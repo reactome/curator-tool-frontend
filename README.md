@@ -1,1 +1,1 @@
-# curator-tool-frontend
+Components used build the front end of the Curator Tool web project.
