@@ -4,8 +4,9 @@ import {HttpClientModule} from '@angular/common/http'; // importing the http mod
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { AttributeTableComponent } from './attribute-table/attribute-table.component';
+import { AttributeTableComponent } from './attribute-table/pages/attributeTable/attribute-table.component'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { EntriesTableComponent } from './attribute-table/pages/entries-table/entries-table.component';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,9 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     AppRoutingModule,
     BrowserAnimationsModule,
     AttributeTableComponent,
-    HttpClientModule
+    HttpClientModule,
+    EntriesTableComponent
+
   ],
   providers: [],
   bootstrap: [AppComponent]
