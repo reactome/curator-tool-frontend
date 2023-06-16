@@ -23,7 +23,8 @@ export class DataService {
           return throwError(err);    //Rethrow it back to component
         }))
         .pipe(map((data: AttributTableData[]) => {
-          return data.map(value => new AttributTableData(value.name));
+          console.log(data)
+          return data.map(value => new AttributTableData(value.name, value.properties));
         }));
     }
 }

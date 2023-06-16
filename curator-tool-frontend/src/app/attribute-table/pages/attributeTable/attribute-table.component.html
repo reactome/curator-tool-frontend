@@ -8,19 +8,19 @@
     <!-- Cardinality Column -->
     <ng-container matColumnDef="cardinality">
       <th mat-header-cell *matHeaderCellDef>Cardinality</th>
-      <td mat-cell *matCellDef="let element"></td>
+      <td mat-cell *matCellDef="let element">{{element.properties.cardinality}}</td>
     </ng-container>
 
     <!-- Value Type Column -->
     <ng-container matColumnDef="valueType">
       <th mat-header-cell *matHeaderCellDef>Value Type</th>
-      <td mat-cell *matCellDef="let element"></td>
+      <td mat-cell *matCellDef="let element">{{element.properties.attributeClasses[0].type}}</td>
     </ng-container>
 
       <!-- Origin Column -->
       <ng-container matColumnDef="attributeOrigin">
         <th mat-header-cell *matHeaderCellDef>Attribute Origin</th>
-        <td mat-cell *matCellDef="let element"></td>
+        <td mat-cell *matCellDef="let element">{{element.properties.origin}}</td>
       </ng-container>
   
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

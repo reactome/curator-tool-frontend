@@ -16,10 +16,12 @@ const routes: Routes = [
 ]
 
 @NgModule({
-  declarations: [AttributeTableComponent, EntriesTableComponent],
+  declarations: [],
   imports: [
     CommonModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild(routes),
+    AttributeTableComponent,
+    EntriesTableComponent
   ],
   exports:[RouterModule]
 })

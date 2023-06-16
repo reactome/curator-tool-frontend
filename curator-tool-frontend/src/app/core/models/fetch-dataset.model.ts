@@ -1,27 +1,15 @@
 export interface AttributeData {
     name: string;
-    // properties: {
-    //     cardinality: string;
-    //     valueType: string;
-    //     attributeOrigin: string;
-    // }
+    properties: {};
   }
 
   export class AttributTableData implements AttributeData {
     name: string;
-    // properties: {
-    //     cardinality: string;
-    //     valueType: string;
-    //     attributeOrigin: string;
-    // }
+    properties: {};
 
-
-    constructor(name: string){
+    constructor(name: string, properties: {}){
         this.name = name;
-        // this.properties = properties;
-        // this.properties.cardinality = properties.cardinality;
-        // this.properties.valueType = properties.valueType;
-        // this.properties.attributeOrigin = properties.attributeOrigin;
+        this.properties = properties;
     }
 }
   

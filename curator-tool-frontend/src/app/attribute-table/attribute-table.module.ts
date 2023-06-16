@@ -7,14 +7,12 @@ import { EntriesTableComponent } from './pages/entries-table/entries-table.compo
 
 
 @NgModule({
-  declarations: [
-    AttributeTableComponent,
-    EntriesTableComponent
-
-  ],
+  declarations: [],
   imports: [
     CommonModule,
-    AttributeTableRoutingModule
+    AttributeTableRoutingModule,
+    AttributeTableComponent,
+    EntriesTableComponent
   ]
 })
 export class AttributeTableModule { }
