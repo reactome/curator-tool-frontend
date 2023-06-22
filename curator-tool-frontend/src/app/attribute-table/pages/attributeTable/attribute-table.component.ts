@@ -1,16 +1,8 @@
 import { Component, OnInit, Input } from '@angular/core';
 import {NgIf, NgFor} from '@angular/common';
 import {MatTableModule} from '@angular/material/table';
-import {HttpClient} from '@angular/common/http';
 import { DataService } from 'src/app/core/services/data.service';
-import {Observable} from "rxjs";
-
-export interface AttributeData {
-  name: string;
-  // cardinality: string | undefined;
-  // valueType: string | undefined;
-  // attributeOrigin: string;
-}
+import { AttributeData } from 'src/app/core/models/fetch-dataset.model';
 
 @Component({
   selector: 'app-attribute-table',
@@ -23,11 +15,11 @@ export class AttributeTableComponent implements OnInit{
   displayedColumns: string[] = ['attributeName', 'cardinality', 'valueType', 'attributeOrigin'];
   dataSource: AttributeData[] = [];
   clickedRows = new Set<AttributeData>();
-  constructor(private http: HttpClient, private dataService: DataService) {}
-  //@Input() dataSource = Array<AttributeData>;
+  constructor(private dataService: DataService) {}
+  @Input()  className: string = "";
 
 	ngOnInit() {
-    this.dataService.fetchExampleData("Polymer")
+    this.dataService.fetchAttributeData("Polymer")
         .subscribe(data => this.dataSource = data);
 	}
 }

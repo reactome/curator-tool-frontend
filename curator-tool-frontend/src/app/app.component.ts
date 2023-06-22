@@ -1,13 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import {HttpClient} from '@angular/common/http';
-import { Observable } from 'rxjs';
-
-export interface AttributeData {
-  name: string;
-  cardinality: string | undefined;
-  valueType: string | undefined;
-  attributeOrigin: string;
-}
 
 @Component({
   selector: 'app-root',
@@ -16,6 +7,7 @@ export interface AttributeData {
 })
 export class AppComponent {
   title = 'curator-tool-frontend';
+  testClassName: string = "testClassName"
   ngOnInit() {
   }
 }

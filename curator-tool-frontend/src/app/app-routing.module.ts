@@ -12,7 +12,14 @@ const routes: Routes = [
     loadChildren: () =>
       import("./attribute-table/attribute-table.module").then((m) =>
           m.AttributeTableModule),
+  },
+  {
+    path: "entries-table",
+    loadChildren: () => 
+      import("./entities-table/entities-table.module").then((m) =>
+      m.EntitiesTableModule),
   }
+
 ];
 
 @NgModule({
