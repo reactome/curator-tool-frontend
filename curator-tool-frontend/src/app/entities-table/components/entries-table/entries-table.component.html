@@ -2,10 +2,15 @@
   <!-- Attribute Name Column -->
   <ng-container matColumnDef="attribute">
     <th mat-header-cell *matHeaderCellDef>Attribute</th>
-    <td mat-cell *matCellDef="let element">{{element.key}}</td>
+    <td class="attColumn" mat-cell *matCellDef="let element">{{element.key}}</td>
   </ng-container>
 
-  <!-- Cardinality Column -->
+  <!-- <ng-container matColumnDef="value">
+    <th mat-header-cell *matHeaderCellDef>value</th>
+    <td class="attColumn" mat-cell *matCellDef="let element">{{element.value}}</td>
+  </ng-container> -->
+
+  Attribute Value Column
   <ng-container matColumnDef="value">
     <th mat-header-cell *matHeaderCellDef>Value</th>
     <td mat-cell *matCellDef="let element">
@@ -15,23 +20,25 @@
                             color="primary"></mat-slide-toggle>
         </ng-template>
         <ng-template [ngSwitchCase]="'string'">
-          <!-- <mat-form-field appearance="outline"  subscriptSizing="dynamic"> -->
+          <mat-form-field appearance="fill" subscriptSizing="dynamic" style="width: 100%">
             <input [(ngModel)]="element.value"  matInput type="text">
-          <!-- </mat-form-field> -->
+          </mat-form-field>
         </ng-template>
 
         <ng-template [ngSwitchCase]="'number'">
-          <!-- <mat-form-field appearance="outline"  subscriptSizing="dynamic"> -->
+          <mat-form-field appearance="fill"  subscriptSizing="dynamic" style="width: 100%">
             <input [(ngModel)]="element.value"  matInput type="number">
-          <!-- </mat-form-field> -->
+          </mat-form-field>
         </ng-template>
 
         <ng-template [ngSwitchCase]="'object'">
-          <a href=".">{{element.value.displayName}}</a>
+          <a href=".">[{{element.value.className}}: {{element.value.dbId}}] 
+            {{element.value.displayName}}</a>
         </ng-template>
 
         <ng-template [ngSwitchCase]="'array'">
-          <a *ngFor="let object of element.value" href=".">{{object.displayName}}</a>
+          <a *ngFor="let object of element.value" href=".">[{{object.className}}: {{object.dbId}}] 
+            {{object.displayName}}<br></a>
         </ng-template>
 
 
@@ -44,8 +51,6 @@
   <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
   <tr
       mat-row
-      (click)="clickedRows.add(row)"
-      [class.demo-row-is-clicked]="clickedRows.has(row)"
       *matRowDef="let row; columns: displayedColumns;"
   ></tr>
 </table>

@@ -27,6 +27,7 @@ import { EffectsModule } from '@ngrx/effects';
     EntriesTableComponent,
     AttributeTableModule,
     EntitiesTableModule,
+    EffectsModule.forRoot(),
     StoreModule.forRoot({}, {}),
     StoreDevtoolsModule.instrument({ 
       maxAge: 25, 

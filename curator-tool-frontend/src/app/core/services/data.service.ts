@@ -1,9 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import { AttributTableData } from '../models/fetch-dataset.model';
+import { AttributeData, AttributTableData } from '../models/fetch-dataset.model';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { KeyValuePair } from '../models/key-value.model';
 import { environment } from 'src/environments/environment.dev';
+import { selectAttribute, selectAttributeData } from 'src/app/attribute-table/state/attribute-table.selectors';
+import { MemoizedSelector, Store } from '@ngrx/store';
+import { AttributeDataState } from 'src/app/attribute-table/state/attribute-table.reducers';
+import { AttributeTableActions } from 'src/app/attribute-table/state/attribute-table.actions';
 
 
 @Injectable({
@@ -13,7 +17,9 @@ export class DataService {
   attributeDataurl = `${environment.ApiRoot}/getAttributes/`
   entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private store: Store) {
+    this.store.dispatch({type: AttributeTableActions.GET_ATTRIBUTE_DATA});
+   }
 
 
   fetchAttributeData(className: string): Observable<AttributTableData[]> {
@@ -26,8 +32,9 @@ export class DataService {
         return throwError(() => err);
       }))
       .pipe(map((data: AttributTableData[]) => {
+        console.log("data:")
         console.log(data)
-        return data.map(value => new AttributTableData(value.name, value.properties))
+        return data.map(value => new AttributTableData(value.category, value.definingType, value.name, value.properties))
           .sort((a, b) => a.name.localeCompare(b.name));
       }));
   }
@@ -45,6 +52,8 @@ export class DataService {
         map(data => Object.keys(data).map(key => {
           const value = data[key];
           const type = value instanceof Array ? 'array' : typeof value;
+          let dataSource = this.store.select(selectAttributeData());
+          //console.log(dataSource);
           return { key, value, type }
         })));
   }

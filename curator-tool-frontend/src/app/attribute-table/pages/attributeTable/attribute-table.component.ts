@@ -3,6 +3,12 @@ import {NgIf, NgFor} from '@angular/common';
 import {MatTableModule} from '@angular/material/table';
 import { DataService } from 'src/app/core/services/data.service';
 import { AttributeData } from 'src/app/core/models/fetch-dataset.model';
+import { AttributeDataState } from '../../state/attribute-table.reducers';
+import { Router } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { selectAttribute, selectAttributeData } from '../../state/attribute-table.selectors';
+import { AttributeTableActions } from '../../state/attribute-table.actions';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-attribute-table',
@@ -13,13 +19,13 @@ import { AttributeData } from 'src/app/core/models/fetch-dataset.model';
 })
 export class AttributeTableComponent implements OnInit{
   displayedColumns: string[] = ['attributeName', 'cardinality', 'valueType', 'attributeOrigin'];
-  dataSource: AttributeData[] = [];
+  dataSource$: Observable<AttributeData[]> = this.store.select(selectAttributeData());
   clickedRows = new Set<AttributeData>();
-  constructor(private dataService: DataService) {}
+  constructor(
+    private store: Store) {}
   @Input()  className: string = "";
 
-	ngOnInit() {
-    this.dataService.fetchAttributeData("Polymer")
-        .subscribe(data => this.dataSource = data);
-	}
+  ngOnInit(): void {
+    this.store.dispatch({type: AttributeTableActions.GET_ATTRIBUTE_DATA, className: "Polymer"});
+  }
 }
