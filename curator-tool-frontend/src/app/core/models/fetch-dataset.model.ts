@@ -1,20 +1,30 @@
+export type AttributeProperty = {
+  attributeClasses: { type: string, valueTypeDatabaseObject: boolean }[],
+  cardinality: '1' | '+',
+  name: string,
+  origin: string,
+}
+
 export interface AttributeData {
-  category: string,
-  definingType: string,
+  category: 'OPTIONAL' | 'MANDATORY' | 'REQUIRED' | 'NOMANUALEDIT',
+  definingType: 'UNDEFINED' | 'ALL_DEFINING',
   name: string;
-  properties: {};
+  properties: AttributeProperty;
 }
 
 export class AttributTableData implements AttributeData {
-  category: string;
-  definingType: string;
-  name: string;
-  properties: {};
+  constructor(
+    public category: 'OPTIONAL' | 'MANDATORY' | 'REQUIRED' | 'NOMANUALEDIT',
+    public definingType: 'UNDEFINED' | 'ALL_DEFINING',
+    public name: string,
+    public properties: AttributeProperty) {
 
-  constructor(category: string, definingType:string, name: string, properties: {}) {
-    this.category = category;
-    this.definingType = definingType;
-    this.name = name;
-    this.properties = properties;
   }
+}
+
+export function toAttributeClassName(props: AttributeProperty) {
+  const type = props.attributeClasses[0].type;
+  let typeArray = type.split(".");
+  let index = typeArray.length;
+  return typeArray[index - 1];
 }

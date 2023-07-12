@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SchemaPanelComponent } from './layout/schema-panel/schema-panel.component';
 import { PipeNameComponent } from './pipes/pipe-name/pipe-name.component';
+import { MaterialModule } from '../material/material.module';
 
 
 
@@ -11,7 +12,9 @@ import { PipeNameComponent } from './pipes/pipe-name/pipe-name.component';
     PipeNameComponent
   ],
   imports: [
-    CommonModule
-  ]
+    CommonModule,
+    MaterialModule
+  ],
+  exports: [MaterialModule]
 })
 export class SharedModule { }

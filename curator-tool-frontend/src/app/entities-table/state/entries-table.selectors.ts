@@ -1,7 +1,9 @@
 import { createFeatureSelector, createSelector } from "@ngrx/store";
 import { EntriesDataState } from "./entries-table.reducers"
 import { selectAttributeDataState } from "src/app/attribute-table/state/attribute-table.selectors";
-import { SchemaClassData, SchemaTableData } from "src/app/core/models/schema-class.model";
+import { SchemaClassData, toDataType } from "src/app/core/models/schema-class.model";
+import { AttributeData, toAttributeClassName } from "src/app/core/models/fetch-dataset.model";
+import { AttributeDataState } from "src/app/attribute-table/state/attribute-table.reducers";
 
 export const selectEntiresDataState =
     createFeatureSelector<EntriesDataState>('entriesDataState')
@@ -16,47 +18,16 @@ export const selectEntry = (attributeName: string) => createSelector(
     selectEntiresDataState,
     (state: EntriesDataState) => state.entriesData.filter(d => d.key === attributeName))
 
-//  const selectSchemaClassArray =createSelector(
-//     selectAttributeDataState,
-//     selectEntiresDataState,
-//     (attributes, entries) = >{
-//         let schemaClassArray: SchemaClassData[] = [];
-
-//     }
-// )
-
-export const selectSchemaClassArray = () => createSelector(
+export const selectSchemaClassArray = () => createSelector<any, AttributeDataState, EntriesDataState, SchemaClassData[]>(
     selectAttributeDataState,
     selectEntiresDataState,
     (attributes, entries) => {
-        let schemaClassArray: SchemaClassData[] = [];
-        attributes.attributeData.forEach((attribute) => {
-
-            if (entries.entriesData.filter(e => e.key === attribute.name)){
-
-            let schemaClassDataObject = new SchemaTableData(
-            attribute.category,
-            attribute.definingType,
-            attribute.name,
-            attribute.properties,
-            entries.entriesData.filter(e => e.key === attribute.name)
-            )
-            schemaClassArray.push(schemaClassDataObject);
-            }
-            else {
-                let schemaClassDataObject = new SchemaTableData(
-                    attribute.category,
-                    attribute.definingType,
-                    attribute.name,
-                    attribute.properties,
-                    undefined)
-                    schemaClassArray.push(schemaClassDataObject);
-            }
-    
-        });
-return schemaClassArray
-
-    } 
+        const entriesMap = new Map(entries.entriesData.map(e => [e.key, e.value]));
+        return attributes.attributeData.map(attribute => ({
+            ...attribute,
+             value: entriesMap.get(attribute.name),
+             type: toDataType(attribute.properties),
+             className: toAttributeClassName(attribute.properties)
+        }))
+    }
 )
-
-//entries.entriesData.filter(e => e.key === attribute.name)[0].value

@@ -11,11 +11,10 @@ const routes: Routes = [
 
 
 @NgModule({
-  declarations: [EntriesTableComponent],
+  declarations: [],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
-    EntriesTableComponent
   ],
   exports:[RouterModule]
 })
