@@ -6,7 +6,6 @@ import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
 import { entriesTableReducer } from './state/entries-table.reducers';
 import { ToolBarComponent } from './components/tool-bar/tool-bar.component';
-import { MatToolbarModule} from '@angular/material/toolbar';
 import { EntitiesTableRoutingModule } from './entities-table-routing.module';
 import { SharedModule } from '../shared/shared.module';
 
@@ -22,7 +21,6 @@ import { SharedModule } from '../shared/shared.module';
     EntitiesTableRoutingModule,
     EffectsModule.forFeature(EntriesTableEffects),
     StoreModule.forFeature('entriesDataState', entriesTableReducer),
-    MatToolbarModule,
     SharedModule  ],
 })
 export class EntitiesTableModule { }

@@ -10,6 +10,9 @@
   <ng-container matColumnDef="value">
     <th mat-header-cell *matHeaderCellDef>Value</th>
     <td mat-cell *matCellDef="let element">
+      <ng-container *ngIf="showToolBar">
+        <app-tool-bar></app-tool-bar>
+      </ng-container>
       <ng-container *ngIf="element.properties.cardinality === '1'">
         <ng-container [ngSwitch]="element.type">
           <ng-template [ngSwitchCase]="'BOOLEAN'">
@@ -34,12 +37,7 @@
           </ng-template>
 
           <ng-template [ngSwitchCase]="'RELATIONSHIP'">
-            <ng-container *ngIf="element.value === undefined">
-              <a href=".">Add new {{element.className}}</a>
-            </ng-container>
-            <ng-container *ngElse>
-              <a href=".">{{element.value}}</a>
-            </ng-container>
+            <a href=".">{{element.value}}</a>
           </ng-template>
 
         </ng-container>
@@ -79,15 +77,8 @@
     </td>
   </ng-container>
 
-
-
   <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
   <tr mat-row (mouseenter)="onMouseEnter(row)" (mouseleave)="onMouseOut(row)"
     *matRowDef="let row; columns: displayedColumns;">
   </tr>
-  <!-- <ng-container *ngIf="showToolBar">
-    <mat-toolbar>
-      <span>Testing Toolbar</span>
-    </mat-toolbar>
-  </ng-container> -->
 </table>
