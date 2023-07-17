@@ -1,5 +1,5 @@
 import {createAction, createActionGroup, emptyProps, props} from '@ngrx/store';
-import { KeyValuePair } from 'src/app/core/models/key-value.model';
+import { EntryData } from 'src/app/core/models/entry-data.model';
 //import {Update} from "@ngrx/entity";
 
 export enum EntriesTableActions {
@@ -12,5 +12,5 @@ export enum EntriesTableActions {
   );
   export const setEntriesData = createAction(
     EntriesTableActions.SET_ENTRIES_DATA,
-    props<{ entriesData: Array<KeyValuePair>}>(),
+    props<{ entriesData: Array<EntryData>}>(),
   );

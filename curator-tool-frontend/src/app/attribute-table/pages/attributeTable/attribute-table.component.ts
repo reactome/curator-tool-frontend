@@ -2,7 +2,7 @@ import { Component, OnInit, Input } from '@angular/core';
 import {NgIf, NgFor} from '@angular/common';
 import {MatTableModule} from '@angular/material/table';
 import { DataService } from 'src/app/core/services/data.service';
-import { AttributeData } from 'src/app/core/models/fetch-dataset.model';
+import { AttributeData } from 'src/app/core/models/schema-class-attribute-data.model';
 import { AttributeDataState } from '../../state/attribute-table.reducers';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';

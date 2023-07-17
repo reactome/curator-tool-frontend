@@ -10,8 +10,8 @@
   <ng-container matColumnDef="value">
     <th mat-header-cell *matHeaderCellDef>Value</th>
     <td mat-cell *matCellDef="let element">
-      <ng-container *ngIf="showToolBar">
-        <app-tool-bar></app-tool-bar>
+      <ng-container *ngIf="showToolBar[element.name]">
+        <app-tool-bar>[row]="row"</app-tool-bar>
       </ng-container>
       <ng-container *ngIf="element.properties.cardinality === '1'">
         <ng-container [ngSwitch]="element.type">
@@ -78,7 +78,7 @@
   </ng-container>
 
   <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-  <tr mat-row (mouseenter)="onMouseEnter(row)" (mouseleave)="onMouseOut(row)"
+  <tr mat-row (click)="onMouseEnter(row.name)"
     *matRowDef="let row; columns: displayedColumns;">
   </tr>
 </table>

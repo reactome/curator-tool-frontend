@@ -1,5 +1,5 @@
 import {createAction, props} from '@ngrx/store';
-import { SchemaClassData } from 'src/app/core/models/schema-class.model';
+import { SchemaClassData } from 'src/app/core/models/schema-class-entry-data.model';
 
 export enum SchemaClassActions {
     GET_SCHEMA_CLASS_DATA = '[Schema-Class-Data] Get Schema-Class-Data',

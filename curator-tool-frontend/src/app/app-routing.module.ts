@@ -15,9 +15,9 @@ const routes: Routes = [
   },
   {
     path: "entries-table",
-    loadChildren: () => 
-      import("./entities-table/entities-table.module").then((m) =>
-      m.EntitiesTableModule),
+    loadChildren: () =>
+      import("./entries-table/entries-table.module").then((m) =>
+      m.EntriesTableModule),
   }
 
 ];

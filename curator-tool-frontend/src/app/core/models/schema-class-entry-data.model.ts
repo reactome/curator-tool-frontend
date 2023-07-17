@@ -1,4 +1,4 @@
-import { AttributeData, AttributeProperty } from "./fetch-dataset.model";
+import { AttributeData, AttributeProperty } from "./schema-class-attribute-data.model";
 
 export interface SchemaClassData<T = any> extends AttributeData {
   value: T;

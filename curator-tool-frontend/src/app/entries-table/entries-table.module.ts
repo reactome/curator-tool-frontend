@@ -6,7 +6,7 @@ import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
 import { entriesTableReducer } from './state/entries-table.reducers';
 import { ToolBarComponent } from './components/tool-bar/tool-bar.component';
-import { EntitiesTableRoutingModule } from './entities-table-routing.module';
+import { EntriesTableRoutingModule } from './entries-table-routing.module';
 import { SharedModule } from '../shared/shared.module';
 
 
@@ -18,9 +18,9 @@ import { SharedModule } from '../shared/shared.module';
   ],
   imports: [
     CommonModule,
-    EntitiesTableRoutingModule,
+    EntriesTableRoutingModule,
     EffectsModule.forFeature(EntriesTableEffects),
     StoreModule.forFeature('entriesDataState', entriesTableReducer),
     SharedModule  ],
 })
-export class EntitiesTableModule { }
+export class EntriesTableModule { }

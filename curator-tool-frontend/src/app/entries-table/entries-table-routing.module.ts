@@ -18,4 +18,4 @@ const routes: Routes = [
   ],
   exports:[RouterModule]
 })
-export class EntitiesTableRoutingModule { }
+export class EntriesTableRoutingModule { }

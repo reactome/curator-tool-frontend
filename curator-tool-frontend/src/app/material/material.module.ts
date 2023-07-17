@@ -8,31 +8,37 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import {MatMenuModule} from "@angular/material/menu";
+import {MatListModule} from "@angular/material/list";
 
 @NgModule({
   declarations: [],
   imports: [
     CommonModule,
     MatTableModule,
-    MatButtonModule, 
+    MatButtonModule,
     MatSlideToggleModule,
     MatFormFieldModule,
-    MatSelectModule, 
-    FormsModule, 
-    ReactiveFormsModule, 
-    MatInputModule, 
-    MatToolbarModule
+    MatSelectModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatInputModule,
+    MatToolbarModule,
+    MatMenuModule,
+    MatListModule
   ],
   exports: [
     MatTableModule,
-    MatButtonModule, 
+    MatButtonModule,
     MatSlideToggleModule,
     MatFormFieldModule,
-    MatSelectModule, 
-    FormsModule, 
-    ReactiveFormsModule, 
-    MatInputModule, 
-    MatToolbarModule
+    MatSelectModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatInputModule,
+    MatToolbarModule,
+    MatMenuModule,
+    MatListModule
   ]
 })
 export class MaterialModule { }

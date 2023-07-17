@@ -1,8 +1,8 @@
 import { createFeatureSelector, createSelector } from "@ngrx/store";
 import { EntriesDataState } from "./entries-table.reducers"
 import { selectAttributeDataState } from "src/app/attribute-table/state/attribute-table.selectors";
-import { SchemaClassData, toDataType } from "src/app/core/models/schema-class.model";
-import { AttributeData, toAttributeClassName } from "src/app/core/models/fetch-dataset.model";
+import { SchemaClassData, toDataType } from "src/app/core/models/schema-class-entry-data.model";
+import { AttributeData, toAttributeClassName } from "src/app/core/models/schema-class-attribute-data.model";
 import { AttributeDataState } from "src/app/attribute-table/state/attribute-table.reducers";
 
 export const selectEntiresDataState =
