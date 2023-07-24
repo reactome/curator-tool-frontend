@@ -11,13 +11,13 @@ export type DataType =
   'INTEGER' |
   'FLOAT' |
   'BOOLEAN' |
-  'RELATIONSHIP';
+  'INSTANCE';
 
 
 export function toDataType(props: AttributeProperty): DataType {
   const type = props.attributeClasses[0].type;
   if (type.startsWith("org.reactome")) {
-    return 'RELATIONSHIP';
+    return 'INSTANCE';
   } else if (type.endsWith("Long") || type.endsWith("Integer")) {
     return 'INTEGER';
   } else if (type.endsWith("Float") || type.endsWith("Double")) {

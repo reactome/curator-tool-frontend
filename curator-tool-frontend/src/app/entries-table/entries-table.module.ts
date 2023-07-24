@@ -5,16 +5,19 @@ import { EntriesTableEffects } from './state/entries-table.effects';
 import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
 import { entriesTableReducer } from './state/entries-table.reducers';
-import { ToolBarComponent } from './components/tool-bar/tool-bar.component';
+import { ActionMenuComponent } from './components/action-menu/action-menu.component';
 import { EntriesTableRoutingModule } from './entries-table-routing.module';
 import { SharedModule } from '../shared/shared.module';
+import {DialogOverviewExampleDialog, RowElementComponent} from './components/row-element/row-element.component';
 
 
 
 @NgModule({
   declarations: [
      EntriesTableComponent,
-     ToolBarComponent
+     ActionMenuComponent,
+     RowElementComponent,
+    DialogOverviewExampleDialog,
   ],
   imports: [
     CommonModule,

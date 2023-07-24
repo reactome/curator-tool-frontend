@@ -47,14 +47,15 @@ export class DataService {
         map(data => Object.keys(data).map(key => {
           const value = data[key];
           const type = value instanceof Array ? 'array' : typeof value;
+          console.log(data);
           return { key, value, type }
         })));
   }
 
   fetchSchemaClasses(): Observable<string[]> {
+    let stringArray: string[] = [];
     return this.http.get<string[]>(`http://localhost:8080/api/curation/getSchemaClasses`)
       .pipe(map((data: string[]) => {
-        console.log(data)
         return data;
       }));
   }

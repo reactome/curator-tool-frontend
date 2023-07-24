@@ -1,0 +1,9 @@
+<div mat-dialog-content>
+  <app-entries-table
+    [dbId]="data.elementValue?.dbId">
+  </app-entries-table>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="onNoClick()">Close</button>
+<!--  <button mat-button [mat-dialog-close]="data.animal" cdkFocusInitial>Ok</button>-->
+</div>
