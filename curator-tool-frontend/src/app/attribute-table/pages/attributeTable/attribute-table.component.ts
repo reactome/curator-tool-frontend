@@ -23,7 +23,7 @@ export class AttributeTableComponent implements OnInit{
   clickedRows = new Set<AttributeData>();
   constructor(
     private store: Store) {}
-  @Input()  className: string = "";
+  @Input()  className: string = "Polymer";
 
   ngOnInit(): void {
     this.store.dispatch({type: AttributeTableActions.GET_ATTRIBUTE_DATA, className: this.className});
