@@ -12,5 +12,5 @@ export enum EntriesTableActions {
   );
   export const setEntriesData = createAction(
     EntriesTableActions.SET_ENTRIES_DATA,
-    props<{ entriesData: Array<EntryData>}>(),
+    props<{ dbId: string, entriesData: Array<EntryData>}>(),
   );

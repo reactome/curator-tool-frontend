@@ -1,7 +1,8 @@
-<table mat-table [dataSource]="dataSource$" class="mat-elevation-z8 demo-table">
+<table mat-table *ngIf="dataSource$ | async as dataSource" [dataSource]="dataSource" matSort
+       class="mat-elevation-z8 demo-table">
   <!-- Attribute Name Column -->
-  <ng-container matColumnDef="attribute">
-    <th mat-header-cell *matHeaderCellDef>Attribute</th>
+  <ng-container matColumnDef="name">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header>Attribute</th>
     <td class="attColumn" mat-cell *matCellDef="let element">{{element.name}}</td>
   </ng-container>
 
@@ -12,14 +13,19 @@
       <ng-container *ngIf="element.properties.cardinality === '1'">
         <app-row-element
           [elementValue]="element.value"
-          [elementType]="element.type">
+          [elementType]="element.type"
+          [className]="element.properties.className"
+        >
         </app-row-element>
       </ng-container>
 
       <ng-container *ngIf="element.properties.cardinality === '+'">
-        <app-row-element *ngFor="let object of element.value"
+        <app-row-element
+          *ngFor="let object of element.value"
           [elementValue]="object"
-          [elementType]="element.type">
+          [elementType]="element.type"
+          [className]="element.properties.className"
+        >
         </app-row-element>
       </ng-container>
       <ng-container *ngIf="showToolBar[element.name]">
@@ -30,6 +36,6 @@
 
   <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
   <tr mat-row (click)="onClick(row.name)"
-    *matRowDef="let row; columns: displayedColumns;">
+      *matRowDef="let row; columns: displayedColumns;">
   </tr>
 </table>

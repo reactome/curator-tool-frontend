@@ -19,13 +19,13 @@ import { Observable } from 'rxjs';
 })
 export class AttributeTableComponent implements OnInit{
   displayedColumns: string[] = ['attributeName', 'cardinality', 'valueType', 'attributeOrigin'];
-  dataSource$: Observable<AttributeData[]> = this.store.select(selectAttributeData());
+  dataSource$: Observable<AttributeData[]> = this.store.select(selectAttributeData('Polymer'));
   clickedRows = new Set<AttributeData>();
   constructor(
     private store: Store) {}
   @Input()  className: string = "";
 
   ngOnInit(): void {
-    this.store.dispatch({type: AttributeTableActions.GET_ATTRIBUTE_DATA, className: "Polymer"});
+    this.store.dispatch({type: AttributeTableActions.GET_ATTRIBUTE_DATA, className: this.className});
   }
 }

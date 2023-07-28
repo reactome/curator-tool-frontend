@@ -11,6 +11,10 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import {MatMenuModule} from "@angular/material/menu";
 import {MatListModule} from "@angular/material/list";
 import {MatDialogModule} from "@angular/material/dialog";
+import {MatSortModule} from "@angular/material/sort";
+import {MatTabsModule} from "@angular/material/tabs";
+import {MatIconModule} from "@angular/material/icon";
+import {MatCardModule} from "@angular/material/card";
 
 @NgModule({
   declarations: [],
@@ -27,7 +31,11 @@ import {MatDialogModule} from "@angular/material/dialog";
     MatToolbarModule,
     MatMenuModule,
     MatListModule,
-    MatDialogModule
+    MatDialogModule,
+    MatSortModule,
+    MatTabsModule,
+    MatIconModule,
+    MatCardModule
   ],
   exports: [
     MatTableModule,
@@ -41,7 +49,11 @@ import {MatDialogModule} from "@angular/material/dialog";
     MatToolbarModule,
     MatMenuModule,
     MatListModule,
-    MatDialogModule
+    MatDialogModule,
+    MatSortModule,
+    MatTabsModule,
+    MatIconModule,
+    MatCardModule
   ]
 })
 export class MaterialModule { }

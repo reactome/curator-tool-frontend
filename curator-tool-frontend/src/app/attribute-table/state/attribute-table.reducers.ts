@@ -1,18 +1,27 @@
-import { createReducer, on } from "@ngrx/store";
-import { AttributeData } from "src/app/core/models/schema-class-attribute-data.model";
-import { setAttributeData } from "./attribute-table.actions";
+import {createReducer, on} from "@ngrx/store";
+import {AttributeData} from "src/app/core/models/schema-class-attribute-data.model";
+import {setAttributeData} from "./attribute-table.actions";
+import {createEntityAdapter, EntityState} from "@ngrx/entity";
+import {setEntriesData} from "../../entries-table/state/entries-table.actions";
+import {EntriesData} from "../../entries-table/state/entries-table.reducers";
 
-export interface AttributeDataState {
-    attributeData: Array<AttributeData>;
+export interface AttributeDataEntity {
+  className: string
+  attributeData: Array<AttributeData>;
 }
 
-export const initialState: AttributeDataState = {
-    attributeData: []
+export interface AttributeDataState extends EntityState<AttributeDataEntity> {
 }
+
+export const attributeDataAdapter = createEntityAdapter<AttributeDataEntity>({
+  selectId: entity => entity.className
+});
+
+export const initialState: AttributeDataState = attributeDataAdapter.getInitialState()
 
 export const attributeTableReducer =
-createReducer(
+  createReducer(
     initialState,
-    on(setAttributeData, (state, {attributeData}) =>
-    {return {...state, attributeData}}),
-);
+    on(setAttributeData, (state, { className, attributeData}) => attributeDataAdapter.upsertOne({className: className, attributeData: attributeData}, state))
+  );
+

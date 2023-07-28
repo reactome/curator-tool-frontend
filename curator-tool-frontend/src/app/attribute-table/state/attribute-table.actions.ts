@@ -11,5 +11,5 @@ export const getAttributeDataList = createAction(
 );
 export const setAttributeData = createAction(
   AttributeTableActions.SET_ATTRIBUTE_DATA,
-  props<{ attributeData: Array<AttributeData>}>(),
+  props<{ className: string, attributeData: Array<AttributeData>}>(),
 );

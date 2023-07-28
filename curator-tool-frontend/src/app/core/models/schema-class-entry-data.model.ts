@@ -3,7 +3,6 @@ import { AttributeData, AttributeProperty } from "./schema-class-attribute-data.
 export interface SchemaClassData<T = any> extends AttributeData {
   value: T;
   type: DataType;
-  className: string;
 }
 
 export type DataType =

@@ -9,6 +9,10 @@ import { ActionMenuComponent } from './components/action-menu/action-menu.compon
 import { EntriesTableRoutingModule } from './entries-table-routing.module';
 import { SharedModule } from '../shared/shared.module';
 import {DialogOverviewExampleDialog, RowElementComponent} from './components/row-element/row-element.component';
+import {MatSortModule} from "@angular/material/sort";
+import { BreadCrumbComponent } from './components/bread-crumb/bread-crumb.component';
+import {MatIconModule} from "@angular/material/icon";
+import {MatCardModule} from "@angular/material/card";
 
 
 
@@ -18,12 +22,14 @@ import {DialogOverviewExampleDialog, RowElementComponent} from './components/row
      ActionMenuComponent,
      RowElementComponent,
     DialogOverviewExampleDialog,
+    BreadCrumbComponent,
   ],
   imports: [
     CommonModule,
     EntriesTableRoutingModule,
     EffectsModule.forFeature(EntriesTableEffects),
     StoreModule.forFeature('entriesDataState', entriesTableReducer),
-    SharedModule  ],
+    SharedModule
+  ],
 })
 export class EntriesTableModule { }

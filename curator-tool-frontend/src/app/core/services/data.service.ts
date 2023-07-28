@@ -34,7 +34,7 @@ export class DataService {
       }));
   }
 
-  fetchEntityData(dbId: string): Observable<EntryData[]> {
+  fetchEntityData(dbId: string): Observable< EntryData[]> {
     return this.http.get<{ [key: string]: any }>(this.entityDataUrl + `${dbId}`)
       .pipe(
         catchError((err: Error) => {
@@ -47,8 +47,7 @@ export class DataService {
         map(data => Object.keys(data).map(key => {
           const value = data[key];
           const type = value instanceof Array ? 'array' : typeof value;
-          console.log(data);
-          return { key, value, type }
+          return { key, value, type };
         })));
   }
 

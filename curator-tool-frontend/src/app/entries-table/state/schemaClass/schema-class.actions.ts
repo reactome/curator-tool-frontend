@@ -7,8 +7,9 @@ export enum SchemaClassActions {
   }
   export const getSchemaClassList = createAction(
     SchemaClassActions.GET_SCHEMA_CLASS_DATA,
+    props<{ className: string}>(),
   );
   export const setSchemaClassData = createAction(
     SchemaClassActions.SET_SCHEMA_CLASS_DATA,
-    props<{ schemaClassData: Array<SchemaClassData>}>(),
+    props<{ className: string, schemaClassData: Array<SchemaClassData>}>(),
   );

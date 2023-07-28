@@ -3,6 +3,8 @@ export type AttributeProperty = {
   cardinality: '1' | '+',
   name: string,
   origin: string,
+  className: string,
+  '@JavaClass': string
 }
 
 export interface AttributeData {
@@ -17,8 +19,9 @@ export class AttributTableData implements AttributeData {
     public category: 'OPTIONAL' | 'MANDATORY' | 'REQUIRED' | 'NOMANUALEDIT',
     public definingType: 'UNDEFINED' | 'ALL_DEFINING',
     public name: string,
-    public properties: AttributeProperty) {
-
+    public properties: AttributeProperty,
+    ) {
+    this.properties.className = this.properties.origin.split('.').slice(-1)[0];
   }
 }
 

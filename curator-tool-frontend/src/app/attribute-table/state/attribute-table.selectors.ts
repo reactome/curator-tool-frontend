@@ -1,16 +1,16 @@
-import { createFeatureSelector, createSelector } from "@ngrx/store";
-import { AttributeDataState } from "./attribute-table.reducers";
+import {createFeatureSelector, createSelector} from "@ngrx/store";
+import {AttributeDataState} from "./attribute-table.reducers";
 
-export  const selectAttributeDataState = 
-createFeatureSelector<AttributeDataState>('attributeDataState')
+export const selectAttributeDataState =
+  createFeatureSelector<AttributeDataState>('attributeDataState')
 
-export const selectAttributeData = () => createSelector(
-    selectAttributeDataState,
-    (state: AttributeDataState) => state.attributeData
+export const selectAttributeData = (className: string) => createSelector(
+  selectAttributeDataState,
+  (state: AttributeDataState) => state.entities[className]?.attributeData || []
 )
 
 // Select one attribute by name
-export const selectAttribute = (attributeName: string) => 
-createSelector(
+export const selectAttribute = (className:string, attributeName: string) =>
+  createSelector(
     selectAttributeDataState,
-    (state: AttributeDataState) => state.attributeData.filter(d => d.name === attributeName ))
+    (state: AttributeDataState) => state.entities[className]?.attributeData.filter(d => d.name === attributeName)) || []
