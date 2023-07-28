@@ -1,0 +1,22 @@
+<div fxFlex="25">
+
+  <mat-toolbar color="primary" style="height: 45px; font-size: 16px; font-weight: bold; color: #E6E8EA">
+    <span><a  mat-button (click)="breadCrumbMain()" style="color: white;">Main</a></span>
+
+    <span *ngFor="let m of menuHeader; let indx = index" style="color: white;">
+      <a  mat-button (click)="breadCrumb(menuHeader, indx)" >{{m.label}}
+        <mat-icon fxFlex="10">{{m.icon}}</mat-icon></a>
+    </span>
+
+  </mat-toolbar>
+
+  <mat-card class="cs-card-padding">
+    <div>
+      <mat-list role="list" *ngFor="let menu of appitemsTravel">
+        <mat-list-item (click)="menuChange(menu)" role="listitem"><span fxFlex="90">{{menu.label}}</span>
+          <mat-icon fxFlex="10">{{menu.icon}}</mat-icon>
+        </mat-list-item>
+      </mat-list>
+    </div>
+  </mat-card>
+</div>
