@@ -4,9 +4,9 @@ import {Store} from '@ngrx/store';
 import {EntriesTableActions} from '../../state/entries-table.actions';
 import {selectSchemaClassArray} from '../../state/entries-table.selectors';
 import {SchemaClassData} from 'src/app/core/models/schema-class-entry-data.model';
-import {AttributeTableActions} from 'src/app/attribute-table/state/attribute-table.actions';
 import {MatTableDataSource} from "@angular/material/table";
 import {MatSort} from "@angular/material/sort";
+import {EntriesData} from "../../state/entries-table.reducers";
 
 @Component({
   selector: 'app-entries-table',
@@ -21,9 +21,12 @@ export class EntriesTableComponent implements OnInit, AfterViewInit {
   @ViewChild(MatSort) sort?: MatSort;
   showToolBar: boolean[] = [];
   row: {} = {};
-  @Input() className: string = 'Polymer';
+  test$: Observable<EntriesData | undefined> = EMPTY;
+  @Input() className: string = '';
   @Input() dbId: string = '8876883';
-
+  @Output() newItemEvent = new EventEmitter<any>();
+  @Output() newEntryTableEvent = new EventEmitter<any>();
+  @Output() getClassNameEvent= new EventEmitter<string>();
 
   constructor(private store: Store) {
   }
@@ -32,16 +35,24 @@ export class EntriesTableComponent implements OnInit, AfterViewInit {
     this.dataSource.sort = this.sort!;
   }
 
-
   onClick(row: number) {
-    this.showToolBar[row] = !this.showToolBar[row];
+    // this.showToolBar[row] = !this.showToolBar[row];
+  }
+
+  newEntryTable(newEntryTable: any){
+    this.newEntryTableEvent.emit(newEntryTable);
+  }
+
+  getClassName(className: string){
+    this.getClassNameEvent.emit(className);
   }
 
   ngOnInit(): void {
-    this.store.dispatch({type: AttributeTableActions.GET_ATTRIBUTE_DATA, className: this.className});
+    // this.store.dispatch({type: AttributeTableActions.GET_ATTRIBUTE_DATA, className: this.className});
     this.store.dispatch({type: EntriesTableActions.GET_ENTRIES_DATA, dbId: this.dbId});
+    this.newItemEvent.emit(this.dbId);
 
-    this.dataSource$ = selectSchemaClassArray(this.store, this.dbId, this.className).pipe(
+    this.dataSource$ = selectSchemaClassArray(this.store, this.dbId).pipe(
       map(data => {
         this.dataSource.data = data
         return this.dataSource;

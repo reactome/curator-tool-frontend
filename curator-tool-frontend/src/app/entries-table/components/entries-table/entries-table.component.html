@@ -14,7 +14,9 @@
         <app-row-element
           [elementValue]="element.value"
           [elementType]="element.type"
-          [className]="element.properties.className"
+          [className]="element.javaType"
+          (getClassNameEvent)="getClassName($event)"
+          (newEntryTableEvent)="newEntryTable($event)"
         >
         </app-row-element>
       </ng-container>
@@ -24,7 +26,8 @@
           *ngFor="let object of element.value"
           [elementValue]="object"
           [elementType]="element.type"
-          [className]="element.properties.className"
+          [className]="element.javaType"
+          (newEntryTableEvent)="newEntryTable($event)"
         >
         </app-row-element>
       </ng-container>

@@ -1,5 +1,7 @@
-import {Component, Inject, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Inject, Input, OnInit, Output} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from "@angular/material/dialog";
+import {Store} from "@ngrx/store";
+import {AttributeTableActions} from "../../../attribute-table/state/attribute-table.actions";
 
 @Component({
   selector: 'app-row-element',
@@ -10,12 +12,18 @@ export class RowElementComponent {
   @Input() elementType: string = 'STRING';
   @Input() elementValue: any = 'test';
   @Input() className: string = '';
+  @Output() newEntryTableEvent = new EventEmitter<any>();
+  @Output() getClassNameEvent = new EventEmitter<any>();
 
-  constructor(public dialog: MatDialog) {
+
+  constructor(public dialog: MatDialog, private store: Store) {
   }
 
-  onClick() {
-    console.log("click")
+  onClick(elementValue: any) {
+    this.store.dispatch(AttributeTableActions.get({className:this.className}));
+    this.newEntryTableEvent.emit(elementValue);
+    console.log(this.className)
+    this.getClassNameEvent.emit(this.className)
   }
 
   openDialog(elementValue: any): void {

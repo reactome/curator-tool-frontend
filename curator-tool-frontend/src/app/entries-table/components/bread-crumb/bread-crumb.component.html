@@ -1,22 +1,29 @@
 <div fxFlex="25">
 
-  <mat-toolbar color="primary" style="height: 45px; font-size: 16px; font-weight: bold; color: #E6E8EA">
-    <span><a  mat-button (click)="breadCrumbMain()" style="color: white;">Main</a></span>
+  <mat-toolbar color="primary"
+               style="height: 45px; font-size: 16px; font-weight: bold; color: gray">
+    <span><a  mat-button (click)="breadCrumbMain()" style="color: white;">{{mainDbId}}</a></span>
 
     <span *ngFor="let m of menuHeader; let indx = index" style="color: white;">
-      <a  mat-button (click)="breadCrumb(menuHeader, indx)" >{{m.label}}
-        <mat-icon fxFlex="10">{{m.icon}}</mat-icon></a>
+      <a  mat-button (click)="breadCrumb(menuHeader, indx)" >{{m}}</a>
     </span>
 
   </mat-toolbar>
 
   <mat-card class="cs-card-padding">
-    <div>
-      <mat-list role="list" *ngFor="let menu of appitemsTravel">
-        <mat-list-item (click)="menuChange(menu)" role="listitem"><span fxFlex="90">{{menu.label}}</span>
-          <mat-icon fxFlex="10">{{menu.icon}}</mat-icon>
-        </mat-list-item>
-      </mat-list>
+      <app-entries-table
+        *ngIf="showMainTable"
+        [dbId]="mainDbId"
+        [className]="mainClassName"
+        (newEntryTableEvent)="addEntryTable($event)"
+        (getClassNameEvent) = "getClassName($event)"></app-entries-table>
+    <div *ngFor="let table of entryTables; let indx =index">
+      <app-entries-table
+        *ngIf="showTable[indx]"
+        [dbId]="table.dbId"
+        [className]="mainClassName"
+        (newEntryTableEvent)="addEntryTable($event)"
+        (getClassNameEvent) = "getClassName($event)"></app-entries-table>
     </div>
   </mat-card>
 </div>

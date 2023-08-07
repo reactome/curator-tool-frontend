@@ -1,14 +1,11 @@
-import { Component, OnInit, Input } from '@angular/core';
-import {NgIf, NgFor} from '@angular/common';
+import {Component, Input, OnInit} from '@angular/core';
+import {NgFor, NgIf} from '@angular/common';
 import {MatTableModule} from '@angular/material/table';
-import { DataService } from 'src/app/core/services/data.service';
-import { AttributeData } from 'src/app/core/models/schema-class-attribute-data.model';
-import { AttributeDataState } from '../../state/attribute-table.reducers';
-import { Router } from '@angular/router';
-import { Store } from '@ngrx/store';
-import { selectAttribute, selectAttributeData } from '../../state/attribute-table.selectors';
-import { AttributeTableActions } from '../../state/attribute-table.actions';
-import { Observable } from 'rxjs';
+import {AttributeData} from 'src/app/core/models/schema-class-attribute-data.model';
+import {Store} from '@ngrx/store';
+import {selectAttributeData} from '../../state/attribute-table.selectors';
+import {AttributeTableActions} from '../../state/attribute-table.actions';
+import {Observable} from 'rxjs';
 
 @Component({
   selector: 'app-attribute-table',
@@ -26,6 +23,6 @@ export class AttributeTableComponent implements OnInit{
   @Input()  className: string = "Polymer";
 
   ngOnInit(): void {
-    this.store.dispatch({type: AttributeTableActions.GET_ATTRIBUTE_DATA, className: this.className});
+    this.store.dispatch(AttributeTableActions.get({className: this.className}));
   }
 }

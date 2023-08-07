@@ -1,4 +1,4 @@
-<ng-container [ngSwitch]="elementType" (click)="onClick()">
+<ng-container [ngSwitch]="elementType">
   <ng-template [ngSwitchCase]="'BOOLEAN'">
     <mat-slide-toggle [(ngModel)]="elementValue" color="primary"></mat-slide-toggle>
   </ng-template>
@@ -23,7 +23,7 @@
   <ng-template [ngSwitchCase]="'INSTANCE'">
 <!--    <a href=".">[{{elementValue?.dbId}}]-->
 <!--        {{elementValue?.displayName}}<br></a>-->
-    <button mat-button (click)="openDialog(elementValue)">[{{elementValue?.dbId}}]
+    <button mat-button (click)="onClick(elementValue)">{{elementValue?.dbId}}
       {{elementValue?.displayName}}<br></button>
   </ng-template>
 </ng-container>

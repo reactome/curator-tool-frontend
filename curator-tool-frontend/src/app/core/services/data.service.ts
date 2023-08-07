@@ -47,7 +47,8 @@ export class DataService {
         map(data => Object.keys(data).map(key => {
           const value = data[key];
           const type = value instanceof Array ? 'array' : typeof value;
-          return { key, value, type };
+          const javaType = "";
+          return { key, value, type, javaType };
         })));
   }
 

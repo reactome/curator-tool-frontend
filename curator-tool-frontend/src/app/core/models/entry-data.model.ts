@@ -2,6 +2,7 @@ export interface EntryData<T = any> {
     key: string;
     value: T;
     type: Type;
+    javaType: string;
 }
 
 export type Type =
