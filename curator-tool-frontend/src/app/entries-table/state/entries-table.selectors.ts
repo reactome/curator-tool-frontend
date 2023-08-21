@@ -1,10 +1,10 @@
 import {createFeatureSelector, createSelector, Store} from "@ngrx/store";
 import {EntriesDataState} from "./entries-table.reducers"
 import {selectAttributeDataState} from "src/app/attribute-table/state/attribute-table.selectors";
-import {toDataType} from "src/app/core/models/schema-class-entry-data.model";
+import {SchemaClassData, toDataType} from "src/app/core/models/schema-class-entry-data.model";
 import {toClassName} from "src/app/core/models/schema-class-attribute-data.model";
 import {combineLatest, filter, map, tap, zip} from "rxjs";
-import {AttributeTableActions} from "../../attribute-table/state/attribute-table.actions";
+import {AttributeDataState} from "../../attribute-table/state/attribute-table.reducers";
 
 export const selectEntriesDataState =
   createFeatureSelector<EntriesDataState>('entriesDataState')
@@ -42,6 +42,20 @@ export const selectSchemaClassArray = (store: Store, dbId: string) => combineLat
   }),
   tap(data => console.log(data))
 );
+
+export const selectSchemaClassAttributes = (className: string) => createSelector<any, AttributeDataState, SchemaClassData[]>(
+ selectAttributeDataState,
+  (attributes) => {
+   return attributes.entities[className]?.attributeData
+     .filter(attributes => attributes.properties != undefined)
+       .map(attribute => ({
+         ...attribute,
+         value: null,
+         type: toDataType(attribute.properties!),
+         javaType: className
+       })) || []
+  }
+)
 // export const selectSchemaClassArray = () => createSelector<any, AttributeDataState, EntriesDataState, SchemaClassData[]>(
 //   selectAttributeDataState,
 //   selectEntriesDataState,

@@ -2,28 +2,11 @@
 
   <mat-toolbar color="primary"
                style="height: 45px; font-size: 16px; font-weight: bold; color: gray">
-    <span><a  mat-button (click)="breadCrumbMain()" style="color: white;">{{mainDbId}}</a></span>
+    <span><a mat-button (click)="breadCrumbMain()" style="color: white;">{{mainNavigation}}</a></span>
 
-    <span *ngFor="let m of menuHeader; let indx = index" style="color: white;">
-      <a  mat-button (click)="breadCrumb(menuHeader, indx)" >{{m}}</a>
+    <span *ngFor="let m of newMenuItem; let indx = index" style="color: white;">
+      <a mat-button (click)="breadCrumb(newMenuItem, indx)" >{{m}}</a>
     </span>
 
   </mat-toolbar>
-
-  <mat-card class="cs-card-padding">
-      <app-entries-table
-        *ngIf="showMainTable"
-        [dbId]="mainDbId"
-        [className]="mainClassName"
-        (newEntryTableEvent)="addEntryTable($event)"
-        (getClassNameEvent) = "getClassName($event)"></app-entries-table>
-    <div *ngFor="let table of entryTables; let indx =index">
-      <app-entries-table
-        *ngIf="showTable[indx]"
-        [dbId]="table.dbId"
-        [className]="mainClassName"
-        (newEntryTableEvent)="addEntryTable($event)"
-        (getClassNameEvent) = "getClassName($event)"></app-entries-table>
-    </div>
-  </mat-card>
 </div>

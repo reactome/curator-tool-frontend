@@ -4,7 +4,6 @@ import { setEntriesData } from "./entries-table.actions";
 import {createEntityAdapter, EntityState} from "@ngrx/entity";
 
 export interface EntriesData {
-    //entriesData: Map<string, Array<EntryData>>;
   id: string;
   entriesData: Array<EntryData>;
 }

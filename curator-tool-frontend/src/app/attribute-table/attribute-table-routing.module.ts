@@ -5,7 +5,7 @@ import { AttributeTableComponent } from './pages/attributeTable/attribute-table.
 
 const routes: Routes = [
   {
-    path: "",
+    path: `:className`,
     component: AttributeTableComponent
   }
 ]
