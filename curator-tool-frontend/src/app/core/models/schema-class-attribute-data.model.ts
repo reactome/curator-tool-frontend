@@ -6,8 +6,10 @@ export type AttributeProperty = {
   '@JavaClass': string
 }
 
+export type Category = 'OPTIONAL' | 'MANDATORY' | 'REQUIRED' | 'NOMANUALEDIT';
+
 export interface AttributeData {
-  category: 'OPTIONAL' | 'MANDATORY' | 'REQUIRED' | 'NOMANUALEDIT',
+  category: Category,
   definingType: 'UNDEFINED' | 'ALL_DEFINING',
   name: string;
   properties?: AttributeProperty;

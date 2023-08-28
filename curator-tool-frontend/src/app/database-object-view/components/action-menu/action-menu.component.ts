@@ -1,8 +1,7 @@
-import {Component, Input, OnInit, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {MatAutocompleteModule} from "@angular/material/autocomplete";
 import {FormControl} from "@angular/forms";
 import {EMPTY, map, Observable, startWith} from "rxjs";
-import {MatMenuTrigger} from "@angular/material/menu";
 
 export interface User {
   name: string;
@@ -13,13 +12,16 @@ export interface User {
   styleUrls: ['./action-menu.component.scss'],
 })
 export class ActionMenuComponent implements OnInit{
-  @Input() row: string = '';
+  @Input() row: any = {};
+  @Output() setRow = new EventEmitter<string>();
   myControl = new FormControl<string | User>('');
-  options: User[] = [{name: 'Mary'}, {name: 'Shelley'}, {name: 'Igor'}];
+  options: User[] = [{name: 'David'}, {name: 'Shelley'}, {name: 'Igor'}];
   filteredOptions: Observable<User[]> = EMPTY;
   showPanel: boolean = false;
+  value: string = '';
 
   ngOnInit() {
+    console.log('row ' + this.row.name)
     this.filteredOptions = this.myControl.valueChanges.pipe(
       startWith(''),
       map(value => {
@@ -34,6 +36,11 @@ export class ActionMenuComponent implements OnInit{
   }
   displayFn(user: User): string {
     return user && user.name ? user.name : '';
+  }
+
+  setOption() {
+    console.log(this.value)
+    this.setRow.emit(this.row.value);
   }
 
   private _filter(name: string): User[] {

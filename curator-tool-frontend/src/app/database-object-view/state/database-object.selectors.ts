@@ -1,5 +1,5 @@
 import {createFeatureSelector, createSelector, Store} from "@ngrx/store";
-import {EntriesDataState} from "./entries-table.reducers"
+import {DatabaseObjectState} from "./database-object.reducers"
 import {selectAttributeDataState} from "src/app/attribute-table/state/attribute-table.selectors";
 import {SchemaClassData, toDataType} from "src/app/core/models/schema-class-entry-data.model";
 import {toClassName} from "src/app/core/models/schema-class-attribute-data.model";
@@ -7,17 +7,17 @@ import {combineLatest, filter, map, tap, zip} from "rxjs";
 import {AttributeDataState} from "../../attribute-table/state/attribute-table.reducers";
 
 export const selectEntriesDataState =
-  createFeatureSelector<EntriesDataState>('entriesDataState')
+  createFeatureSelector<DatabaseObjectState>('databaseObjectState')
 
 export const selectEntriesData = (dbId: string) => createSelector(
   selectEntriesDataState,
-  (state: EntriesDataState) => state.entities[dbId]
+  (state: DatabaseObjectState) => state.entities[dbId]
 )
 
 // Select one attribute by name
 export const selectEntry = (attributeName: string, dbId: string) => createSelector(
   selectEntriesDataState,
-  (state: EntriesDataState) => state.entities[dbId]?.entriesData.filter(
+  (state: DatabaseObjectState) => state.entities[dbId]?.databaseObject.filter(
     d => d.key === attributeName))
 
 export const selectSchemaClassArray = (store: Store, dbId: string) => combineLatest([
@@ -25,7 +25,7 @@ export const selectSchemaClassArray = (store: Store, dbId: string) => combineLat
   store.select(selectEntriesDataState)
 ]).pipe(
   map(([attributes, entries]) => {
-    const entriesMap = new Map(entries.entities[dbId]?.entriesData.map(e => [e.key, e.value]));
+    const entriesMap = new Map(entries.entities[dbId]?.databaseObject.map(e => [e.key, e.value]));
     let className = toClassName(entriesMap.get("@JavaClass") as string);
     return {attributes, entries, entriesMap, className}
   }),

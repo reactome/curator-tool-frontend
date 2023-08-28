@@ -14,10 +14,10 @@ const routes: Routes = [
           m.AttributeTableModule),
   },
   {
-    path: "entries-table",
+    path: "properties-table",
     loadChildren: () =>
-      import("./entries-table/entries-table.module").then((m) =>
-      m.EntriesTableModule),
+      import("./database-object-view/database-object.module").then((m) =>
+      m.DatabaseObjectModule),
   }
 
 ];

@@ -1,4 +1,4 @@
-export interface EntryData<T = any> {
+export interface DatabaseObject<T = any> {
     key: string;
     value: T;
     type: Type;

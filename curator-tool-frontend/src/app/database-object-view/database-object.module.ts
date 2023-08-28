@@ -1,12 +1,12 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { EntriesTableComponent } from './components/entries-table/entries-table.component';
-import { EntriesTableEffects } from './state/entries-table.effects';
+import { PropertiesTableComponent } from './components/properties-table/properties-table.component';
+import { DatabaseObjectEffects } from './state/database-object.effects';
 import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
-import { entriesTableReducer } from './state/entries-table.reducers';
+import {databaseObjectReducer} from './state/database-object.reducers';
 import { ActionMenuComponent } from './components/action-menu/action-menu.component';
-import { EntriesTableRoutingModule } from './entries-table-routing.module';
+import { DatabaseObjectRoutingModule } from './database-object-routing.module';
 import { SharedModule } from '../shared/shared.module';
 import { RowElementComponent} from './components/row-element/row-element.component';
 import { BreadCrumbComponent } from './components/bread-crumb/bread-crumb.component';
@@ -15,7 +15,7 @@ import {CdkContextMenuTrigger, CdkMenu, CdkMenuItem} from "@angular/cdk/menu";
 
 @NgModule({
   declarations: [
-     EntriesTableComponent,
+     PropertiesTableComponent,
      ActionMenuComponent,
      RowElementComponent,
     BreadCrumbComponent,
@@ -23,13 +23,13 @@ import {CdkContextMenuTrigger, CdkMenu, CdkMenuItem} from "@angular/cdk/menu";
   ],
   imports: [
     CommonModule,
-    EntriesTableRoutingModule,
-    EffectsModule.forFeature(EntriesTableEffects),
-    StoreModule.forFeature('entriesDataState', entriesTableReducer),
+    DatabaseObjectRoutingModule,
+    EffectsModule.forFeature(DatabaseObjectEffects),
+    StoreModule.forFeature('databaseObjectState', databaseObjectReducer),
     SharedModule,
     CdkContextMenuTrigger,
     CdkMenu,
     CdkMenuItem
   ],
 })
-export class EntriesTableModule { }
+export class DatabaseObjectModule { }

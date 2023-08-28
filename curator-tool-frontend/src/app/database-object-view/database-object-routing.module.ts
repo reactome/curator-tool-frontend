@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import {InstanceViewComponent} from "./components/instance-view/instance-view.component";
-import {EntriesTableComponent} from "./components/entries-table/entries-table.component";
+import {PropertiesTableComponent} from "./components/properties-table/properties-table.component";
 const routes: Routes = [
   {
     path: `:dbId`,
@@ -10,7 +10,7 @@ const routes: Routes = [
   },
   {
     path: `schemaClass/:className`,
-    component: EntriesTableComponent
+    component: PropertiesTableComponent
   }
 ]
 
@@ -22,4 +22,4 @@ const routes: Routes = [
   ],
   exports:[RouterModule]
 })
-export class EntriesTableRoutingModule { }
+export class DatabaseObjectRoutingModule { }
