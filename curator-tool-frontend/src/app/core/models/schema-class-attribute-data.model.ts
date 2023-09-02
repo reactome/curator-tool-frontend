@@ -22,6 +22,10 @@ export class AttributTableData implements AttributeData {
     public name: string,
     public properties?: AttributeProperty,
     ) {
+    // if(this.properties && properties) {
+    //   this.properties.origin = toClassName(properties.origin);
+    //   this.properties.attributeClasses[0].type = toClassName(properties.attributeClasses[0].type);
+    // }
   }
 }
 

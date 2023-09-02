@@ -1,17 +1,28 @@
-import { Component } from '@angular/core';
-import {Router} from "@angular/router";
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute, Router} from "@angular/router";
 @Component({
   selector: 'app-instance-view',
   templateUrl: './instance-view.component.html',
   styleUrls: ['./instance-view.component.scss']
 })
-export class InstanceViewComponent {
+export class InstanceViewComponent implements OnInit{
   menuHeader: any = [];
   mainNavigation: string = '8876883';
   counter: number = 0;
   className: string = '';
   addToHeader: boolean = true;
-  constructor(private router: Router) {}
+  dbId: string = '';
+  constructor(private router: Router, private route: ActivatedRoute) {}
+
+  ngOnInit() {
+    this.route.params.subscribe((params) => {
+      console.log(params)
+      if (params['dbId']) {
+        this.dbId = params['dbId'];
+        console.log(this.dbId)
+      }
+    })
+  }
 
   setClassName(data: any){
     if(this.addToHeader) {

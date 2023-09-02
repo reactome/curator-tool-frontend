@@ -1,22 +1,37 @@
-<div class="menu-row" cdkMenu *ngIf="!showPanel">
-  <button class="menu-item" cdkMenuItem>Delete</button>
-  <button (click)="showLookupPanel()" >Add</button>
-  <button class="menu-item" cdkMenuItem>Edit</button>
+<mat-action-list class="action-menu" cdkMenu *ngIf="!showPanel">
+    <button  mat-list-item>Delete</button>
+    <button mat-list-item (click)="showLookupPanel()">Add</button>
+    <button mat-list-item>Edit</button>
+</mat-action-list>
+
+<div *ngIf="showPanel">
+  <button mat-button class="close-icon"
+          (click)="showLookupPanel()"
+          [mat-dialog-close]="true">
+    <mat-icon>close</mat-icon>
+  </button>
+  <!--  TODO: Add the schema class dropdown menu-->
+  <app-properties-table
+    [className]="className">
+  </app-properties-table>
+  <button mat-raised-button style="position: absolute; right: 150px;"
+  (click)="onSubmit()">Submit</button>
 </div>
 
-<form class="example-form" *ngIf="showPanel" (ngSubmit)="setOption()">
-  <mat-form-field class="example-full-width">
-        <input
-               matInput type="text">
-    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">
-      <mat-option *ngFor="let option of filteredOptions | async" [value]="option">
-        {{option.name}}
-      </mat-option>
-    </mat-autocomplete>
-  </mat-form-field>
-  <button mat-raised-button type="submit">Add</button>
 
-</form>
+<!--<form class="example-form" *ngIf="showPanel" (ngSubmit)="setOption()">-->
+<!--  <mat-form-field class="example-full-width">-->
+<!--        <input-->
+<!--               matInput type="text">-->
+<!--    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn">-->
+<!--      <mat-option *ngFor="let option of filteredOptions | async" [value]="option">-->
+<!--        {{option.name}}-->
+<!--      </mat-option>-->
+<!--    </mat-autocomplete>-->
+<!--  </mat-form-field>-->
+<!--  <button mat-raised-button type="submit">Add</button>-->
+
+<!--</form>-->
 
 <!--<button mat-raised-button (click)="showLookupPanel()">Create Event</button>-->
 

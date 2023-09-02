@@ -19,5 +19,23 @@ export const databaseObjectReducer =
 createReducer(
     initialState,
     on(DatabaseObjectActions.set, (state, { dbId, databaseObject}) => databaseObjectAdapter.addOne({id: dbId, databaseObject: databaseObject}, state)),
-    on(DatabaseObjectActions.remove, (state, { dbIds}) => databaseObjectAdapter.removeMany(dbIds, state))
-);
+    on(DatabaseObjectActions.remove, (state, { dbIds}) => databaseObjectAdapter.removeMany(dbIds, state)),
+    on(DatabaseObjectActions.modify, (state, {dbId, databaseObjectInput}) =>
+    databaseObjectAdapter.updateOne(
+      {
+        id: dbId,
+        changes: { databaseObject: databaseObjectInput}
+
+      }, state)),
+  // on(DatabaseObjectActions.add, (state, {dbId, databaseObjectInput}) =>
+  // databaseObjectAdapter.addOne(databaseObjectInput, state))
+)
+// state.entities[dbId]?.databaseObject.find(line => {line.key === '@JavaClass'
+//   line.value = databaseObjectInput; console.log('the test dbObject' + databaseObjectInput)}})
+// }})
+//state.entities[dbId]?.databaseObject.find(e => e.key === attribute)?.value
+
+//   return {...state, databaseObject:
+//       state.entities[dbId]?.databaseObject.filter(data => data.key === databaseObject.key)
+//   {if(e.key === attribute) {e.value = databaseObjectInput; console.log('the test dbObject' + databaseObjectInput)}})
+// }}

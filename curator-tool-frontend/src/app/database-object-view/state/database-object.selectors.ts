@@ -11,7 +11,7 @@ export const selectEntriesDataState =
 
 export const selectEntriesData = (dbId: string) => createSelector(
   selectEntriesDataState,
-  (state: DatabaseObjectState) => state.entities[dbId]
+  (state: DatabaseObjectState) => state.entities[dbId]?.databaseObject || []
 )
 
 // Select one attribute by name

@@ -7,3 +7,26 @@
     margin-right: 10px;
     margin-left: 50px;
   }
+
+  .action-menu {
+    width: 120px;
+    height: flex;
+    outline-style: solid;
+    background-color: white;
+
+  }
+
+  .menu-item {
+    max-width: 120px;
+    max-height: 5px;
+    display: inline-block;
+  }
+
+.close-icon {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 5px;
+  line-height: 14px;
+  min-width: auto;
+}

@@ -40,9 +40,6 @@
         >
         </app-row-element>
       </ng-container>
-<!--      <ng-container *ngIf="showToolBar[element.name]">-->
-<!--        <app-action-menu>[row]="row"</app-action-menu>-->
-<!--      </ng-container>-->
     </td>
   </ng-container>
 
@@ -52,12 +49,12 @@
     <ng-template #row_menu>
       <app-action-menu
         [row]=row
+        [dbId]="dbId"
         (setRow)="setRow($event)"></app-action-menu>
     </ng-template>
   </tr>
 </table>
 <br>
-<button mat-raised-button style="position: absolute; right: 150px;">Submit</button>
 
 
 

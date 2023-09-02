@@ -20,6 +20,7 @@ export const DatabaseObjectActions = createActionGroup({
     get: props<{dbId: string}>(),
     set: props<{ dbId: string, databaseObject: Array<DatabaseObject>}>(),
     remove: props<{ dbIds: string[]}>(),
-    modify: props<{ dbId: string, databaseObject: Array<DatabaseObject>}>(),
+    modify: props<{ dbId: string, databaseObjectInput: Array<DatabaseObject>}>(),
+    add: props<{dbId: string, databaseObjectInput: Array<DatabaseObject>}>()
   }
 })

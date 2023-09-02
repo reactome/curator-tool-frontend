@@ -1,9 +1,13 @@
 <app-bread-crumb
   [mainNavigation]="mainNavigation"
   [newMenuItem]="menuHeader"
-  (clickEvent)="changeTable($event)"></app-bread-crumb>
-<mat-card class="cs-card-padding">
-  <app-properties-table
-    (newItemEvent)="setClassName($event)"
-    (getClassNameEvent) = "getClassName($event)"></app-properties-table>
-</mat-card>
+  (clickEvent)="changeTable($event)">
+</app-bread-crumb>
+<app-properties-table
+  (newItemEvent)="setClassName($event)"
+  (getClassNameEvent) = "getClassName($event)"
+  [className]="className"
+  [relationshipDbId]="dbId">
+</app-properties-table>
+<button mat-raised-button style="position: absolute; right: 150px;">Submit</button>
+
