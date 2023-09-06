@@ -6,6 +6,7 @@
 <app-properties-table
   (newItemEvent)="setClassName($event)"
   (getClassNameEvent) = "getClassName($event)"
+  (addRelationshipEvent) = "addRelationship($event)"
   [className]="className"
   [relationshipDbId]="dbId">
 </app-properties-table>

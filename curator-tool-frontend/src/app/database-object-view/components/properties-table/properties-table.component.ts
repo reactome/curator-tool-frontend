@@ -8,6 +8,7 @@ import {MatTableDataSource} from "@angular/material/table";
 import {MatSort} from "@angular/material/sort";
 import {ActivatedRoute} from "@angular/router";
 import {AttributeTableActions} from "../../../attribute-table/state/attribute-table.actions";
+import {DatabaseObject} from "../../../core/models/database-object.model";
 
 @Component({
   selector: 'app-properties-table',
@@ -18,11 +19,10 @@ export class PropertiesTableComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['name', 'value'];
   dataSource = new MatTableDataSource<SchemaClassData>();
   unfilteredData: SchemaClassData[] = [];
-  dataSource$: Observable<MatTableDataSource<SchemaClassData>> = EMPTY;
   showFilterOptions: boolean = false;
   dbId: string = "";
-  showToolBar: boolean[] = [];
   row: {} = {};
+  newDatabaseObjectValues: DatabaseObject[] = [];
 
   categories: { [name: string]: boolean } = {
     "MANDATORY": false,
@@ -37,20 +37,13 @@ export class PropertiesTableComponent implements OnInit, AfterViewInit {
   @Output() newItemEvent = new EventEmitter<any>();
   @Output() newEntryTableEvent = new EventEmitter<any>();
   @Output() getClassNameEvent = new EventEmitter<string>();
+  @Output() addRelationshipEvent = new EventEmitter<string>();
 
   constructor(private store: Store, private route: ActivatedRoute) {
   }
 
   ngAfterViewInit(): void {
     this.dataSource.sort = this.sort!;
-  }
-
-  onClick(row: number) {
-    this.showToolBar[row] = !this.showToolBar[row];
-  }
-
-  newEntryTable(newEntryTable: any) {
-    this.newEntryTableEvent.emit(newEntryTable);
   }
 
   getClassName(displayName: string) {
@@ -74,27 +67,31 @@ export class PropertiesTableComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-
-    if(this.relationshipDbId){
-      this.dbId = this.relationshipDbId
-      this.store.dispatch(DatabaseObjectActions.get({dbId: this.dbId}));
-      //this.newItemEvent.emit(this.dbId);
-      selectSchemaClassArray(this.store, this.dbId)
-        .subscribe(data => {
+    this.route.params.subscribe((params) => {
+      if (params['dbId']) {
+        this.dbId = params['dbId'];
+        this.store.dispatch(DatabaseObjectActions.get({dbId: this.dbId}));
+        this.newItemEvent.emit(this.dbId);
+        selectSchemaClassArray(this.store, this.dbId)
+          .subscribe(data => {
+              this.unfilteredData = data;
+              this.dataSource.data = data
+            }
+          );
+      }
+      if (params['className']) {
+        this.className = params['className'];
+        console.log(this.className)
+        this.addRelationshipEvent.emit(this.className);
+        this.store.dispatch(AttributeTableActions.get({className: this.className}));
+        this.store.select(selectSchemaClassAttributes(this.className))
+          .subscribe(data => {
             this.unfilteredData = data;
             this.dataSource.data = data
-          }
-        );
-    }
-
-    else if(this.className) {
-      this.store.dispatch(AttributeTableActions.get({className: this.className}));
-      this.store.select(selectSchemaClassAttributes(this.className))
-        .subscribe(data => {
-          this.unfilteredData = data;
-          this.dataSource.data = data
-        })
-    }
+          })
+        console.log('data' + this.dataSource.data);
+      }
+    })
   }
 
 }

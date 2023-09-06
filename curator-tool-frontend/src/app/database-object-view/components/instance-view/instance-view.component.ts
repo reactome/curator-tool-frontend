@@ -15,13 +15,6 @@ export class InstanceViewComponent implements OnInit{
   constructor(private router: Router, private route: ActivatedRoute) {}
 
   ngOnInit() {
-    this.route.params.subscribe((params) => {
-      console.log(params)
-      if (params['dbId']) {
-        this.dbId = params['dbId'];
-        console.log(this.dbId)
-      }
-    })
   }
 
   setClassName(data: any){
@@ -29,7 +22,6 @@ export class InstanceViewComponent implements OnInit{
       if (this.counter === 0) {
         this.mainNavigation = data
       } else {
-        console.log(data)
         this.menuHeader.push(data)
       }
       this.counter++;
@@ -46,6 +38,10 @@ export class InstanceViewComponent implements OnInit{
     this.setClassName(this.className);
     this.addToHeader = false;
     //TODO: currently have classname, would be nice to have displayName
+  }
+
+  addRelationship(className: string) {
+    this.menuHeader.push(className)
   }
 
 }

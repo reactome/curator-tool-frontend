@@ -12,6 +12,9 @@ import { StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { environment } from 'src/environments/environment.dev';
 import { EffectsModule } from '@ngrx/effects';
+import {RouterModule} from "@angular/router";
+import {routerReducer, StoreRouterConnectingModule} from '@ngrx/router-store';
+import {CustomSerializer} from "./store/custom-serializer";
 @NgModule({
   declarations: [
     AppComponent,
@@ -25,7 +28,9 @@ import { EffectsModule } from '@ngrx/effects';
     AttributeTableModule,
     DatabaseObjectModule,
     EffectsModule.forRoot(),
-    StoreModule.forRoot({}, {}),
+    StoreModule.forRoot({router: routerReducer}),
+    RouterModule.forRoot([]),
+    StoreRouterConnectingModule.forRoot({serializer: CustomSerializer,}),
     StoreDevtoolsModule.instrument({
       maxAge: 25,
       logOnly: environment.production,

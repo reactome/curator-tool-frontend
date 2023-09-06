@@ -47,14 +47,6 @@ export class ActionMenuComponent implements OnInit{
     );
 
     this.className = toClassName(this.row.properties.attributeClasses[0].type)
-    // console.log(this.className)
-    // this.filteredOptions = this.myControl.valueChanges.pipe(
-    //   startWith(''),
-    //   map(value => {
-    //     const name = typeof value === 'string' ? value : value?.name;
-    //     return name ? this._filter(name as string) : this.options.slice();
-    //   }),
-    // );
   }
 
   showLookupPanel(){

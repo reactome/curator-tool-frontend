@@ -10,7 +10,7 @@ const routes: Routes = [
   },
   {
     path: `schemaClass/:className`,
-    component: PropertiesTableComponent
+    component: InstanceViewComponent
   }
 ]
 

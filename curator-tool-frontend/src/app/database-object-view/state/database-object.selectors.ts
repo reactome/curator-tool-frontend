@@ -29,6 +29,7 @@ export const selectSchemaClassArray = (store: Store, dbId: string) => combineLat
     let className = toClassName(entriesMap.get("@JavaClass") as string);
     return {attributes, entries, entriesMap, className}
   }),
+  // Filter to check if the attribute value is already in the store
   filter(({attributes, entries, entriesMap, className}) => (attributes.ids as string[]).includes(className)),
   map(({attributes, entries, entriesMap, className}) => {
     return attributes.entities[className]?.attributeData
