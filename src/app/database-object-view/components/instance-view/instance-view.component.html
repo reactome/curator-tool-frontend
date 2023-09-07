@@ -1,0 +1,15 @@
+<app-bread-crumb
+  [mainNavigation]="mainNavigation"
+  [newMenuItem]="menuHeader"
+  (clickEvent)="changeTable($event)">
+</app-bread-crumb>
+<app-properties-table
+  (newItemEvent)="setClassName($event)"
+  (getClassNameEvent)="getClassName($event)"
+  (addRelationshipEvent)="addRelationship($event)"
+  (updateDatasourceEvent)="updateMainTable($event)"
+  [className]="className"
+  [relationshipDbId]="dbId">
+</app-properties-table>
+<button mat-raised-button style="position: absolute; right: 150px;" (click)="onSubmit()">Submit</button>
+

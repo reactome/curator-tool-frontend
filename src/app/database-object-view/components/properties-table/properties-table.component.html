@@ -1,0 +1,63 @@
+<table mat-table [dataSource]="dataSource" matSort
+       class="mat-elevation-z8 demo-table">
+  <!-- Attribute Name Column -->
+  <ng-container matColumnDef="name">
+    <th mat-header-cell *matHeaderCellDef mat-sort-header>Attribute</th>
+    <td class="attColumn" mat-cell *matCellDef="let element">{{element.name}}</td>
+  </ng-container>
+
+  <!-- Attribute Value Column -->
+  <ng-container matColumnDef="value">
+    <th mat-header-cell *matHeaderCellDef> Value
+      <button mat-icon-button color="primary" (click)="showFilter()">
+        <mat-icon color="accent">filter_alt</mat-icon>
+      </button>
+      <section *ngIf="showFilterOptions">
+        <mat-checkbox *ngFor="let cat of (categories | keyvalue)" [(ngModel)]="categories[cat.key]"
+                      (ngModelChange)="doFilter()">{{cat.key | titlecase}}</mat-checkbox>
+      </section>
+    </th>
+    <td mat-cell *matCellDef="let element">
+      <ng-container *ngIf="element.properties.cardinality === '1'">
+        <app-row-element
+          [elementValue]="element.value"
+          [elementType]="element.type"
+          [className]="element.javaType"
+          [category]="element?.category"
+          [key]="element.name"
+          (getClassNameEvent)="getClassName($event)"
+          (getNewValueEvent)="setNewValue($event)"
+        >
+        </app-row-element>
+      </ng-container>
+
+      <ng-container *ngIf="element.properties.cardinality === '+'">
+        <app-row-element
+          *ngFor="let object of element.value"
+          [elementValue]="object"
+          [elementType]="element.type"
+          [className]="element.javaType"
+          [key]="element.key"
+          (getClassNameEvent)="getClassName($event)"
+          (getNewValueEvent)="setNewValue($event)"
+        >
+        </app-row-element>
+      </ng-container>
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row [cdkContextMenuTriggerFor]="row_menu"
+      *matRowDef="let row; columns: displayedColumns;">
+    <ng-template #row_menu>
+      <app-action-menu
+        [row]=row
+        [dbId]="dbId"
+        (setRow)="setRow($event)"></app-action-menu>
+    </ng-template>
+  </tr>
+</table>
+<br>
+
+
+
