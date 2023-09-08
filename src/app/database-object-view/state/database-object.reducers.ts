@@ -33,5 +33,7 @@ export const databaseObjectReducer =
           changes: {databaseObject: databaseObjectInput}
 
         }, state)),
+    on(DatabaseObjectActions.add, (state, {dbId, databaseObjectInput}) =>
+    databaseObjectAdapter.addOne({id: dbId, databaseObject: databaseObjectInput}, state))
   )
 

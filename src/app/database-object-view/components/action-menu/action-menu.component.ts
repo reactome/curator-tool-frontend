@@ -6,6 +6,7 @@ import {Store} from "@ngrx/store";
 import {DatabaseObject, Type} from "../../../core/models/database-object-attribute.model";
 import {DataService} from "../../../core/services/data.service";
 import {selectDatabaseObjectData} from "../../state/database-object.selectors";
+import {Router} from "@angular/router";
 
 export interface User {
   name: string;
@@ -26,8 +27,9 @@ export class ActionMenuComponent implements OnInit {
   className: string = '';
   data: {} = {};
   updateDataSource: DatabaseObject[] = [];
+  newDbId: number = -1;
 
-  constructor(private store: Store, private dataService: DataService) {
+  constructor(private store: Store, private dataService: DataService, private router: Router) {
   }
 
   ngOnInit() {
@@ -45,8 +47,14 @@ export class ActionMenuComponent implements OnInit {
     this.className = toClassName(this.row.properties.attributeClasses[0].type)
   }
 
-  showLookupPanel() {
-    this.showPanel = !this.showPanel;
+  newDatabaseObject() {
+    let id: DatabaseObject = {key: 'dbId', value: this.newDbId, type:'number', javaType:""}
+    let displayName: DatabaseObject= {key:"displayName", value:"Display Name will be auto-generated", type:"string", javaType:""}
+    let stId: DatabaseObject = {key:"stId", value: "R-HSA-", type:"string", javaType:""}
+    let databaseObjectInput: DatabaseObject[] = [id, displayName, stId];
+    this.store.dispatch(DatabaseObjectActions.add({dbId: this.newDbId.toString(), databaseObjectInput: databaseObjectInput}));
+    this.router.navigate(["/properties-table/" + this.newDbId]);
+    this.newDbId--;
   }
 
   onSubmit() {

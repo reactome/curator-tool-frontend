@@ -1,6 +1,6 @@
 <mat-action-list class="action-menu" cdkMenu *ngIf="!showPanel">
   <button mat-list-item>Delete</button>
-  <button mat-list-item routerLink="/properties-table/schemaClass/{{className}}" (click)="showLookupPanel()">Add
+  <button mat-list-item (click)="newDatabaseObject()">Add
   </button>
   <button mat-list-item (click)="onSubmit()">Test Add</button>
   <button mat-list-item>Edit</button>
@@ -8,7 +8,7 @@
 
 <div *ngIf="showPanel">
   <button mat-button class="close-icon"
-          (click)="showLookupPanel()"
+          (click)="newDatabaseObject()"
           [mat-dialog-close]="true">
     <mat-icon>close</mat-icon>
   </button>

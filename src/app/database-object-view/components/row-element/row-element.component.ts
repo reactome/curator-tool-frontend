@@ -38,7 +38,7 @@ export class RowElementComponent implements OnInit {
   }
 
   onChange() {
-    this.databaseObject.key = 'cellType';
+    this.databaseObject.key = this.key;
     this.databaseObject.type = this.elementType;
     this.databaseObject.value = this.elementValue;
     this.databaseObject.javaType = this.elementType;

@@ -2,7 +2,11 @@ import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, ViewChild
 import {EMPTY, map, Observable, take} from 'rxjs';
 import {Store} from '@ngrx/store';
 import {DatabaseObjectActions} from '../../state/database-object.actions';
-import {selectSchemaClassArray, selectSchemaClassAttributes} from '../../state/database-object.selectors';
+import {
+  selectDatabaseObjectData,
+  selectSchemaClassArray,
+  selectSchemaClassAttributes
+} from '../../state/database-object.selectors';
 import {SchemaClassData} from 'src/app/core/models/schema-class-entry-data.model';
 import {MatTableDataSource} from "@angular/material/table";
 import {MatSort} from "@angular/material/sort";
@@ -22,7 +26,7 @@ export class PropertiesTableComponent implements OnInit, AfterViewInit {
   showFilterOptions: boolean = false;
   dbId: string = "";
   row: {} = {};
-  newDatabaseObjectValues: DatabaseObject[] = [];
+  newDatabaseObjectValues: SchemaClassData[] = [];
 
   categories: { [name: string]: boolean } = {
     "MANDATORY": false,
@@ -39,6 +43,8 @@ export class PropertiesTableComponent implements OnInit, AfterViewInit {
   @Output() getClassNameEvent = new EventEmitter<string>();
   @Output() addRelationshipEvent = new EventEmitter<string>();
   @Output() updateDatasourceEvent = new EventEmitter<any>();
+  copyDataSource: DatabaseObject[] = [];
+  dataSource$: DatabaseObject[] = [];
 
   constructor(private store: Store, private route: ActivatedRoute) {
   }
@@ -68,7 +74,29 @@ export class PropertiesTableComponent implements OnInit, AfterViewInit {
   }
 
   setNewValue(data: any) {
-    this.updateDatasourceEvent.emit(data);
+    this.store.select(selectDatabaseObjectData(this.dbId)).subscribe(
+      data => {
+        this.dataSource$ = data;
+      }
+    );
+
+    let index = this.dataSource$.findIndex(key => key.key === data.key)
+    console.log(index)
+    if(index === -1)
+    {
+      this.copyDataSource = this.dataSource$.map((item) => ({
+        ...item,
+      }))
+      this.copyDataSource.push(data);
+      console.log(this.copyDataSource)
+    }
+    else
+    {
+      this.dataSource$.at(index)!.value = data.value;
+    }
+    this.store.dispatch(DatabaseObjectActions.modify({dbId: this.dbId, databaseObjectInput: this.copyDataSource}));
+
+    //this.updateDatasourceEvent.emit(data);
   }
 
   ngOnInit(): void {
