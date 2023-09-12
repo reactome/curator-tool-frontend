@@ -1,12 +1,12 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 import {CommonModule} from '@angular/common';
-import {AttributeTableComponent} from './components/attributeTable/attribute-table.component';
+import {SchemaClassTableComponent} from './components/attributeTable/schema-class-table.component';
 
 const routes: Routes = [
   {
     path: `:className`,
-    component: AttributeTableComponent
+    component: SchemaClassTableComponent
   }
 ]
 
@@ -15,9 +15,9 @@ const routes: Routes = [
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
-    AttributeTableComponent
+    SchemaClassTableComponent
   ],
   exports: [RouterModule]
 })
-export class AttributeTableRoutingModule {
+export class SchemaClassTableRoutingModule {
 }

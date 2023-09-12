@@ -1,10 +1,10 @@
 import {createFeatureSelector, createSelector, Store} from "@ngrx/store";
 import {DatabaseObjectState} from "./database-object.reducers"
-import {selectAttributeDataState} from "src/app/attribute-table/state/attribute-table.selectors";
-import {SchemaClassData, toDataType} from "src/app/core/models/schema-class-entry-data.model";
+import {selectSchemaClassDataState} from "src/app/schema-class-table/state/schema-class-table.selectors";
+import {SchemaClassInstanceData, toDataType} from "src/app/core/models/schema-class-entry-data.model";
 import {toClassName} from "src/app/core/models/schema-class-attribute-data.model";
 import {combineLatest, filter, map, tap, zip} from "rxjs";
-import {AttributeDataState} from "../../attribute-table/state/attribute-table.reducers";
+import {SchemaClassDataState} from "../../schema-class-table/state/schema-class-table.reducers";
 
 // The current state of the databaseObject store
 export const selectDatabaseObjectState =
@@ -28,7 +28,7 @@ export const selectDatabaseObjectAttribute = (attributeName: string, dbId: strin
 // Combine the attribute information from a schema class with a databaseObject instance of
 // that schema clas.
 export const selectSchemaClassArray = (store: Store, dbId: string) => combineLatest([
-  store.select(selectAttributeDataState),
+  store.select(selectSchemaClassDataState),
   store.select(selectDatabaseObjectState)
 ]).pipe(
   map(([attributes, entries]) => {
@@ -39,7 +39,7 @@ export const selectSchemaClassArray = (store: Store, dbId: string) => combineLat
   // Filter to check if the attribute value is already in the store
   filter(({attributes, entries, entriesMap, className}) => (attributes.ids as string[]).includes(className)),
   map(({attributes, entries, entriesMap, className}) => {
-    return attributes.entities[className]?.attributeData
+    return attributes.entities[className]?.schemaClassData
       .filter(attributes => attributes.properties != undefined)
       .map(attribute => ({
         ...attribute,
@@ -53,10 +53,10 @@ export const selectSchemaClassArray = (store: Store, dbId: string) => combineLat
 
 // select attributes for a schema class in the format of a schema-class-entry so that
 // the model is ready to be populated with user info as a new database Object instance.
-export const selectSchemaClassAttributes = (className: string) => createSelector<any, AttributeDataState, SchemaClassData[]>(
-  selectAttributeDataState,
+export const selectSchemaClassAttributes = (className: string) => createSelector<any, SchemaClassDataState, SchemaClassInstanceData[]>(
+  selectSchemaClassDataState,
   (attributes) => {
-    return attributes.entities[className]?.attributeData
+    return attributes.entities[className]?.schemaClassData
       .filter(attributes => attributes.properties != undefined)
       .map(attribute => ({
         ...attribute,

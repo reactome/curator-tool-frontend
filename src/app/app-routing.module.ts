@@ -4,17 +4,17 @@ import { RouterModule, Routes } from '@angular/router';
 const routes: Routes = [
   {
     path: "",
-    redirectTo: "attribute-table",
+    redirectTo: "schema-class-table",
     pathMatch: "full",
   },
   {
-    path: "attribute-table",
+    path: "schema-class-table",
     loadChildren: () =>
-      import("./attribute-table/attribute-table.module").then((m) =>
-          m.AttributeTableModule),
+      import("./schema-class-table/schema-class-table.module").then((m) =>
+          m.SchemaClassTableModule),
   },
   {
-    path: "properties-table",
+    path: "instance-table",
     loadChildren: () =>
       import("./database-object-view/database-object.module").then((m) =>
       m.DatabaseObjectModule),

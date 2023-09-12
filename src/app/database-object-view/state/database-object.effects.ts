@@ -1,23 +1,35 @@
 import {Injectable} from "@angular/core";
 import {Actions, createEffect, ofType} from "@ngrx/effects";
-import {catchError, EMPTY, mergeMap, Observable} from "rxjs";
+import {catchError, EMPTY, map, mergeMap, Observable, of, tap, withLatestFrom} from "rxjs";
 import {DataService} from "src/app/core/services/data.service";
 import {DatabaseObjectActions} from "./database-object.actions";
 import {TypedAction} from "@ngrx/store/src/models";
-import {AttributeTableActions} from "../../attribute-table/state/attribute-table.actions";
+import {SchemaClassTableActions} from "../../schema-class-table/state/schema-class-table.actions";
 import {toClassName} from "../../core/models/schema-class-attribute-data.model";
+import {Store} from "@ngrx/store";
+import {selectDatabaseObjectData, selectDatabaseObjectState} from "./database-object.selectors";
 
 @Injectable()
 export class DatabaseObjectEffects {
+  private fetchedDbObjects: Set<string> = new Set();
+
   getDatabaseObjectData$: Observable<TypedAction<any>> = createEffect(() => {
       return this.actions$.pipe(
         ofType(DatabaseObjectActions.get),
-        mergeMap(({dbId}) => this.dataService.fetchDatabaseObjectData(dbId)
-          .pipe(
+        // withLatestFrom(action =>
+        //     of(action).pipe(
+        //       this.store.pipe(select(selectDatabaseObjectData(dbId: {action.dbId})))
+        //     )),
+        mergeMap(({dbId}) =>
+          //this.store.select(selectDatabaseObjectData(dbId)) ?
+            //EMPTY :
+          this.dataService.fetchDatabaseObjectData(dbId).pipe(
+            catchError(() => EMPTY),
+            //tap(schemaClassData => this.fetchedDbObjects.add(dbId)),
             mergeMap(databaseObject => [
               DatabaseObjectActions.set({dbId, databaseObject}),
               // Getting the className to perform the correct call for SchemaClass attribute info
-              AttributeTableActions.get({className: toClassName(databaseObject.find(line => line.key === '@JavaClass')?.value)})
+              SchemaClassTableActions.get({className: toClassName(databaseObject.find(line => line.key === '@JavaClass')?.value)})
             ]),
             catchError(() => EMPTY)
           )));
@@ -27,6 +39,7 @@ export class DatabaseObjectEffects {
   constructor(
     private actions$: Actions,
     private dataService: DataService,
+    private store: Store
   ) {
   }
 }

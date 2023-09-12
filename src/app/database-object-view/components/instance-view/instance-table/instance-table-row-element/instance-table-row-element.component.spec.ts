@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { RowElementComponent } from './row-element.component';
+import { InstanceTableRowElementComponent } from './instance-table-row-element.component';
 
 describe('RowElementComponent', () => {
-  let component: RowElementComponent;
-  let fixture: ComponentFixture<RowElementComponent>;
+  let component: InstanceTableRowElementComponent;
+  let fixture: ComponentFixture<InstanceTableRowElementComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ RowElementComponent ]
+      declarations: [ InstanceTableRowElementComponent ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(RowElementComponent);
+    fixture = TestBed.createComponent(InstanceTableRowElementComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

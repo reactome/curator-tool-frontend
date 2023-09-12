@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from "@angular/common/http";
-import {AttributeData} from '../models/schema-class-attribute-data.model';
+import {SchemaClassData} from '../models/schema-class-attribute-data.model';
 import {catchError, map, Observable, pipe, throwError} from 'rxjs';
 import { DatabaseObject } from '../models/database-object-attribute.model';
 import { environment } from 'src/environments/environment.dev';
@@ -10,15 +10,15 @@ import { environment } from 'src/environments/environment.dev';
   providedIn: 'root'
 })
 export class DataService {
-  attributeDataurl = `${environment.ApiRoot}/getAttributes/`
+  schemaClassDataUrl = `${environment.ApiRoot}/getAttributes/`
   entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
 
   constructor(private http: HttpClient) {
    }
 
 
-  fetchAttributeData(className: string): Observable<AttributeData[]> {
-    return this.http.get<AttributeData[]>(this.attributeDataurl + `${className}`)
+  fetchSchemaClassData(className: string): Observable<SchemaClassData[]> {
+    return this.http.get<SchemaClassData[]>(this.schemaClassDataUrl + `${className}`)
       .pipe(catchError((err: Error) => {
         console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
           panelClass: ['warning-snackbar'],
@@ -26,7 +26,7 @@ export class DataService {
         });
         return throwError(() => err);
       }))
-      .pipe(map((data: AttributeData[]) => {
+      .pipe(map((data: SchemaClassData[]) => {
         console.log("dts:")
         console.log(data)
         return data;

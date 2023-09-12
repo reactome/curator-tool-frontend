@@ -5,7 +5,7 @@ import {HttpClientModule} from '@angular/common/http'; // importing the http mod
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { AttributeTableModule } from './attribute-table/attribute-table.module';
+import { SchemaClassTableModule } from './schema-class-table/schema-class-table.module';
 import { DatabaseObjectModule } from './database-object-view/database-object.module';
 import { StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
@@ -14,7 +14,7 @@ import { EffectsModule } from '@ngrx/effects';
 import {RouterModule} from "@angular/router";
 import {routerReducer, StoreRouterConnectingModule} from '@ngrx/router-store';
 import {CustomSerializer} from "./store/custom-serializer";
-import {AttributeTableComponent} from "./attribute-table/components/attributeTable/attribute-table.component";
+import {SchemaClassTableComponent} from "./schema-class-table/components/attributeTable/schema-class-table.component";
 @NgModule({
   declarations: [
     AppComponent,
@@ -23,9 +23,9 @@ import {AttributeTableComponent} from "./attribute-table/components/attributeTab
     BrowserModule,
     AppRoutingModule,
     BrowserAnimationsModule,
-    AttributeTableComponent,
+    SchemaClassTableComponent,
     HttpClientModule,
-    AttributeTableModule,
+    SchemaClassTableModule,
     DatabaseObjectModule,
     EffectsModule.forRoot(),
     StoreModule.forRoot({router: routerReducer}),

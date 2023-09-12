@@ -3,13 +3,14 @@
   [newMenuItem]="menuHeader"
   (clickEvent)="changeTable($event)">
 </app-bread-crumb>
-<app-properties-table
+<app-instance-table
   (newItemEvent)="setClassName($event)"
   (getClassNameEvent)="getClassName($event)"
   (addRelationshipEvent)="addRelationship($event)"
   (updateDatasourceEvent)="updateMainTable($event)"
+  (setRowInstance)="setRow($event)"
   [className]="className"
   [relationshipDbId]="dbId">
-</app-properties-table>
+</app-instance-table>
 <button mat-raised-button style="position: absolute; right: 150px;" (click)="onSubmit()">Submit</button>
 

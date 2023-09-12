@@ -1,13 +1,13 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Store} from "@ngrx/store";
-import {AttributeTableActions} from "../../../attribute-table/state/attribute-table.actions";
+import {SchemaClassTableActions} from "../../../../../schema-class-table/state/schema-class-table.actions";
 
 @Component({
-  selector: 'app-row-element',
-  templateUrl: './row-element.component.html',
-  styleUrls: ['./row-element.component.scss']
+  selector: 'app-instance-table-row-element',
+  templateUrl: './instance-table-row-element.component.html',
+  styleUrls: ['./instance-table-row-element.component.scss']
 })
-export class RowElementComponent implements OnInit {
+export class InstanceTableRowElementComponent implements OnInit {
   @Input() elementType: string = 'STRING';
   @Input() elementValue: any = 'test';
   @Input() className: string = '';
@@ -33,7 +33,7 @@ export class RowElementComponent implements OnInit {
   }
 
   onClick() {
-    this.store.dispatch(AttributeTableActions.get({className: this.className}));
+    this.store.dispatch(SchemaClassTableActions.get({className: this.className}));
     this.getClassNameEvent.emit(this.elementValue.displayName);
   }
 

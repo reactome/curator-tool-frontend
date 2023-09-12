@@ -3,7 +3,7 @@
 
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {ActivatedRoute, Router} from "@angular/router";
-import {AttributeTableActions} from "../../../attribute-table/state/attribute-table.actions";
+import {SchemaClassTableActions} from "../../../schema-class-table/state/schema-class-table.actions";
 import {Store} from "@ngrx/store";
 import {DatabaseObjectActions} from "../../state/database-object.actions";
 

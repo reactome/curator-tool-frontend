@@ -19,7 +19,7 @@
     </th>
     <td mat-cell *matCellDef="let element">
       <ng-container *ngIf="element.properties.cardinality === '1'">
-        <app-row-element
+        <app-instance-table-row-element
           [elementValue]="element.value"
           [elementType]="element.type"
           [className]="element.javaType"
@@ -28,11 +28,11 @@
           (getClassNameEvent)="getClassName($event)"
           (getNewValueEvent)="setNewValue($event)"
         >
-        </app-row-element>
+        </app-instance-table-row-element>
       </ng-container>
 
       <ng-container *ngIf="element.properties.cardinality === '+'">
-        <app-row-element
+        <app-instance-table-row-element
           *ngFor="let object of element.value"
           [elementValue]="object"
           [elementType]="element.type"
@@ -41,7 +41,7 @@
           (getClassNameEvent)="getClassName($event)"
           (getNewValueEvent)="setNewValue($event)"
         >
-        </app-row-element>
+        </app-instance-table-row-element>
       </ng-container>
     </td>
   </ng-container>

@@ -9,7 +9,7 @@ export type AttributeProperty = {
 
 export type Category = 'OPTIONAL' | 'MANDATORY' | 'REQUIRED' | 'NOMANUALEDIT';
 
-export interface AttributeData {
+export interface SchemaClassData {
   category: Category,
   definingType: 'UNDEFINED' | 'ALL_DEFINING',
   name: string;

@@ -1,32 +1,32 @@
 import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
 import {EMPTY, map, Observable, take} from 'rxjs';
 import {Store} from '@ngrx/store';
-import {DatabaseObjectActions} from '../../state/database-object.actions';
+import {DatabaseObjectActions} from '../../../state/database-object.actions';
 import {
   selectDatabaseObjectData,
   selectSchemaClassArray,
   selectSchemaClassAttributes
-} from '../../state/database-object.selectors';
-import {SchemaClassData} from 'src/app/core/models/schema-class-entry-data.model';
+} from '../../../state/database-object.selectors';
+import {SchemaClassInstanceData} from 'src/app/core/models/schema-class-entry-data.model';
 import {MatTableDataSource} from "@angular/material/table";
 import {MatSort} from "@angular/material/sort";
 import {ActivatedRoute} from "@angular/router";
-import {AttributeTableActions} from "../../../attribute-table/state/attribute-table.actions";
-import {DatabaseObject} from "../../../core/models/database-object-attribute.model";
+import {SchemaClassTableActions} from "../../../../schema-class-table/state/schema-class-table.actions";
+import {DatabaseObject} from "../../../../core/models/database-object-attribute.model";
 
 @Component({
-  selector: 'app-properties-table',
-  templateUrl: './properties-table.component.html',
-  styleUrls: ['./properties-table.component.scss'],
+  selector: 'app-instance-table',
+  templateUrl: './instance-table.component.html',
+  styleUrls: ['./instance-table.component.scss'],
 })
-export class PropertiesTableComponent implements OnInit, AfterViewInit {
+export class InstanceTableComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['name', 'value'];
-  dataSource = new MatTableDataSource<SchemaClassData>();
-  unfilteredData: SchemaClassData[] = [];
+  dataSource = new MatTableDataSource<SchemaClassInstanceData>();
+  unfilteredData: SchemaClassInstanceData[] = [];
   showFilterOptions: boolean = false;
   dbId: string = "";
   row: {} = {};
-  newDatabaseObjectValues: SchemaClassData[] = [];
+  newDatabaseObjectValues: SchemaClassInstanceData[] = [];
 
   categories: { [name: string]: boolean } = {
     "MANDATORY": false,
@@ -43,6 +43,7 @@ export class PropertiesTableComponent implements OnInit, AfterViewInit {
   @Output() getClassNameEvent = new EventEmitter<string>();
   @Output() addRelationshipEvent = new EventEmitter<string>();
   @Output() updateDatasourceEvent = new EventEmitter<any>();
+  @Output() setRowInstance = new EventEmitter<DatabaseObject[]>();
   copyDataSource: DatabaseObject[] = [];
   dataSource$: DatabaseObject[] = [];
 
@@ -70,7 +71,8 @@ export class PropertiesTableComponent implements OnInit, AfterViewInit {
   }
 
   setRow(data: any) {
-    this.store.dispatch(DatabaseObjectActions.modify({dbId: this.dbId, databaseObjectInput: data}));
+    console.log('row ' + data.name)
+    this.setRowInstance.emit(data)
   }
 
   setNewValue(data: any) {
@@ -101,9 +103,11 @@ export class PropertiesTableComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     // If the router param is a dbId, perform query for that dbOject,
+    //console.log('test in prop table')
     this.route.params.subscribe((params) => {
       if (params['dbId']) {
         this.dbId = params['dbId'];
+        this.dbId === '-1' ? this.store.select(selectDatabaseObjectData(this.dbId)) :
         this.store.dispatch(DatabaseObjectActions.get({dbId: this.dbId}));
         this.newItemEvent.emit(this.dbId);
         selectSchemaClassArray(this.store, this.dbId)
@@ -119,7 +123,7 @@ export class PropertiesTableComponent implements OnInit, AfterViewInit {
         this.className = params['className'];
         console.log(this.className)
         this.addRelationshipEvent.emit(this.className);
-        this.store.dispatch(AttributeTableActions.get({className: this.className}));
+        this.store.dispatch(SchemaClassTableActions.get({className: this.className}));
         this.store.select(selectSchemaClassAttributes(this.className))
           .subscribe(data => {
             this.unfilteredData = data;

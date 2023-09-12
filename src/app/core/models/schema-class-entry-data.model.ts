@@ -1,8 +1,8 @@
-import {AttributeData, AttributeProperty} from "./schema-class-attribute-data.model";
+import {SchemaClassData, AttributeProperty} from "./schema-class-attribute-data.model";
 
 // These attributes combine with the AttributeDate to create a model for the
 // properties table, which displays a database object instance of a schema class
-export interface SchemaClassData<T = any> extends AttributeData {
+export interface SchemaClassInstanceData<T = any> extends SchemaClassData {
   value: T;
   type: DataType;
   javaType: string;

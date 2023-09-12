@@ -7,6 +7,7 @@ import {DatabaseObject, Type} from "../../../core/models/database-object-attribu
 import {DataService} from "../../../core/services/data.service";
 import {selectDatabaseObjectData} from "../../state/database-object.selectors";
 import {Router} from "@angular/router";
+import {SchemaClassTableActions} from "../../../schema-class-table/state/schema-class-table.actions";
 
 export interface User {
   name: string;
@@ -33,6 +34,8 @@ export class ActionMenuComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.setRow.emit(this.row)
+    console.log(this.row.name)
     this.dataService.fetchDatabaseObjectData('71033').pipe(
       map(databaseObject => this.value = databaseObject)
     );
@@ -50,10 +53,15 @@ export class ActionMenuComponent implements OnInit {
   newDatabaseObject() {
     let id: DatabaseObject = {key: 'dbId', value: this.newDbId, type:'number', javaType:""}
     let displayName: DatabaseObject= {key:"displayName", value:"Display Name will be auto-generated", type:"string", javaType:""}
-    let stId: DatabaseObject = {key:"stId", value: "R-HSA-", type:"string", javaType:""}
-    let databaseObjectInput: DatabaseObject[] = [id, displayName, stId];
+    let stId: DatabaseObject = {key:"stId", value: "R-HSA-" + this.newDbId.toString(), type:"string", javaType:""}
+    let javaClass: DatabaseObject = {key:"@JavaClass", value:"org.reactome.server.graph.domain.model." + this.className,
+      type:"string",
+      javaType:""}
+    let databaseObjectInput: DatabaseObject[] = [id, displayName, stId, javaClass];
+    this.store.dispatch(SchemaClassTableActions.get({className: this.className}));
     this.store.dispatch(DatabaseObjectActions.add({dbId: this.newDbId.toString(), databaseObjectInput: databaseObjectInput}));
-    this.router.navigate(["/properties-table/" + this.newDbId]);
+    this.router.navigate(["/instance-table/" + this.newDbId]);
+    console.log('after modify');
     this.newDbId--;
   }
 

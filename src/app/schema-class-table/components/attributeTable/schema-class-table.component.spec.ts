@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AttributeTableComponent } from './attribute-table.component';
+import { SchemaClassTableComponent } from './schema-class-table.component';
 
 describe('AttributeTableComponent', () => {
-  let component: AttributeTableComponent;
-  let fixture: ComponentFixture<AttributeTableComponent>;
+  let component: SchemaClassTableComponent;
+  let fixture: ComponentFixture<SchemaClassTableComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ AttributeTableComponent ]
+      declarations: [ SchemaClassTableComponent ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(AttributeTableComponent);
+    fixture = TestBed.createComponent(SchemaClassTableComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
