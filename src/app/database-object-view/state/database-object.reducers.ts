@@ -2,6 +2,7 @@ import {createReducer, on} from "@ngrx/store";
 import {DatabaseObject} from "src/app/core/models/database-object-attribute.model";
 import {DatabaseObjectActions} from "./database-object.actions";
 import {createEntityAdapter, EntityState} from "@ngrx/entity";
+import {EMPTY} from "rxjs";
 
 export interface DatabaseObjectEntity {
   id: string;
@@ -34,6 +35,8 @@ export const databaseObjectReducer =
 
         }, state)),
     on(DatabaseObjectActions.add, (state, {dbId, databaseObjectInput}) =>
-    databaseObjectAdapter.addOne({id: dbId, databaseObject: databaseObjectInput}, state))
+    databaseObjectAdapter.addOne({id: dbId, databaseObject: databaseObjectInput}, state)),
+    // on(DatabaseObjectActions.checkDbidsInState, (state, {dbId}) =>
+    //   state.entities[dbId]?.databaseObject || []
   )
 

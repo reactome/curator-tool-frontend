@@ -24,7 +24,7 @@ export class DatabaseObjectEffects {
           //this.store.select(selectDatabaseObjectData(dbId)) ?
             //EMPTY :
           this.dataService.fetchDatabaseObjectData(dbId).pipe(
-            catchError(() => EMPTY),
+            //catchError(() => EMPTY),
             //tap(schemaClassData => this.fetchedDbObjects.add(dbId)),
             mergeMap(databaseObject => [
               DatabaseObjectActions.set({dbId, databaseObject}),

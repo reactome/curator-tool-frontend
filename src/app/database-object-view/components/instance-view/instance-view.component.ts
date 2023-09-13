@@ -17,10 +17,12 @@ export class InstanceViewComponent implements OnInit {
   className: string = '';
   addToHeader: boolean = true;
   dbId: string = '';
-  newRelationship: DatabaseObject[] = [];
+  newRelationship: any = [];
   originalDataSource: DatabaseObject[] = [];
-  newDataSource: DatabaseObject[] = [];
+  copyDataSource: DatabaseObject[] = [];
   row: any = {};
+  finalObj: {} = {};
+  keyString: any = '';
 
   constructor(private router: Router, private route: ActivatedRoute, private store: Store) {
   }
@@ -67,29 +69,33 @@ export class InstanceViewComponent implements OnInit {
   onSubmit() {
     this.store.select(selectDatabaseObjectData("-1")).subscribe(
       data => {
-        this.newRelationship = data;
+        data.map((e: any) => {
+          this.keyString = e.key;
+          this.newRelationship = {key: e.key, value: e.value}});
+        // data.map(e => this.newRelationship.push(
+        //     e.key.toString() + ": " + e.value.toString()
+        //   )
+        // )
+        console.log("nr" + this.newRelationship[0])
       }
-    );
+  );
+
     this.store.select(selectDatabaseObjectData(this.mainNavigation)).subscribe(
       data => {
         this.originalDataSource = data;
+        this.copyDataSource = this.originalDataSource.map((item) => ({
+          ...item,
+        }))
       }
     );
-    this.newDataSource = this.originalDataSource.map((item) => ({
-      ...item,
-    }))
 
-    console.log(this.row.name)
-
-    this.newDataSource.push(
+    this.copyDataSource.push(
       {
         key: this.row.name, // in this case author
-        value: {
-          "@JavaClass": "org.reactome.server.graph.domain.model.InstanceEdit",
-          "dbId": 71033,
-          "displayName": "2003-04-11 00:00:00",
-          "dateTime": "2003-04-11 04:00:00"
-        },
+        // value: {
+        //   value: this.newRelationship
+        // },
+        value: this.newRelationship,
         type: this.row.type, // type of author
         javaType: this.row.javaType // java type of author
       }
@@ -97,7 +103,7 @@ export class InstanceViewComponent implements OnInit {
 
     this.store.dispatch(DatabaseObjectActions.modify({
       dbId: this.mainNavigation,
-      databaseObjectInput: this.newDataSource
+      databaseObjectInput: this.copyDataSource
     }));
     this.router.navigate(["/instance-table/" + this.mainNavigation]);
   }
