@@ -39,7 +39,6 @@ export class ActionMenuComponent implements OnInit {
     this.dataService.fetchDatabaseObjectData('71033').pipe(
       map(databaseObject => this.value = databaseObject)
     );
-    console.log('value' + this.value)
 
     this.store.select(selectDatabaseObjectData(this.dbId)).subscribe(
       data => {
@@ -51,6 +50,7 @@ export class ActionMenuComponent implements OnInit {
   }
 
   newDatabaseObject() {
+    //Logic for a new instance, would be better to move this
     let id: DatabaseObject = {key: 'dbId', value: this.newDbId, type:'number', javaType:""}
     let displayName: DatabaseObject= {key:"displayName", value:"Display Name will be auto-generated", type:"string", javaType:""}
     let stId: DatabaseObject = {key:"stId", value: "R-HSA-" + this.newDbId.toString(), type:"string", javaType:""}
@@ -61,12 +61,11 @@ export class ActionMenuComponent implements OnInit {
     this.store.dispatch(SchemaClassTableActions.get({className: this.className}));
     this.store.dispatch(DatabaseObjectActions.add({dbId: this.newDbId.toString(), databaseObjectInput: databaseObjectInput}));
     this.router.navigate(["/instance-table/" + this.newDbId]);
-    console.log('after modify');
     this.newDbId--;
   }
 
   onSubmit() {
-    // TODO: move this code into the instance view
+    // TODO: this is only here for the "test instance" the logic only needs to be in instance-view
     // Determine if the current databaseObject contains the attribute
     // that is being assigned a value
     let index = this.dataSource$.findIndex(key => key.key === this.row.name)

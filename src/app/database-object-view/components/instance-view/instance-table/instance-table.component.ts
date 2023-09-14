@@ -76,26 +76,32 @@ export class InstanceTableComponent implements OnInit, AfterViewInit {
   }
 
   setNewValue(data: any) {
+    // get the database object from the store
     this.store.select(selectDatabaseObjectData(this.dbId)).subscribe(
       data => {
         this.dataSource$ = data;
       }
     );
 
+    // the state is immutable, so make a copy
+    this.copyDataSource = this.dataSource$.map((item) => ({
+      ...item,
+    }))
+
+    // Determine if the current databaseObject contains the attribute
+    // that is being assigned a value
     let index = this.dataSource$.findIndex(key => key.key === data.key)
-    console.log(index)
-    if(index === -1)
-    {
-      this.copyDataSource = this.dataSource$.map((item) => ({
-        ...item,
-      }))
+
+    // If index is -1, the attribute does not exist on the object
+    if (index === -1) {
       this.copyDataSource.push(data);
-      console.log(this.copyDataSource)
     }
-    else
-    {
-      this.dataSource$.at(index)!.value = data.value;
+    // otherwise assign the value to the correct attribute
+    else {
+      this.copyDataSource.at(index)!.value = data.value;
     }
+
+    // dispatch the new datasource to the store
     this.store.dispatch(DatabaseObjectActions.modify({dbId: this.dbId, databaseObjectInput: this.copyDataSource}));
 
     //this.updateDatasourceEvent.emit(data);
@@ -108,7 +114,7 @@ export class InstanceTableComponent implements OnInit, AfterViewInit {
       if (params['dbId']) {
         this.dbId = params['dbId'];
         this.dbId === '-1' ? this.store.select(selectDatabaseObjectData(this.dbId)) :
-        this.store.dispatch(DatabaseObjectActions.get({dbId: this.dbId}));
+          this.store.dispatch(DatabaseObjectActions.get({dbId: this.dbId}));
         this.newItemEvent.emit(this.dbId);
         selectSchemaClassArray(this.store, this.dbId)
           .subscribe(data => {

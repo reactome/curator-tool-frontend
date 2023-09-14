@@ -67,19 +67,19 @@ export class InstanceViewComponent implements OnInit {
   }
 
   onSubmit() {
+    // select the newly added instance from the store
+    // currently also trying to map the values to newRelationship as object
     this.store.select(selectDatabaseObjectData("-1")).subscribe(
       data => {
         data.map((e: any) => {
           this.keyString = e.key;
-          this.newRelationship = {key: e.key, value: e.value}});
-        // data.map(e => this.newRelationship.push(
-        //     e.key.toString() + ": " + e.value.toString()
-        //   )
-        // )
-        console.log("nr" + this.newRelationship[0])
+          this.newRelationship = {key: e.key, value: e.value}
+        });
       }
-  );
+    );
 
+    // Select the main database object from the store
+    // the datasource is immutable, so a copy is made
     this.store.select(selectDatabaseObjectData(this.mainNavigation)).subscribe(
       data => {
         this.originalDataSource = data;
@@ -89,18 +89,23 @@ export class InstanceViewComponent implements OnInit {
       }
     );
 
+    // the newRelationship.value is in an incorrect format, so using an example
     this.copyDataSource.push(
       {
-        key: this.row.name, // in this case author
-        // value: {
-        //   value: this.newRelationship
-        // },
-        value: this.newRelationship,
-        type: this.row.type, // type of author
-        javaType: this.row.javaType // java type of author
+        key: this.row.name,
+        value: {
+          "@JavaClass": "org.reactome.server.graph.domain.model.InstanceEdit",
+          "dbId": 71033,
+          "displayName": "2003-04-11 00:00:00",
+          "dateTime": "2003-04-11 04:00:00"
+        },
+        //value: this.newRelationship,
+        type: this.row.type,
+        javaType: this.row.javaType
       }
     );
 
+    // dispatch the changes to the store
     this.store.dispatch(DatabaseObjectActions.modify({
       dbId: this.mainNavigation,
       databaseObjectInput: this.copyDataSource
