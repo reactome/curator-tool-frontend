@@ -1,5 +1,5 @@
 import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
-import {EMPTY, map, Observable, take} from 'rxjs';
+import {BehaviorSubject, EMPTY, map, Observable, of, take} from 'rxjs';
 import {Store} from '@ngrx/store';
 import {DatabaseObjectActions} from '../../../state/database-object.actions';
 import {
@@ -13,6 +13,9 @@ import {MatSort} from "@angular/material/sort";
 import {ActivatedRoute} from "@angular/router";
 import {SchemaClassTableActions} from "../../../../schema-class-table/state/schema-class-table.actions";
 import {DatabaseObject} from "../../../../core/models/database-object-attribute.model";
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { DataSource } from '@angular/cdk/collections';
+import { InstanceDataSource } from './instance-table.model';
 
 @Component({
   selector: 'app-instance-table',
@@ -38,6 +41,14 @@ export class InstanceTableComponent implements OnInit, AfterViewInit {
   @ViewChild(MatSort) sort?: MatSort;
   @Input() className: string = '';
   @Input() relationshipDbId: string = '';
+
+  // The instance to be displayed
+  instanceDataSource : InstanceDataSource = new InstanceDataSource(undefined);
+  // Make sure it is bound to input instance
+  @Input() set instance(instance: Instance | undefined) {
+    this.instanceDataSource = new InstanceDataSource(instance);
+  };
+  
   @Output() newItemEvent = new EventEmitter<any>();
   @Output() newEntryTableEvent = new EventEmitter<any>();
   @Output() getClassNameEvent = new EventEmitter<string>();
@@ -109,7 +120,6 @@ export class InstanceTableComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     // If the router param is a dbId, perform query for that dbOject,
-    //console.log('test in prop table')
     this.route.params.subscribe((params) => {
       if (params['dbId']) {
         this.dbId = params['dbId'];

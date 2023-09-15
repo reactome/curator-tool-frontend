@@ -1,8 +1,9 @@
-import {createReducer, on} from "@ngrx/store";
-import {DatabaseObject} from "src/app/core/models/database-object-attribute.model";
-import {DatabaseObjectActions} from "./database-object.actions";
-import {createEntityAdapter, EntityState} from "@ngrx/entity";
-import {EMPTY} from "rxjs";
+import { createReducer, on } from "@ngrx/store";
+import { DatabaseObject } from "src/app/core/models/database-object-attribute.model";
+import { DatabaseObjectActions, InstanceActions } from "./database-object.actions";
+import { createEntityAdapter, EntityState } from "@ngrx/entity";
+import { EMPTY } from "rxjs";
+import { Instance } from "src/app/core/models/reactome-instance.model";
 
 export interface DatabaseObjectEntity {
   id: string;
@@ -22,21 +23,30 @@ export const initialState: DatabaseObjectState = databaseObjectAdapter.getInitia
 export const databaseObjectReducer =
   createReducer(
     initialState,
-    on(DatabaseObjectActions.set, (state, {dbId, databaseObject}) => databaseObjectAdapter.addOne({
+    on(DatabaseObjectActions.set, (state, { dbId, databaseObject }) => databaseObjectAdapter.addOne({
       id: dbId,
       databaseObject: databaseObject
     }, state)),
-    on(DatabaseObjectActions.remove, (state, {dbIds}) => databaseObjectAdapter.removeMany(dbIds, state)),
-    on(DatabaseObjectActions.modify, (state, {dbId, databaseObjectInput}) =>
+    on(DatabaseObjectActions.remove, (state, { dbIds }) => databaseObjectAdapter.removeMany(dbIds, state)),
+    on(DatabaseObjectActions.modify, (state, { dbId, databaseObjectInput }) =>
       databaseObjectAdapter.updateOne(
         {
           id: dbId,
-          changes: {databaseObject: databaseObjectInput}
+          changes: { databaseObject: databaseObjectInput }
 
         }, state)),
-    on(DatabaseObjectActions.add, (state, {dbId, databaseObjectInput}) =>
-    databaseObjectAdapter.addOne({id: dbId, databaseObject: databaseObjectInput}, state)),
+    on(DatabaseObjectActions.add, (state, { dbId, databaseObjectInput }) =>
+      databaseObjectAdapter.addOne({ id: dbId, databaseObject: databaseObjectInput }, state)),
     // on(DatabaseObjectActions.checkDbidsInState, (state, {dbId}) =>
     //   state.entities[dbId]?.databaseObject || []
   )
 
+/**
+ * Reducer to handle the instance to be viewed.
+ */
+export const initialInstance: Instance = {dbId: 0, displayName: undefined};
+
+export const instanceReducer = createReducer(
+  initialInstance,
+  on(InstanceActions.view_instance, (state, instance) => instance)
+);

@@ -3,12 +3,16 @@
   [newMenuItem]="menuHeader"
   (clickEvent)="changeTable($event)">
 </app-bread-crumb>
+<h4 style="margin-left: 16px;">
+  <span *ngIf="instance !== undefined">{{instance.schemaClassName}}: {{instance.displayName}} [{{instance.dbId}}]</span>
+</h4>
 <app-instance-table
   (newItemEvent)="setClassName($event)"
   (getClassNameEvent)="getClassName($event)"
   (addRelationshipEvent)="addRelationship($event)"
   (updateDatasourceEvent)="updateMainTable($event)"
   (setRowInstance)="setRow($event)"
+  [instance]="instance"
   [className]="className"
   [relationshipDbId]="dbId">
 </app-instance-table>

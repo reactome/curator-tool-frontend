@@ -44,11 +44,11 @@ export enum AttributeDefiningType {
 }
 
 export enum AttributeDataType {
-  'STRING',
-  'INTEGER',
-  'FLOAT',
-  'BOOLEAN',
-  'INSTANCE'
+  STRING,
+  INTEGER,
+  FLOAT,
+  BOOLEAN,
+  INSTANCE
 }
 
 /**

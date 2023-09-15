@@ -1,32 +1,32 @@
-<ng-container [ngSwitch]="elementType">
-  <ng-template [ngSwitchCase]="'BOOLEAN'">
-    <mat-slide-toggle [(ngModel)]="elementValue" color="primary"
+<ng-container [ngSwitch]="attribute?.type">
+  <ng-template [ngSwitchCase]="dataType.BOOLEAN">
+    <mat-slide-toggle [(ngModel)]="value" color="primary"
                       disabled="{{isDisabled}}"
                       required="{{isRequired}}"
                       (change)="onChange()">
     </mat-slide-toggle>
   </ng-template>
-  <ng-template [ngSwitchCase]="'STRING'">
-    <mat-form-field appearance="fill" subscriptSizing="dynamic" style="width: 100%">
-      <input [(ngModel)]="elementValue" matInput type="text"
+  <ng-template [ngSwitchCase]="dataType.STRING">
+    <mat-form-field appearance="fill" subscriptSizing="dynamic" style="width: 100%; white-space: normal;">
+      <input [(ngModel)]="value!" matInput type="text"
              disabled="{{isDisabled}}"
              required="{{isRequired}}"
              (change)="onChange()">
     </mat-form-field>
   </ng-template>
 
-  <ng-template [ngSwitchCase]="'INTEGER'">
+  <ng-template [ngSwitchCase]="dataType.INTEGER">
     <mat-form-field appearance="fill" subscriptSizing="dynamic" style="width: 100%">
-      <input [(ngModel)]="elementValue" matInput type="number"
+      <input [(ngModel)]="value!" matInput type="number"
              disabled="{{isDisabled}}"
              required="{{isRequired}}"
              (change)="onChange()">
     </mat-form-field>
   </ng-template>
 
-  <ng-template [ngSwitchCase]="'FLOAT'">
+  <ng-template [ngSwitchCase]="dataType.FLOAT">
     <mat-form-field appearance="fill" subscriptSizing="dynamic" style="width: 100%">
-      <input [(ngModel)]="elementValue"
+      <input [(ngModel)]="value!"
              matInput type="number"
              [disabled]="isDisabled"
              [required]="isRequired"
@@ -34,10 +34,10 @@
     </mat-form-field>
   </ng-template>
 
-  <ng-template [ngSwitchCase]="'INSTANCE'">
-    <ng-container>
-      <a routerLink="/instance-table/{{elementValue?.dbId}}" (click)="onClick()">{{elementValue?.dbId}}
-        {{elementValue?.displayName}}<br></a>
+  <ng-template [ngSwitchCase]="dataType.INSTANCE">
+    <ng-container *ngIf="value !== undefined">
+      <a routerLink="/instance_view/{{value.dbId}}" (click)="onClick()">
+        {{value.displayName}}  [{{value.dbId}}]</a><br>
     </ng-container>
   </ng-template>
 </ng-container>

@@ -1,23 +1,23 @@
 .demo-table {
-    width: 100%;
-  }
-
-  .demo-row-is-hovered {
-    font-weight: bold;
-  }
-
-  .mat-mdc-row:hover .mat-mdc-cell {
-    border-color: currentColor;
-    // border-bottom: 1px solid transparent;
-    // border-top: 1px solid transparent;
-  }
-
-  .mat-mdc-row:nth-child(even){
-    background-color: white;
+  width: 100%;
 }
 
-.mat-mdc-row:nth-child(odd){
-    background-color: white;
+.demo-row-is-hovered {
+  font-weight: bold;
+}
+
+.mat-mdc-row:hover .mat-mdc-cell {
+  border-color: currentColor;
+  // border-bottom: 1px solid transparent;
+  // border-top: 1px solid transparent;
+}
+
+.mat-mdc-row:nth-child(even) {
+  background-color: white;
+}
+
+.mat-mdc-row:nth-child(odd) {
+  background-color: white;
 }
 
 .attColumn {

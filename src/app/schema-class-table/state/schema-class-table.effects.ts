@@ -10,20 +10,20 @@ export class SchemaClassTableEffects {
   // The set of previously fetched class names are stored to prevent duplicate calls
   private fetchedClassNames: Set<string> = new Set();
 
-  getSchemaClassData$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(SchemaClassTableActions.get),
-      // check if className has been fetched, otherwise perform call
-      mergeMap(({className}) =>
-        this.fetchedClassNames.has(className) ?
-          EMPTY :
-          this.dataService.fetchSchemaClassData(className).pipe(
-            catchError(() => EMPTY),
-            tap(schemaClassData => this.fetchedClassNames.add(className)),
-            map(schemaClassData => SchemaClassTableActions.set({className, schemaClassData}),
-            )))
-    ), {dispatch: true}
-  );
+  // getSchemaClassData$ = createEffect(() =>
+  //   this.actions$.pipe(
+  //     ofType(SchemaClassTableActions.get),
+  //     // check if className has been fetched, otherwise perform call
+  //     mergeMap(({className}) =>
+  //       this.fetchedClassNames.has(className) ?
+  //         EMPTY :
+  //         this.dataService.fetchSchemaClassData(className).pipe(
+  //           catchError(() => EMPTY),
+  //           tap(schemaClassData => this.fetchedClassNames.add(className)),
+  //           map(schemaClassData => SchemaClassTableActions.set({className, schemaClassData}),
+  //           )))
+  //   ), {dispatch: true}
+  // );
 
   constructor(
     private actions$: Actions,

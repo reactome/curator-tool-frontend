@@ -4,7 +4,7 @@ import {InstanceTableComponent} from './components/instance-view/instance-table/
 import {DatabaseObjectEffects} from './state/database-object.effects';
 import {EffectsModule} from '@ngrx/effects';
 import {StoreModule} from '@ngrx/store';
-import {databaseObjectReducer} from './state/database-object.reducers';
+import {databaseObjectReducer, instanceReducer} from './state/database-object.reducers';
 import {ActionMenuComponent} from './components/action-menu/action-menu.component';
 import {DatabaseObjectRoutingModule} from './database-object-routing.module';
 import {SharedModule} from '../shared/shared.module';
@@ -12,6 +12,8 @@ import {InstanceTableRowElementComponent} from './components/instance-view/insta
 import {BreadCrumbComponent} from './components/bread-crumb/bread-crumb.component';
 import {InstanceViewComponent} from './components/instance-view/instance-view.component';
 import {CdkContextMenuTrigger, CdkMenu, CdkMenuItem} from "@angular/cdk/menu";
+import { InstanceActions } from './state/database-object.actions';
+import { VIEW_INSTANCE_STATE_NAME } from './state/database-object.selectors';
 
 @NgModule({
   declarations: [
@@ -26,6 +28,7 @@ import {CdkContextMenuTrigger, CdkMenu, CdkMenuItem} from "@angular/cdk/menu";
     DatabaseObjectRoutingModule,
     EffectsModule.forFeature(DatabaseObjectEffects),
     StoreModule.forFeature('databaseObjectState', databaseObjectReducer),
+    StoreModule.forFeature(VIEW_INSTANCE_STATE_NAME, instanceReducer),
     SharedModule,
     CdkContextMenuTrigger,
     CdkMenu,

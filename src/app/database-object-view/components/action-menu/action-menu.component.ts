@@ -36,9 +36,9 @@ export class ActionMenuComponent implements OnInit {
   ngOnInit() {
     this.setRow.emit(this.row)
     console.log(this.row.name)
-    this.dataService.fetchDatabaseObjectData('71033').pipe(
-      map(databaseObject => this.value = databaseObject)
-    );
+    // this.dataService.fetchDatabaseObjectData('71033').pipe(
+    //   map(databaseObject => this.value = databaseObject)
+    // );
 
     this.store.select(selectDatabaseObjectData(this.dbId)).subscribe(
       data => {

@@ -5,6 +5,18 @@ import {SchemaClassInstanceData, toDataType} from "src/app/core/models/schema-cl
 import {toClassName} from "src/app/core/models/schema-class-attribute-data.model";
 import {combineLatest, filter, map, tap, zip} from "rxjs";
 import {SchemaClassDataState} from "../../schema-class-table/state/schema-class-table.reducers";
+import { Instance } from "src/app/core/models/reactome-instance.model";
+import { state } from "@angular/animations";
+
+// The instance to be viewed
+export const VIEW_INSTANCE_STATE_NAME = 'view_instance';
+// The state
+export const viewInstanceState = createFeatureSelector<Instance>(VIEW_INSTANCE_STATE_NAME);
+// The selector
+export const selectViewInstance = () => createSelector(
+  viewInstanceState,
+  (state: Instance) => state
+);
 
 // The current state of the databaseObject store
 export const selectDatabaseObjectState =
@@ -47,8 +59,8 @@ export const selectSchemaClassArray = (store: Store, dbId: string) => combineLat
         type: toDataType(attribute.properties!),
         javaType: className
       })) || []
-  }),
-  tap(data => console.log(data))
+  })
+  // tap(data => console.log(data))
 );
 
 // select attributes for a schema class in the format of a schema-class-entry so that

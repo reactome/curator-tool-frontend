@@ -1,6 +1,8 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Store} from "@ngrx/store";
 import {SchemaClassTableActions} from "../../../../../schema-class-table/state/schema-class-table.actions";
+import { AttributeValue } from '../instance-table.model';
+import { AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
 
 @Component({
   selector: 'app-instance-table-row-element',
@@ -13,6 +15,9 @@ export class InstanceTableRowElementComponent implements OnInit {
   @Input() className: string = '';
   @Input() category: string = '';
   @Input() key: string = '';
+  // Value to be displayed here
+  @Input() attribute: SchemaAttribute | undefined = undefined;
+  @Input() value: any; 
   @Output() getClassNameEvent = new EventEmitter<string>();
   @Output() getNewValueEvent = new EventEmitter<any>();
   isDisabled: boolean = false;
@@ -23,6 +28,8 @@ export class InstanceTableRowElementComponent implements OnInit {
     type: '',
     javaType: ''
   };
+  // So that we can use it in the template
+  dataType = AttributeDataType;
 
   ngOnInit(): void {
     this.isDisabled = this.category[1] === "NOMANUALEDIT";
@@ -42,7 +49,7 @@ export class InstanceTableRowElementComponent implements OnInit {
     this.databaseObject.type = this.elementType;
     this.databaseObject.value = this.elementValue;
     this.databaseObject.javaType = this.elementType;
-    console.log(this.databaseObject);
+    console.info(this.databaseObject);
     this.getNewValueEvent.emit(this.databaseObject);
   }
 
