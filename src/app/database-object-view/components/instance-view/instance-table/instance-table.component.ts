@@ -1,21 +1,19 @@
-import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
-import {BehaviorSubject, EMPTY, map, Observable, of, take} from 'rxjs';
-import {Store} from '@ngrx/store';
-import {DatabaseObjectActions} from '../../../state/database-object.actions';
+import { AfterViewInit, Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { MatSort } from "@angular/material/sort";
+import { MatTableDataSource } from "@angular/material/table";
+import { ActivatedRoute } from "@angular/router";
+import { Store } from '@ngrx/store';
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { SchemaClassInstanceData } from 'src/app/core/models/schema-class-entry-data.model';
+import { DatabaseObject } from "../../../../core/models/database-object-attribute.model";
+import { SchemaClassTableActions } from "../../../../schema-class-table/state/schema-class-table.actions";
+import { DatabaseObjectActions } from '../../../state/database-object.actions';
 import {
   selectDatabaseObjectData,
   selectSchemaClassArray,
   selectSchemaClassAttributes
 } from '../../../state/database-object.selectors';
-import {SchemaClassInstanceData} from 'src/app/core/models/schema-class-entry-data.model';
-import {MatTableDataSource} from "@angular/material/table";
-import {MatSort} from "@angular/material/sort";
-import {ActivatedRoute} from "@angular/router";
-import {SchemaClassTableActions} from "../../../../schema-class-table/state/schema-class-table.actions";
-import {DatabaseObject} from "../../../../core/models/database-object-attribute.model";
-import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { DataSource } from '@angular/cdk/collections';
-import { InstanceDataSource } from './instance-table.model';
+import { AttributeValue, InstanceDataSource } from './instance-table.model';
 
 @Component({
   selector: 'app-instance-table',
@@ -44,9 +42,12 @@ export class InstanceTableComponent implements OnInit, AfterViewInit {
 
   // The instance to be displayed
   instanceDataSource : InstanceDataSource = new InstanceDataSource(undefined);
+  // Keep it for editing
+  _instance?: Instance;
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
     this.instanceDataSource = new InstanceDataSource(instance);
+    this._instance = instance;
   };
   
   @Output() newItemEvent = new EventEmitter<any>();
@@ -86,36 +87,53 @@ export class InstanceTableComponent implements OnInit, AfterViewInit {
     this.setRowInstance.emit(data)
   }
 
-  setNewValue(data: any) {
-    // get the database object from the store
-    this.store.select(selectDatabaseObjectData(this.dbId)).subscribe(
-      data => {
-        this.dataSource$ = data;
+  onNewValue(data: AttributeValue) {
+    console.debug('onNewValue: ', data);
+    if (data.attribute.cardinality === '1') {
+      this._instance?.attributes!.set(data.attribute.name, data.value);
+    }
+    else { // This should be a list
+      let valueList = this._instance?.attributes!.get(data.attribute.name);
+      if (valueList === undefined) {
+        this._instance?.attributes!.set(data.attribute.name, [data.value]);
       }
-    );
-
-    // the state is immutable, so make a copy
-    this.copyDataSource = this.dataSource$.map((item) => ({
-      ...item,
-    }))
-
-    // Determine if the current databaseObject contains the attribute
-    // that is being assigned a value
-    let index = this.dataSource$.findIndex(key => key.key === data.key)
-
-    // If index is -1, the attribute does not exist on the object
-    if (index === -1) {
-      this.copyDataSource.push(data);
+      else {
+        valueList[data.index!] = data.value;
+      }
     }
-    // otherwise assign the value to the correct attribute
-    else {
-      this.copyDataSource.at(index)!.value = data.value;
-    }
+  }
 
-    // dispatch the new datasource to the store
-    this.store.dispatch(DatabaseObjectActions.modify({dbId: this.dbId, databaseObjectInput: this.copyDataSource}));
+  setNewValue(data: string) {
+    // console.debug('setNewValue: ', data);
+    // // get the database object from the store
+    // this.store.select(selectDatabaseObjectData(this.dbId)).subscribe(
+    //   data => {
+    //     this.dataSource$ = data;
+    //   }
+    // );
 
-    //this.updateDatasourceEvent.emit(data);
+    // // the state is immutable, so make a copy
+    // this.copyDataSource = this.dataSource$.map((item) => ({
+    //   ...item,
+    // }))
+
+    // // Determine if the current databaseObject contains the attribute
+    // // that is being assigned a value
+    // let index = this.dataSource$.findIndex(key => key.key === data.key)
+
+    // // If index is -1, the attribute does not exist on the object
+    // if (index === -1) {
+    //   this.copyDataSource.push(data);
+    // }
+    // // otherwise assign the value to the correct attribute
+    // else {
+    //   this.copyDataSource.at(index)!.value = data.value;
+    // }
+
+    // // dispatch the new datasource to the store
+    // this.store.dispatch(DatabaseObjectActions.modify({dbId: this.dbId, databaseObjectInput: this.copyDataSource}));
+
+    // //this.updateDatasourceEvent.emit(data);
   }
 
   ngOnInit(): void {

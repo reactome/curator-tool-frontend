@@ -1,12 +1,11 @@
 <app-bread-crumb
-  [mainNavigation]="mainNavigation"
-  [newMenuItem]="menuHeader"
+  [newMenuItem]="viewHistory"
   (clickEvent)="changeTable($event)">
 </app-bread-crumb>
 <h4 style="margin-left: 16px;">
   <span *ngIf="instance !== undefined">{{instance.schemaClassName}}: {{instance.displayName}} [{{instance.dbId}}]</span>
 </h4>
-<app-instance-table
+<!-- <app-instance-table
   (newItemEvent)="setClassName($event)"
   (getClassNameEvent)="getClassName($event)"
   (addRelationshipEvent)="addRelationship($event)"
@@ -15,6 +14,9 @@
   [instance]="instance"
   [className]="className"
   [relationshipDbId]="dbId">
+</app-instance-table> -->
+<app-instance-table
+  [instance]="instance">
 </app-instance-table>
 <button mat-raised-button style="position: absolute; right: 150px;" (click)="onSubmit()">Submit</button>
 

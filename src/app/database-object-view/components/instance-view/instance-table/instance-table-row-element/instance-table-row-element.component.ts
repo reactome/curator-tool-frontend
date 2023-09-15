@@ -1,56 +1,51 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Store} from "@ngrx/store";
-import {SchemaClassTableActions} from "../../../../../schema-class-table/state/schema-class-table.actions";
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Store } from "@ngrx/store";
+import { AttributeCategory, AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
+import { SchemaClassTableActions } from "../../../../../schema-class-table/state/schema-class-table.actions";
 import { AttributeValue } from '../instance-table.model';
-import { AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
 
+/**
+ * Used to display a single value of an Instance object.
+ */
 @Component({
   selector: 'app-instance-table-row-element',
   templateUrl: './instance-table-row-element.component.html',
   styleUrls: ['./instance-table-row-element.component.scss']
 })
-export class InstanceTableRowElementComponent implements OnInit {
-  @Input() elementType: string = 'STRING';
-  @Input() elementValue: any = 'test';
-  @Input() className: string = '';
-  @Input() category: string = '';
-  @Input() key: string = '';
+export class InstanceTableRowElementComponent {
   // Value to be displayed here
   @Input() attribute: SchemaAttribute | undefined = undefined;
   @Input() value: any; 
+  @Input() index: number = 0; // The position for a value in multi-slot
   @Output() getClassNameEvent = new EventEmitter<string>();
-  @Output() getNewValueEvent = new EventEmitter<any>();
-  isDisabled: boolean = false;
-  isRequired: boolean = false;
-  databaseObject: { key: string, value: any, type: string, javaType: string } = {
-    key: '',
-    value: undefined,
-    type: '',
-    javaType: ''
-  };
-  // So that we can use it in the template
-  dataType = AttributeDataType;
+  @Output() newValueEvent = new EventEmitter<AttributeValue>();
 
-  ngOnInit(): void {
-    this.isDisabled = this.category[1] === "NOMANUALEDIT";
-    this.isRequired = this.category[1] === "REQUIRED" || this.category[1] === "MANDATORY"
-  }
+  // So that we can use it in the template
+  DATA_TYPES = AttributeDataType;
+  CATEGORIES = AttributeCategory;
 
   constructor(private store: Store) {
   }
 
   onClick() {
-    this.store.dispatch(SchemaClassTableActions.get({className: this.className}));
-    this.getClassNameEvent.emit(this.elementValue.displayName);
+    this.store.dispatch(SchemaClassTableActions.get({className: this.attribute?.name ?? ''}));
+    // this.getClassNameEvent.emit(this.elementValue.displayName);
   }
 
   onChange() {
-    this.databaseObject.key = this.key;
-    this.databaseObject.type = this.elementType;
-    this.databaseObject.value = this.elementValue;
-    this.databaseObject.javaType = this.elementType;
-    console.info(this.databaseObject);
-    this.getNewValueEvent.emit(this.databaseObject);
+    // this.databaseObject.key = this.key;
+    // this.databaseObject.type = this.elementType;
+    // this.databaseObject.value = this.elementValue;
+    // this.databaseObject.javaType = this.elementType;
+    // console.info(this.databaseObject);
+    // Create a new AttributeValue to fire
+    let attributeValue = {
+      attribute: this.attribute!,
+      value: this.value,
+      index: this.index
+    }
+    console.debug("onChange: ", attributeValue);
+    this.newValueEvent.emit(attributeValue);
   }
 
 }

@@ -30,17 +30,17 @@ export interface SchemaClass {
 }
 
 export enum AttributeCategory {
-  'OPTIONAL',
-  'MANDATORY',
-  'REQUIRED',
-  'NOMANUALEDIT'
+  OPTIONAL,
+  MANDATORY,
+  REQUIRED,
+  NOMANUALEDIT
 }
 
 export enum AttributeDefiningType {
-  'ALL_DEFINING',
-  'ANY_DEFINING',
-  'NONE_DEFINING',
-  'UNDEFINED'
+  ALL_DEFINING,
+  ANY_DEFINING,
+  NONE_DEFINING,
+  UNDEFINED
 }
 
 export enum AttributeDataType {

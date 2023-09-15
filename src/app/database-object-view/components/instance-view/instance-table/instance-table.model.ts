@@ -12,7 +12,8 @@ import { SchemaAttribute } from "src/app/core/models/reactome-schema.model";
  */
 export interface AttributeValue {
     attribute: SchemaAttribute,
-    value: any
+    value: any,
+    index?: number // index of the value for an multi-valued slot
 }
 
 /**
@@ -26,9 +27,10 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
 
     override connect(): Observable<AttributeValue[]> {
         const attributeValues: AttributeValue[] = [];
-        if (this.instance) {
-            for (let attribute of this.instance.schemaClass?.attributes!) {
-                let value = this.instance.attributes?.get(attribute.name);
+        // This is weird. Not sure why. Just manually check here
+        if (this.instance?.attributes) {
+            for (let attribute of this.instance!.schemaClass!.attributes!) {
+                let value = this.instance!.attributes!.get(attribute.name);
                 const attributeValue = {
                     attribute: attribute,
                     value: value

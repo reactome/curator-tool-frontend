@@ -32,6 +32,7 @@ export class DataService {
    * @param className
    * @returns 
    */
+  //TODO: For some reason, it is very slow to fetch class "Species". Need to find why!
   fetchSchemaClass(className: string): Observable<SchemaClass> {
     // Check cached results first
     if (this.name2SchemaClass.has(className)) {

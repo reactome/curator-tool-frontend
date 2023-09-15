@@ -21,7 +21,10 @@
         <!-- <app-instance-table-row-element [elementValue]="element.value" [elementType]="element.type"
           [className]="element.javaType" [category]="element?.category" [key]="element.name"
           (getClassNameEvent)="getClassName($event)" (getNewValueEvent)="setNewValue($event)"> -->
-        <app-instance-table-row-element [attribute]="element.attribute" [value]="element.value" />
+        <app-instance-table-row-element 
+        [attribute]="element.attribute" 
+        [value]="element.value" 
+        (newValueEvent)="onNewValue($event)"/>
       </ng-container>
 
       <ng-container *ngIf="element.attribute.cardinality === '+'">
@@ -29,8 +32,11 @@
           [elementType]="element.type" [className]="element.javaType" [key]="element.key"
           (getClassNameEvent)="getClassName($event)" (getNewValueEvent)="setNewValue($event)">
         </app-instance-table-row-element> -->
-        <app-instance-table-row-element *ngFor="let object of element.value" [attribute]="element.attribute"
-          [value]="object" />
+        <app-instance-table-row-element *ngFor="let object of element.value; let i = index" 
+          [attribute]="element.attribute"
+          [value]="object"
+          [index]="i"
+          (newValueEvent)="onNewValue($event)" />
       </ng-container>
     </td>
   </ng-container>

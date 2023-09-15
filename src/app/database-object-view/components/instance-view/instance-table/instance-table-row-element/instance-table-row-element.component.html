@@ -1,43 +1,39 @@
 <ng-container [ngSwitch]="attribute?.type">
-  <ng-template [ngSwitchCase]="dataType.BOOLEAN">
-    <mat-slide-toggle [(ngModel)]="value" color="primary"
-                      disabled="{{isDisabled}}"
-                      required="{{isRequired}}"
-                      (change)="onChange()">
+  <ng-template [ngSwitchCase]="DATA_TYPES.BOOLEAN">
+    <mat-slide-toggle [(ngModel)]="value" color="primary" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
+      required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
+      (change)="onChange()">
     </mat-slide-toggle>
   </ng-template>
-  <ng-template [ngSwitchCase]="dataType.STRING">
+  <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
     <mat-form-field appearance="fill" subscriptSizing="dynamic" style="width: 100%; white-space: normal;">
-      <input [(ngModel)]="value!" matInput type="text"
-             disabled="{{isDisabled}}"
-             required="{{isRequired}}"
-             (change)="onChange()">
+      <input [(ngModel)]="value!" matInput type="text" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
+        required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
+        (change)="onChange()">
     </mat-form-field>
   </ng-template>
 
-  <ng-template [ngSwitchCase]="dataType.INTEGER">
+  <ng-template [ngSwitchCase]="DATA_TYPES.INTEGER">
     <mat-form-field appearance="fill" subscriptSizing="dynamic" style="width: 100%">
-      <input [(ngModel)]="value!" matInput type="number"
-             disabled="{{isDisabled}}"
-             required="{{isRequired}}"
-             (change)="onChange()">
+      <input [(ngModel)]="value!" matInput type="number" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
+        required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
+        (change)="onChange()">
     </mat-form-field>
   </ng-template>
 
-  <ng-template [ngSwitchCase]="dataType.FLOAT">
+  <ng-template [ngSwitchCase]="DATA_TYPES.FLOAT">
     <mat-form-field appearance="fill" subscriptSizing="dynamic" style="width: 100%">
-      <input [(ngModel)]="value!"
-             matInput type="number"
-             [disabled]="isDisabled"
-             [required]="isRequired"
-             (change)="onChange()">
+      <input [(ngModel)]="value!" matInput type="number" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
+        required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
+        (change)="onChange()">
     </mat-form-field>
   </ng-template>
 
-  <ng-template [ngSwitchCase]="dataType.INSTANCE">
+  <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
+    <!-- TODO: Also need to determine if it is required or disabled-->
     <ng-container *ngIf="value !== undefined">
       <a routerLink="/instance_view/{{value.dbId}}" (click)="onClick()">
-        {{value.displayName}}  [{{value.dbId}}]</a><br>
+        {{value.displayName}} [{{value.dbId}}]</a><br>
     </ng-container>
   </ng-template>
 </ng-container>
