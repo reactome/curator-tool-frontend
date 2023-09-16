@@ -5,7 +5,7 @@ import {DatabaseObjectEffects} from './state/instance.effects';
 import {EffectsModule} from '@ngrx/effects';
 import {StoreModule} from '@ngrx/store';
 import {databaseObjectReducer, instanceReducer} from './state/instance.reducers';
-import {ActionMenuComponent} from './components/action-menu/action-menu.component';
+import {ActionMenuComponent} from './components/instance-view/instance-table/action-menu/action-menu.component';
 import {DatabaseObjectRoutingModule} from './instance-routing.module';
 import {SharedModule} from '../shared/shared.module';
 import {InstanceTableRowElementComponent} from './components/instance-view/instance-table/instance-table-row-element/instance-table-row-element.component';

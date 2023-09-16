@@ -1,10 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from "@angular/router";
-import { DatabaseObject } from "../../../core/models/database-object-attribute.model";
 import { Store } from "@ngrx/store";
-import { DatabaseObjectActions, InstanceActions } from "../../state/instance.actions";
-import { selectDatabaseObjectData } from "../../state/instance.selectors";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { DatabaseObject } from "../../../core/models/database-object-attribute.model";
+import { InstanceActions } from "../../state/instance.actions";
 import { selectViewInstance } from '../../state/instance.selectors';
 
 @Component({

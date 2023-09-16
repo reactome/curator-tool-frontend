@@ -1,22 +1,17 @@
 <mat-action-list class="action-menu" cdkMenu *ngIf="!showPanel">
   <button mat-list-item>Delete</button>
-  <button mat-list-item (click)="newDatabaseObject()">Add
-  </button>
+  <button mat-list-item (click)="newDatabaseObject()">Add</button>
   <button mat-list-item (click)="onSubmit()">Test Add</button>
   <button mat-list-item>Edit</button>
 </mat-action-list>
 
 <div *ngIf="showPanel">
-  <button mat-button class="close-icon"
-          (click)="newDatabaseObject()"
-          [mat-dialog-close]="true">
+  <button mat-button class="close-icon" (click)="newDatabaseObject()" [mat-dialog-close]="true">
     <mat-icon>close</mat-icon>
   </button>
   <!--  TODO: Add the schema class dropdown menu-->
-  <app-instance-table
-    [className]="className">
+  <app-instance-table [className]="className">
   </app-instance-table>
-  <button mat-raised-button style="position: absolute; right: 150px;"
-          (click)="onSubmit()">Submit
+  <button mat-raised-button style="position: absolute; right: 150px;" (click)="onSubmit()">Submit
   </button>
 </div>

@@ -5,6 +5,7 @@
       (change)="onChange()">
     </mat-slide-toggle>
   </ng-template>
+
   <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
     <mat-form-field appearance="fill" subscriptSizing="dynamic" style="width: 100%; white-space: normal;">
       <input [(ngModel)]="value!" matInput type="text" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
@@ -32,7 +33,7 @@
   <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
     <!-- TODO: Also need to determine if it is required or disabled-->
     <ng-container *ngIf="value !== undefined">
-      <a routerLink="/instance_view/{{value.dbId}}" (click)="onClick()">
+      <a routerLink="/instance_view/{{value.dbId}}">
         {{value.displayName}} [{{value.dbId}}]</a><br>
     </ng-container>
   </ng-template>

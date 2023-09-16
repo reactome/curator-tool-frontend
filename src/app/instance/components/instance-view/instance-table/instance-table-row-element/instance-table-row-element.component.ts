@@ -17,7 +17,6 @@ export class InstanceTableRowElementComponent {
   @Input() attribute: SchemaAttribute | undefined = undefined;
   @Input() value: any; 
   @Input() index: number = 0; // The position for a value in multi-slot
-  @Output() getClassNameEvent = new EventEmitter<string>();
   @Output() newValueEvent = new EventEmitter<AttributeValue>();
 
   // So that we can use it in the template
@@ -27,18 +26,7 @@ export class InstanceTableRowElementComponent {
   constructor(private store: Store) {
   }
 
-  onClick() {
-    this.store.dispatch(SchemaClassTableActions.get({className: this.attribute?.name ?? ''}));
-    // this.getClassNameEvent.emit(this.elementValue.displayName);
-  }
-
   onChange() {
-    // this.databaseObject.key = this.key;
-    // this.databaseObject.type = this.elementType;
-    // this.databaseObject.value = this.elementValue;
-    // this.databaseObject.javaType = this.elementType;
-    // console.info(this.databaseObject);
-    // Create a new AttributeValue to fire
     let attributeValue = {
       attribute: this.attribute!,
       value: this.value,

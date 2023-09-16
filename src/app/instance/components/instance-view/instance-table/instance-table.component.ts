@@ -15,6 +15,9 @@ import {
 } from '../../../state/instance.selectors';
 import { AttributeValue, InstanceDataSource } from './instance-table.model';
 
+/**
+ * This is the actual table component to show the content of an Instance. 
+ */
 @Component({
   selector: 'app-instance-table',
   templateUrl: './instance-table.component.html',
@@ -151,9 +154,8 @@ export class InstanceTableComponent implements OnInit, AfterViewInit {
             }
           );
       }
-
       // otherwise a blank table for the schema is created
-      if (params['className']) {
+      else if (params['className']) {
         this.className = params['className'];
         console.log(this.className)
         this.addRelationshipEvent.emit(this.className);
