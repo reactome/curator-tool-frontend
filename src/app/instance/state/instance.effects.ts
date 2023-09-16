@@ -2,12 +2,12 @@ import {Injectable} from "@angular/core";
 import {Actions, createEffect, ofType} from "@ngrx/effects";
 import {catchError, EMPTY, exhaustMap, map, merge, mergeMap, Observable, of, tap, withLatestFrom} from "rxjs";
 import {DataService} from "src/app/core/services/data.service";
-import {DatabaseObjectActions, InstanceActions} from "./database-object.actions";
+import {DatabaseObjectActions, InstanceActions} from "./instance.actions";
 import {TypedAction} from "@ngrx/store/src/models";
 import {SchemaClassTableActions} from "../../schema-class-table/state/schema-class-table.actions";
 import {toClassName} from "../../core/models/schema-class-attribute-data.model";
 import {Store} from "@ngrx/store";
-import {selectDatabaseObjectData, selectDatabaseObjectState} from "./database-object.selectors";
+import {selectDatabaseObjectData, selectDatabaseObjectState} from "./instance.selectors";
 
 @Injectable()
 export class DatabaseObjectEffects {

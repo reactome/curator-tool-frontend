@@ -17,7 +17,7 @@ const routes: Routes = [
   {
     path: "instance_view",
     loadChildren: () =>
-      import("./database-object-view/database-object.module").then((m) =>
+      import("./instance/instance.module").then((m) =>
       m.DatabaseObjectModule),
   }
 ];

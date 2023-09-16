@@ -7,12 +7,12 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { SchemaClassInstanceData } from 'src/app/core/models/schema-class-entry-data.model';
 import { DatabaseObject } from "../../../../core/models/database-object-attribute.model";
 import { SchemaClassTableActions } from "../../../../schema-class-table/state/schema-class-table.actions";
-import { DatabaseObjectActions } from '../../../state/database-object.actions';
+import { DatabaseObjectActions } from '../../../state/instance.actions';
 import {
   selectDatabaseObjectData,
   selectSchemaClassArray,
   selectSchemaClassAttributes
-} from '../../../state/database-object.selectors';
+} from '../../../state/instance.selectors';
 import { AttributeValue, InstanceDataSource } from './instance-table.model';
 
 @Component({

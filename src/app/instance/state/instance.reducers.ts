@@ -1,6 +1,6 @@
 import { createReducer, on } from "@ngrx/store";
 import { DatabaseObject } from "src/app/core/models/database-object-attribute.model";
-import { DatabaseObjectActions, InstanceActions } from "./database-object.actions";
+import { DatabaseObjectActions, InstanceActions } from "./instance.actions";
 import { createEntityAdapter, EntityState } from "@ngrx/entity";
 import { EMPTY } from "rxjs";
 import { Instance } from "src/app/core/models/reactome-instance.model";

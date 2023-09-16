@@ -1,5 +1,5 @@
 import {createFeatureSelector, createSelector, Store} from "@ngrx/store";
-import {DatabaseObjectState} from "./database-object.reducers"
+import {DatabaseObjectState} from "./instance.reducers"
 import {selectSchemaClassDataState} from "src/app/schema-class-table/state/schema-class-table.selectors";
 import {SchemaClassInstanceData, toDataType} from "src/app/core/models/schema-class-entry-data.model";
 import {toClassName} from "src/app/core/models/schema-class-attribute-data.model";

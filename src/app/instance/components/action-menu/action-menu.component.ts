@@ -1,11 +1,11 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {map} from "rxjs";
 import {toClassName} from "../../../core/models/schema-class-attribute-data.model";
-import {DatabaseObjectActions} from "../../state/database-object.actions";
+import {DatabaseObjectActions} from "../../state/instance.actions";
 import {Store} from "@ngrx/store";
 import {DatabaseObject, Type} from "../../../core/models/database-object-attribute.model";
 import {DataService} from "../../../core/services/data.service";
-import {selectDatabaseObjectData} from "../../state/database-object.selectors";
+import {selectDatabaseObjectData} from "../../state/instance.selectors";
 import {Router} from "@angular/router";
 import {SchemaClassTableActions} from "../../../schema-class-table/state/schema-class-table.actions";
 

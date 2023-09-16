@@ -32,7 +32,6 @@ export class DataService {
    * @param className
    * @returns 
    */
-  //TODO: For some reason, it is very slow to fetch class "Species". Need to find why!
   fetchSchemaClass(className: string): Observable<SchemaClass> {
     // Check cached results first
     if (this.name2SchemaClass.has(className)) {
@@ -45,7 +44,7 @@ export class DataService {
           // console.log("fetchSchemaClass:");
           // console.log(data);
           // convert data to schemaClass
-          let schemaCls = this.convertToSchemaClass(className, data);
+        let schemaCls = this.convertToSchemaClass(className, data);
           this.name2SchemaClass.set(schemaCls.name, schemaCls);
           return schemaCls;
         }),
@@ -142,6 +141,8 @@ export class DataService {
    * An Instance object needs to have its SchemaClass loaded first. Therefore,
    * this function makes two calls: 1). Get the instance first; 2). Get the SchemaClass
    * for the instance. Both of them may be cached in this object.
+   * Note: fetch homo sapien (DBID = 48887) is very slow, most likely caused by the many references
+   * This slowness is not caused by loading the Species schema class!
    * @param dbId 
    */
   fetchInstance(dbId: number): Observable<Instance> {

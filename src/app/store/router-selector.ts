@@ -1,6 +1,6 @@
 import * as fromRouter from '@ngrx/router-store';
 import {createFeatureSelector, createSelector} from "@ngrx/store";
-import {selectSchemaClassArray} from "../database-object-view/state/database-object.selectors";
+import {selectSchemaClassArray} from "../instance/state/instance.selectors";
 
 export interface State {
   router: fromRouter.RouterReducerState<any>;
