@@ -1,0 +1,7 @@
+<mat-action-list class="action-menu" cdkMenu *ngIf="!hidePanel">
+  <button mat-list-item (click)="onClick(EDIT_ACTION.ADD_NEW)">Add via Creation</button>
+  <button mat-list-item (click)="onClick(EDIT_ACTION.ADD_VIA_SELECT)">Add via Selection</button>
+  <button mat-list-item (click)="onClick(EDIT_ACTION.DELETE)">Delete</button>
+  <button mat-list-item (click)="onClick(EDIT_ACTION.EDIT)">Edit</button>
+  <button mat-list-item (click)="onClick(EDIT_ACTION.TEST_DELETE)">Test Add</button>
+</mat-action-list>

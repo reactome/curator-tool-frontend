@@ -4,7 +4,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ActivatedRoute } from "@angular/router";
 import { Store } from "@ngrx/store";
-import { DatabaseObjectActions } from "../../state/instance.actions";
+import { DatabaseObjectActions } from "../../../state/instance.actions";
 
 @Component({
   selector: 'app-bread-crumb',

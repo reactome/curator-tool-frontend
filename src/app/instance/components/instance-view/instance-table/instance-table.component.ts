@@ -13,7 +13,7 @@ import {
   selectSchemaClassArray,
   selectSchemaClassAttributes
 } from '../../../state/instance.selectors';
-import { AttributeValue, InstanceDataSource } from './instance-table.model';
+import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
 
 /**
  * This is the actual table component to show the content of an Instance. 
@@ -90,22 +90,6 @@ export class InstanceTableComponent implements OnInit, AfterViewInit {
     this.setRowInstance.emit(data)
   }
 
-  onNewValue(data: AttributeValue) {
-    console.debug('onNewValue: ', data);
-    if (data.attribute.cardinality === '1') {
-      this._instance?.attributes!.set(data.attribute.name, data.value);
-    }
-    else { // This should be a list
-      let valueList = this._instance?.attributes!.get(data.attribute.name);
-      if (valueList === undefined) {
-        this._instance?.attributes!.set(data.attribute.name, [data.value]);
-      }
-      else {
-        valueList[data.index!] = data.value;
-      }
-    }
-  }
-
   setNewValue(data: string) {
     // console.debug('setNewValue: ', data);
     // // get the database object from the store
@@ -140,34 +124,82 @@ export class InstanceTableComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    // If the router param is a dbId, perform query for that dbOject,
-    this.route.params.subscribe((params) => {
-      if (params['dbId']) {
-        this.dbId = params['dbId'];
-        this.dbId === '-1' ? this.store.select(selectDatabaseObjectData(this.dbId)) :
-          this.store.dispatch(DatabaseObjectActions.get({dbId: this.dbId}));
-        this.newItemEvent.emit(this.dbId);
-        selectSchemaClassArray(this.store, this.dbId)
-          .subscribe(data => {
-              this.unfilteredData = data;
-              this.dataSource.data = data
-            }
-          );
+    // // If the router param is a dbId, perform query for that dbOject,
+    // this.route.params.subscribe((params) => {
+    //   if (params['dbId']) {
+    //     this.dbId = params['dbId'];
+    //     this.dbId === '-1' ? this.store.select(selectDatabaseObjectData(this.dbId)) :
+    //       this.store.dispatch(DatabaseObjectActions.get({dbId: this.dbId}));
+    //     this.newItemEvent.emit(this.dbId);
+    //     selectSchemaClassArray(this.store, this.dbId)
+    //       .subscribe(data => {
+    //           this.unfilteredData = data;
+    //           this.dataSource.data = data
+    //         }
+    //       );
+    //   }
+    //   // otherwise a blank table for the schema is created
+    //   else if (params['className']) {
+    //     this.className = params['className'];
+    //     console.log(this.className)
+    //     this.addRelationshipEvent.emit(this.className);
+    //     this.store.dispatch(SchemaClassTableActions.get({className: this.className}));
+    //     this.store.select(selectSchemaClassAttributes(this.className))
+    //       .subscribe(data => {
+    //         this.unfilteredData = data;
+    //         this.dataSource.data = data
+    //       })
+    //     console.log('data' + this.dataSource.data);
+    //   }
+    // })
+  }
+
+  onNoInstanceAttributeEdit(data: AttributeValue) {
+    console.debug('onNewValue: ', data);
+    if (data.attribute.cardinality === '1') {
+      this._instance?.attributes?.set(data.attribute.name, data.value);
+    }
+    else { // This should be a list
+      let valueList = this._instance?.attributes!.get(data.attribute.name);
+      if (valueList === undefined) {
+        this._instance?.attributes?.set(data.attribute.name, [data.value]);
       }
-      // otherwise a blank table for the schema is created
-      else if (params['className']) {
-        this.className = params['className'];
-        console.log(this.className)
-        this.addRelationshipEvent.emit(this.className);
-        this.store.dispatch(SchemaClassTableActions.get({className: this.className}));
-        this.store.select(selectSchemaClassAttributes(this.className))
-          .subscribe(data => {
-            this.unfilteredData = data;
-            this.dataSource.data = data
-          })
-        console.log('data' + this.dataSource.data);
+      else {
+        valueList[data.index!] = data.value;
       }
-    })
+    }
+  }
+
+  onInstanceAttributeEdit(attributeValue: AttributeValue) {
+    console.debug("onEdit: ", attributeValue);
+    switch (attributeValue.editAction) {
+      case EDIT_ACTION.DELETE: 
+        this.deleteInstanceAttribute(attributeValue);
+        break;
+      case EDIT_ACTION.ADD_NEW:
+        this.addInstanceAttribute(attributeValue);
+        break;
+      default:
+        console.error("The action doesn't know: ", attributeValue.editAction);
+    }
+  }
+
+  private deleteInstanceAttribute(attributeValue: AttributeValue): void {
+    console.debug('deleteInstanceAttribute: ', attributeValue);
+    if (attributeValue.attribute.cardinality === '1') {
+      // This should not occur. Just in case
+      this._instance?.attributes?.delete(attributeValue.attribute?.name);
+    }
+    else {
+      // This should be a list
+      const valueList: [] = this._instance?.attributes?.get(attributeValue.attribute.name);
+      // Remove the value
+      valueList.splice(attributeValue.index!, 1);
+    }
+  }
+
+  private addInstanceAttribute(attributeValue: AttributeValue): void {
+
   }
 
 }

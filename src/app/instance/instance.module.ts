@@ -1,19 +1,19 @@
-import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {InstanceTableComponent} from './components/instance-view/instance-table/instance-table.component';
-import {DatabaseObjectEffects} from './state/instance.effects';
-import {EffectsModule} from '@ngrx/effects';
-import {StoreModule} from '@ngrx/store';
-import {databaseObjectReducer, instanceReducer} from './state/instance.reducers';
-import {ActionMenuComponent} from './components/instance-view/instance-table/action-menu/action-menu.component';
-import {DatabaseObjectRoutingModule} from './instance-routing.module';
-import {SharedModule} from '../shared/shared.module';
-import {InstanceTableRowElementComponent} from './components/instance-view/instance-table/instance-table-row-element/instance-table-row-element.component';
-import {BreadCrumbComponent} from './components/bread-crumb/bread-crumb.component';
-import {InstanceViewComponent} from './components/instance-view/instance-view.component';
-import {CdkContextMenuTrigger, CdkMenu, CdkMenuItem} from "@angular/cdk/menu";
-import { InstanceActions } from './state/instance.actions';
+import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem } from "@angular/cdk/menu";
+import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
+import { EffectsModule } from '@ngrx/effects';
+import { StoreModule } from '@ngrx/store';
+import { SharedModule } from '../shared/shared.module';
+import { BreadCrumbComponent } from './components/instance-view/bread-crumb/bread-crumb.component';
+import { InstanceTableRowElementComponent } from './components/instance-view/instance-table/instance-table-row-element/instance-table-row-element.component';
+import { InstanceTableComponent } from './components/instance-view/instance-table/instance-table.component';
+import { InstanceViewComponent } from './components/instance-view/instance-view.component';
+import { DatabaseObjectRoutingModule } from './instance-routing.module';
+import { DatabaseObjectEffects } from './state/instance.effects';
+import { databaseObjectReducer, instanceReducer } from './state/instance.reducers';
 import { VIEW_INSTANCE_STATE_NAME } from './state/instance.selectors';
+import { ActionMenuComponent } from "./components/instance-view/instance-table/instance-table-row-element/action-menu/action-menu.component";
+import { MatMenuModule } from "@angular/material/menu";
 
 @NgModule({
   declarations: [

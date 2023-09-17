@@ -14,6 +14,15 @@ export interface AttributeValue {
     attribute: SchemaAttribute,
     value: any,
     index?: number // index of the value for an multi-valued slot
+    editAction?: EDIT_ACTION // May be used to encode editing action: 
+}
+
+export enum EDIT_ACTION {
+    ADD_NEW,
+    ADD_VIA_SELECT,
+    DELETE,
+    EDIT,
+    TEST_DELETE
 }
 
 /**

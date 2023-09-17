@@ -1,6 +1,7 @@
 <ng-container [ngSwitch]="attribute?.type">
   <ng-template [ngSwitchCase]="DATA_TYPES.BOOLEAN">
-    <mat-slide-toggle [(ngModel)]="value" color="primary" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
+    <mat-slide-toggle [(ngModel)]="value!" color="primary"
+      disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
       required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
       (change)="onChange()">
     </mat-slide-toggle>
@@ -32,9 +33,19 @@
 
   <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
     <!-- TODO: Also need to determine if it is required or disabled-->
-    <ng-container *ngIf="value !== undefined">
-      <a routerLink="/instance_view/{{value.dbId}}">
-        {{value.displayName}} [{{value.dbId}}]</a><br>
+    <ng-container *ngIf="value !== undefined; else elseblock">
+      <a routerLink="/instance_view/{{value.dbId}}" [cdkContextMenuTriggerFor]="row_menu">{{value.displayName}}
+        [{{value.dbId}}]</a><br>
     </ng-container>
+    <!-- Add this empty space so that we can pop up the context menu to handle action. 
+    For the time being, the popup works for instance type only. -->
+    <ng-template #elseblock>
+      <!-- Use a customized class to force the empty span to show the menu.-->
+      <span [cdkContextMenuTriggerFor]="row_menu" class="span-menu-trigger"></span>
+    </ng-template>
+  </ng-template>
+
+  <ng-template #row_menu="">
+    <app-action-menu (actionItem)="onEditAction($event)"></app-action-menu>
   </ng-template>
 </ng-container>

@@ -2,6 +2,7 @@ import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {RouterModule, Routes} from '@angular/router';
 import {InstanceViewComponent} from "./components/instance-view/instance-view.component";
+import { MatMenuModule } from '@angular/material/menu';
 
 const routes: Routes = [
   {
