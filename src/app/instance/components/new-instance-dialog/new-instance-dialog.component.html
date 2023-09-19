@@ -1,0 +1,9 @@
+<h2 mat-dialog-title>My Dialog</h2>
+<mat-dialog-content>
+    <h4>{{data.attribute.allowedClases}}</h4>
+  <app-instance-table [instance]="instance"></app-instance-table>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+    <button mat-button [mat-dialog-close]="onOK()" cdkFocusInitial>OK</button>
+    <button mat-button (click)="onCancel()">Cancel</button>
+</mat-dialog-actions>

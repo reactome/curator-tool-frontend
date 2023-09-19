@@ -6,14 +6,8 @@ import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { SchemaClassInstanceData } from 'src/app/core/models/schema-class-entry-data.model';
 import { DatabaseObject } from "../../../../core/models/database-object-attribute.model";
-import { SchemaClassTableActions } from "../../../../schema-class-table/state/schema-class-table.actions";
-import { DatabaseObjectActions } from '../../../state/instance.actions';
-import {
-  selectDatabaseObjectData,
-  selectSchemaClassArray,
-  selectSchemaClassAttributes
-} from '../../../state/instance.selectors';
 import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
+import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
 
 /**
  * This is the actual table component to show the content of an Instance. 
@@ -49,8 +43,8 @@ export class InstanceTableComponent implements OnInit, AfterViewInit {
   _instance?: Instance;
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
-    this.instanceDataSource = new InstanceDataSource(instance);
     this._instance = instance;
+    this.updateTableContent();
   };
   
   @Output() newItemEvent = new EventEmitter<any>();
@@ -62,7 +56,9 @@ export class InstanceTableComponent implements OnInit, AfterViewInit {
   copyDataSource: DatabaseObject[] = [];
   dataSource$: DatabaseObject[] = [];
 
-  constructor(private store: Store, private route: ActivatedRoute) {
+  constructor(private store: Store, 
+    private route: ActivatedRoute,
+    private dialogService: NewInstanceDialogService) {
   }
 
   ngAfterViewInit(): void {
@@ -177,7 +173,7 @@ export class InstanceTableComponent implements OnInit, AfterViewInit {
         this.deleteInstanceAttribute(attributeValue);
         break;
       case EDIT_ACTION.ADD_NEW:
-        this.addInstanceAttribute(attributeValue);
+        this.addNewInstanceAttribute(attributeValue);
         break;
       default:
         console.error("The action doesn't know: ", attributeValue.editAction);
@@ -196,10 +192,33 @@ export class InstanceTableComponent implements OnInit, AfterViewInit {
       // Remove the value
       valueList.splice(attributeValue.index!, 1);
     }
+    this.updateTableContent();
   }
 
-  private addInstanceAttribute(attributeValue: AttributeValue): void {
+  private addNewInstanceAttribute(attributeValue: AttributeValue): void {
+    const matDialogRef = this.dialogService.openDialog(attributeValue);
+    matDialogRef.afterClosed().subscribe(result => {
+      // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
+      // Add the new value
+      if (result === undefined)
+        return; // Do nothing
+      // Check if there is any value
+      let value = this._instance?.attributes?.get(attributeValue.attribute.name);
+      if (value === undefined) {
+        // It should be the first
+        if (attributeValue.attribute.cardinality === '1') {
+          this._instance?.attributes?.set(attributeValue.attribute.name, result);
+        }
+        else {
+          this._instance?.attributes?.set(attributeValue.attribute.name, [result]);
+        }
+      }
+      this.updateTableContent();
+    });
+  }
 
+  private updateTableContent(): void {
+    this.instanceDataSource = new InstanceDataSource(this._instance);
   }
 
 }
