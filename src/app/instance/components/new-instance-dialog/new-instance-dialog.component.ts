@@ -1,12 +1,14 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { DataService } from 'src/app/core/services/data.service';
 import { AttributeValue } from '../instance-view/instance-table/instance-table.model';
-import { Store } from '@ngrx/store';
-import { selectViewInstance } from '../../state/instance.selectors';
 
 /**
  * A dialog component that is used to create a new Instance object.
+ * 
+ * <b>Note</b>: It is just too complexity to use rxjs store to manage new instance creation.
+ * Here, we will use the data service directly. 
  */
 @Component({
   selector: 'app-new-instance-dialog',
@@ -15,16 +17,21 @@ import { selectViewInstance } from '../../state/instance.selectors';
 })
 export class NewInstanceDialogComponent implements OnInit {
   instance: Instance | undefined;
+  // avoid reset the displayed instance
+  private is_assigned: boolean = false;
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: AttributeValue,
+  constructor(@Inject(MAT_DIALOG_DATA) public attriuteValue: AttributeValue,
     public dialogRef: MatDialogRef<NewInstanceDialogComponent>,
-    private store: Store) { }
+    private dataService: DataService) { }
 
   ngOnInit(): void {
-    // Get the view instance to be displayed here
-    this.store.select(selectViewInstance()).subscribe(instance => {
+    // Fire an action to create a new instance.
+    // Use the first allowable schema class for the time being
+    // TODO: Create a list for concrete SchemaClasses only.
+    this.dataService.createNewInstance(this.attriuteValue.attribute.allowedClases![0]).subscribe(instance => {
       this.instance = instance;
-    })
+    }
+    );
   }
 
   onCancel() {
@@ -34,7 +41,8 @@ export class NewInstanceDialogComponent implements OnInit {
   onOK() {
     // Just return the instance newly created. Don't close it. The template
     // will handle close.
-    return this.instance;
+    this.dataService.registerNewInstance(this.instance!);
+    this.dialogRef.close(this.instance);
   }
 
 }

@@ -4,7 +4,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ActivatedRoute } from "@angular/router";
 import { Store } from "@ngrx/store";
-import { DatabaseObjectActions } from "../../../state/instance.actions";
 
 @Component({
   selector: 'app-bread-crumb',
@@ -24,9 +23,7 @@ export class BreadCrumbComponent {
   breadCrumb(menu: any, index: any) {
     this.clickEvent.emit(this.newMenuItem[index]);
     this.dbIdsRemove = this.newMenuItem.slice(index + 1);
-    this.store.dispatch(DatabaseObjectActions.remove({ dbIds: this.dbIdsRemove }));
     this.newMenuItem.splice(index + 1, this.newMenuItem.length);
-
     if (menu[index] && menu[index].items && menu[index].items.length) {
     }
   }

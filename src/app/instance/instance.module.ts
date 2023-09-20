@@ -12,8 +12,8 @@ import { InstanceViewComponent } from './components/instance-view/instance-view.
 import { NewInstanceDialogComponent } from './components/new-instance-dialog/new-instance-dialog.component';
 import { DatabaseObjectRoutingModule } from './instance-routing.module';
 import { DatabaseObjectEffects } from './state/instance.effects';
-import { databaseObjectReducer, instanceReducer } from './state/instance.reducers';
 import { VIEW_INSTANCE_STATE_NAME } from './state/instance.selectors';
+import { viewInstanceReducer } from "./state/instance.reducers";
 
 @NgModule({
   declarations: [
@@ -28,8 +28,7 @@ import { VIEW_INSTANCE_STATE_NAME } from './state/instance.selectors';
     CommonModule,
     DatabaseObjectRoutingModule,
     EffectsModule.forFeature(DatabaseObjectEffects),
-    StoreModule.forFeature('databaseObjectState', databaseObjectReducer),
-    StoreModule.forFeature(VIEW_INSTANCE_STATE_NAME, instanceReducer),
+    StoreModule.forFeature(VIEW_INSTANCE_STATE_NAME, viewInstanceReducer),
     SharedModule,
     CdkContextMenuTrigger,
     CdkMenu,

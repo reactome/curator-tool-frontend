@@ -1,12 +1,10 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
-import { catchError, concat, concatMap, map, Observable, of, throwError } from 'rxjs';
+import { catchError, concatMap, map, Observable, of, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
-import { DatabaseObject } from '../models/database-object-attribute.model';
 import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttribute, SchemaClass } from '../models/reactome-schema.model';
 // import { AttributeDa } from '../models/schema-class-attribute-data.model';
 import { Instance } from "../models/reactome-instance.model";
-import { SchemaClassData } from '../models/schema-class-attribute-data.model';
 
 
 @Injectable({
@@ -23,6 +21,8 @@ export class DataService {
   private id2instance: Map<number, Instance> = new Map<number, Instance>();
   schemaClassDataUrl = `${environment.ApiRoot}/getAttributes/` // TODO: Need to consider using Angular ConfigService!
   entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
+  // Track the negative dbId to be used
+  private nextNewDbId: number = -1;
 
   constructor(private http: HttpClient) {
   }
@@ -44,7 +44,7 @@ export class DataService {
           // console.log("fetchSchemaClass:");
           // console.log(data);
           // convert data to schemaClass
-        let schemaCls = this.convertToSchemaClass(className, data);
+          let schemaCls = this.convertToSchemaClass(className, data);
           this.name2SchemaClass.set(schemaCls.name, schemaCls);
           return schemaCls;
         }),
@@ -168,6 +168,41 @@ export class DataService {
           return throwError(() => err);
         }),
       );
+  }
+
+  /**
+   * Create a new instance for the specified class.
+   */
+  createNewInstance(schemaClassName: string): Observable<Instance> {
+    return this.fetchSchemaClass(schemaClassName).pipe(map((schemaClass: SchemaClass) => {
+      const attributes = new Map();
+      attributes.set('dbId', this.nextNewDbId);
+      this.nextNewDbId -= 1;
+      attributes.set('displayName', 'To be generated');
+      let instance: Instance = {
+        dbId: attributes.get('dbId'),
+        displayName: attributes.get('displayName'),
+        attributes: attributes
+      };
+      instance.schemaClass = schemaClass;
+      this.normalizeAttributes(instance);
+      return instance;
+    }),
+      catchError((err: Error) => {
+        console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
+          panelClass: ['warning-snackbar'],
+          duration: 10000
+        });
+        return throwError(() => err);
+      }),
+    );
+  }
+
+  /**
+   * Register a new instance to the cache.
+   */
+  registerNewInstance(instance: Instance): void {
+    this.id2instance.set(instance.dbId, instance);
   }
 
   /**
