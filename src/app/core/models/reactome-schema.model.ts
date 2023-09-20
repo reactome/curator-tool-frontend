@@ -51,12 +51,3 @@ export enum AttributeDataType {
   INSTANCE
 }
 
-/**
- * A utility function to parse by "." and return the last string
- */
-export function toClassName(props: string) {
-  if (!props) return '';
-  let typeArray = props.split(".");
-  let index = typeArray.length;
-  return typeArray[index - 1];
-}
