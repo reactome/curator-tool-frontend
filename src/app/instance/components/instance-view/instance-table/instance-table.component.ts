@@ -1,8 +1,5 @@
-import { AfterViewInit, Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, Input, ViewChild } from '@angular/core';
 import { MatSort } from "@angular/material/sort";
-import { MatTableDataSource } from "@angular/material/table";
-import { ActivatedRoute } from "@angular/router";
-import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
 import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
@@ -38,10 +35,8 @@ export class InstanceTableComponent {
     this.updateTableContent();
   };
 
-  constructor(private store: Store,
-    private route: ActivatedRoute,
-    private dialogService: NewInstanceDialogService) {
-  }
+  constructor(
+    private dialogService: NewInstanceDialogService) {} // Use a dialog serice to hide the implementation of the dialog.
 
   ngAfterViewInit(): void {
     // this.dataSource.sort = this.sort!;
