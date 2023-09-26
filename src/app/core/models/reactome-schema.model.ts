@@ -24,6 +24,7 @@ export interface SchemaClass {
    * https://github.com/reactome/CuratorTool/blob/master/src/org/gk/schema/GKSchemaClass.java.
    */
   name: string;
+  children?: SchemaClass[]; // Optional for the schema class tree
   attributes?: SchemaAttribute[];
   isAbstract?: boolean; // Default should be false. Therefore this property is optional.
   '@JavaClass'?: string; // Map back to Java.

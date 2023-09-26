@@ -19,10 +19,13 @@ export class DataService {
   private name2SchemaClass: Map<string, SchemaClass> = new Map<string, SchemaClass>();
   // Cache fetched instances
   private id2instance: Map<number, Instance> = new Map<number, Instance>();
-  schemaClassDataUrl = `${environment.ApiRoot}/getAttributes/` // TODO: Need to consider using Angular ConfigService!
-  entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
+  private schemaClassDataUrl = `${environment.ApiRoot}/getAttributes/` // TODO: Need to consider using Angular ConfigService!
+  private entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
+  private schemaClassTreeUrl = `${environment.ApiRoot}/getSchemaClassTree/`;
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
+  // The root class is cached for performance
+  private rootClass: SchemaClass | undefined;
 
   constructor(private http: HttpClient) {
   }
@@ -56,6 +59,34 @@ export class DataService {
           return throwError(() => err);
         }));
   }
+
+  /**
+   * Fetch the schema class tree.
+   * @param className
+   * @returns 
+   */
+  fetchSchemaClassTree(): Observable<SchemaClass> {
+    // Check cached results first
+    if (this.rootClass) {
+      return of(this.rootClass!);
+    }
+    // Otherwise call the restful API
+    return this.http.get<SchemaClass>(this.schemaClassTreeUrl)
+      .pipe(
+        map((data: SchemaClass) => {
+          console.debug("fetchSchemaClassTree:", data);
+          this.rootClass = data;
+          return this.rootClass;
+        }),
+        catchError((err: Error) => {
+          console.log("The schema class tree could not been loaded: \n" + err.message, "Close", {
+            panelClass: ['warning-snackbar'],
+            duration: 10000
+          });
+          return throwError(() => err);
+        }));
+  }
+
 
   /**
    * A helper function to convert a JSON array into a SchemaClass so that it is easier to model.
