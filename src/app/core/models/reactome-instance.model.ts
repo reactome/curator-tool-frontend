@@ -2,7 +2,7 @@
  * This TypeScript file contains TS artfacts which are used to model an instance in the Reactome Schema.
  */
 
-import { SchemaClass } from "./reactome-schema.model";
+import {SchemaClass} from "./reactome-schema.model";
 
 export interface Instance {
   /**
@@ -14,8 +14,23 @@ export interface Instance {
                              // the name of schemaClass to ease the handling.
   schemaClassName?: string; // Hold the class name for the time being
   dbId: number;
-  displayName: string | undefined;
+  displayName: string;
   attributes?: Map<string, any>; // This is optional so that we can have a simple shell instance
   isShell?: boolean; // Check if this is just a shell instance. A shell instance should have both dbId and displayName
   isDirty?: boolean; // Flag if this has been updated.
-} 
+}
+
+
+
+export class InstanceClass implements Instance {
+  public constructor(
+    public dbId: number,
+    public displayName: string = 'This field is auto generated',
+    public schemaClass?: SchemaClass,
+    public schemaClassName?: string,
+    public attributes?: Map<string, any>,
+    public isShell?: boolean,
+    public isDirty?: boolean
+  ) {}
+
+}

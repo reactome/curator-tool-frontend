@@ -1,10 +1,16 @@
-import { HttpClient } from "@angular/common/http";
-import { Injectable } from '@angular/core';
-import { catchError, concatMap, map, Observable, of, throwError } from 'rxjs';
-import { environment } from 'src/environments/environment.dev';
-import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttribute, SchemaClass } from '../models/reactome-schema.model';
+import {HttpClient} from "@angular/common/http";
+import {Injectable} from '@angular/core';
+import {catchError, concatMap, map, Observable, of, throwError} from 'rxjs';
+import {environment} from 'src/environments/environment.dev';
+import {
+  AttributeCategory,
+  AttributeDataType,
+  AttributeDefiningType,
+  SchemaAttribute,
+  SchemaClass
+} from '../models/reactome-schema.model';
 // import { AttributeDa } from '../models/schema-class-attribute-data.model';
-import { Instance } from "../models/reactome-instance.model";
+import {Instance, InstanceClass} from "../models/reactome-instance.model";
 
 
 @Injectable({
@@ -12,7 +18,7 @@ import { Instance } from "../models/reactome-instance.model";
 })
 
 /**
- * This class is used to fetch instance and class definition from the RESTful API. 
+ * This class is used to fetch instance and class definition from the RESTful API.
  */
 export class DataService {
   // Cache fetched SchemaClass objects
@@ -33,7 +39,7 @@ export class DataService {
   /**
    * Fetch the instance data.
    * @param className
-   * @returns 
+   * @returns
    */
   fetchSchemaClass(className: string): Observable<SchemaClass> {
     // Check cached results first
@@ -107,7 +113,7 @@ export class DataService {
         cardinality: properties.cardinality,
         type: this.convertToAttType(properties),
         category: AttributeCategory[categoryKey], // The second element
-        definingType: AttributeDefiningType[definingTypeKey], // Second element 
+        definingType: AttributeDefiningType[definingTypeKey], // Second element
         origin: this.getClassName(properties.origin),
       };
       if (allowedClasses.length > 0) {
@@ -124,8 +130,8 @@ export class DataService {
 
   /**
    * Convert a Java class type into the attribute type (e.g. instance, integer, etc).
-   * @param properties 
-   * @returns 
+   * @param properties
+   * @returns
    */
   private convertToAttType(properties: any): AttributeDataType {
     // We need to determine if this is an instance type or other plain
@@ -174,7 +180,7 @@ export class DataService {
    * for the instance. Both of them may be cached in this object.
    * Note: fetch homo sapien (DBID = 48887) is very slow, most likely caused by the many references
    * This slowness is not caused by loading the Species schema class!
-   * @param dbId 
+   * @param dbId
    */
   fetchInstance(dbId: number): Observable<Instance> {
     // Check cached results first
@@ -238,7 +244,7 @@ export class DataService {
 
   /**
    * Convert a JSON object returned from the RESTful API into an Instance defined in the web front.
-   * @param data 
+   * @param data
    */
   private convertToInstance(data: any): Instance {
     let instance: Instance = {
@@ -263,7 +269,7 @@ export class DataService {
    * Add the SchemaClass to a fetched instance. The schemaclass may be cached or needed
    * to be fetched directly from the backend.
    * @param className
-   * @returns 
+   * @returns
    */
   private handleSchemaClassForInstance(instance: Instance): Observable<Instance> {
     let className: string = instance.schemaClassName!;
@@ -293,40 +299,24 @@ export class DataService {
         continue; // Nothing to do
       if (attribute.cardinality === '1') {
         if (value instanceof Object) {
-          let attributeInstance = {
-            dbId: value.dbId,
-            displayName: value.displayName
-          };
-          id2instance.set(attributeInstance.dbId,
-            attributeInstance);
+          let attributeInstance = new InstanceClass(value.dbId, value.displayName )
+          id2instance.set(attributeInstance.dbId, attributeInstance);
           instance.attributes?.set(attribute.name, attributeInstance);
         }
         else if (typeof value === 'number') {
-          let attributeInstance = {
-            dbId: value,
-            displayName: undefined
-          };
-          instance.attributes?.set(attribute.name, attributeInstance);
+          instance.attributes?.set(attribute.name, new InstanceClass(value));
         }
       }
       else { // This is a list
         let attributeInstanceList: Instance[] = [];
         for (let value1 of value) {
           if (value1 instanceof Object) {
-            let attributeInstance = {
-              dbId: value1.dbId,
-              displayName: value1.displayName
-            };
-            id2instance.set(attributeInstance.dbId,
-              attributeInstance);
+            let attributeInstance = new InstanceClass(value1.dbId, value1.displayName);
+            id2instance.set(attributeInstance.dbId, attributeInstance);
             attributeInstanceList.push(attributeInstance);
           }
           else if (typeof value1 === 'number') {
-            let attributeInstance = {
-              dbId: value1,
-              displayName: undefined
-            };
-            attributeInstanceList.push(attributeInstance);
+            attributeInstanceList.push(new InstanceClass(value1));
           }
         }
         instance.attributes?.set(attribute.name, attributeInstanceList);
