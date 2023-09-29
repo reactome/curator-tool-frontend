@@ -18,3 +18,9 @@
 
 .mat-tree-node { min-height: 20px }
 
+div {
+  height: 700px;
+  width: 250px;
+  border: 1px solid black;
+  overflow: scroll;
+}

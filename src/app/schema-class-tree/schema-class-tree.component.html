@@ -1,5 +1,4 @@
-<!--<cdk-virtual-scroll-viewport itemSize="48" style="height: 200px;">-->
-<!--  <ng-container *cdkVirtualFor="let item of dataSource"></ng-container>-->
+<div>
   <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
     <!-- This is the tree node template for leaf nodes -->
     <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding class="schema_class_text" matTreeNodePaddingIndent="20">
@@ -10,5 +9,4 @@
       {{node.name}}
     </mat-tree-node>
   </mat-tree>
-<!--</cdk-virtual-scroll-viewport>-->
-
+</div>

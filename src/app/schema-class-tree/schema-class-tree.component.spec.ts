@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { SchemaPanelComponent } from './schema-panel.component';
+import { SchemaClassTreeComponent } from './schema-class-tree.component';
 
 describe('SchemaPanelComponent', () => {
-  let component: SchemaPanelComponent;
-  let fixture: ComponentFixture<SchemaPanelComponent>;
+  let component: SchemaClassTreeComponent;
+  let fixture: ComponentFixture<SchemaClassTreeComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ SchemaPanelComponent ]
+      declarations: [ SchemaClassTreeComponent ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(SchemaPanelComponent);
+    fixture = TestBed.createComponent(SchemaClassTreeComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

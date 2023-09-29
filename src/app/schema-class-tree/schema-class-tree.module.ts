@@ -1,10 +1,14 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SchemaClassTreeComponent } from './schema-class-tree.component';
 import { MaterialModule } from '../material/material.module';
 import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} from "@angular/cdk/scrolling";
 
+
+
 @NgModule({
-  declarations: [],
+  declarations: [
+    SchemaClassTreeComponent],
   imports: [
     CommonModule,
     MaterialModule,
@@ -12,6 +16,6 @@ import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} fr
     CdkFixedSizeVirtualScroll,
     CdkVirtualForOf
   ],
-    exports: [MaterialModule]
+  exports: [MaterialModule, SchemaClassTreeComponent]
 })
-export class SharedModule { }
+export class SchemaClassTreeModule { }
