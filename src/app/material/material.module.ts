@@ -18,6 +18,7 @@ import {MatCardModule} from "@angular/material/card";
 import {MatAutocompleteModule} from "@angular/material/autocomplete";
 import {MatRadioModule} from "@angular/material/radio";
 import {MatCheckboxModule} from "@angular/material/checkbox";
+import {MatTreeModule} from "@angular/material/tree";
 
 @NgModule({
   declarations: [],
@@ -41,7 +42,8 @@ import {MatCheckboxModule} from "@angular/material/checkbox";
     MatCardModule,
     MatAutocompleteModule,
     MatRadioModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatTreeModule
   ],
   exports: [
     MatTableModule,
@@ -62,7 +64,8 @@ import {MatCheckboxModule} from "@angular/material/checkbox";
     MatCardModule,
     MatAutocompleteModule,
     MatRadioModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatTreeModule
   ]
 })
 export class MaterialModule { }

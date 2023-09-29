@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { SchemaPanelComponent } from './layout/schema-panel/schema-panel.component';
 import { PipeNameComponent } from './pipes/pipe-name/pipe-name.component';
 import { MaterialModule } from '../material/material.module';
+import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} from "@angular/cdk/scrolling";
 
 
 
@@ -13,8 +14,11 @@ import { MaterialModule } from '../material/material.module';
   ],
   imports: [
     CommonModule,
-    MaterialModule
+    MaterialModule,
+    CdkVirtualScrollViewport,
+    CdkFixedSizeVirtualScroll,
+    CdkVirtualForOf
   ],
-  exports: [MaterialModule]
+    exports: [MaterialModule, SchemaPanelComponent]
 })
 export class SharedModule { }

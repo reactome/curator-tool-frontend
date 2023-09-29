@@ -1,17 +1,13 @@
-<h2 mat-dialog-title>Create a New Instance</h2>
+<h2 class="dialog_title" mat-dialog-title cdkdraghandle>Create a New Instance</h2>
 <mat-dialog-content>
-  <!--  <button mat-button [matMenuTriggerFor]="menu">-->
-  <!--    {{attriuteValue.attribute.allowedClases}}-->
-  <!--  </button>-->
-  <button mat-icon-button color="primary" [matMenuTriggerFor]="menu">
-    <mat-icon color="accent">filter_alt</mat-icon>
-    {{attriuteValue.attribute.allowedClases}}
-  </button>
-  <mat-menu #menu="matMenu">
-    <button mat-menu-item>Complex</button>
-    <button mat-menu-item>Entity Set</button>
-    <button mat-menu-item>Polymer</button>
-  </mat-menu>
+  <mat-label>Select a Schema Class: </mat-label>
+  <mat-select [(value)]="selected" class="drop_down">
+<!--   TODO: Check on touchscreen if touch works for 'click' event -->
+    <mat-option (click)="onSelectionChange()" *ngFor="let schemaClass of schemaClasses" [value]="schemaClass">
+      {{schemaClass}}
+    </mat-option>
+  </mat-select>
+
   <app-instance-table [instance]="instance"></app-instance-table>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

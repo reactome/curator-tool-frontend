@@ -10,7 +10,7 @@ import {
   SchemaClass
 } from '../models/reactome-schema.model';
 // import { AttributeDa } from '../models/schema-class-attribute-data.model';
-import {Instance, InstanceClass} from "../models/reactome-instance.model";
+import {Instance} from "../models/reactome-instance.model";
 
 
 @Injectable({
@@ -69,7 +69,7 @@ export class DataService {
   /**
    * Fetch the schema class tree.
    * @param className
-   * @returns 
+   * @returns
    */
   fetchSchemaClassTree(): Observable<SchemaClass> {
     // Check cached results first
@@ -299,24 +299,24 @@ export class DataService {
         continue; // Nothing to do
       if (attribute.cardinality === '1') {
         if (value instanceof Object) {
-          let attributeInstance = new InstanceClass(value.dbId, value.displayName )
+          let attributeInstance = new Instance(value.dbId, value.displayName )
           id2instance.set(attributeInstance.dbId, attributeInstance);
           instance.attributes?.set(attribute.name, attributeInstance);
         }
         else if (typeof value === 'number') {
-          instance.attributes?.set(attribute.name, new InstanceClass(value));
+          instance.attributes?.set(attribute.name, new Instance(value));
         }
       }
       else { // This is a list
         let attributeInstanceList: Instance[] = [];
         for (let value1 of value) {
           if (value1 instanceof Object) {
-            let attributeInstance = new InstanceClass(value1.dbId, value1.displayName);
+            let attributeInstance = new Instance(value1.dbId, value1.displayName);
             id2instance.set(attributeInstance.dbId, attributeInstance);
             attributeInstanceList.push(attributeInstance);
           }
           else if (typeof value1 === 'number') {
-            attributeInstanceList.push(new InstanceClass(value1));
+            attributeInstanceList.push(new Instance(value1));
           }
         }
         instance.attributes?.set(attribute.name, attributeInstanceList);
@@ -357,4 +357,5 @@ export class DataService {
         return data;
       }));
   }
+
 }

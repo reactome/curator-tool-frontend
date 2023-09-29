@@ -6,9 +6,9 @@ import { AttributeValue } from '../instance-view/instance-table/instance-table.m
 
 /**
  * A dialog component that is used to create a new Instance object.
- * 
+ *
  * <b>Note</b>: It is just too complexity to use rxjs store to manage new instance creation.
- * Here, we will use the data service directly. 
+ * Here, we will use the data service directly.
  */
 @Component({
   selector: 'app-new-instance-dialog',
@@ -16,6 +16,8 @@ import { AttributeValue } from '../instance-view/instance-table/instance-table.m
   styleUrls: ['./new-instance-dialog.component.scss']
 })
 export class NewInstanceDialogComponent implements OnInit {
+  selected = this.attriuteValue.attribute.allowedClases![0];
+  schemaClasses: string[] = [this.attriuteValue.attribute.allowedClases![0], "Complex", "Polymer", "Protein"];
   instance: Instance | undefined;
   // avoid reset the displayed instance
   private is_assigned: boolean = false;
@@ -34,6 +36,14 @@ export class NewInstanceDialogComponent implements OnInit {
     );
   }
 
+  onSelectionChange(): void {
+    console.log('selected' + this.selected)
+    this.dataService.createNewInstance(this.selected).subscribe(instance => {
+        this.instance = instance;
+      }
+    );
+  }
+
   onCancel() {
     this.dialogRef.close();
   }
@@ -44,5 +54,4 @@ export class NewInstanceDialogComponent implements OnInit {
     this.dataService.registerNewInstance(this.instance!);
     this.dialogRef.close(this.instance);
   }
-
 }
