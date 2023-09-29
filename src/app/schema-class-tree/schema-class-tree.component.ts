@@ -11,6 +11,7 @@ interface ExampleFlatNode {
   expandable: boolean;
   name: string;
   level: number;
+  count: number;
 }
 @Component({
   selector: 'app-schema-class-tree',
@@ -23,6 +24,7 @@ export class SchemaClassTreeComponent {
     return {
       expandable: !!node.children && node.children.length > 0,
       name: node.name,
+      count: node.count ?? 0,
       level: level,
     };
   };
