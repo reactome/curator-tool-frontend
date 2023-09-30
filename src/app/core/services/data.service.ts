@@ -190,9 +190,9 @@ export class DataService {
     // Fetch from the server
     return this.http.get<Instance>(this.entityDataUrl + `${dbId}`)
       .pipe(
-        concatMap((data: any) => {
-          // Convert the data into an Instance object.
-          let instance: Instance = this.convertToInstance(data);
+        concatMap((data: Instance) => {
+          let instance: Instance = data; // Converted into the Instance object already
+          this.handleInstanceAttributes(instance);
           this.id2instance.set(dbId, instance); // Cache this instance
           return this.handleSchemaClassForInstance(instance);
         }),
@@ -200,7 +200,7 @@ export class DataService {
         catchError((err: Error) => {
           console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
             panelClass: ['warning-snackbar'],
-            duration: 10000
+            duration: 100
           });
           return throwError(() => err);
         }),
@@ -222,13 +222,12 @@ export class DataService {
         attributes: attributes
       };
       instance.schemaClass = schemaClass;
-      this.normalizeAttributes(instance);
       return instance;
     }),
       catchError((err: Error) => {
         console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
           panelClass: ['warning-snackbar'],
-          duration: 10000
+          duration: 100
         });
         return throwError(() => err);
       }),
@@ -243,26 +242,20 @@ export class DataService {
   }
 
   /**
-   * Convert a JSON object returned from the RESTful API into an Instance defined in the web front.
-   * @param data
+   * Attributes returned from the server are kept as JavaScript object since JavaScript really
+   * doesn't care about the type. Therefore, we need to do some converting here.
+   * @param instance
    */
-  private convertToInstance(data: any): Instance {
-    let instance: Instance = {
-      dbId: data['dbId'],
-      displayName: data['displayName'],
-      isShell: false, // Should be fully loaded
-      isDirty: false, // Not edited yet since it is just loaded.
-      schemaClassName: this.getClassName(data['@JavaClass'])
-    };
-    // Hold attribute values for the time being.
-    // Will be refined after get the SchemaClass.
-    let attributes = new Map<string, any>();
-    Object.keys(data).map((key: string) => {
-      const value = data[key];
-      attributes.set(key, value);
-    });
-    instance.attributes = attributes;
-    return instance;
+  private handleInstanceAttributes(instance: Instance): void {
+    if (instance.attributes === undefined)
+      return;
+    let attributeMap = new Map<string, any>();
+    let attributes: any = instance.attributes;
+    Object.keys(attributes).map((key: string) => {
+      const value = attributes[key];
+      attributeMap.set(key, value);
+    })
+    instance.attributes = attributeMap;
   }
 
   /**
@@ -277,87 +270,12 @@ export class DataService {
     return schemaClass$.pipe(
       map((schemaClass: SchemaClass) => {
         instance.schemaClass = schemaClass;
-        this.normalizeAttributes(instance);
         return instance;
       })
     );
   }
 
-  /**
-   * Make sure attributes in the instances are consistent with the defintion in the SchemaClass.
-   * @param instance
-   */
-  private normalizeAttributes(instance: Instance): void {
-    // Since some referred instances may be returned with dbIds only, therefore, two passes
-    // are performed here
-    let id2instance: Map<number, Instance> = new Map<number, Instance>();
-    for (let attribute of instance.schemaClass?.attributes!) {
-      if (attribute.type !== AttributeDataType.INSTANCE)
-        continue;
-      let value = instance.attributes?.get(attribute.name);
-      if (value === undefined)
-        continue; // Nothing to do
-      if (attribute.cardinality === '1') {
-        if (value instanceof Object) {
-          let attributeInstance : Instance = {
-            dbId: value.dbId, 
-            displayName: value.displayName
-          }
-          id2instance.set(attributeInstance.dbId, attributeInstance);
-          instance.attributes?.set(attribute.name, attributeInstance);
-        }
-        else if (typeof value === 'number') {
-          instance.attributes?.set(attribute.name, {dbId: value});
-        }
-      }
-      else { // This is a list
-        let attributeInstanceList: Instance[] = [];
-        for (let value1 of value) {
-          if (value1 instanceof Object) {
-            let attributeInstance: Instance = {
-              dbId: value1.dbId,
-              displayName: value1.displayName
-            };
-            id2instance.set(attributeInstance.dbId, attributeInstance);
-            attributeInstanceList.push(attributeInstance);
-          }
-          else if (typeof value1 === 'number') {
-            attributeInstanceList.push({dbId: value1});
-          }
-        }
-        instance.attributes?.set(attribute.name, attributeInstanceList);
-      }
-    }
-    // The second pass to make sure all instances have displayName setting
-    for (let attribute of instance.schemaClass?.attributes!) {
-      if (attribute.type !== AttributeDataType.INSTANCE)
-        continue;
-      let value = instance.attributes?.get(attribute.name);
-      if (value === undefined)
-        continue; // Nothing to do
-      if (attribute.cardinality === '1') {
-        if (value.displayName === undefined) {
-          let otherValue = id2instance.get(value.dbId);
-          if (otherValue !== undefined) {
-            value.displayName = otherValue.displayName; // Here we use a new copy of instance. Since this is light weight, it should be fine.
-          }
-        }
-      }
-      else { // This is a list
-        for (let value1 of value) {
-          if (value1.displayName === undefined) {
-            let otherValue = id2instance.get(value1.dbId);
-            if (otherValue !== undefined) {
-              value1.displayName = otherValue.displayName;
-            }
-          }
-        }
-      }
-    }
-  }
-
   fetchSchemaClasses(): Observable<string[]> {
-    let stringArray: string[] = [];
     return this.http.get<string[]>(`http://localhost:8080/api/curation/getSchemaClasses`)
       .pipe(map((data: string[]) => {
         return data;
