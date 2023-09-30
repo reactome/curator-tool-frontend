@@ -5,7 +5,7 @@ import { InstanceActions } from "./instance.actions";
 /**
  * Reducer to handle the instance to be viewed.
  */
-export const initialInstance: Instance = new Instance(0);
+export const initialInstance: Instance = {dbId: 0};
 
 export const viewInstanceReducer = createReducer(
   initialInstance,

@@ -299,24 +299,30 @@ export class DataService {
         continue; // Nothing to do
       if (attribute.cardinality === '1') {
         if (value instanceof Object) {
-          let attributeInstance = new Instance(value.dbId, value.displayName )
+          let attributeInstance : Instance = {
+            dbId: value.dbId, 
+            displayName: value.displayName
+          }
           id2instance.set(attributeInstance.dbId, attributeInstance);
           instance.attributes?.set(attribute.name, attributeInstance);
         }
         else if (typeof value === 'number') {
-          instance.attributes?.set(attribute.name, new Instance(value));
+          instance.attributes?.set(attribute.name, {dbId: value});
         }
       }
       else { // This is a list
         let attributeInstanceList: Instance[] = [];
         for (let value1 of value) {
           if (value1 instanceof Object) {
-            let attributeInstance = new Instance(value1.dbId, value1.displayName);
+            let attributeInstance: Instance = {
+              dbId: value1.dbId,
+              displayName: value1.displayName
+            };
             id2instance.set(attributeInstance.dbId, attributeInstance);
             attributeInstanceList.push(attributeInstance);
           }
           else if (typeof value1 === 'number') {
-            attributeInstanceList.push(new Instance(value1));
+            attributeInstanceList.push({dbId: value1});
           }
         }
         instance.attributes?.set(attribute.name, attributeInstanceList);
