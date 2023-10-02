@@ -8,8 +8,8 @@
   <!-- Attribute Value Column -->
   <ng-container matColumnDef="value">
     <th mat-header-cell *matHeaderCellDef> Value
-      <button mat-icon-button color="primary" (click)="showFilter()">
-        <mat-icon color="accent">filter_alt</mat-icon>
+      <button mat-icon-button (click)="showFilter()">
+        <mat-icon>filter_alt</mat-icon>
       </button>
       <section *ngIf="showFilterOptions">
         <mat-checkbox *ngFor="let cat of (categories | keyvalue)" [(ngModel)]="categories[cat.key]"

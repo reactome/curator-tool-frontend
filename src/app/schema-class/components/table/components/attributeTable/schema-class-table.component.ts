@@ -9,7 +9,7 @@ import {EMPTY, Observable} from 'rxjs';
 import {ActivatedRoute} from "@angular/router";
 
 @Component({
-  selector: 'app-schema-class-table',
+  selector: 'app-table',
   templateUrl: './schema-class-table.component.html',
   styleUrls: ['./schema-class-table.component.scss'],
   standalone: true,

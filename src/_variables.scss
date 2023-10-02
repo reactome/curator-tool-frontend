@@ -1,112 +1,105 @@
-//@use "@angular/material" as mat;
-//@use "sass:map";
-//@use "palette";
-//
-//@mixin theme($palettes) {
-//  $primary-palette: map.get($palettes, 'primary-palette');
-//  $secondary-palette: map.get($palettes, 'secondary-palette');
-//  $tertiary-palette: map.get($palettes, 'tertiary-palette');
-//  $error-palette: map.get($palettes, 'error-palette');
-//  $neutral-palette: map.get($palettes, 'neutral-palette');
-//  $neutral-variant-palette: map.get($palettes, 'neutral-variant-palette');
-//
-//
-//  $primary: mat.get-color-from-palette($primary-palette, 600);
-//  $surface: mat.get-color-from-palette($neutral-palette, 010);
-//  :root {
-//    --primary: #{$primary};
-//    --on-primary: #{mat.get-color-from-palette($primary-palette, 000)};
-//    --primary-container: #{mat.get-color-from-palette($primary-palette, 100)};
-//    --on-primary-container: #{mat.get-color-from-palette($primary-palette, 900)};
-//
-//    --secondary: #{ mat.get-color-from-palette($secondary-palette, 600)};
-//    --on-secondary: #{mat.get-color-from-palette($secondary-palette, 000)};
-//    --secondary-container: #{ mat.get-color-from-palette($secondary-palette, 100)};
-//    --on-secondary-container: #{ mat.get-color-from-palette($secondary-palette, 900)};
-//
-//    --tertiary: #{mat.get-color-from-palette($tertiary-palette, 600)};
-//    --on-tertiary: #{mat.get-color-from-palette($tertiary-palette, 000)};
-//    --tertiary-container: #{ mat.get-color-from-palette($tertiary-palette, 100)};
-//    --on-tertiary-container: #{ mat.get-color-from-palette($tertiary-palette, 900)};
-//
-//    --error: #{mat.get-color-from-palette($error-palette, 600)};
-//    --on-error: #{mat.get-color-from-palette($error-palette, 000)};
-//    --error-container: #{ mat.get-color-from-palette($error-palette, 100)};
-//    --on-error-container: #{mat.get-color-from-palette($error-palette, 900)};
-//
-//    --background: #{mat.get-color-from-palette($neutral-palette, 010)};
-//    --on-background: #{mat.get-color-from-palette($neutral-palette, 900)};
-//    --surface: #{$surface};
-//    --on-surface: #{mat.get-color-from-palette($neutral-palette, 900)};
-//
-//    --surface-variant: #{mat.get-color-from-palette($neutral-variant-palette, 100)};
-//    --on-surface-variant: #{mat.get-color-from-palette($neutral-variant-palette, 700)};
-//    --outline: #{mat.get-color-from-palette($neutral-variant-palette, 500)};
-//    --outline-variant: #{mat.get-color-from-palette($neutral-variant-palette, 200)};
-//
-//
-//    --surface1: #{linear-gradient(0, transparentize($primary, 0.95), transparentize($primary, 0.95)), $surface};
-//    --surface2: #{linear-gradient(0, transparentize($primary, 0.92), transparentize($primary, 0.92)), $surface};
-//    --surface3: #{linear-gradient(0, transparentize($primary, 0.89), transparentize($primary, 0.89)), $surface};
-//    --surface4: #{linear-gradient(0, transparentize($primary, 0.88), transparentize($primary, 0.88)), $surface};
-//    --surface5: #{linear-gradient(0, transparentize($primary, 0.86), transparentize($primary, 0.86)), $surface};
-//
-//    --icon-positive: #0C9509;
-//    --hover: rgba(0, 0, 0, 0.04);
-//  }
-//
-//
-//  @media (prefers-color-scheme: dark) {
-//    $primary: mat.get-color-from-palette($primary-palette, 200);
-//    $surface: mat.get-color-from-palette($neutral-palette, 900);
-//
-//    :root {
-//      --primary: #{$primary};
-//      --on-primary: #{mat.get-color-from-palette($primary-palette, 950)};
-//      --primary-container: #{mat.get-color-from-palette($primary-palette, 700)};
-//      --on-primary-container: #{mat.get-color-from-palette($primary-palette, 100)};
-//
-//      --secondary: #{mat.get-color-from-palette($secondary-palette, 200)};
-//      --on-secondary: #{mat.get-color-from-palette($secondary-palette, 800)};
-//      --secondary-container: #{mat.get-color-from-palette($secondary-palette, 700)};
-//      --on-secondary-container: #{mat.get-color-from-palette($secondary-palette, 100)};
-//
-//      --tertiary: #{mat.get-color-from-palette($tertiary-palette, 200)};
-//      --on-tertiary: #{mat.get-color-from-palette($tertiary-palette, 950)};
-//      --tertiary-container: #{mat.get-color-from-palette($tertiary-palette, 700)};
-//      --on-tertiary-container: #{mat.get-color-from-palette($tertiary-palette, 100)};
-//
-//      --error: #{mat.get-color-from-palette($error-palette, 200)};
-//      --on-error: #{mat.get-color-from-palette($error-palette, 800)};
-//      --error-container: #{mat.get-color-from-palette($error-palette, 700)};
-//      --on-error-container: #{mat.get-color-from-palette($error-palette, 100)};
-//
-//      --background: #{mat.get-color-from-palette($neutral-palette, 900)};
-//      --on-background: #{mat.get-color-from-palette($neutral-palette, 100)};
-//      --surface: #{$surface};
-//      --on-surface: #{mat.get-color-from-palette($neutral-palette, 100)};
-//
-//      --surface-variant: #{mat.get-color-from-palette($neutral-variant-palette, 700)};
-//      --on-surface-variant: #{mat.get-color-from-palette($neutral-variant-palette, 200)};
-//      --outline: #{mat.get-color-from-palette($neutral-variant-palette, 400)};
-//      --outline-variant: #{mat.get-color-from-palette($neutral-variant-palette, 700)};
-//
-//      --surface1: #{linear-gradient(0, transparentize($primary, 0.95), transparentize($primary, 0.95)), $surface};
-//      --surface2: #{linear-gradient(0, transparentize($primary, 0.92), transparentize($primary, 0.92)), $surface};
-//      --surface3: #{linear-gradient(0, transparentize($primary, 0.89), transparentize($primary, 0.89)), $surface};
-//      --surface4: #{linear-gradient(0, transparentize($primary, 0.88), transparentize($primary, 0.88)), $surface};
-//      --surface5: #{linear-gradient(0, transparentize($primary, 0.86), transparentize($primary, 0.86)), $surface};
-//
-//      --icon-positive: #51F44D;
-//      --hover: rgba(255, 255, 255, 0.04);
-//
-//    }
-//  }
-//}
+@use "@angular/material" as mat;
+@use "sass:map";
+@use "palette";
+
+@mixin theme($palettes) {
+  $primary-palette: map.get($palettes, 'primary-palette');
+  $secondary-palette: map.get($palettes, 'secondary-palette');
+  $tertiary-palette: map.get($palettes, 'tertiary-palette');
+  $error-palette: map.get($palettes, 'error-palette');
+  $neutral-palette: map.get($palettes, 'neutral-palette');
+  $neutral-variant-palette: map.get($palettes, 'neutral-variant-palette');
 
 
+  $primary: mat.get-color-from-palette($primary-palette, 600);
+  $surface: mat.get-color-from-palette($neutral-palette, 010);
+  :root {
+    --primary: #{$primary};
+    --on-primary: #{mat.get-color-from-palette($primary-palette, 000)};
+    --primary-container: #{mat.get-color-from-palette($primary-palette, 100)};
+    --on-primary-container: #{mat.get-color-from-palette($primary-palette, 900)};
+
+    --secondary: #{ mat.get-color-from-palette($secondary-palette, 600)};
+    --on-secondary: #{mat.get-color-from-palette($secondary-palette, 000)};
+    --secondary-container: #{ mat.get-color-from-palette($secondary-palette, 100)};
+    --on-secondary-container: #{ mat.get-color-from-palette($secondary-palette, 900)};
+
+    --tertiary: #{mat.get-color-from-palette($tertiary-palette, 600)};
+    --on-tertiary: #{mat.get-color-from-palette($tertiary-palette, 000)};
+    --tertiary-container: #{ mat.get-color-from-palette($tertiary-palette, 100)};
+    --on-tertiary-container: #{ mat.get-color-from-palette($tertiary-palette, 900)};
+
+    --error: #{mat.get-color-from-palette($error-palette, 600)};
+    --on-error: #{mat.get-color-from-palette($error-palette, 000)};
+    --error-container: #{ mat.get-color-from-palette($error-palette, 100)};
+    --on-error-container: #{mat.get-color-from-palette($error-palette, 900)};
+
+    --background: #{mat.get-color-from-palette($neutral-palette, 010)};
+    --on-background: #{mat.get-color-from-palette($neutral-palette, 900)};
+    --surface: #{$surface};
+    --on-surface: #{mat.get-color-from-palette($neutral-palette, 900)};
+
+    --surface-variant: #{mat.get-color-from-palette($neutral-variant-palette, 100)};
+    --on-surface-variant: #{mat.get-color-from-palette($neutral-variant-palette, 700)};
+    --outline: #{mat.get-color-from-palette($neutral-variant-palette, 500)};
+    --outline-variant: #{mat.get-color-from-palette($neutral-variant-palette, 200)};
 
 
+    --surface1: #{linear-gradient(0, transparentize($primary, 0.95), transparentize($primary, 0.95)), $surface};
+    --surface2: #{linear-gradient(0, transparentize($primary, 0.92), transparentize($primary, 0.92)), $surface};
+    --surface3: #{linear-gradient(0, transparentize($primary, 0.89), transparentize($primary, 0.89)), $surface};
+    --surface4: #{linear-gradient(0, transparentize($primary, 0.88), transparentize($primary, 0.88)), $surface};
+    --surface5: #{linear-gradient(0, transparentize($primary, 0.86), transparentize($primary, 0.86)), $surface};
+
+    --icon-positive: #0C9509;
+    --hover: rgba(0, 0, 0, 0.04);
+  }
 
 
+  @media (prefers-color-scheme: dark) {
+    $primary: mat.get-color-from-palette($primary-palette, 200);
+    $surface: mat.get-color-from-palette($neutral-palette, 900);
 
+    :root {
+      --primary: #{$primary};
+      --on-primary: #{mat.get-color-from-palette($primary-palette, 950)};
+      --primary-container: #{mat.get-color-from-palette($primary-palette, 700)};
+      --on-primary-container: #{mat.get-color-from-palette($primary-palette, 100)};
+
+      --secondary: #{mat.get-color-from-palette($secondary-palette, 200)};
+      --on-secondary: #{mat.get-color-from-palette($secondary-palette, 800)};
+      --secondary-container: #{mat.get-color-from-palette($secondary-palette, 700)};
+      --on-secondary-container: #{mat.get-color-from-palette($secondary-palette, 100)};
+
+      --tertiary: #{mat.get-color-from-palette($tertiary-palette, 200)};
+      --on-tertiary: #{mat.get-color-from-palette($tertiary-palette, 950)};
+      --tertiary-container: #{mat.get-color-from-palette($tertiary-palette, 700)};
+      --on-tertiary-container: #{mat.get-color-from-palette($tertiary-palette, 100)};
+
+      --error: #{mat.get-color-from-palette($error-palette, 200)};
+      --on-error: #{mat.get-color-from-palette($error-palette, 800)};
+      --error-container: #{mat.get-color-from-palette($error-palette, 700)};
+      --on-error-container: #{mat.get-color-from-palette($error-palette, 100)};
+
+      --background: #{mat.get-color-from-palette($neutral-palette, 900)};
+      --on-background: #{mat.get-color-from-palette($neutral-palette, 100)};
+      --surface: #{$surface};
+      --on-surface: #{mat.get-color-from-palette($neutral-palette, 100)};
+
+      --surface-variant: #{mat.get-color-from-palette($neutral-variant-palette, 800)};
+      --on-surface-variant: #{mat.get-color-from-palette($neutral-variant-palette, 200)};
+      --outline: #{mat.get-color-from-palette($neutral-variant-palette, 400)};
+      --outline-variant: #{mat.get-color-from-palette($neutral-variant-palette, 700)};
+
+      --surface1: #{linear-gradient(0, transparentize($primary, 0.95), transparentize($primary, 0.95)), $surface};
+      --surface2: #{linear-gradient(0, transparentize($primary, 0.92), transparentize($primary, 0.92)), $surface};
+      --surface3: #{linear-gradient(0, transparentize($primary, 0.89), transparentize($primary, 0.89)), $surface};
+      --surface4: #{linear-gradient(0, transparentize($primary, 0.88), transparentize($primary, 0.88)), $surface};
+      --surface5: #{linear-gradient(0, transparentize($primary, 0.86), transparentize($primary, 0.86)), $surface};
+
+      --icon-positive: #51F44D;
+      --hover: rgba(255, 255, 255, 0.04);
+
+    }
+  }
+}

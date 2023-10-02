@@ -5,7 +5,7 @@ import {HttpClientModule} from '@angular/common/http'; // importing the http mod
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { SchemaClassTableModule } from './schema-class-table/schema-class-table.module';
+import { SchemaClassTableModule } from './schema-class/components/table/schema-class-table.module';
 import { DatabaseObjectModule } from './instance/instance.module';
 import { StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
@@ -14,9 +14,9 @@ import { EffectsModule } from '@ngrx/effects';
 import {RouterModule} from "@angular/router";
 import {routerReducer, StoreRouterConnectingModule} from '@ngrx/router-store';
 import {CustomSerializer} from "./store/custom-serializer";
-import {SchemaClassTableComponent} from "./schema-class-table/components/attributeTable/schema-class-table.component";
+import {SchemaClassTableComponent} from "./schema-class/components/table/components/attributeTable/schema-class-table.component";
 import {SharedModule} from "./shared/shared.module";
-import {SchemaClassTreeModule} from "./schema-class-tree/schema-class-tree.module";
+import {SchemaClassTreeModule} from "./schema-class/components/tree/schema-class-tree.module";
 @NgModule({
   declarations: [
     AppComponent,

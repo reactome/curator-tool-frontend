@@ -1,7 +1,7 @@
-.schema_class_text {
-  text-align: left;
-  font-size: 12px;
-}
+//.schema_class_text {
+//  text-align: left;
+//  font-size: 12px;
+//}
 .example-tree-invisible {
   display: none;
 }
@@ -18,9 +18,12 @@
 
 .mat-tree-node { min-height: 20px }
 
-div {
-  height: 700px;
-  width: 250px;
+mat-tree {
+  background: var(--surface2);
+  margin-left: 10px;
+  margin-right: 10px;
+  height: 1000px;
+  width: 300px;
   border: 1px solid black;
   overflow: scroll;
 }

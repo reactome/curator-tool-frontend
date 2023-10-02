@@ -8,7 +8,7 @@
   </ng-template>
 
   <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
-    <mat-form-field appearance="fill" subscriptSizing="dynamic" style="width: 100%; white-space: normal;">
+    <mat-form-field appearance="fill" subscriptSizing="dynamic">
       <input [(ngModel)]="value!" matInput type="text" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
         required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
         (change)="onChange()">
@@ -16,7 +16,7 @@
   </ng-template>
 
   <ng-template [ngSwitchCase]="DATA_TYPES.INTEGER">
-    <mat-form-field appearance="fill" subscriptSizing="dynamic" style="width: 100%">
+    <mat-form-field appearance="fill" subscriptSizing="dynamic">
       <input [(ngModel)]="value!" matInput type="number" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
         required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
         (change)="onChange()">
@@ -24,7 +24,7 @@
   </ng-template>
 
   <ng-template [ngSwitchCase]="DATA_TYPES.FLOAT">
-    <mat-form-field appearance="fill" subscriptSizing="dynamic" style="width: 100%">
+    <mat-form-field appearance="fill" subscriptSizing="dynamic">
       <input [(ngModel)]="value!" matInput type="number" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
         required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
         (change)="onChange()">
@@ -37,7 +37,7 @@
       <a routerLink="/instance_view/{{value.dbId}}" [cdkContextMenuTriggerFor]="row_menu">{{value.displayName}}
         [{{value.dbId}}]</a><br>
     </ng-container>
-    <!-- Add this empty space so that we can pop up the context menu to handle action. 
+    <!-- Add this empty space so that we can pop up the context menu to handle action.
     For the time being, the popup works for instance type only. -->
     <ng-template #elseblock>
       <!-- Use a customized class to force the empty span to show the menu.-->

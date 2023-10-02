@@ -11,6 +11,9 @@
 npm-debug.log
 yarn-error.log
 
+*.css
+*.css.map
+
 # IDEs and editors
 .idea/
 .project

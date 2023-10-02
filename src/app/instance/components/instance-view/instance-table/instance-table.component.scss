@@ -12,14 +12,22 @@
   // border-top: 1px solid transparent;
 }
 
-.mat-mdc-row:nth-child(even) {
-  background-color: white;
-}
-
-.mat-mdc-row:nth-child(odd) {
-  background-color: white;
-}
+//.mat-mdc-row:nth-child(even) {
+//  background: var(--surface1);
+//  color: var(--on-surface);
+//}
+//
+//.mat-mdc-row:nth-child(odd) {
+//  background: var(--surface);
+//  color: var(--on-surface);
+//}
 
 .attColumn {
-  background-color: lightblue;
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+
+}
+
+.mat-icon {
+  color: var(--primary);
 }

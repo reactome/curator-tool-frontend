@@ -1,4 +1,5 @@
 mat-list :hover {
-  background: lightgray;
+  background: var(--primary);
+  color: var(--on-primary);
   cursor: pointer;
 }

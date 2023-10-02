@@ -9,9 +9,9 @@ const routes: Routes = [
     pathMatch: "full",
   },
   {
-    path: "schema-class-table",
+    path: "table",
     loadChildren: () =>
-      import("./schema-class-table/schema-class-table.module").then((m) =>
+      import("./schema-class/components/table/schema-class-table.module").then((m) =>
           m.SchemaClassTableModule),
   },
   {

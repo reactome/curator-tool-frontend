@@ -1,36 +1,36 @@
-//@function modify-background($theme, $background-palette) {
-//  // Replace the background in the color object's background palette.
-//  $theme-color: map-get($theme, color);
-//  $color-background-palette: map-get($theme-color, background);
-//  $color-background-palette: map-merge($color-background-palette, $background-palette);
-//
-//  // Replace the background in the background palette.
-//  $background-palette: map-get($theme, background);
-//  $background-palette: map-merge($background-palette, $background-palette);
-//
-//  // Merge the changes into a new theme.
-//  $modified-theme-color: map-merge($theme-color, (background: $color-background-palette));
-//  $modified-theme: map-merge($theme, (color: $modified-theme-color));
-//  $modified-theme: map-merge($modified-theme, (background: $background-palette));
-//
-//  @return $modified-theme;
-//}
-//
-//
-//@function modify-foreground($theme, $foreground-palette) {
-//  // Replace the foreground in the color object's foreground palette.
-//  $theme-color: map-get($theme, color);
-//  $color-foreground-palette: map-get($theme-color, foreground);
-//  $color-foreground-palette: map-merge($color-foreground-palette, $foreground-palette);
-//
-//  // Replace the foreground in the foreground palette.
-//  $foreground-palette: map-get($theme, foreground);
-//  $foreground-palette: map-merge($foreground-palette, $foreground-palette);
-//
-//  // Merge the changes into a new theme.
-//  $modified-theme-color: map-merge($theme-color, (foreground: $color-foreground-palette));
-//  $modified-theme: map-merge($theme, (color: $modified-theme-color));
-//  $modified-theme: map-merge($modified-theme, (foreground: $foreground-palette));
-//
-//  @return $modified-theme;
-//}
+@function modify-background($theme, $background-palette) {
+  // Replace the background in the color object's background palette.
+  $theme-color: map-get($theme, color);
+  $color-background-palette: map-get($theme-color, background);
+  $color-background-palette: map-merge($color-background-palette, $background-palette);
+
+  // Replace the background in the background palette.
+  $background-palette: map-get($theme, background);
+  $background-palette: map-merge($background-palette, $background-palette);
+
+  // Merge the changes into a new theme.
+  $modified-theme-color: map-merge($theme-color, (background: $color-background-palette));
+  $modified-theme: map-merge($theme, (color: $modified-theme-color));
+  $modified-theme: map-merge($modified-theme, (background: $background-palette));
+
+  @return $modified-theme;
+}
+
+
+@function modify-foreground($theme, $foreground-palette) {
+  // Replace the foreground in the color object's foreground palette.
+  $theme-color: map-get($theme, color);
+  $color-foreground-palette: map-get($theme-color, foreground);
+  $color-foreground-palette: map-merge($color-foreground-palette, $foreground-palette);
+
+  // Replace the foreground in the foreground palette.
+  $foreground-palette: map-get($theme, foreground);
+  $foreground-palette: map-merge($foreground-palette, $foreground-palette);
+
+  // Merge the changes into a new theme.
+  $modified-theme-color: map-merge($theme-color, (foreground: $color-foreground-palette));
+  $modified-theme: map-merge($theme, (color: $modified-theme-color));
+  $modified-theme: map-merge($modified-theme, (foreground: $foreground-palette));
+
+  @return $modified-theme;
+}

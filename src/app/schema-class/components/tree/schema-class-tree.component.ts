@@ -2,8 +2,8 @@ import { Component } from '@angular/core';
 import {FlatTreeControl} from "@angular/cdk/tree";
 import {MatTreeFlatDataSource, MatTreeFlattener} from "@angular/material/tree";
 import {Data} from "@angular/router";
-import {DataService} from "../core/services/data.service";
-import {SchemaClass} from "../core/models/reactome-schema.model";
+import {DataService} from "../../../core/services/data.service";
+import {SchemaClass} from "../../../core/models/reactome-schema.model";
 import {map} from "rxjs";
 
 /** Flat node with expandable and level information */
