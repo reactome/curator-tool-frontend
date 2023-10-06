@@ -1,22 +1,24 @@
-import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
+import {NgModule} from '@angular/core';
+import {BrowserModule} from '@angular/platform-browser';
 import {HttpClientModule} from '@angular/common/http'; // importing the http module
 
-import { AppRoutingModule } from './app-routing.module';
-import { AppComponent } from './app.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { SchemaClassTableModule } from './schema-class/components/table/schema-class-table.module';
-import { DatabaseObjectModule } from './instance/instance.module';
-import { StoreModule } from '@ngrx/store';
-import { StoreDevtoolsModule } from '@ngrx/store-devtools';
-import { environment } from 'src/environments/environment.dev';
-import { EffectsModule } from '@ngrx/effects';
+import {AppRoutingModule} from './app-routing.module';
+import {AppComponent} from './app.component';
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+import {SchemaClassTableModule} from './schema-class/components/table/schema-class-table.module';
+import {DatabaseObjectModule} from './instance/instance.module';
+import {StoreModule} from '@ngrx/store';
+import {StoreDevtoolsModule} from '@ngrx/store-devtools';
+import {environment} from 'src/environments/environment.dev';
+import {EffectsModule} from '@ngrx/effects';
 import {RouterModule} from "@angular/router";
 import {routerReducer, StoreRouterConnectingModule} from '@ngrx/router-store';
 import {CustomSerializer} from "./store/custom-serializer";
-import {SchemaClassTableComponent} from "./schema-class/components/table/components/attributeTable/schema-class-table.component";
+import {
+  SchemaClassTableComponent
+} from "./schema-class/components/table/components/attributeTable/schema-class-table.component";
 import {SharedModule} from "./shared/shared.module";
-import {SchemaClassTreeModule} from "./schema-class/components/tree/schema-class-tree.module";
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -39,9 +41,9 @@ import {SchemaClassTreeModule} from "./schema-class/components/tree/schema-class
       autoPause: true,
     }),
     SharedModule,
-    SchemaClassTreeModule
   ],
   providers: [],
   bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {
+}

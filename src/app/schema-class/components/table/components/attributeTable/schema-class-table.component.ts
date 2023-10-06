@@ -7,6 +7,7 @@ import {selectSchemaClassData} from '../../state/schema-class-table.selectors';
 import {SchemaClassTableActions} from '../../state/schema-class-table.actions';
 import {EMPTY, Observable} from 'rxjs';
 import {ActivatedRoute} from "@angular/router";
+import {SchemaAttribute, SchemaClass} from "../../../../../core/models/reactome-schema.model";
 
 @Component({
   selector: 'app-table',
@@ -17,7 +18,7 @@ import {ActivatedRoute} from "@angular/router";
 })
 export class SchemaClassTableComponent implements OnInit {
   displayedColumns: string[] = ['attributeName', 'cardinality', 'valueType', 'attributeOrigin'];
-  dataSource$: Observable<SchemaClassData[]> = EMPTY;
+  dataSource: SchemaAttribute[] = [];
   clickedRows = new Set<SchemaClassData>();
 
   constructor(
@@ -29,7 +30,11 @@ export class SchemaClassTableComponent implements OnInit {
   ngOnInit(): void {
     this.route.params.subscribe((className) => {
       this.className = className
-      this.dataSource$ = this.store.select(selectSchemaClassData(this.className.className))
+      this.store.select(selectSchemaClassData(this.className.className)).subscribe(schemaClass => {
+        this.dataSource = schemaClass.attributes || [];
+        }
+
+      )
       this.fetchAttributeTableByClassName(this.className.className);
     })
   }

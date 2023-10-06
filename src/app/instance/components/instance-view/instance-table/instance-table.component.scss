@@ -1,9 +1,10 @@
 .demo-table {
   width: 100%;
+  overflow: auto;
 }
 
-.demo-row-is-hovered {
-  font-weight: bold;
+.mat-mdc-row {
+  height: 30px;
 }
 
 .mat-mdc-row:hover .mat-mdc-cell {
@@ -30,4 +31,13 @@
 
 .mat-icon {
   color: var(--primary);
+}
+
+mat-table {
+  height: 500px;
+}
+
+.table-container {
+  height: 712px;
+  overflow: auto;
 }

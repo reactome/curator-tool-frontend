@@ -11,4 +11,14 @@
 
 mat-form-field {
   width: 100%;
+  margin: 0;
+  height: 35px;
+  outline: none;
+}
+
+.input-style {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-size: 14px;
+  width: 100%;
+  line-height: normal;
 }

@@ -1,5 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import {
+  SchemaClassTableComponent
+} from "./schema-class/components/table/components/attributeTable/schema-class-table.component";
 
 const routes: Routes = [
   {
@@ -19,7 +22,11 @@ const routes: Routes = [
     loadChildren: () =>
       import("./instance/instance.module").then((m) =>
       m.DatabaseObjectModule),
-  }
+  },
+  { path: '**',
+    loadChildren: () =>
+      import("./schema-class/components/table/schema-class-table.module").then((m) =>
+        m.SchemaClassTableModule),}
 ];
 
 @NgModule({

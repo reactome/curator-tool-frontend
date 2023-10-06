@@ -8,7 +8,7 @@
   </ng-template>
 
   <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
-    <mat-form-field appearance="fill" subscriptSizing="dynamic">
+    <mat-form-field appearance="fill" subscriptSizing="dynamic" class="input-style">
       <input [(ngModel)]="value!" matInput type="text" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
         required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
         (change)="onChange()">
@@ -16,7 +16,7 @@
   </ng-template>
 
   <ng-template [ngSwitchCase]="DATA_TYPES.INTEGER">
-    <mat-form-field appearance="fill" subscriptSizing="dynamic">
+    <mat-form-field appearance="fill" subscriptSizing="dynamic" class="input-style">
       <input [(ngModel)]="value!" matInput type="number" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
         required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
         (change)="onChange()">
@@ -24,7 +24,7 @@
   </ng-template>
 
   <ng-template [ngSwitchCase]="DATA_TYPES.FLOAT">
-    <mat-form-field appearance="fill" subscriptSizing="dynamic">
+    <mat-form-field appearance="fill" subscriptSizing="dynamic" class="input-style">
       <input [(ngModel)]="value!" matInput type="number" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
         required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
         (change)="onChange()">

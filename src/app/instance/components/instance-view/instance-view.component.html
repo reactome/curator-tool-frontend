@@ -1,7 +1,13 @@
-<app-bread-crumb [newMenuItem]="viewHistory" (clickEvent)="changeTable($event)">
-</app-bread-crumb>
-<h4>
-  <span *ngIf="instance !== undefined">{{instance.schemaClass?.name}}: {{instance.displayName}} [{{instance.dbId}}]</span>
-</h4>
-<app-instance-table [instance]="instance">
-</app-instance-table>
+<div class="position">
+  <app-schema-class-tree></app-schema-class-tree>
+  <div>
+    <app-bread-crumb [newMenuItem]="viewHistory" (clickEvent)="changeTable($event)">
+    </app-bread-crumb>
+    <mat-toolbar class="toolbar">
+    <span *ngIf="instance !== undefined">{{instance.schemaClass?.name}}: {{instance.displayName}} [{{instance.dbId}}
+      ]</span>
+    </mat-toolbar>
+    <app-instance-table [instance]="instance">
+    </app-instance-table>
+  </div>
+</div>

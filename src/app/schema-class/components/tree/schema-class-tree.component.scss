@@ -16,14 +16,18 @@
   display: block;
 }
 
-.mat-tree-node { min-height: 20px }
+.mat-tree-node {
+  min-height: 20px;
+  margin: 6px;
+
+}
 
 mat-tree {
   background: var(--surface2);
-  margin-left: 10px;
   margin-right: 10px;
-  height: 1000px;
+  height: 800px;
   width: 300px;
   border: 1px solid black;
   overflow: scroll;
+  position: sticky;
 }

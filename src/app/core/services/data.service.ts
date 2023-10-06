@@ -32,6 +32,7 @@ export class DataService {
   private nextNewDbId: number = -1;
   // The root class is cached for performance
   private rootClass: SchemaClass | undefined;
+  private schemaClassMap: Map<string, SchemaClass> = new Map<string, SchemaClass>();
 
   constructor(private http: HttpClient) {
   }
@@ -91,6 +92,16 @@ export class DataService {
           });
           return throwError(() => err);
         }));
+  }
+
+  getSchemaClassMap(schemaClass: SchemaClass): Map<string, SchemaClass>{
+    this.schemaClassMap.set(schemaClass.name, schemaClass);
+    if(schemaClass.children){
+      for(let child of schemaClass.children) {
+        this.getSchemaClassMap(child);
+      }
+    }
+      return this.schemaClassMap;
   }
 
 

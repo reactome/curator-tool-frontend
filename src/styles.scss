@@ -10,3 +10,216 @@ a {
 h4 {
   color: var(--surface1)
 }
+
+/* You can add global styles to this file, and also import other style files */
+// TODO: choose custom styles
+html, body {
+  height: 900px;
+  overflow: scroll;
+}
+
+body {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background-color: var(--surface);
+  color: black;
+  margin: 8px;
+}
+
+@media (prefers-color-scheme: light) {
+  body {
+    color: white;
+  }
+}
+
+mat-vertical-stepper, mat-horizontal-stepper {
+  background: transparent !important;
+}
+
+
+.outline {
+  color: var(--outline);
+}
+
+.mdc-tooltip__surface {
+  text-align: justify;
+}
+
+h1 {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+  font-weight: bold !important;
+}
+
+//Width
+
+.width-forty {
+  width: 40%;
+}
+
+.width-fifty {
+  width: 50%;
+}
+
+.width-sixty {
+  width: 60%;
+}
+
+.width-seventy {
+  width: 70%;
+}
+
+.width-eighty {
+  width: 80%;
+}
+
+.width-hundred {
+  width: 100%;
+}
+
+.height-eighty {
+  height: 80%;
+}
+
+.height-hundred {
+  height: 100%;
+}
+
+.relative {
+  position: relative;
+}
+
+.margin-left-10 {
+  margin-left: 10px;
+}
+
+.blue-border {
+  border: 2px solid var(--primary) !important;
+}
+
+/*Fonts*/
+
+.bold {
+  font-weight: 500;
+}
+
+.no-wrap {
+  white-space: nowrap;
+}
+
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.italic {
+  font-style: italic;
+}
+
+.flex {
+  display: flex;
+}
+
+/*Flexbox*/
+.flex-container {
+  display: flex;
+  flex-wrap: wrap;
+
+  &.no-wrap {
+    flex-wrap: nowrap;
+    white-space: inherit;
+  }
+}
+
+.flex-one {
+  flex: 1;
+}
+
+.gap-one {
+  gap: 1em;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.align-start {
+  align-items: start;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-evenly {
+  justify-content: space-evenly;
+}
+
+.horizontal {
+  flex-direction: row;
+}
+
+.vertical {
+  flex-direction: column;
+}
+
+
+//Angular Material
+mat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mat-vertical-content {
+  padding-right: 0 !important;
+}
+
+.expansion-panel-margin {
+  margin-top: 16px !important;
+}
+
+.dataset-card-content {
+  color: var(--primary);
+  //color: black;
+  padding: 10px;
+  margin: 3px !important;
+  border-radius: 10px;
+  border: 1px solid var(--primary);
+}
+
+.dataset-card-content:hover {
+  background: rgba(var(--primary), 0.2);
+  cursor: pointer;
+}
+
+.warning-snackbar {
+  background-color: white;
+  color: coral;
+
+  .mat-simple-snackbar-action {
+    color: black !important;
+  }
+}
+
+
+.error-snackbar {
+  background-color: var(--error-container);
+  color: var(--on-error-container);
+
+  .mat-simple-snackbar-action {
+    color: black !important;
+  }
+}
+
+.mat-snack-bar-container {
+  max-width: 100% !important;
+  //background: white !important;
+
+}

@@ -7,8 +7,8 @@ export interface User {
 
 /**
  * This is just a dummy action list. Clicking any action sends out the clicked menu item
- * for other components to handle. 
- * TODO: See if this menu can be refactored for generic use. 
+ * for other components to handle.
+ * TODO: See if this menu can be refactored for generic use.
  */
 @Component({
   selector: 'app-action-menu',
@@ -24,7 +24,6 @@ export class ActionMenuComponent {
   }
 
   onClick(editAction: EDIT_ACTION) {
-    console.debug('onClick: ', editAction);
     this.actionItem.emit(editAction);
     this.hidePanel = true;
   }

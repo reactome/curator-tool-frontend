@@ -1,11 +1,21 @@
 <h2 class="dialog_title" mat-dialog-title cdkdraghandle>Create a New Instance</h2>
 <mat-dialog-content>
   <mat-label>Select a Schema Class: </mat-label>
-  <mat-select [(value)]="selected" class="drop_down">
+  <mat-select [(value)]="selected" class="drop_down" (selectionChange)="onSelectionChange()">
 <!--   TODO: Check on touchscreen if touch works for 'click' event -->
-    <mat-option (click)="onSelectionChange()" *ngFor="let schemaClass of schemaClasses" [value]="schemaClass">
-      {{schemaClass}}
-    </mat-option>
+    <ng-container *ngIf="groups.length === 1; else multiGroup">
+      <mat-option *ngFor="let value of groups[0].values" [value]="value.name">
+        {{value.name}}
+      </mat-option>
+    </ng-container>
+    <ng-template #multiGroup>
+      <mat-optgroup *ngFor="let group of groups" [label]="group.name">
+        <mat-option *ngFor="let value of group.values" [value]="value.name">
+          {{value.name}}
+        </mat-option>
+      </mat-optgroup>
+    </ng-template>
+
   </mat-select>
 
   <app-instance-table [instance]="instance"></app-instance-table>

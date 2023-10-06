@@ -14,6 +14,7 @@ import { DatabaseObjectRoutingModule } from './instance-routing.module';
 import { DatabaseObjectEffects } from './state/instance.effects';
 import { VIEW_INSTANCE_STATE_NAME } from './state/instance.selectors';
 import { viewInstanceReducer } from "./state/instance.reducers";
+import {SchemaClassTreeModule} from "../schema-class/components/tree/schema-class-tree.module";
 
 @NgModule({
   declarations: [
@@ -32,7 +33,8 @@ import { viewInstanceReducer } from "./state/instance.reducers";
     SharedModule,
     CdkContextMenuTrigger,
     CdkMenu,
-    CdkMenuItem
+    CdkMenuItem,
+    SchemaClassTreeModule
   ],
 })
 export class DatabaseObjectModule {
