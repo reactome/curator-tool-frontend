@@ -3,19 +3,11 @@
   <mat-label>Select a Schema Class: </mat-label>
   <mat-select [(value)]="selected" class="drop_down" (selectionChange)="onSelectionChange()">
 <!--   TODO: Check on touchscreen if touch works for 'click' event -->
-    <ng-container *ngIf="groups.length === 1; else multiGroup">
-      <mat-option *ngFor="let value of groups[0].values" [value]="value.name">
-        {{value.name}}
+    <ng-container>
+      <mat-option *ngFor="let value of candidateClasses" [value]="value">
+        {{value}}
       </mat-option>
     </ng-container>
-    <ng-template #multiGroup>
-      <mat-optgroup *ngFor="let group of groups" [label]="group.name">
-        <mat-option *ngFor="let value of group.values" [value]="value.name">
-          {{value.name}}
-        </mat-option>
-      </mat-optgroup>
-    </ng-template>
-
   </mat-select>
 
   <app-instance-table [instance]="instance"></app-instance-table>

@@ -32,7 +32,7 @@ export class DataService {
   private nextNewDbId: number = -1;
   // The root class is cached for performance
   private rootClass: SchemaClass | undefined;
-  private schemaClassMap: Map<string, SchemaClass> = new Map<string, SchemaClass>();
+  private name2class?: Map<string, SchemaClass>;
 
   constructor(private http: HttpClient) {
   }
@@ -94,16 +94,25 @@ export class DataService {
         }));
   }
 
-  getSchemaClassMap(schemaClass: SchemaClass): Map<string, SchemaClass>{
-    this.schemaClassMap.set(schemaClass.name, schemaClass);
-    if(schemaClass.children){
-      for(let child of schemaClass.children) {
-        this.getSchemaClassMap(child);
-      }
-    }
-      return this.schemaClassMap;
+  getSchemaClass(clsName: string): SchemaClass | undefined {
+    if (this.name2class)
+      return this.name2class.get(clsName);
+    this.name2class = new Map<string, SchemaClass>();
+    if (this.rootClass) 
+      this.buildSchemaClassMap(this.rootClass, this.name2class);
+    else 
+      console.error("The class tree has not been loaded. No map cannot be returned!");
+    return this.name2class.get(clsName);
   }
 
+  private buildSchemaClassMap(schemaClass: SchemaClass, name2class: Map<string, SchemaClass>) {
+    name2class.set(schemaClass.name, schemaClass);
+    if(schemaClass.children){
+      for(let child of schemaClass.children) {
+        this.buildSchemaClassMap(child, name2class);
+      }
+    }
+  }
 
   /**
    * A helper function to convert a JSON array into a SchemaClass so that it is easier to model.
