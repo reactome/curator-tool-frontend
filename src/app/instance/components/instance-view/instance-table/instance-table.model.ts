@@ -37,9 +37,9 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
     override connect(): Observable<AttributeValue[]> {
         const attributeValues: AttributeValue[] = [];
         // This is weird. Not sure why. Just manually check here
-        if (this.instance?.attributes) {
-            for (let attribute of this.instance!.schemaClass!.attributes!) {
-                let value = this.instance!.attributes!.get(attribute.name);
+        if (this.instance?.schemaClass) {
+            for (let attribute of this.instance?.schemaClass?.attributes!) {
+                let value = this.instance!.attributes?.get(attribute.name);
                 const attributeValue = {
                     attribute: attribute,
                     value: value
