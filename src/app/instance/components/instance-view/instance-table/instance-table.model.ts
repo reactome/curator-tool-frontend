@@ -5,16 +5,16 @@
 import { DataSource } from "@angular/cdk/collections";
 import { Observable, of } from "rxjs";
 import { Instance } from "src/app/core/models/reactome-instance.model";
-import { SchemaAttribute } from "src/app/core/models/reactome-schema.model";
+import {AttributeCategory, SchemaAttribute} from "src/app/core/models/reactome-schema.model";
 
 /**
- * Used to encode the data for the attribute value cell. 
+ * Used to encode the data for the attribute value cell.
  */
 export interface AttributeValue {
     attribute: SchemaAttribute,
     value: any,
     index?: number // index of the value for an multi-valued slot
-    editAction?: EDIT_ACTION // May be used to encode editing action: 
+    editAction?: EDIT_ACTION // May be used to encode editing action:
 }
 
 export enum EDIT_ACTION {
@@ -30,7 +30,7 @@ export enum EDIT_ACTION {
  */
 export class InstanceDataSource extends DataSource<AttributeValue> {
 
-    constructor(private instance: Instance | undefined) {
+    constructor(private instance: Instance | undefined, private categories: { [name: string]: boolean }, public sort: boolean) {
         super();
     }
 
@@ -40,11 +40,21 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
         if (this.instance?.attributes) {
             for (let attribute of this.instance!.schemaClass!.attributes!) {
                 let value = this.instance!.attributes!.get(attribute.name);
+              if(this.categories[AttributeCategory[attribute.category]]) {
                 const attributeValue = {
-                    attribute: attribute,
-                    value: value
+                  attribute: attribute,
+                  value: value
                 };
                 attributeValues.push(attributeValue);
+              }
+            }
+
+            //TODO: make this logic better
+            if(this.sort) {
+              attributeValues.sort((a, b) => a.attribute.name.localeCompare(b.attribute.name));
+            }
+            else{
+              attributeValues.sort((a, b) => b.attribute.name.localeCompare(a.attribute.name));
             }
         }
         return of(attributeValues);

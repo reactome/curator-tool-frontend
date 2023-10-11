@@ -3,9 +3,10 @@ import { MatSort } from "@angular/material/sort";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
 import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
+import {AttributeCategory, SchemaAttribute} from "../../../../core/models/reactome-schema.model";
 
 /**
- * This is the actual table component to show the content of an Instance. 
+ * This is the actual table component to show the content of an Instance.
  */
 @Component({
   selector: 'app-instance-table',
@@ -15,20 +16,21 @@ import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-tabl
 export class InstanceTableComponent {
   displayedColumns: string[] = ['name', 'value'];
   showFilterOptions: boolean = false;
-  
+  sortAttNames: boolean = true;
+
+  //TODO: use dictionary
   categories: { [name: string]: boolean } = {
-    "MANDATORY": false,
-    "OPTIONAL": false,
-    "REQUIRED": false,
-    "NOMANUALEDIT": false
+    "MANDATORY": true,
+    "OPTIONAL": true,
+    "REQUIRED": true,
+    "NOMANUALEDIT": true
   };
 
-  @ViewChild(MatSort) sort?: MatSort;
-  
   // The instance to be displayed
-  instanceDataSource: InstanceDataSource = new InstanceDataSource(undefined);
+  instanceDataSource: InstanceDataSource = new InstanceDataSource(undefined, this.categories, this.sortAttNames);
   // Keep it for editing
   _instance?: Instance;
+  unfilteredData?: SchemaAttribute[] = this._instance?.schemaClass?.attributes;
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
     this._instance = instance;
@@ -38,8 +40,10 @@ export class InstanceTableComponent {
   constructor(
     private dialogService: NewInstanceDialogService) {} // Use a dialog serice to hide the implementation of the dialog.
 
+  // @ViewChild(MatSort) sort?: MatSort;
+
   ngAfterViewInit(): void {
-    // this.dataSource.sort = this.sort!;
+     //this.instanceDataSource.sort = this.sort!;
   }
 
   showFilter() {
@@ -48,10 +52,12 @@ export class InstanceTableComponent {
   }
 
   doFilter() {
-    console.log('do filter', this.categories)
-    // this.dataSource.data = Object.values(this.categories).every(selected => !selected) ?
-    //   this.unfilteredData :
-    //   this.unfilteredData.filter(row => this.categories[row.category[1]]);
+    this.updateTableContent();
+  }
+
+  sort() {
+    this.sortAttNames = !this.sortAttNames;
+    this.updateTableContent();
   }
 
   onNoInstanceAttributeEdit(data: AttributeValue) {
@@ -132,7 +138,7 @@ export class InstanceTableComponent {
   }
 
   private updateTableContent(): void {
-    this.instanceDataSource = new InstanceDataSource(this._instance);
+    this.instanceDataSource = new InstanceDataSource(this._instance, this.categories, this.sortAttNames);
   }
 
 }

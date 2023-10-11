@@ -2,6 +2,7 @@
   <!-- This is the tree node template for leaf nodes -->
   <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding class="schema_class_text" matTreeNodePaddingIndent="20">
     {{node.name}} [{{node.count}}]
+      <mat-icon color="primary">add_box</mat-icon>
   </mat-tree-node>
   <!-- This is the tree node template for expandable nodes -->
   <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding class="schema_class_text"

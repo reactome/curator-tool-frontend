@@ -4,6 +4,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ActivatedRoute } from "@angular/router";
 import { Store } from "@ngrx/store";
+import {Instance} from "../../../../core/models/reactome-instance.model";
 
 @Component({
   selector: 'app-bread-crumb',
@@ -11,11 +12,11 @@ import { Store } from "@ngrx/store";
   styleUrls: ['./bread-crumb.component.scss']
 })
 export class BreadCrumbComponent {
-  @Input() newMenuItem: string[] = new Array<string>;
-  @Input() dbIds: string[] = new Array<string>;
-  @Output() clickEvent = new EventEmitter<string>();
+  @Input() newMenuItem: Instance[] = new Array<Instance>;
+  @Input() dbIds: Instance[] = new Array<Instance>;
+  @Output() clickEvent = new EventEmitter<Instance>();
 
-  dbIdsRemove: string[] = new Array<string>;
+  dbIdsRemove: Instance[] = new Array<Instance>;
 
   constructor(private store: Store, private route: ActivatedRoute) {
   }

@@ -15,6 +15,8 @@ import { DatabaseObjectEffects } from './state/instance.effects';
 import { VIEW_INSTANCE_STATE_NAME } from './state/instance.selectors';
 import { viewInstanceReducer } from "./state/instance.reducers";
 import {SchemaClassTreeModule} from "../schema-class/components/tree/schema-class-tree.module";
+import {MatTooltipModule} from "@angular/material/tooltip";
+import {MatSidenavModule} from "@angular/material/sidenav";
 
 @NgModule({
   declarations: [
@@ -34,7 +36,9 @@ import {SchemaClassTreeModule} from "../schema-class/components/tree/schema-clas
     CdkContextMenuTrigger,
     CdkMenu,
     CdkMenuItem,
-    SchemaClassTreeModule
+    SchemaClassTreeModule,
+    MatTooltipModule,
+    MatSidenavModule
   ],
 })
 export class DatabaseObjectModule {

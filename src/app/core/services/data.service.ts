@@ -98,9 +98,9 @@ export class DataService {
     if (this.name2class)
       return this.name2class.get(clsName);
     this.name2class = new Map<string, SchemaClass>();
-    if (this.rootClass) 
+    if (this.rootClass)
       this.buildSchemaClassMap(this.rootClass, this.name2class);
-    else 
+    else
       console.error("The class tree has not been loaded. No map cannot be returned!");
     return this.name2class.get(clsName);
   }
@@ -125,8 +125,8 @@ export class DataService {
       // Something not right with deletedInstanceDB_ID: no proprties.
       // Need to check why. Escape for the time being
       if (properties === undefined) continue;
-      let categoryKey: keyof typeof AttributeCategory = element.category[1];
-      let definingTypeKey: keyof typeof AttributeDefiningType = element.definingType[1];
+      let categoryKey: keyof typeof AttributeCategory = element.category;
+      let definingTypeKey: keyof typeof AttributeDefiningType = element.definingType;
       let allowedClasses = this.getAllowedClasses(properties.attributeClasses);
       let attribute: SchemaAttribute = {
         name: properties.name,

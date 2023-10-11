@@ -11,7 +11,8 @@ import { selectViewInstance } from '../../state/instance.selectors';
   styleUrls: ['./instance-view.component.scss']
 })
 export class InstanceViewComponent implements OnInit {
-  viewHistory: any = [];
+  viewHistory: Instance[] = [];
+  dbIds: any =[];
   // instance to be displayed
   instance: Instance | undefined;
 
@@ -31,13 +32,14 @@ export class InstanceViewComponent implements OnInit {
     // Get the view instance to be displayed here
     this.store.select(selectViewInstance()).subscribe(instance => {
       this.instance = instance;
-      if (this.instance.dbId !== 0 && !this.viewHistory.includes(this.instance.dbId))
-        this.viewHistory.push(this.instance.dbId);
+      if (this.instance.dbId !== 0 && !this.dbIds.includes(this.instance.dbId))
+        this.viewHistory.push(this.instance);
+        this.dbIds.push(this.instance.dbId)
     })
   }
 
-  changeTable(dbId: string) {
-    this.router.navigate(["/instance_view/" + dbId]);
+  changeTable(instance: Instance) {
+    this.router.navigate(["/instance_view/" + instance.dbId.toString()]);
   }
 
 }

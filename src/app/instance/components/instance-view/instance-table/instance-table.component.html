@@ -2,7 +2,10 @@
   <table mat-table [dataSource]="instanceDataSource" matSort class="demo-table">
     <!-- Attribute Name Column -->
     <ng-container matColumnDef="name">
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>Attribute</th>
+      <th mat-header-cell *matHeaderCellDef >Attribute
+        <button mat-icon-button (click)="sort()">
+          <mat-icon>sort</mat-icon>
+        </button></th>
       <td class="attColumn" mat-cell *matCellDef="let element">{{element.attribute.name}}</td>
     </ng-container>
 

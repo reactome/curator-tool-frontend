@@ -25,9 +25,14 @@
 mat-tree {
   background: var(--surface2);
   margin-right: 10px;
-  height: 800px;
-  width: 300px;
+  height: calc(100vh - 2*10px);
   border: 1px solid black;
   overflow: scroll;
   position: sticky;
+}
+
+.mat-icon {
+  color: var(--primary);
+  //line-height: 10px;
+  //height: 10px;
 }
