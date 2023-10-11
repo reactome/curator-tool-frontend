@@ -14,15 +14,15 @@ h4 {
 /* You can add global styles to this file, and also import other style files */
 // TODO: choose custom styles
 html, body {
-  height: 900px;
-  overflow: scroll;
+  overflow: hidden;
 }
 
 body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
   background-color: var(--surface);
   color: black;
-  margin: 8px;
+  --body-margin: 0px;
+  margin: var(--body-margin, 8px);
 }
 
 @media (prefers-color-scheme: light) {

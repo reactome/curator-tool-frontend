@@ -2,12 +2,13 @@
   <mat-sidenav mode="side" opened style="width: 25vw;">
     <app-schema-class-tree></app-schema-class-tree>
   </mat-sidenav>
-  <mat-sidenav-content style="width:75vw">
+  <mat-sidenav-content style="width:75vw" class="instance-view-container">
     <app-bread-crumb [newMenuItem]="viewHistory" (clickEvent)="changeTable($event)">
     </app-bread-crumb>
     <mat-toolbar class="toolbar">
-    <span *ngIf="instance !== undefined">{{instance.schemaClass?.name}}: {{instance.displayName}} [{{instance.dbId}}
-      ]</span>
+      <span *ngIf="instance !== undefined">
+        {{instance?.schemaClass?.name}}: {{instance?.displayName}} [{{instance?.dbId}}]
+      </span>
     </mat-toolbar>
     <app-instance-table [instance]="instance">
     </app-instance-table>

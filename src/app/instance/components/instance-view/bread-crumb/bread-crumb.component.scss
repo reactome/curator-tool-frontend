@@ -5,7 +5,12 @@ mat-list :hover {
 }
 
 .toolbar {
-  height: 40px;
+  height: var(--bread-crumb-height, 40px);
   font-size: 16px;
   font-weight: bold;
+}
+
+:host {
+  position: sticky;
+  top: 0;
 }

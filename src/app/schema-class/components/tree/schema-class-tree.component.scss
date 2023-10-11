@@ -25,7 +25,7 @@
 mat-tree {
   background: var(--surface2);
   margin-right: 10px;
-  height: calc(100vh - 2*10px);
+  height: calc(100vh - 2 * var(--body-margin, 8px));
   border: 1px solid black;
   overflow: scroll;
   position: sticky;

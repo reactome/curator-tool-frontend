@@ -1,8 +1,7 @@
-import { Component, Input, ViewChild } from '@angular/core';
-import { MatSort } from "@angular/material/sort";
-import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
-import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
+import {Component, Input} from '@angular/core';
+import {Instance} from 'src/app/core/models/reactome-instance.model';
+import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
+import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
 import {AttributeCategory, SchemaAttribute} from "../../../../core/models/reactome-schema.model";
 
 /**
@@ -18,13 +17,19 @@ export class InstanceTableComponent {
   showFilterOptions: boolean = false;
   sortAttNames: boolean = true;
 
-  //TODO: use dictionary
+  //TODO: use map
   categories: { [name: string]: boolean } = {
     "MANDATORY": true,
     "OPTIONAL": true,
     "REQUIRED": true,
     "NOMANUALEDIT": true
   };
+  // categories: Map<AttributeCategory, boolean> = new Map([
+  //   [AttributeCategory.MANDATORY, true],
+  //   [AttributeCategory.REQUIRED, true],
+  //   [AttributeCategory.NOMANUALEDIT, true],
+  //   [AttributeCategory.OPTIONAL, true]
+  // ])
 
   // The instance to be displayed
   instanceDataSource: InstanceDataSource = new InstanceDataSource(undefined, this.categories, this.sortAttNames);

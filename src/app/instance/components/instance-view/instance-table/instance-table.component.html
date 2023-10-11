@@ -1,4 +1,4 @@
-<section class="table-container mat-elevation-z8" tabindex="0">
+<section class="table-container" tabindex="0">
   <table mat-table [dataSource]="instanceDataSource" matSort class="demo-table">
     <!-- Attribute Name Column -->
     <ng-container matColumnDef="name">
@@ -45,7 +45,7 @@
       </td>
     </ng-container>
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true" ></tr>
     <tr mat-row *matRowDef="let row; columns: displayedColumns;">
     </tr>
   </table>
