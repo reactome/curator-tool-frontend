@@ -7,7 +7,7 @@
     </app-bread-crumb>
     <mat-toolbar class="toolbar">
       <span *ngIf="instance !== undefined">
-        {{instance?.schemaClass?.name}}: {{instance?.displayName}} [{{instance?.dbId}}]
+        {{instance.schemaClass?.name}}: {{instance.displayName}} [{{instance.dbId}}]
       </span>
     </mat-toolbar>
     <app-instance-table [instance]="instance">

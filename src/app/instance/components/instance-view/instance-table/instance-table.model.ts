@@ -40,7 +40,7 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
         if (this.instance?.attributes) {
             for (let attribute of this.instance!.schemaClass!.attributes!) {
                 let value = this.instance!.attributes!.get(attribute.name);
-              if(this.categories[AttributeCategory[attribute.category]]) {
+              if(this.categories[(AttributeCategory[attribute.category])]) {
                 const attributeValue = {
                   attribute: attribute,
                   value: value

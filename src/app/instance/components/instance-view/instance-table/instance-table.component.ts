@@ -15,45 +15,39 @@ import {AttributeCategory, SchemaAttribute} from "../../../../core/models/reacto
 export class InstanceTableComponent {
   displayedColumns: string[] = ['name', 'value'];
   showFilterOptions: boolean = false;
+  showFilter: boolean = false;
+  showSort: boolean = false;
   sortAttNames: boolean = true;
+  test: boolean = true;
 
-  //TODO: use map
-  categories: { [name: string]: boolean } = {
-    "MANDATORY": true,
-    "OPTIONAL": true,
-    "REQUIRED": true,
-    "NOMANUALEDIT": true
-  };
-  // categories: Map<AttributeCategory, boolean> = new Map([
-  //   [AttributeCategory.MANDATORY, true],
-  //   [AttributeCategory.REQUIRED, true],
-  //   [AttributeCategory.NOMANUALEDIT, true],
-  //   [AttributeCategory.OPTIONAL, true]
-  // ])
+  categoryNames = Object.keys(AttributeCategory).filter((v) => isNaN(Number(v)));
+  categories: { [name: string]: boolean } = {};
 
   // The instance to be displayed
   instanceDataSource: InstanceDataSource = new InstanceDataSource(undefined, this.categories, this.sortAttNames);
   // Keep it for editing
   _instance?: Instance;
-  unfilteredData?: SchemaAttribute[] = this._instance?.schemaClass?.attributes;
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
     this._instance = instance;
+    for(let category of this.categoryNames){ this.categories[category] = true}
+    console.log(this.categories)
     this.updateTableContent();
   };
 
   constructor(
     private dialogService: NewInstanceDialogService) {} // Use a dialog serice to hide the implementation of the dialog.
 
-  // @ViewChild(MatSort) sort?: MatSort;
-
-  ngAfterViewInit(): void {
-     //this.instanceDataSource.sort = this.sort!;
+  changeShowFilterOptions() {
+    this.showFilterOptions = !this.showFilterOptions;
   }
 
-  showFilter() {
-    this.showFilterOptions = !this.showFilterOptions;
-    // this.dataSource.filter = '';
+  changeShowFilter() {
+    this.showFilter = ! this.showFilter;
+  }
+
+  changeShowSort() {
+    this.showSort = !this.showSort;
   }
 
   doFilter() {
@@ -146,4 +140,6 @@ export class InstanceTableComponent {
     this.instanceDataSource = new InstanceDataSource(this._instance, this.categories, this.sortAttNames);
   }
 
+  protected readonly AttributeCategory = AttributeCategory;
+  protected readonly Object = Object;
 }
