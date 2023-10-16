@@ -1,16 +1,22 @@
-<mat-sidenav-container>
-  <mat-sidenav mode="side" opened style="width: 25vw;">
-    <app-schema-class-tree></app-schema-class-tree>
-  </mat-sidenav>
-  <mat-sidenav-content style="width:75vw" class="instance-view-container">
-    <app-bread-crumb [newMenuItem]="viewHistory" (clickEvent)="changeTable($event)">
-    </app-bread-crumb>
-    <mat-toolbar class="toolbar">
+  <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true">
+    <mat-sidenav mode="side" opened [disableClose]="true" [style.width]="sideWidth + 'px'">
+      <app-schema-class-tree></app-schema-class-tree>
+<!--      <ng-container (mouseenter)="changeShowResize()" (mouseleave)="changeShowResize()">-->
+        <div class="resize-handle" (cdkDragMoved)="resize($event)" cdkDrag cdkDragLockAxis="x">
+          <mat-icon inline="true">drag_indicator</mat-icon>
+        </div>
+<!--      </ng-container>-->
+    </mat-sidenav>
+    <mat-sidenav-content class="instance-view-container">
+      <app-bread-crumb [newMenuItem]="viewHistory" (clickEvent)="changeTable($event)">
+      </app-bread-crumb>
+      <mat-toolbar class="toolbar">
       <span *ngIf="instance !== undefined">
-        {{instance.schemaClass?.name}}: {{instance.displayName}} [{{instance.dbId}}]
+        {{instance?.schemaClass?.name}}: {{instance?.displayName}} [{{instance?.dbId}}]
       </span>
-    </mat-toolbar>
-    <app-instance-table [instance]="instance">
-    </app-instance-table>
-  </mat-sidenav-content>
-</mat-sidenav-container>
+      </mat-toolbar>
+      <app-instance-table [instance]="instance">
+      </app-instance-table>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+

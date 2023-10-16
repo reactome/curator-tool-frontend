@@ -5,6 +5,31 @@
   top: var(--bread-crumb-height, 40px);
 }
 
+.resize-handle {
+  --height: 30px;
+  --width: 10px;
+  --half-width: calc(var(--width) / 2);
+  width: var(--width);
+  height: var(--height);
+  background: var(--primary);
+  color: var(--on-primary);
+  cursor: ew-resize;
+  transform: none !important;
+  position: absolute;
+
+  border-radius: var(--half-width);
+  right: 0px;
+  top: calc(50% - var(--height) / 2);
+  display: flex;
+  align-items: center;
+
+  mat-icon {
+    margin-left: -2px;
+    margin-top: 10px;
+  }
+}
+
+
 .position {
   display: flex;
   flex-direction: row;
@@ -20,4 +45,5 @@
   max-height: 100vh;
   --bread-crumb-height: 40px;
   --title-height: 5vh;
+  border: 1px solid black;
 }

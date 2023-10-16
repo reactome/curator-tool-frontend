@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from "@angular/router";
-import { Store } from "@ngrx/store";
-import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { InstanceActions } from "../../state/instance.actions";
-import { selectViewInstance } from '../../state/instance.selectors';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute, Router} from "@angular/router";
+import {Store} from "@ngrx/store";
+import {Instance} from 'src/app/core/models/reactome-instance.model';
+import {InstanceActions} from "../../state/instance.actions";
+import {selectViewInstance} from '../../state/instance.selectors';
+import {CdkDragMove} from "@angular/cdk/drag-drop";
 
 @Component({
   selector: 'app-instance-view',
@@ -12,9 +13,11 @@ import { selectViewInstance } from '../../state/instance.selectors';
 })
 export class InstanceViewComponent implements OnInit {
   viewHistory: Instance[] = [];
-  dbIds: any =[];
+  sideWidth = 385;
+  dbIds: any = [];
   // instance to be displayed
   instance: Instance | undefined;
+  showResize: boolean = false;
 
   constructor(private router: Router, private route: ActivatedRoute, private store: Store) {
   }
@@ -34,7 +37,7 @@ export class InstanceViewComponent implements OnInit {
       this.instance = instance;
       if (this.instance.dbId !== 0 && !this.dbIds.includes(this.instance.dbId))
         this.viewHistory.push(this.instance);
-        this.dbIds.push(this.instance.dbId)
+      this.dbIds.push(this.instance.dbId)
     })
   }
 
@@ -42,4 +45,9 @@ export class InstanceViewComponent implements OnInit {
     this.router.navigate(["/instance_view/" + instance.dbId.toString()]);
   }
 
+  resize(e: CdkDragMove) {
+      this.sideWidth = e.pointerPosition.x
+  }
+
+  changeShowResize(){this.showResize = !this.showResize}
 }

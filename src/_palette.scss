@@ -2,7 +2,7 @@
 @use "@angular/material/core/theming/palette";
 
 $primary-colors: (
-  000: #ffffff,
+  002: #ffffff,
   010: #fafdff,
   050: #dff4ff,
   100: #baeaff,
@@ -17,7 +17,7 @@ $primary-colors: (
   950: #0D1617,
   1000: #000000,
   contrast: (
-    000: #000000,
+    002: #000000,
     010: #000000,
     050: #000000,
     100: #000000,
@@ -36,7 +36,7 @@ $primary-colors: (
 );
 
 $secondary-colors: (
-  000: #ffffff,
+  002: #ffffff,
   010: #fafdff,
   050: #dff4ff,
   100: #baeaff,
@@ -51,7 +51,7 @@ $secondary-colors: (
   950: #0D1617,
   1000: #000000,
   contrast: (
-    000: #000000,
+    002: #000000,
     050: #000000,
     100: #000000,
     200: #000000,
@@ -69,7 +69,7 @@ $secondary-colors: (
 );
 
 $tertiary-colors: (
-  000: #ffffff,
+  002: #ffffff,
   010: #FDFCFF,
   050: #EAF1FF,
   100: #d3e4ff,
@@ -84,7 +84,7 @@ $tertiary-colors: (
   950: #0D1317,
   1000: #000000,
   contrast: (
-    000: #000000,
+    002: #000000,
     100: #000000,
     200: #000000,
     300: #000000,
@@ -101,7 +101,7 @@ $tertiary-colors: (
 );
 
 $neutral-colors: (
-  000: #ffffff,
+  002: #ffffff,
   010: #FAFDFF,
   050: #D0F8FF,
   100: #a6eeff,
@@ -116,7 +116,7 @@ $neutral-colors: (
   950: #001013,
   1000: #000000,
   contrast: (
-    000: #000,
+    002: #000,
     100: #000,
     200: #000,
     300: #000,
@@ -133,7 +133,7 @@ $neutral-colors: (
 );
 
 $neutral-variant-colors: (
-  000: #ffffff,
+  002: #ffffff,
   010: #FAFDFF,
   050: #EAF2F7,
   100: #E9F2F6,
@@ -147,7 +147,7 @@ $neutral-variant-colors: (
   900: #151d20,
   1000: #000000,
   contrast: (
-    000: #000,
+    002: #000,
     010: #000,
     050: #000,
     100: #000,
@@ -164,7 +164,7 @@ $neutral-variant-colors: (
 );
 
 $error-colors: (
-  000: #ffffff,
+  002: #ffffff,
   010: #FFFBFF,
   050: #FFEDEA,
   100: #ffedea,
@@ -178,7 +178,7 @@ $error-colors: (
   900: #690005,
   1000: #410002,
   contrast: (
-    000: #000,
+    002: #000,
     100: #000,
     200: #000,
     300: #000,
@@ -233,7 +233,7 @@ $dark-theme-foreground-palette: (
 );
 
 $reactome-tertiary-color: (
-  000: #000000,
+  002: #000000,
   100: #001c38,
   200: #00315c,
   300: #004882,
@@ -244,7 +244,7 @@ $reactome-tertiary-color: (
   800: #a3c9ff,
   900: #d3e4ff,
   contrast: (
-    000: #ffffff,
+    002: #ffffff,
     100: #ffffff,
     200: #ffffff,
     300: #ffffff,
@@ -261,7 +261,7 @@ $reactome-tertiary-color: (
 );
 
 $reactome-neutral-color: (
-  000: #000000,
+  002: #000000,
   100: #001f25,
   200: #00363f,
   300: #004e5b,
@@ -272,7 +272,7 @@ $reactome-neutral-color: (
   800: #53d7f1,
   900: #a6eeff,
   contrast: (
-    000: #ffffff,
+    002: #ffffff,
     100: #ffffff,
     200: #ffffff,
     300: #ffffff,
@@ -289,7 +289,7 @@ $reactome-neutral-color: (
 );
 
 $reactome-neutral-variant-color: (
-  000: #000000,
+  002: #000000,
   100: #151d20,
   200: #2a3235,
   300: #40484c,
@@ -300,7 +300,7 @@ $reactome-neutral-variant-color: (
   800: #c0c8cc,
   900: #dce4e8,
   contrast: (
-    000: #ffffff,
+    002: #ffffff,
     100: #ffffff,
     200: #ffffff,
     300: #ffffff,
@@ -317,7 +317,7 @@ $reactome-neutral-variant-color: (
 );
 
 $reactome-error-color: (
-  000: #410002,
+  002: #410002,
   100: #690005,
   200: #93000a,
   300: #ba1a1a,
@@ -328,7 +328,7 @@ $reactome-error-color: (
   800: #ffdad6,
   900: #ffedea,
   contrast: (
-    000: #ffffff,
+    002: #ffffff,
     100: #ffffff,
     200: #ffffff,
     300: #ffffff,

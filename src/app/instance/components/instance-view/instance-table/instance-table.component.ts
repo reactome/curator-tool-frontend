@@ -15,47 +15,53 @@ import {AttributeCategory, SchemaAttribute} from "../../../../core/models/reacto
 export class InstanceTableComponent {
   displayedColumns: string[] = ['name', 'value'];
   showFilterOptions: boolean = false;
-  showFilter: boolean = false;
-  showSort: boolean = false;
+  showHeaderActions: boolean = false;
   sortAttNames: boolean = true;
-  test: boolean = true;
+  sortAttDefined: boolean = false;
 
   categoryNames = Object.keys(AttributeCategory).filter((v) => isNaN(Number(v)));
-  categories: { [name: string]: boolean } = {};
+  categories: Map<AttributeCategory, boolean> = new Map<AttributeCategory, boolean>();
 
   // The instance to be displayed
-  instanceDataSource: InstanceDataSource = new InstanceDataSource(undefined, this.categories, this.sortAttNames);
+  instanceDataSource: InstanceDataSource = new InstanceDataSource(undefined, this.categories, this.sortAttNames, this.sortAttDefined);
   // Keep it for editing
   _instance?: Instance;
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
     this._instance = instance;
-    for(let category of this.categoryNames){ this.categories[category] = true}
-    console.log(this.categories)
     this.updateTableContent();
   };
 
   constructor(
-    private dialogService: NewInstanceDialogService) {} // Use a dialog serice to hide the implementation of the dialog.
+    private dialogService: NewInstanceDialogService) {
+    for(let category of this.categoryNames){
+      let categoryKey = category as keyof typeof AttributeCategory;
+      this.categories.set(AttributeCategory[categoryKey], true)}
+
+  } // Use a dialog serice to hide the implementation of the dialog.
 
   changeShowFilterOptions() {
     this.showFilterOptions = !this.showFilterOptions;
   }
 
-  changeShowFilter() {
-    this.showFilter = ! this.showFilter;
+  changeShowHeaderActions() {
+    this.showHeaderActions = ! this.showHeaderActions;
   }
 
-  changeShowSort() {
-    this.showSort = !this.showSort;
-  }
-
-  doFilter() {
+  doFilter(category: AttributeCategory) {
+    let checked = this.categories.get(category);
+    this.categories.set(category, !checked);
     this.updateTableContent();
   }
 
   sort() {
+    this.sortAttDefined = false;
     this.sortAttNames = !this.sortAttNames;
+    this.updateTableContent();
+  }
+
+  sortByDefined(){
+    this.sortAttDefined = !this.sortAttDefined;
     this.updateTableContent();
   }
 
@@ -137,7 +143,7 @@ export class InstanceTableComponent {
   }
 
   private updateTableContent(): void {
-    this.instanceDataSource = new InstanceDataSource(this._instance, this.categories, this.sortAttNames);
+    this.instanceDataSource = new InstanceDataSource(this._instance, this.categories, this.sortAttNames, this.sortAttDefined);
   }
 
   protected readonly AttributeCategory = AttributeCategory;

@@ -15,13 +15,14 @@ h4 {
 // TODO: choose custom styles
 html, body {
   overflow: hidden;
+  height: 100vh;
 }
 
 body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
   background-color: var(--surface);
   color: black;
-  --body-margin: 0px;
+  --body-margin: 8px;
   margin: var(--body-margin, 8px);
 }
 

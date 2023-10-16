@@ -2,28 +2,29 @@
   <table mat-table [dataSource]="instanceDataSource" matSort class="demo-table">
     <!-- Attribute Name Column -->
     <ng-container matColumnDef="name">
-      <th mat-header-cell *matHeaderCellDef>Attribute
-<!--        <ng-container (mouseenter)="changeShowSort()">-->
-        <button mat-icon-button (click)="sort()">
+      <th mat-header-cell (mouseenter)="changeShowHeaderActions()" (mouseleave)="changeShowHeaderActions()" *matHeaderCellDef>Attribute
+        <button matTooltip="Sort attributes by name" *ngIf="showHeaderActions" mat-icon-button (click)="sort()">
+          <mat-icon>sort_by_alpha</mat-icon>
+        </button>
+        <button matTooltip="Sort by defined attributes" *ngIf="showHeaderActions" mat-icon-button (click)="sortByDefined()">
           <mat-icon>sort</mat-icon>
         </button>
-<!--        </ng-container>-->
       </th>
       <td class="attColumn" mat-cell *matCellDef="let element">{{element.attribute.name}}</td>
     </ng-container>
 
     <!-- Attribute Value Column -->
     <ng-container matColumnDef="value">
-      <th mat-header-cell (mouseenter)="changeShowFilter()" *matHeaderCellDef> Value
-<!--        <ng-container (mouseenter)="changShowFilter()">-->
+      <th mat-header-cell (mouseenter)="changeShowHeaderActions()" (mouseleave)="changeShowHeaderActions()" *matHeaderCellDef> Value
+        <ng-container *ngIf="showHeaderActions">
           <button mat-icon-button (click)="changeShowFilterOptions()">
             <mat-icon>filter_alt</mat-icon>
           </button>
-<!--        </ng-container>-->
         <section *ngIf="showFilterOptions">
-          <mat-checkbox *ngFor="let cat of (categories| keyvalue)" [(ngModel)]="categories[cat.key]"
-                        (ngModelChange)="doFilter()">{{cat.key}}</mat-checkbox>
-        </section>
+            <mat-checkbox *ngFor="let cat of categories.keys()" [ngModel]="categories.get(cat)"
+                          (ngModelChange)="doFilter(cat)">{{AttributeCategory[cat] | titlecase}}</mat-checkbox>
+          </section>
+        </ng-container>
       </th>
       <td mat-cell *matCellDef="let element">
         <ng-container *ngIf="element.attribute.cardinality === '1'">
@@ -55,4 +56,3 @@
     </tr>
   </table>
 </section>
-<br>

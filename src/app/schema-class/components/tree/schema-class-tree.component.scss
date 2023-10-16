@@ -19,8 +19,10 @@
 .mat-tree-node {
   min-height: 20px;
   margin: 6px;
-
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
+
 
 mat-tree {
   background: var(--surface2);

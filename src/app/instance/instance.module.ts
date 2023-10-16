@@ -17,6 +17,7 @@ import { viewInstanceReducer } from "./state/instance.reducers";
 import {SchemaClassTreeModule} from "../schema-class/components/tree/schema-class-tree.module";
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {MatSidenavModule} from "@angular/material/sidenav";
+import {CdkDrag} from "@angular/cdk/drag-drop";
 
 @NgModule({
   declarations: [
@@ -27,19 +28,20 @@ import {MatSidenavModule} from "@angular/material/sidenav";
     InstanceViewComponent,
     NewInstanceDialogComponent,
   ],
-  imports: [
-    CommonModule,
-    DatabaseObjectRoutingModule,
-    EffectsModule.forFeature(DatabaseObjectEffects),
-    StoreModule.forFeature(VIEW_INSTANCE_STATE_NAME, viewInstanceReducer),
-    SharedModule,
-    CdkContextMenuTrigger,
-    CdkMenu,
-    CdkMenuItem,
-    SchemaClassTreeModule,
-    MatTooltipModule,
-    MatSidenavModule
-  ],
+    imports: [
+        CommonModule,
+        DatabaseObjectRoutingModule,
+        EffectsModule.forFeature(DatabaseObjectEffects),
+        StoreModule.forFeature(VIEW_INSTANCE_STATE_NAME, viewInstanceReducer),
+        SharedModule,
+        CdkContextMenuTrigger,
+        CdkMenu,
+        CdkMenuItem,
+        SchemaClassTreeModule,
+        MatTooltipModule,
+        MatSidenavModule,
+        CdkDrag
+    ],
 })
 export class DatabaseObjectModule {
 }
