@@ -1,32 +1,25 @@
-.example-button-row {
-    display: table-cell;
-    max-width: 1000px;
-  }
-
-  .mat-raised-button {
-    margin-right: 10px;
-    margin-left: 50px;
-  }
-
-  .action-menu {
-    width: 175px;
-    height: flex;
-    outline-style: solid;
-    background: var(--surface2);
-
-  }
-
-  .menu-item {
-    max-width: 175px;
-    max-height: 5px;
-    display: inline-block;
-  }
-
-.close-icon {
-  position: absolute;
-  top: 0;
-  right: 0;
-  padding: 5px;
-  line-height: 14px;
-  min-width: auto;
+.action-menu {
+  width: 124px;
+  background: var(--surface2);
+  padding: 0;
+  border: 1px solid var(--outline-variant);
+  border-bottom: 0;
 }
+
+.action-button {
+  font-size: 12px;
+  width: 124px;
+  height: 24px;
+  border-bottom: 1px solid var(--outline-variant);
+  //vertical-align: bottom;
+}
+
+.mat-icon {
+  font-size: 12px;
+  width: 12px;
+  height: 14px;
+  color: var(--primary);
+  vertical-align: middle;
+  justify-content: center;
+}
+

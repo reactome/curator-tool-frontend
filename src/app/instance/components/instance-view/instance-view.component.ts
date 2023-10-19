@@ -18,6 +18,7 @@ export class InstanceViewComponent implements OnInit {
   // instance to be displayed
   instance: Instance | undefined;
   showResize: boolean = false;
+  resizing: boolean = false;
 
   constructor(private router: Router, private route: ActivatedRoute, private store: Store) {
   }

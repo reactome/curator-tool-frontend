@@ -4,6 +4,7 @@ import { SchemaClassTreeComponent } from './schema-class-tree.component';
 import { MaterialModule } from '../../../material/material.module';
 import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} from "@angular/cdk/scrolling";
 import {SharedModule} from "../../../shared/shared.module";
+import {MatTooltipModule} from "@angular/material/tooltip";
 
 
 
@@ -16,7 +17,8 @@ import {SharedModule} from "../../../shared/shared.module";
     CdkVirtualScrollViewport,
     CdkFixedSizeVirtualScroll,
     CdkVirtualForOf,
-    SharedModule
+    SharedModule,
+    MatTooltipModule
   ],
   exports: [MaterialModule, SchemaClassTreeComponent]
 })

@@ -5,36 +5,19 @@
   top: var(--bread-crumb-height, 40px);
 }
 
-.resize-handle {
-  --height: 30px;
-  --width: 10px;
-  --half-width: calc(var(--width) / 2);
-  width: var(--width);
-  height: var(--height);
-  background: var(--primary);
-  color: var(--on-primary);
-  cursor: ew-resize;
-  transform: none !important;
-  position: absolute;
-
-  border-radius: var(--half-width);
-  right: 0px;
-  top: calc(50% - var(--height) / 2);
-  display: flex;
-  align-items: center;
-
-  mat-icon {
-    margin-left: -2px;
-    margin-top: 10px;
-  }
-}
-
-
 .position {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
   width: 100%;
+}
+
+mat-sidenav {
+  overflow: unset;
+
+  > * {
+    overflow-x: auto;
+  }
 }
 
 .breadCrumb {
@@ -45,5 +28,29 @@
   max-height: 100vh;
   --bread-crumb-height: 40px;
   --title-height: 5vh;
-  border: 1px solid black;
+  border: 1px solid var(--outline-variant);
+  border-left-width: 0;
+}
+
+.resize-container {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0px;
+  width: 8px;
+  transform: none !important;
+  opacity: 0;
+  margin-right: -4px;
+
+  .resize-bar {
+    position: absolute;
+    inset: 0 2px;
+    background-color: var(--tertiary);
+    cursor: col-resize;
+    box-shadow: 0 0 2px var(--tertiary);
+  }
+
+  &:hover, &.resizing {
+    opacity: 1;
+  }
 }
