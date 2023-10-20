@@ -1,32 +1,21 @@
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
   <!-- This is the tree node template for leaf nodes -->
-  <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding class="schema_class_text" matTreeNodePaddingIndent="20">
+  <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding class="schema_class_text" matTreeNodePaddingIndent="25"
+                 matTreeNodeToggle>
     {{node.name}} [{{node.count}}]
     <button mat-icon-button (click)="createNewInstance(node.name)"
             matTooltip="Create new {{node.name}}">
       <mat-icon color="primary">add_box</mat-icon>
     </button>
   </mat-tree-node>
-<!--  &lt;!&ndash; This is the tree node template for expandable nodes &ndash;&gt;-->
-<!--  <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding class="schema_class_text"-->
-<!--                 matTreeNodePaddingIndent="20">-->
-<!--    {{node.name}} [{{node.count}}]-->
-<!--  </mat-tree-node>-->
   <!-- This is the tree node template for expandable nodes -->
-  <mat-nested-tree-node class="schema_class_text" *matTreeNodeDef="let node; when: hasChild">
-    <div class="mat-tree-node">
-      <button mat-icon-button matTreeNodeToggle>
-        <mat-icon class="mat-icon-rtl-mirror">
-          {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
-        </mat-icon>
-      </button>
-      {{node.name}} [{{node.count}}]
-    </div>
-    <!-- There is inline padding applied to this div using styles.
-        This padding value depends on the mat-icon-button width.  -->
-<!--    <div [class.example-tree-invisible]="!treeControl.isExpanded(node)"-->
-<!--         role="group">-->
-<!--      <ng-container matTreeNodeOutlet></ng-container>-->
-<!--    </div>-->
-  </mat-nested-tree-node>
+  <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding class="schema_class_text"
+                 matTreeNodePaddingIndent="15">
+    <button mat-icon-button matTreeNodeToggle>
+      <mat-icon class="mat-icon-rtl-mirror">
+        {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+      </mat-icon>
+    </button>
+    {{node.name}} [{{node.count}}]
+  </mat-tree-node>
 </mat-tree>

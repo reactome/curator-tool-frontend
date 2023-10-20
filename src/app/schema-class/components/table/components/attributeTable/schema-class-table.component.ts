@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {NgFor, NgIf} from '@angular/common';
+import {NgFor, NgIf, TitleCasePipe} from '@angular/common';
 import {MatTableModule} from '@angular/material/table';
 import {SchemaClassData} from 'src/app/core/models/schema-class-attribute-data.model';
 import {Store} from '@ngrx/store';
@@ -7,17 +7,22 @@ import {selectSchemaClassData} from '../../state/schema-class-table.selectors';
 import {SchemaClassTableActions} from '../../state/schema-class-table.actions';
 import {EMPTY, Observable} from 'rxjs';
 import {ActivatedRoute} from "@angular/router";
-import {SchemaAttribute, SchemaClass} from "../../../../../core/models/reactome-schema.model";
+import {
+  AttributeCategory,
+  AttributeDataType,
+  AttributeDefiningType,
+  SchemaAttribute
+} from "../../../../../core/models/reactome-schema.model";
 
 @Component({
   selector: 'app-table',
   templateUrl: './schema-class-table.component.html',
   styleUrls: ['./schema-class-table.component.scss'],
   standalone: true,
-  imports: [MatTableModule, NgIf, NgFor],
+  imports: [MatTableModule, NgIf, NgFor, TitleCasePipe],
 })
 export class SchemaClassTableComponent implements OnInit {
-  displayedColumns: string[] = ['attributeName', 'cardinality', 'valueType', 'attributeOrigin'];
+  displayedColumns: string[] = ['name','type', 'category', 'allowedClasses', 'attributeOrigin', 'cardinality', 'definingType'];
   dataSource: SchemaAttribute[] = [];
   clickedRows = new Set<SchemaClassData>();
 
@@ -42,4 +47,8 @@ export class SchemaClassTableComponent implements OnInit {
   fetchAttributeTableByClassName(className: string) {
     this.store.dispatch(SchemaClassTableActions.get({className: className}));
   }
+
+  protected readonly AttributeDefiningType = AttributeDefiningType;
+  protected readonly AttributeDataType = AttributeDataType;
+  protected readonly AttributeCategory = AttributeCategory;
 }

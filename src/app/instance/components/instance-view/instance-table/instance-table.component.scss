@@ -9,24 +9,11 @@
 
 .mat-mdc-row:hover .mat-mdc-cell {
   border-color: currentColor;
-  // border-bottom: 1px solid transparent;
-  // border-top: 1px solid transparent;
 }
-
-//.mat-mdc-row:nth-child(even) {
-//  background: var(--surface1);
-//  color: var(--on-surface);
-//}
-//
-//.mat-mdc-row:nth-child(odd) {
-//  background: var(--surface);
-//  color: var(--on-surface);
-//}
 
 .attColumn {
   background: var(--primary-container);
   color: var(--on-primary-container);
-
 }
 
 .mat-icon {

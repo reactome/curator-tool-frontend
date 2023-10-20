@@ -15,7 +15,7 @@
 .mat-tree-node {
   min-height: 20px;
   height: 20px;
-  margin: 6px;
+  margin: 3px;
   flex-wrap: nowrap;
   white-space: nowrap;
 }
@@ -33,13 +33,10 @@ mat-tree {
   width: 16px;
   height: 16px;
   color: var(--primary);
-  //right: 15px;
-}
-
-//.button {
-//  width: 10px !important;
-//  height: 10px !important;
+  text-align: left;
+  }
+//
+//.mat-icon-button {
 //  padding: 0;
-//  border: none;
-//  background: none;
+//  left: 10px;
 //}
