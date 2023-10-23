@@ -18,6 +18,7 @@ import {
   SchemaClassTableComponent
 } from "./schema-class/components/table/components/attributeTable/schema-class-table.component";
 import {SharedModule} from "./shared/shared.module";
+import {ListInstancesModule} from "./schema-class/components/list-instances/list-instances.module";
 
 @NgModule({
   declarations: [
@@ -31,6 +32,7 @@ import {SharedModule} from "./shared/shared.module";
     HttpClientModule,
     SchemaClassTableModule,
     DatabaseObjectModule,
+    ListInstancesModule,
     EffectsModule.forRoot(),
     StoreModule.forRoot({router: routerReducer}),
     RouterModule.forRoot([]),

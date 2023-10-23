@@ -1,22 +1,23 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 import {CommonModule} from '@angular/common';
-import {SchemaClassTableComponent} from './components/attributeTable/schema-class-table.component';
+import {ListInstancesComponent} from "./list-instances.component";
 
 const routes: Routes = [
   {
     path: `:className`,
-    component: SchemaClassTableComponent
+    component: ListInstancesComponent
   }
 ]
+
 @NgModule({
   declarations: [],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
-    SchemaClassTableComponent
+    ListInstancesComponent
   ],
   exports: [RouterModule]
 })
-export class SchemaClassTableRoutingModule {
+export class ListInstancesRoutingModule {
 }

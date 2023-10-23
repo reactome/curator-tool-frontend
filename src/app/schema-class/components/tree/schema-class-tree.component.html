@@ -2,7 +2,8 @@
   <!-- This is the tree node template for leaf nodes -->
   <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding class="schema_class_text" matTreeNodePaddingIndent="25"
                  matTreeNodeToggle>
-    {{node.name}} [{{node.count}}]
+    {{node.name}}
+    <a routerLink="/list_instances/{{node.name}}">  [{{[node.count]}}]</a>
     <button mat-icon-button (click)="createNewInstance(node.name)"
             matTooltip="Create new {{node.name}}">
       <mat-icon color="primary">add_box</mat-icon>
@@ -16,6 +17,7 @@
         {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
       </mat-icon>
     </button>
-    {{node.name}} [{{node.count}}]
+    {{node.name}}
+     <a routerLink="/list_instances/{{node.name}}">  [{{[node.count]}}]</a>
   </mat-tree-node>
 </mat-tree>

@@ -1,6 +1,6 @@
 .demo-table {
   width: 100%;
-  overflow: auto;
+  overflow: scroll;
 }
 
 .mat-mdc-row {
@@ -11,17 +11,10 @@
   border-color: currentColor;
 }
 
-.attColumn {
-  background: var(--primary-container);
-  color: var(--on-primary-container);
-}
-
-.thead {
-  height: 40px !important;
-}
-
-.mat-icon {
-  color: var(--primary);
+th {
+  background: var(--primary-container) !important;
+  color: var(--on-primary-container) !important;
+  height: var(--bread-crumb-height, 40px) !important;
 }
 
 .table-container {
@@ -30,12 +23,12 @@
   border: none;
 }
 
-.mat-icon {
+.toolbar {
+  height: var(--bread-crumb-height, 40px);
   font-size: 16px;
-  width: 16px;
-  height: 16px;
-  color: var(--primary);
-  text-align: left;
+  font-weight: bold;
 }
 
-
+.filter {
+  width: 100%;
+}

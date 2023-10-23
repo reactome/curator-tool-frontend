@@ -11,6 +11,7 @@ import {
 } from '../models/reactome-schema.model';
 // import { AttributeDa } from '../models/schema-class-attribute-data.model';
 import {Instance} from "../models/reactome-instance.model";
+import {InstanceList} from "../models/schema-class-instance-list.model";
 
 
 @Injectable({
@@ -28,6 +29,7 @@ export class DataService {
   private schemaClassDataUrl = `${environment.ApiRoot}/getAttributes/` // TODO: Need to consider using Angular ConfigService!
   private entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
   private schemaClassTreeUrl = `${environment.ApiRoot}/getSchemaClassTree/`;
+  private listInstancesUrl = `${environment.ApiRoot}/listInstances/`
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
   // The root class is cached for performance
@@ -107,8 +109,8 @@ export class DataService {
 
   private buildSchemaClassMap(schemaClass: SchemaClass, name2class: Map<string, SchemaClass>) {
     name2class.set(schemaClass.name, schemaClass);
-    if(schemaClass.children){
-      for(let child of schemaClass.children) {
+    if (schemaClass.children) {
+      for (let child of schemaClass.children) {
         this.buildSchemaClassMap(child, name2class);
       }
     }
@@ -232,18 +234,18 @@ export class DataService {
    */
   createNewInstance(schemaClassName: string): Observable<Instance> {
     return this.fetchSchemaClass(schemaClassName).pipe(map((schemaClass: SchemaClass) => {
-      const attributes = new Map();
-      attributes.set('dbId', this.nextNewDbId);
-      this.nextNewDbId -= 1;
-      attributes.set('displayName', 'To be generated');
-      let instance: Instance = {
-        dbId: attributes.get('dbId'),
-        displayName: attributes.get('displayName'),
-        attributes: attributes
-      };
-      instance.schemaClass = schemaClass;
-      return instance;
-    }),
+        const attributes = new Map();
+        attributes.set('dbId', this.nextNewDbId);
+        this.nextNewDbId -= 1;
+        attributes.set('displayName', 'To be generated');
+        let instance: Instance = {
+          dbId: attributes.get('dbId'),
+          displayName: attributes.get('displayName'),
+          attributes: attributes
+        };
+        instance.schemaClass = schemaClass;
+        return instance;
+      }),
       catchError((err: Error) => {
         console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
           panelClass: ['warning-snackbar'],
@@ -295,11 +297,26 @@ export class DataService {
     );
   }
 
-  fetchSchemaClasses(): Observable<string[]> {
-    return this.http.get<string[]>(`http://localhost:8080/api/curation/getSchemaClasses`)
-      .pipe(map((data: string[]) => {
-        return data;
-      }));
+  /**
+   * Fetch the list of instances for a schema class.
+   * @param className
+   * @returns
+   */
+  listInstances(className: string): Observable<InstanceList[]> {
+    // TODO: Check cached results first?
+
+    // Otherwise call the restful API
+    return this.http.get<InstanceList[]>(this.listInstancesUrl + `${className}/` + `${1}/` + `${100}`)
+      .pipe(map((data: InstanceList[]) => {
+          return data.map(instance => new InstanceList(instance.dbId, instance.displayName));
+        }),
+        catchError((err: Error) => {
+          console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
+            panelClass: ['warning-snackbar'],
+            duration: 10000
+          });
+          return throwError(() => err);
+        }));
   }
 
 }

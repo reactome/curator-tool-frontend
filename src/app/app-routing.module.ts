@@ -1,8 +1,5 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import {
-  SchemaClassTableComponent
-} from "./schema-class/components/table/components/attributeTable/schema-class-table.component";
 
 const routes: Routes = [
   {
@@ -18,6 +15,12 @@ const routes: Routes = [
           m.SchemaClassTableModule),
   },
   {
+    path: "list_instances",
+    loadChildren: () =>
+      import("./schema-class/components/list-instances/list-instances.module").then((m) =>
+        m.ListInstancesModule),
+  },
+  {
     path: "instance_view",
     loadChildren: () =>
       import("./instance/instance.module").then((m) =>
@@ -26,7 +29,8 @@ const routes: Routes = [
   { path: '**',
     loadChildren: () =>
       import("./schema-class/components/table/schema-class-table.module").then((m) =>
-        m.SchemaClassTableModule),}
+        m.SchemaClassTableModule),
+  },
 ];
 
 @NgModule({

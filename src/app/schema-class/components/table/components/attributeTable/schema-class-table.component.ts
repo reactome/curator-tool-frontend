@@ -1,7 +1,6 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {NgFor, NgIf, TitleCasePipe} from '@angular/common';
 import {MatTableModule} from '@angular/material/table';
-import {SchemaClassData} from 'src/app/core/models/schema-class-attribute-data.model';
 import {Store} from '@ngrx/store';
 import {selectSchemaClassData} from '../../state/schema-class-table.selectors';
 import {SchemaClassTableActions} from '../../state/schema-class-table.actions';
@@ -24,7 +23,6 @@ import {
 export class SchemaClassTableComponent implements OnInit {
   displayedColumns: string[] = ['name','type', 'category', 'allowedClasses', 'attributeOrigin', 'cardinality', 'definingType'];
   dataSource: SchemaAttribute[] = [];
-  clickedRows = new Set<SchemaClassData>();
 
   constructor(
     private store: Store, private route: ActivatedRoute) {
