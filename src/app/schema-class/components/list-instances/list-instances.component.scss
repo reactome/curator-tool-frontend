@@ -1,6 +1,5 @@
 .demo-table {
   width: 100%;
-  overflow: scroll;
 }
 
 .mat-mdc-row {
@@ -18,13 +17,15 @@ th {
 }
 
 .table-container {
+  max-height: 100vh;
   height: calc(100vh - var(--bread-crumb-height) - var(--title-height) - 2 * var(--body-margin));
-  overflow: auto;
+  overflow: scroll;
   border: none;
 }
 
 .toolbar {
-  height: var(--bread-crumb-height, 40px);
+  height: 5vh;
+  //height: var(--bread-crumb-height, 40px);
   font-size: 16px;
   font-weight: bold;
 }

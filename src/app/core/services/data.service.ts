@@ -306,7 +306,7 @@ export class DataService {
     // TODO: Check cached results first?
 
     // Otherwise call the restful API
-    return this.http.get<InstanceList[]>(this.listInstancesUrl + `${className}/` + `${1}/` + `${100}`)
+    return this.http.get<InstanceList[]>(this.listInstancesUrl + `${className}/` + `${0}/` + `${100}`)
       .pipe(map((data: InstanceList[]) => {
           return data.map(instance => new InstanceList(instance.dbId, instance.displayName));
         }),

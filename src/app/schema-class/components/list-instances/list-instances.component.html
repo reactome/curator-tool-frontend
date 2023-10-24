@@ -1,7 +1,7 @@
-<mat-toolbar color="primary" class="toolbar">
-  {{this.className.className}}
-</mat-toolbar>
 <section class="table-container" tabindex="0">
+  <mat-toolbar color="primary" class="toolbar">
+    {{this.className.className}}
+  </mat-toolbar>
   <mat-form-field class="filter">
     <mat-label>Filter</mat-label>
     <input matInput (keyup)="applyFilter($event)" placeholder="Ex. ium" #input>
