@@ -1,13 +1,10 @@
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { MaterialModule } from '../material/material.module';
+import {NgModule} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {MaterialModule} from '../material/material.module';
 import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} from "@angular/cdk/scrolling";
-import { ResizableComponent } from './resizable/resizable.component';
 
 @NgModule({
-  declarations: [
-    ResizableComponent
-  ],
+  declarations: [],
   imports: [
     CommonModule,
     MaterialModule,
@@ -15,6 +12,7 @@ import { ResizableComponent } from './resizable/resizable.component';
     CdkFixedSizeVirtualScroll,
     CdkVirtualForOf
   ],
-  exports: [MaterialModule, ResizableComponent]
+  exports: [MaterialModule]
 })
-export class SharedModule { }
+export class SharedModule {
+}
