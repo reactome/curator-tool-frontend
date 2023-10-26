@@ -34,9 +34,11 @@ mat-tree {
   height: 16px;
   color: var(--primary);
   text-align: left;
-  }
-//
-//.mat-icon-button {
-//  padding: 0;
-//  left: 10px;
-//}
+  padding: 0 0 0 -5rem;
+}
+
+.mat-icon-button {
+  padding: 0;
+  left: 10px;
+  flex-direction: row-reverse;
+}

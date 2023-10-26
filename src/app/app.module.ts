@@ -18,7 +18,8 @@ import {
   SchemaClassTableComponent
 } from "./schema-class/components/table/components/attributeTable/schema-class-table.component";
 import {SharedModule} from "./shared/shared.module";
-import {ListInstancesModule} from "./schema-class/components/list-instances/list-instances.module";
+import {ListInstancesModule} from "./list-instances/list-instances.module";
+import {MainModule} from "./main/main.module";
 
 @NgModule({
   declarations: [
@@ -43,6 +44,7 @@ import {ListInstancesModule} from "./schema-class/components/list-instances/list
       autoPause: true,
     }),
     SharedModule,
+    MainModule,
   ],
   providers: [],
   bootstrap: [AppComponent],

@@ -302,11 +302,11 @@ export class DataService {
    * @param className
    * @returns
    */
-  listInstances(className: string): Observable<InstanceList[]> {
+  listInstances(className: string, skip: number, limit: number): Observable<InstanceList[]> {
     // TODO: Check cached results first?
 
     // Otherwise call the restful API
-    return this.http.get<InstanceList[]>(this.listInstancesUrl + `${className}/` + `${0}/` + `${100}`)
+    return this.http.get<InstanceList[]>(this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`)
       .pipe(map((data: InstanceList[]) => {
           return data.map(instance => new InstanceList(instance.dbId, instance.displayName));
         }),

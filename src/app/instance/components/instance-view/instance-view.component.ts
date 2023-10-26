@@ -13,12 +13,9 @@ import {CdkDragMove} from "@angular/cdk/drag-drop";
 })
 export class InstanceViewComponent implements OnInit {
   viewHistory: Instance[] = [];
-  sideWidth = 385;
   dbIds: any = [];
   // instance to be displayed
   instance: Instance | undefined;
-  showResize: boolean = false;
-  resizing: boolean = false;
 
   constructor(private router: Router, private route: ActivatedRoute, private store: Store) {
   }
@@ -45,10 +42,4 @@ export class InstanceViewComponent implements OnInit {
   changeTable(instance: Instance) {
     this.router.navigate(["/instance_view/" + instance.dbId.toString()]);
   }
-
-  resize(e: CdkDragMove) {
-      this.sideWidth = e.pointerPosition.x
-  }
-
-  changeShowResize(){this.showResize = !this.showResize}
 }

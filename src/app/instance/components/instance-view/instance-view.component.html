@@ -1,20 +1,9 @@
-<mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true">
-  <mat-sidenav mode="side" opened [disableClose]="true" [style.width]="sideWidth + 'px'">
-    <app-schema-class-tree></app-schema-class-tree>
-    <div class="resize-container" (cdkDragMoved)="resize($event)" cdkDrag cdkDragLockAxis="x"
-         (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
-      <div class="resize-bar"></div>
-    </div>
-  </mat-sidenav>
-  <mat-sidenav-content class="instance-view-container">
-    <app-bread-crumb [newMenuItem]="viewHistory" (clickEvent)="changeTable($event)">
-    </app-bread-crumb>
-    <mat-toolbar class="toolbar">
+<app-bread-crumb [newMenuItem]="viewHistory" (clickEvent)="changeTable($event)">
+</app-bread-crumb>
+<mat-toolbar class="toolbar">
       <span *ngIf="instance !== undefined">
-        {{instance?.schemaClass?.name}}: {{instance?.displayName}} [{{instance?.dbId}}]
+        {{instance.schemaClass?.name}}: {{instance.displayName}} [{{instance.dbId}}]
       </span>
-    </mat-toolbar>
-    <app-instance-table [instance]="instance">
-    </app-instance-table>
-  </mat-sidenav-content>
-</mat-sidenav-container>
+</mat-toolbar>
+<app-instance-table [instance]="instance">
+</app-instance-table>

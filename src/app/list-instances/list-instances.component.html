@@ -2,7 +2,7 @@
   <mat-toolbar color="primary" class="toolbar">
     {{this.className.className}}
   </mat-toolbar>
-  <mat-form-field class="filter">
+  <mat-form-field>
     <mat-label>Filter</mat-label>
     <input matInput (keyup)="applyFilter($event)" placeholder="Ex. ium" #input>
   </mat-form-field>
@@ -29,5 +29,6 @@
       <td class="mat-cell" colspan="4">No data matching the filter "{{input.value}}"</td>
     </tr>
   </table>
-  <mat-paginator [pageSizeOptions]="[5, 10, 25, 100]" showFirstLastButtons aria-label="Select page of users"></mat-paginator>
+  <mat-paginator (change)="onPageChange()" [pageSizeOptions]=pageSizeOptions
+       showFirstLastButtons aria-label="Select page of users"></mat-paginator>
 </section>

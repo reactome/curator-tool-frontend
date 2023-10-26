@@ -12,45 +12,6 @@
   width: 100%;
 }
 
-mat-sidenav {
-  overflow: unset;
-
-  > * {
-    overflow-x: auto;
-  }
-}
-
 .breadCrumb {
   height: 5vh;
-}
-
-.instance-view-container {
-  max-height: 100vh;
-  --bread-crumb-height: 40px;
-  --title-height: 5vh;
-  border: 1px solid var(--outline-variant);
-  border-left-width: 0;
-}
-
-.resize-container {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0px;
-  width: 8px;
-  transform: none !important;
-  opacity: 0;
-  margin-right: -4px;
-
-  .resize-bar {
-    position: absolute;
-    inset: 0 2px;
-    background-color: var(--tertiary);
-    cursor: col-resize;
-    box-shadow: 0 0 2px var(--tertiary);
-  }
-
-  &:hover, &.resizing {
-    opacity: 1;
-  }
 }

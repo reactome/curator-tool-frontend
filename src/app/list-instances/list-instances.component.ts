@@ -1,6 +1,6 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
-import {DataService} from "../../../core/services/data.service";
-import {InstanceList} from "../../../core/models/schema-class-instance-list.model";
+import {DataService} from "../core/services/data.service";
+import {InstanceList} from "../core/models/schema-class-instance-list.model";
 import {ActivatedRoute} from "@angular/router";
 import {MatTableDataSource, MatTableModule} from "@angular/material/table";
 import {MatToolbarModule} from "@angular/material/toolbar";
@@ -18,6 +18,9 @@ export class ListInstancesComponent implements OnInit{
   displayedColumns: string[] = ['dbId','displayName'];
   dataSource: InstanceList[] = [];
   matDataSource = new MatTableDataSource<InstanceList>();
+  limit: number = 100;
+  skip: number = 0;
+  pageSizeOptions = [20, 50, 100];
 
   @ViewChild(MatPaginator)
   paginator!: MatPaginator;
@@ -30,7 +33,7 @@ export class ListInstancesComponent implements OnInit{
 
     this.route.params.subscribe((className) => {
       this.className = className
-      this.dataService.listInstances(this.className.className).subscribe(listInstances => {
+      this.dataService.listInstances(this.className.className, this.skip, this.limit).subscribe(listInstances => {
           this.dataSource = listInstances;
           this.matDataSource = new MatTableDataSource<InstanceList>(this.dataSource);
           this.matDataSource.paginator = this.paginator;
@@ -42,5 +45,10 @@ export class ListInstancesComponent implements OnInit{
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.matDataSource.filter = filterValue.trim().toLowerCase();
+  }
+
+  onPageChange(){
+    // this.skip = 5;
+    console.log('onchange')
   }
 }

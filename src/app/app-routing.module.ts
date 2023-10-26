@@ -17,7 +17,7 @@ const routes: Routes = [
   {
     path: "list_instances",
     loadChildren: () =>
-      import("./schema-class/components/list-instances/list-instances.module").then((m) =>
+      import("./list-instances/list-instances.module").then((m) =>
         m.ListInstancesModule),
   },
   {
