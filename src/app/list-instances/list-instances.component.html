@@ -10,13 +10,16 @@
     <!-- Attribute Name Column -->
     <ng-container matColumnDef="dbId">
       <th mat-header-cell *matHeaderCellDef>Database Identifier</th>
-      <td mat-cell *matCellDef="let element">{{element.dbId}}</td>
+      <td mat-cell *matCellDef="let element">
+        <a routerLink="/instance_view/{{element.dbId}}">{{element.dbId}}</a><br>
+      </td>
     </ng-container>
 
     <!-- Value Type Column -->
     <ng-container matColumnDef="displayName">
       <th mat-header-cell *matHeaderCellDef>Display Name</th>
-      <td mat-cell *matCellDef="let element">{{element.displayName}}</td>
+      <td mat-cell *matCellDef="let element">
+        <a routerLink="/instance_view/{{element.dbId}}">{{element.displayName}}</a><br></td>
     </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
@@ -29,6 +32,6 @@
       <td class="mat-cell" colspan="4">No data matching the filter "{{input.value}}"</td>
     </tr>
   </table>
-  <mat-paginator (change)="onPageChange()" [pageSizeOptions]=pageSizeOptions
+  <mat-paginator (change)="onPageChange($event)" [pageSizeOptions]=pageSizeOptions
        showFirstLastButtons aria-label="Select page of users"></mat-paginator>
 </section>

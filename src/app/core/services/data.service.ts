@@ -300,11 +300,11 @@ export class DataService {
   /**
    * Fetch the list of instances for a schema class.
    * @param className
+   * @param skip
+   * @param limit
    * @returns
    */
   listInstances(className: string, skip: number, limit: number): Observable<InstanceList[]> {
-    // TODO: Check cached results first?
-
     // Otherwise call the restful API
     return this.http.get<InstanceList[]>(this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`)
       .pipe(map((data: InstanceList[]) => {

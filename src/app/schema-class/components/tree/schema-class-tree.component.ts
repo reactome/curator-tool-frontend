@@ -1,10 +1,12 @@
-import {Component} from '@angular/core';
+import {Component, EventEmitter, Output} from '@angular/core';
 import {FlatTreeControl, NestedTreeControl} from "@angular/cdk/tree";
 import {MatTreeFlatDataSource, MatTreeFlattener, MatTreeNestedDataSource} from "@angular/material/tree";
 import {Router} from "@angular/router";
 import {DataService} from "../../../core/services/data.service";
 import {SchemaClass} from "../../../core/models/reactome-schema.model";
 import {EDIT_ACTION} from "../../../instance/components/instance-view/instance-table/instance-table.model";
+import {Instance} from "../../../core/models/reactome-instance.model";
+import {Store} from "@ngrx/store";
 
 /** Flat node with expandable and level information */
 interface ExampleFlatNode {
@@ -20,7 +22,6 @@ interface ExampleFlatNode {
   styleUrls: ['./schema-class-tree.component.scss']
 })
 export class SchemaClassTreeComponent {
-
   private _transformer = (node: SchemaClass, level: number) => {
     return {
       expandable: !!node.children && node.children.length > 0,
@@ -44,7 +45,7 @@ export class SchemaClassTreeComponent {
 
   dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
 
-  constructor(private service: DataService, private router: Router) {
+  constructor(private service: DataService, private router: Router, private store: Store) {
     service.fetchSchemaClassTree().subscribe(data => {
       this.dataSource.data = [data]
       this.treeControl.expandAll();
