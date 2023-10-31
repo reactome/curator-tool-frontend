@@ -42,3 +42,8 @@ mat-tree {
   left: 10px;
   flex-direction: row-reverse;
 }
+
+.schema_class_text {
+  color: var(--surface1);
+  text-underline-style: none;
+}

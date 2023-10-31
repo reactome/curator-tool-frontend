@@ -1,12 +1,11 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
 import {DataService} from "../core/services/data.service";
 import {InstanceList} from "../core/models/schema-class-instance-list.model";
 import {ActivatedRoute, RouterLink} from "@angular/router";
 import {MatTableDataSource, MatTableModule} from "@angular/material/table";
 import {MatToolbarModule} from "@angular/material/toolbar";
-import {MatPaginator, MatPaginatorModule} from "@angular/material/paginator";
+import {MatPaginator, MatPaginatorModule, PageEvent} from "@angular/material/paginator";
 import {MatInputModule} from "@angular/material/input";
-import {SchemaClass} from "../core/models/reactome-schema.model";
 
 @Component({
   selector: 'app-list-instances',
@@ -15,13 +14,14 @@ import {SchemaClass} from "../core/models/reactome-schema.model";
   standalone: true,
   imports: [MatTableModule, MatToolbarModule, MatPaginatorModule, MatInputModule, RouterLink]
 })
-export class ListInstancesComponent implements OnInit {
+export class ListInstancesComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['dbId', 'displayName'];
-  dataSource: InstanceList[] = [];
   matDataSource = new MatTableDataSource<InstanceList>();
   skip: number = 0;
   pageSizeOptions = [20, 50, 100];
-  limit: number = 0;
+  pageSize: number = 20;
+  className: any = "";
+  pageIndex: number = 0;
 
   @ViewChild(MatPaginator)
   paginator!: MatPaginator;
@@ -29,47 +29,40 @@ export class ListInstancesComponent implements OnInit {
   constructor(private dataService: DataService, private route: ActivatedRoute) {
   }
 
-  className: any = "";
+  ngAfterViewInit() {
+    this.matDataSource.paginator = this.paginator;
+    this.paginator.length = this.pageSize;
+  }
 
   ngOnInit(): void {
-
     this.route.params.subscribe((className) => {
-      this.className = className
+      this.className = className;
+      this.setPaginator();
+    });
+  }
 
-      this.dataService.fetchSchemaClassTree().subscribe(data => {
-        this.findSchemaClassNode(data);
-
-        this.dataService.listInstances(this.className.className, this.skip, 20).subscribe(listInstances => {
-            this.dataSource = listInstances;
-            this.matDataSource = new MatTableDataSource<InstanceList>(this.dataSource);
-            this.paginator.length = 500;
-            this.matDataSource.paginator = this.paginator;
-          }
-        )
-      })
+  setPaginator(){
+    this.dataService.listInstances(this.className.className, this.skip, this.pageSize).subscribe(listInstances => {
+      this.matDataSource.data = listInstances;
+      // Based on this: https://www.freakyjolly.com/angular-material-12-server-side-table-pagination-example/
+      // Use timeout to reset the paginator.
+      setTimeout(() => {
+        this.paginator.pageIndex = this.pageIndex;
+        this.paginator.pageSize = this.pageSize;
+        this.paginator.length = this.dataService.getInstanceCount(this.className.className);
+      });
     })
   }
-
-  findSchemaClassNode(schemaClass: SchemaClass) {
-    if (schemaClass.name === this.className.className) {
-      this.limit = schemaClass.count!
-    } else {
-      if (schemaClass.children) {
-        for (let child of schemaClass.children) {
-          this.findSchemaClassNode(child)
-        }
-      }
-    }
-  }
-
 
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.matDataSource.filter = filterValue.trim().toLowerCase();
   }
 
-  onPageChange(pageObject: {}) {
-    // this.skip = 5;
-    console.log('onchange' + pageObject)
+  onPageChange(pageObject: PageEvent) {
+    this.skip = pageObject.pageIndex * pageObject.pageSize;
+    this.pageSize = pageObject.pageSize;
+    this.pageIndex = pageObject.pageIndex;
+    this.setPaginator();
   }
 }
