@@ -2,7 +2,7 @@ import {Component, Input} from '@angular/core';
 import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
 import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
-import {AttributeCategory, SchemaAttribute} from "../../../../core/models/reactome-schema.model";
+import {AttributeCategory} from "../../../../core/models/reactome-schema.model";
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -90,6 +90,9 @@ export class InstanceTableComponent {
       case EDIT_ACTION.ADD_NEW:
         this.addNewInstanceAttribute(attributeValue);
         break;
+      case EDIT_ACTION.ADD_VIA_SELECT:
+        this.addInstanceViaSelect();
+        break;
       default:
         console.error("The action doesn't know: ", attributeValue.editAction);
     }
@@ -141,6 +144,8 @@ export class InstanceTableComponent {
       this.updateTableContent();
     });
   }
+
+  private addInstanceViaSelect(){}
 
   private updateTableContent(): void {
     this.instanceDataSource = new InstanceDataSource(this._instance, this.categories, this.sortAttNames, this.sortAttDefined);

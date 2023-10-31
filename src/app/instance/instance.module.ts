@@ -18,6 +18,8 @@ import {SchemaClassTreeModule} from "../schema-class/components/tree/schema-clas
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {MatSidenavModule} from "@angular/material/sidenav";
 import {CdkDrag} from "@angular/cdk/drag-drop";
+import { SelectInstanceDialogComponent } from './components/select-instance-dialog/select-instance-dialog.component';
+import {ListInstancesComponent} from "../list-instances/list-instances.component";
 
 @NgModule({
   declarations: [
@@ -27,6 +29,7 @@ import {CdkDrag} from "@angular/cdk/drag-drop";
     BreadCrumbComponent,
     InstanceViewComponent,
     NewInstanceDialogComponent,
+    SelectInstanceDialogComponent,
   ],
     imports: [
         CommonModule,
@@ -40,7 +43,8 @@ import {CdkDrag} from "@angular/cdk/drag-drop";
         SchemaClassTreeModule,
         MatTooltipModule,
         MatSidenavModule,
-        CdkDrag
+        CdkDrag,
+        ListInstancesComponent
     ],
 })
 export class DatabaseObjectModule {

@@ -39,10 +39,10 @@ export class ListInstancesComponent implements OnInit {
       this.dataService.fetchSchemaClassTree().subscribe(data => {
         this.findSchemaClassNode(data);
 
-        this.dataService.listInstances(this.className.className, this.skip, this.limit).subscribe(listInstances => {
+        this.dataService.listInstances(this.className.className, this.skip, 20).subscribe(listInstances => {
             this.dataSource = listInstances;
             this.matDataSource = new MatTableDataSource<InstanceList>(this.dataSource);
-            this.paginator.length = 90;
+            this.paginator.length = 500;
             this.matDataSource.paginator = this.paginator;
           }
         )

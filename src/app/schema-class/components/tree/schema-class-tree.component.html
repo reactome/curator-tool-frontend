@@ -4,7 +4,7 @@
                  matTreeNodePaddingIndent="15">
     <!-- use a disabled button to provide padding for tree leaf -->
     <button mat-icon-button disabled></button>
-    {{node.name}}&nbsp;
+    <a routerLink="/table/{{node.name}}">{{node.name}}</a>&nbsp;
     <a routerLink="/list_instances/{{node.name}}">[{{[node.count]}}]</a>
     <button mat-icon-button (click)="createNewInstance(node.name)"
             matTooltip="Create new {{node.name}}">
@@ -19,7 +19,7 @@
         {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
       </mat-icon>
     </button>
-    {{node.name}}&nbsp;
-     <a routerLink="/list_instances/{{node.name}}"> [{{[node.count]}}]</a>
+    <a routerLink="/table/{{node.name}}">{{node.name}}</a>&nbsp;
+    <a routerLink="/list_instances/{{node.name}}"> [{{[node.count]}}]</a>
   </mat-tree-node>
 </mat-tree>

@@ -18,14 +18,14 @@ th {
 
 .table-container {
   max-height: 100vh;
-  //height: calc(100vh - var(--bread-crumb-height) - var(--title-height) - 2 * var(--body-margin));
+  height: calc(100vh - var(--bread-crumb-height) - var(--filter-height) - 2 * var(--body-margin));
   overflow: scroll;
   border: none;
 }
 
 .toolbar {
-  height: 5vh;
-  //height: var(--bread-crumb-height, 40px);
+  //height: 5vh;
+  height: var(--bread-crumb-height, 40px);
   font-size: 16px;
   font-weight: bold;
 }
@@ -37,7 +37,7 @@ th {
 mat-form-field {
   margin-top: 5px;
   width: 100%;
-  height: 80px;
+  height: var(--filter-height, 80px);
   outline: none;
   margin-bottom: -1.25em;
   line-height: 40px;
