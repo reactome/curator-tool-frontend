@@ -32,6 +32,6 @@
       <td class="mat-cell" colspan="4">No data matching the filter "{{input.value}}"</td>
     </tr>
   </table>
-  <mat-paginator (change)="onPageChange($event)" [pageSizeOptions]=pageSizeOptions
+  <mat-paginator (page)="onPageChange($event)" [pageSizeOptions]=pageSizeOptions
        showFirstLastButtons aria-label="Select page of users"></mat-paginator>
 </section>

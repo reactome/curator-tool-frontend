@@ -263,6 +263,26 @@ export class DataService {
     this.id2instance.set(instance.dbId, instance);
   }
 
+  getInstanceCount(className: string): number {
+    if (this.rootClass === undefined)
+      return 0;
+    let rtn = this.getInstanceCountForClass(className, this.rootClass!);
+    return rtn ?? 0;
+  }
+
+  private getInstanceCountForClass(queryClassName: string, schemaClass: SchemaClass): number | undefined {
+    if (queryClassName === schemaClass.name)
+      return schemaClass.count!;
+    if (schemaClass.children !== undefined) {
+      for (let childSchemaClass of schemaClass.children!) {
+        let rtn = this.getInstanceCountForClass(queryClassName, childSchemaClass);
+        if (rtn !== undefined)
+          return rtn;
+      }
+    }
+    return undefined;
+  }
+
   /**
    * Attributes returned from the server are kept as JavaScript object since JavaScript really
    * doesn't care about the type. Therefore, we need to do some converting here.
