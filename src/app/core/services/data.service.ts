@@ -1,7 +1,7 @@
-import {HttpClient} from "@angular/common/http";
-import {Injectable} from '@angular/core';
-import {catchError, concatMap, map, Observable, of, throwError} from 'rxjs';
-import {environment} from 'src/environments/environment.dev';
+import { HttpClient } from "@angular/common/http";
+import { Injectable } from '@angular/core';
+import { catchError, concatMap, map, Observable, of, throwError } from 'rxjs';
+import { environment } from 'src/environments/environment.dev';
 import {
   AttributeCategory,
   AttributeDataType,
@@ -10,8 +10,7 @@ import {
   SchemaClass
 } from '../models/reactome-schema.model';
 // import { AttributeDa } from '../models/schema-class-attribute-data.model';
-import {Instance} from "../models/reactome-instance.model";
-import {InstanceList} from "../models/schema-class-instance-list.model";
+import { Instance } from "../models/reactome-instance.model";
 
 
 @Injectable({
@@ -324,12 +323,10 @@ export class DataService {
    * @param limit
    * @returns
    */
-  listInstances(className: string, skip: number, limit: number): Observable<InstanceList[]> {
+  listInstances(className: string, skip: number, limit: number): Observable<Instance[]> {
     // Otherwise call the restful API
-    return this.http.get<InstanceList[]>(this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`)
-      .pipe(map((data: InstanceList[]) => {
-          return data.map(instance => new InstanceList(instance.dbId, instance.displayName));
-        }),
+    return this.http.get<Instance[]>(this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`)
+      .pipe(map((data: Instance[]) => data), // Nothing needs to be done.
         catchError((err: Error) => {
           console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
             panelClass: ['warning-snackbar'],

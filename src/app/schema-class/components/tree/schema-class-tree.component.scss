@@ -33,14 +33,21 @@ mat-tree {
   width: 16px;
   height: 16px;
   color: var(--primary);
-  text-align: left;
-  padding: 0 0 0 -5rem;
 }
 
 .mat-icon-button {
-  padding: 0;
-  left: 10px;
   flex-direction: row-reverse;
+  width: 36px; // This is important to show the icon
+  height: 16px; // 2px is added
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+.mat-mdc-button-touch-target {
+  width: 36px;
+  height: 16px;
 }
 
 .schema_class_text {
