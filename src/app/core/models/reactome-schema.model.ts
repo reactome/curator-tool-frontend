@@ -24,7 +24,7 @@ export interface SchemaClass {
    * https://github.com/reactome/CuratorTool/blob/master/src/org/gk/schema/GKSchemaClass.java.
    */
   name: string;
-  children?: SchemaClass[]; // Optional for the schema class tree
+  children?: SchemaClass[]; // Optional for the schema class table
   attributes?: SchemaAttribute[];
   abstract?: boolean; // Default should be false. Therefore this property is optional.
   count?: number; // The total count of instances in this class, including all descendants

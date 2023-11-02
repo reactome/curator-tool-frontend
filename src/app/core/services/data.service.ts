@@ -70,7 +70,7 @@ export class DataService {
   }
 
   /**
-   * Fetch the schema class tree.
+   * Fetch the schema class table.
    * @param className
    * @returns
    */
@@ -88,7 +88,7 @@ export class DataService {
           return this.rootClass;
         }),
         catchError((err: Error) => {
-          console.log("The schema class tree could not been loaded: \n" + err.message, "Close", {
+          console.log("The schema class table could not been loaded: \n" + err.message, "Close", {
             panelClass: ['warning-snackbar'],
             duration: 10000
           });
@@ -103,7 +103,7 @@ export class DataService {
     if (this.rootClass)
       this.buildSchemaClassMap(this.rootClass, this.name2class);
     else
-      console.error("The class tree has not been loaded. No map cannot be returned!");
+      console.error("The class table has not been loaded. No map cannot be returned!");
     return this.name2class.get(clsName);
   }
 

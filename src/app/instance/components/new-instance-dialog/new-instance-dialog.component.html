@@ -9,8 +9,14 @@
       </mat-option>
     </ng-container>
   </mat-select>
-
-  <app-instance-table [instance]="instance"></app-instance-table>
+<!--  TODO: change to case statement-->
+  <ng-container *ngIf="attributeValue.editAction === 0">
+    <app-instance-table [instance]="instance"></app-instance-table>
+  </ng-container>
+<!--  <ng-container *ngIf="attributeValue.editAction === 1">-->
+<!--    <app-list-instances-table [inputClassName]="candidateClasses[0]" [isSelection]="true"-->
+<!--    ></app-list-instances-table>-->
+<!--  </ng-container>-->
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="onOK()" cdkFocusInitial>OK</button>

@@ -1,14 +1,23 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {ListInstancesComponent} from "./list-instances.component";
+import {ListInstancesTableComponent} from "./components/table/list-instances-table.component";
 import {ListInstancesRoutingModule} from "./list-instances-routing.module";
+import {ListInstancesViewComponent} from "./components/list-instances-view/list-instances-view.component";
+import {SharedModule} from "../shared/shared.module";
+import {MaterialModule} from "../material/material.module";
 
 @NgModule({
-  declarations: [],
+  declarations: [
+    ListInstancesTableComponent,
+    ListInstancesViewComponent,
+  ],
+  exports: [
+    ListInstancesTableComponent
+  ],
   imports: [
     CommonModule,
     ListInstancesRoutingModule,
-    ListInstancesComponent,
+    MaterialModule
   ]
 })
 export class ListInstancesModule {

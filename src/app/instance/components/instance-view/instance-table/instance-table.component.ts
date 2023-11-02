@@ -91,7 +91,7 @@ export class InstanceTableComponent {
         this.addNewInstanceAttribute(attributeValue);
         break;
       case EDIT_ACTION.ADD_VIA_SELECT:
-        this.addInstanceViaSelect();
+        this.addNewInstanceAttribute(attributeValue);
         break;
       default:
         console.error("The action doesn't know: ", attributeValue.editAction);
@@ -145,7 +145,7 @@ export class InstanceTableComponent {
     });
   }
 
-  private addInstanceViaSelect(){}
+  private addInstanceViaSelect(attributeValue: AttributeValue){}
 
   private updateTableContent(): void {
     this.instanceDataSource = new InstanceDataSource(this._instance, this.categories, this.sortAttNames, this.sortAttDefined);

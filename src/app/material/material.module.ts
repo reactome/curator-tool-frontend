@@ -19,6 +19,7 @@ import {MatAutocompleteModule} from "@angular/material/autocomplete";
 import {MatRadioModule} from "@angular/material/radio";
 import {MatCheckboxModule} from "@angular/material/checkbox";
 import {MatTreeModule} from "@angular/material/tree";
+import {MatPaginatorModule} from "@angular/material/paginator";
 
 @NgModule({
   declarations: [],
@@ -43,7 +44,8 @@ import {MatTreeModule} from "@angular/material/tree";
     MatAutocompleteModule,
     MatRadioModule,
     MatCheckboxModule,
-    MatTreeModule
+    MatTreeModule,
+    MatPaginatorModule,
   ],
   exports: [
     MatTableModule,
@@ -65,7 +67,8 @@ import {MatTreeModule} from "@angular/material/tree";
     MatAutocompleteModule,
     MatRadioModule,
     MatCheckboxModule,
-    MatTreeModule
+    MatTreeModule,
+    MatPaginatorModule
   ]
 })
 export class MaterialModule { }

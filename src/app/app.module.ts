@@ -20,16 +20,16 @@ import {
 import {SharedModule} from "./shared/shared.module";
 import {ListInstancesModule} from "./list-instances/list-instances.module";
 import {MainModule} from "./main/main.module";
+import { ListInstancesViewComponent } from './list-instances/components/list-instances-view/list-instances-view.component';
 
 @NgModule({
   declarations: [
-    AppComponent,
+    AppComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     BrowserAnimationsModule,
-    SchemaClassTableComponent,
     HttpClientModule,
     SchemaClassTableModule,
     DatabaseObjectModule,

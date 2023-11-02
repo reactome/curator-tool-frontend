@@ -1,20 +1,19 @@
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
-import {DataService} from "../core/services/data.service";
-import {InstanceList} from "../core/models/schema-class-instance-list.model";
+import {AfterViewInit, Component, Input, OnInit, ViewChild} from '@angular/core';
+import {DataService} from "../../../core/services/data.service";
+import {InstanceList} from "../../../core/models/schema-class-instance-list.model";
 import {ActivatedRoute, RouterLink} from "@angular/router";
 import {MatTableDataSource, MatTableModule} from "@angular/material/table";
 import {MatToolbarModule} from "@angular/material/toolbar";
 import {MatPaginator, MatPaginatorModule, PageEvent} from "@angular/material/paginator";
 import {MatInputModule} from "@angular/material/input";
+import {NgIf} from "@angular/common";
 
 @Component({
-  selector: 'app-list-instances',
-  templateUrl: './list-instances.component.html',
-  styleUrls: ['./list-instances.component.scss'],
-  standalone: true,
-  imports: [MatTableModule, MatToolbarModule, MatPaginatorModule, MatInputModule, RouterLink]
+  selector: 'app-list-instances-table',
+  templateUrl: './list-instances-table.component.html',
+  styleUrls: ['./list-instances-table.component.scss'],
 })
-export class ListInstancesComponent implements OnInit, AfterViewInit {
+export class ListInstancesTableComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['dbId', 'displayName'];
   matDataSource = new MatTableDataSource<InstanceList>();
   skip: number = 0;
@@ -22,6 +21,8 @@ export class ListInstancesComponent implements OnInit, AfterViewInit {
   pageSize: number = 20;
   className: any = "";
   pageIndex: number = 0;
+  @Input() inputClassName: string = "";
+  @Input() isSelection: boolean = false;
 
   @ViewChild(MatPaginator)
   paginator!: MatPaginator;
@@ -35,21 +36,26 @@ export class ListInstancesComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+    console.log('inputClassName' + this.inputClassName)
+    this.isSelection ? this.className = this.inputClassName && this.loadInstances() :
     this.route.params.subscribe((className) => {
       this.className = className;
-      this.setPaginator();
+      this.className = this.className.className;
+      this.skip = 0;
+      this.pageIndex = 0;
+      this.loadInstances();
     });
   }
 
-  setPaginator(){
-    this.dataService.listInstances(this.className.className, this.skip, this.pageSize).subscribe(listInstances => {
+  loadInstances(){
+    this.dataService.listInstances(this.className, this.skip, this.pageSize).subscribe(listInstances => {
       this.matDataSource.data = listInstances;
       // Based on this: https://www.freakyjolly.com/angular-material-12-server-side-table-pagination-example/
       // Use timeout to reset the paginator.
       setTimeout(() => {
         this.paginator.pageIndex = this.pageIndex;
         this.paginator.pageSize = this.pageSize;
-        this.paginator.length = this.dataService.getInstanceCount(this.className.className);
+        this.paginator.length = this.dataService.getInstanceCount(this.className);
       });
     })
   }
@@ -63,6 +69,6 @@ export class ListInstancesComponent implements OnInit, AfterViewInit {
     this.skip = pageObject.pageIndex * pageObject.pageSize;
     this.pageSize = pageObject.pageSize;
     this.pageIndex = pageObject.pageIndex;
-    this.setPaginator();
+    this.loadInstances();
   }
 }

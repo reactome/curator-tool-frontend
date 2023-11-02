@@ -1,8 +1,8 @@
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
-  <!-- This is the tree node template for leaf nodes -->
+  <!-- This is the table node template for leaf nodes -->
   <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding class="schema_class_text" matTreeNodeToggle
                  matTreeNodePaddingIndent="15">
-    <!-- use a disabled button to provide padding for tree leaf -->
+    <!-- use a disabled button to provide padding for table leaf -->
     <button mat-icon-button disabled></button>
     <a class="schema_class_text" routerLink="/table/{{node.name}}">{{node.name}}</a>&nbsp;
     <a routerLink="/list_instances/{{node.name}}">[{{[node.count]}}]</a>
@@ -11,7 +11,7 @@
       <mat-icon color="primary">add_box</mat-icon>
     </button>
   </mat-tree-node>
-  <!-- This is the tree node template for expandable nodes -->
+  <!-- This is the table node template for expandable nodes -->
   <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding class="schema_class_text"
                  matTreeNodePaddingIndent="15">
     <button mat-icon-button matTreeNodeToggle>

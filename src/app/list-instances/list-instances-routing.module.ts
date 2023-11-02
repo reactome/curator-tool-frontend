@@ -1,12 +1,12 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 import {CommonModule} from '@angular/common';
-import {ListInstancesComponent} from "./list-instances.component";
+import {ListInstancesViewComponent} from "./components/list-instances-view/list-instances-view.component";
 
 const routes: Routes = [
   {
     path: `:className`,
-    component: ListInstancesComponent
+    component: ListInstancesViewComponent
   }
 ]
 
@@ -14,9 +14,7 @@ const routes: Routes = [
   declarations: [],
   imports: [
     CommonModule,
-    RouterModule.forChild(routes),
-    ListInstancesComponent
-  ],
+    RouterModule.forChild(routes)],
   exports: [RouterModule]
 })
 export class ListInstancesRoutingModule {

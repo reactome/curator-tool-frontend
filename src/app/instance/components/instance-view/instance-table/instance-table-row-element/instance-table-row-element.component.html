@@ -7,6 +7,7 @@
     </mat-slide-toggle>
   </ng-template>
 
+<!--  TODO: change height of text container-->
   <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
     <mat-form-field appearance="fill" subscriptSizing="dynamic" class="input-style">
       <input [(ngModel)]="value!" matInput type="text" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"

@@ -13,18 +13,16 @@
 th {
   background: var(--primary-container) !important;
   color: var(--on-primary-container) !important;
-  height: var(--bread-crumb-height, 40px) !important;
+  //height: var(--bread-crumb-height, 40px) !important;
 }
 
 .table-container {
-  max-height: 100vh;
   height: calc(100vh - var(--bread-crumb-height) - var(--filter-height) - 2 * var(--body-margin));
-  overflow: scroll;
+  overflow: auto;
   border: none;
 }
 
 .toolbar {
-  //height: 5vh;
   height: var(--bread-crumb-height, 40px);
   font-size: 16px;
   font-weight: bold;

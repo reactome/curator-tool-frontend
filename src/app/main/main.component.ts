@@ -11,7 +11,6 @@ export class MainComponent {
   showResize: boolean = false;
   sideWidth = 400;
   resizing: boolean = false;
-  instanceCount: number = 0;
 
   constructor(private router: Router, private route: ActivatedRoute) {
   }
