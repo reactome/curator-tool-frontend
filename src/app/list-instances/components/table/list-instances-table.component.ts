@@ -36,26 +36,24 @@ export class ListInstancesTableComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    console.log('inputClassName' + this.inputClassName)
-    this.isSelection ? this.className = this.inputClassName && this.loadInstances() :
-    this.route.params.subscribe((className) => {
-      this.className = className;
-      this.className = this.className.className;
-      this.skip = 0;
-      this.pageIndex = 0;
-      this.loadInstances();
-    });
+    this.className = this.inputClassName;
+    this.skip = 0;
+    this.pageIndex = 0;
+    this.loadInstances();
   }
 
-  loadInstances(){
-    this.dataService.listInstances(this.className, this.skip, this.pageSize).subscribe(listInstances => {
+  loadInstances() {
+    console.log('inputClassName ' + this.inputClassName)
+    this.dataService.listInstances(this.inputClassName, this.skip, this.pageSize).subscribe(listInstances => {
       this.matDataSource.data = listInstances;
       // Based on this: https://www.freakyjolly.com/angular-material-12-server-side-table-pagination-example/
       // Use timeout to reset the paginator.
+      this.skip = 0;
+      this.pageIndex = 0;
       setTimeout(() => {
         this.paginator.pageIndex = this.pageIndex;
         this.paginator.pageSize = this.pageSize;
-        this.paginator.length = this.dataService.getInstanceCount(this.className);
+        this.paginator.length = this.dataService.getInstanceCount(this.inputClassName);
       });
     })
   }

@@ -4,7 +4,6 @@ import {Store} from "@ngrx/store";
 import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {InstanceActions} from "../../state/instance.actions";
 import {selectViewInstance} from '../../state/instance.selectors';
-import {CdkDragMove} from "@angular/cdk/drag-drop";
 
 @Component({
   selector: 'app-instance-view',
