@@ -1,12 +1,9 @@
-import {AfterViewInit, Component, Input, OnInit, ViewChild} from '@angular/core';
-import {DataService} from "../../../core/services/data.service";
-import {InstanceList} from "../../../core/models/schema-class-instance-list.model";
-import {ActivatedRoute, RouterLink} from "@angular/router";
-import {MatTableDataSource, MatTableModule} from "@angular/material/table";
-import {MatToolbarModule} from "@angular/material/toolbar";
-import {MatPaginator, MatPaginatorModule, PageEvent} from "@angular/material/paginator";
-import {MatInputModule} from "@angular/material/input";
-import {NgIf} from "@angular/common";
+import { AfterViewInit, Component, Input, OnInit, ViewChild } from '@angular/core';
+import { MatPaginator, PageEvent } from "@angular/material/paginator";
+import { MatTableDataSource } from "@angular/material/table";
+import { ActivatedRoute } from "@angular/router";
+import { Instance } from "../../../core/models/reactome-instance.model";
+import { DataService } from "../../../core/services/data.service";
 
 @Component({
   selector: 'app-list-instances-table',
@@ -15,7 +12,7 @@ import {NgIf} from "@angular/common";
 })
 export class ListInstancesTableComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['dbId', 'displayName'];
-  matDataSource = new MatTableDataSource<InstanceList>();
+  matDataSource = new MatTableDataSource<Instance>();
   skip: number = 0;
   pageSizeOptions = [20, 50, 100];
   pageSize: number = 20;
