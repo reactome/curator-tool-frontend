@@ -48,9 +48,8 @@
   cursor: pointer;
 }
 
-// Need to have some adjust to make sure it is the same as the original hover color.
-button:hover {
-  background-color: lightgrey;
+.mat-icon-button:hover {
+  background-color: var(--hover);
 }
 
 
