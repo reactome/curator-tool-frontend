@@ -18,8 +18,15 @@ export class ListInstancesTableComponent implements OnInit, AfterViewInit {
   pageSize: number = 20;
   className: any = "";
   pageIndex: number = 0;
-  @Input() inputClassName: string = "";
+  inputClassName: string = "";
   @Input() isSelection: boolean = false;
+
+  @Input() set setClassName(className: string) {
+    this.inputClassName = className;
+    this.skip = 0;
+    this.pageIndex = 0;
+    this.loadInstances();
+  }
 
   @ViewChild(MatPaginator)
   paginator!: MatPaginator;
@@ -45,8 +52,6 @@ export class ListInstancesTableComponent implements OnInit, AfterViewInit {
       this.matDataSource.data = listInstances;
       // Based on this: https://www.freakyjolly.com/angular-material-12-server-side-table-pagination-example/
       // Use timeout to reset the paginator.
-      this.skip = 0;
-      this.pageIndex = 0;
       setTimeout(() => {
         this.paginator.pageIndex = this.pageIndex;
         this.paginator.pageSize = this.pageSize;
