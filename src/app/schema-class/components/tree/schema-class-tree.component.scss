@@ -20,7 +20,7 @@
   white-space: nowrap;
 }
 
-mat-tree {
+.mat-tree {
   background: var(--surface2);
   height: calc(100vh - 2 * var(--body-margin, 8px));
   border: 1px solid var(--outline-variant);
@@ -38,17 +38,34 @@ mat-tree {
 .mat-icon-button {
   flex-direction: row-reverse;
   width: 36px; // This is important to show the icon
-  height: 16px; // 2px is added
+  height: 18px; // 2px is added
   display: flex;
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
+  background: transparent; // these two to make sure no background and border for tree nodes having children.
+  border: none;
+  cursor: pointer;
 }
 
-.mat-mdc-button-touch-target {
-  width: 36px;
-  height: 16px;
+// Need to have some adjust to make sure it is the same as the original hover color.
+button:hover {
+  background-color: lightgrey;
 }
+
+
+// Any width and height changes in the following cannot work because of this:
+// https://m2.material.io/develop/web/supporting/touch-target.
+// .mat-mdc-icon-button .mat-mdc-button-touch-target {
+//   position: absolute;
+//   top: 50%;
+//   height: 18px;
+//   left: 50%;
+//   width: 36px;
+//   transform: translate(-50%, -50%);
+//   background-color: green;
+// }
+
 
 .schema_class_text {
   color: var(--surface1);
