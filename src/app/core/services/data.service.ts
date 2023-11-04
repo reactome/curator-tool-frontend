@@ -29,6 +29,7 @@ export class DataService {
   private entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
   private schemaClassTreeUrl = `${environment.ApiRoot}/getSchemaClassTree/`;
   private listInstancesUrl = `${environment.ApiRoot}/listInstances/`
+  private countInstancesUrl = `${environment.ApiRoot}/countInstances/`
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
   // The root class is cached for performance
@@ -82,7 +83,7 @@ export class DataService {
     return this.http.get<SchemaClass>(this.schemaClassTreeUrl)
       .pipe(
         map((data: SchemaClass) => {
-          console.debug("fetchSchemaClassTree:", data);
+          // console.debug("fetchSchemaClassTree:", data);
           this.rootClass = data;
           return this.rootClass;
         }),
@@ -233,18 +234,18 @@ export class DataService {
    */
   createNewInstance(schemaClassName: string): Observable<Instance> {
     return this.fetchSchemaClass(schemaClassName).pipe(map((schemaClass: SchemaClass) => {
-        const attributes = new Map();
-        attributes.set('dbId', this.nextNewDbId);
-        this.nextNewDbId -= 1;
-        attributes.set('displayName', 'To be generated');
-        let instance: Instance = {
-          dbId: attributes.get('dbId'),
-          displayName: attributes.get('displayName'),
-          attributes: attributes
-        };
-        instance.schemaClass = schemaClass;
-        return instance;
-      }),
+      const attributes = new Map();
+      attributes.set('dbId', this.nextNewDbId);
+      this.nextNewDbId -= 1;
+      attributes.set('displayName', 'To be generated');
+      let instance: Instance = {
+        dbId: attributes.get('dbId'),
+        displayName: attributes.get('displayName'),
+        attributes: attributes
+      };
+      instance.schemaClass = schemaClass;
+      return instance;
+    }),
       catchError((err: Error) => {
         console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
           panelClass: ['warning-snackbar'],
@@ -262,24 +263,25 @@ export class DataService {
     this.id2instance.set(instance.dbId, instance);
   }
 
-  getInstanceCount(className: string): number {
-    if (this.rootClass === undefined)
-      return 0;
-    let rtn = this.getInstanceCountForClass(className, this.rootClass!);
-    return rtn ?? 0;
-  }
-
-  private getInstanceCountForClass(queryClassName: string, schemaClass: SchemaClass): number | undefined {
-    if (queryClassName === schemaClass.name)
-      return schemaClass.count!;
-    if (schemaClass.children !== undefined) {
-      for (let childSchemaClass of schemaClass.children!) {
-        let rtn = this.getInstanceCountForClass(queryClassName, childSchemaClass);
-        if (rtn !== undefined)
-          return rtn;
-      }
+  /**
+   * Call the server to get the counts.
+   * @param className
+   * @returns 
+   */
+  getInstanceCount(className: string, searchKey: string | undefined): Observable<number> {
+    let url = this.countInstancesUrl + className;
+    if (searchKey !== undefined) {
+      url += '?query=' + searchKey;
     }
-    return undefined;
+    return this.http.get<number>(url)
+      .pipe(map((count: number) => count), // Nothing needs to be done.
+        catchError((err: Error) => {
+          console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
+            panelClass: ['warning-snackbar'],
+            duration: 10000
+          });
+          return throwError(() => err);
+        }));
   }
 
   /**
@@ -323,9 +325,16 @@ export class DataService {
    * @param limit
    * @returns
    */
-  listInstances(className: string, skip: number, limit: number): Observable<Instance[]> {
-    // Otherwise call the restful API
-    return this.http.get<Instance[]>(this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`)
+  listInstances(className: string,
+    skip: number,
+    limit: number,
+    searchKey: string | undefined): Observable<Instance[]> {
+    let url = this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
+    if (searchKey !== undefined) {
+      url += '?query=' + searchKey;
+    }
+    // console.debug('list instances url: ' + url);
+    return this.http.get<Instance[]>(url)
       .pipe(map((data: Instance[]) => data), // Nothing needs to be done.
         catchError((err: Error) => {
           console.log("The list of instances could not be loaded: \n" + err.message, "Close", {

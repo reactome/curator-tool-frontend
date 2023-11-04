@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import {ListInstancesTableComponent} from "../table/list-instances-table.component";
 
 @Component({
   selector: 'app-list-instances-view',
