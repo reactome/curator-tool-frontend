@@ -3,7 +3,7 @@
 </mat-toolbar>
 <mat-form-field>
   <mat-label>Search</mat-label>
-  <input matInput (keydown.enter)="searchForName($event)" #input>
+  <input matInput (keydown.enter)="searchForName($event)" (keyup)="recordSearchKey($event)" #input>
 </mat-form-field>
 <section class="table-container" tabindex="0">
   <table mat-table [dataSource]="matDataSource" class="mat-elevation-z8 demo-table">

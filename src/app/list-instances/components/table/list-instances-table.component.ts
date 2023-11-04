@@ -10,7 +10,7 @@ import { DataService } from "../../../core/services/data.service";
   templateUrl: './list-instances-table.component.html',
   styleUrls: ['./list-instances-table.component.scss'],
 })
-export class ListInstancesTableComponent implements OnInit, AfterViewInit {
+export class ListInstancesTableComponent implements OnInit {
   displayedColumns: string[] = ['dbId', 'displayName'];
   matDataSource = new MatTableDataSource<Instance>();
   skip: number = 0;
@@ -28,11 +28,6 @@ export class ListInstancesTableComponent implements OnInit, AfterViewInit {
   paginator!: MatPaginator;
 
   constructor(private dataService: DataService, private route: ActivatedRoute) {
-  }
-
-  ngAfterViewInit() {
-    this.matDataSource.paginator = this.paginator;
-    this.paginator.length = this.pageSize;
   }
 
   ngOnInit(): void {
@@ -57,6 +52,7 @@ export class ListInstancesTableComponent implements OnInit, AfterViewInit {
       this.instanceCount = count, 
       this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey).subscribe(instanceList => {
         this.matDataSource.data = instanceList;
+        this.matDataSource.paginator = this.paginator;
         // Based on this: https://www.freakyjolly.com/angular-material-12-server-side-table-pagination-example/
         // Use timeout to reset the paginator.
         setTimeout(() => {
@@ -70,11 +66,14 @@ export class ListInstancesTableComponent implements OnInit, AfterViewInit {
   }
 
   searchForName(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
     this.skip = 0;
     this.pageIndex = 0;
-    this.searchKey = filterValue;
     this.loadInstances();
+  }
+
+  recordSearchKey(event: Event) {
+    const text = (event.target as HTMLInputElement).value;
+    this.searchKey = text;
   }
 
   onPageChange(pageObject: PageEvent) {
