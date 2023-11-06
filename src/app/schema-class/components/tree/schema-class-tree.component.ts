@@ -1,19 +1,19 @@
-import {Component, EventEmitter, Output} from '@angular/core';
-import {FlatTreeControl, NestedTreeControl} from "@angular/cdk/tree";
-import {MatTreeFlatDataSource, MatTreeFlattener, MatTreeNestedDataSource} from "@angular/material/tree";
-import {Router} from "@angular/router";
-import {DataService} from "../../../core/services/data.service";
-import {SchemaClass} from "../../../core/models/reactome-schema.model";
-import {EDIT_ACTION} from "../../../instance/components/instance-view/instance-table/instance-table.model";
-import {Instance} from "../../../core/models/reactome-instance.model";
-import {Store} from "@ngrx/store";
+import { FlatTreeControl } from "@angular/cdk/tree";
+import { Component } from '@angular/core';
+import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
+import { Router } from "@angular/router";
+import { Store } from "@ngrx/store";
+import { SchemaClass } from "../../../core/models/reactome-schema.model";
+import { DataService } from "../../../core/services/data.service";
+import { EDIT_ACTION } from "../../../instance/components/instance-view/instance-table/instance-table.model";
 
-/** Flat node with expandable and level information */
-interface ExampleFlatNode {
+/** Tree node with expandable and level information */
+interface SchemaClassNode {
   expandable: boolean;
   name: string;
   level: number;
   count: number;
+  abstract: boolean;
 }
 
 @Component({
@@ -28,10 +28,11 @@ export class SchemaClassTreeComponent {
       name: node.name,
       count: node.count ?? 0,
       level: level,
+      abstract: node.abstract ?? false, // Default is false
     };
   };
 
-  treeControl = new FlatTreeControl<ExampleFlatNode>(
+  treeControl = new FlatTreeControl<SchemaClassNode>(
     node => node.level,
     node => node.expandable,
   );
@@ -52,7 +53,7 @@ export class SchemaClassTreeComponent {
     })
   }
 
-  hasChild = (_: number, node: ExampleFlatNode) => node.expandable;
+  hasChild = (_: number, node: SchemaClassNode) => node.expandable;
 
   createNewInstance(schemaClassName: string) {
     this.service.createNewInstance(schemaClassName).subscribe(instance => {

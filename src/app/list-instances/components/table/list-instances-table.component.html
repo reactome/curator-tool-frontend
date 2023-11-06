@@ -2,8 +2,9 @@
   {{this.className}}
 </mat-toolbar>
 <mat-form-field>
-  <mat-label>Filter</mat-label>
-  <input matInput (keyup)="applyFilter($event)" placeholder="Ex. ium" #input>
+  <mat-label>Search</mat-label>
+  <!-- Need to track the text using keyup in case the text is deleted but still used for instance list -->
+  <input matInput (keydown.enter)="searchForName($event)" (keyup)="recordSearchKey($event)" #input>
 </mat-form-field>
 <section class="table-container" tabindex="0">
   <table mat-table [dataSource]="matDataSource" class="mat-elevation-z8 demo-table">
@@ -39,7 +40,7 @@
     ></tr>
     <!-- Row shown when there is no matching data. -->
     <tr class="mat-row" *matNoDataRow>
-      <td class="mat-cell" colspan="4">No data matching the filter "{{input.value}}"</td>
+      <td class="mat-cell" colspan="4">No data matching the search key: "{{input.value}}"</td>
     </tr>
   </table>
   <mat-paginator (page)="onPageChange($event)" [pageSizeOptions]=pageSizeOptions
