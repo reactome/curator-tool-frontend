@@ -22,7 +22,6 @@ import {SchemaClassTreeModule} from "../schema-class/components/tree/schema-clas
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {MatSidenavModule} from "@angular/material/sidenav";
 import {CdkDrag} from "@angular/cdk/drag-drop";
-import {SelectInstanceDialogComponent} from './components/select-instance-dialog/select-instance-dialog.component';
 import {ListInstancesModule} from "../list-instances/list-instances.module";
 
 @NgModule({
@@ -32,8 +31,7 @@ import {ListInstancesModule} from "../list-instances/list-instances.module";
     InstanceTableRowElementComponent,
     BreadCrumbComponent,
     InstanceViewComponent,
-    NewInstanceDialogComponent,
-    SelectInstanceDialogComponent,
+    NewInstanceDialogComponent
   ],
   imports: [
     CommonModule,

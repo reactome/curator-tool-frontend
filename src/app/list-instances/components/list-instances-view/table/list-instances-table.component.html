@@ -1,6 +1,3 @@
-<mat-toolbar color="primary" class="toolbar">
-  {{this.className}}
-</mat-toolbar>
 <mat-form-field>
   <mat-label>Search</mat-label>
   <!-- Need to track the text using keyup in case the text is deleted but still used for instance list -->
@@ -29,20 +26,32 @@
           {{element.displayName}}
         </ng-container>
         <ng-container *ngIf="!isSelection">
-        <a routerLink="/instance_view/{{element.dbId}}">{{element.displayName}}</a>
-        </ng-container><br></td>
+          <a routerLink="/instance_view/{{element.dbId}}">{{element.displayName}}</a>
+        </ng-container>
+        <br></td>
     </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr
-      mat-row
-      *matRowDef="let row; columns: displayedColumns;"
-    ></tr>
+    <ng-container *ngIf="!isSelection">
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns;"
+      ></tr>
+    </ng-container>
+    <ng-container *ngIf="isSelection">
+      <tr
+        mat-row
+        (click)="onRowClick(row)"
+        *matRowDef="let row; columns: displayedColumns;"
+        [class.selected]="row.dbId === this.selected"
+      ></tr>
+    </ng-container>
+
     <!-- Row shown when there is no matching data. -->
     <tr class="mat-row" *matNoDataRow>
       <td class="mat-cell" colspan="4">No data matching the search key: "{{input.value}}"</td>
     </tr>
   </table>
-  <mat-paginator (page)="onPageChange($event)" [pageSizeOptions]=pageSizeOptions
+  <mat-paginator (page)="onPageChange($event)" [length]="instanceCount" [pageSizeOptions]=pageSizeOptions
                  showFirstLastButtons aria-label="Select page of users"></mat-paginator>
 </section>

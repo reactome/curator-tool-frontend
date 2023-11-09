@@ -3,6 +3,9 @@ import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
 import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
 import {AttributeCategory} from "../../../../core/models/reactome-schema.model";
+import {
+  SelectInstanceDialogService
+} from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -33,7 +36,8 @@ export class InstanceTableComponent {
   };
 
   constructor(
-    private dialogService: NewInstanceDialogService) {
+    private dialogService: NewInstanceDialogService,
+    private selectInstanceDialogService: SelectInstanceDialogService) {
     for(let category of this.categoryNames){
       let categoryKey = category as keyof typeof AttributeCategory;
       this.categories.set(AttributeCategory[categoryKey], true)}
@@ -91,7 +95,7 @@ export class InstanceTableComponent {
         this.addNewInstanceAttribute(attributeValue);
         break;
       case EDIT_ACTION.ADD_VIA_SELECT:
-        this.addNewInstanceAttribute(attributeValue);
+        this.addInstanceViaSelect(attributeValue);
         break;
       default:
         console.error("The action doesn't know: ", attributeValue.editAction);
@@ -145,7 +149,37 @@ export class InstanceTableComponent {
     });
   }
 
-  private addInstanceViaSelect(attributeValue: AttributeValue){}
+  private addInstanceViaSelect(attributeValue: AttributeValue){
+    const matDialogRef = this.selectInstanceDialogService.openDialog(attributeValue);
+    matDialogRef.afterClosed().subscribe(result => {
+      // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
+      // Add the new value
+      if (result === undefined)
+        return; // Do nothing
+      // Check if there is any value
+      let value = this._instance?.attributes?.get(attributeValue.attribute.name);
+      if (value === undefined) {
+        // It should be the first
+        if (attributeValue.attribute.cardinality === '1') {
+          this._instance?.attributes?.set(attributeValue.attribute.name, result);
+        }
+        else {
+          this._instance?.attributes?.set(attributeValue.attribute.name, [result]);
+        }
+      }
+      else {
+        // It should be the first
+        if (attributeValue.attribute.cardinality === '1') { // Make sure only one value used
+          this._instance?.attributes?.set(attributeValue.attribute.name, result);
+        }
+        else {
+          value.splice(attributeValue.index, 0, result);
+        }
+      }
+      //TODO: Add a new value may reset the scroll position. This needs to be changed!
+      this.updateTableContent();
+    });
+  }
 
   private updateTableContent(): void {
     this.instanceDataSource = new InstanceDataSource(this._instance, this.categories, this.sortAttNames, this.sortAttDefined);

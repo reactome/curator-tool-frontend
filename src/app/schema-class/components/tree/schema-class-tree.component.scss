@@ -68,5 +68,9 @@
 
 .schema_class_text {
   color: var(--surface1);
-  text-underline-style: none;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline ;
+}
 }

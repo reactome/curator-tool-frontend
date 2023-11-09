@@ -2,12 +2,24 @@
   width: 100%;
 }
 
+.demo-row-is-clicked {
+  font-weight: bold;
+}
+
 .mat-mdc-row {
   height: 30px;
 }
 
 .mat-mdc-row:hover .mat-mdc-cell {
   border-color: currentColor;
+  //border-bottom: 1px currentColor;
+  border-top: 1px currentColor;
+  background-color: var(--surface-variant);
+  cursor: pointer;
+}
+
+selected {
+  background-color: #8a9296;
 }
 
 th {
@@ -20,12 +32,6 @@ th {
   height: calc(100vh - var(--bread-crumb-height) - var(--filter-height) - 2 * var(--body-margin));
   overflow: auto;
   border: none;
-}
-
-.toolbar {
-  height: var(--bread-crumb-height, 40px);
-  font-size: 16px;
-  font-weight: bold;
 }
 
 .filter {
