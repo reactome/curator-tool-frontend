@@ -6,6 +6,5 @@ export const InstanceActions = createActionGroup({
   events: {
     get_instance: props<{dbId: number}>(),
     view_instance: props<Instance>(),
-    create_instance: props<{schemaClassName: string}>(),
   }
 })

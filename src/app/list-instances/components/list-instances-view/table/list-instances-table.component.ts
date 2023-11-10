@@ -63,6 +63,11 @@ export class ListInstancesTableComponent implements OnInit {
   recordSearchKey(event: Event) {
     const text = (event.target as HTMLInputElement).value;
     this.searchKey = text;
+    // Make sure reset it to undefined if nothing there so that
+    // no empty string sent to the server
+    if (this.searchKey !== undefined && this.searchKey.length === 0) {
+      this.searchKey = undefined;
+    }
   }
 
   onPageChange(pageObject: PageEvent) {
