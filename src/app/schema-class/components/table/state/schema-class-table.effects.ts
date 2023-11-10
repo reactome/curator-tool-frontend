@@ -7,14 +7,14 @@ import {DataService} from "src/app/core/services/data.service";
 @Injectable()
 export class SchemaClassTableEffects {
 
-  getSchemaClassData$ = createEffect(() =>
+  getSchemaClass$ = createEffect(() =>
     this.actions$.pipe(
       ofType(SchemaClassTableActions.get),
       // check if className has been fetched, otherwise perform call
       mergeMap(({className}) =>
           this.dataService.fetchSchemaClass(className).pipe(
             catchError(() => EMPTY),
-            map(schemaClassData => SchemaClassTableActions.set(schemaClassData),
+            map(schemaClass => SchemaClassTableActions.set(schemaClass),
             )))
     ), {dispatch: true}
   );

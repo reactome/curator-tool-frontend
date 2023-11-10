@@ -16,7 +16,7 @@ import {routerReducer, StoreRouterConnectingModule} from '@ngrx/router-store';
 import {CustomSerializer} from "./store/custom-serializer";
 import {
   SchemaClassTableComponent
-} from "./schema-class/components/table/components/attributeTable/schema-class-table.component";
+} from "./schema-class/components/table/schema-class-table.component";
 import {SharedModule} from "./shared/shared.module";
 import {ListInstancesModule} from "./list-instances/list-instances.module";
 import {MainModule} from "./main/main.module";

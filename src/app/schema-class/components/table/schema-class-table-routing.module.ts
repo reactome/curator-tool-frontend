@@ -1,7 +1,7 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 import {CommonModule} from '@angular/common';
-import {SchemaClassTableComponent} from './components/attributeTable/schema-class-table.component';
+import {SchemaClassTableComponent} from './schema-class-table.component';
 
 const routes: Routes = [
   {
