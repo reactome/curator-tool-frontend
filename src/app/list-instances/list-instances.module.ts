@@ -6,12 +6,14 @@ import {ListInstancesViewComponent} from "./components/list-instances-view/list-
 import {SharedModule} from "../shared/shared.module";
 import {MaterialModule} from "../material/material.module";
 import {SelectInstanceDialogComponent} from "./components/select-instance-dialog/select-instance-dialog.component";
+import { SelectedInstancesTableComponent } from './components/select-instance-dialog/selected-instances-table/selected-instances-table.component';
 
 @NgModule({
   declarations: [
     ListInstancesTableComponent,
     ListInstancesViewComponent,
-    SelectInstanceDialogComponent
+    SelectInstanceDialogComponent,
+    SelectedInstancesTableComponent
   ],
   exports: [
     ListInstancesTableComponent,

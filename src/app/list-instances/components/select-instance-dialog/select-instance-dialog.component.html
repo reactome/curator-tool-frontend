@@ -14,6 +14,9 @@
       [isSelection]="true"
       (clickEvent)="onSelectRow($event)"
     ></app-list-instances-table>
+  <ng-container *ngIf="this.selectedInstances.length > 0">
+    <app-selected-instances-table [setDataSource]="selectedInstances"></app-selected-instances-table>
+  </ng-container>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="onOK()" cdkFocusInitial>OK</button>

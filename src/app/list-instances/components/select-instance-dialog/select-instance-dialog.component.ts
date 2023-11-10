@@ -20,6 +20,8 @@ export class SelectInstanceDialogComponent {
   selected: string = '';
   candidateClasses: string[] = [];
   instance: Instance | undefined;
+  selectedInstances: Instance[] = [];
+  testing: string = "now TEsting"
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public attributeValue: AttributeValue,
               public dialogRef: MatDialogRef<SelectInstanceDialogComponent>,
@@ -30,6 +32,8 @@ export class SelectInstanceDialogComponent {
 
   onSelectRow(row: Instance){
     this.instance = row;
+    this.selectedInstances.push(row);
+    console.log("selected Instances:  " + this.selectedInstances)
   }
 
   onSelectionChange(): void {

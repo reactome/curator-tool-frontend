@@ -18,7 +18,7 @@ export class BreadCrumbComponent {
 
   dbIdsRemove: Instance[] = new Array<Instance>;
 
-  constructor(private store: Store, private route: ActivatedRoute) {
+  constructor() {
   }
 
   breadCrumb(menu: any, index: any) {

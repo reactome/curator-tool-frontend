@@ -52,3 +52,9 @@ mat-form-field {
 ::ng-deep .mat-form-field-wrapper{
   margin-bottom: -1.25em;
 }
+
+mat-paginator {
+  bottom: 0px;
+  position: sticky;
+  z-index: 10;
+}
