@@ -45,6 +45,28 @@ mat-vertical-stepper, mat-horizontal-stepper {
   text-align: justify;
 }
 
+.table-container .mat-mdc-form-field {
+  .mat-mdc-form-field-infix {
+    padding: 0 !important;
+    min-height: 29px !important; // TODO: USE CALCULATION
+    display: flex !important;
+  }
+
+  //// To disable form field line underneath. PLease add something to distinguish editable fields
+  //// before removing activating it
+  //.mdc-line-ripple {
+  //  display: none!important;
+  //}
+}
+
+.mat-mdc-progress-spinner {
+  height: 50px !important;
+  width: 50px !important;
+  position: absolute;
+  text-align: center !important;
+  top: 50%;
+}
+
 h1 {
   display: flex;
   justify-content: center;

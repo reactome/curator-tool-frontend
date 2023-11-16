@@ -1,21 +1,25 @@
 <h2 class="dialog_title" mat-dialog-title cdkdraghandle>Select an Instance</h2>
-<mat-dialog-content style="width: 100%">
+<mat-dialog-content style="width: 100%;">
   <mat-label>Select a Schema Class: </mat-label>
   <mat-select [(value)]="selected" class="drop_down" (selectionChange)="onSelectionChange()">
-    <!--   TODO: Check on touchscreen if touch works for 'click' event -->
     <ng-container>
       <mat-option *ngFor="let value of candidateClasses" [value]="value">
         {{value}}
       </mat-option>
     </ng-container>
-  </mat-select>
-    <app-list-instances-table
+  </mat-select>  <section class="scroll_panel">
+  <app-list-instances-table class="scroll_panel"
       [setClassName]="this.selected"
       [isSelection]="true"
       (clickEvent)="onSelectRow($event)"
     ></app-list-instances-table>
+  </section>
+  <br>
+  <mat-label>Selected Instances: </mat-label>
   <ng-container *ngIf="this.selectedInstances.length > 0">
-    <app-selected-instances-table [setDataSource]="selectedInstances"></app-selected-instances-table>
+    <section class="scroll_panel">
+      <app-selected-instances-table [dataSource]="selectedInstances" (removeEvent)="onRemoveEvent($event)"></app-selected-instances-table>
+    </section>
   </ng-container>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

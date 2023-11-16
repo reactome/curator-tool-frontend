@@ -1,12 +1,20 @@
 .span-menu-trigger {
-    display: inline-block;
-    width: 100%;
-    /* Adjust the width to your preference
-    TODO: Make sure this is the same height as the link in other cells! */
-    height: 20px;
-    /* Adjust the height to your preference */
+  display: inline-block;
+  width: 100%;
+  /* Adjust the width to your preference
+  TODO: Make sure this is the same height as the link in other cells! */
+  height: 20px;
+  /* Adjust the height to your preference */
 
-    /* Change the background color as needed */
+  /* Change the background color as needed */
+}
+
+.padding {
+  padding: 0 16px;
+}
+
+:host {
+  --mdc-shape-small: 0;
 }
 
 mat-form-field {
@@ -16,6 +24,11 @@ mat-form-field {
   outline: none;
   font-family: Roboto, "Helvetica Neue", sans-serif;
   font-size: 14px;
+}
+
+.mat-mdc-form-field-infix {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .input-style {

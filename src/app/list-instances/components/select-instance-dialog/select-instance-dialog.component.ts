@@ -21,7 +21,6 @@ export class SelectInstanceDialogComponent {
   candidateClasses: string[] = [];
   instance: Instance | undefined;
   selectedInstances: Instance[] = [];
-  testing: string = "now TEsting"
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public attributeValue: AttributeValue,
               public dialogRef: MatDialogRef<SelectInstanceDialogComponent>,
@@ -31,8 +30,8 @@ export class SelectInstanceDialogComponent {
   }
 
   onSelectRow(row: Instance){
-    this.instance = row;
-    this.selectedInstances.push(row);
+    // this.instance = row;
+    this.selectedInstances = [...this.selectedInstances, row];
     console.log("selected Instances:  " + this.selectedInstances)
   }
 
@@ -45,9 +44,13 @@ export class SelectInstanceDialogComponent {
   }
 
   onOK() {
-    // Just return the instance newly created. Don't close it. The template
-    // will handle close.
-    this.dialogRef.close(this.instance);
+    this.dialogRef.close(this.selectedInstances);
+  }
+
+  onRemoveEvent(instance: Instance) {
+    let index = this.selectedInstances.indexOf(instance);
+    this.selectedInstances.splice(index, 1);
+    this.selectedInstances = [...this.selectedInstances];
   }
 
   setCandidateClasses(attributeValue: AttributeValue) {

@@ -1,15 +1,15 @@
-<ng-container [ngSwitch]="attribute?.type">
-  <ng-template [ngSwitchCase]="DATA_TYPES.BOOLEAN">
-    <mat-slide-toggle [(ngModel)]="value!" color="primary"
-      disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
-      required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
-      (change)="onChange()">
-    </mat-slide-toggle>
-  </ng-template>
+<!--<form [formGroup]="userForm">-->
+  <ng-container [ngSwitch]="attribute?.type">
+    <ng-template [ngSwitchCase]="DATA_TYPES.BOOLEAN">
+      <mat-slide-toggle [(ngModel)]="value!" color="primary" class="padding"
+                        disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
+                        required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
+                        (change)="onChange()">
+      </mat-slide-toggle>
+    </ng-template>
 
-<!--  TODO: change height of text container-->
-  <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
-    <mat-form-field appearance="fill" subscriptSizing="dynamic">
+    <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
+      <mat-form-field appearance="fill" subscriptSizing="dynamic">
       <textarea matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize"
                 cdkAutosizeMinRows="1"
                 cdkAutosizeMaxRows="5"
@@ -18,41 +18,45 @@
                 required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
                 (change)="onChange()">
       </textarea>
-    </mat-form-field>
-  </ng-template>
-
-  <ng-template [ngSwitchCase]="DATA_TYPES.INTEGER">
-    <mat-form-field appearance="fill" subscriptSizing="dynamic" class="input-style">
-      <input [(ngModel)]="value!" matInput type="number" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
-        required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
-        (change)="onChange()">
-    </mat-form-field>
-  </ng-template>
-
-  <ng-template [ngSwitchCase]="DATA_TYPES.FLOAT">
-    <mat-form-field appearance="fill" subscriptSizing="dynamic" class="input-style">
-      <input [(ngModel)]="value!" matInput type="number" disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
-        required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
-        (change)="onChange()">
-    </mat-form-field>
-  </ng-template>
-
-  <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
-    <!-- TODO: Also need to determine if it is required or disabled-->
-    <ng-container *ngIf="value !== undefined; else elseblock">
-      <a routerLink="/instance_view/{{value.dbId}}" [cdkContextMenuTriggerFor]="row_menu" class="span-menu-trigger">
-        {{value.displayName}}
-        [{{value.dbId}}]</a><br>
-    </ng-container>
-    <!-- Add this empty space so that we can pop up the context menu to handle action.
-    For the time being, the popup works for instance type only. -->
-    <ng-template #elseblock>
-      <!-- Use a customized class to force the empty span to show the menu.-->
-      <span [cdkContextMenuTriggerFor]="row_menu" class="span-menu-trigger"></span>
+      </mat-form-field>
     </ng-template>
-  </ng-template>
 
-  <ng-template #row_menu="">
-    <app-action-menu (actionItem)="onEditAction($event)"></app-action-menu>
-  </ng-template>
-</ng-container>
+    <ng-template [ngSwitchCase]="DATA_TYPES.INTEGER">
+      <mat-form-field appearance="fill" subscriptSizing="dynamic" class="input-style">
+        <input [(ngModel)]="value!" matInput type="number"
+               disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
+               required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
+               (change)="onChange()">
+      </mat-form-field>
+    </ng-template>
+
+    <ng-template [ngSwitchCase]="DATA_TYPES.FLOAT">
+      <mat-form-field appearance="fill" subscriptSizing="dynamic" class="input-style">
+        <input [(ngModel)]="value!" matInput type="number"
+               disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
+               required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
+               (change)="onChange()">
+      </mat-form-field>
+    </ng-template>
+
+    <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
+      <!-- TODO: Also need to determine if it is required or disabled-->
+      <ng-container *ngIf="value !== undefined; else elseblock">
+        <a routerLink="/instance_view/{{value.dbId}}" [cdkContextMenuTriggerFor]="row_menu"
+           class="padding span-menu-trigger">
+          {{value.displayName}}
+          [{{value.dbId}}]</a><br>
+      </ng-container>
+      <!-- Add this empty space so that we can pop up the context menu to handle action.
+      For the time being, the popup works for instance type only. -->
+      <ng-template #elseblock>
+        <!-- Use a customized class to force the empty span to show the menu.-->
+        <span [cdkContextMenuTriggerFor]="row_menu" class="span-menu-trigger"></span>
+      </ng-template>
+    </ng-template>
+
+    <ng-template #row_menu="">
+      <app-action-menu (actionItem)="onEditAction($event)"></app-action-menu>
+    </ng-template>
+  </ng-container>
+<!--</form>-->

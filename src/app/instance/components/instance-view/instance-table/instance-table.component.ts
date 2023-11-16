@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
 import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
@@ -161,10 +161,10 @@ export class InstanceTableComponent {
       if (value === undefined) {
         // It should be the first
         if (attributeValue.attribute.cardinality === '1') {
-          this._instance?.attributes?.set(attributeValue.attribute.name, result);
+          this._instance?.attributes?.set(attributeValue.attribute.name, result[0]);
         }
         else {
-          this._instance?.attributes?.set(attributeValue.attribute.name, [result]);
+          this._instance?.attributes?.set(attributeValue.attribute.name, result);
         }
       }
       else {

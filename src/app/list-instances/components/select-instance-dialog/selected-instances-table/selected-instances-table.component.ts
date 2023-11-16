@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, Input, OnInit} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Instance} from "../../../../core/models/reactome-instance.model";
 import {MatTableDataSource} from "@angular/material/table";
 
@@ -8,15 +8,16 @@ import {MatTableDataSource} from "@angular/material/table";
   styleUrls: ['./selected-instances-table.component.scss']
 })
 export class SelectedInstancesTableComponent {
-  @Input() set setDataSource(instances: Instance[]) {
+  @Input() set dataSource(instances: Instance[]) {
     this.instances = instances;
     this.setTable();
     console.log("instances " + instances)
   }
+  @Output() removeEvent = new EventEmitter<Instance>();
 
   instances: Instance[] = [];
 
-  displayedColumns: string[] = ['dbId', 'displayName'];
+  displayedColumns: string[] = ['dbId', 'displayName', 'removeInstance'];
   matDataSource = new MatTableDataSource<Instance>();
 
   constructor() {
@@ -25,5 +26,9 @@ export class SelectedInstancesTableComponent {
   setTable() {
     this.matDataSource.data = this.instances;
     console.log("matDataSource " + this.matDataSource.data);
+  }
+
+  removeInstance(instance: Instance) {
+    this.removeEvent.emit(instance);
   }
 }

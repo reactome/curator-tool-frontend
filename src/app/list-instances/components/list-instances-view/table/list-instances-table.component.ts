@@ -12,7 +12,7 @@ import {combineLatest, concatMap, last} from 'rxjs';
   styleUrls: ['./list-instances-table.component.scss'],
 })
 export class ListInstancesTableComponent implements OnInit {
-  displayedColumns: string[] = ['dbId', 'displayName'];
+  displayedColumns: string[] = ['dbId', 'displayName', 'viewInstance'];
   matDataSource = new MatTableDataSource<Instance>();
   skip: number = 0;
   // For doing search
@@ -23,6 +23,7 @@ export class ListInstancesTableComponent implements OnInit {
   className: string = "";
   instanceCount: number = 0;
   selected: number = 0;
+  showProgressSpinner: boolean = true;
   @Output() clickEvent = new EventEmitter<Instance>();
   @Input() isSelection: boolean = false;
 
@@ -30,16 +31,17 @@ export class ListInstancesTableComponent implements OnInit {
     this.className = inputClassName;
     this.skip = 0;
     this.pageIndex = 0;
+    this.showProgressSpinner = true;
     this.loadInstances();
   }
 
-  constructor(private dataService: DataService, private route: ActivatedRoute) {
+  constructor(private dataService: DataService) {
   }
 
   ngOnInit(): void {
-    //this.className = this.inputClassName;
     this.skip = 0;
     this.pageIndex = 0;
+    this.showProgressSpinner = true;
     this.loadInstances();
   }
 
@@ -50,6 +52,7 @@ export class ListInstancesTableComponent implements OnInit {
     ]).subscribe(([count, instances]) => {
         this.instanceCount = count;
         this.matDataSource.data = instances;
+        this.showProgressSpinner = false;
       }
     )
   }
@@ -80,5 +83,9 @@ export class ListInstancesTableComponent implements OnInit {
   onRowClick(row: Instance) {
     this.selected = row.dbId
     this.clickEvent.emit(row)
+  }
+
+  click() {
+
   }
 }

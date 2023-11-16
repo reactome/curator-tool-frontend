@@ -2,6 +2,9 @@
   text-align: left;
   font-weight: bold;
   font-size: 20px;
+  //color: var(--primary);
+  background-color: var(--primary);
+
 }
 
 .dialog_area {
@@ -12,4 +15,11 @@
 .drop_down {
   max-width: 300px;
   margin: auto;
+}
+
+.scroll_panel {
+  height: auto;
+  max-height: 40vh;
+  overflow: scroll;
+  border: solid;
 }

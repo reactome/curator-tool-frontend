@@ -17,10 +17,10 @@ export class SelectInstanceDialogService {
 
   constructor(private dialog: MatDialog) { }
 
-  openDialog(attributeValue: AttributeValue): MatDialogRef<SelectInstanceDialogComponent, Instance> {
+  openDialog(attributeValue: AttributeValue): MatDialogRef<SelectInstanceDialogComponent, Instance[]> {
     const dialogRef = this.dialog.open(SelectInstanceDialogComponent, {
       width: '800px',
-      height: '900px',
+      height: '1000px',
       data: attributeValue
     });
     return dialogRef;

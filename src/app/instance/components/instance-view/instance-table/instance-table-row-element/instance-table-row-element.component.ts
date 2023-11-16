@@ -4,6 +4,7 @@ import { AttributeCategory, AttributeDataType, SchemaAttribute } from 'src/app/c
 import { AttributeValue, EDIT_ACTION } from '../instance-table.model';
 import {CdkTextareaAutosize} from "@angular/cdk/text-field";
 import {take} from "rxjs";
+import {FormControl, FormGroup} from "@angular/forms";
 
 /**
  * Used to display a single value of an Instance object.
@@ -29,6 +30,9 @@ export class InstanceTableRowElementComponent {
   isRequired: boolean = this.attribute?.category === AttributeCategory.REQUIRED || this.attribute?.category == AttributeCategory.MANDATORY;
   isDisabled: boolean = this.attribute?.category === AttributeCategory.NOMANUALEDIT;
 
+// userForm = new FormGroup({
+  //   con1: new FormControl({disabled: true}),
+  // })
   constructor(private store: Store, private _ngZone: NgZone) {
   }
 
