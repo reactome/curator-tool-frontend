@@ -1,6 +1,7 @@
 import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Instance} from "../../../../core/models/reactome-instance.model";
 import {MatTableDataSource} from "@angular/material/table";
+import {ActivatedRoute, Router} from "@angular/router";
 
 @Component({
   selector: 'app-selected-instances-table',
@@ -20,7 +21,7 @@ export class SelectedInstancesTableComponent {
   displayedColumns: string[] = ['dbId', 'displayName', 'removeInstance'];
   matDataSource = new MatTableDataSource<Instance>();
 
-  constructor() {
+  constructor(private router: Router) {
   }
 
   setTable() {
@@ -30,5 +31,9 @@ export class SelectedInstancesTableComponent {
 
   removeInstance(instance: Instance) {
     this.removeEvent.emit(instance);
+  }
+
+  navigate(dbId: number) {
+    window.open("http://localhost:4200/instance_view/" + dbId + true, '_blank');
   }
 }

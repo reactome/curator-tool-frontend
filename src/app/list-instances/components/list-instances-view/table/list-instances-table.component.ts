@@ -5,6 +5,7 @@ import {ActivatedRoute} from "@angular/router";
 import {Instance} from "../../../../core/models/reactome-instance.model";
 import {DataService} from "../../../../core/services/data.service";
 import {combineLatest, concatMap, last} from 'rxjs';
+import {ViewOnlyService} from "../../../../core/services/view-only.service";
 
 @Component({
   selector: 'app-list-instances-table',
@@ -85,7 +86,7 @@ export class ListInstancesTableComponent implements OnInit {
     this.clickEvent.emit(row)
   }
 
-  click() {
-
+  navigate(dbId: number) {
+    window.open(`http://localhost:4200/instance_view/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
   }
 }

@@ -39,6 +39,6 @@ export class InstanceViewComponent implements OnInit {
   }
 
   changeTable(instance: Instance) {
-    this.router.navigate(["/instance_view/" + instance.dbId.toString()]);
+    this.router.navigate(["/instance_view/" + instance.dbId.toString()], {queryParamsHandling: 'preserve'});
   }
 }

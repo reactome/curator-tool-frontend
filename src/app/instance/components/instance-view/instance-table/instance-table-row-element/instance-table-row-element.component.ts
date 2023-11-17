@@ -1,10 +1,12 @@
-import {Component, EventEmitter, Input, NgZone, Output, ViewChild} from '@angular/core';
-import { Store } from "@ngrx/store";
-import { AttributeCategory, AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
-import { AttributeValue, EDIT_ACTION } from '../instance-table.model';
+import {Component, EventEmitter, Input, NgZone, OnInit, Output, ViewChild} from '@angular/core';
+import {Store} from "@ngrx/store";
+import {AttributeCategory, AttributeDataType, SchemaAttribute} from 'src/app/core/models/reactome-schema.model';
+import {AttributeValue, EDIT_ACTION} from '../instance-table.model';
 import {CdkTextareaAutosize} from "@angular/cdk/text-field";
 import {take} from "rxjs";
-import {FormControl, FormGroup} from "@angular/forms";
+import {FormControl, FormGroup, Validators} from "@angular/forms";
+import {ActivatedRoute} from "@angular/router";
+import {ViewOnlyService} from "../../../../../core/services/view-only.service";
 
 /**
  * Used to display a single value of an Instance object.
@@ -14,7 +16,7 @@ import {FormControl, FormGroup} from "@angular/forms";
   templateUrl: './instance-table-row-element.component.html',
   styleUrls: ['./instance-table-row-element.component.scss']
 })
-export class InstanceTableRowElementComponent {
+export class InstanceTableRowElementComponent implements OnInit {
   // Value to be displayed here
   @Input() attribute: SchemaAttribute | undefined = undefined;
   @Input() value: any;
@@ -25,18 +27,26 @@ export class InstanceTableRowElementComponent {
 
   // So that we can use it in the template
   DATA_TYPES = AttributeDataType;
-  CATEGORIES = AttributeCategory;
 
-  isRequired: boolean = this.attribute?.category === AttributeCategory.REQUIRED || this.attribute?.category == AttributeCategory.MANDATORY;
-  isDisabled: boolean = this.attribute?.category === AttributeCategory.NOMANUALEDIT;
+  control = new FormControl();
 
-// userForm = new FormGroup({
-  //   con1: new FormControl({disabled: true}),
-  // })
-  constructor(private store: Store, private _ngZone: NgZone) {
+  constructor(private store: Store, private _ngZone: NgZone, private route: ActivatedRoute, public viewOnly: ViewOnlyService) {
   }
 
   @ViewChild('autosize') autosize: CdkTextareaAutosize | undefined;
+
+  ngOnInit() {
+    if (this.viewOnly.enabled || this.attribute?.category === AttributeCategory.NOMANUALEDIT) {
+      this.control.disable();
+    }
+
+    this.control.setValue(this.value);
+
+    if (this.attribute?.category && [AttributeCategory.REQUIRED, AttributeCategory.MANDATORY].includes(this.attribute?.category)) {
+      this.control.addValidators([Validators.required])
+    }
+
+  }
 
   onChange() {
     let attributeValue: AttributeValue = {
@@ -64,8 +74,6 @@ export class InstanceTableRowElementComponent {
     // Wait for changes to be applied, then trigger textarea resize.
     this._ngZone.onStable.pipe(take(1)).subscribe(() => this.autosize!.resizeToFitContent(true));
   }
-
-  protected readonly undefined = undefined;
 }
 
 

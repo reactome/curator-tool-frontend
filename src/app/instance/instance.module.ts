@@ -23,6 +23,9 @@ import {MatTooltipModule} from "@angular/material/tooltip";
 import {MatSidenavModule} from "@angular/material/sidenav";
 import {CdkDrag} from "@angular/cdk/drag-drop";
 import {ListInstancesModule} from "../list-instances/list-instances.module";
+import {
+  DisableControlDirective
+} from "./components/instance-view/instance-table/instance-table-row-element/disableControlDirective";
 
 @NgModule({
   declarations: [
@@ -31,7 +34,8 @@ import {ListInstancesModule} from "../list-instances/list-instances.module";
     InstanceTableRowElementComponent,
     BreadCrumbComponent,
     InstanceViewComponent,
-    NewInstanceDialogComponent
+    NewInstanceDialogComponent,
+    DisableControlDirective
   ],
   imports: [
     CommonModule,

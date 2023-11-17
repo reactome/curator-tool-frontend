@@ -1,9 +1,19 @@
-<!--<form [formGroup]="userForm">-->
+<ng-container *ngIf="viewOnly.enabled; else editView">
+  <ng-container *ngIf="attribute?.type === DATA_TYPES.INSTANCE && value; else simple">
+    <a routerLink="/instance_view/{{value.dbId}}" [queryParamsHandling]="'preserve'"
+       class="padding span-menu-trigger">
+      {{value.displayName}}
+      [{{value.dbId}}]</a><br>
+  </ng-container>
+  <ng-template #simple>
+    <span class="padding">{{value}}</span>
+  </ng-template>
+</ng-container>
+<ng-template #editView>
+
   <ng-container [ngSwitch]="attribute?.type">
     <ng-template [ngSwitchCase]="DATA_TYPES.BOOLEAN">
-      <mat-slide-toggle [(ngModel)]="value!" color="primary" class="padding"
-                        disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
-                        required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
+      <mat-slide-toggle [formControl]="control" color="primary" class="padding"
                         (change)="onChange()">
       </mat-slide-toggle>
     </ng-template>
@@ -13,9 +23,7 @@
       <textarea matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize"
                 cdkAutosizeMinRows="1"
                 cdkAutosizeMaxRows="5"
-                [(ngModel)]="value!"
-                disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
-                required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
+                [formControl]="control"
                 (change)="onChange()">
       </textarea>
       </mat-form-field>
@@ -23,18 +31,14 @@
 
     <ng-template [ngSwitchCase]="DATA_TYPES.INTEGER">
       <mat-form-field appearance="fill" subscriptSizing="dynamic" class="input-style">
-        <input [(ngModel)]="value!" matInput type="number"
-               disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
-               required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
+        <input [formControl]="control" matInput type="number"
                (change)="onChange()">
       </mat-form-field>
     </ng-template>
 
     <ng-template [ngSwitchCase]="DATA_TYPES.FLOAT">
       <mat-form-field appearance="fill" subscriptSizing="dynamic" class="input-style">
-        <input [(ngModel)]="value!" matInput type="number"
-               disabled="{{attribute?.category === CATEGORIES.NOMANUALEDIT}}"
-               required="{{attribute?.category === CATEGORIES.REQUIRED || attribute?.category == CATEGORIES.MANDATORY}}"
+        <input [formControl]="control" matInput type="number"
                (change)="onChange()">
       </mat-form-field>
     </ng-template>
@@ -59,4 +63,7 @@
       <app-action-menu (actionItem)="onEditAction($event)"></app-action-menu>
     </ng-template>
   </ng-container>
-<!--</form>-->
+
+</ng-template>
+
+
