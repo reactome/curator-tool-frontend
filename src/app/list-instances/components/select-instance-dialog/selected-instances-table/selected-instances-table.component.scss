@@ -4,6 +4,10 @@ mat-paginator {
   z-index: 10;
 }
 
+.instance-list-table {
+  width: 100%;
+}
+
 .table-container {
   height: calc(100vh - var(--bread-crumb-height) - var(--title-height) - 2 * var(--body-margin));
   overflow: auto;

@@ -2,7 +2,7 @@
  * This TypeScript file contains TS artfacts which are used to model an instance in the Reactome Schema.
  */
 
-import {SchemaAttribute, SchemaClass} from "./reactome-schema.model";
+import { SchemaClass } from "./reactome-schema.model";
 
 export interface Instance {
   /**
