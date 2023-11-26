@@ -51,7 +51,7 @@ export class InstanceTableRowElementComponent implements OnInit {
   onChange() {
     let attributeValue: AttributeValue = {
       attribute: this.attribute!,
-      value: this.value,
+      value: this.control.value, // Get the new value from control
       index: this.index
     }
     console.debug("onChange: ", attributeValue);
@@ -72,7 +72,10 @@ export class InstanceTableRowElementComponent implements OnInit {
 
   triggerResize() {
     // Wait for changes to be applied, then trigger textarea resize.
-    this._ngZone.onStable.pipe(take(1)).subscribe(() => this.autosize!.resizeToFitContent(true));
+    this._ngZone.onStable.pipe(take(1)).subscribe(() => {
+    if (this.autosize) // Somehow this.autosize! cannot work!
+      this.autosize.resizeToFitContent(true)
+    });
   }
 }
 

@@ -88,8 +88,12 @@ export class InstanceTableComponent {
       }
       else {
         valueList[data.index!] = data.value;
+        console.debug(valueList);
       }
     }
+    // Change in this type of attribute doesn't need to update the table content. 
+    // Therefore, we need to register it here
+    this.registerUpdatedInstance();
   }
 
   onInstanceAttributeEdit(attributeValue: AttributeValue) {
@@ -180,7 +184,7 @@ export class InstanceTableComponent {
           this._instance?.attributes?.set(attributeValue.attribute.name, result);
         }
         else {
-          value.splice(attributeValue.index, 0, result);
+          value.splice(attributeValue.index, 0, ...result);
         }
       }
       //TODO: Add a new value may reset the scroll position. This needs to be changed!
@@ -192,8 +196,12 @@ export class InstanceTableComponent {
     this.instanceDataSource = new InstanceDataSource(this._instance, this.categories, this.sortAttNames, this.sortAttDefined);
     if (this.isInEditing) {
       // Register the updated instances
-      this.store.dispatch(InstanceActions.register_updated_instance(this._instance!));
+      this.registerUpdatedInstance();
     }
+  }
+
+  private registerUpdatedInstance(): void {
+    this.store.dispatch(InstanceActions.register_updated_instance(this._instance!));
   }
 
   protected readonly AttributeCategory = AttributeCategory;
