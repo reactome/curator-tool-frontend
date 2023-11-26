@@ -1,11 +1,13 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {Instance} from 'src/app/core/models/reactome-instance.model';
-import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
-import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
-import {AttributeCategory} from "../../../../core/models/reactome-schema.model";
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
+import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
+import { AttributeCategory } from "../../../../core/models/reactome-schema.model";
 import {
   SelectInstanceDialogService
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
+import { Store } from '@ngrx/store';
+import { InstanceActions } from 'src/app/instance/state/instance.actions';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -29,19 +31,24 @@ export class InstanceTableComponent {
   instanceDataSource: InstanceDataSource = new InstanceDataSource(undefined, this.categories, this.sortAttNames, this.sortAttDefined);
   // Keep it for editing
   _instance?: Instance;
+  // flag to indicate if it is in a edit mode
+  isInEditing: boolean = false;
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
     this._instance = instance;
+    this.isInEditing = false;
     this.updateTableContent();
+    this.isInEditing = true; // After the table is shown, the instance is in editing mode
   };
 
   constructor(
     private dialogService: NewInstanceDialogService,
-    private selectInstanceDialogService: SelectInstanceDialogService) {
-    for(let category of this.categoryNames){
+    private selectInstanceDialogService: SelectInstanceDialogService,
+    private store: Store) {
+    for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
-      this.categories.set(AttributeCategory[categoryKey], true)}
-
+      this.categories.set(AttributeCategory[categoryKey], true)
+    }
   } // Use a dialog serice to hide the implementation of the dialog.
 
   changeShowFilterOptions() {
@@ -49,7 +56,7 @@ export class InstanceTableComponent {
   }
 
   changeShowHeaderActions() {
-    this.showHeaderActions = ! this.showHeaderActions;
+    this.showHeaderActions = !this.showHeaderActions;
   }
 
   doFilter(category: AttributeCategory) {
@@ -64,7 +71,7 @@ export class InstanceTableComponent {
     this.updateTableContent();
   }
 
-  sortByDefined(){
+  sortByDefined() {
     this.sortAttDefined = !this.sortAttDefined;
     this.updateTableContent();
   }
@@ -149,7 +156,7 @@ export class InstanceTableComponent {
     });
   }
 
-  private addInstanceViaSelect(attributeValue: AttributeValue){
+  private addInstanceViaSelect(attributeValue: AttributeValue) {
     const matDialogRef = this.selectInstanceDialogService.openDialog(attributeValue);
     matDialogRef.afterClosed().subscribe(result => {
       // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
@@ -183,6 +190,10 @@ export class InstanceTableComponent {
 
   private updateTableContent(): void {
     this.instanceDataSource = new InstanceDataSource(this._instance, this.categories, this.sortAttNames, this.sortAttDefined);
+    if (this.isInEditing) {
+      // Register the updated instances
+      this.store.dispatch(InstanceActions.register_updated_instance(this._instance!));
+    }
   }
 
   protected readonly AttributeCategory = AttributeCategory;

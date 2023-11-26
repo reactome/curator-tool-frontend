@@ -8,7 +8,6 @@ import {SchemaClassTreeModule} from "../schema-class/components/tree/schema-clas
 import {RouterOutlet} from "@angular/router";
 
 
-
 @NgModule({
   declarations: [
     MainComponent
@@ -22,7 +21,7 @@ import {RouterOutlet} from "@angular/router";
     MatSidenavModule,
     MatToolbarModule,
     SchemaClassTreeModule,
-    RouterOutlet
+    RouterOutlet,
   ]
 })
 export class MainModule { }
