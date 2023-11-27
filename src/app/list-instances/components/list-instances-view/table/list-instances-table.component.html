@@ -5,10 +5,10 @@
 </mat-form-field>
 <section class="table-container" tabindex="0">
   <ng-container *ngIf="showProgressSpinner">
-    <mat-spinner class="spinner demo-table"></mat-spinner>
+    <mat-spinner class="spinner instance-list-table"></mat-spinner>
   </ng-container>
   <ng-container *ngIf="!showProgressSpinner">
-  <table mat-table [dataSource]="matDataSource" class="mat-elevation-z8 demo-table">
+  <table mat-table [dataSource]="matDataSource" class="mat-elevation-z8 instance-list-table">
     <!-- Attribute Name Column -->
     <ng-container matColumnDef="dbId">
       <th mat-header-cell *matHeaderCellDef>dbId</th>

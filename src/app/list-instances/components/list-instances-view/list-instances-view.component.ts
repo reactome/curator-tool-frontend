@@ -16,7 +16,7 @@ export class ListInstancesViewComponent implements OnInit {
     this.route.params.subscribe((className) => {
       this.schemaClassName = className;
       this.schemaClassName = this.schemaClassName.className;
-      console.log('name from view' + this.schemaClassName)
+      // console.log('name from view' + this.schemaClassName)
     });
   }
 

@@ -11,3 +11,11 @@ export const selectViewInstance = () => createSelector(
   viewInstanceState,
   (state: Instance) => state
 );
+
+// Updated instance state
+export const UPDATE_INSTANCES_STATE_NAME = 'updated_instances'
+export const updatedInstanceState = createFeatureSelector<Instance[]>(UPDATE_INSTANCES_STATE_NAME);
+export const updatedInstances = () => createSelector(
+  updatedInstanceState,
+  (state: Instance[]) => state
+)
