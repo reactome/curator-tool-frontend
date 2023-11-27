@@ -7,6 +7,7 @@ import {SharedModule} from "../shared/shared.module";
 import {MaterialModule} from "../material/material.module";
 import {SelectInstanceDialogComponent} from "./components/select-instance-dialog/select-instance-dialog.component";
 import { SelectedInstancesTableComponent } from './components/select-instance-dialog/selected-instances-table/selected-instances-table.component';
+import {MatTooltipModule} from "@angular/material/tooltip";
 
 @NgModule({
   declarations: [
@@ -22,7 +23,8 @@ import { SelectedInstancesTableComponent } from './components/select-instance-di
   imports: [
     CommonModule,
     ListInstancesRoutingModule,
-    MaterialModule
+    MaterialModule,
+    MatTooltipModule
   ]
 })
 export class ListInstancesModule {

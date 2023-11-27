@@ -16,11 +16,12 @@
 
     <ng-container matColumnDef="removeInstance">
       <th mat-header-cell *matHeaderCellDef></th>
-      <td mat-cell *matCellDef="let element">
-        <button style="position: relative; right: auto" color="primary" mat-icon-button (click)="navigate(element.dbId)">
+      <td class="column-right" mat-cell *matCellDef="let element">
+        <button color="primary" mat-icon-button (click)="navigate(element.dbId)"
+                matTooltip="View Instance" matTooltipPosition="left">
           <mat-icon>launch</mat-icon>
         </button>
-        <button style="position: relative; right: auto" color="warn" mat-icon-button (click)="removeInstance(element)">
+        <button color="warn" mat-icon-button (click)="removeInstance(element)">
           <mat-icon>close</mat-icon>
         </button>
       </td>

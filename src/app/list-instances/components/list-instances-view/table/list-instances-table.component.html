@@ -38,7 +38,8 @@
     <ng-container matColumnDef="viewInstance">
       <th mat-header-cell *matHeaderCellDef></th>
       <td mat-cell *matCellDef="let element">
-        <button color="primary" *ngIf="isSelection" mat-icon-button (click)="navigate(element.dbId)">
+        <button color="primary" *ngIf="isSelection" mat-icon-button (click)="navigate(element.dbId)"
+                matTooltip="View Instance" matTooltipPosition="left">
           <mat-icon>launch</mat-icon>
         </button>
       </td>
