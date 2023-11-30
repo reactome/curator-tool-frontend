@@ -6,16 +6,25 @@ import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { UpdatedInstanceListComponent } from '../components/updated-instance-list/updated-instance-list.component';
+import { MatListModule } from '@angular/material/list';
 
 @Component({
   selector: 'app-status',
   templateUrl: './status.component.html',
   styleUrls: ['./status.component.scss'],
   standalone: true,
-  imports: [MatToolbarModule, MatButtonModule, MatBottomSheetModule]
+  imports: [MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule]
 })
 export class StatusComponent implements OnInit{
   updatedInstances: Instance[] = [];
+
+  typesOfShoes: string[] = [
+    'Boots',
+    'Clogs',
+    'Loafers',
+    'Moccasins',
+    'Sneakers',
+  ];
 
   constructor(private store: Store, private _bottomSheet: MatBottomSheet) {
   }

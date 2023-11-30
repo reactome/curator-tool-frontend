@@ -10,14 +10,12 @@ import { updatedInstancesReducer } from '../instance/state/instance.reducers';
   imports: [
     CommonModule,
     StatusComponent,
+    UpdatedInstanceListComponent,
     // Need to register here for update to avoid a warning.
     StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),
   ],
   exports: [
     StatusComponent // Have to export it!!!
   ],
-  declarations: [
-    UpdatedInstanceListComponent
-  ]
 })
 export class StatusModule { }
