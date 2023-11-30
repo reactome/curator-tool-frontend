@@ -29,7 +29,9 @@ export class StatusComponent implements OnInit{
 
   showUpdated(): void {
     console.debug("Show updated instances: " + this.updatedInstances.length)
-    this._bottomSheet.open(UpdatedInstanceListComponent);
+    this._bottomSheet.open(UpdatedInstanceListComponent, {
+      data: {updated_instances: this.updatedInstances},
+    });
   }
 
 }
