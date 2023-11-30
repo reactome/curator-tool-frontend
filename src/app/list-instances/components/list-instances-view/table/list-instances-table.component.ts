@@ -1,11 +1,10 @@
-import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angular/core';
-import {MatPaginator, PageEvent} from "@angular/material/paginator";
-import {MatTableDataSource} from "@angular/material/table";
-import {ActivatedRoute} from "@angular/router";
-import {Instance} from "../../../../core/models/reactome-instance.model";
-import {DataService} from "../../../../core/services/data.service";
-import {combineLatest, concatMap, last} from 'rxjs';
-import {ViewOnlyService} from "../../../../core/services/view-only.service";
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { PageEvent } from "@angular/material/paginator";
+import { MatTableDataSource } from "@angular/material/table";
+import { combineLatest } from 'rxjs';
+import { Instance } from "../../../../core/models/reactome-instance.model";
+import { DataService } from "../../../../core/services/data.service";
+import { ViewOnlyService } from "../../../../core/services/view-only.service";
 
 @Component({
   selector: 'app-list-instances-table',
@@ -19,7 +18,7 @@ export class ListInstancesTableComponent implements OnInit {
   // For doing search
   searchKey: string | undefined = undefined;
   pageSizeOptions = [20, 50, 100];
-  pageSize: number = 20;
+  @Input() pageSize: number = 50;
   pageIndex: number = 0;
   className: string = "";
   instanceCount: number = 0;
@@ -87,6 +86,6 @@ export class ListInstancesTableComponent implements OnInit {
   }
 
   navigate(dbId: number) {
-    window.open(`http://localhost:4200/instance_view/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
+    window.open(`instance_view/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
   }
 }

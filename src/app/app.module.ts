@@ -11,7 +11,6 @@ import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { environment } from 'src/environments/environment.dev';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { DatabaseObjectModule } from './instance/instance.module';
 import { ListInstancesModule } from "./list-instances/list-instances.module";
 import { MainModule } from "./main/main.module";
 import { SchemaClassTableModule } from './schema-class/components/table/schema-class-table.module';
@@ -29,7 +28,6 @@ import { CustomSerializer } from "./store/custom-serializer";
     BrowserAnimationsModule,
     HttpClientModule,
     SchemaClassTableModule,
-    DatabaseObjectModule,
     ListInstancesModule,
     EffectsModule.forRoot(),
     StoreModule.forRoot({router: routerReducer}),

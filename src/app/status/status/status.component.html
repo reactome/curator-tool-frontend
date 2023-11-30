@@ -1,1 +1,3 @@
-<p class="status" *ngIf="updatedInstances">Updated instances: {{updatedInstances.length}}</p>
+<mat-toolbar class="status" color="secondary">
+    <span>Updated instances: <button mat-button style="border: 0px;" (click)="showUpdated()">{{updatedInstances.length}}</button></span>
+</mat-toolbar>

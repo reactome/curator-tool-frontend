@@ -2,7 +2,7 @@
 </app-bread-crumb>
 <ng-container *ngIf="showProgressSpinner">
   <!-- Probably should not use this hard-coded min-height? -->
-  <mat-spinner class="spinner" style="min-height: 95vh;"></mat-spinner>
+  <mat-spinner class="spinner"></mat-spinner>
 </ng-container>
 <mat-toolbar class="toolbar" *ngIf="!showProgressSpinner">
       <span *ngIf="instance !== undefined">

@@ -24,8 +24,8 @@ import { InstanceViewComponent } from './components/instance-view/instance-view.
 import { NewInstanceDialogComponent } from './components/new-instance-dialog/new-instance-dialog.component';
 import { DatabaseObjectRoutingModule } from './instance-routing.module';
 import { DatabaseObjectEffects } from './state/instance.effects';
-import { updatedInstancesReducer, viewInstanceReducer } from "./state/instance.reducers";
-import { UPDATE_INSTANCES_STATE_NAME, VIEW_INSTANCE_STATE_NAME } from './state/instance.selectors';
+import { viewInstanceReducer } from "./state/instance.reducers";
+import { VIEW_INSTANCE_STATE_NAME } from './state/instance.selectors';
 
 @NgModule({
   declarations: [
@@ -43,7 +43,7 @@ import { UPDATE_INSTANCES_STATE_NAME, VIEW_INSTANCE_STATE_NAME } from './state/i
     EffectsModule.forFeature(DatabaseObjectEffects),
     StoreModule.forFeature(VIEW_INSTANCE_STATE_NAME, viewInstanceReducer),
     // Need to register here for update. The registered state can be used out of this module.
-    StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),
+    // StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),
     SharedModule,
     CdkContextMenuTrigger,
     CdkMenu,

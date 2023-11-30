@@ -1,4 +1,4 @@
-<mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true">
+<mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 95.5vh">
   <mat-sidenav mode="side" opened [disableClose]="true" [style.width]="sideWidth + 'px'">
     <app-schema-class-tree></app-schema-class-tree>
     <div class="resize-container" (cdkDragMoved)="resize($event)" cdkDrag cdkDragLockAxis="x"
