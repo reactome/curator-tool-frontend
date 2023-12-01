@@ -5,7 +5,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { updatedInstances } from 'src/app/instance/state/instance.selectors';
-import { UpdatedInstanceListComponent } from '../components/updated-instance-list/updated-instance-list.component';
+import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 import { MatListModule } from '@angular/material/list';
 
 @Component({
