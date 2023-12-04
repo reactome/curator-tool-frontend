@@ -66,7 +66,9 @@
       <td class="mat-cell" colspan="4">No data matching the search key: "{{input.value}}"</td>
     </tr>
   </table>
-  <mat-paginator (page)="onPageChange($event)" [length]="instanceCount" [pageSizeOptions]=pageSizeOptions
+  <mat-paginator (page)="onPageChange($event)" [length]="instanceCount" 
+                 [pageSizeOptions]=pageSizeOptions
+                 [pageSize]="pageSize"
                  showFirstLastButtons aria-label="Select page of users"></mat-paginator>
 </ng-container>
 </section>

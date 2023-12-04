@@ -1,0 +1,7 @@
+<mat-toolbar class="status" color="secondary">
+    <span>Updated instances:
+        <button mat-button style="border: 0px;" (click)="showUpdated()" 
+        [disabled]="updatedInstances.length === 0">{{updatedInstances.length}}
+        </button>
+    </span>
+</mat-toolbar>

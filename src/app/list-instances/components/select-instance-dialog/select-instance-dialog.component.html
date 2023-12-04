@@ -7,18 +7,18 @@
         {{value}}
       </mat-option>
     </ng-container>
-  </mat-select>  <section class="scroll_panel">
-  <app-list-instances-table class="scroll_panel"
-      [setClassName]="this.selected"
-      [isSelection]="true"
-      (clickEvent)="onSelectRow($event)"
-    ></app-list-instances-table>
+  </mat-select>
+  <section class="scroll_panel">
+    <!-- For this list, we use a pagesize = 20 as the default for easy check: users are expected to do searching here. -->
+    <app-list-instances-table class="scroll_panel" [setClassName]="this.selected" [isSelection]="true" [pageSize]="20"
+      (clickEvent)="onSelectRow($event)"></app-list-instances-table>
   </section>
   <br>
   <mat-label>Selected Instances: </mat-label>
   <ng-container *ngIf="this.selectedInstances.length > 0">
     <section class="scroll_panel">
-      <app-selected-instances-table [dataSource]="selectedInstances" (removeEvent)="onRemoveEvent($event)"></app-selected-instances-table>
+      <app-selected-instances-table [dataSource]="selectedInstances"
+        (removeEvent)="onRemoveEvent($event)"></app-selected-instances-table>
     </section>
   </ng-container>
 </mat-dialog-content>

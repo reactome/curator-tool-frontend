@@ -165,8 +165,8 @@ export class InstanceTableComponent {
     matDialogRef.afterClosed().subscribe(result => {
       // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
       // Add the new value
-      if (result === undefined)
-        return; // Do nothing
+      if (result === undefined || !result)
+        return; // Do nothing if this is undefined or resolve to false (e.g. nothing there)
       // Check if there is any value
       let value = this._instance?.attributes?.get(attributeValue.attribute.name);
       if (value === undefined) {
@@ -181,7 +181,7 @@ export class InstanceTableComponent {
       else {
         // It should be the first
         if (attributeValue.attribute.cardinality === '1') { // Make sure only one value used
-          this._instance?.attributes?.set(attributeValue.attribute.name, result);
+          this._instance?.attributes?.set(attributeValue.attribute.name, result.length > 0 ? result[0] : undefined);
         }
         else {
           value.splice(attributeValue.index, 0, ...result);
