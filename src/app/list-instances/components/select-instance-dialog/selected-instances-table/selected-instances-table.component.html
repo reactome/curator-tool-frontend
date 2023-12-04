@@ -17,6 +17,7 @@
     <ng-container matColumnDef="removeInstance">
       <th mat-header-cell *matHeaderCellDef></th>
       <td class="column-right" mat-cell *matCellDef="let element">
+        <ng-container>
         <button color="primary" mat-icon-button (click)="navigate(element.dbId)"
                 matTooltip="View Instance" matTooltipPosition="left">
           <mat-icon>launch</mat-icon>
@@ -24,6 +25,7 @@
         <button color="warn" mat-icon-button (click)="removeInstance(element)">
           <mat-icon>close</mat-icon>
         </button>
+        </ng-container>
       </td>
     </ng-container>
 
