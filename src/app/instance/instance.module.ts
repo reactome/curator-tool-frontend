@@ -28,32 +28,35 @@ import { viewInstanceReducer } from "./state/instance.reducers";
 import { VIEW_INSTANCE_STATE_NAME } from './state/instance.selectors';
 
 @NgModule({
-  declarations: [
-    InstanceTableComponent,
-    ActionMenuComponent,
-    InstanceTableRowElementComponent,
-    BreadCrumbComponent,
-    InstanceViewComponent,
-    NewInstanceDialogComponent,
-    DisableControlDirective
-  ],
-  imports: [
-    CommonModule,
-    DatabaseObjectRoutingModule,
-    EffectsModule.forFeature(DatabaseObjectEffects),
-    StoreModule.forFeature(VIEW_INSTANCE_STATE_NAME, viewInstanceReducer),
-    // Need to register here for update. The registered state can be used out of this module.
-    // StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),
-    SharedModule,
-    CdkContextMenuTrigger,
-    CdkMenu,
-    CdkMenuItem,
-    SchemaClassTreeModule,
-    MatTooltipModule,
-    MatSidenavModule,
-    CdkDrag,
-    ListInstancesModule
-  ],
+    declarations: [
+        InstanceTableComponent,
+        ActionMenuComponent,
+        InstanceTableRowElementComponent,
+        BreadCrumbComponent,
+        InstanceViewComponent,
+        NewInstanceDialogComponent,
+        DisableControlDirective
+    ],
+    imports: [
+        CommonModule,
+        DatabaseObjectRoutingModule,
+        EffectsModule.forFeature(DatabaseObjectEffects),
+        StoreModule.forFeature(VIEW_INSTANCE_STATE_NAME, viewInstanceReducer),
+        // Need to register here for update. The registered state can be used out of this module.
+        // StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),
+        SharedModule,
+        CdkContextMenuTrigger,
+        CdkMenu,
+        CdkMenuItem,
+        SchemaClassTreeModule,
+        MatTooltipModule,
+        MatSidenavModule,
+        CdkDrag,
+        ListInstancesModule
+    ],
+    exports: [
+        InstanceTableComponent
+    ]
 })
 export class DatabaseObjectModule {
 }

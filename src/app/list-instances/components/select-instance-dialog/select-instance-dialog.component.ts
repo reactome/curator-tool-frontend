@@ -54,6 +54,7 @@ export class SelectInstanceDialogComponent {
   }
 
   setCandidateClasses(attributeValue: AttributeValue) {
+    // @ts-ignore
     let concreteClassNames = new Set<string>();
     for (let clsName of attributeValue.attribute.allowedClases!) {
       let schemaClass: SchemaClass = this.dataService.getSchemaClass(clsName)!;

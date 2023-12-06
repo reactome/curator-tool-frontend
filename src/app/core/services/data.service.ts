@@ -11,6 +11,7 @@ import {
 } from '../models/reactome-schema.model';
 // import { AttributeDa } from '../models/schema-class-attribute-data.model';
 import { Instance } from "../models/reactome-instance.model";
+import {coerceNumberProperty} from "@angular/cdk/coercion";
 
 
 @Injectable({
@@ -209,6 +210,10 @@ export class DataService {
     if (this.id2instance.has(dbId)) {
       return of(this.id2instance.get(dbId)!);
     }
+    return this.fetchInstanceFromDatabase(dbId);
+  }
+
+  fetchInstanceFromDatabase(dbId: number): Observable<Instance> {
     // Fetch from the server
     return this.http.get<Instance>(this.entityDataUrl + `${dbId}`)
       .pipe(
@@ -266,7 +271,7 @@ export class DataService {
   /**
    * Call the server to get the counts.
    * @param className
-   * @returns 
+   * @returns
    */
   getInstanceCount(className: string, searchKey: string | undefined): Observable<number> {
     let url = this.countInstancesUrl + className;

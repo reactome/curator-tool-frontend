@@ -1,13 +1,13 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
-import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
-import { AttributeCategory } from "../../../../core/models/reactome-schema.model";
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Instance} from 'src/app/core/models/reactome-instance.model';
+import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
+import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
+import {AttributeCategory} from "../../../../core/models/reactome-schema.model";
 import {
   SelectInstanceDialogService
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
-import { Store } from '@ngrx/store';
-import { InstanceActions } from 'src/app/instance/state/instance.actions';
+import {Store} from '@ngrx/store';
+import {InstanceActions} from 'src/app/instance/state/instance.actions';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -33,6 +33,7 @@ export class InstanceTableComponent {
   _instance?: Instance;
   // flag to indicate if it is in a edit mode
   isInEditing: boolean = false;
+
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
     this._instance = instance;
@@ -77,21 +78,20 @@ export class InstanceTableComponent {
   }
 
   onNoInstanceAttributeEdit(data: AttributeValue) {
-    console.debug('onNewValue: ', data);
+    this.addModifiedAttributeName(data.attribute.name);
+
     if (data.attribute.cardinality === '1') {
       this._instance?.attributes?.set(data.attribute.name, data.value);
-    }
-    else { // This should be a list
+    } else { // This should be a list
       let valueList = this._instance?.attributes!.get(data.attribute.name);
       if (valueList === undefined) {
         this._instance?.attributes?.set(data.attribute.name, [data.value]);
-      }
-      else {
+      } else {
         valueList[data.index!] = data.value;
         console.debug(valueList);
       }
     }
-    // Change in this type of attribute doesn't need to update the table content. 
+    // Change in this type of attribute doesn't need to update the table content.
     // Therefore, we need to register it here
     this.registerUpdatedInstance();
   }
@@ -115,11 +115,11 @@ export class InstanceTableComponent {
 
   private deleteInstanceAttribute(attributeValue: AttributeValue): void {
     console.debug('deleteInstanceAttribute: ', attributeValue);
+    this.addModifiedAttributeName(attributeValue.attribute.name);
     if (attributeValue.attribute.cardinality === '1') {
       // This should not occur. Just in case
       this._instance?.attributes?.delete(attributeValue.attribute?.name);
-    }
-    else {
+    } else {
       // This should be a list
       const valueList: [] = this._instance?.attributes?.get(attributeValue.attribute.name);
       // Remove the value
@@ -141,22 +141,21 @@ export class InstanceTableComponent {
         // It should be the first
         if (attributeValue.attribute.cardinality === '1') {
           this._instance?.attributes?.set(attributeValue.attribute.name, result);
-        }
-        else {
+        } else {
           this._instance?.attributes?.set(attributeValue.attribute.name, [result]);
         }
-      }
-      else {
+      } else {
         // It should be the first
         if (attributeValue.attribute.cardinality === '1') { // Make sure only one value used
           this._instance?.attributes?.set(attributeValue.attribute.name, result);
-        }
-        else {
+        } else {
           value.splice(attributeValue.index, 0, result);
         }
       }
       //TODO: Add a new value may reset the scroll position. This needs to be changed!
       this.updateTableContent();
+      // Only add attribute name if value was added
+      this.addModifiedAttributeName(attributeValue.attribute.name);
     });
   }
 
@@ -173,22 +172,22 @@ export class InstanceTableComponent {
         // It should be the first
         if (attributeValue.attribute.cardinality === '1') {
           this._instance?.attributes?.set(attributeValue.attribute.name, result[0]);
-        }
-        else {
+        } else {
           this._instance?.attributes?.set(attributeValue.attribute.name, result);
         }
-      }
-      else {
+      } else {
         // It should be the first
         if (attributeValue.attribute.cardinality === '1') { // Make sure only one value used
           this._instance?.attributes?.set(attributeValue.attribute.name, result.length > 0 ? result[0] : undefined);
-        }
-        else {
+        } else {
           value.splice(attributeValue.index, 0, ...result);
         }
       }
       //TODO: Add a new value may reset the scroll position. This needs to be changed!
       this.updateTableContent();
+      //Only add attribute name if value was added
+      this.addModifiedAttributeName(attributeValue.attribute.name);
+
     });
   }
 
@@ -202,6 +201,17 @@ export class InstanceTableComponent {
 
   private registerUpdatedInstance(): void {
     this.store.dispatch(InstanceActions.register_updated_instance(this._instance!));
+  }
+
+  private addModifiedAttributeName(attName: string){
+    if (this._instance != undefined) {
+      this._instance = {...this._instance}
+      // this._instance = Object.assign({modifiedAttributes: this.testArray}, this._instance)
+      if (this._instance.modifiedAttributes)
+        this._instance.modifiedAttributes = [...this._instance.modifiedAttributes, attName]
+      else this._instance.modifiedAttributes = [attName]
+      console.log(this._instance.modifiedAttributes)
+    }
   }
 
   protected readonly AttributeCategory = AttributeCategory;

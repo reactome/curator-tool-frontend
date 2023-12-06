@@ -20,7 +20,7 @@ export class NewInstanceDialogComponent {
   selected: string = '';
   candidateClasses: string[] = [];
   instance: Instance | undefined;
-  
+
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public attributeValue: AttributeValue,
               public dialogRef: MatDialogRef<NewInstanceDialogComponent>,
@@ -50,6 +50,7 @@ export class NewInstanceDialogComponent {
   }
 
   setCandidateClasses(attributeValue: AttributeValue) {
+    // @ts-ignore
     let concreteClassNames = new Set<string>();
     for (let clsName of attributeValue.attribute.allowedClases!) {
       let schemaClass: SchemaClass = this.dataService.getSchemaClass(clsName)!;

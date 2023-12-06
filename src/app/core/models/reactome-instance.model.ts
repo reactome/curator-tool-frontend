@@ -18,5 +18,6 @@ export interface Instance {
   attributes?: Map<string, any>; // This is optional so that we can have a simple shell instance
   isShell?: boolean; // Check if this is just a shell instance. A shell instance should have both dbId and displayName
   isDirty?: boolean; // Flag if this has been updated.
+  modifiedAttributes?: string[]; // Optional array of modified attribute names.
 }
 

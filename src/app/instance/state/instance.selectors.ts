@@ -1,5 +1,6 @@
 import { createFeatureSelector, createSelector } from "@ngrx/store";
 import { Instance } from "src/app/core/models/reactome-instance.model";
+import {updatedInstancesAdaptor, UpdatedInstanceState} from "./instance.reducers";
 
 // The instance to be viewed
 export const VIEW_INSTANCE_STATE_NAME = 'view_instance';
@@ -14,8 +15,8 @@ export const selectViewInstance = () => createSelector(
 
 // Updated instance state
 export const UPDATE_INSTANCES_STATE_NAME = 'updated_instances'
-export const updatedInstanceState = createFeatureSelector<Instance[]>(UPDATE_INSTANCES_STATE_NAME);
+export const updatedInstanceState = createFeatureSelector<UpdatedInstanceState>(UPDATE_INSTANCES_STATE_NAME);
 export const updatedInstances = () => createSelector(
   updatedInstanceState,
-  (state: Instance[]) => state
+  (state: UpdatedInstanceState) => updatedInstancesAdaptor.getSelectors().selectAll(state)
 )

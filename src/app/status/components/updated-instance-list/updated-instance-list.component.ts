@@ -6,13 +6,17 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
+import {AttributeValue} from "../../../instance/components/instance-view/instance-table/instance-table.model";
+import {
+  CompareUpdatedInstanceDialogService
+} from "../compare-updated-instance-dialog/compare-updated-instance-dialog.service";
 
 @Component({
   selector: 'app-updated-instance-list',
   templateUrl: './updated-instance-list.component.html',
   styleUrls: ['./updated-instance-list.component.scss'],
   standalone: true,
-  imports: [MatListModule, MatButtonModule, MatTableModule, MatIconModule, MatCheckboxModule], 
+  imports: [MatListModule, MatButtonModule, MatTableModule, MatIconModule, MatCheckboxModule],
 })
 export class UpdatedInstanceListComponent {
 
@@ -22,7 +26,8 @@ export class UpdatedInstanceListComponent {
   toBeUploaded: Instance[] = [];
 
   constructor(private _bottomSheetRef: MatBottomSheetRef<UpdatedInstanceListComponent>,
-              @Inject(MAT_BOTTOM_SHEET_DATA) public data: {updated_instances: Instance[]}) {
+              @Inject(MAT_BOTTOM_SHEET_DATA) public data: {updated_instances: Instance[]},
+              private dialogService: CompareUpdatedInstanceDialogService) {
     this.matDataSource.data = this.data.updated_instances;
     this.toBeUploaded = [...this.data.updated_instances]
   }
@@ -36,13 +41,14 @@ export class UpdatedInstanceListComponent {
   }
 
   compareWithDB(instance: Instance) {
-    alert("Compare the updated instance with the db version")
+      const matDialogRef = this.dialogService.openDialog(instance);
+      matDialogRef.afterClosed().subscribe(result => {});
   }
 
   onSelectionChange(instance: Instance, event: MatCheckboxChange) {
     let index = this.toBeUploaded.indexOf(instance);
     if (event.checked) {
-      if (index < 0) 
+      if (index < 0)
         this.toBeUploaded.push(instance);
     }
     else {
