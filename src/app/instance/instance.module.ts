@@ -54,9 +54,10 @@ import { VIEW_INSTANCE_STATE_NAME } from './state/instance.selectors';
         CdkDrag,
         ListInstancesModule
     ],
-    exports: [
-        InstanceTableComponent
-    ]
+  exports: [
+    InstanceTableComponent,
+    InstanceTableRowElementComponent
+  ]
 })
 export class DatabaseObjectModule {
 }

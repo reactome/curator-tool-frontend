@@ -204,14 +204,11 @@ export class InstanceTableComponent {
   }
 
   private addModifiedAttributeName(attName: string){
-    if (this._instance != undefined) {
-      this._instance = {...this._instance}
-      // this._instance = Object.assign({modifiedAttributes: this.testArray}, this._instance)
-      if (this._instance.modifiedAttributes)
-        this._instance.modifiedAttributes = [...this._instance.modifiedAttributes, attName]
-      else this._instance.modifiedAttributes = [attName]
-      console.log(this._instance.modifiedAttributes)
+    let dbId = this._instance?.dbId;
+    if(dbId) {
+      this.store.dispatch(InstanceActions.add_modified_attribute({dbId, attName}))
     }
+    console.log('instance:', this._instance)
   }
 
   protected readonly AttributeCategory = AttributeCategory;

@@ -1,7 +1,7 @@
-import { HttpClient } from "@angular/common/http";
-import { Injectable } from '@angular/core';
-import { catchError, concatMap, map, Observable, of, throwError } from 'rxjs';
-import { environment } from 'src/environments/environment.dev';
+import {HttpClient} from "@angular/common/http";
+import {Injectable} from '@angular/core';
+import {catchError, concatMap, map, Observable, of, throwError} from 'rxjs';
+import {environment} from 'src/environments/environment.dev';
 import {
   AttributeCategory,
   AttributeDataType,
@@ -10,7 +10,7 @@ import {
   SchemaClass
 } from '../models/reactome-schema.model';
 // import { AttributeDa } from '../models/schema-class-attribute-data.model';
-import { Instance } from "../models/reactome-instance.model";
+import {Instance} from "../models/reactome-instance.model";
 import {coerceNumberProperty} from "@angular/cdk/coercion";
 
 
@@ -239,18 +239,18 @@ export class DataService {
    */
   createNewInstance(schemaClassName: string): Observable<Instance> {
     return this.fetchSchemaClass(schemaClassName).pipe(map((schemaClass: SchemaClass) => {
-      const attributes = new Map();
-      attributes.set('dbId', this.nextNewDbId);
-      this.nextNewDbId -= 1;
-      attributes.set('displayName', 'To be generated');
-      let instance: Instance = {
-        dbId: attributes.get('dbId'),
-        displayName: attributes.get('displayName'),
-        attributes: attributes
-      };
-      instance.schemaClass = schemaClass;
-      return instance;
-    }),
+        const attributes = new Map();
+        attributes.set('dbId', this.nextNewDbId);
+        this.nextNewDbId -= 1;
+        attributes.set('displayName', 'To be generated');
+        let instance: Instance = {
+          dbId: attributes.get('dbId'),
+          displayName: attributes.get('displayName'),
+          attributes: attributes
+        };
+        instance.schemaClass = schemaClass;
+        return instance;
+      }),
       catchError((err: Error) => {
         console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
           panelClass: ['warning-snackbar'],
@@ -331,9 +331,9 @@ export class DataService {
    * @returns
    */
   listInstances(className: string,
-    skip: number,
-    limit: number,
-    searchKey: string | undefined): Observable<Instance[]> {
+                skip: number,
+                limit: number,
+                searchKey: string | undefined): Observable<Instance[]> {
     let url = this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
     if (searchKey !== undefined) {
       url += '?query=' + searchKey;
@@ -350,4 +350,12 @@ export class DataService {
         }));
   }
 
+  addModifiedAttribute(dbId: number, attName: string): Observable<Instance> {
+    this.fetchInstance(dbId).subscribe(instance => {
+        if (instance.modifiedAttributes)
+          instance.modifiedAttributes = [...instance.modifiedAttributes, attName]
+        else instance.modifiedAttributes = [attName]
+    });
+    return this.fetchInstance(dbId);
+  }
 }

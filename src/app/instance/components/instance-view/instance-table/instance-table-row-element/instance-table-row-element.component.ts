@@ -29,6 +29,7 @@ export class InstanceTableRowElementComponent implements OnInit {
   DATA_TYPES = AttributeDataType;
 
   control = new FormControl();
+  showField: boolean = true;
 
   constructor(private store: Store, private _ngZone: NgZone, private route: ActivatedRoute, public viewOnly: ViewOnlyService) {
   }
@@ -45,7 +46,6 @@ export class InstanceTableRowElementComponent implements OnInit {
     if (this.attribute?.category && [AttributeCategory.REQUIRED, AttributeCategory.MANDATORY].includes(this.attribute?.category)) {
       this.control.addValidators([Validators.required])
     }
-
   }
 
   onChange() {

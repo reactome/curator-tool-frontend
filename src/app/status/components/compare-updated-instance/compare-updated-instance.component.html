@@ -2,3 +2,38 @@
   <app-instance-table class="child" [instance]="dbInstance"></app-instance-table>
   <app-instance-table class="child" [instance]="editedInstance"></app-instance-table>
 </div>
+
+<!--<section class="table-container" tabindex="0">-->
+<!--  <table mat-table [dataSource]="attributes" matSort class="instance-table">-->
+<!--    &lt;!&ndash; Attribute Name Column &ndash;&gt;-->
+<!--    <ng-container matColumnDef="name">-->
+<!--      <td class="attColumn" mat-cell *matCellDef="let element">{{element.name}}</td>-->
+<!--    </ng-container>-->
+
+<!--    &lt;!&ndash; Attribute Value Column &ndash;&gt;-->
+<!--    <ng-container matColumnDef="value">-->
+<!--      <th mat-header-cell *matHeaderCellDef> Value</th>-->
+<!--      <td mat-cell *matCellDef="let element" style="padding: 0">-->
+<!--        <ng-container *ngIf="element.attribute.cardinality === '1'">-->
+<!--          <app-instance-table-row-element [attribute]="element" [value]="element.value"/>-->
+<!--        </ng-container>-->
+
+<!--        <ng-container *ngIf="element.cardinality === '+'">-->
+<!--          &lt;!&ndash; Make sure ngif on a ng-container &ndash;&gt;-->
+<!--          <ng-container *ngIf="element.value === undefined; else elseblock">-->
+<!--            &lt;!&ndash; If no value for this attribute, nothing to be passed. But we still need the editing.&ndash;&gt;-->
+<!--            <app-instance-table-row-element [attribute]="element"/>-->
+<!--          </ng-container>-->
+<!--          <ng-template #elseblock>-->
+<!--            <app-instance-table-row-element *ngFor="let object of element.value; let i = index"-->
+<!--                                            [attribute]="element" [value]="object" [index]="i"/>-->
+<!--          </ng-template>-->
+<!--        </ng-container>-->
+<!--      </td>-->
+<!--    </ng-container>-->
+
+<!--    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>-->
+<!--    <tr mat-row *matRowDef="let row; columns: displayedColumns;">-->
+<!--    </tr>-->
+<!--  </table>-->
+<!--</section>-->

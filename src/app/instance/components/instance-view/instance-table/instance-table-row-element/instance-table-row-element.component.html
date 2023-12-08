@@ -1,3 +1,4 @@
+<ng-container *ngIf="showField">
 <ng-container *ngIf="viewOnly.enabled; else editView">
   <ng-container *ngIf="attribute?.type === DATA_TYPES.INSTANCE && value; else simple">
     <a routerLink="/instance_view/{{value.dbId}}" [queryParamsHandling]="'preserve'"
@@ -65,5 +66,4 @@
   </ng-container>
 
 </ng-template>
-
-
+</ng-container>

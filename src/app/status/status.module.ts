@@ -12,6 +12,11 @@ import {
 } from "./components/compare-updated-instance-dialog/compare-updated-instance-dialog.component";
 import {MatDialogModule} from "@angular/material/dialog";
 import {MatButtonModule} from "@angular/material/button";
+import {MatCheckboxModule} from "@angular/material/checkbox";
+import {MatIconModule} from "@angular/material/icon";
+import {MatSortModule} from "@angular/material/sort";
+import {MatTableModule} from "@angular/material/table";
+import {MatTooltipModule} from "@angular/material/tooltip";
 
 @NgModule({
   imports: [
@@ -23,6 +28,11 @@ import {MatButtonModule} from "@angular/material/button";
     DatabaseObjectModule,
     MatDialogModule,
     MatButtonModule,
+    MatCheckboxModule,
+    MatIconModule,
+    MatSortModule,
+    MatTableModule,
+    MatTooltipModule,
   ],
   exports: [
     StatusComponent // Have to export it!!!
