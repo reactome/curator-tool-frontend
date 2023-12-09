@@ -8,8 +8,8 @@ import {AttributeCategory} from "../../../core/models/reactome-schema.model";
 
 @Component({
   selector: 'app-compare-updated-instance',
-  templateUrl: './compare-updated-instance.component.html',
-  styleUrls: ['./compare-updated-instance.component.scss']
+  templateUrl: './instance-comparison.component.html',
+  styleUrls: ['./instance-comparison.component.scss']
 })
 export class CompareUpdatedInstanceComponent implements OnInit {
   editedInstance: Instance | undefined;

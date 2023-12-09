@@ -9,7 +9,7 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import {AttributeValue} from "../../../instance/components/instance-view/instance-table/instance-table.model";
 import {
   CompareUpdatedInstanceDialogService
-} from "../compare-updated-instance-dialog/compare-updated-instance-dialog.service";
+} from "../instance-comparison-dialog/instance-comparison-dialog.service";
 
 @Component({
   selector: 'app-updated-instance-list',

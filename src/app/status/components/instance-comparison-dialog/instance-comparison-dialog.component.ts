@@ -6,8 +6,8 @@ import {SchemaClass} from "../../../core/models/reactome-schema.model";
 
 @Component({
   selector: 'app-new-instance-dialog',
-  templateUrl: './compare-updated-instance-dialog.component.html',
-  styleUrls: ['./compare-updated-instance-dialog.component.scss']
+  templateUrl: './instance-comparison-dialog.component.html',
+  styleUrls: ['./instance-comparison-dialog.component.scss']
 })
 export class CompareUpdatedInstanceDialog {
   // instance: Instance | undefined;

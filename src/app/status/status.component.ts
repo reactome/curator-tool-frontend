@@ -18,14 +18,6 @@ import { MatListModule } from '@angular/material/list';
 export class StatusComponent implements OnInit{
   updatedInstances: Instance[] = [];
 
-  typesOfShoes: string[] = [
-    'Boots',
-    'Clogs',
-    'Loafers',
-    'Moccasins',
-    'Sneakers',
-  ];
-
   constructor(private store: Store, private _bottomSheet: MatBottomSheet) {
   }
 

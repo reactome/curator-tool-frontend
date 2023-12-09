@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { CompareUpdatedInstanceDialog } from './compare-updated-instance-dialog.component';
+import { CompareUpdatedInstanceDialog } from './instance-comparison-dialog.component';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 
 /**

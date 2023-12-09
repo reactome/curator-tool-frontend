@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { CompareUpdatedInstanceDialogService } from './compare-updated-instance-dialog.service';
+import { CompareUpdatedInstanceDialogService } from './instance-comparison-dialog.service';
 
 describe('NewInstanceDialogService', () => {
   let service: CompareUpdatedInstanceDialogService;

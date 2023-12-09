@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CompareUpdatedInstanceComponent } from './compare-updated-instance.component';
+import { CompareUpdatedInstanceComponent } from './instance-comparison.component';
 
 describe('CompareUpdatedInstanceComponent', () => {
   let component: CompareUpdatedInstanceComponent;

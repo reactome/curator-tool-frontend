@@ -5,11 +5,11 @@ import { UpdatedInstanceListComponent } from './components/updated-instance-list
 import { StoreModule } from '@ngrx/store';
 import { UPDATE_INSTANCES_STATE_NAME } from '../instance/state/instance.selectors';
 import { updatedInstancesReducer } from '../instance/state/instance.reducers';
-import { CompareUpdatedInstanceComponent } from './components/compare-updated-instance/compare-updated-instance.component';
+import { CompareUpdatedInstanceComponent } from './components/instance-comparison/instance-comparison.component';
 import {DatabaseObjectModule} from "../instance/instance.module";
 import {
   CompareUpdatedInstanceDialog
-} from "./components/compare-updated-instance-dialog/compare-updated-instance-dialog.component";
+} from "./components/instance-comparison-dialog/instance-comparison-dialog.component";
 import {MatDialogModule} from "@angular/material/dialog";
 import {MatButtonModule} from "@angular/material/button";
 import {MatCheckboxModule} from "@angular/material/checkbox";
