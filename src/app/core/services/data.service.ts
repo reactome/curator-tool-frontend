@@ -210,17 +210,18 @@ export class DataService {
     if (this.id2instance.has(dbId)) {
       return of(this.id2instance.get(dbId)!);
     }
-    return this.fetchInstanceFromDatabase(dbId);
+    return this.fetchInstanceFromDatabase(dbId, true);
   }
 
-  fetchInstanceFromDatabase(dbId: number): Observable<Instance> {
+  fetchInstanceFromDatabase(dbId: number, cache: boolean): Observable<Instance> {
     // Fetch from the server
     return this.http.get<Instance>(this.entityDataUrl + `${dbId}`)
       .pipe(
         concatMap((data: Instance) => {
           let instance: Instance = data; // Converted into the Instance object already
           this.handleInstanceAttributes(instance);
-          this.id2instance.set(dbId, instance); // Cache this instance
+          if (cache)
+            this.id2instance.set(dbId, instance); // Cache this instance
           return this.handleSchemaClassForInstance(instance);
         }),
 

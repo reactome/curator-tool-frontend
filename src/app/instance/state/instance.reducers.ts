@@ -1,45 +1,43 @@
-import {createReducer, on} from "@ngrx/store";
-import {Instance} from "src/app/core/models/reactome-instance.model";
-import {InstanceActions} from "./instance.actions";
-import {createEntityAdapter, EntityState} from "@ngrx/entity";
+import { createReducer, on } from "@ngrx/store";
+import { Instance } from "src/app/core/models/reactome-instance.model";
+import { InstanceActions } from "./instance.actions";
+import { createEntityAdapter, EntityState } from "@ngrx/entity";
 
 /**
  * Reducer to handle the instance to be viewed.
  */
-export const initialInstance: Instance = {dbId: 0};
+export const initialInstance: Instance = { dbId: 0 };
 
 export const viewInstanceReducer = createReducer(
   initialInstance,
-  on(InstanceActions.view_instance, (state, instance) => instance)
+  on(InstanceActions.view_instance, (state, instance) => createShellInstance(instance))
 );
 
 /**
  * Reducer to handle registration of updated instance
  */
-export const updatedInstances: Instance[] = [];
-
 export interface UpdatedInstanceState extends EntityState<Instance> {
-
 }
 
 export const updatedInstancesAdaptor = createEntityAdapter<Instance>({
   selectId: instance => instance.dbId
-});
+})
 export const updatedInstancesReducer = createReducer(
   updatedInstancesAdaptor.getInitialState(),
-  on(InstanceActions.register_updated_instance, (state, instance) => updatedInstancesAdaptor.upsertOne(instance, state))
-);
+  on(InstanceActions.register_updated_instance,
+    (state, instance) => {
+      // Use a shell copy of instance
+      let _instance: Instance = createShellInstance(instance);
+      return updatedInstancesAdaptor.upsertOne(_instance, state);
+    }
+  )
+)
 
-//   {
-//     // Check based on dbId
-//     let exists: boolean = false;
-//     for (let tmp of state) {
-//       if (tmp.dbId === instance.dbId) {
-//         exists = true;
-//         break;
-//       }
-//     }
-//     if (exists) return state;
-//     return [...state, instance]
-//   }
-//   )
+function createShellInstance(template: Instance): Instance {
+  let rtn = {
+    dbId: template.dbId,
+    displayName: template.displayName,
+    schemaClassName: template.schemaClassName
+  };
+  return rtn;
+}

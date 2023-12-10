@@ -22,22 +22,4 @@ export class DisableControlDirective {
   }
 
 }
-//
-// @Directive({
-//   selector: '[appUniqueAlterEgo]',
-//   providers: [
-//     {
-//       provide: NG_ASYNC_VALIDATORS,
-//       useExisting: forwardRef(() => UniqueAlterEgoValidatorDirective),
-//       multi: true,
-//     },
-//   ],
-//   standalone: true,
-// })
-// export class UniqueAlterEgoValidatorDirective implements AsyncValidator {
-//   constructor(private validator: UniqueAlterEgoValidator) {}
-//
-//   validate(control: AbstractControl): Observable<ValidationErrors | null> {
-//     return this.validator.validate(control);
-//   }
-// }
+

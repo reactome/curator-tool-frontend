@@ -4,6 +4,7 @@ import { Store } from "@ngrx/store";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { InstanceActions } from "../../state/instance.actions";
 import { selectViewInstance } from '../../state/instance.selectors';
+import { DataService } from 'src/app/core/services/data.service';
 
 @Component({
   selector: 'app-instance-view',
@@ -19,22 +20,28 @@ export class InstanceViewComponent implements OnInit {
   // Control if the instance is loading
   showProgressSpinner: boolean = false;
 
-  constructor(private router: Router, private route: ActivatedRoute, private store: Store) {
+  constructor(private router: Router, 
+              private route: ActivatedRoute, 
+              private dataService: DataService) {
   }
 
   ngOnInit() {
     // Use the route to get the dbId for the instance to be displayed
+    // Handle the loading of instance directly here without using ngrx's effect, which is just
+    // too complicated and not necessary here.
     this.route.params.subscribe((params) => {
       if (params['dbId']) {
         let dbId = params['dbId'];
         // Make sure dbId is a number
         dbId = parseInt(dbId);
-        this.showProgressSpinner = true;
-        this.store.dispatch(InstanceActions.get_instance({dbId: dbId}));
+        this.loadInstance(dbId);
       }
     });
-    // Get the view instance to be displayed here
-    this.store.select(selectViewInstance()).subscribe(instance => {
+  }
+
+  private loadInstance(dbId: number) {
+    this.showProgressSpinner = true;
+    this.dataService.fetchInstance(dbId).subscribe((instance) => {
       this.instance = instance;
       if (this.instance.dbId !== 0 && !this.dbIds.includes(this.instance.dbId))
         this.viewHistory.push(this.instance);

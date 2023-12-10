@@ -20,7 +20,7 @@ export class CompareUpdatedInstanceDialogService {
     const dialogRef = this.dialog.open(InstanceComparisonDialog, {
       width: '1000px',
       // height: '900px',
-      data: instance
+      data: instance.dbId
     });
     return dialogRef;
   }

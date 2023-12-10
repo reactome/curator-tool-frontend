@@ -24,6 +24,13 @@ export class InstanceTableRowElementComponent implements OnInit {
   @Output() newValueEvent = new EventEmitter<AttributeValue>();
   // Edit action
   @Output() editAction = new EventEmitter<AttributeValue>();
+  // To disable it manually
+  @Input() set disable(disable: boolean) {
+    if (disable)
+      this.control.disable();
+    else
+      this.control.enable();
+  }
 
   // So that we can use it in the template
   DATA_TYPES = AttributeDataType;
@@ -31,13 +38,17 @@ export class InstanceTableRowElementComponent implements OnInit {
   control = new FormControl();
   showField: boolean = true;
 
+  // viewOnly as a service is drilled down too deep in the component hierarchy. Better not been here and disable
+  // the editing using a simple flag!
   constructor(private store: Store, private _ngZone: NgZone, private route: ActivatedRoute, public viewOnly: ViewOnlyService) {
+    if (viewOnly.enabled)
+      this.control.disable();
   }
 
   @ViewChild('autosize') autosize: CdkTextareaAutosize | undefined;
 
   ngOnInit() {
-    if (this.viewOnly.enabled || this.attribute?.category === AttributeCategory.NOMANUALEDIT) {
+    if (this.attribute?.category === AttributeCategory.NOMANUALEDIT) {
       this.control.disable();
     }
 

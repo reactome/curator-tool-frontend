@@ -20,17 +20,16 @@
 
 <ng-template #refValueColTemplate let-element>
   <ng-container *ngIf="element.attribute.cardinality === '1'">
-    <app-instance-table-row-element [attribute]="element.attribute" [value]="element.value" />
+    <app-instance-table-row-element [attribute]="element.attribute" [value]="element.referenceValue" [disable]="true" />
   </ng-container>
   <ng-container *ngIf="element.attribute.cardinality === '+'">
     <!-- Make sure ngif on a ng-container -->
     <ng-container *ngIf="element.referenceValue === undefined; else elseblock">
-      <!-- If no value for this attribute, nothing to be passed. But we still need the editing.-->
-      <app-instance-table-row-element [attribute]="element.attribute" />
+      <app-instance-table-row-element [attribute]="element.attribute" [disable]="true" />
     </ng-container>
     <ng-template #elseblock>
       <app-instance-table-row-element *ngFor="let object of element.referenceValue let i = index"
-        [attribute]="element.attribute" [value]="object" [index]="i" />
+        [attribute]="element.attribute" [value]="object" [index]="i" [disable]="true" />
     </ng-template>
   </ng-container>
 </ng-template>
