@@ -1,13 +1,13 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {Instance} from 'src/app/core/models/reactome-instance.model';
-import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
-import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
-import {AttributeCategory} from "../../../../core/models/reactome-schema.model";
+import { Component, Input } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { InstanceActions } from 'src/app/instance/state/instance.actions';
+import { AttributeCategory } from "../../../../core/models/reactome-schema.model";
 import {
   SelectInstanceDialogService
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
-import {Store} from '@ngrx/store';
-import {InstanceActions} from 'src/app/instance/state/instance.actions';
+import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
+import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -18,7 +18,7 @@ import {InstanceActions} from 'src/app/instance/state/instance.actions';
   styleUrls: ['./instance-table.component.scss'],
 })
 export class InstanceTableComponent {
-  displayedColumns: string[] = ['name', 'value'];
+  @Input() displayedColumns: string[] = ['name', 'value'];
   showFilterOptions: boolean = false;
   showHeaderActions: boolean = false;
   sortAttNames: boolean = true;
@@ -34,9 +34,19 @@ export class InstanceTableComponent {
   // flag to indicate if it is in a edit mode
   isInEditing: boolean = false;
 
+  // For comparison
+  _referenceInstance?: Instance;
+
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
     this._instance = instance;
+    this.isInEditing = false;
+    this.updateTableContent();
+    this.isInEditing = true; // After the table is shown, the instance is in editing mode
+  };
+
+  @Input() set referenceInstance(refInstance: Instance | undefined) {
+    this._referenceInstance = refInstance;
     this.isInEditing = false;
     this.updateTableContent();
     this.isInEditing = true; // After the table is shown, the instance is in editing mode
@@ -192,7 +202,11 @@ export class InstanceTableComponent {
   }
 
   private updateTableContent(): void {
-    this.instanceDataSource = new InstanceDataSource(this._instance, this.categories, this.sortAttNames, this.sortAttDefined);
+    this.instanceDataSource = new InstanceDataSource(this._instance, 
+                                                    this.categories, 
+                                                    this.sortAttNames, 
+                                                    this.sortAttDefined,
+                                                    this._referenceInstance);
     if (this.isInEditing) {
       // Register the updated instances
       this.registerUpdatedInstance();

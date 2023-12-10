@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { CompareUpdatedInstanceDialog } from './instance-comparison-dialog.component';
+import { InstanceComparisonDialog } from './instance-comparison-dialog.component';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 
 /**
@@ -16,8 +16,8 @@ export class CompareUpdatedInstanceDialogService {
 
   constructor(private dialog: MatDialog) { }
 
-  openDialog(instance: Instance): MatDialogRef<CompareUpdatedInstanceDialog, Instance> {
-    const dialogRef = this.dialog.open(CompareUpdatedInstanceDialog, {
+  openDialog(instance: Instance): MatDialogRef<InstanceComparisonDialog, Instance> {
+    const dialogRef = this.dialog.open(InstanceComparisonDialog, {
       width: '1000px',
       // height: '900px',
       data: instance

@@ -1,6 +1,8 @@
 <h2 class="dialog_title" mat-dialog-title>Compared Updated Instance to db</h2>
 <mat-dialog-content style="width: 100%">
-  <app-compare-updated-instance></app-compare-updated-instance>
+  <!-- <app-compare-updated-instance></app-compare-updated-instance> -->
+  <app-instance-table [instance]="instance" 
+  [displayedColumns]="displayedColumns" [referenceInstance]="dbInstance"></app-instance-table>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="onOK()" cdkFocusInitial>OK</button>

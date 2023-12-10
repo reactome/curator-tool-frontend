@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CompareUpdatedInstanceDialog } from './instance-comparison-dialog.component';
+import { InstanceComparisonDialog } from './instance-comparison-dialog.component';
 
 describe('NewInstanceDialogComponent', () => {
-  let component: CompareUpdatedInstanceDialog;
-  let fixture: ComponentFixture<CompareUpdatedInstanceDialog>;
+  let component: InstanceComparisonDialog;
+  let fixture: ComponentFixture<InstanceComparisonDialog>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ CompareUpdatedInstanceDialog ]
+      declarations: [ InstanceComparisonDialog ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(CompareUpdatedInstanceDialog);
+    fixture = TestBed.createComponent(InstanceComparisonDialog);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

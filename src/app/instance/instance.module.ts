@@ -56,8 +56,8 @@ import { VIEW_INSTANCE_STATE_NAME } from './state/instance.selectors';
     ],
   exports: [
     InstanceTableComponent,
-    InstanceTableRowElementComponent
+    InstanceTableRowElementComponent,
   ]
 })
-export class DatabaseObjectModule {
+export class InstanceModule {
 }

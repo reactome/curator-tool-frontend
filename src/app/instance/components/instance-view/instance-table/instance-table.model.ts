@@ -2,10 +2,10 @@
  * This script holds classes defined for the instance table.
  */
 
-import {DataSource} from "@angular/cdk/collections";
-import {Observable, of} from "rxjs";
-import {Instance} from "src/app/core/models/reactome-instance.model";
-import {AttributeCategory, AttributeDefiningType, SchemaAttribute} from "src/app/core/models/reactome-schema.model";
+import { DataSource } from "@angular/cdk/collections";
+import { Observable, of } from "rxjs";
+import { Instance } from "src/app/core/models/reactome-instance.model";
+import { AttributeCategory, SchemaAttribute } from "src/app/core/models/reactome-schema.model";
 
 /**
  * Used to encode the data for the attribute value cell.
@@ -14,7 +14,8 @@ export interface AttributeValue {
   attribute: SchemaAttribute,
   value: any,
   index?: number // index of the value for an multi-valued slot
-  editAction?: EDIT_ACTION // May be used to encode editing action:
+  editAction?: EDIT_ACTION // May be used to encode editing action
+  referenceValue?: any // To be used for comparison
 }
 
 export enum EDIT_ACTION {
@@ -22,7 +23,6 @@ export enum EDIT_ACTION {
   ADD_VIA_SELECT,
   DELETE,
   EDIT,
-  TEST_DELETE
 }
 
 /**
@@ -30,7 +30,11 @@ export enum EDIT_ACTION {
  */
 export class InstanceDataSource extends DataSource<AttributeValue> {
 
-  constructor(private instance: Instance | undefined, private categories: Map<AttributeCategory, boolean>, public sort: boolean, public sortAttDefined: boolean) {
+  constructor(private instance: Instance | undefined, 
+              private categories: Map<AttributeCategory, boolean>, 
+              public sort: boolean, 
+              public sortAttDefined: boolean,
+              private referenceInstance?: Instance) {
     super();
   }
 
@@ -41,10 +45,13 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
       for (let attribute of this.instance!.schemaClass!.attributes!) {
         let value = this.instance!.attributes!.get(attribute.name);
         if (this.categories.get(attribute.category)) {
-          const attributeValue = {
+          const attributeValue: AttributeValue = {
             attribute: attribute,
             value: value
           };
+          if (this.referenceInstance !== undefined) {
+            attributeValue.referenceValue = this.referenceInstance.attributes!.get(attribute.name);
+          }
           attributeValues.push(attributeValue);
         }
       }
