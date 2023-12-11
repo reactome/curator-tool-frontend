@@ -8,6 +8,7 @@ import {
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
 import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
 import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
+import {DataService} from "../../../../core/services/data.service";
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -18,7 +19,9 @@ import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-tabl
   styleUrls: ['./instance-table.component.scss'],
 })
 export class InstanceTableComponent {
-  @Input() displayedColumns: string[] = ['name', 'value'];
+  // @Input() displayedColumns: string[] = ['name', 'value', 'referenceValue'];
+  showReferenceColumn: boolean = false;
+  displayedColumns: string[] = ['name', 'value'];
   showFilterOptions: boolean = false;
   showHeaderActions: boolean = false;
   sortAttNames: boolean = true;
@@ -32,7 +35,7 @@ export class InstanceTableComponent {
   // Keep it for editing
   _instance?: Instance;
   // flag to indicate if it is in a edit mode
-  isInEditing: boolean = false;
+  isInEditing: boolean = true;
 
   // For comparison
   _referenceInstance?: Instance;
@@ -40,27 +43,37 @@ export class InstanceTableComponent {
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
     this._instance = instance;
+    this.dataService.fetchInstanceFromDatabase(this._instance!.dbId, false).subscribe(
+      refInstance => {this._referenceInstance = refInstance;
+    this.updateTableContent()});
     this.isInEditing = false;
-    this.updateTableContent();
     this.isInEditing = true; // After the table is shown, the instance is in editing mode
   };
 
-  @Input() set referenceInstance(refInstance: Instance | undefined) {
-    this._referenceInstance = refInstance;
-    this.isInEditing = false;
-    this.updateTableContent();
-    this.isInEditing = true; // After the table is shown, the instance is in editing mode
-  };
+  @Input() set referenceValueColumn(showReferenceColumn: boolean) {
+    this.showReferenceColumn = showReferenceColumn;
+    this.showReferenceColumn ?
+      this.displayedColumns = ['name', 'value', 'referenceValue'] :
+      this.displayedColumns = ['name', 'value'];
+  }
+
+  // @Input() set referenceInstance(refInstance: Instance | undefined) {
+  //   this._referenceInstance = refInstance;
+  //   this.isInEditing = false;
+  //   this.updateTableContent();
+  //   this.isInEditing = true; // After the table is shown, the instance is in editing mode
+  // };
 
   constructor(
     private dialogService: NewInstanceDialogService,
     private selectInstanceDialogService: SelectInstanceDialogService,
-    private store: Store) {
+    private store: Store,
+    private dataService: DataService) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
       this.categories.set(AttributeCategory[categoryKey], true)
     }
-  } // Use a dialog serice to hide the implementation of the dialog.
+  } // Use a dialog service to hide the implementation of the dialog.
 
   changeShowFilterOptions() {
     this.showFilterOptions = !this.showFilterOptions;
@@ -121,6 +134,13 @@ export class InstanceTableComponent {
       default:
         console.error("The action doesn't know: ", attributeValue.editAction);
     }
+  }
+
+  showReferenceValueColumn(){
+    this.showReferenceColumn = !this.showReferenceColumn;
+    this.showReferenceColumn ?
+      this.displayedColumns = ['name', 'value', 'referenceValue'] :
+      this.displayedColumns = ['name', 'value'];
   }
 
   private deleteInstanceAttribute(attributeValue: AttributeValue): void {
@@ -202,9 +222,9 @@ export class InstanceTableComponent {
   }
 
   private updateTableContent(): void {
-    this.instanceDataSource = new InstanceDataSource(this._instance, 
-                                                    this.categories, 
-                                                    this.sortAttNames, 
+    this.instanceDataSource = new InstanceDataSource(this._instance,
+                                                    this.categories,
+                                                    this.sortAttNames,
                                                     this.sortAttDefined,
                                                     this._referenceInstance);
     if (this.isInEditing) {
