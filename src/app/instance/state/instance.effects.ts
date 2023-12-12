@@ -29,6 +29,18 @@ export class DatabaseObjectEffects {
       )))
   })
 
+  getDbInstance$ = createEffect(() => {
+    return this.actions$.pipe(
+      ofType(InstanceActions.get_instance),
+      mergeMap(({dbId}) =>
+        this.dataService.fetchInstanceFromDatabase(dbId, false).pipe(
+          mergeMap(inst => [InstanceActions.view_instance(inst)]),
+          catchError((error) => EMPTY)
+        )
+      ),
+      catchError(() => EMPTY)
+    )});
+
   // addModifiedAttribute$ = createEffect(() => {
   //   return this.actions$.pipe(
   //     ofType(InstanceActions.add_modified_attribute),

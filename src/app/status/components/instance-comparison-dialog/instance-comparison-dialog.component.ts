@@ -16,6 +16,7 @@ export class InstanceComparisonDialog {
   displayedColumns: string[] = ['name', 'value', 'referenceValue'];
   dbInstance?: Instance;
   updatedInstance?: Instance;
+  testDbId: number = 389891;
 
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public dbId: number,
@@ -25,7 +26,7 @@ export class InstanceComparisonDialog {
     // Need the original database copy. Not the cached one.
     this.dataService.fetchInstanceFromDatabase(this.dbId, false).subscribe(instance => this.dbInstance = instance);
   }
-  
+
   //TODO: The following two functions to be updated.
   onCancel() {
     this.dialogRef.close();
