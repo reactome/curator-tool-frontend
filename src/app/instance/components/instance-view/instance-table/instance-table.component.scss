@@ -25,7 +25,8 @@
 }
 
 .table-container {
-  // height: calc(100vh - var(--bread-crumb-height) - var(--title-height) - 2 * var(--body-margin));
+  max-height: calc(100vh - var(--bread-crumb-height) - var(--title-height) - 2 * var(--body-margin));
+  height: calc(100vh - var(--bread-crumb-height) - var(--title-height) - 2 * var(--body-margin));
   overflow: auto;
   border: none;
 }

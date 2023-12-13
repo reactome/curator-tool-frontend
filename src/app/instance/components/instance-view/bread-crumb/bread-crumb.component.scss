@@ -8,6 +8,8 @@ mat-list :hover {
   height: var(--bread-crumb-height, 40px);
   font-size: 16px;
   font-weight: bold;
+  position: sticky;
+  min-height: var(--bread-crumb-height, 40px);
 }
 
 :host {
