@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import {Component, Inject, Input} from '@angular/core';
 import { MAT_BOTTOM_SHEET_DATA, MatBottomSheetRef } from '@angular/material/bottom-sheet';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxChange, MatCheckboxModule } from '@angular/material/checkbox';
@@ -6,7 +6,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
-import {AttributeValue} from "../../../instance/components/instance-view/instance-table/instance-table.model";
 import {
   CompareUpdatedInstanceDialogService
 } from "../instance-comparison-dialog/instance-comparison-dialog.service";
@@ -19,26 +18,27 @@ import {
   imports: [MatListModule, MatButtonModule, MatTableModule, MatIconModule, MatCheckboxModule],
 })
 export class UpdatedInstanceListComponent {
-
+  @Input() data: Instance[] = [];
   displayedColumns: string[] = ['dbId', 'displayName', 'compareInstance', 'check'];
   matDataSource = new MatTableDataSource<Instance>();
   // instances to be comitted
   toBeUploaded: Instance[] = [];
 
-  constructor(private _bottomSheetRef: MatBottomSheetRef<UpdatedInstanceListComponent>,
-              @Inject(MAT_BOTTOM_SHEET_DATA) public data: {updated_instances: Instance[]},
+  // private _bottomSheetRef: MatBottomSheetRef<UpdatedInstanceListComponent>,
+  // @Inject(MAT_BOTTOM_SHEET_DATA) public data: {updated_instances: Instance[]},
+  constructor(
               private dialogService: CompareUpdatedInstanceDialogService) {
-    this.matDataSource.data = this.data.updated_instances;
-    this.toBeUploaded = [...this.data.updated_instances]
+    this.matDataSource.data = this.data;
+    this.toBeUploaded = [...this.data]
   }
 
-  close() {
-    this._bottomSheetRef.dismiss();
-  }
-
-  commit() {
-    this._bottomSheetRef.dismiss();
-  }
+  // close() {
+  //   this._bottomSheetRef.dismiss();
+  // }
+  //
+  // commit() {
+  //   this._bottomSheetRef.dismiss();
+  // }
 
   compareWithDB(instance: Instance) {
       const matDialogRef = this.dialogService.openDialog(instance);

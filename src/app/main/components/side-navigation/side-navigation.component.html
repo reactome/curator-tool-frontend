@@ -1,0 +1,12 @@
+<app-schema-class-tree *ngIf="!showUpdatedList"></app-schema-class-tree>
+<cdk-accordion class="example-accordion">
+  <cdk-accordion-item>
+    <div
+      class="example-accordion-item-body"
+      role="region"
+      [style.display]="showUpdatedList ? '' : 'none'">
+      <app-updated-instance-list [data]="data"></app-updated-instance-list>
+    </div>
+  </cdk-accordion-item>
+</cdk-accordion>
+

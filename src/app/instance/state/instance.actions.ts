@@ -14,9 +14,5 @@ export const InstanceActions = createActionGroup({
 
     // Modify instance attributes
     add_modified_attribute: props<{dbId:number; attName: string}>(),
-
-    // Get original db instance
-    get_db_instance: props<{dbId: number}>(),
-    view_db_instance: props<Instance>(),
   }
 })

@@ -1,13 +1,13 @@
-import { Component, Input } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { InstanceActions } from 'src/app/instance/state/instance.actions';
-import { AttributeCategory } from "../../../../core/models/reactome-schema.model";
+import {Component, Input} from '@angular/core';
+import {Store} from '@ngrx/store';
+import {Instance} from 'src/app/core/models/reactome-instance.model';
+import {InstanceActions} from 'src/app/instance/state/instance.actions';
+import {AttributeCategory} from "../../../../core/models/reactome-schema.model";
 import {
   SelectInstanceDialogService
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
-import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
-import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
+import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
+import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
 import {DataService} from "../../../../core/services/data.service";
 
 /**
@@ -35,7 +35,7 @@ export class InstanceTableComponent {
   // Keep it for editing
   _instance?: Instance;
   // flag to indicate if it is in a edit mode
-  isInEditing: boolean = true;
+  isInEditing: boolean = false;
 
   // For comparison
   _referenceInstance?: Instance;
@@ -45,7 +45,7 @@ export class InstanceTableComponent {
     this._instance = instance;
     this.updateTableContent();
     this.isInEditing = false;
-    this.isInEditing = true; // After the table is shown, the instance is in editing mode
+    //this.isInEditing = true; // After the table is shown, the instance is in editing mode
   };
 
   // Render the instance table with the comparision column visible
@@ -126,7 +126,7 @@ export class InstanceTableComponent {
     }
   }
 
-  showReferenceValueColumn(){
+  showReferenceValueColumn() {
     this.showReferenceColumn = !this.showReferenceColumn;
     this.getDbInstance();
   }
@@ -137,9 +137,11 @@ export class InstanceTableComponent {
     this.comparisonDbId === 0 ? dbId = this._instance!.dbId : dbId = this.comparisonDbId;
     this.showReferenceColumn ?
       this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
-        refInstance => {this._referenceInstance = refInstance;
+        refInstance => {
+          this._referenceInstance = refInstance;
           this.updateTableContent()
-          this.displayedColumns = ['name', 'value', 'referenceValue']}) :
+          this.displayedColumns = ['name', 'value', 'referenceValue']
+        }) :
       this.displayedColumns = ['name', 'value'];
   }
 
@@ -223,10 +225,10 @@ export class InstanceTableComponent {
 
   private updateTableContent(): void {
     this.instanceDataSource = new InstanceDataSource(this._instance,
-                                                    this.categories,
-                                                    this.sortAttNames,
-                                                    this.sortAttDefined,
-                                                    this._referenceInstance);
+      this.categories,
+      this.sortAttNames,
+      this.sortAttDefined,
+      this._referenceInstance);
     if (this.isInEditing) {
       // Register the updated instances
       this.registerUpdatedInstance();
@@ -237,9 +239,9 @@ export class InstanceTableComponent {
     this.store.dispatch(InstanceActions.register_updated_instance(this._instance!));
   }
 
-  private addModifiedAttributeName(attName: string){
+  private addModifiedAttributeName(attName: string) {
     let dbId = this._instance?.dbId;
-    if(dbId) {
+    if (dbId) {
       this.store.dispatch(InstanceActions.add_modified_attribute({dbId, attName}))
     }
     console.log('instance:', this._instance)

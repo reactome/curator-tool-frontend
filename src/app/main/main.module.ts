@@ -6,14 +6,20 @@ import {MatSidenavModule} from "@angular/material/sidenav";
 import {MatToolbarModule} from "@angular/material/toolbar";
 import {SchemaClassTreeModule} from "../schema-class/components/tree/schema-class-tree.module";
 import {RouterOutlet} from "@angular/router";
+import { SideNavigationComponent } from './components/side-navigation/side-navigation.component';
+import {UpdatedInstanceListComponent} from "../status/components/updated-instance-list/updated-instance-list.component";
+import {StatusComponent} from "../status/status.component";
+import {CdkAccordionModule} from "@angular/cdk/accordion";
 
 
 @NgModule({
   declarations: [
-    MainComponent
+    MainComponent,
+    SideNavigationComponent
   ],
   exports: [
-    MainComponent
+    MainComponent,
+    SideNavigationComponent
   ],
   imports: [
     CommonModule,
@@ -22,6 +28,9 @@ import {RouterOutlet} from "@angular/router";
     MatToolbarModule,
     SchemaClassTreeModule,
     RouterOutlet,
+    UpdatedInstanceListComponent,
+    StatusComponent,
+    CdkAccordionModule,
   ]
 })
 export class MainModule { }

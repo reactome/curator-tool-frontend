@@ -15,16 +15,6 @@ export const viewInstanceReducer = createReducer(
 );
 
 /**
- * Reducer to handle the original database instance.
- */
-export const dbInstance: Instance = {dbId: 0};
-
-export const viewDbInstance = createReducer(
-  dbInstance,
-  on(InstanceActions.view_db_instance, (state, instance) => createShellInstance(instance))
-)
-
-/**
  * Reducer to handle registration of updated instance
  */
 export interface UpdatedInstanceState extends EntityState<Instance> {
