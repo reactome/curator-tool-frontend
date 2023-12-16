@@ -1,6 +1,6 @@
 import { createFeatureSelector, createSelector } from "@ngrx/store";
 import { Instance } from "src/app/core/models/reactome-instance.model";
-import {updatedInstancesAdaptor, UpdatedInstanceState, DbInstanceState, dbInstanceAdaptor} from "./instance.reducers";
+import { UpdatedInstanceState, updatedInstancesAdaptor } from "./instance.reducers";
 
 // The instance to be viewed
 export const VIEW_INSTANCE_STATE_NAME = 'view_instance';
@@ -21,11 +21,4 @@ export const updatedInstances = () => createSelector(
   (state: UpdatedInstanceState) => updatedInstancesAdaptor.getSelectors().selectAll(state)
 )
 
-// Original db Instance state
-export const GET_DB_INSTANCE = 'get_db_instance'
-export const getDbInstanceState = createFeatureSelector<DbInstanceState>(GET_DB_INSTANCE);
-export const getDbInstance = () => createSelector(
-  getDbInstanceState,
-  (state: DbInstanceState) => dbInstanceAdaptor.getInitialState()
-)
 

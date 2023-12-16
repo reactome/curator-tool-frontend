@@ -10,9 +10,8 @@ export const InstanceActions = createActionGroup({
 
     // Record updated instances
     register_updated_instance: props<Instance>(),
+    remove_updated_instance: props<Instance>(),
     get_updated_instances: emptyProps(),
 
-    // Modify instance attributes
-    add_modified_attribute: props<{dbId:number; attName: string}>(),
   }
 })

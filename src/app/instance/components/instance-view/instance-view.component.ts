@@ -76,4 +76,9 @@ export class InstanceViewComponent implements OnInit {
     this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
       dbInstance => this.dbInstance = dbInstance);
   }
+
+  upload() {
+    console.debug('Upload the instance!');
+  }
+
 }

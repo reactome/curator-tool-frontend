@@ -3,6 +3,7 @@ import { Instance } from "src/app/core/models/reactome-instance.model";
 import { InstanceActions } from "./instance.actions";
 import { createEntityAdapter, EntityState } from "@ngrx/entity";
 import {state} from "@angular/animations";
+import { InstantiateExpr } from "@angular/compiler";
 
 /**
  * Reducer to handle the instance to be viewed.
@@ -18,9 +19,6 @@ export const viewInstanceReducer = createReducer(
  * Reducer to handle registration of updated instance
  */
 export interface UpdatedInstanceState extends EntityState<Instance> {
-}
-
-export interface DbInstanceState extends EntityState<Instance> {
 }
 
 export const updatedInstancesAdaptor = createEntityAdapter<Instance>({
@@ -39,15 +37,9 @@ export const updatedInstancesReducer = createReducer(
       return updatedInstancesAdaptor.upsertOne(_instance, state);
     }
   ),
+  on(InstanceActions.remove_updated_instance,
+    (state, instance) => updatedInstancesAdaptor.removeOne(instance.dbId, state))
 )
-
-// export const getDbInstanceReducer = createReducer(
-//   dbInstanceAdaptor.getInitialState(),
-//   on(InstanceActions.view_db_instance,
-//     (state, instance) => {
-//     return dbInstanceAdaptor.getSelectors().;
-//     })
-// )
 
 function createShellInstance(template: Instance): Instance {
   let rtn = {

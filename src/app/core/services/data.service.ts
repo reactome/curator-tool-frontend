@@ -351,12 +351,4 @@ export class DataService {
         }));
   }
 
-  addModifiedAttribute(dbId: number, attName: string): Observable<Instance> {
-    this.fetchInstance(dbId).subscribe(instance => {
-        if (instance.modifiedAttributes)
-          instance.modifiedAttributes = [...instance.modifiedAttributes, attName]
-        else instance.modifiedAttributes = [attName]
-    });
-    return this.fetchInstance(dbId);
-  }
 }

@@ -19,23 +19,6 @@ export class DatabaseObjectEffects {
       catchError(() => EMPTY)
   )});
 
-  addModifiedAttribute$ = createEffect(() => {
-    return this.actions$.pipe(
-      ofType(InstanceActions.add_modified_attribute),
-      mergeMap(({dbId, attName}) =>
-      this.dataService.addModifiedAttribute(dbId, attName).pipe(
-                mergeMap(inst => [InstanceActions.view_instance(inst)]),
-            catchError((error) => EMPTY)
-      )))
-  })
-
-  // addModifiedAttribute$ = createEffect(() => {
-  //   return this.actions$.pipe(
-  //     ofType(InstanceActions.add_modified_attribute),
-  //     tap(({dbId, attName}) =>
-  //       this.dataService.addModifiedAttribute(dbId, attName)))
-  // },{dispatch: false})
-
   constructor(
     private actions$: Actions,
     private dataService: DataService
