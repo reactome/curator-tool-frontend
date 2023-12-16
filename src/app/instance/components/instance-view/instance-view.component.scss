@@ -2,7 +2,11 @@
   font-size: 16px;
   height: var(--title-height, 40px);
   position: sticky;
-  //top: var(--bread-crumb-height, 40px);
+}
+
+.title{
+  max-width: 100px;
+  word-wrap:break-word;
 }
 
 .position {
@@ -14,4 +18,9 @@
 
 .breadCrumb {
   height: 5vh;
+}
+
+.button {
+  right: 0;
+  position: absolute;
 }

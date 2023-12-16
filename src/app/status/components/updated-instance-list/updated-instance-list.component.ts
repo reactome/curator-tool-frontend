@@ -9,6 +9,7 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import {
   CompareUpdatedInstanceDialogService
 } from "../instance-comparison-dialog/instance-comparison-dialog.service";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-updated-instance-list',
@@ -21,28 +22,18 @@ export class UpdatedInstanceListComponent {
   @Input() data: Instance[] = [];
   displayedColumns: string[] = ['dbId', 'displayName', 'compareInstance', 'check'];
   matDataSource = new MatTableDataSource<Instance>();
-  // instances to be comitted
+  // instances to be committed
   toBeUploaded: Instance[] = [];
 
   // private _bottomSheetRef: MatBottomSheetRef<UpdatedInstanceListComponent>,
   // @Inject(MAT_BOTTOM_SHEET_DATA) public data: {updated_instances: Instance[]},
-  constructor(
-              private dialogService: CompareUpdatedInstanceDialogService) {
+  constructor(private router: Router,) {
     this.matDataSource.data = this.data;
-    this.toBeUploaded = [...this.data]
+    this.toBeUploaded = [...this.data];
   }
 
-  // close() {
-  //   this._bottomSheetRef.dismiss();
-  // }
-  //
-  // commit() {
-  //   this._bottomSheetRef.dismiss();
-  // }
-
   compareWithDB(instance: Instance) {
-      const matDialogRef = this.dialogService.openDialog(instance);
-      matDialogRef.afterClosed().subscribe(result => {});
+    this.router.navigate(["/instance_view/" + instance.dbId + "/" + "comparison"]);
   }
 
   onSelectionChange(instance: Instance, event: MatCheckboxChange) {

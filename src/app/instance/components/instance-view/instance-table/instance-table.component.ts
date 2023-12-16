@@ -19,8 +19,6 @@ import {DataService} from "../../../../core/services/data.service";
   styleUrls: ['./instance-table.component.scss'],
 })
 export class InstanceTableComponent {
-  @Input() comparisonDbId: number = 0;
-  showReferenceColumn: boolean = false;
   displayedColumns: string[] = ['name', 'value'];
   showFilterOptions: boolean = false;
   showHeaderActions: boolean = false;
@@ -39,20 +37,29 @@ export class InstanceTableComponent {
 
   // For comparison
   _referenceInstance?: Instance;
+  showReferenceColumn: boolean = false;
 
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
     this._instance = instance;
-    this.updateTableContent();
     this.isInEditing = false;
-    //this.isInEditing = true; // After the table is shown, the instance is in editing mode
+    this.updateTableContent();
+    this.isInEditing = true; // After the table is shown, the instance is in editing mode
   };
 
-  // Render the instance table with the comparision column visible
-  @Input() set referenceValueColumn(showReferenceColumn: boolean) {
-    this.showReferenceColumn = showReferenceColumn;
-    this.getDbInstance();
-  }
+  @Input() set referenceInstance(refInstance: Instance | undefined) {
+    this._referenceInstance = refInstance;
+    this.isInEditing = false;
+    this.updateTableContent();
+    this.isInEditing = true; // After the table is shown, the instance is in editing mode
+    if (refInstance === undefined) {
+      this.showReferenceColumn = false
+      this.displayedColumns = ['name', 'value']
+    } else {
+      this.showReferenceColumn = true;
+      this.displayedColumns = ['name', 'value', 'referenceValue']
+    }
+  };
 
   constructor(
     private dialogService: NewInstanceDialogService,
@@ -126,24 +133,16 @@ export class InstanceTableComponent {
     }
   }
 
-  showReferenceValueColumn() {
-    this.showReferenceColumn = !this.showReferenceColumn;
-    this.getDbInstance();
-  }
-
-  // TODO: move dataService method out of component (use emit?)
-  private getDbInstance() {
-    let dbId: number;
-    this.comparisonDbId === 0 ? dbId = this._instance!.dbId : dbId = this.comparisonDbId;
-    this.showReferenceColumn ?
-      this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
-        refInstance => {
-          this._referenceInstance = refInstance;
-          this.updateTableContent()
-          this.displayedColumns = ['name', 'value', 'referenceValue']
-        }) :
-      this.displayedColumns = ['name', 'value'];
-  }
+  // private getDbInstance() {
+  //   this.showReferenceColumn ?
+  //     this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
+  //       refInstance => {
+  //         this._referenceInstance = refInstance;
+  //         this.updateTableContent()
+  //         this.displayedColumns = ['name', 'value', 'referenceValue']
+  //       }) :
+  //     this.displayedColumns = ['name', 'value'];
+  // }
 
   private deleteInstanceAttribute(attributeValue: AttributeValue): void {
     console.debug('deleteInstanceAttribute: ', attributeValue);

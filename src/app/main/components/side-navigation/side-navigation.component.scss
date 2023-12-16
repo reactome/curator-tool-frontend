@@ -1,3 +1,16 @@
-.list{
-  height: calc(100vh - 2 * var(--body-margin, 8px));
+.example-accordion {
+  background-color: var(--surface-variant);
+  align-items: end;
+  border: var(--surface)
 }
+
+.example-accordion-item-body {
+  position: relative;
+  background-color: var(--surface-variant);
+  align-items: end;
+}
+
+.example-accordion-item-header {
+  width: 50%;
+  top: 0;
+ }

@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from "@angular/router";
-import { Store } from "@ngrx/store";
-import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { InstanceActions } from "../../state/instance.actions";
-import { selectViewInstance } from '../../state/instance.selectors';
-import { DataService } from 'src/app/core/services/data.service';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute, Router} from "@angular/router";
+import {Store} from "@ngrx/store";
+import {Instance} from 'src/app/core/models/reactome-instance.model';
+import {InstanceActions} from "../../state/instance.actions";
+import {selectViewInstance} from '../../state/instance.selectors';
+import {DataService} from 'src/app/core/services/data.service';
 
 @Component({
   selector: 'app-instance-view',
@@ -16,12 +16,13 @@ export class InstanceViewComponent implements OnInit {
   dbIds: any = [];
   // instance to be displayed
   instance: Instance | undefined;
-
   // Control if the instance is loading
   showProgressSpinner: boolean = false;
+  showReferenceColumn: boolean = false;
+  dbInstance: Instance | undefined;
 
-  constructor(private router: Router, 
-              private route: ActivatedRoute, 
+  constructor(private router: Router,
+              private route: ActivatedRoute,
               private dataService: DataService) {
   }
 
@@ -35,6 +36,17 @@ export class InstanceViewComponent implements OnInit {
         // Make sure dbId is a number
         dbId = parseInt(dbId);
         this.loadInstance(dbId);
+        console.log("mode", params)
+      }
+      if(params['mode']) {
+        console.log("comparison" + params['comparison'])
+        this.showReferenceColumn = params['comparison'];
+      }
+      if(params['dbId2']) {
+        let dbId = params['dbId2'];
+        // Make sure dbId is a number
+        dbId = parseInt(dbId);
+        this.getDbInstance(dbId);
       }
     });
   }
@@ -52,5 +64,16 @@ export class InstanceViewComponent implements OnInit {
 
   changeTable(instance: Instance) {
     this.router.navigate(["/instance_view/" + instance.dbId.toString()], {queryParamsHandling: 'preserve'});
+  }
+
+  showReferenceValueColumn() {
+    this.showReferenceColumn = !this.showReferenceColumn;
+    if(this.showReferenceColumn) this.getDbInstance(this.instance!.dbId);
+    else this.dbInstance = undefined;
+  }
+
+  private getDbInstance(dbId: number) {
+    this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
+      dbInstance => this.dbInstance = dbInstance);
   }
 }

@@ -25,9 +25,4 @@ export class MainComponent {
   changeShowResize() {
     this.showResize = !this.showResize
   }
-
-  showUpdatedList(updatedInstances: Instance[]) {
-    this.updatedInstances = updatedInstances;
-    this.showInstanceList = !this.showInstanceList;
-  }
 }

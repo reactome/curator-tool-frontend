@@ -6,12 +6,22 @@ import {InstanceViewComponent} from "./components/instance-view/instance-view.co
 const routes: Routes = [
   {
     path: `:dbId`,
-    component: InstanceViewComponent
+    component: InstanceViewComponent,
+    children: [
+      {
+        path:`:mode`,
+        component: InstanceViewComponent
+      },
+      {
+        path:`:mode :dbId2`,
+        component: InstanceViewComponent
+      },
+    ]
   },
   {
     path: `schemaClass/:className`,
     component: InstanceViewComponent
-  }
+  },
 ]
 
 @NgModule({
