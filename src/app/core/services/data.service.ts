@@ -1,7 +1,7 @@
-import {HttpClient} from "@angular/common/http";
-import {Injectable} from '@angular/core';
-import {catchError, concatMap, map, Observable, of, throwError} from 'rxjs';
-import {environment} from 'src/environments/environment.dev';
+import { HttpClient } from "@angular/common/http";
+import { Injectable } from '@angular/core';
+import { catchError, concatMap, map, Observable, of, throwError } from 'rxjs';
+import { environment } from 'src/environments/environment.dev';
 import {
   AttributeCategory,
   AttributeDataType,
@@ -10,8 +10,8 @@ import {
   SchemaClass
 } from '../models/reactome-schema.model';
 // import { AttributeDa } from '../models/schema-class-attribute-data.model';
-import {Instance} from "../models/reactome-instance.model";
-import {coerceNumberProperty} from "@angular/cdk/coercion";
+import { Instance } from "../models/reactome-instance.model";
+import { coerceNumberProperty } from "@angular/cdk/coercion";
 
 
 @Injectable({
@@ -29,8 +29,9 @@ export class DataService {
   private schemaClassDataUrl = `${environment.ApiRoot}/getAttributes/` // TODO: Need to consider using Angular ConfigService!
   private entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
   private schemaClassTreeUrl = `${environment.ApiRoot}/getSchemaClassTree/`;
-  private listInstancesUrl = `${environment.ApiRoot}/listInstances/`
-  private countInstancesUrl = `${environment.ApiRoot}/countInstances/`
+  private listInstancesUrl = `${environment.ApiRoot}/listInstances/`;
+  private countInstancesUrl = `${environment.ApiRoot}/countInstances/`;
+  private commitInstanceUrl = `${environment.ApiRoot}/commit/`;
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
   // The root class is cached for performance
@@ -240,18 +241,19 @@ export class DataService {
    */
   createNewInstance(schemaClassName: string): Observable<Instance> {
     return this.fetchSchemaClass(schemaClassName).pipe(map((schemaClass: SchemaClass) => {
-        const attributes = new Map();
-        attributes.set('dbId', this.nextNewDbId);
-        this.nextNewDbId -= 1;
-        attributes.set('displayName', 'To be generated');
-        let instance: Instance = {
-          dbId: attributes.get('dbId'),
-          displayName: attributes.get('displayName'),
-          attributes: attributes
-        };
-        instance.schemaClass = schemaClass;
-        return instance;
-      }),
+      const attributes = new Map();
+      attributes.set('dbId', this.nextNewDbId);
+      this.nextNewDbId -= 1;
+      attributes.set('displayName', 'To be generated');
+      let instance: Instance = {
+        dbId: attributes.get('dbId'),
+        displayName: attributes.get('displayName'),
+        schemaClassName: schemaClassName,
+        attributes: attributes
+      };
+      instance.schemaClass = schemaClass;
+      return instance;
+    }),
       catchError((err: Error) => {
         console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
           panelClass: ['warning-snackbar'],
@@ -332,9 +334,9 @@ export class DataService {
    * @returns
    */
   listInstances(className: string,
-                skip: number,
-                limit: number,
-                searchKey: string | undefined): Observable<Instance[]> {
+    skip: number,
+    limit: number,
+    searchKey: string | undefined): Observable<Instance[]> {
     let url = this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
     if (searchKey !== undefined) {
       url += '?query=' + searchKey;
@@ -349,6 +351,41 @@ export class DataService {
           });
           return throwError(() => err);
         }));
+  }
+
+  /**
+   * Commit the passed instance back to the database.
+   * @param instance 
+   */
+  commit(instance: Instance): Observable<number> {
+    let instanceToBeCommitted = this.cloneInstanceForCommit(instance);
+    return this.http.post<number>(this.commitInstanceUrl, instanceToBeCommitted).pipe(
+      map((dbId: number) => {
+        console.debug('Returned dbId: ' + dbId);
+        return dbId;
+      }),
+      catchError(error => {
+        console.log("An error is thrown during committing: \n" + error.message, "Close", {
+          panelClass: ['warning-snackbar'],
+          duration: 10000
+        });
+        return throwError(() => error);
+      })
+    )
+  }
+
+  private cloneInstanceForCommit(source: Instance): Instance {
+    let instance : Instance = {
+      dbId: source.dbId,
+      displayName: source.displayName,
+      schemaClassName: source.schemaClassName,
+    }
+    // Need to manually convert the instance to a string because the use of map for attributes
+    if (source.attributes) {
+      let attributesJson = Object.fromEntries(source.attributes);
+      instance.attributes = attributesJson;
+    }
+    return instance;
   }
 
 }

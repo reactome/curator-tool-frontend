@@ -218,7 +218,6 @@ export class InstanceTableComponent {
       this.updateTableContent();
       //Only add attribute name if value was added
       this.addModifiedAttributeName(attributeValue.attribute.name);
-
     });
   }
 

@@ -1,10 +1,7 @@
-import {Component, OnInit} from '@angular/core';
-import {ActivatedRoute, Router} from "@angular/router";
-import {Store} from "@ngrx/store";
-import {Instance} from 'src/app/core/models/reactome-instance.model';
-import {InstanceActions} from "../../state/instance.actions";
-import {selectViewInstance} from '../../state/instance.selectors';
-import {DataService} from 'src/app/core/services/data.service';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from "@angular/router";
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { DataService } from 'src/app/core/services/data.service';
 
 @Component({
   selector: 'app-instance-view',
@@ -68,8 +65,10 @@ export class InstanceViewComponent implements OnInit {
 
   showReferenceValueColumn() {
     this.showReferenceColumn = !this.showReferenceColumn;
-    if(this.showReferenceColumn) this.getDbInstance(this.instance!.dbId);
-    else this.dbInstance = undefined;
+    if(this.showReferenceColumn) 
+      this.getDbInstance(this.instance!.dbId);
+    else 
+      this.dbInstance = undefined;
   }
 
   private getDbInstance(dbId: number) {
@@ -77,8 +76,22 @@ export class InstanceViewComponent implements OnInit {
       dbInstance => this.dbInstance = dbInstance);
   }
 
-  upload() {
+  isUploadable() {
+    //TODO: an attribute may add a new value and then delete this new value. Need to have a better
+    // control!
+    return this.instance ? (this.instance.dbId < 0 || this.instance.modifiedAttributes): false;
+  }
+
+  upload(): void {
     console.debug('Upload the instance!');
+    // TODO: Need to present a confirmation dialog after it is done!
+    this.dataService.commit(this.instance!).subscribe(dbId => {
+      console.debug('Returned dbId: ' + dbId);
+      // TODO: This may be overkill. See is there is a more efficient way.
+      this.loadInstance(dbId);
+      // TODO: Remove the register in update_instance_state!
+      // Also update the breakcrunch!
+    })
   }
 
 }

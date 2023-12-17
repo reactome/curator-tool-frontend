@@ -1,19 +1,7 @@
+import { EntityState, createEntityAdapter } from "@ngrx/entity";
 import { createReducer, on } from "@ngrx/store";
 import { Instance } from "src/app/core/models/reactome-instance.model";
 import { InstanceActions } from "./instance.actions";
-import { createEntityAdapter, EntityState } from "@ngrx/entity";
-import {state} from "@angular/animations";
-import { InstantiateExpr } from "@angular/compiler";
-
-/**
- * Reducer to handle the instance to be viewed.
- */
-export const initialInstance: Instance = { dbId: 0 };
-
-export const viewInstanceReducer = createReducer(
-  initialInstance,
-  on(InstanceActions.view_instance, (state, instance) => createShellInstance(instance))
-);
 
 /**
  * Reducer to handle registration of updated instance

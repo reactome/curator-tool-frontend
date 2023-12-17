@@ -24,8 +24,6 @@ import { InstanceViewComponent } from './components/instance-view/instance-view.
 import { NewInstanceDialogComponent } from './components/new-instance-dialog/new-instance-dialog.component';
 import { DatabaseObjectRoutingModule } from './instance-routing.module';
 import { DatabaseObjectEffects } from './state/instance.effects';
-import { viewInstanceReducer } from "./state/instance.reducers";
-import { VIEW_INSTANCE_STATE_NAME } from './state/instance.selectors';
 
 @NgModule({
     declarations: [
@@ -41,7 +39,6 @@ import { VIEW_INSTANCE_STATE_NAME } from './state/instance.selectors';
         CommonModule,
         DatabaseObjectRoutingModule,
         EffectsModule.forFeature(DatabaseObjectEffects),
-        StoreModule.forFeature(VIEW_INSTANCE_STATE_NAME, viewInstanceReducer),
         // Need to register here for update. The registered state can be used out of this module.
         // StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),
         SharedModule,

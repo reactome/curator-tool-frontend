@@ -12,12 +12,10 @@ export interface Instance {
    */
   schemaClass?: SchemaClass; // This is optional so that we can have a very simple instance with dbId and displayName. Also we use
                              // the name of schemaClass to ease the handling.
-  schemaClassName?: string; // Hold the class name for the time being
+  schemaClassName: string; // Hold the class name for the time being. This is required for the back-end converting.
   dbId: number;
   displayName?: string;
-  attributes?: Map<string, any>; // This is optional so that we can have a simple shell instance
-  isShell?: boolean; // Check if this is just a shell instance. A shell instance should have both dbId and displayName
-  isDirty?: boolean; // Flag if this has been updated.
+  attributes?: Map<string, any> | any; // This is optional so that we can have a simple shell instance. Use also any for easy converting
   modifiedAttributes?: string[]; // Optional array of modified attribute names.
 }
 

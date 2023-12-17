@@ -4,10 +4,6 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 export const InstanceActions = createActionGroup({
   source: "instance_actions",
   events: {
-    // Fetch and view actions
-    get_instance: props<{dbId: number}>(),
-    view_instance: props<Instance>(),
-
     // Record updated instances
     register_updated_instance: props<Instance>(),
     remove_updated_instance: props<Instance>(),

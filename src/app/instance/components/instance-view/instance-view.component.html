@@ -12,7 +12,7 @@
     <button mat-icon-button color="primary" (click)="showReferenceValueColumn()">
       <mat-icon>compare</mat-icon>
     </button>
-    <button mat-icon-button color="primary" (click)="upload()">
+    <button mat-icon-button color="primary" (click)="upload()" [disabled]="!isUploadable()">
       <mat-icon>upload</mat-icon>
     </button>
   </div>
