@@ -357,13 +357,10 @@ export class DataService {
    * Commit the passed instance back to the database.
    * @param instance 
    */
-  commit(instance: Instance): Observable<number> {
+  commit(instance: Instance): Observable<Instance> {
     let instanceToBeCommitted = this.cloneInstanceForCommit(instance);
-    return this.http.post<number>(this.commitInstanceUrl, instanceToBeCommitted).pipe(
-      map((dbId: number) => {
-        console.debug('Returned dbId: ' + dbId);
-        return dbId;
-      }),
+    return this.http.post<Instance>(this.commitInstanceUrl, instanceToBeCommitted).pipe(
+      map((inst: Instance) => inst),
       catchError(error => {
         console.log("An error is thrown during committing: \n" + error.message, "Close", {
           panelClass: ['warning-snackbar'],

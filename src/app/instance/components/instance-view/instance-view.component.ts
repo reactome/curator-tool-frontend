@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from "@angular/router";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
+import { InstanceTableComponent } from './instance-table/instance-table.component';
 
 @Component({
   selector: 'app-instance-view',
@@ -9,6 +10,8 @@ import { DataService } from 'src/app/core/services/data.service';
   styleUrls: ['./instance-view.component.scss']
 })
 export class InstanceViewComponent implements OnInit {
+  // Used to force the update of table content
+  @ViewChild(InstanceTableComponent) instanceTable!: InstanceTableComponent;
   viewHistory: Instance[] = [];
   dbIds: any = [];
   // instance to be displayed
@@ -85,10 +88,27 @@ export class InstanceViewComponent implements OnInit {
   upload(): void {
     console.debug('Upload the instance!');
     // TODO: Need to present a confirmation dialog after it is done!
-    this.dataService.commit(this.instance!).subscribe(dbId => {
-      console.debug('Returned dbId: ' + dbId);
-      // TODO: This may be overkill. See is there is a more efficient way.
-      this.loadInstance(dbId);
+    this.dataService.commit(this.instance!).subscribe(storedInst => {
+      console.debug('Returned dbId: ' + storedInst.dbId);
+      this.instance!.modifiedAttributes = undefined;
+      // Check if the table content needs to be updated
+      let updatedTable: boolean = false;
+      if (storedInst.dbId !== this.instance?.dbId) {
+        this.instance!.dbId = storedInst.dbId;
+        if (this.instance!.attributes)
+          this.instance!.attributes.set('dbId', storedInst.dbId);
+        updatedTable = true;
+      }
+      if (storedInst.displayName !== this.instance?.displayName) {
+        this.instance!.displayName = storedInst.displayName;
+        if (this.instance!.attributes)
+          this.instance!.attributes.set('displayName', storedInst.displayName);
+        updatedTable = true;
+      }
+      // Most likely this is not a good idea. However, since this view is tied to the table,
+      // probably it is OK for noew!
+      if (updatedTable)
+        this.instanceTable.updateTableContent();
       // TODO: Remove the register in update_instance_state!
       // Also update the breakcrunch!
     })

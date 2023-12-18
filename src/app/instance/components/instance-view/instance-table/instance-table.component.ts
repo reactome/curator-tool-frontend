@@ -1,14 +1,14 @@
-import {Component, Input} from '@angular/core';
-import {Store} from '@ngrx/store';
-import {Instance} from 'src/app/core/models/reactome-instance.model';
-import {InstanceActions} from 'src/app/instance/state/instance.actions';
-import {AttributeCategory} from "../../../../core/models/reactome-schema.model";
+import { Component, Input } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { InstanceActions } from 'src/app/instance/state/instance.actions';
+import { AttributeCategory } from "../../../../core/models/reactome-schema.model";
+import { DataService } from "../../../../core/services/data.service";
 import {
   SelectInstanceDialogService
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
-import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
-import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
-import {DataService} from "../../../../core/services/data.service";
+import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
+import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -221,7 +221,7 @@ export class InstanceTableComponent {
     });
   }
 
-  private updateTableContent(): void {
+  updateTableContent(): void {
     this.instanceDataSource = new InstanceDataSource(this._instance,
       this.categories,
       this.sortAttNames,
@@ -234,7 +234,13 @@ export class InstanceTableComponent {
   }
 
   private registerUpdatedInstance(): void {
-    this.store.dispatch(InstanceActions.register_updated_instance(this._instance!));
+    let cloned : Instance = {
+      dbId: this._instance!.dbId,
+      displayName: this._instance!.displayName,
+      schemaClassName: this._instance!.schemaClassName
+    };
+    // Have to make a clone to avoid any change to the current _instance!
+    this.store.dispatch(InstanceActions.register_updated_instance(cloned));
   }
 
   private addModifiedAttributeName(attName: string) {
@@ -244,6 +250,7 @@ export class InstanceTableComponent {
     if (this._instance.modifiedAttributes == undefined)
       this._instance.modifiedAttributes = [attName];
     else if (!this._instance.modifiedAttributes.includes(attName))
+      // Somehow ngrx/store make modifiedAttributes immutable
       this._instance.modifiedAttributes.push(attName);
   }
 

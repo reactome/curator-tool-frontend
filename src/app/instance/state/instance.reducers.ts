@@ -19,21 +19,9 @@ export const dbInstanceAdaptor = createEntityAdapter<Instance>({
 export const updatedInstancesReducer = createReducer(
   updatedInstancesAdaptor.getInitialState(),
   on(InstanceActions.register_updated_instance,
-    (state, instance) => {
-      // Use a shell copy of instance
-      let _instance: Instance = createShellInstance(instance);
-      return updatedInstancesAdaptor.upsertOne(_instance, state);
-    }
+    (state, instance) => updatedInstancesAdaptor.upsertOne(instance, state)
   ),
   on(InstanceActions.remove_updated_instance,
     (state, instance) => updatedInstancesAdaptor.removeOne(instance.dbId, state))
 )
 
-function createShellInstance(template: Instance): Instance {
-  let rtn = {
-    dbId: template.dbId,
-    displayName: template.displayName,
-    schemaClassName: template.schemaClassName
-  };
-  return rtn;
-}
