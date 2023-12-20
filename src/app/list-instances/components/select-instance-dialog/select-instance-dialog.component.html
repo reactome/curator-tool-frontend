@@ -10,8 +10,8 @@
   </mat-select>
   <section class="scroll_panel">
     <!-- For this list, we use a pagesize = 20 as the default for easy check: users are expected to do searching here. -->
-    <app-list-instances-table class="scroll_panel" [setClassName]="this.selected" [isSelection]="true" [pageSize]="20"
-      (clickEvent)="onSelectRow($event)"></app-list-instances-table>
+    <app-instance-selection class="scroll_panel" [setClassName]="this.selected" [isSelection]="true" [pageSize]="20"
+      (clickEvent)="onSelectRow($event)"></app-instance-selection>
   </section>
   <br>
   <mat-label>Selected Instances: </mat-label>

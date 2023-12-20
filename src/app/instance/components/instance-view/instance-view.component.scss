@@ -5,8 +5,10 @@
 }
 
 .title{
-  max-width: 100px;
+  width: 10px;
   word-wrap:break-word;
+  inline-size: 15px;
+  overflow-wrap: break-word;
 }
 
 .position {
@@ -21,6 +23,8 @@
 }
 
 .button {
-  right: 0;
-  position: absolute;
+  right: var(--body-margin);
+  position: fixed;
+  height: var(--title-height, 40px);
+  background-color: var(--surface);
 }

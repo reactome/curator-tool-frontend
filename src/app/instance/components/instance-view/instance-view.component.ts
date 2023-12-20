@@ -1,8 +1,9 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from "@angular/router";
+import {ActivatedRoute, Router} from "@angular/router";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { InstanceTableComponent } from './instance-table/instance-table.component';
+import {CdkDragMove} from "@angular/cdk/drag-drop";
 
 @Component({
   selector: 'app-instance-view',
@@ -20,7 +21,7 @@ export class InstanceViewComponent implements OnInit {
   showProgressSpinner: boolean = false;
   showReferenceColumn: boolean = false;
   dbInstance: Instance | undefined;
-
+  title: string = '';
   constructor(private router: Router,
               private route: ActivatedRoute,
               private dataService: DataService) {
@@ -31,22 +32,25 @@ export class InstanceViewComponent implements OnInit {
     // Handle the loading of instance directly here without using ngrx's effect, which is just
     // too complicated and not necessary here.
     this.route.params.subscribe((params) => {
+      console.log("params", params)
       if (params['dbId']) {
         let dbId = params['dbId'];
         // Make sure dbId is a number
         dbId = parseInt(dbId);
         this.loadInstance(dbId);
-        console.log("mode", params)
-      }
-      if(params['mode']) {
-        console.log("comparison" + params['comparison'])
-        this.showReferenceColumn = params['comparison'];
-      }
-      if(params['dbId2']) {
-        let dbId = params['dbId2'];
-        // Make sure dbId is a number
-        dbId = parseInt(dbId);
-        this.getDbInstance(dbId);
+        // May want to change to case statement if multiple modes
+        if(params['mode']) {
+          this.showReferenceColumn = (params['mode'] === 'comparison');
+          if(params['dbId2']) {
+            let dbId2 = params['dbId2'];
+            // Make sure dbId is a number
+            dbId2 = parseInt(dbId2);
+            this.loadReferenceInstance(dbId2);
+          }
+          else{
+            this.loadReferenceInstance(dbId);
+          }
+        }
       }
     });
   }
@@ -59,7 +63,14 @@ export class InstanceViewComponent implements OnInit {
         this.viewHistory.push(this.instance);
       this.dbIds.push(this.instance.dbId)
       this.showProgressSpinner = false;
+      let title = instance.schemaClass?.name + ": " + instance.displayName + "[" + instance.dbId + "]"
+      this.title = this.setTitle(title);
     })
+  }
+
+  setTitle(title: string): string {
+    if(title.length < 50) return title
+    else return title.substring(0, 50) + "..."
   }
 
   changeTable(instance: Instance) {
@@ -68,13 +79,13 @@ export class InstanceViewComponent implements OnInit {
 
   showReferenceValueColumn() {
     this.showReferenceColumn = !this.showReferenceColumn;
-    if(this.showReferenceColumn) 
-      this.getDbInstance(this.instance!.dbId);
-    else 
+    if(this.showReferenceColumn)
+      this.loadReferenceInstance(this.instance!.dbId);
+    else
       this.dbInstance = undefined;
   }
 
-  private getDbInstance(dbId: number) {
+  private loadReferenceInstance(dbId: number) {
     this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
       dbInstance => this.dbInstance = dbInstance);
   }

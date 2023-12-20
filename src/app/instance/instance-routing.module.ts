@@ -7,16 +7,14 @@ const routes: Routes = [
   {
     path: `:dbId`,
     component: InstanceViewComponent,
-    children: [
-      {
-        path:`:mode`,
-        component: InstanceViewComponent
-      },
-      {
-        path:`:mode :dbId2`,
-        component: InstanceViewComponent
-      },
-    ]
+  },
+  {
+    path:`:dbId/:mode`,
+    component: InstanceViewComponent
+  },
+  {
+    path:`:dbId/:mode/:dbId2`,
+    component: InstanceViewComponent
   },
   {
     path: `schemaClass/:className`,

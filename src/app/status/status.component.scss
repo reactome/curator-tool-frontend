@@ -1,5 +1,5 @@
 .status {
     font-size: 14px;
-    height: 20px; // TODO: How to not hard-coding this?
+    height: var(--status-height, 30px);
     font-weight: normal;
 }

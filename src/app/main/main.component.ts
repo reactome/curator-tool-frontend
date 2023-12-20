@@ -1,7 +1,5 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
 import {CdkDragMove} from "@angular/cdk/drag-drop";
-import {ActivatedRoute, Router} from "@angular/router";
-import {Instance} from "../core/models/reactome-instance.model";
 
 @Component({
   selector: 'app-main',
@@ -12,10 +10,9 @@ export class MainComponent {
   showResize: boolean = false;
   sideWidth = 400;
   resizing: boolean = false;
-  updatedInstances: Instance[] =[];
-  showInstanceList: boolean = false;
+  showInstanceList: number = 0;
 
-  constructor(private router: Router, private route: ActivatedRoute) {
+  constructor() {
   }
 
   resize(e: CdkDragMove) {
@@ -24,5 +21,10 @@ export class MainComponent {
 
   changeShowResize() {
     this.showResize = !this.showResize
+  }
+
+  showUpdatedInstances(index: number) {
+    console.log(index);
+    this.showInstanceList = index;
   }
 }

@@ -1,36 +1,8 @@
-<cdk-accordion class="example-accordion">
-  <cdk-accordion-item
-    #accordionItem="cdkAccordionItem"
-    class="example-accordion-item"
-    role="button"
-    tabindex="0"
-    [attr.aria-expanded]="accordionItem.expanded">
-    <div class="example-accordion-item-header" (click)="showUpdatedListToggle()">
-      <h4>Schema</h4>
-    </div>
-    <div
-      class="example-accordion-item-body"
-      role="region"
-      [style.display]="!showUpdatedList ? '' : 'none'">
-      <app-schema-class-tree></app-schema-class-tree>
-    </div>
-  </cdk-accordion-item>
-
-  <cdk-accordion-item
-    #accordionItem="cdkAccordionItem"
-    class="example-accordion-item"
-    role="button"
-    tabindex="0"
-    [attr.aria-expanded]="accordionItem.expanded">
-    <div class="example-accordion-item-header" (click)="showUpdatedListToggle()">
-      <app-status></app-status>
-    </div>
-    <div
-      class="example-accordion-item-body"
-      role="region"
-      [style.display]="showUpdatedList ? '' : 'none'">
-      <app-updated-instance-list [data]="data"></app-updated-instance-list>
-    </div>
-  </cdk-accordion-item>
-</cdk-accordion>
-
+<mat-tab-group [(selectedIndex)]="showUpdatedList" animationDuration="0ms">
+  <mat-tab label="Schema" (click)="updateTabIndex()">
+    <app-schema-class-tree></app-schema-class-tree>
+  </mat-tab>
+  <mat-tab label="Changes">
+    <app-updated-instance-list [data]="data"></app-updated-instance-list>
+  </mat-tab>
+</mat-tab-group>

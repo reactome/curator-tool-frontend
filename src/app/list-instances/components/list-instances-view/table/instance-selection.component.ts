@@ -7,12 +7,12 @@ import { DataService } from "../../../../core/services/data.service";
 import { ViewOnlyService } from "../../../../core/services/view-only.service";
 
 @Component({
-  selector: 'app-list-instances-table',
-  templateUrl: './list-instances-table.component.html',
-  styleUrls: ['./list-instances-table.component.scss'],
+  selector: 'app-instance-selection',
+  templateUrl: './instance-selection.component.html',
+  styleUrls: ['./instance-selection.component.scss'],
 })
-export class ListInstancesTableComponent implements OnInit {
-  displayedColumns: string[] = ['dbId', 'displayName', 'viewInstance'];
+export class InstanceSelectionComponent implements OnInit {
+  // displayedColumns: string[] = ['dbId', 'displayName', 'viewInstance'];
   matDataSource = new MatTableDataSource<Instance>();
   skip: number = 0;
   // For doing search
@@ -22,10 +22,13 @@ export class ListInstancesTableComponent implements OnInit {
   pageIndex: number = 0;
   className: string = "";
   instanceCount: number = 0;
-  selected: number = 0;
+  selected: number = 0; //move
   showProgressSpinner: boolean = true;
   @Output() clickEvent = new EventEmitter<Instance>();
   @Input() isSelection: boolean = false;
+  data: Instance[] = [];
+  actionButtons: string[] = ["launch"];
+  actionSelected: string = '';
 
   @Input() set setClassName(inputClassName: string) {
     this.className = inputClassName;
@@ -51,6 +54,7 @@ export class ListInstancesTableComponent implements OnInit {
       this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
     ]).subscribe(([count, instances]) => {
         this.instanceCount = count;
+        this.data = instances;
         this.matDataSource.data = instances;
         this.showProgressSpinner = false;
       }
@@ -85,7 +89,19 @@ export class ListInstancesTableComponent implements OnInit {
     this.clickEvent.emit(row)
   }
 
-  navigate(dbId: number) {
-    window.open(`instance_view/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
+  setActionType(action: string) {
+    this.actionSelected = action;
+  }
+
+  handleAction(actionButton: {instance: Instance, action: string}) {
+    switch(actionButton.action) {
+      case "launch": {
+        this.navigate(actionButton.instance);
+      }
+    }
+  }
+
+  navigate(instance: Instance) {
+    window.open(`instance_view/${instance.dbId}?${ViewOnlyService.KEY}=true`, '_blank');
   }
 }

@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ListInstancesTableComponent } from './list-instances-table.component';
+import { InstanceSelectionComponent } from './instance-selection.component';
 
 describe('ListInstancesComponent', () => {
-  let component: ListInstancesTableComponent;
-  let fixture: ComponentFixture<ListInstancesTableComponent>;
+  let component: InstanceSelectionComponent;
+  let fixture: ComponentFixture<InstanceSelectionComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ListInstancesTableComponent ]
+      declarations: [ InstanceSelectionComponent ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(ListInstancesTableComponent);
+    fixture = TestBed.createComponent(InstanceSelectionComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

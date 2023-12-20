@@ -1,0 +1,22 @@
+<mat-form-field>
+  <mat-label>Search</mat-label>
+  <!-- Need to track the text using keyup in case the text is deleted but still used for instance list -->
+  <input matInput (keydown.enter)="searchForName($event)" (keyup)="recordSearchKey($event)" #input>
+</mat-form-field>
+<section class="table-container" tabindex="0">
+  <ng-container *ngIf="showProgressSpinner">
+    <mat-spinner class="spinner instance-list-table"></mat-spinner>
+  </ng-container>
+  <ng-container *ngIf="!showProgressSpinner">
+    <app-instance-list-table
+    [dataSource]="data"
+    [isSelection]="isSelection"
+    [actionButtons]="actionButtons"
+    (actionEvent)="handleAction($event)"
+    (selectionEvent)="onRowClick($event)"></app-instance-list-table>
+  <mat-paginator (page)="onPageChange($event)" [length]="instanceCount"
+                 [pageSizeOptions]=pageSizeOptions
+                 [pageSize]="pageSize"
+                 showFirstLastButtons aria-label="Select page of users"></mat-paginator>
+</ng-container>
+</section>

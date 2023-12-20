@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Instance} from "../../../core/models/reactome-instance.model";
 import {Store} from "@ngrx/store";
 import { updatedInstances } from 'src/app/instance/state/instance.selectors';
@@ -9,9 +9,9 @@ import { updatedInstances } from 'src/app/instance/state/instance.selectors';
   styleUrls: ['./side-navigation.component.scss']
 })
 export class SideNavigationComponent implements OnInit {
-  @Input() showUpdatedList: boolean = false;
+  @Input() showUpdatedList: number = 0;
+  @Output() updateTabIndexEvent = new EventEmitter<number>();
   data: Instance[] = [];
-
   constructor(private store: Store) {
   }
 
@@ -22,14 +22,7 @@ export class SideNavigationComponent implements OnInit {
     })
   }
 
-  showUpdatedListToggle() {
-    this.showUpdatedList = !this.showUpdatedList;
+  updateTabIndex() {
+    this.updateTabIndexEvent.emit(this.showUpdatedList);
   }
-  //
-  // updateList(updatedInstances: Instance[]){
-  //   this.store.select(updatedInstances()).subscribe((instances) => {
-  //     if (instances !== undefined)
-  //       this.updatedInstances = instances;
-  //   })
-  // }
 }

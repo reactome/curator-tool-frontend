@@ -1,7 +1,6 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { MatTableDataSource } from "@angular/material/table";
-import { Router } from "@angular/router";
-import { Instance } from "../../../../core/models/reactome-instance.model";
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {MatTableDataSource} from "@angular/material/table";
+import {Instance} from "../../../../core/models/reactome-instance.model";
 
 @Component({
   selector: 'app-selected-instances-table',
@@ -14,15 +13,12 @@ export class SelectedInstancesTableComponent {
     this.setTable();
     console.log("instances " + instances)
   }
+
   @Output() removeEvent = new EventEmitter<Instance>();
-
   instances: Instance[] = [];
-
-  displayedColumns: string[] = ['dbId', 'displayName', 'removeInstance'];
   matDataSource = new MatTableDataSource<Instance>();
-
-  constructor(private router: Router) {
-  }
+  isSelection: boolean = true;
+  actionButtons: string[] = ["launch", "close"];
 
   setTable() {
     this.matDataSource.data = this.instances;
@@ -33,8 +29,22 @@ export class SelectedInstancesTableComponent {
     this.removeEvent.emit(instance);
   }
 
-  navigate(dbId: number) {
+  handleAction(actionButton: { instance: Instance, action: string }) {
+    switch (actionButton.action) {
+      case "launch": {
+        this.navigate(actionButton.instance);
+        break;
+      }
+
+      case "close": {
+        this.removeInstance(actionButton.instance);
+        break;
+      }
+    }
+  }
+
+  navigate(instance: Instance) {
     // This needs to be update by configuring
-    window.open("instance_view/" + dbId + true, '_blank');
+    window.open("instance_view/" + instance.dbId + true, '_blank');
   }
 }

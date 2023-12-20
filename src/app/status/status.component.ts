@@ -18,7 +18,7 @@ import {MainModule} from "../main/main.module";
   imports: [MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule, CdkAccordionModule, UpdatedInstanceListComponent]
 })
 export class StatusComponent implements OnInit{
-  @Output() showUpdatedEvent = new EventEmitter<Instance[]>();
+  @Output() showUpdatedEvent = new EventEmitter<number>();
   updatedInstances: Instance[] = [];
 
   constructor(private store: Store) {
@@ -33,6 +33,6 @@ export class StatusComponent implements OnInit{
 
   showUpdated(): void {
     console.debug("Show updated instances: " + this.updatedInstances.length)
-    this.showUpdatedEvent.emit(this.updatedInstances);
+    this.showUpdatedEvent.emit(1);
   }
 }
