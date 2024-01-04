@@ -8,6 +8,5 @@ export const InstanceActions = createActionGroup({
     register_updated_instance: props<Instance>(),
     remove_updated_instance: props<Instance>(),
     get_updated_instances: emptyProps(),
-
   }
 })

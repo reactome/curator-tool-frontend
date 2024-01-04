@@ -6,6 +6,7 @@ import { Store } from "@ngrx/store";
 import { SchemaClass } from "../../../core/models/reactome-schema.model";
 import { DataService } from "../../../core/services/data.service";
 import { EDIT_ACTION } from "../../../instance/components/instance-view/instance-table/instance-table.model";
+import {NewInstanceActions} from "../../../instance/state/new-instance/new-instance.actions";
 
 /** Tree node with expandable and level information */
 interface SchemaClassNode {
@@ -58,6 +59,7 @@ export class SchemaClassTreeComponent {
   createNewInstance(schemaClassName: string) {
     this.service.createNewInstance(schemaClassName).subscribe(instance => {
       this.service.registerNewInstance(instance);
+      this.store.dispatch(NewInstanceActions.register_new_instances(instance));
       let dbId = instance.dbId.toString();
       this.router.navigate(["/instance_view/" + dbId]);
     });

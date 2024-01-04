@@ -1,6 +1,6 @@
 <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh">
   <mat-sidenav mode="side" opened [disableClose]="true" [style.width]="sideWidth + 'px'">
-    <app-side-navigation (updateTabIndexEvent)="showUpdatedInstances($event)" [showUpdatedList]="showInstanceList"></app-side-navigation>
+    <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)" [showUpdatedList]="showInstanceList"></app-side-navigation>
     <div class="resize-container" (cdkDragMoved)="resize($event)" cdkDrag cdkDragLockAxis="x"
          (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
       <div class="resize-bar"></div>
@@ -10,4 +10,4 @@
     <router-outlet></router-outlet>
   </mat-sidenav-content>
 </mat-sidenav-container>
-<app-status (showUpdatedEvent)="showUpdatedInstances($event)" ></app-status>
+<app-status [sidePanelState]="showInstanceList" (showUpdatedEvent)="showUpdatedInstances($event)" ></app-status>

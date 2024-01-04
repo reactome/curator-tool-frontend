@@ -17,7 +17,13 @@
     <th mat-header-cell *matHeaderCellDef>Display Name</th>
     <td mat-cell *matCellDef="let element">
       <ng-container *ngIf="isSelection">
-        {{element.displayName}}
+        <!--        Use the schema class name for newly generated instances-->
+        <ng-container *ngIf="element.displayName === DataService.newDisplayName; else display_name">
+          {{element.schemaClassName}}
+        </ng-container>
+        <ng-template #display_name>
+          {{element.displayName}}
+        </ng-template>
       </ng-container>
       <ng-container *ngIf="!isSelection">
         <a routerLink="/instance_view/{{element.dbId}}">{{element.displayName}}</a>
@@ -28,17 +34,19 @@
   <!-- Action Buttons Column -->
   <ng-container matColumnDef="actionButtons">
     <th mat-header-cell *matHeaderCellDef></th>
-      <td class="column-right" mat-cell *matCellDef="let element">
-        <ng-container *ngIf="actionButtons.length > 0 && isSelection">
+    <td class="column-right" mat-cell *matCellDef="let element">
+      <ng-container *ngIf="actionButtons.length > 0 && isSelection">
         <button color="primary" *ngFor="let button of actionButtons" mat-icon-button (click)="click(element, button)"
                 matTooltip="View Instance" matTooltipPosition="left">
           <mat-icon>{{button}}</mat-icon>
         </button>
-        </ng-container>
-      </td>
+      </ng-container>
+    </td>
   </ng-container>
 
-  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <ng-container *ngIf="showHeader">
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  </ng-container>
   <ng-container *ngIf="!isSelection">
     <tr
       mat-row

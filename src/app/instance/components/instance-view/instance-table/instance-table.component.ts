@@ -234,13 +234,16 @@ export class InstanceTableComponent {
   }
 
   private registerUpdatedInstance(): void {
-    let cloned : Instance = {
-      dbId: this._instance!.dbId,
-      displayName: this._instance!.displayName,
-      schemaClassName: this._instance!.schemaClassName
-    };
-    // Have to make a clone to avoid any change to the current _instance!
-    this.store.dispatch(InstanceActions.register_updated_instance(cloned));
+    // Only register updates to exisiting instances
+    if(this._instance!.dbId > 0) {
+      let cloned: Instance = {
+        dbId: this._instance!.dbId,
+        displayName: this._instance!.displayName,
+        schemaClassName: this._instance!.schemaClassName
+      };
+      // Have to make a clone to avoid any change to the current _instance!
+      this.store.dispatch(InstanceActions.register_updated_instance(cloned));
+    }
   }
 
   private addModifiedAttributeName(attName: string) {

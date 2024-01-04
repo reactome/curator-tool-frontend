@@ -14,6 +14,7 @@
     background-color: var(--tertiary);
     cursor: col-resize;
     box-shadow: 0 0 2px var(--tertiary);
+    z-index: 1;
   }
 
   &:hover, &.resizing {
@@ -27,6 +28,10 @@ mat-sidenav {
   > * {
     overflow-x: auto;
   }
+}
+
+side-nav {
+  position:relative;
 }
 
 .instance-view-container {

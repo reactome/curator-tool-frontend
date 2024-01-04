@@ -37,6 +37,7 @@ export class DataService {
   // The root class is cached for performance
   private rootClass: SchemaClass | undefined;
   private name2class?: Map<string, SchemaClass>;
+  public static newDisplayName: string = 'To be generated';
 
   constructor(private http: HttpClient) {
   }
@@ -244,7 +245,7 @@ export class DataService {
       const attributes = new Map();
       attributes.set('dbId', this.nextNewDbId);
       this.nextNewDbId -= 1;
-      attributes.set('displayName', 'To be generated');
+      attributes.set('displayName', DataService.newDisplayName);
       let instance: Instance = {
         dbId: attributes.get('dbId'),
         displayName: attributes.get('displayName'),
@@ -355,7 +356,7 @@ export class DataService {
 
   /**
    * Commit the passed instance back to the database.
-   * @param instance 
+   * @param instance
    */
   commit(instance: Instance): Observable<Instance> {
     let instanceToBeCommitted = this.cloneInstanceForCommit(instance);

@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCheckboxChange, MatCheckboxModule} from '@angular/material/checkbox';
 import {MatIconModule} from '@angular/material/icon';
@@ -7,6 +7,8 @@ import {MatTableModule} from '@angular/material/table';
 import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {Router} from "@angular/router";
 import {ListInstancesModule} from "../../../list-instances/list-instances.module";
+import {Store} from "@ngrx/store";
+import {newInstances, newInstanceState} from "../../../instance/state/new-instance/new-instance.selectors";
 
 @Component({
   selector: 'app-updated-instance-list',
@@ -15,15 +17,25 @@ import {ListInstancesModule} from "../../../list-instances/list-instances.module
   standalone: true,
   imports: [MatListModule, MatButtonModule, MatTableModule, MatIconModule, MatCheckboxModule, ListInstancesModule],
 })
-export class UpdatedInstanceListComponent {
+export class UpdatedInstanceListComponent implements OnInit{
   @Input() data: Instance[] = [];
   // instances to be committed
   toBeUploaded: Instance[] = [];
   actionButtons: string[] = ["compare"];
   isSelection: boolean = true;
+  newInstances: Instance[] = [];
+  showHeader: boolean = false;
+  newInstancesActionButtons: string[] = ["launch"];
 
-  constructor(private router: Router,) {
+  constructor(private router: Router, private store: Store) {
     this.toBeUploaded = [...this.data];
+  }
+
+  ngOnInit(): void {
+    this.store.select(newInstances()).subscribe((instances) => {
+      if (instances !== undefined)
+        this.newInstances = instances;
+    })
   }
 
   compareWithDB(instance: Instance) {
@@ -48,6 +60,15 @@ export class UpdatedInstanceListComponent {
         this.compareWithDB(actionButton.instance)
         break;
       }
+
+      case "launch": {
+        this.launchNewInstance(actionButton.instance)
+        break;
+      }
     }
+  }
+
+  launchNewInstance(instance: Instance) {
+    this.router.navigate(["/instance_view/", instance.dbId]);
   }
 }

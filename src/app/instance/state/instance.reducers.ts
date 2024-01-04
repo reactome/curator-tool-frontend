@@ -24,4 +24,3 @@ export const updatedInstancesReducer = createReducer(
   on(InstanceActions.remove_updated_instance,
     (state, instance) => updatedInstancesAdaptor.removeOne(instance.dbId, state))
 )
-

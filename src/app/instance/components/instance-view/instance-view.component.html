@@ -5,9 +5,9 @@
   <mat-spinner class="spinner"></mat-spinner>
 </ng-container>
 <mat-toolbar class="toolbar" *ngIf="!showProgressSpinner">
-      <span class="title" *ngIf="instance !== undefined">
-        {{title}}
-      </span>
+  <span class="title" *ngIf="instance !== undefined">
+    {{title}}
+  </span>
   <div class="button">
     <button mat-icon-button color="primary" (click)="showReferenceValueColumn()">
       <mat-icon>compare</mat-icon>

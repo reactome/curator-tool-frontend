@@ -10,7 +10,7 @@ import { updatedInstances } from 'src/app/instance/state/instance.selectors';
 })
 export class SideNavigationComponent implements OnInit {
   @Input() showUpdatedList: number = 0;
-  @Output() updateTabIndexEvent = new EventEmitter<number>();
+  @Output() updateTabIndexEvent = new EventEmitter<boolean>();
   data: Instance[] = [];
   constructor(private store: Store) {
   }
@@ -21,8 +21,8 @@ export class SideNavigationComponent implements OnInit {
         this.data = instances;
     })
   }
-
   updateTabIndex() {
-    this.updateTabIndexEvent.emit(this.showUpdatedList);
+    let showList = this.showUpdatedList !== 0;
+    this.updateTabIndexEvent.emit(showList);
   }
 }

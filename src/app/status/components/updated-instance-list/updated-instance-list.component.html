@@ -1,6 +1,16 @@
+<h4>Updated Instances: </h4>
 <app-instance-list-table [dataSource]="data"
                          [isSelection]="isSelection"
+                         [showHeader]="showHeader"
                          [actionButtons]="actionButtons"
+                         (actionEvent)="handleAction($event)">
+</app-instance-list-table>
+<br>
+<h4>New Instances: </h4>
+<app-instance-list-table [dataSource]="newInstances"
+                         [isSelection]="isSelection"
+                         [showHeader]="showHeader"
+                         [actionButtons]="newInstancesActionButtons"
                          (actionEvent)="handleAction($event)">
 </app-instance-list-table>
 

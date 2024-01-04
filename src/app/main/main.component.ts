@@ -7,7 +7,6 @@ import {CdkDragMove} from "@angular/cdk/drag-drop";
   styleUrls: ['./main.component.scss'],
 })
 export class MainComponent {
-  showResize: boolean = false;
   sideWidth = 400;
   resizing: boolean = false;
   showInstanceList: number = 0;
@@ -19,12 +18,9 @@ export class MainComponent {
     this.sideWidth = e.pointerPosition.x
   }
 
-  changeShowResize() {
-    this.showResize = !this.showResize
-  }
-
-  showUpdatedInstances(index: number) {
-    console.log(index);
-    this.showInstanceList = index;
+  showUpdatedInstances(showList: boolean) {
+    console.log(showList);
+    if(showList) {this.showInstanceList = 1}
+    else {this.showInstanceList = 0;}
   }
 }

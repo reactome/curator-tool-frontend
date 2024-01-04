@@ -24,6 +24,9 @@ import { InstanceViewComponent } from './components/instance-view/instance-view.
 import { NewInstanceDialogComponent } from './components/new-instance-dialog/new-instance-dialog.component';
 import { DatabaseObjectRoutingModule } from './instance-routing.module';
 import { DatabaseObjectEffects } from './state/instance.effects';
+import {NewInstanceEffects} from "./state/new-instance/new-instance.effects";
+import {NEW_INSTANCES_STATE_NAME} from "./state/new-instance/new-instance.selectors";
+import {newInstancesReducer} from "./state/new-instance/new-instance.reducers";
 
 @NgModule({
     declarations: [
@@ -39,7 +42,10 @@ import { DatabaseObjectEffects } from './state/instance.effects';
         CommonModule,
         DatabaseObjectRoutingModule,
         EffectsModule.forFeature(DatabaseObjectEffects),
-        // Need to register here for update. The registered state can be used out of this module.
+        EffectsModule.forFeature(NewInstanceEffects),
+        StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer),
+
+      // Need to register here for update. The registered state can be used out of this module.
         // StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),
         SharedModule,
         CdkContextMenuTrigger,

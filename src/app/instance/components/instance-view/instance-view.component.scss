@@ -4,9 +4,9 @@
   position: sticky;
 }
 
-.title{
+.title {
   width: 10px;
-  word-wrap:break-word;
+  word-wrap: break-word;
   inline-size: 15px;
   overflow-wrap: break-word;
 }
@@ -20,6 +20,13 @@
 
 .breadCrumb {
   height: 5vh;
+}
+
+.button-container {
+  background-color: var(--surface2);
+  right: 0;
+  position: relative;
+  height: var(--title-height, 40px);
 }
 
 .button {

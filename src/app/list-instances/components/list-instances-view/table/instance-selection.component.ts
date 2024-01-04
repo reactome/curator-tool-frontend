@@ -12,7 +12,6 @@ import { ViewOnlyService } from "../../../../core/services/view-only.service";
   styleUrls: ['./instance-selection.component.scss'],
 })
 export class InstanceSelectionComponent implements OnInit {
-  // displayedColumns: string[] = ['dbId', 'displayName', 'viewInstance'];
   matDataSource = new MatTableDataSource<Instance>();
   skip: number = 0;
   // For doing search
@@ -28,7 +27,6 @@ export class InstanceSelectionComponent implements OnInit {
   @Input() isSelection: boolean = false;
   data: Instance[] = [];
   actionButtons: string[] = ["launch"];
-  actionSelected: string = '';
 
   @Input() set setClassName(inputClassName: string) {
     this.className = inputClassName;
@@ -87,10 +85,6 @@ export class InstanceSelectionComponent implements OnInit {
   onRowClick(row: Instance) {
     this.selected = row.dbId
     this.clickEvent.emit(row)
-  }
-
-  setActionType(action: string) {
-    this.actionSelected = action;
   }
 
   handleAction(actionButton: {instance: Instance, action: string}) {
