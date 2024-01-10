@@ -6,6 +6,8 @@ import { DataSource } from "@angular/cdk/collections";
 import { Observable, of } from "rxjs";
 import { Instance } from "src/app/core/models/reactome-instance.model";
 import { AttributeCategory, SchemaAttribute } from "src/app/core/models/reactome-schema.model";
+import {DragDropService} from "../../../../instance-bookmark/drag-drop.service";
+import {CdkDropList} from "@angular/cdk/drag-drop";
 
 /**
  * Used to encode the data for the attribute value cell.
@@ -23,6 +25,7 @@ export enum EDIT_ACTION {
   ADD_VIA_SELECT,
   DELETE,
   EDIT,
+  BOOKMARK
 }
 
 /**
@@ -30,9 +33,9 @@ export enum EDIT_ACTION {
  */
 export class InstanceDataSource extends DataSource<AttributeValue> {
 
-  constructor(private instance: Instance | undefined, 
-              private categories: Map<AttributeCategory, boolean>, 
-              public sort: boolean, 
+  constructor(private instance: Instance | undefined,
+              private categories: Map<AttributeCategory, boolean>,
+              public sort: boolean,
               public sortAttDefined: boolean,
               private referenceInstance?: Instance) {
     super();

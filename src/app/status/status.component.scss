@@ -3,3 +3,9 @@
     height: var(--status-height, 30px);
     font-weight: normal;
 }
+
+.bookmark {
+  position: absolute;
+  right: 10px;
+  z-index: 1;
+}

@@ -25,7 +25,7 @@ export class NewInstanceDialogComponent {
   constructor(@Inject(MAT_DIALOG_DATA) public attributeValue: AttributeValue,
               public dialogRef: MatDialogRef<NewInstanceDialogComponent>,
               private dataService: DataService) {
-      this.setCandidateClasses(attributeValue);
+      this.candidateClasses = dataService.setCandidateClasses(attributeValue.attribute);
       this.selected = this.candidateClasses![0];
       this.dataService.createNewInstance(this.selected).subscribe(instance => this.instance = instance);
   }
@@ -49,24 +49,24 @@ export class NewInstanceDialogComponent {
     this.dialogRef.close(this.instance);
   }
 
-  setCandidateClasses(attributeValue: AttributeValue) {
-    // @ts-ignore
-    let concreteClassNames = new Set<string>();
-    for (let clsName of attributeValue.attribute.allowedClases!) {
-      let schemaClass: SchemaClass = this.dataService.getSchemaClass(clsName)!;
-      this.grepConcreteClasses(schemaClass, concreteClassNames);
-    }
-    this.candidateClasses = [...concreteClassNames];
-    this.candidateClasses.sort();
-  }
-
-  private grepConcreteClasses(schemaClass: SchemaClass, concreteClsNames: Set<String>): void {
-    if (!schemaClass.abstract)
-      concreteClsNames.add(schemaClass.name);
-    if (schemaClass.children) {
-      for (let child of schemaClass.children) {
-        this.grepConcreteClasses(child, concreteClsNames)
-      }
-    }
-  }
+  // setCandidateClasses(attributeValue: AttributeValue) {
+  //   // @ts-ignore
+  //   let concreteClassNames = new Set<string>();
+  //   for (let clsName of attributeValue.attribute.allowedClases!) {
+  //     let schemaClass: SchemaClass = this.dataService.getSchemaClass(clsName)!;
+  //     this.grepConcreteClasses(schemaClass, concreteClassNames);
+  //   }
+  //   this.candidateClasses = [...concreteClassNames];
+  //   this.candidateClasses.sort();
+  // }
+  //
+  // private grepConcreteClasses(schemaClass: SchemaClass, concreteClsNames: Set<String>): void {
+  //   if (!schemaClass.abstract)
+  //     concreteClsNames.add(schemaClass.name);
+  //   if (schemaClass.children) {
+  //     for (let child of schemaClass.children) {
+  //       this.grepConcreteClasses(child, concreteClsNames)
+  //     }
+  //   }
+  // }
 }

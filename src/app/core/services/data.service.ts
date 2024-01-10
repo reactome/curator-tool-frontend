@@ -12,6 +12,7 @@ import {
 // import { AttributeDa } from '../models/schema-class-attribute-data.model';
 import { Instance } from "../models/reactome-instance.model";
 import { coerceNumberProperty } from "@angular/cdk/coercion";
+import {AttributeValue} from "../../instance/components/instance-view/instance-table/instance-table.model";
 
 
 @Injectable({
@@ -384,6 +385,28 @@ export class DataService {
       instance.attributes = attributesJson;
     }
     return instance;
+  }
+
+  // TODO: Create a separate service for instance/attribute logic
+  setCandidateClasses(schemaAttribute: SchemaAttribute): any[]  {
+    // @ts-ignore
+    let concreteClassNames = new Set<string>();
+    for (let clsName of schemaAttribute.allowedClases!) {
+      let schemaClass: SchemaClass = this.getSchemaClass(clsName)!;
+      this.grepConcreteClasses(schemaClass, concreteClassNames);
+    }
+    let candidateClasses = [...concreteClassNames];
+    return candidateClasses.sort();
+  }
+
+  private grepConcreteClasses(schemaClass: SchemaClass, concreteClsNames: Set<String>): void {
+    if (!schemaClass.abstract)
+      concreteClsNames.add(schemaClass.name);
+    if (schemaClass.children) {
+      for (let child of schemaClass.children) {
+        this.grepConcreteClasses(child, concreteClsNames)
+      }
+    }
   }
 
 }

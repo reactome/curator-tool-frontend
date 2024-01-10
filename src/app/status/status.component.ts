@@ -8,21 +8,23 @@ import { updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 import { MatListModule } from '@angular/material/list';
 import {CdkAccordionModule} from "@angular/cdk/accordion";
-import {MainModule} from "../main/main.module";
 import {newInstances} from "../instance/state/new-instance/new-instance.selectors";
+import {InstanceBookmarkModule} from "../instance-bookmark/instance-bookmark.module";
+import {bookmarkedInstances, bookmarkState} from "../instance-bookmark/state/bookmark.selectors";
 
 @Component({
   selector: 'app-status',
   templateUrl: './status.component.html',
   styleUrls: ['./status.component.scss'],
   standalone: true,
-  imports: [MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule, CdkAccordionModule, UpdatedInstanceListComponent]
+  imports: [MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule, CdkAccordionModule, UpdatedInstanceListComponent, InstanceBookmarkModule]
 })
 export class StatusComponent implements OnInit{
   @Input() sidePanelState: number = 0;
   @Output() showUpdatedEvent = new EventEmitter<boolean>();
   updatedInstances: Instance[] = [];
   newInstances: Instance[] = [];
+  bookmarkList: Instance[] = [];
 
   constructor(private store: Store) {
   }
@@ -38,9 +40,6 @@ export class StatusComponent implements OnInit{
         this.newInstances = instances;
       }
     })
-    // for(let instance of this.newInstances) {
-    //   this.updatedInstances.push(instance)
-    // }
   }
 
   showUpdated(): void {

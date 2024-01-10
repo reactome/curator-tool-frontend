@@ -40,6 +40,12 @@
 
       <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
         <!-- TODO: Also need to determine if it is required or disabled-->
+        <div
+          cdkDropList
+          id="cdk-drop-list-{{attribute?.name}}"
+          cdkDropListConnectedTo="bookmark-list"
+          [cdkDropListData]="dropData"
+          (cdkDropListDropped)="drop($event)">
         <ng-container *ngIf="value !== undefined; else elseblock">
           <a routerLink="/instance_view/{{value.dbId}}" [cdkContextMenuTriggerFor]="row_menu"
             class="padding span-menu-trigger">
@@ -52,6 +58,7 @@
           <!-- Use a customized class to force the empty span to show the menu.-->
           <span [cdkContextMenuTriggerFor]="row_menu" class="span-menu-trigger"></span>
         </ng-template>
+        </div>
       </ng-template>
 
       <ng-template #row_menu>

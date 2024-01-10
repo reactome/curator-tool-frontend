@@ -44,6 +44,18 @@
     </td>
   </ng-container>
 
+  <!-- Bookmark Column -->
+  <ng-container matColumnDef="bookmark">
+    <th mat-header-cell *matHeaderCellDef></th>
+    <td class="column-right" mat-cell *matCellDef="let element">
+      <button color="primary" *ngFor="let button of actionButtons" mat-icon-button (click)="addBookmark(element)"
+              matTooltip="Add Bookmark" matTooltipPosition="left">
+        <mat-icon>bookmark</mat-icon>
+      </button>
+    </td>
+  </ng-container>
+
+
   <ng-container *ngIf="showHeader">
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
   </ng-container>

@@ -7,6 +7,9 @@ import {take} from "rxjs";
 import {FormControl, FormGroup, Validators} from "@angular/forms";
 import {ActivatedRoute} from "@angular/router";
 import {ViewOnlyService} from "../../../../../core/services/view-only.service";
+import {CdkDragDrop, copyArrayItem, moveItemInArray, transferArrayItem} from "@angular/cdk/drag-drop";
+import {Instance} from "../../../../../core/models/reactome-instance.model";
+import {DataService} from "../../../../../core/services/data.service";
 
 /**
  * Used to display a single value of an Instance object.
@@ -37,12 +40,17 @@ export class InstanceTableRowElementComponent implements OnInit {
 
   control = new FormControl();
   showField: boolean = true;
+  dropData: Instance[] = [];
+  candidateClasses: string[] = [];
+
 
   // viewOnly as a service is drilled down too deep in the component hierarchy. Better not been here and disable
   // the editing using a simple flag!
-  constructor(private store: Store, private _ngZone: NgZone, private route: ActivatedRoute, public viewOnly: ViewOnlyService) {
+  constructor(private store: Store, private _ngZone: NgZone, private dataService: DataService, public viewOnly: ViewOnlyService) {
     if (viewOnly.enabled)
       this.control.disable();
+    if(this.attribute)
+    this.candidateClasses = dataService.setCandidateClasses(this.attribute);
   }
 
   @ViewChild('autosize') autosize: CdkTextareaAutosize | undefined;
@@ -87,6 +95,24 @@ export class InstanceTableRowElementComponent implements OnInit {
     if (this.autosize) // Somehow this.autosize! cannot work!
       this.autosize.resizeToFitContent(true)
     });
+  }
+
+  drop(event: CdkDragDrop<Instance[]>) {
+    this.value = event.container.data;
+    console.log("value: ", event.container.data)
+     //if (this.candidateClasses.includes(this.value.schemaClassName)) {
+      if (event.previousContainer === event.container) {
+        moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      } else {
+        copyArrayItem(
+          event.previousContainer.data,
+          event.container.data,
+          event.previousIndex,
+          event.currentIndex,
+        );
+      }
+      this.onEditAction(EDIT_ACTION.BOOKMARK)
+    //}
   }
 }
 

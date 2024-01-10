@@ -1,4 +1,4 @@
-import { CdkDrag } from "@angular/cdk/drag-drop";
+import {CdkDrag, CdkDropList} from "@angular/cdk/drag-drop";
 import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem } from "@angular/cdk/menu";
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
@@ -38,25 +38,26 @@ import {newInstancesReducer} from "./state/new-instance/new-instance.reducers";
         NewInstanceDialogComponent,
         DisableControlDirective
     ],
-    imports: [
-        CommonModule,
-        DatabaseObjectRoutingModule,
-        EffectsModule.forFeature(DatabaseObjectEffects),
-        EffectsModule.forFeature(NewInstanceEffects),
-        StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer),
+  imports: [
+    CommonModule,
+    DatabaseObjectRoutingModule,
+    EffectsModule.forFeature(DatabaseObjectEffects),
+    EffectsModule.forFeature(NewInstanceEffects),
+    StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer),
 
-      // Need to register here for update. The registered state can be used out of this module.
-        // StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),
-        SharedModule,
-        CdkContextMenuTrigger,
-        CdkMenu,
-        CdkMenuItem,
-        SchemaClassTreeModule,
-        MatTooltipModule,
-        MatSidenavModule,
-        CdkDrag,
-        ListInstancesModule
-    ],
+    // Need to register here for update. The registered state can be used out of this module.
+    // StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),
+    SharedModule,
+    CdkContextMenuTrigger,
+    CdkMenu,
+    CdkMenuItem,
+    SchemaClassTreeModule,
+    MatTooltipModule,
+    MatSidenavModule,
+    CdkDrag,
+    ListInstancesModule,
+    CdkDropList
+  ],
   exports: [
     InstanceTableComponent,
     InstanceTableRowElementComponent,

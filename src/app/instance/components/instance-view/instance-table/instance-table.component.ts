@@ -1,14 +1,14 @@
-import { Component, Input } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { InstanceActions } from 'src/app/instance/state/instance.actions';
-import { AttributeCategory } from "../../../../core/models/reactome-schema.model";
-import { DataService } from "../../../../core/services/data.service";
+import {Component, Input} from '@angular/core';
+import {Store} from '@ngrx/store';
+import {Instance} from 'src/app/core/models/reactome-instance.model';
+import {InstanceActions} from 'src/app/instance/state/instance.actions';
+import {AttributeCategory, AttributeDataType} from "../../../../core/models/reactome-schema.model";
 import {
   SelectInstanceDialogService
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
-import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
-import { AttributeValue, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
+import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
+import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
+import {DragDropService} from "../../../../instance-bookmark/drag-drop.service";
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -63,9 +63,9 @@ export class InstanceTableComponent {
 
   constructor(
     private dialogService: NewInstanceDialogService,
+    private dragDropService: DragDropService,
     private selectInstanceDialogService: SelectInstanceDialogService,
-    private store: Store,
-    private dataService: DataService) {
+    private store: Store) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
       this.categories.set(AttributeCategory[categoryKey], true)
@@ -127,6 +127,9 @@ export class InstanceTableComponent {
         break;
       case EDIT_ACTION.ADD_VIA_SELECT:
         this.addInstanceViaSelect(attributeValue);
+        break;
+      case EDIT_ACTION.BOOKMARK:
+        this.addBookmarkedInstance(attributeValue);
         break;
       default:
         console.error("The action doesn't know: ", attributeValue.editAction);
@@ -221,6 +224,31 @@ export class InstanceTableComponent {
     });
   }
 
+  addBookmarkedInstance(attributeValue: AttributeValue){
+    let result = attributeValue.value[0]; //Only one value emitted at once
+    let value = this._instance?.attributes?.get(attributeValue.attribute.name);
+    if (value === undefined) {
+      // It should be the first
+      if (attributeValue.attribute.cardinality === '1') {
+        this._instance?.attributes?.set(attributeValue.attribute.name, result);
+      } else {
+        this._instance?.attributes?.set(attributeValue.attribute.name, [result]);
+      }
+    } else {
+      // It should be the first
+      if (attributeValue.attribute.cardinality === '1') { // Make sure only one value used
+        this._instance?.attributes?.set(attributeValue.attribute.name, result);
+      } else {
+        value.splice(attributeValue.index, 0, result);
+      }
+    }
+    //TODO: Add a new value may reset the scroll position. This needs to be changed!
+    this.updateTableContent();
+    // Only add attribute name if value was added
+    this.addModifiedAttributeName(attributeValue.attribute.name);
+
+  }
+
   updateTableContent(): void {
     this.instanceDataSource = new InstanceDataSource(this._instance,
       this.categories,
@@ -231,6 +259,15 @@ export class InstanceTableComponent {
       // Register the updated instances
       this.registerUpdatedInstance();
     }
+    this.instanceDataSource.connect().subscribe(inst => {
+      for(let i=0; i<inst.length; i++){
+        if(inst.at(i)!.attribute.type === AttributeDataType.INSTANCE) {
+          let name = inst.at(i)!.attribute.name;
+          this.dragDropService.register(name)
+        }
+      }
+    })
+
   }
 
   private registerUpdatedInstance(): void {

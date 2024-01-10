@@ -4,6 +4,7 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import {CdkDragMove} from "@angular/cdk/drag-drop";
+import {DragDropService} from "../../../instance-bookmark/drag-drop.service";
 
 @Component({
   selector: 'app-instance-view',
@@ -24,7 +25,8 @@ export class InstanceViewComponent implements OnInit {
   title: string = '';
   constructor(private router: Router,
               private route: ActivatedRoute,
-              private dataService: DataService) {
+              private dataService: DataService,
+              private dragDropService: DragDropService) {
   }
 
   ngOnInit() {
@@ -74,6 +76,7 @@ export class InstanceViewComponent implements OnInit {
   }
 
   changeTable(instance: Instance) {
+    this.dragDropService.resetList();
     this.router.navigate(["/instance_view/" + instance.dbId.toString()], {queryParamsHandling: 'preserve'});
   }
 
