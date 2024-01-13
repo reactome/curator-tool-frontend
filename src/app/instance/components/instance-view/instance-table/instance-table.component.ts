@@ -9,6 +9,7 @@ import {
 import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
 import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
 import {DragDropService} from "../../../../instance-bookmark/drag-drop.service";
+import {CdkDragDrop, moveItemInArray, transferArrayItem} from "@angular/cdk/drag-drop";
 
 
 /**
@@ -260,6 +261,21 @@ export class InstanceTableComponent {
       this._instance.modifiedAttributes.push(attName);
   }
 
+  drop(event: CdkDragDrop<string[]>) {
+    // TODO: actually need to save the new order of the values
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex,
+      );
+    }
+  }
+
   protected readonly AttributeCategory = AttributeCategory;
   protected readonly Object = Object;
+  protected readonly undefined = undefined;
 }

@@ -1,35 +1,43 @@
 <ng-template #valueColTemplate let-element>
   <ng-container *ngIf="element.attribute.cardinality === '1'">
     <app-instance-table-row-element [attribute]="element.attribute" [value]="element.value"
-      (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)" />
+                                    (newValueEvent)="onNoInstanceAttributeEdit($event)"
+                                    (editAction)="onInstanceAttributeEdit($event)"/>
   </ng-container>
   <ng-container *ngIf="element.attribute.cardinality === '+'">
     <!-- Make sure ngif on a ng-container -->
     <ng-container *ngIf="element.value === undefined; else elseblock">
       <!-- If no value for this attribute, nothing to be passed. But we still need the editing.-->
       <app-instance-table-row-element [attribute]="element.attribute"
-        (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)" />
+                                      (newValueEvent)="onNoInstanceAttributeEdit($event)"
+                                      (editAction)="onInstanceAttributeEdit($event)"/>
     </ng-container>
     <ng-template #elseblock>
-      <app-instance-table-row-element *ngFor="let object of element.value; let i = index"
-        [attribute]="element.attribute" [value]="object" [index]="i" (newValueEvent)="onNoInstanceAttributeEdit($event)"
-        (editAction)="onInstanceAttributeEdit($event)" />
+      <div
+        cdkDropList
+        [cdkDropListData]="element.value"
+        (cdkDropListDropped)="drop($event)">
+        <app-instance-table-row-element cdkDrag *ngFor="let object of element.value; let i = index" class="example-box"
+                                        [attribute]="element.attribute" [value]="object" [index]="i"
+                                        (newValueEvent)="onNoInstanceAttributeEdit($event)"
+                                        (editAction)="onInstanceAttributeEdit($event)"/>
+      </div>
     </ng-template>
   </ng-container>
 </ng-template>
 
 <ng-template #refValueColTemplate let-element>
   <ng-container *ngIf="element.attribute.cardinality === '1'">
-    <app-instance-table-row-element [attribute]="element.attribute" [value]="element.referenceValue" [disable]="true" />
+    <app-instance-table-row-element [attribute]="element.attribute" [value]="element.referenceValue" [disable]="true"/>
   </ng-container>
   <ng-container *ngIf="element.attribute.cardinality === '+'">
     <!-- Make sure ngif on a ng-container -->
     <ng-container *ngIf="element.referenceValue === undefined; else elseblock">
-      <app-instance-table-row-element [attribute]="element.attribute" [disable]="true" />
+      <app-instance-table-row-element [attribute]="element.attribute" [disable]="true"/>
     </ng-container>
     <ng-template #elseblock>
       <app-instance-table-row-element *ngFor="let object of element.referenceValue let i = index"
-        [attribute]="element.attribute" [value]="object" [index]="i" [disable]="true" />
+                                      [attribute]="element.attribute" [value]="object" [index]="i" [disable]="true"/>
     </ng-template>
   </ng-container>
 </ng-template>
@@ -39,12 +47,12 @@
     <!-- Attribute Name Column -->
     <ng-container matColumnDef="name">
       <th mat-header-cell (mouseenter)="changeShowHeaderActions()" (mouseleave)="changeShowHeaderActions()"
-        *matHeaderCellDef>Attribute
+          *matHeaderCellDef>Attribute
         <button matTooltip="Sort attributes by name" *ngIf="showHeaderActions" mat-icon-button (click)="sort()">
           <mat-icon>sort_by_alpha</mat-icon>
         </button>
         <button matTooltip="Sort by defined attributes" *ngIf="showHeaderActions" mat-icon-button
-          (click)="sortByDefined()">
+                (click)="sortByDefined()">
           <mat-icon>sort</mat-icon>
         </button>
       </th>
@@ -54,14 +62,14 @@
     <!-- Attribute Value Column -->
     <ng-container matColumnDef="value">
       <th mat-header-cell (mouseenter)="changeShowHeaderActions()" (mouseleave)="changeShowHeaderActions()"
-        *matHeaderCellDef> Value
+          *matHeaderCellDef> Value
         <ng-container *ngIf="showHeaderActions">
           <button mat-icon-button (click)="changeShowFilterOptions()">
             <mat-icon>filter_alt</mat-icon>
           </button>
           <section *ngIf="showFilterOptions">
             <mat-checkbox *ngFor="let cat of categories.keys()" [ngModel]="categories.get(cat)"
-              (ngModelChange)="doFilter(cat)">{{AttributeCategory[cat] | titlecase}}</mat-checkbox>
+                          (ngModelChange)="doFilter(cat)">{{AttributeCategory[cat] | titlecase}}</mat-checkbox>
           </section>
         </ng-container>
       </th>
