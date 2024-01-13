@@ -2,13 +2,14 @@ import {Component, Input} from '@angular/core';
 import {Store} from '@ngrx/store';
 import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {InstanceActions} from 'src/app/instance/state/instance.actions';
-import {AttributeCategory, AttributeDataType} from "../../../../core/models/reactome-schema.model";
+import {AttributeCategory} from "../../../../core/models/reactome-schema.model";
 import {
   SelectInstanceDialogService
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
 import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
 import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
 import {DragDropService} from "../../../../instance-bookmark/drag-drop.service";
+
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -136,17 +137,6 @@ export class InstanceTableComponent {
     }
   }
 
-  // private getDbInstance() {
-  //   this.showReferenceColumn ?
-  //     this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
-  //       refInstance => {
-  //         this._referenceInstance = refInstance;
-  //         this.updateTableContent()
-  //         this.displayedColumns = ['name', 'value', 'referenceValue']
-  //       }) :
-  //     this.displayedColumns = ['name', 'value'];
-  // }
-
   private deleteInstanceAttribute(attributeValue: AttributeValue): void {
     console.debug('deleteInstanceAttribute: ', attributeValue);
     this.addModifiedAttributeName(attributeValue.attribute.name);
@@ -170,26 +160,7 @@ export class InstanceTableComponent {
       if (result === undefined)
         return; // Do nothing
       // Check if there is any value
-      let value = this._instance?.attributes?.get(attributeValue.attribute.name);
-      if (value === undefined) {
-        // It should be the first
-        if (attributeValue.attribute.cardinality === '1') {
-          this._instance?.attributes?.set(attributeValue.attribute.name, result);
-        } else {
-          this._instance?.attributes?.set(attributeValue.attribute.name, [result]);
-        }
-      } else {
-        // It should be the first
-        if (attributeValue.attribute.cardinality === '1') { // Make sure only one value used
-          this._instance?.attributes?.set(attributeValue.attribute.name, result);
-        } else {
-          value.splice(attributeValue.index, 0, result);
-        }
-      }
-      //TODO: Add a new value may reset the scroll position. This needs to be changed!
-      this.updateTableContent();
-      // Only add attribute name if value was added
-      this.addModifiedAttributeName(attributeValue.attribute.name);
+      this.addValueToAttribute(attributeValue, result);
     });
   }
 
@@ -201,6 +172,7 @@ export class InstanceTableComponent {
       if (result === undefined || !result)
         return; // Do nothing if this is undefined or resolve to false (e.g. nothing there)
       // Check if there is any value
+      //this.addValueToAttribute(attributeValue, result);
       let value = this._instance?.attributes?.get(attributeValue.attribute.name);
       if (value === undefined) {
         // It should be the first
@@ -224,8 +196,12 @@ export class InstanceTableComponent {
     });
   }
 
-  addBookmarkedInstance(attributeValue: AttributeValue){
+  addBookmarkedInstance(attributeValue: AttributeValue) {
     let result = attributeValue.value[0]; //Only one value emitted at once
+    this.addValueToAttribute(attributeValue, result);
+  }
+
+  private addValueToAttribute(attributeValue: AttributeValue, result: any) {
     let value = this._instance?.attributes?.get(attributeValue.attribute.name);
     if (value === undefined) {
       // It should be the first
@@ -246,7 +222,6 @@ export class InstanceTableComponent {
     this.updateTableContent();
     // Only add attribute name if value was added
     this.addModifiedAttributeName(attributeValue.attribute.name);
-
   }
 
   updateTableContent(): void {
@@ -259,20 +234,11 @@ export class InstanceTableComponent {
       // Register the updated instances
       this.registerUpdatedInstance();
     }
-    this.instanceDataSource.connect().subscribe(inst => {
-      for(let i=0; i<inst.length; i++){
-        if(inst.at(i)!.attribute.type === AttributeDataType.INSTANCE) {
-          let name = inst.at(i)!.attribute.name;
-          this.dragDropService.register(name)
-        }
-      }
-    })
-
   }
 
   private registerUpdatedInstance(): void {
     // Only register updates to exisiting instances
-    if(this._instance!.dbId > 0) {
+    if (this._instance!.dbId > 0) {
       let cloned: Instance = {
         dbId: this._instance!.dbId,
         displayName: this._instance!.displayName,

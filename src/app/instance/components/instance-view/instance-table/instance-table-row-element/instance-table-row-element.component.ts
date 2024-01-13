@@ -1,15 +1,25 @@
-import {Component, EventEmitter, Input, NgZone, OnInit, Output, ViewChild} from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  EventEmitter,
+  Input,
+  NgZone,
+  OnDestroy,
+  OnInit,
+  Output,
+  ViewChild
+} from '@angular/core';
 import {Store} from "@ngrx/store";
 import {AttributeCategory, AttributeDataType, SchemaAttribute} from 'src/app/core/models/reactome-schema.model';
 import {AttributeValue, EDIT_ACTION} from '../instance-table.model';
 import {CdkTextareaAutosize} from "@angular/cdk/text-field";
 import {take} from "rxjs";
-import {FormControl, FormGroup, Validators} from "@angular/forms";
-import {ActivatedRoute} from "@angular/router";
+import {FormControl, Validators} from "@angular/forms";
 import {ViewOnlyService} from "../../../../../core/services/view-only.service";
-import {CdkDragDrop, copyArrayItem, moveItemInArray, transferArrayItem} from "@angular/cdk/drag-drop";
+import {CdkDragDrop, copyArrayItem, moveItemInArray} from "@angular/cdk/drag-drop";
 import {Instance} from "../../../../../core/models/reactome-instance.model";
 import {DataService} from "../../../../../core/services/data.service";
+import {DragDropService} from "../../../../../instance-bookmark/drag-drop.service";
 
 /**
  * Used to display a single value of an Instance object.
@@ -19,7 +29,7 @@ import {DataService} from "../../../../../core/services/data.service";
   templateUrl: './instance-table-row-element.component.html',
   styleUrls: ['./instance-table-row-element.component.scss']
 })
-export class InstanceTableRowElementComponent implements OnInit {
+export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, OnDestroy {
   // Value to be displayed here
   @Input() attribute: SchemaAttribute | undefined = undefined;
   @Input() value: any;
@@ -27,6 +37,7 @@ export class InstanceTableRowElementComponent implements OnInit {
   @Output() newValueEvent = new EventEmitter<AttributeValue>();
   // Edit action
   @Output() editAction = new EventEmitter<AttributeValue>();
+
   // To disable it manually
   @Input() set disable(disable: boolean) {
     if (disable)
@@ -46,11 +57,15 @@ export class InstanceTableRowElementComponent implements OnInit {
 
   // viewOnly as a service is drilled down too deep in the component hierarchy. Better not been here and disable
   // the editing using a simple flag!
-  constructor(private store: Store, private _ngZone: NgZone, private dataService: DataService, public viewOnly: ViewOnlyService) {
+  constructor(private store: Store, private _ngZone: NgZone, private dataService: DataService, public viewOnly: ViewOnlyService, private dragDropService: DragDropService) {
     if (viewOnly.enabled)
       this.control.disable();
-    if(this.attribute)
-    this.candidateClasses = dataService.setCandidateClasses(this.attribute);
+  }
+
+  ngAfterViewInit(): void {
+    if (this.attribute?.type === AttributeDataType.INSTANCE && this.attribute?.category !== AttributeCategory.NOMANUALEDIT) {
+      this.dragDropService.register(this.attribute!.name)
+    }
   }
 
   @ViewChild('autosize') autosize: CdkTextareaAutosize | undefined;
@@ -65,7 +80,10 @@ export class InstanceTableRowElementComponent implements OnInit {
     if (this.attribute?.category && [AttributeCategory.REQUIRED, AttributeCategory.MANDATORY].includes(this.attribute?.category)) {
       this.control.addValidators([Validators.required])
     }
+    // if (this.attribute)
+    //   this.candidateClasses = this.dataService.setCandidateClasses(this.attribute);
   }
+
 
   onChange() {
     let attributeValue: AttributeValue = {
@@ -92,27 +110,28 @@ export class InstanceTableRowElementComponent implements OnInit {
   triggerResize() {
     // Wait for changes to be applied, then trigger textarea resize.
     this._ngZone.onStable.pipe(take(1)).subscribe(() => {
-    if (this.autosize) // Somehow this.autosize! cannot work!
-      this.autosize.resizeToFitContent(true)
+      if (this.autosize) // Somehow this.autosize! cannot work!
+        this.autosize.resizeToFitContent(true)
     });
   }
 
   drop(event: CdkDragDrop<Instance[]>) {
     this.value = event.container.data;
-    console.log("value: ", event.container.data)
-     //if (this.candidateClasses.includes(this.value.schemaClassName)) {
-      if (event.previousContainer === event.container) {
-        moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-      } else {
-        copyArrayItem(
-          event.previousContainer.data,
-          event.container.data,
-          event.previousIndex,
-          event.currentIndex,
-        );
-      }
-      this.onEditAction(EDIT_ACTION.BOOKMARK)
-    //}
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      copyArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex,
+      );
+    }
+    this.onEditAction(EDIT_ACTION.BOOKMARK)
+  }
+
+  ngOnDestroy(): void {
+    this.dragDropService.unregister(this.attribute!.name);
   }
 }
 

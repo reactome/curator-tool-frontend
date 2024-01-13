@@ -1,7 +1,8 @@
 import {Component, Input} from '@angular/core';
-import {CdkDrag, CdkDragDrop, CdkDragPlaceholder, CdkDropList, moveItemInArray} from "@angular/cdk/drag-drop";
-import {Instance} from "../../../core/models/reactome-instance.model";
-import {DragDropService} from "../../drag-drop.service";
+import {CdkDragDrop, moveItemInArray} from "@angular/cdk/drag-drop";
+import {Instance} from "../../../../core/models/reactome-instance.model";
+import {DragDropService} from "../../../drag-drop.service";
+import {Store} from "@ngrx/store";
 
 @Component({
   selector: 'app-bookmark-list',
@@ -10,11 +11,9 @@ import {DragDropService} from "../../drag-drop.service";
 })
 export class BookmarkListComponent {
   @Input() bookmarks: Instance[] = [];
-  connectedTo: CdkDropList[] = [];
+  cdkDropGroup: string[] = [];
 
-  constructor(dragDropService: DragDropService) {
-    this.connectedTo = dragDropService.dropLists
-    console.log("connectTo: " + this.connectedTo)
+  constructor(public dragDropService: DragDropService) {
   }
 
   drop(event: CdkDragDrop<Instance[]>) {

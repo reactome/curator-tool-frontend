@@ -1,4 +1,4 @@
-import {BookmarkListComponent} from "./components/bookmark-list/bookmark-list.component";
+import {BookmarkListComponent} from "./components/bookmark-status/bookmark-list/bookmark-list.component";
 import {BookmarkStatusComponent} from "./components/bookmark-status/bookmark-status.component";
 import {CommonModule} from "@angular/common";
 import {SharedModule} from "../shared/shared.module";

@@ -1,17 +1,20 @@
-import {CdkDropList} from "@angular/cdk/drag-drop";
-import {Inject, Injectable} from "@angular/core";
-import {DOCUMENT} from "@angular/common";
+import {Injectable} from "@angular/core";
 
 @Injectable({
   providedIn: 'root'
 })
 export class DragDropService {
-  dropLists: CdkDropList[] = [];
-  currentHoverDropListId?: string;
+  // @ts-ignore
+  dropLists: string[] = [];
 
   public register(attributeName: string) {
     // generating an id for each table row. Must cast string as CdkDropList type
-    this.dropLists.push(('cdk-drop-list-' + attributeName) as unknown as CdkDropList);
+    this.dropLists.push('cdk-drop-list-' + attributeName);
+  }
+
+  public unregister(attributeName: string) {
+    let index = this.dropLists.indexOf('cdk-drop-list-' + attributeName)
+    this.dropLists.splice(index, 1);
   }
 
   public resetList() {
