@@ -1,10 +1,8 @@
 <div>
-
   <mat-toolbar color="primary" class="toolbar">
     <span *ngFor="let m of newMenuItem; let indx = index" style="color: white;">
-      <a mat-button matTooltip="{{m.schemaClassName}}: {{m.displayName}}" 
+      <a mat-button matTooltip="{{m.schemaClassName}}: {{m.displayName}}"
       (click)="breadCrumb(newMenuItem, indx)">{{m.dbId}}</a>
     </span>
-
   </mat-toolbar>
 </div>

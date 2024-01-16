@@ -6,16 +6,18 @@
 </ng-container>
 <mat-toolbar class="toolbar" *ngIf="!showProgressSpinner">
   <span class="title" *ngIf="instance !== undefined">
+    <div>
     {{title}}
-  </span>
-  <div class="button">
-    <button mat-icon-button color="primary" (click)="showReferenceValueColumn()">
+<!--      <div class="button">-->
+    <button style="position: fixed; right: 40px" mat-icon-button color="primary" (click)="showReferenceValueColumn()">
       <mat-icon>compare</mat-icon>
     </button>
-    <button mat-icon-button color="primary" (click)="upload()" [disabled]="!isUploadable()">
+    <button style="position: fixed; right: 5px" mat-icon-button color="primary" (click)="upload()" [disabled]="!isUploadable()">
       <mat-icon>upload</mat-icon>
     </button>
-  </div>
+<!--  </div>-->
+      </div>
+  </span>
 </mat-toolbar>
 <app-instance-table [instance]="instance" [referenceInstance]="dbInstance"
                     *ngIf="!showProgressSpinner"></app-instance-table>

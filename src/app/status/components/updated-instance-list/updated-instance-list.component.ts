@@ -22,7 +22,7 @@ export class UpdatedInstanceListComponent implements OnInit{
   // instances to be committed
   toBeUploaded: Instance[] = [];
   actionButtons: string[] = ["compare"];
-  isSelection: boolean = true;
+  isSelection: boolean = false;
   newInstances: Instance[] = [];
   showHeader: boolean = false;
   newInstancesActionButtons: string[] = ["launch"];

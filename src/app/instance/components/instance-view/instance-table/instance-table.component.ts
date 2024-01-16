@@ -261,8 +261,7 @@ export class InstanceTableComponent {
       this._instance.modifiedAttributes.push(attName);
   }
 
-  drop(event: CdkDragDrop<string[]>) {
-    // TODO: actually need to save the new order of the values
+  drop(event: CdkDragDrop<string[]>, value: Instance) {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
@@ -273,6 +272,8 @@ export class InstanceTableComponent {
         event.currentIndex,
       );
     }
+    console.log(event.container.data)
+    this._instance?.attributes?.set(value, event.container.data);
   }
 
   protected readonly AttributeCategory = AttributeCategory;

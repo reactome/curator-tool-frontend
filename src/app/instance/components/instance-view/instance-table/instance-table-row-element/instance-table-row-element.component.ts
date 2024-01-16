@@ -116,18 +116,28 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
   }
 
   drop(event: CdkDragDrop<Instance[]>) {
-    this.value = event.container.data;
-    if (event.previousContainer === event.container) {
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    if (this.attribute)
+      // get the schemaClasses for the attribute type
+      this.candidateClasses = this.dataService.setCandidateClasses(this.attribute);
+    let draggedElement = event.previousContainer.data.at(event.previousIndex);
+     console.log("draggedElName", draggedElement!.schemaClassName);
+    if (this.candidateClasses.includes(draggedElement!.schemaClassName)) {
+      console.log("true")
+      if (event.previousContainer === event.container) {
+        moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      } else {
+        copyArrayItem(
+          event.previousContainer.data,
+          event.container.data,
+          event.previousIndex,
+          event.currentIndex,
+        );
+        this.value = event.container.data;
+      }
+      this.onEditAction(EDIT_ACTION.BOOKMARK)
     } else {
-      copyArrayItem(
-        event.previousContainer.data,
-        event.container.data,
-        event.previousIndex,
-        event.currentIndex,
-      );
+      return // use return to make the dragged element return to parent container
     }
-    this.onEditAction(EDIT_ACTION.BOOKMARK)
   }
 
   ngOnDestroy(): void {

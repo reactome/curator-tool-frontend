@@ -5,7 +5,9 @@
   <ng-container *ngFor="let instance of bookmarks">
   <div class="example-box" cdkDrag>
     <div class="example-custom-placeholder" *cdkDragPlaceholder></div>
-  {{instance.dbId }} {{instance.displayName}}
+  {{instance.dbId }} <br>
+    {{instance.displayName}} <br>
+    {{instance.schemaClassName}}
   </div>
   </ng-container>
 </div>

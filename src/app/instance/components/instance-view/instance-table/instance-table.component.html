@@ -16,7 +16,7 @@
       <div
         cdkDropList
         [cdkDropListData]="element.value"
-        (cdkDropListDropped)="drop($event)">
+        (cdkDropListDropped)="drop($event, element.value)">
         <app-instance-table-row-element cdkDrag *ngFor="let object of element.value; let i = index" class="example-box"
                                         [attribute]="element.attribute" [value]="object" [index]="i"
                                         (newValueEvent)="onNoInstanceAttributeEdit($event)"
@@ -46,7 +46,7 @@
   <table mat-table [dataSource]="instanceDataSource" matSort class="instance-table">
     <!-- Attribute Name Column -->
     <ng-container matColumnDef="name">
-      <th mat-header-cell (mouseenter)="changeShowHeaderActions()" (mouseleave)="changeShowHeaderActions()"
+      <th class="" mat-header-cell (mouseenter)="changeShowHeaderActions()" (mouseleave)="changeShowHeaderActions()"
           *matHeaderCellDef>Attribute
         <button matTooltip="Sort attributes by name" *ngIf="showHeaderActions" mat-icon-button (click)="sort()">
           <mat-icon>sort_by_alpha</mat-icon>

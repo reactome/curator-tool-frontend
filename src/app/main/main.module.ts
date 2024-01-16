@@ -10,6 +10,7 @@ import { SideNavigationComponent } from './components/side-navigation/side-navig
 import {UpdatedInstanceListComponent} from "../status/components/updated-instance-list/updated-instance-list.component";
 import {StatusComponent} from "../status/status.component";
 import {CdkAccordionModule} from "@angular/cdk/accordion";
+import {InstanceBookmarkModule} from "../instance-bookmark/instance-bookmark.module";
 
 
 @NgModule({
@@ -21,16 +22,17 @@ import {CdkAccordionModule} from "@angular/cdk/accordion";
     MainComponent,
     SideNavigationComponent
   ],
-  imports: [
-    CommonModule,
-    CdkDrag,
-    MatSidenavModule,
-    MatToolbarModule,
-    SchemaClassTreeModule,
-    RouterOutlet,
-    UpdatedInstanceListComponent,
-    StatusComponent,
-    CdkAccordionModule,
-  ]
+    imports: [
+        CommonModule,
+        CdkDrag,
+        MatSidenavModule,
+        MatToolbarModule,
+        SchemaClassTreeModule,
+        RouterOutlet,
+        UpdatedInstanceListComponent,
+        StatusComponent,
+        CdkAccordionModule,
+        InstanceBookmarkModule,
+    ]
 })
 export class MainModule { }
