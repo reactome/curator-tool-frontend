@@ -26,7 +26,8 @@ import {bookmarkReducer} from "./state/bookmark.reducers";
     StoreModule.forFeature(BOOKMARK_STATE_NAME, bookmarkReducer),
   ],
   exports: [
-    BookmarkStatusComponent
+    BookmarkStatusComponent,
+    BookmarkListComponent
   ]
 })
 export class InstanceBookmarkModule {

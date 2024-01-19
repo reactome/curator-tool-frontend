@@ -44,6 +44,7 @@
           cdkDropList
           id="cdk-drop-list-{{attribute?.name}}"
           cdkDropListConnectedTo="bookmark-list"
+          [cdkDropListEnterPredicate]="canDrop"
           [cdkDropListData]="dropData"
           (cdkDropListDropped)="drop($event)">
         <ng-container *ngIf="value !== undefined; else elseblock">

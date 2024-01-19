@@ -71,8 +71,9 @@ export class InstanceViewComponent implements OnInit {
   }
 
   setTitle(title: string): string {
-    if(title.length < 50) return title
-    else return title.substring(0, 50) + "..."
+    // if(title.length < 50) return title
+    // else return title.substring(0, 50) + "..."
+    return title;
   }
 
   changeTable(instance: Instance) {

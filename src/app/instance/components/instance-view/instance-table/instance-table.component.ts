@@ -2,7 +2,7 @@ import {Component, Input} from '@angular/core';
 import {Store} from '@ngrx/store';
 import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {InstanceActions} from 'src/app/instance/state/instance.actions';
-import {AttributeCategory} from "../../../../core/models/reactome-schema.model";
+import {AttributeCategory, SchemaAttribute} from "../../../../core/models/reactome-schema.model";
 import {
   SelectInstanceDialogService
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
@@ -261,7 +261,7 @@ export class InstanceTableComponent {
       this._instance.modifiedAttributes.push(attName);
   }
 
-  drop(event: CdkDragDrop<string[]>, value: Instance) {
+  drop(event: CdkDragDrop<string[]>, value: SchemaAttribute) {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
@@ -272,8 +272,8 @@ export class InstanceTableComponent {
         event.currentIndex,
       );
     }
-    console.log(event.container.data)
-    this._instance?.attributes?.set(value, event.container.data);
+    console.log("value", this._instance)
+    this._instance?.attributes?.set(value.name, event.container.data);
   }
 
   protected readonly AttributeCategory = AttributeCategory;

@@ -15,10 +15,10 @@ export class BookmarkStatusComponent implements OnInit{
   }
 
   ngOnInit() {
-    this.store.select(bookmarkedInstances()).subscribe((instances) => {
-      if (instances !== undefined) {
-        this.bookmarkList = instances;
-      }
-    })
+    // this.store.select(bookmarkedInstances()).subscribe((instances) => {
+    //   if (instances !== undefined) {
+    //     this.bookmarkList = instances;
+    //   }
+    // })
   }
 }

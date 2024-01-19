@@ -2,15 +2,32 @@
   font-size: 16px;
   height: var(--title-height, 40px);
   position: sticky;
+  padding: 0 0 0 16px;
 }
 
 .title {
-  width: 10px;
-  word-wrap: break-word;
-  inline-size: 15px;
-  overflow-wrap: break-word;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  flex-direction: row;
 }
 
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.shrinkable{
+  flex: 1 1 auto;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  text-overflow: ellipsis;
+
+}
 .position {
   display: flex;
   flex-direction: row;
@@ -23,15 +40,17 @@
 }
 
 .button-container {
-  background-color: var(--surface2);
-  right: 0;
-  position: relative;
-  height: var(--title-height, 40px);
+  //background-color: var(--surface2);
+  //right: 0;
+  //position: relative;
+  //height: var(--title-height, 40px);
+  flex: 0 0 auto;
 }
 
-.button {
-  right: var(--body-margin);
-  position: fixed;
-  height: var(--title-height, 40px);
-  background-color: var(--surface);
+.v-center {
+  //right: var(--body-margin);
+  //position: fixed;
+  //height: var(--title-height, 40px);
+  //background-color: var(--surface);
+  vertical-align: text-top;
 }

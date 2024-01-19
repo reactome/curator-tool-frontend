@@ -1,14 +1,34 @@
-<mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh">
-  <mat-sidenav mode="side" opened [disableClose]="true" [style.width]="sideWidth + 'px'">
-    <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)" [showUpdatedList]="showInstanceList"></app-side-navigation>
-    <div class="resize-container" (cdkDragMoved)="resize($event)" cdkDrag cdkDragLockAxis="x"
-         (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
-      <div class="resize-bar"></div>
+<div #container>
+  <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh">
+    <mat-sidenav mode="side" opened [disableClose]="true" [style.width]="sideWidth + 'px'">
+      <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)"
+                           [showUpdatedList]="showInstanceList"></app-side-navigation>
+      <div class="resize-container" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
+           (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
+        <div class="resize-bar"></div>
+      </div>
+    </mat-sidenav>
+    <mat-sidenav-content class="instance-view-container">
+      <router-outlet></router-outlet>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+  <!--<div class="resize-bookmark"-->
+  <!--     (click)="drawer.toggle()" [style.width]="sideWidthBookMark + 'px'">-->
+  <!--  <div class="resize-bookmark-bar"></div>-->
+  <!--</div>-->
+  <!--<mat-drawer #drawer class="bookmark-sidenav" mode="side" [disableClose]="true" position="end"-->
+  <!--(opened)="expandPanel()" (closed)="closePanel()">-->
+  <!--  <app-bookmark-status class="bookmark"></app-bookmark-status>-->
+  <!--</mat-drawer>-->
+  <div id="bookmark-boundary">
+    <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="#bookmark-boundary" id="bookmark-container" [ngClass]="status"
+         [style.height]="container.clientHeight + 'px'" (cdkDragStarted)="onDrag()" (cdkDragEnded)="onDragEnd()">
+      <button id="bookmark-handle" cdkDragHandle (click)="toggleBookmarks()">BOOKMARKS
+      </button>
+      <div id="bookmark" #bookmark>
+        <app-bookmark-list></app-bookmark-list>
+      </div>
     </div>
-  </mat-sidenav>
-  <mat-sidenav-content class="instance-view-container">
-    <router-outlet></router-outlet>
-  </mat-sidenav-content>
-</mat-sidenav-container>
-<app-bookmark-status class="bookmark"></app-bookmark-status>
-<app-status [sidePanelState]="showInstanceList" (showUpdatedEvent)="showUpdatedInstances($event)" ></app-status>
+  </div>
+  <app-status [sidePanelState]="showInstanceList" (showUpdatedEvent)="showUpdatedInstances($event)"></app-status>
+</div>

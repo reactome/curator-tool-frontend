@@ -16,10 +16,11 @@ import {CdkTextareaAutosize} from "@angular/cdk/text-field";
 import {take} from "rxjs";
 import {FormControl, Validators} from "@angular/forms";
 import {ViewOnlyService} from "../../../../../core/services/view-only.service";
-import {CdkDragDrop, copyArrayItem, moveItemInArray} from "@angular/cdk/drag-drop";
+import {CdkDrag, CdkDragDrop, CdkDropList, copyArrayItem, moveItemInArray} from "@angular/cdk/drag-drop";
 import {Instance} from "../../../../../core/models/reactome-instance.model";
 import {DataService} from "../../../../../core/services/data.service";
 import {DragDropService} from "../../../../../instance-bookmark/drag-drop.service";
+import { ElementRef } from '@angular/core';
 
 /**
  * Used to display a single value of an Instance object.
@@ -57,7 +58,8 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
 
   // viewOnly as a service is drilled down too deep in the component hierarchy. Better not been here and disable
   // the editing using a simple flag!
-  constructor(private store: Store, private _ngZone: NgZone, private dataService: DataService, public viewOnly: ViewOnlyService, private dragDropService: DragDropService) {
+  constructor(private store: Store, private _ngZone: NgZone, private dataService: DataService, public viewOnly: ViewOnlyService, private dragDropService: DragDropService,
+              private elementRef: ElementRef<HTMLElement>) {
     if (viewOnly.enabled)
       this.control.disable();
   }
@@ -66,6 +68,9 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
     if (this.attribute?.type === AttributeDataType.INSTANCE && this.attribute?.category !== AttributeCategory.NOMANUALEDIT) {
       this.dragDropService.register(this.attribute!.name)
     }
+    // if (this.attribute && this.attribute.type === AttributeDataType.INSTANCE)
+    //   // get the schemaClasses for the attribute type
+    //   this.candidateClasses = this.dataService.setCandidateClasses(this.attribute);
   }
 
   @ViewChild('autosize') autosize: CdkTextareaAutosize | undefined;
@@ -80,8 +85,6 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
     if (this.attribute?.category && [AttributeCategory.REQUIRED, AttributeCategory.MANDATORY].includes(this.attribute?.category)) {
       this.control.addValidators([Validators.required])
     }
-    // if (this.attribute)
-    //   this.candidateClasses = this.dataService.setCandidateClasses(this.attribute);
   }
 
 
@@ -115,12 +118,16 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
     });
   }
 
+  startTimer(){
+    let timer = setTimeout(() => {})
+  }
+
   drop(event: CdkDragDrop<Instance[]>) {
     if (this.attribute)
       // get the schemaClasses for the attribute type
       this.candidateClasses = this.dataService.setCandidateClasses(this.attribute);
     let draggedElement = event.previousContainer.data.at(event.previousIndex);
-     console.log("draggedElName", draggedElement!.schemaClassName);
+    console.log("draggedElName", draggedElement!.schemaClassName);
     if (this.candidateClasses.includes(draggedElement!.schemaClassName)) {
       console.log("true")
       if (event.previousContainer === event.container) {
@@ -140,9 +147,18 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
     }
   }
 
+  canDrop(drag: CdkDrag, drop: CdkDropList){
+    // can get the attribute name from the id
+    console.log(drag.element.nativeElement.id)
+    console.log(drop.id)
+    return false;
+  }
+
   ngOnDestroy(): void {
     this.dragDropService.unregister(this.attribute!.name);
   }
+
+  protected readonly clearTimeout = clearTimeout;
 }
 
 

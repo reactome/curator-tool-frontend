@@ -16,7 +16,7 @@
       <div
         cdkDropList
         [cdkDropListData]="element.value"
-        (cdkDropListDropped)="drop($event, element.value)">
+        (cdkDropListDropped)="drop($event, element.attribute)">
         <app-instance-table-row-element cdkDrag *ngFor="let object of element.value; let i = index" class="example-box"
                                         [attribute]="element.attribute" [value]="object" [index]="i"
                                         (newValueEvent)="onNoInstanceAttributeEdit($event)"

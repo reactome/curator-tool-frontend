@@ -44,9 +44,62 @@ side-nav {
   border-left-width: 0;
   //width: 60vw;
 }
-.bookmark {
-  position: absolute;
-  right: var(--body-margin);
+
+
+#bookmark-boundary {
+  --bookmark-width: 250px;
+  --border-width: 2px;
+  --handle-width: 20px;
+
+  position: fixed;
+  pointer-events: none;
+  right: calc(-1 *  var(--bookmark-width) - var(--border-width));
+  height: 100%;
+  width: calc(2 * var(--bookmark-width) + var(--handle-width));
+  top: 0;
+  bottom: 0;
   z-index: 1;
-  top: var(--body-margin);
+
+  #bookmark {
+    width: var(--bookmark-width);
+    height: 100%;
+    border-left: var(--border-width) solid var(--primary);
+    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    backdrop-filter: blur(5px);
+  }
+
+  #bookmark-handle {
+    width: var(--handle-width);
+    text-orientation: upright;
+    writing-mode: vertical-lr;
+
+    border-radius: 8.5px 0 0 8.5px;
+    background: color-mix(in srgb, var(--surface) 50%, transparent);
+    backdrop-filter: blur(5px);
+    border-left: var(--border-width) solid var(--primary);
+    border-top: var(--border-width) solid var(--primary);
+    border-bottom: var(--border-width) solid var(--primary);
+    border-right: 0;
+    cursor: ew-resize;
+    color: var(--on-surface);
+  }
+
+  #bookmark-container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    left: calc(var(--bookmark-width) - var(--border-width));
+    pointer-events: all;
+    height: 100%;
+    transition-duration: 500ms;
+
+    &.opened {
+      transform: translate3d((calc( -1 * var(--bookmark-width))), 0, 0)!important;
+    }
+    &.closed {
+      transform: translate3d(0, 0, 0)!important; ;
+    }
+  }
 }
