@@ -21,6 +21,7 @@ import {Instance} from "../../../../../core/models/reactome-instance.model";
 import {DataService} from "../../../../../core/services/data.service";
 import {DragDropService} from "../../../../../instance-bookmark/drag-drop.service";
 import { ElementRef } from '@angular/core';
+import { DataServiceLocatorService } from 'src/app/core/services/data-service.locator.service';
 
 /**
  * Used to display a single value of an Instance object.
@@ -52,9 +53,7 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
 
   control = new FormControl();
   showField: boolean = true;
-  dropData: Instance[] = [];
   candidateClasses: string[] = [];
-
 
   // viewOnly as a service is drilled down too deep in the component hierarchy. Better not been here and disable
   // the editing using a simple flag!
@@ -122,36 +121,45 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
     let timer = setTimeout(() => {})
   }
 
-  drop(event: CdkDragDrop<Instance[]>) {
+  // The three parametered parameters are quite confusing. Regardelss, this function works.
+  // Use the associated values to finish drop.
+  drop(event: CdkDragDrop<SchemaAttribute | undefined, Instance, Instance>) {
+    console.log('drop: ', event);
+    console.log('dragged instance: ', event.item.data);
+    console.log('attribute dropped into: ', event.container.data);
+    // How to figure out the index???
     if (this.attribute)
       // get the schemaClasses for the attribute type
       this.candidateClasses = this.dataService.setCandidateClasses(this.attribute);
-    let draggedElement = event.previousContainer.data.at(event.previousIndex);
-    console.log("draggedElName", draggedElement!.schemaClassName);
-    if (this.candidateClasses.includes(draggedElement!.schemaClassName)) {
-      console.log("true")
-      if (event.previousContainer === event.container) {
-        moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-      } else {
-        copyArrayItem(
-          event.previousContainer.data,
-          event.container.data,
-          event.previousIndex,
-          event.currentIndex,
-        );
-        this.value = event.container.data;
-      }
-      this.onEditAction(EDIT_ACTION.BOOKMARK)
-    } else {
-      return // use return to make the dragged element return to parent container
-    }
+    // let draggedElement = event.previousContainer.data.at(event.previousIndex);
+    // console.log("draggedElName", draggedElement!.schemaClassName);
+    // if (this.candidateClasses.includes(draggedElement!.schemaClassName)) {
+    //   console.log("true")
+    //   if (event.previousContainer === event.container) {
+    //     moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    //   } else {
+    //     copyArrayItem(
+    //       event.previousContainer.data,
+    //       event.container.data,
+    //       event.previousIndex,
+    //       event.currentIndex,
+    //     );
+    //     this.value = event.container.data;
+    //   }
+    //   this.onEditAction(EDIT_ACTION.BOOKMARK)
+    // } else {
+    //   return // use return to make the dragged element return to parent container
+    // }
   }
 
-  canDrop(drag: CdkDrag, drop: CdkDropList){
+  canDrop(drag: CdkDrag<Instance>, drop: CdkDropList<SchemaAttribute>){
     // can get the attribute name from the id
-    console.log(drag.element.nativeElement.id)
-    console.log(drop.id)
-    return false;
+    // console.log(drag.element.nativeElement.id)
+    const dataSerice = DataServiceLocatorService.getDataService();
+    console.log('Use this data service to perform checking: ', dataSerice);
+    console.log('Instance that is dragged: ', drag.data);
+    console.log('Attribute to be dragged into: ', drop.data);
+    return true;
   }
 
   ngOnDestroy(): void {
