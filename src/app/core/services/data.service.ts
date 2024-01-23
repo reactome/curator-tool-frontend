@@ -9,11 +9,7 @@ import {
   SchemaAttribute,
   SchemaClass
 } from '../models/reactome-schema.model';
-// import { AttributeDa } from '../models/schema-class-attribute-data.model';
 import { Instance } from "../models/reactome-instance.model";
-import { coerceNumberProperty } from "@angular/cdk/coercion";
-import {AttributeValue} from "../../instance/components/instance-view/instance-table/instance-table.model";
-import { DataServiceLocatorService } from "./data-service.locator.service";
 
 
 @Injectable({
@@ -42,7 +38,6 @@ export class DataService {
   public static newDisplayName: string = 'To be generated';
 
   constructor(private http: HttpClient) {
-    DataServiceLocatorService.setDataService(this);
   }
 
   /**

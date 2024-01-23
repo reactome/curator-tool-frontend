@@ -45,7 +45,7 @@
           id="cdk-drop-list-{{attribute?.name}}"
           cdkDropListConnectedTo="bookmark-list"
           [cdkDropListEnterPredicate]="canDrop"
-          [cdkDropListData]="attribute"
+          [cdkDropListData]="this"
           (cdkDropListDropped)="drop($event)">
         <ng-container *ngIf="value !== undefined; else elseblock">
           <a routerLink="/instance_view/{{value.dbId}}" [cdkContextMenuTriggerFor]="row_menu"

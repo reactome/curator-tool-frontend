@@ -16,12 +16,11 @@ import {CdkTextareaAutosize} from "@angular/cdk/text-field";
 import {take} from "rxjs";
 import {FormControl, Validators} from "@angular/forms";
 import {ViewOnlyService} from "../../../../../core/services/view-only.service";
-import {CdkDrag, CdkDragDrop, CdkDropList, copyArrayItem, moveItemInArray} from "@angular/cdk/drag-drop";
+import {CdkDrag, CdkDragDrop, CdkDropList} from "@angular/cdk/drag-drop";
 import {Instance} from "../../../../../core/models/reactome-instance.model";
 import {DataService} from "../../../../../core/services/data.service";
 import {DragDropService} from "../../../../../instance-bookmark/drag-drop.service";
-import { ElementRef } from '@angular/core';
-import { DataServiceLocatorService } from 'src/app/core/services/data-service.locator.service';
+import {ElementRef} from '@angular/core';
 
 /**
  * Used to display a single value of an Instance object.
@@ -67,9 +66,6 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
     if (this.attribute?.type === AttributeDataType.INSTANCE && this.attribute?.category !== AttributeCategory.NOMANUALEDIT) {
       this.dragDropService.register(this.attribute!.name)
     }
-    // if (this.attribute && this.attribute.type === AttributeDataType.INSTANCE)
-    //   // get the schemaClasses for the attribute type
-    //   this.candidateClasses = this.dataService.setCandidateClasses(this.attribute);
   }
 
   @ViewChild('autosize') autosize: CdkTextareaAutosize | undefined;
@@ -117,49 +113,20 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
     });
   }
 
-  startTimer(){
-    let timer = setTimeout(() => {})
+  drop(event: CdkDragDrop<InstanceTableRowElementComponent, CdkDrag<any>>) {
+    console.log("event", event);
+    this.value = event.item.dropContainer.data;
+    this.onEditAction(EDIT_ACTION.BOOKMARK)
   }
 
-  // The three parametered parameters are quite confusing. Regardelss, this function works.
-  // Use the associated values to finish drop.
-  drop(event: CdkDragDrop<SchemaAttribute | undefined, Instance, Instance>) {
-    console.log('drop: ', event);
-    console.log('dragged instance: ', event.item.data);
-    console.log('attribute dropped into: ', event.container.data);
-    // How to figure out the index???
-    if (this.attribute)
-      // get the schemaClasses for the attribute type
-      this.candidateClasses = this.dataService.setCandidateClasses(this.attribute);
-    // let draggedElement = event.previousContainer.data.at(event.previousIndex);
-    // console.log("draggedElName", draggedElement!.schemaClassName);
-    // if (this.candidateClasses.includes(draggedElement!.schemaClassName)) {
-    //   console.log("true")
-    //   if (event.previousContainer === event.container) {
-    //     moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-    //   } else {
-    //     copyArrayItem(
-    //       event.previousContainer.data,
-    //       event.container.data,
-    //       event.previousIndex,
-    //       event.currentIndex,
-    //     );
-    //     this.value = event.container.data;
-    //   }
-    //   this.onEditAction(EDIT_ACTION.BOOKMARK)
-    // } else {
-    //   return // use return to make the dragged element return to parent container
-    // }
-  }
-
-  canDrop(drag: CdkDrag<Instance>, drop: CdkDropList<SchemaAttribute>){
-    // can get the attribute name from the id
-    // console.log(drag.element.nativeElement.id)
-    const dataSerice = DataServiceLocatorService.getDataService();
-    console.log('Use this data service to perform checking: ', dataSerice);
+  canDrop(drag: CdkDrag<Instance>, drop: CdkDropList<InstanceTableRowElementComponent>) {
     console.log('Instance that is dragged: ', drag.data);
-    console.log('Attribute to be dragged into: ', drop.data);
-    return true;
+    console.log('Attribute to be dragged into: ', drop.data.attribute);
+    if (drop.data.attribute) {
+      let candidateClasses = drop.data.dataService.setCandidateClasses(drop.data.attribute);
+      return candidateClasses.includes(drag.data.schemaClassName);
+    }
+    return false;
   }
 
   ngOnDestroy(): void {
