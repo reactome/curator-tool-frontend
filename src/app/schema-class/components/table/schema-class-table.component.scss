@@ -17,7 +17,8 @@ th {
 }
 
 .table-container {
-  height: calc(100vh - var(--bread-crumb-height) - var(--title-height) - 2 * var(--body-margin));
+  max-height: calc(100vh - var(--title-height));
+  height: calc(100vh - var(--title-height));
   overflow: auto;
   border: none;
 }

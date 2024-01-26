@@ -1,6 +1,7 @@
 import {
   AfterViewInit,
   Component,
+  ElementRef,
   EventEmitter,
   Input,
   NgZone,
@@ -16,11 +17,10 @@ import {CdkTextareaAutosize} from "@angular/cdk/text-field";
 import {take} from "rxjs";
 import {FormControl, Validators} from "@angular/forms";
 import {ViewOnlyService} from "../../../../../core/services/view-only.service";
-import {CdkDrag, CdkDragDrop, CdkDropList} from "@angular/cdk/drag-drop";
+import {CdkDrag, CdkDragDrop, CdkDragEnter, CdkDropList} from "@angular/cdk/drag-drop";
 import {Instance} from "../../../../../core/models/reactome-instance.model";
 import {DataService} from "../../../../../core/services/data.service";
 import {DragDropService} from "../../../../../instance-bookmark/drag-drop.service";
-import {ElementRef} from '@angular/core';
 
 /**
  * Used to display a single value of an Instance object.
@@ -56,7 +56,7 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
 
   // viewOnly as a service is drilled down too deep in the component hierarchy. Better not been here and disable
   // the editing using a simple flag!
-  constructor(private store: Store, private _ngZone: NgZone, private dataService: DataService, public viewOnly: ViewOnlyService, private dragDropService: DragDropService,
+  constructor(private store: Store, private _ngZone: NgZone, private dataService: DataService, public viewOnly: ViewOnlyService, public dragDropService: DragDropService,
               private elementRef: ElementRef<HTMLElement>) {
     if (viewOnly.enabled)
       this.control.disable();
@@ -115,18 +115,32 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
 
   drop(event: CdkDragDrop<InstanceTableRowElementComponent, CdkDrag<any>>) {
     console.log("event", event);
-    this.value = event.item.dropContainer.data;
-    this.onEditAction(EDIT_ACTION.BOOKMARK)
+    if(event.isPointerOverContainer){
+      this.value = event.item.data;
+      console.log("value", this.value)
+      this.onEditAction(EDIT_ACTION.BOOKMARK)
+    }
+    else{
+      return
+    }
+
   }
 
   canDrop(drag: CdkDrag<Instance>, drop: CdkDropList<InstanceTableRowElementComponent>) {
-    console.log('Instance that is dragged: ', drag.data);
-    console.log('Attribute to be dragged into: ', drop.data.attribute);
+    // console.log('Instance that is dragged: ', drag.data);
+    // console.log('Attribute to be dragged into: ', drop.data.attribute);
     if (drop.data.attribute) {
       let candidateClasses = drop.data.dataService.setCandidateClasses(drop.data.attribute);
+      //console.log("schema class", drag.data.schemaClassName)
+      // this.dragDropService.canDrop = canDrop;
       return candidateClasses.includes(drag.data.schemaClassName);
     }
     return false;
+  }
+
+  onContainerExit(event: MouseEvent){
+    let element = document.getElementById('cdkDragPreviewClass')
+     console.log("onExit", element)
   }
 
   ngOnDestroy(): void {
@@ -134,6 +148,14 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
   }
 
   protected readonly clearTimeout = clearTimeout;
+
+  dragEntering($event: CdkDragEnter<InstanceTableRowElementComponent>) {
+    this.dragDropService.canDrop = true
+  }
+
+  mouseLeave() {
+    this.dragDropService.canDrop = false
+  }
 }
 
 

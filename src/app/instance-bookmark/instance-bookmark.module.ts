@@ -4,12 +4,13 @@ import {CommonModule} from "@angular/common";
 import {SharedModule} from "../shared/shared.module";
 import {NgModule} from "@angular/core";
 import {MatExpansionModule} from "@angular/material/expansion";
-import {CdkDrag, CdkDropList} from "@angular/cdk/drag-drop";
+import {CdkDrag, CdkDragPlaceholder, CdkDropList} from "@angular/cdk/drag-drop";
 import {EffectsModule} from "@ngrx/effects";
 import {StoreModule} from "@ngrx/store";
 import {BookmarkEffects} from "./state/bookmark.effects";
 import {BOOKMARK_STATE_NAME} from "./state/bookmark.selectors";
 import {bookmarkReducer} from "./state/bookmark.reducers";
+import {MatTooltipModule} from "@angular/material/tooltip";
 
 @NgModule({
   declarations: [
@@ -24,6 +25,8 @@ import {bookmarkReducer} from "./state/bookmark.reducers";
     CdkDrag,
     EffectsModule.forFeature(BookmarkEffects),
     StoreModule.forFeature(BOOKMARK_STATE_NAME, bookmarkReducer),
+    MatTooltipModule,
+    CdkDragPlaceholder,
   ],
   exports: [
     BookmarkStatusComponent,

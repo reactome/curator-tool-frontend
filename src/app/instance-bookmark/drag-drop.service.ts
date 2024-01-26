@@ -6,6 +6,7 @@ import {Injectable} from "@angular/core";
 export class DragDropService {
   // @ts-ignore
   dropLists: string[] = [];
+  canDrop: boolean = false;
 
   public register(attributeName: string) {
     // generating an id for each table row. Must cast string as CdkDropList type

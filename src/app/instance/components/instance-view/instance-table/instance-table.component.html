@@ -56,7 +56,21 @@
           <mat-icon>sort</mat-icon>
         </button>
       </th>
-      <td class="attColumn" mat-cell *matCellDef="let element">{{element.attribute.name}}</td>
+      <td class="attColumn" mat-cell *matCellDef="let element">
+        <ng-container *ngIf="element.attribute.category === AttributeCategory.MANDATORY">
+          <img ngSrc="assets/images/Mandatory.gif" alt="Mandatory" width="16" height="16" priority>
+        </ng-container>
+        <ng-container *ngIf="element.attribute.category === AttributeCategory.REQUIRED">
+          <img ngSrc="assets/images/Required.gif" alt="Required" width="16" height="16" priority>
+        </ng-container>
+        <ng-container *ngIf="element.attribute.category === AttributeCategory.OPTIONAL">
+          <img ngSrc="assets/images/Optional.gif" alt="Optional" width="16" height="16" priority>
+        </ng-container>
+        <ng-container *ngIf="element.attribute.category === AttributeCategory.NOMANUALEDIT">
+          <img ngSrc="assets/images/NoManualEdit.gif" alt="NoManualEdit" width="16" height="16" priority>
+        </ng-container>
+        {{element.attribute.name}}
+      </td>
     </ng-container>
 
     <!-- Attribute Value Column -->

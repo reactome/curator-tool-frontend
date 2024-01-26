@@ -7,5 +7,6 @@ export const BookmarkActions = createActionGroup({
     // Bookmarks are selected instances
     add_bookmark: props<Instance>(),
     get_bookmark: props<Instance>(),
+    remove_bookmark: props<Instance>(),
   }
 })

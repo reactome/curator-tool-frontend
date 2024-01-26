@@ -389,6 +389,7 @@ export class DataService {
     // @ts-ignore
     let concreteClassNames = new Set<string>();
     for (let clsName of schemaAttribute.allowedClases!) {
+      console.log("clsName", clsName)
       let schemaClass: SchemaClass = this.getSchemaClass(clsName)!;
       this.grepConcreteClasses(schemaClass, concreteClassNames);
     }

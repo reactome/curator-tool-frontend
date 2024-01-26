@@ -3,14 +3,21 @@
      [cdkDropListConnectedTo]="dragDropService.dropLists"
      [cdkDropListData]="bookmarks" (cdkDropListDropped)="drop($event)">
   <ng-container *ngFor="let instance of bookmarks">
-  <div class="example-box" cdkDrag [cdkDragData]="instance">
-    <div class="example-custom-placeholder" *cdkDragPlaceholder></div>
-  {{instance.dbId }} <br>
-    {{instance.displayName}} <br>
-    {{instance.schemaClassName}}
-    <button class="clear_button" mat-icon-button color="primary">
-      <mat-icon>clear</mat-icon>
-    </button>
-  </div>
+    <div class="bookmark-container" cdkDrag [cdkDragData]="instance" [ngClass]="dragging" (cdkDragMoved)="updateStatus($event)">
+      <div class="bookmark-placeholder" *cdkDragPlaceholder>
+        <div *ngIf="dragDropService.canDrop" class="bookmark-container">
+          {{instance.displayName}}
+        </div>
+      </div>
+      <button class="drag-item-button" (click)="navigate(instance)"
+        [matTooltip]="instance.dbId.toString() + ' ' + instance.schemaClassName">
+        {{instance.displayName}}</button>
+      <button class="clear_button" mat-icon-button color="primary" (click)="onRemove(instance)">
+        <mat-icon>clear</mat-icon>
+      </button>
+    </div>
+  </ng-container>
+  <ng-container *ngIf="bookmarks.length === 0">
+    <span class="no-bookmarks">No bookmarks to show</span>
   </ng-container>
 </div>

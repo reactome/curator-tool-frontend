@@ -12,14 +12,6 @@
       <router-outlet></router-outlet>
     </mat-sidenav-content>
   </mat-sidenav-container>
-  <!--<div class="resize-bookmark"-->
-  <!--     (click)="drawer.toggle()" [style.width]="sideWidthBookMark + 'px'">-->
-  <!--  <div class="resize-bookmark-bar"></div>-->
-  <!--</div>-->
-  <!--<mat-drawer #drawer class="bookmark-sidenav" mode="side" [disableClose]="true" position="end"-->
-  <!--(opened)="expandPanel()" (closed)="closePanel()">-->
-  <!--  <app-bookmark-status class="bookmark"></app-bookmark-status>-->
-  <!--</mat-drawer>-->
   <div id="bookmark-boundary">
     <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="#bookmark-boundary" id="bookmark-container" [ngClass]="status"
          [style.height]="container.clientHeight + 'px'" (cdkDragStarted)="onDrag()" (cdkDragEnded)="onDragEnd()">

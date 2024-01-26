@@ -1,6 +1,6 @@
-import {CdkDrag, CdkDropList} from "@angular/cdk/drag-drop";
+import {CdkDrag, CdkDragPlaceholder, CdkDropList} from "@angular/cdk/drag-drop";
 import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem } from "@angular/cdk/menu";
-import { CommonModule } from '@angular/common';
+import {CommonModule, NgOptimizedImage} from '@angular/common';
 import { NgModule } from '@angular/core';
 import { MatSidenavModule } from "@angular/material/sidenav";
 import { MatTooltipModule } from "@angular/material/tooltip";
@@ -56,7 +56,9 @@ import {newInstancesReducer} from "./state/new-instance/new-instance.reducers";
     MatSidenavModule,
     CdkDrag,
     ListInstancesModule,
-    CdkDropList
+    CdkDropList,
+    NgOptimizedImage,
+    CdkDragPlaceholder
   ],
   exports: [
     InstanceTableComponent,

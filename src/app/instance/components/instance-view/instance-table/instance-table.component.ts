@@ -198,7 +198,7 @@ export class InstanceTableComponent {
   }
 
   addBookmarkedInstance(attributeValue: AttributeValue) {
-    let result = attributeValue.value[0]; //Only one value emitted at once
+    let result = attributeValue.value; //Only one value emitted at once
     this.addValueToAttribute(attributeValue, result);
   }
 

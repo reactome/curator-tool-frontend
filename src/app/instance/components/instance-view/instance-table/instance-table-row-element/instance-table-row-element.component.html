@@ -41,12 +41,14 @@
       <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
         <!-- TODO: Also need to determine if it is required or disabled-->
         <div
-          cdkDropList
-          id="cdk-drop-list-{{attribute?.name}}"
-          cdkDropListConnectedTo="bookmark-list"
-          [cdkDropListEnterPredicate]="canDrop"
+          (cdkDropListDropped)="drop($event)"
+          (mouseleave)="mouseLeave()"
+          (cdkDropListEntered)="dragEntering($event)"
           [cdkDropListData]="this"
-          (cdkDropListDropped)="drop($event)">
+          [cdkDropListEnterPredicate]="canDrop.bind(this)"
+          cdkDropList
+          cdkDropListConnectedTo="bookmark-list"
+          id="cdk-drop-list-{{attribute?.name}}">
         <ng-container *ngIf="value !== undefined; else elseblock">
           <a routerLink="/instance_view/{{value.dbId}}" [cdkContextMenuTriggerFor]="row_menu"
             class="padding span-menu-trigger">

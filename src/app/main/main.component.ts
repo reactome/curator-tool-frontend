@@ -10,7 +10,6 @@ export class MainComponent {
   sideWidth = 400;
   resizing: boolean = false;
   showInstanceList: number = 0;
-  sideWidthBookMark = 10;
   status = {closed: true, opened: false, dragging: false};
 
   constructor() {
@@ -18,15 +17,6 @@ export class MainComponent {
 
   resizeLeft(e: CdkDragMove) {
     this.sideWidth = e.pointerPosition.x
-  }
-
-  expandPanel() {
-    this.sideWidthBookMark = this.sideWidthBookMark + 240;
-    console.log(this.sideWidthBookMark);
-  }
-
-  closePanel() {
-    this.sideWidthBookMark = 10;
   }
 
   showUpdatedInstances(showList: boolean) {
