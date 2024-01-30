@@ -43,7 +43,9 @@
         <div
           (cdkDropListDropped)="drop($event)"
           (mouseleave)="mouseLeave()"
+          (mouseenter)="mouseEnter()"
           (cdkDropListEntered)="dragEntering($event)"
+          (cdkDropListExited)="mouseLeave()"
           [cdkDropListData]="this"
           [cdkDropListEnterPredicate]="canDrop.bind(this)"
           cdkDropList

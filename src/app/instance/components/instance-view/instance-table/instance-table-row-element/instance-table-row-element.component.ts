@@ -156,6 +156,11 @@ export class InstanceTableRowElementComponent implements OnInit, AfterViewInit, 
   mouseLeave() {
     this.dragDropService.canDrop = false
   }
+
+  mouseEnter() {
+    //this.dragDropService.canDrop = true;
+
+  }
 }
 
 

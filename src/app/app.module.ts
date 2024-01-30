@@ -17,6 +17,7 @@ import { SchemaClassTableModule } from './schema-class/components/table/schema-c
 import { SharedModule } from "./shared/shared.module";
 import { StatusModule } from './status/status.module';
 import { CustomSerializer } from "./store/custom-serializer";
+import {CookieService} from "ngx-cookie-service";
 
 @NgModule({
   declarations: [
@@ -42,7 +43,7 @@ import { CustomSerializer } from "./store/custom-serializer";
     MainModule,
     StatusModule
   ],
-  providers: [],
+  providers: [CookieService],
   bootstrap: [AppComponent],
 })
 export class AppModule {

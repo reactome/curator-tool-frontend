@@ -4,6 +4,9 @@ import {DataService} from "../../../../../core/services/data.service";
 import {InstanceActions} from "../../../../../instance/state/instance.actions";
 import {Store} from "@ngrx/store";
 import {BookmarkActions} from "../../../../../instance-bookmark/state/bookmark.actions";
+import {CookieService} from "ngx-cookie-service";
+import {bookmarkedInstances} from "../../../../../instance-bookmark/state/bookmark.selectors";
+import {Serializer} from "@angular/compiler";
 
 @Component({
   selector: 'app-instance-list-table',
@@ -21,7 +24,7 @@ export class InstanceListTableComponent {
   selected: number = 0;
   displayName: string | undefined = '';
 
-  constructor(private store: Store) {}
+  constructor(private store: Store, private cookieService: CookieService) {}
 
   click(instance: Instance, action: string) {
     let actionButton  = {instance, action};
@@ -35,6 +38,12 @@ export class InstanceListTableComponent {
 
   addBookmark(instance: Instance){
     this.store.dispatch(BookmarkActions.add_bookmark(instance));
+    this.store.select(bookmarkedInstances()).subscribe((instances: Instance[] | undefined) => {
+      if (instances !== undefined) {
+        let cookies = JSON.stringify(instances);
+        this.cookieService.set("bookmarks", cookies)
+      }
+    })
   }
 
   protected readonly DataService = DataService;

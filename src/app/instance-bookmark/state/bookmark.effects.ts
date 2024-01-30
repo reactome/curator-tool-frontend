@@ -3,15 +3,16 @@ import {Injectable} from "@angular/core";
 import {Actions, createEffect, ofType} from "@ngrx/effects";
 import {BookmarkActions} from "./bookmark.actions";
 import {catchError, EMPTY, map, mergeMap} from "rxjs";
+import {CookieService} from "ngx-cookie-service";
 
 @Injectable()
 export class BookmarkEffects {
 
-  // getInstance$ = createEffect(() => {
+  // getBookmarks$ = createEffect(() => {
   //   return this.actions$.pipe(
   //     ofType(BookmarkActions.get_bookmark),
   //     mergeMap(({dbId}) =>
-  //       this.dataService.fetchInstance(dbId).pipe(
+  //       this.cookieService.get('bookmarks').pipe(
   //         mergeMap(inst => [BookmarkActions.add_bookmark(inst)]),
   //         catchError((error) => EMPTY) // TODO: To be updated
   //       )
@@ -21,6 +22,6 @@ export class BookmarkEffects {
 
   constructor(
     private actions$: Actions,
-    private dataService: DataService
+    private cookieService: CookieService
   ) {}
 }
