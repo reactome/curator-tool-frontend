@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {CdkDragDrop, CdkDragMove, moveItemInArray} from "@angular/cdk/drag-drop";
+import {CdkDragDrop, moveItemInArray} from "@angular/cdk/drag-drop";
 import {Instance} from "../../../../core/models/reactome-instance.model";
 import {DragDropService} from "../../../drag-drop.service";
 import {DataService} from "../../../../core/services/data.service";
@@ -7,7 +7,6 @@ import {bookmarkedInstances} from "../../../state/bookmark.selectors";
 import {Store} from "@ngrx/store";
 import {BookmarkActions} from "../../../state/bookmark.actions";
 import {Router} from "@angular/router";
-import {CookieService} from "ngx-cookie-service";
 
 @Component({
   selector: 'app-bookmark-list',
@@ -22,8 +21,7 @@ export class BookmarkListComponent implements OnInit {
   constructor(public dragDropService: DragDropService,
               public dataService: DataService,
               public store: Store,
-              private router: Router,
-              private cookieService: CookieService) {
+              private router: Router) {
   }
 
   ngOnInit() {
@@ -42,37 +40,9 @@ export class BookmarkListComponent implements OnInit {
 
   onRemove(instance: Instance) {
     this.store.dispatch(BookmarkActions.remove_bookmark(instance));
-    this.cookieService.delete("bookmarks")
-    // this.store.select(bookmarkedInstances()).subscribe((instances: Instance[] | undefined) => {
-    //   if (instances !== undefined) {
-    //     let cookies = JSON.stringify(instances);
-    //     this.cookieService.set("bookmarks", cookies);
-    //   }
-    // })
   }
 
   navigate(instance: Instance) {
     this.router.navigate(["/instance_view/" + instance.dbId.toString()], {queryParamsHandling: 'preserve'});
   }
-
-
-  protected readonly DragDropService = DragDropService;
-  protected readonly open = open;
-
-  isHoveringCorrectArea: boolean = false;
-
-  updateStatus($event: CdkDragMove<Instance>) {
-    let pos = $event.pointerPosition;
-    // for (let el of document.elementsFromPoint(pos.x, pos.y)) {
-    //   console.log(el.attributes)
-    //   const candidateClasses = el.attributes.getNamedItem('candidateClasses');
-    //   if (candidateClasses) {
-    //     console.log(candidateClasses)
-    //     break;
-    //   }
-    // }
-    // this.dragDropService.canDrop = true;
-  }
-
-  protected readonly JSON = JSON;
 }

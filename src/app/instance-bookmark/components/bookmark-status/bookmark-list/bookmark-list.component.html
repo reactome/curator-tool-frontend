@@ -3,7 +3,7 @@
      [cdkDropListConnectedTo]="dragDropService.dropLists"
      [cdkDropListData]="bookmarks" (cdkDropListDropped)="drop($event)">
   <ng-container *ngFor="let instance of bookmarks">
-    <div class="bookmark-container" cdkDrag [cdkDragData]="instance" [ngClass]="dragging" (cdkDragMoved)="updateStatus($event)">
+    <div class="bookmark-container" cdkDrag [cdkDragData]="instance" [ngClass]="dragging">
       <div class="bookmark-placeholder" *cdkDragPlaceholder>
         <div *ngIf="dragDropService.canDrop" class="bookmark-container">
           {{instance.displayName}}
