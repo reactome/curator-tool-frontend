@@ -17,7 +17,6 @@ import { SchemaClassTableModule } from './schema-class/components/table/schema-c
 import { SharedModule } from "./shared/shared.module";
 import { StatusModule } from './status/status.module';
 import { CustomSerializer } from "./store/custom-serializer";
-import {CookieService} from "ngx-cookie-service";
 import {localStorageSync} from "ngrx-store-localstorage";
 
 export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
@@ -51,7 +50,7 @@ const metaReducers: Array<MetaReducer<any, any>> = [localStorageSyncReducer]
     MainModule,
     StatusModule
   ],
-  providers: [CookieService],
+  providers: [],
   bootstrap: [AppComponent],
 })
 export class AppModule {

@@ -2,12 +2,8 @@ import { EntityState, createEntityAdapter } from "@ngrx/entity";
 import { createReducer, on } from "@ngrx/store";
 import { Instance } from "src/app/core/models/reactome-instance.model";
 import {BookmarkActions} from "./bookmark.actions";
-import {state} from "@angular/animations";
-import {inject} from "@angular/core";
-import {CookieService} from "ngx-cookie-service";
 
 
-// let cookieService = inject(CookieService);
 /**
  * Reducer to handle new bookmarks
  */
@@ -32,8 +28,4 @@ export const bookmarkReducer = createReducer(
   on(BookmarkActions.remove_bookmark,
     (state, instance) => bookmarkAdaptor.removeOne(instance.dbId, state)
   ),
-  // on(BookmarkActions.save_bookmarks,(state) =>  {
-  //   cookieService.set('bookmarks', JSON.stringify(bookmarkAdaptor.getSelectors().selectAll(state)));
-  //   return state
-  // })
 )
