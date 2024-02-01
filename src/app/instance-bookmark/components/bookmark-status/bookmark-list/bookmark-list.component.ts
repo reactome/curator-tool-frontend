@@ -27,9 +27,6 @@ export class BookmarkListComponent implements OnInit {
   }
 
   ngOnInit() {
-    let cookies = this.cookieService.get("bookmarks");
-    console.log('cookies', JSON.parse(cookies) as Instance)
-    this.cachedBookmarks = JSON.parse(cookies)
     this.store.select(bookmarkedInstances()).subscribe((instances: Instance[] | undefined) => {
       if (instances !== undefined) {
         this.bookmarks = instances;

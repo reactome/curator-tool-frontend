@@ -6,7 +6,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterModule } from "@angular/router";
 import { EffectsModule } from '@ngrx/effects';
 import { routerReducer, StoreRouterConnectingModule } from '@ngrx/router-store';
-import { StoreModule } from '@ngrx/store';
+import {ActionReducer, MetaReducer, StoreModule} from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { environment } from 'src/environments/environment.dev';
 import { AppRoutingModule } from './app-routing.module';
@@ -18,6 +18,14 @@ import { SharedModule } from "./shared/shared.module";
 import { StatusModule } from './status/status.module';
 import { CustomSerializer } from "./store/custom-serializer";
 import {CookieService} from "ngx-cookie-service";
+import {localStorageSync} from "ngrx-store-localstorage";
+
+export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
+  return localStorageSync({
+    keys: ['bookmark'],
+    rehydrate: true,})(reducer);}
+
+const metaReducers: Array<MetaReducer<any, any>> = [localStorageSyncReducer]
 
 @NgModule({
   declarations: [
@@ -31,7 +39,7 @@ import {CookieService} from "ngx-cookie-service";
     SchemaClassTableModule,
     ListInstancesModule,
     EffectsModule.forRoot(),
-    StoreModule.forRoot({router: routerReducer}),
+    StoreModule.forRoot({router: routerReducer}, {metaReducers}),
     RouterModule.forRoot([]),
     StoreRouterConnectingModule.forRoot({serializer: CustomSerializer,}),
     StoreDevtoolsModule.instrument({

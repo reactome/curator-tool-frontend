@@ -38,12 +38,12 @@ export class InstanceListTableComponent {
 
   addBookmark(instance: Instance){
     this.store.dispatch(BookmarkActions.add_bookmark(instance));
-    this.store.select(bookmarkedInstances()).subscribe((instances: Instance[] | undefined) => {
-      if (instances !== undefined) {
-        let cookies = JSON.stringify(instances);
-        this.cookieService.set("bookmarks", cookies)
-      }
-    })
+    // this.store.select(bookmarkedInstances()).subscribe((instances: Instance[] | undefined) => {
+    //   if (instances !== undefined) {
+    //     let cookies = JSON.stringify(instances);
+    //     this.cookieService.set("bookmarks", cookies)
+    //   }
+    // })
   }
 
   protected readonly DataService = DataService;
