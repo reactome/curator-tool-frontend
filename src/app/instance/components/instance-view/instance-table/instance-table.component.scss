@@ -7,14 +7,36 @@
   height: 30px;
 }
 
-.mat-mdc-row:hover .mat-mdc-cell {
-  border-color: currentColor;
+.valueRow {
+  padding: 0;
+
+  &.dragging:hover {
+    padding: 0;
+
+    &.green {
+      border-color: green;
+      border-width: 4px;
+    }
+
+    &.red {
+      border-color: red;
+      border-width: 4px;
+    }
+  }
+  &.notDragging{
+    border-color: #8a9296;
+  }
 }
+
+//.mat-mdc-row:hover .mat-mdc-cell {
+//  border-color: currentColor;
+//}
 
 .attColumn {
   background: var(--primary-container);
   color: var(--on-primary-container);
   width: 30px;
+  min-width: 30px;
 }
 
 .thead {

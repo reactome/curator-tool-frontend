@@ -2,7 +2,6 @@ import {Component, OnInit} from '@angular/core';
 import {CdkDragDrop, moveItemInArray} from "@angular/cdk/drag-drop";
 import {Instance} from "../../../../core/models/reactome-instance.model";
 import {DragDropService} from "../../../drag-drop.service";
-import {DataService} from "../../../../core/services/data.service";
 import {bookmarkedInstances} from "../../../state/bookmark.selectors";
 import {Store} from "@ngrx/store";
 import {BookmarkActions} from "../../../state/bookmark.actions";
@@ -19,7 +18,6 @@ export class BookmarkListComponent implements OnInit {
   cachedBookmarks: any[] = [];
 
   constructor(public dragDropService: DragDropService,
-              public dataService: DataService,
               public store: Store,
               private router: Router) {
   }
@@ -30,6 +28,7 @@ export class BookmarkListComponent implements OnInit {
         this.bookmarks = instances;
       }
     })
+    console.log(this.dragDropService.dropLists)
   }
 
   drop(event: CdkDragDrop<Instance[]>) {

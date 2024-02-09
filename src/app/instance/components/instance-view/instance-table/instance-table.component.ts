@@ -1,15 +1,23 @@
-import {Component, Input} from '@angular/core';
+import {AfterViewInit, Component, Input} from '@angular/core';
 import {Store} from '@ngrx/store';
 import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {InstanceActions} from 'src/app/instance/state/instance.actions';
-import {AttributeCategory, SchemaAttribute} from "../../../../core/models/reactome-schema.model";
+import {AttributeCategory, AttributeDataType, SchemaAttribute} from "../../../../core/models/reactome-schema.model";
 import {
   SelectInstanceDialogService
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
 import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
 import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
 import {DragDropService} from "../../../../instance-bookmark/drag-drop.service";
-import {CdkDragDrop, moveItemInArray, transferArrayItem} from "@angular/cdk/drag-drop";
+import {
+  CdkDrag,
+  CdkDragDrop,
+  CdkDragEnter,
+  CdkDropList,
+  moveItemInArray,
+  transferArrayItem
+} from "@angular/cdk/drag-drop";
+import {elementAt, OperatorFunction} from "rxjs";
 
 
 /**
@@ -40,6 +48,12 @@ export class InstanceTableComponent {
   // For comparison
   _referenceInstance?: Instance;
   showReferenceColumn: boolean = false;
+  draggedInstance?: Instance;
+
+  // For highlighting rows during drag/drop event
+  canDropAttribute: Map<string, string> = new Map<string, string>();
+  drag = false;
+  dropping = false;
 
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
@@ -72,6 +86,7 @@ export class InstanceTableComponent {
       let categoryKey = category as keyof typeof AttributeCategory;
       this.categories.set(AttributeCategory[categoryKey], true)
     }
+    this.dragDropService.register("instance-table")
   } // Use a dialog service to hide the implementation of the dialog.
 
   changeShowFilterOptions() {
@@ -116,6 +131,7 @@ export class InstanceTableComponent {
     // Change in this type of attribute doesn't need to update the table content.
     // Therefore, we need to register it here
     this.registerUpdatedInstance();
+    this.dropping = false;
   }
 
   onInstanceAttributeEdit(attributeValue: AttributeValue) {
@@ -198,8 +214,11 @@ export class InstanceTableComponent {
   }
 
   addBookmarkedInstance(attributeValue: AttributeValue) {
-    let result = attributeValue.value; //Only one value emitted at once
-    this.addValueToAttribute(attributeValue, result);
+    if(this.dropping) {
+      let result = attributeValue.value; //Only one value emitted at once
+      this.addValueToAttribute(attributeValue, result);
+      this.drag = false;
+    }
   }
 
   private addValueToAttribute(attributeValue: AttributeValue, result: any) {
@@ -276,7 +295,22 @@ export class InstanceTableComponent {
     this._instance?.attributes?.set(value.name, event.container.data);
   }
 
+
+  canDrop(dragging: boolean) {
+    this.drag = dragging;
+  }
+
   protected readonly AttributeCategory = AttributeCategory;
-  protected readonly Object = Object;
   protected readonly undefined = undefined;
+
+  bookmarkDrop(event: CdkDragDrop<Instance | undefined>) {
+    this.dropping = true;
+    this.drag = false;
+  }
+
+  dragEntering($event: CdkDragEnter<Instance | undefined>) {
+    console.log("event", $event)
+    this.drag = true;
+    this.draggedInstance = $event.item.data;
+  }
 }

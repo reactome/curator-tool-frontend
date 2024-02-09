@@ -37,3 +37,22 @@ mat-form-field {
   width: 100%;
   line-height: normal;
 }
+
+.valueRow {
+
+  &.dragging:hover {
+
+    &.green {
+      border: 4px green;
+      background: green;
+    }
+
+    &.red {
+     border: 4px red;
+      background: red;
+    }
+  }
+  &.notDragging{
+    border-color: #8a9296;
+  }
+}

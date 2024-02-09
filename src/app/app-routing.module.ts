@@ -2,11 +2,20 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
+  // {
+  //   path: "",
+  //   redirectTo: "login",
+  //   pathMatch: "full",
+  // },
   {
     path: "",
     // redirectTo: "attribute-table",
     redirectTo: "instance_view/141429", // To a reaction for the development: https://reactome.org/PathwayBrowser/#/R-HSA-69620&SEL=R-HSA-141429&PATH=R-HSA-1640170
     pathMatch: "full",
+  },
+  {
+    path: "login",
+    loadChildren: () => import("./auth/auth.module").then((m) => m.AuthModule),
   },
   {
     path: "table",

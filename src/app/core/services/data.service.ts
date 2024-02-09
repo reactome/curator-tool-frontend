@@ -98,8 +98,9 @@ export class DataService {
   }
 
   getSchemaClass(clsName: string): SchemaClass | undefined {
-    if (this.name2class)
-      return this.name2class.get(clsName);
+    if (this.name2class && this.name2class.size > 0) {
+    return this.name2class.get(clsName);
+  }
     this.name2class = new Map<string, SchemaClass>();
     if (this.rootClass)
       this.buildSchemaClassMap(this.rootClass, this.name2class);
@@ -388,10 +389,11 @@ export class DataService {
   setCandidateClasses(schemaAttribute: SchemaAttribute): any[]  {
     // @ts-ignore
     let concreteClassNames = new Set<string>();
-    for (let clsName of schemaAttribute.allowedClases!) {
-      console.log("clsName", clsName)
-      let schemaClass: SchemaClass = this.getSchemaClass(clsName)!;
-      this.grepConcreteClasses(schemaClass, concreteClassNames);
+    if(schemaAttribute.allowedClases) {
+      for (let clsName of schemaAttribute.allowedClases) {
+        let schemaClass: SchemaClass = this.getSchemaClass(clsName)!;
+        this.grepConcreteClasses(schemaClass, concreteClassNames);
+      }
     }
     let candidateClasses = [...concreteClassNames];
     return candidateClasses.sort();
