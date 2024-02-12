@@ -214,11 +214,10 @@ export class InstanceTableComponent {
   }
 
   addBookmarkedInstance(attributeValue: AttributeValue) {
-    if(this.dropping) {
       let result = attributeValue.value; //Only one value emitted at once
       this.addValueToAttribute(attributeValue, result);
       this.drag = false;
-    }
+      this.dropping = false;
   }
 
   private addValueToAttribute(attributeValue: AttributeValue, result: any) {

@@ -36,18 +36,20 @@ export class InstanceTableRowElementComponent implements OnInit {
     console.log("draggedInstance", draggedInstance)
     if (draggedInstance !== undefined) {
       this.dragInstance = draggedInstance;
-      this.canDrop();
     }
   };
 
   @Input() set dragging(isDragging: boolean) {
     this.isDragging = isDragging;
+    if (this.isDropping) {
+      this.checkDrop()
+    }
   }
 
   @Input() set dropping(isDropping: boolean) {
     this.isDropping = isDropping
-    if(isDropping){this.checkDrop()}
   }
+
   // @Output() canDropEvent = new EventEmitter<string>();
   @Output() newValueEvent = new EventEmitter<AttributeValue>();
   // Edit action
@@ -144,6 +146,7 @@ export class InstanceTableRowElementComponent implements OnInit {
 
   mouseEnter() {
     this.mouseIn = true;
+    this.canDrop();
   }
 
   private checkDrop() {
@@ -151,11 +154,11 @@ export class InstanceTableRowElementComponent implements OnInit {
     if (this.canDrop() && this.mouseIn) {
       let attributeValue: AttributeValue = {
         attribute: this.attribute!,
-        value: this.dragInstance, // Get the new value dragged Instance
-        index: this.index
+        value: this.dragInstance,
+        index: this.index,
+        editAction: EDIT_ACTION.BOOKMARK,
       }
-      this.newValueEvent.emit(attributeValue);
-      //this.onEditAction(EDIT_ACTION.BOOKMARK)}
+      this.editAction.emit(attributeValue);
     }
   }
 }
