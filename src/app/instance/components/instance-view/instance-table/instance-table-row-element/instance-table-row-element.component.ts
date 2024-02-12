@@ -33,21 +33,19 @@ export class InstanceTableRowElementComponent implements OnInit {
   @Input() value: any;
   @Input() index: number = 0; // The position for a value in multi-slot
   @Input() set draggedInstance(draggedInstance: any) {
-    console.log("draggedInstance", draggedInstance)
     if (draggedInstance !== undefined) {
       this.dragInstance = draggedInstance;
     }
   };
-
   @Input() set dragging(isDragging: boolean) {
     this.isDragging = isDragging;
-    if (this.isDropping) {
-      this.checkDrop()
-    }
   }
 
   @Input() set dropping(isDropping: boolean) {
     this.isDropping = isDropping
+    if (this.isDropping) {
+      this.checkDrop()
+    }
   }
 
   // @Output() canDropEvent = new EventEmitter<string>();
@@ -158,6 +156,7 @@ export class InstanceTableRowElementComponent implements OnInit {
         index: this.index,
         editAction: EDIT_ACTION.BOOKMARK,
       }
+      console.log(attributeValue)
       this.editAction.emit(attributeValue);
     }
   }

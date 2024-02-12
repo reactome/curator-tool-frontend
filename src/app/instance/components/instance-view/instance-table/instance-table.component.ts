@@ -305,6 +305,7 @@ export class InstanceTableComponent {
   bookmarkDrop(event: CdkDragDrop<Instance | undefined>) {
     this.dropping = true;
     this.drag = false;
+    console.log("drop")
   }
 
   dragEntering($event: CdkDragEnter<Instance | undefined>) {
