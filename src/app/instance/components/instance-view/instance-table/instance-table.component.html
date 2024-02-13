@@ -1,9 +1,7 @@
 <ng-template #valueColTemplate let-element>
   <ng-container *ngIf="element.attribute.cardinality === '1'">
     <app-instance-table-row-element [attribute]="element.attribute" [value]="element.value"
-                                    [draggedInstance]="draggedInstance"
-                                    [dragging]="drag"
-                                    [dropping]="dropping"
+                                    [dragDropStatus]="dragDropStatus"
                                     (newValueEvent)="onNoInstanceAttributeEdit($event)"
                                     (editAction)="onInstanceAttributeEdit($event)"/>
   </ng-container>
@@ -12,9 +10,7 @@
     <ng-container *ngIf="element.value === undefined; else elseblock">
       <!-- If no value for this attribute, nothing to be passed. But we still need the editing.-->
       <app-instance-table-row-element [attribute]="element.attribute"
-                                      [draggedInstance]="draggedInstance"
-                                      [dragging]="drag"
-                                      [dropping]="dropping"
+                                      [dragDropStatus]="dragDropStatus"
                                       (newValueEvent)="onNoInstanceAttributeEdit($event)"
                                       (editAction)="onInstanceAttributeEdit($event)"/>
     </ng-container>
@@ -25,9 +21,7 @@
         (cdkDropListDropped)="drop($event, element.attribute)">
         <app-instance-table-row-element cdkDrag *ngFor="let object of element.value; let i = index" class="example-box"
                                         [attribute]="element.attribute" [value]="object"
-                                        [draggedInstance]="draggedInstance" [index]="i"
-                                        [dragging]="drag"
-                                        [dropping]="dropping"
+                                        [dragDropStatus]="dragDropStatus"
                                         (newValueEvent)="onNoInstanceAttributeEdit($event)"
                                         (editAction)="onInstanceAttributeEdit($event)"/>
       </div>
@@ -54,7 +48,7 @@
   <table mat-table [dataSource]="instanceDataSource" matSort class="instance-table"
          [cdkDropListData]="_instance"
          (cdkDropListEntered)="dragEntering($event)"
-         (cdkDropListExited)="canDrop(false)"
+         (cdkDropListExited)="stopDragging()"
          (cdkDropListDropped)="bookmarkDrop($event)"
          cdkDropList
          cdkDropListConnectedTo="bookmark-list"

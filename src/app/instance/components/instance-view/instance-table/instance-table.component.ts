@@ -1,24 +1,19 @@
-import {AfterViewInit, Component, Input} from '@angular/core';
-import {Store} from '@ngrx/store';
-import {Instance} from 'src/app/core/models/reactome-instance.model';
-import {InstanceActions} from 'src/app/instance/state/instance.actions';
-import {AttributeCategory, AttributeDataType, SchemaAttribute} from "../../../../core/models/reactome-schema.model";
+import { ApplicationRef, ChangeDetectorRef, Component, Input } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { InstanceActions } from 'src/app/instance/state/instance.actions';
+import { AttributeCategory, SchemaAttribute } from "../../../../core/models/reactome-schema.model";
 import {
   SelectInstanceDialogService
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
-import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
-import {AttributeValue, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
-import {DragDropService} from "../../../../instance-bookmark/drag-drop.service";
+import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
+import { AttributeValue, DragDropStatus, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
+import { DragDropService } from "../../../../instance-bookmark/drag-drop.service";
 import {
-  CdkDrag,
   CdkDragDrop,
-  CdkDragEnter,
-  CdkDropList,
-  moveItemInArray,
+  CdkDragEnter, moveItemInArray,
   transferArrayItem
 } from "@angular/cdk/drag-drop";
-import {elementAt, OperatorFunction} from "rxjs";
-
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -51,9 +46,11 @@ export class InstanceTableComponent {
   draggedInstance?: Instance;
 
   // For highlighting rows during drag/drop event
-  canDropAttribute: Map<string, string> = new Map<string, string>();
-  drag = false;
-  dropping = false;
+  dragDropStatus: DragDropStatus = {
+    dragging: false,
+    dropping: false,
+    draggedInstance: undefined
+  }
 
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
@@ -78,6 +75,7 @@ export class InstanceTableComponent {
   };
 
   constructor(
+    private cdr: ChangeDetectorRef,
     private dialogService: NewInstanceDialogService,
     private dragDropService: DragDropService,
     private selectInstanceDialogService: SelectInstanceDialogService,
@@ -131,7 +129,6 @@ export class InstanceTableComponent {
     // Change in this type of attribute doesn't need to update the table content.
     // Therefore, we need to register it here
     this.registerUpdatedInstance();
-    this.dropping = false;
   }
 
   onInstanceAttributeEdit(attributeValue: AttributeValue) {
@@ -154,6 +151,8 @@ export class InstanceTableComponent {
     }
   }
 
+  //TODO: There is a bug here. If there is only one value in an attribute, delete
+  // this value will disable the action menu popup!
   private deleteInstanceAttribute(attributeValue: AttributeValue): void {
     console.debug('deleteInstanceAttribute: ', attributeValue);
     this.addModifiedAttributeName(attributeValue.attribute.name);
@@ -214,10 +213,9 @@ export class InstanceTableComponent {
   }
 
   addBookmarkedInstance(attributeValue: AttributeValue) {
-      let result = attributeValue.value; //Only one value emitted at once
-      this.addValueToAttribute(attributeValue, result);
-      this.drag = false;
-      this.dropping = false;
+    let result = attributeValue.value; //Only one value emitted at once
+    this.addValueToAttribute(attributeValue, result);
+    this.cdr.detectChanges();
   }
 
   private addValueToAttribute(attributeValue: AttributeValue, result: any) {
@@ -240,15 +238,17 @@ export class InstanceTableComponent {
     //TODO: Add a new value may reset the scroll position. This needs to be changed!
     this.updateTableContent();
     // Only add attribute name if value was added
+    //TODO: This causes the Angular N100 error about state change after view established. Need more refactoring!
     this.addModifiedAttributeName(attributeValue.attribute.name);
   }
 
   updateTableContent(): void {
     this.instanceDataSource = new InstanceDataSource(this._instance,
-      this.categories,
-      this.sortAttNames,
-      this.sortAttDefined,
-      this._referenceInstance);
+                                                    this.categories,
+                                                    this.sortAttNames,
+                                                    this.sortAttDefined,
+                                                    this._referenceInstance);    
+    this.instanceDataSource.connect();                                                                     
     if (this.isInEditing) {
       // Register the updated instances
       this.registerUpdatedInstance();
@@ -282,7 +282,8 @@ export class InstanceTableComponent {
   drop(event: CdkDragDrop<string[]>, value: SchemaAttribute) {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-    } else {
+    }
+    else {
       transferArrayItem(
         event.previousContainer.data,
         event.container.data,
@@ -295,22 +296,32 @@ export class InstanceTableComponent {
   }
 
 
-  canDrop(dragging: boolean) {
-    this.drag = dragging;
+  stopDragging() {
+    console.debug('stopDragging because of drag exit');
+    this.dragDropStatus = {
+      dragging: false,
+      dropping: false,
+      draggedInstance: undefined
+    }
   }
 
   protected readonly AttributeCategory = AttributeCategory;
-  protected readonly undefined = undefined;
 
-  bookmarkDrop(event: CdkDragDrop<Instance | undefined>) {
-    this.dropping = true;
-    this.drag = false;
-    console.log("drop")
+  bookmarkDrop($event: CdkDragDrop<Instance | undefined>) {
+    console.debug('bookmarkDrop: ', $event);
+    this.dragDropStatus = {
+      dragging: false,
+      dropping: true,
+      draggedInstance: $event.item.data
+    }
   }
 
   dragEntering($event: CdkDragEnter<Instance | undefined>) {
-    console.log("event", $event)
-    this.drag = true;
-    this.draggedInstance = $event.item.data;
+    console.debug("dragEntering: ", $event.item.data)
+    this.dragDropStatus = {
+      dragging: true,
+      dropping: false,
+      draggedInstance: $event.item.data
+    }
   }
 }

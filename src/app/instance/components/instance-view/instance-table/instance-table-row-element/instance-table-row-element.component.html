@@ -39,7 +39,7 @@
       </ng-template>
 
       <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
-      <div (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="valueRow" [ngClass]="{dragging: isDragging, red: !color, green: color}">
+      <div (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="valueRow" [ngClass]="{dragging: dragging, red: !color, green: color}">
         <!-- TODO: Also need to determine if it is required or disabled-->
         <ng-container *ngIf="value !== undefined; else elseblock">
           <a routerLink="/instance_view/{{value.dbId}}" [cdkContextMenuTriggerFor]="row_menu"

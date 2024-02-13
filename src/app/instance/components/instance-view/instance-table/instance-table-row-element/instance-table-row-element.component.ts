@@ -8,16 +8,16 @@ import {
   Output,
   ViewChild
 } from '@angular/core';
-import {Store} from "@ngrx/store";
-import {AttributeCategory, AttributeDataType, SchemaAttribute} from 'src/app/core/models/reactome-schema.model';
-import {AttributeValue, EDIT_ACTION} from '../instance-table.model';
-import {CdkTextareaAutosize} from "@angular/cdk/text-field";
-import {take} from "rxjs";
-import {FormControl, Validators} from "@angular/forms";
-import {ViewOnlyService} from "../../../../../core/services/view-only.service";
-import {DataService} from "../../../../../core/services/data.service";
-import {DragDropService} from "../../../../../instance-bookmark/drag-drop.service";
-import {Instance} from "../../../../../core/models/reactome-instance.model";
+import { Store } from "@ngrx/store";
+import { AttributeCategory, AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
+import { AttributeValue, DragDropStatus, EDIT_ACTION } from '../instance-table.model';
+import { CdkTextareaAutosize } from "@angular/cdk/text-field";
+import { take } from "rxjs";
+import { FormControl, Validators } from "@angular/forms";
+import { ViewOnlyService } from "../../../../../core/services/view-only.service";
+import { DataService } from "../../../../../core/services/data.service";
+import { DragDropService } from "../../../../../instance-bookmark/drag-drop.service";
+import { Instance } from "../../../../../core/models/reactome-instance.model";
 
 /**
  * Used to display a single value of an Instance object.
@@ -32,19 +32,21 @@ export class InstanceTableRowElementComponent implements OnInit {
   @Input() attribute: SchemaAttribute | undefined = undefined;
   @Input() value: any;
   @Input() index: number = 0; // The position for a value in multi-slot
-  @Input() set draggedInstance(draggedInstance: any) {
-    if (draggedInstance !== undefined) {
-      this.dragInstance = draggedInstance;
-    }
-  };
-  @Input() set dragging(isDragging: boolean) {
-    this.isDragging = isDragging;
-  }
 
-  @Input() set dropping(isDropping: boolean) {
-    this.isDropping = isDropping
-    if (this.isDropping) {
-      this.checkDrop()
+  // The following properties and attributes are used for DnD from bookmarks
+  private isMouseIn: boolean = false;
+  dragging: boolean = false;
+  isDroppable: boolean = false;
+  @Input() set dragDropStatus(dndStatus: DragDropStatus) {
+    // console.debug('set dragDropStatus', dndStatus);
+    this.dragging = dndStatus.dragging;
+    if (dndStatus.dropping) {
+      this.dropInstance(dndStatus.draggedInstance);
+    }
+    else {
+      // Call onces to set the color
+      this.color = this.canDrop(dndStatus.draggedInstance);
+      this.isDroppable = this.color;
     }
   }
 
@@ -66,16 +68,12 @@ export class InstanceTableRowElementComponent implements OnInit {
 
   control = new FormControl();
   showField: boolean = true;
-  mouseIn: boolean = false;
-  dragInstance?: Instance;
-  isDragging: boolean = false;
-  isDropping: boolean = false;
   color: boolean = false;
 
   // viewOnly as a service is drilled down too deep in the component hierarchy. Better not been here and disable
   // the editing using a simple flag!
   constructor(private store: Store, private _ngZone: NgZone, private dataService: DataService, public viewOnly: ViewOnlyService, public dragDropService: DragDropService,
-              private elementRef: ElementRef<HTMLElement>) {
+    private elementRef: ElementRef<HTMLElement>) {
     if (viewOnly.enabled)
       this.control.disable();
   }
@@ -126,12 +124,13 @@ export class InstanceTableRowElementComponent implements OnInit {
     });
   }
 
-  canDrop() {
+  canDrop(draggedInstance: Instance | undefined) {
+    if (draggedInstance === undefined) {
+      return false;
+    }
     if (this.attribute) {
       let candidateClasses = this.dataService.setCandidateClasses(this.attribute);
-      console.log(candidateClasses.includes(this.dragInstance))
-      if (candidateClasses.includes(this.dragInstance?.schemaClassName)) {
-        this.color = true;
+      if (candidateClasses.includes(draggedInstance.schemaClassName)) {
         return true;
       }
     }
@@ -139,25 +138,27 @@ export class InstanceTableRowElementComponent implements OnInit {
   }
 
   mouseLeave() {
-    this.mouseIn = false
+    this.isMouseIn = false
+    this.color = false;
   }
 
   mouseEnter() {
-    this.mouseIn = true;
-    this.canDrop();
+    this.isMouseIn = true;
+    if (this.isDroppable) {
+      this.color = true;
+    }
   }
 
-  private checkDrop() {
-    console.log("mouseIn", this.isDragging, this.canDrop())
-    if (this.canDrop() && this.mouseIn) {
-      let attributeValue: AttributeValue = {
-        attribute: this.attribute!,
-        value: this.dragInstance,
-        index: this.index,
-        editAction: EDIT_ACTION.BOOKMARK,
-      }
-      console.log(attributeValue)
-      this.editAction.emit(attributeValue);
+  private dropInstance(draggedInstance: Instance | undefined) {
+    if (draggedInstance === undefined || !this.isMouseIn || !this.canDrop(draggedInstance))
+      return;
+    console.log("dropInstance: ", this.attribute, draggedInstance);
+    let attributeValue: AttributeValue = {
+      attribute: this.attribute!,
+      value: draggedInstance,
+      index: this.index,
+      editAction: EDIT_ACTION.BOOKMARK,
     }
+    this.editAction.emit(attributeValue);
   }
 }

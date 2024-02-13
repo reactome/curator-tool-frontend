@@ -6,8 +6,6 @@ import { DataSource } from "@angular/cdk/collections";
 import { Observable, of } from "rxjs";
 import { Instance } from "src/app/core/models/reactome-instance.model";
 import { AttributeCategory, SchemaAttribute } from "src/app/core/models/reactome-schema.model";
-import {DragDropService} from "../../../../instance-bookmark/drag-drop.service";
-import {CdkDropList} from "@angular/cdk/drag-drop";
 
 /**
  * Used to encode the data for the attribute value cell.
@@ -18,6 +16,12 @@ export interface AttributeValue {
   index?: number // index of the value for an multi-valued slot
   editAction?: EDIT_ACTION // May be used to encode editing action
   referenceValue?: any // To be used for comparison
+}
+
+export interface DragDropStatus {
+  dragging: boolean,
+  dropping: boolean,
+  draggedInstance: Instance | undefined
 }
 
 export enum EDIT_ACTION {
