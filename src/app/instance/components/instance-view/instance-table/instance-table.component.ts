@@ -158,12 +158,19 @@ export class InstanceTableComponent {
     this.addModifiedAttributeName(attributeValue.attribute.name);
     if (attributeValue.attribute.cardinality === '1') {
       // This should not occur. Just in case
-      this._instance?.attributes?.delete(attributeValue.attribute?.name);
+      //this._instance?.attributes?.delete(attributeValue.attribute?.name);
+      this._instance?.attributes?.set(attributeValue.attribute?.name, undefined);
     } else {
       // This should be a list
       const valueList: [] = this._instance?.attributes?.get(attributeValue.attribute.name);
-      // Remove the value
-      valueList.splice(attributeValue.index!, 1);
+      // Remove the value if more than one
+      if(valueList.length > 1){
+        valueList.splice(attributeValue.index!, 1);
+      }
+      // Otherwise need to set the value to undefined so a value is assigned
+      else {
+        this._instance?.attributes?.set(attributeValue.attribute?.name, undefined);
+      }
     }
     this.updateTableContent();
   }
@@ -247,8 +254,8 @@ export class InstanceTableComponent {
                                                     this.categories,
                                                     this.sortAttNames,
                                                     this.sortAttDefined,
-                                                    this._referenceInstance);    
-    this.instanceDataSource.connect();                                                                     
+                                                    this._referenceInstance);
+    this.instanceDataSource.connect();
     if (this.isInEditing) {
       // Register the updated instances
       this.registerUpdatedInstance();
