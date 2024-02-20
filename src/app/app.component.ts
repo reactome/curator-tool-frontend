@@ -7,8 +7,9 @@ import { Component, OnInit } from '@angular/core';
 })
 export class AppComponent {
   title = 'curator-tool-frontend';
-  testClassName: string = "testClassName"
+  loggedIn: string | null = "false";
   ngOnInit() {
+    this.loggedIn = sessionStorage.getItem('authenticated');
   }
 }
 

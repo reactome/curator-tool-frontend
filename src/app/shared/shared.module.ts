@@ -2,9 +2,12 @@ import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {MaterialModule} from '../material/material.module';
 import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} from "@angular/cdk/scrolling";
+import { SafePipe } from './safe.pipe';
 
 @NgModule({
-  declarations: [],
+  declarations: [
+    SafePipe
+  ],
   imports: [
     CommonModule,
     MaterialModule,
@@ -12,7 +15,7 @@ import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} fr
     CdkFixedSizeVirtualScroll,
     CdkVirtualForOf
   ],
-  exports: [MaterialModule]
+    exports: [MaterialModule, SafePipe]
 })
 export class SharedModule {
 }

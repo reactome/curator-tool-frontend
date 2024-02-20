@@ -6,7 +6,7 @@
 </ng-container>
 <mat-toolbar class="toolbar" *ngIf="!showProgressSpinner">
   <div *ngIf="instance !== undefined" class="title ellipsis">
-      <span class="shrinkable ellipsis">{{title}}</span>
+    <span class="shrinkable ellipsis">{{title}}</span>
       <div class="button-container">
         <button mat-icon-button color="primary" class="v-center" (click)="showReferenceValueColumn()">
           <mat-icon>compare</mat-icon>
@@ -20,3 +20,5 @@
 </mat-toolbar>
 <app-instance-table [instance]="instance" [referenceInstance]="dbInstance"
                     *ngIf="!showProgressSpinner"></app-instance-table>
+<!--<iframe [src]="'https://reactome-pwp.github.io/PathwayBrowser/' + '453279' | safe" width="1980" height="1020" title="Diagram Editor"></iframe>-->
+

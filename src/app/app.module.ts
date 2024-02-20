@@ -18,6 +18,8 @@ import { SharedModule } from "./shared/shared.module";
 import { StatusModule } from './status/status.module';
 import { CustomSerializer } from "./store/custom-serializer";
 import {localStorageSync} from "ngrx-store-localstorage";
+import {LoginComponent} from "./auth/login/login.component";
+import {HomeModule} from "./home/home.module";
 
 export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
   return localStorageSync({
@@ -30,26 +32,28 @@ const metaReducers: Array<MetaReducer<any, any>> = [localStorageSyncReducer]
   declarations: [
     AppComponent
   ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    BrowserAnimationsModule,
-    HttpClientModule,
-    SchemaClassTableModule,
-    ListInstancesModule,
-    EffectsModule.forRoot(),
-    StoreModule.forRoot({router: routerReducer}, {metaReducers}),
-    RouterModule.forRoot([]),
-    StoreRouterConnectingModule.forRoot({serializer: CustomSerializer,}),
-    StoreDevtoolsModule.instrument({
-      maxAge: 25,
-      logOnly: environment.production,
-      autoPause: true,
-    }),
-    SharedModule,
-    MainModule,
-    StatusModule
-  ],
+    imports: [
+        BrowserModule,
+        AppRoutingModule,
+        BrowserAnimationsModule,
+        HttpClientModule,
+        SchemaClassTableModule,
+        ListInstancesModule,
+        EffectsModule.forRoot(),
+        StoreModule.forRoot({router: routerReducer}, {metaReducers}),
+        RouterModule.forRoot([]),
+        StoreRouterConnectingModule.forRoot({serializer: CustomSerializer,}),
+        StoreDevtoolsModule.instrument({
+            maxAge: 25,
+            logOnly: environment.production,
+            autoPause: true,
+        }),
+        SharedModule,
+        MainModule,
+        StatusModule,
+        LoginComponent,
+        HomeModule
+    ],
   providers: [],
   bootstrap: [AppComponent],
 })

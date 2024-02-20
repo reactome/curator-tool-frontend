@@ -1,0 +1,7 @@
+<section class="home-page-container" tabindex="0">
+<!--   Generic search used in the schema panel-->
+  <mat-form-field style="width:100%">
+    <mat-label>Search</mat-label>
+    <input matInput (keydown.enter)="searchForName($event)" (keyup)="recordSearchKey($event)" #input>
+  </mat-form-field>
+</section>

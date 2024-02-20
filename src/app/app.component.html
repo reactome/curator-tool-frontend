@@ -1,1 +1,7 @@
-<app-main></app-main>
+<ng-container *ngIf="!loggedIn">
+  <app-login></app-login>
+</ng-container>
+<ng-container *ngIf="loggedIn">
+  <app-main></app-main>
+</ng-container>
+

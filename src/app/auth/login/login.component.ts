@@ -1,22 +1,37 @@
-import { Component } from '@angular/core';
+import { Input, Component, Output, EventEmitter } from '@angular/core';
+import {FormGroup, FormControl, ReactiveFormsModule} from '@angular/forms';
+import {MatCardModule} from "@angular/material/card";
+import {MatInputModule} from "@angular/material/input";
+import {MatButtonModule} from "@angular/material/button";
 import {AuthenticateService} from "../../core/services/authenticate.service";
-import {Router} from "@angular/router";
-import {localStorageSync} from "ngrx-store-localstorage";
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+  styleUrls: ['./login.component.scss'],
+  standalone: true,
+  imports: [
+    MatCardModule,
+    ReactiveFormsModule,
+    MatInputModule,
+    MatButtonModule
+  ]
 })
+
 export class LoginComponent {
-  constructor(private authService: AuthenticateService,
-              private router: Router) {
-  }
-  submit(data:{email: string, password: string}) {
-    // this.authService.login(data).subscribe((data) => {
-    //   this.router.navigate(['']);
-    //   localStorage.setItem('token', data.token);
-    // })
+
+  form: FormGroup = new FormGroup({
+    username: new FormControl('username'),
+    password: new FormControl('password'),
+  });
+  @Input() error: string = '';
+
+  constructor(private authenticateService: AuthenticateService) {
   }
 
+  submit() {
+    if (this.form.valid) {
+      this.authenticateService.setEnabled(true);
+    }
+  }
 }
