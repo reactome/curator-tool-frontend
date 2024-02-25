@@ -1,7 +1,9 @@
 <ng-container *ngIf="!loggedIn">
   <app-login></app-login>
 </ng-container>
-<ng-container *ngIf="loggedIn">
+<ng-container *ngIf="loggedIn && !test_llm">
   <app-main></app-main>
 </ng-container>
-
+<ng-container *ngIf="test_llm">
+  <app-gene-llm-component></app-gene-llm-component>
+</ng-container>

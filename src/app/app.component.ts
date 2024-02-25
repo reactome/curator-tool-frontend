@@ -8,8 +8,11 @@ import { Component, OnInit } from '@angular/core';
 export class AppComponent {
   title = 'curator-tool-frontend';
   loggedIn: string | null = "false";
+  test_llm: boolean = false;
   ngOnInit() {
     this.loggedIn = sessionStorage.getItem('authenticated');
+    // Bypass for the time being
+    // this.loggedIn = "true";
   }
 }
 
