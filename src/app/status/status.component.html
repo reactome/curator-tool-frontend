@@ -4,4 +4,15 @@
                 [disabled]="updatedInstances.length === 0">{{updatedInstances.length + newInstances.length}}
         </button>
     </span>
+
+  <span>Curators Online:
+        <button mat-button style="border: 0px;" (click)="showUpdated()"
+                [disabled]="updatedInstances.length === 0">{{updatedInstances.length + newInstances.length}}
+        </button>
+    </span>
+
+  <button style="position: absolute; right: 0" (click)="logout()" class="mat-icon-button"
+          matTooltip="Logout" matTooltipPosition="right" [matTooltipShowDelay]="500">
+    <mat-icon color="primary">logout</mat-icon>
+  </button>
 </mat-toolbar>

@@ -1,7 +1,53 @@
-<section class="home-page-container" tabindex="0">
-<!--   Generic search used in the schema panel-->
-  <mat-form-field style="width:100%">
-    <mat-label>Search</mat-label>
-    <input matInput (keydown.enter)="searchForName($event)" (keyup)="recordSearchKey($event)" #input>
-  </mat-form-field>
-</section>
+<!--<section class="home-page-container" tabindex="0">-->
+  <form>
+    <mat-form-field class="form-field">
+      <mat-label>Search</mat-label>
+      <input type="text"
+             placeholder="Pick one"
+             aria-label="Number"
+             matInput
+             [formControl]="myControl"
+             [matAutocomplete]="auto">
+      <mat-autocomplete #auto="matAutocomplete">
+        <mat-option *ngFor="let option of options" [value]="option">{{option}}</mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+  </form>
+  <div class="center-content">
+    <mat-card class="card">
+      <mat-card-content>
+        <a routerLink="/main">Schema View</a>
+      </mat-card-content>
+    </mat-card>
+    <br>
+    <mat-card class="card">
+      <mat-card-content>Event View</mat-card-content>
+    </mat-card>
+    <mat-card class="card">
+      <mat-card-content>ELV View</mat-card-content>
+    </mat-card>
+    <mat-card class="card">
+      <mat-card-content>LLM Apps</mat-card-content>
+    </mat-card>
+  </div>
+  <div >
+    <mat-card style="margin-bottom: 1rem;">
+      <mat-card-content>View History (20 instances)</mat-card-content>
+    </mat-card>
+    <mat-card style="margin-bottom: 1rem;">
+      <mat-card-content>Notes (4 notes)</mat-card-content>
+    </mat-card>
+    <mat-card style="margin-bottom: 1rem;">
+      <mat-card-content>QA Issues (8 issues)</mat-card-content>
+    </mat-card>
+    <mat-card style="margin-bottom: 1rem;">
+      <mat-card-content>New/Updated Instances since Last Logout (25 instances)
+      </mat-card-content>
+    </mat-card>
+    <mat-card style="margin-bottom: 1rem;">
+      <mat-card-content>Logged-in Curators (3 curators)</mat-card-content>
+    </mat-card>
+  </div>
+<!--</section>-->
+
+<!--Fill whole page: search, cypher, last edited history table, last viewed-->

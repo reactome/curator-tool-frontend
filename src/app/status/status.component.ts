@@ -11,13 +11,16 @@ import {CdkAccordionModule} from "@angular/cdk/accordion";
 import {newInstances} from "../instance/state/new-instance/new-instance.selectors";
 import {InstanceBookmarkModule} from "../instance-bookmark/instance-bookmark.module";
 import {bookmarkedInstances, bookmarkState} from "../instance-bookmark/state/bookmark.selectors";
+import {MatIconModule} from "@angular/material/icon";
+import {MatTooltipModule} from "@angular/material/tooltip";
+import {AuthenticateService} from "../core/services/authenticate.service";
 
 @Component({
   selector: 'app-status',
   templateUrl: './status.component.html',
   styleUrls: ['./status.component.scss'],
   standalone: true,
-  imports: [MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule, CdkAccordionModule, UpdatedInstanceListComponent, InstanceBookmarkModule]
+    imports: [MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule, CdkAccordionModule, UpdatedInstanceListComponent, InstanceBookmarkModule, MatIconModule, MatTooltipModule]
 })
 export class StatusComponent implements OnInit{
   @Input() sidePanelState: number = 0;
@@ -26,7 +29,7 @@ export class StatusComponent implements OnInit{
   newInstances: Instance[] = [];
   bookmarkList: Instance[] = [];
 
-  constructor(private store: Store) {
+  constructor(private store: Store, private authenticateService: AuthenticateService) {
   }
 
   ngOnInit(): void {
@@ -47,5 +50,9 @@ export class StatusComponent implements OnInit{
     if(this.sidePanelState === 0){
       this.showUpdatedEvent.emit(true);
     }
+  }
+
+  logout() {
+    this.authenticateService.setEnabled(false);
   }
 }

@@ -11,6 +11,7 @@ import {UpdatedInstanceListComponent} from "../status/components/updated-instanc
 import {StatusComponent} from "../status/status.component";
 import {CdkAccordionModule} from "@angular/cdk/accordion";
 import {InstanceBookmarkModule} from "../instance-bookmark/instance-bookmark.module";
+import {MainRoutingModule} from "./main-routing.module";
 
 
 @NgModule({
@@ -34,6 +35,7 @@ import {InstanceBookmarkModule} from "../instance-bookmark/instance-bookmark.mod
     CdkAccordionModule,
     InstanceBookmarkModule,
     CdkDragHandle,
+    MainRoutingModule
   ]
 })
 export class MainModule { }

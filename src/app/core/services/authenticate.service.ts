@@ -30,7 +30,6 @@ export class AuthenticateService {
 
    setEnabled(value: boolean) {
     this._enabled = value;
-    console.log(value)
     sessionStorage.setItem(AuthenticateService.KEY, JSON.stringify(value));
     this._emitter.next(value);
   }

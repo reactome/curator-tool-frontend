@@ -1,7 +1,10 @@
-<ng-container *ngIf="!loggedIn">
+<ng-container *ngIf="loggedIn === 'false'">
   <app-login></app-login>
 </ng-container>
-<ng-container *ngIf="loggedIn">
+<!--<ng-container *ngIf="loggedIn === 'true'">-->
+<!--  <router-outlet></router-outlet>-->
+<!--</ng-container>-->
+<ng-container *ngIf="loggedIn === 'true'">
   <app-main></app-main>
 </ng-container>
 

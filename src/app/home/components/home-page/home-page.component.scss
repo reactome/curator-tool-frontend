@@ -4,3 +4,21 @@
   overflow: auto;
   border: none;
 }
+
+.center-content{
+  display: flex;
+  justify-content: center;
+}
+
+.card {
+  height: 75px;
+  width: 75px;
+  margin-right: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-field {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 3rem;
+}

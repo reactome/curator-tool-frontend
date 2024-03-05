@@ -1,5 +1,7 @@
-import {Component} from '@angular/core';
+import {Component, ViewChild} from '@angular/core';
 import {CdkDragMove} from "@angular/cdk/drag-drop";
+import {MatSidenav} from "@angular/material/sidenav";
+import {ActivatedRoute, Router} from "@angular/router";
 
 @Component({
   selector: 'app-main',
@@ -8,11 +10,26 @@ import {CdkDragMove} from "@angular/cdk/drag-drop";
 })
 export class MainComponent {
   sideWidth = 400;
+  schemaPanelOpen= false;
   resizing: boolean = false;
   showInstanceList: number = 0;
   status = {closed: true, opened: false, dragging: false};
 
   constructor() {
+    let url = window.location.href.split("/");
+    console.log(url)
+    if (url.includes("home")){this.closeSidenav(); this.sideWidth=0}
+    else{this.openSidenav()}
+    }
+
+  @ViewChild('sidenav') sidenav: MatSidenav | undefined;
+
+  openSidenav() {
+    this.sidenav?.open();
+  }
+
+  closeSidenav() {
+    this.sidenav?.close();
   }
 
   resizeLeft(e: CdkDragMove) {

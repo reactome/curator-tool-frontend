@@ -20,6 +20,7 @@ import { CustomSerializer } from "./store/custom-serializer";
 import {localStorageSync} from "ngrx-store-localstorage";
 import {LoginComponent} from "./auth/login/login.component";
 import {HomeModule} from "./home/home.module";
+import {AuthModule} from "./auth/auth.module";
 
 export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
   return localStorageSync({
@@ -51,7 +52,7 @@ const metaReducers: Array<MetaReducer<any, any>> = [localStorageSyncReducer]
         SharedModule,
         MainModule,
         StatusModule,
-        LoginComponent,
+        AuthModule,
         HomeModule
     ],
   providers: [],

@@ -21,6 +21,12 @@ const routes: Routes = [
         m.HomeModule),
   },
   {
+    path: "main",
+    loadChildren: () =>
+      import("./main/main.module").then((m) =>
+        m.MainModule),
+  },
+  {
     path: "table",
     loadChildren: () =>
       import("./schema-class/components/table/schema-class-table.module").then((m) =>
