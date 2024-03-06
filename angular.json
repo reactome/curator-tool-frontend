@@ -71,10 +71,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "curator-tool-frontend:build:production"
+              "buildTarget": "curator-tool-frontend:build:production"
             },
             "development": {
-              "browserTarget": "curator-tool-frontend:build:development"
+              "buildTarget": "curator-tool-frontend:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -82,7 +82,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "curator-tool-frontend:build"
+            "buildTarget": "curator-tool-frontend:build"
           }
         },
         "test": {
