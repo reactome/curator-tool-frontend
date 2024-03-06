@@ -52,7 +52,6 @@ const metaReducers: Array<MetaReducer<any, any>> = [localStorageSyncReducer]
         SharedModule,
         MainModule,
         StatusModule,
-        LoginComponent,
         HomeModule,
         GeneLlmComponentComponent
     ],
