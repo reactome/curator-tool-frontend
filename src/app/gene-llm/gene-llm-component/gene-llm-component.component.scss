@@ -1,0 +1,23 @@
+:host {
+    overflow: auto;
+    display: table;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100vw;
+  }
+  
+  .section_title {
+    text-align: center;
+  }
+
+  .title {
+    margin-top: 8px;
+    font-weight: bold;
+    text-decoration: underline;
+  }
+  
+  .note {
+    font-size: smaller;
+    font-weight: lighter;
+    font-style: italic;
+  }
