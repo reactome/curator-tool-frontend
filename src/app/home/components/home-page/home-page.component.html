@@ -16,18 +16,25 @@
   <div class="center-content">
     <mat-card class="card">
       <mat-card-content>
-        <a routerLink="/main">Schema View</a>
+        <!-- <a routerLink="/main">Schema View</a> -->
+        <button mat-button (click)="switch_view('schema_view')">Schema View</button>
       </mat-card-content>
     </mat-card>
     <br>
     <mat-card class="card">
-      <mat-card-content>Event View</mat-card-content>
+      <mat-card-content>
+        <button mat-button (click)="switch_view('event_view')">Event View</button>
+      </mat-card-content>
     </mat-card>
     <mat-card class="card">
-      <mat-card-content>ELV View</mat-card-content>
+      <mat-card-content>
+        <button mat-button (click)="switch_view('elv_view')">ELV View</button>
+      </mat-card-content>
     </mat-card>
     <mat-card class="card">
-      <mat-card-content>LLM Apps</mat-card-content>
+      <mat-card-content>
+        <button mat-button (click)="switch_view('llm_apps_view')">LLM Apps</button>
+      </mat-card-content>
     </mat-card>
   </div>
   <div >

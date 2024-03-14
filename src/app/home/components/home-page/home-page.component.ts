@@ -1,9 +1,6 @@
-import {Component, OnInit} from '@angular/core';
-import {MatFormFieldModule} from "@angular/material/form-field";
-import {MatInputModule} from "@angular/material/input";
-import {combineLatest, map, Observable, startWith} from "rxjs";
-import {MaterialModule} from "../../../material/material.module";
-import {FormControl, ReactiveFormsModule} from "@angular/forms";
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { FormControl } from "@angular/forms";
+import { Observable, map, startWith } from "rxjs";
 
 @Component({
   selector: 'app-home-page',
@@ -14,6 +11,8 @@ export class HomePageComponent implements OnInit{
   myControl = new FormControl('');
   options: string[] = ['One', 'Two', 'Three'];
   filteredOptions: Observable<string[]> | undefined;
+  @Output() viewChangeEvent = new EventEmitter<string>();
+  
 
   ngOnInit() {
     this.filteredOptions = this.myControl.valueChanges.pipe(
@@ -32,6 +31,10 @@ export class HomePageComponent implements OnInit{
   }
 
   recordSearchKey(event: Event) {
+  }
+
+  switch_view(view: string) {
+    this.viewChangeEvent.emit(view);
   }
 
 }
