@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { GeneLlmComponentComponent } from './gene-llm/gene-llm-component/gene-llm-component.component';
 
 const routes: Routes = [
   {
@@ -15,7 +16,7 @@ const routes: Routes = [
         m.HomeModule),
   },
   {
-    path: "main",
+    path: "schema_view",
     loadChildren: () =>
       import("./main/main.module").then((m) =>
         m.MainModule),
@@ -37,6 +38,10 @@ const routes: Routes = [
     loadChildren: () =>
       import("./instance/instance.module").then((m) =>
       m.InstanceModule),
+  },
+  {
+    path: "llm_apps",
+    component: GeneLlmComponentComponent
   },
   {
     path: "",
