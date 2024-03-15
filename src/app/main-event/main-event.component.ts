@@ -4,7 +4,7 @@ import {MatSidenav} from "@angular/material/sidenav";
 import {ActivatedRoute, Router} from "@angular/router";
 
 @Component({
-  selector: 'app-main',
+  selector: 'app-main-event',
   templateUrl: './main-event.component.html',
   styleUrls: ['./main-event.component.scss'],
 })

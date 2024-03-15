@@ -1,5 +1,6 @@
 <mat-tab-group [(selectedIndex)]="showUpdatedList" animationDuration="0ms">
   <mat-tab label="Event" (click)="updateTabIndex()">
+    <select-species></select-species>
     <app-event-tree></app-event-tree>
   </mat-tab>
   <mat-tab label="Changes">

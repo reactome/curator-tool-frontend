@@ -12,6 +12,7 @@ import {StatusComponent} from "../status/status.component";
 import {CdkAccordionModule} from "@angular/cdk/accordion";
 import {InstanceBookmarkModule} from "../instance-bookmark/instance-bookmark.module";
 import {MainEventRoutingModule} from "./main-event-routing.module";
+import {SelectSpecies} from "../event/components/select_species/select_species.component";
 
 @NgModule({
   declarations: [
@@ -34,7 +35,8 @@ import {MainEventRoutingModule} from "./main-event-routing.module";
     CdkAccordionModule,
     InstanceBookmarkModule,
     CdkDragHandle,
-    MainEventRoutingModule
-  ]
+    MainEventRoutingModule,
+    SelectSpecies
+    ]
 })
 export class MainEventModule { }
