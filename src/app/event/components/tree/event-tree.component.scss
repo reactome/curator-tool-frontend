@@ -1,0 +1,75 @@
+.example-tree-invisible {
+  display: none;
+}
+
+.example-tree ul,
+.example-tree li {
+  margin-top: 0;
+  margin-bottom: 0;
+  list-style-type: none;
+}
+.example-tree-node {
+  display: block;
+}
+
+.mat-tree-node {
+  min-height: 20px;
+  height: 20px;
+  margin: 3px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.mat-tree {
+  background: var(--surface2);
+  height: calc(100vh - 2 * var(--body-margin, 8px)) / 2;
+  border: 1px solid var(--outline-variant);
+  overflow: scroll;
+}
+
+.mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--primary);
+}
+
+.mat-icon-button {
+  flex-direction: row-reverse;
+  width: 36px; // This is important to show the icon
+  height: 18px; // 2px is added
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  background: transparent; // these two to make sure no background and border for tree nodes having children.
+  border: none;
+  cursor: pointer;
+}
+
+.mat-icon-button:hover {
+  background-color: var(--hover);
+}
+
+
+// Any width and height changes in the following cannot work because of this:
+// https://m2.material.io/develop/web/supporting/touch-target.
+// .mat-mdc-icon-button .mat-mdc-button-touch-target {
+//   position: absolute;
+//   top: 50%;
+//   height: 18px;
+//   left: 50%;
+//   width: 36px;
+//   transform: translate(-50%, -50%);
+//   background-color: green;
+// }
+
+
+.event_text {
+  color: var(--surface1);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline ;
+}
+}

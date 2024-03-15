@@ -71,11 +71,68 @@ export class DataService {
   }
 
   /**
+   * Fetch the instance data.
+   * @param className
+   * @returns
+   */
+  fetchEvent(className: string): Observable<SchemaClass> {
+    // Check cached results first
+    if (this.name2SchemaClass.has(className)) {
+      return of(this.name2SchemaClass.get(className)!);
+    }
+    // Otherwise call the restful API
+    return this.http.get<SchemaClass>(this.schemaClassDataUrl + `${className}`)
+      .pipe(
+        map((data: any) => {
+          // console.log("fetchSchemaClass:");
+          // console.log(data);
+          // convert data to schemaClass
+          let schemaCls = this.convertToSchemaClass(className, data);
+          this.name2SchemaClass.set(schemaCls.name, schemaCls);
+          return schemaCls;
+        }),
+        catchError((err: Error) => {
+          console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
+            panelClass: ['warning-snackbar'],
+            duration: 10000
+          });
+          return throwError(() => err);
+        }));
+  }
+
+  /**
    * Fetch the schema class table.
    * @param className
    * @returns
    */
   fetchSchemaClassTree(): Observable<SchemaClass> {
+    // Check cached results first
+    if (this.rootClass) {
+      return of(this.rootClass!);
+    }
+    // Otherwise call the restful API
+    return this.http.get<SchemaClass>(this.schemaClassTreeUrl)
+      .pipe(
+        map((data: SchemaClass) => {
+          // console.debug("fetchSchemaClassTree:", data);
+          this.rootClass = data;
+          return this.rootClass;
+        }),
+        catchError((err: Error) => {
+          console.log("The schema class table could not been loaded: \n" + err.message, "Close", {
+            panelClass: ['warning-snackbar'],
+            duration: 10000
+          });
+          return throwError(() => err);
+        }));
+  }
+
+  /**
+   * Fetch the schema class table.
+   * @param className
+   * @returns
+   */
+  fetchEventTree(): Observable<SchemaClass> {
     // Check cached results first
     if (this.rootClass) {
       return of(this.rootClass!);

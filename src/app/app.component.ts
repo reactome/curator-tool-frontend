@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component, Input} from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
@@ -9,7 +9,7 @@ import { Router } from '@angular/router';
 export class AppComponent {
   title = 'curator-tool-frontend';
   loggedIn: boolean | null = false;
-  
+
   // This is a hack to show different views at the top. We should use angular route to manage these views!
   current_view: string | undefined = undefined;
 
@@ -27,6 +27,9 @@ export class AppComponent {
     else if (url.includes('home')) {
       this.current_view = 'home_view';
     }
+    else if (url.includes('event')) {
+      this.current_view = 'event_view';
+    }
     else {
       this.current_view = 'schema_view'; // Only support this now.
     }
@@ -42,6 +45,9 @@ export class AppComponent {
     }
     else if (this.current_view === 'llm_apps_view') {
       this.router.navigate(['/llm_apps_view'])
+    }
+    else if (this.current_view === 'event_view') {
+      this.router.navigate(['/event_view'])
     }
     else {
       this.router.navigate(['/schema_view']);
