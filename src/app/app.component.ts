@@ -11,7 +11,7 @@ export class AppComponent {
   loggedIn: boolean | null = false;
   
   // This is a hack to show different views at the top. We should use angular route to manage these views!
-  current_view: string | undefined = undefined;
+  current_view: string = 'home_view';
 
   constructor(private router: Router) {}
 
@@ -19,7 +19,7 @@ export class AppComponent {
   ngOnInit() {
     this.loggedIn = sessionStorage.getItem('authenticated') === 'true';
     // Bypass for the time being
-    // this.loggedIn = false;
+    // this.loggedIn = true;
     let url = window.location.pathname;
     if (url.includes('llm_apps')) {
       this.current_view = 'llm_apps_view';
@@ -32,7 +32,6 @@ export class AppComponent {
     }
     this.router.navigate([url]);
   }
-
 
   switch_view(view: any) {
     this.current_view = view;

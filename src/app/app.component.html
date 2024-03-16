@@ -1,7 +1,7 @@
 <ng-container *ngIf="!loggedIn">
   <app-login></app-login>
 </ng-container>
-<ng-component *ngIf="loggedIn">
+<ng-container *ngIf="loggedIn">
   <!-- The following is a hack to show something for he time being. They should be changed to use Angular route!!!-->
   <ng-container *ngIf="current_view === 'home_view'">
     <app-home-page (viewChangeEvent)="switch_view($event)"></app-home-page>
@@ -12,4 +12,4 @@
   <ng-container *ngIf="current_view === 'llm_apps_view'">
     <app-gene-llm-component></app-gene-llm-component>
   </ng-container>
-</ng-component>
+</ng-container>
