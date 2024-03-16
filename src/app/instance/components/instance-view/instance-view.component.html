@@ -8,10 +8,11 @@
   <div *ngIf="instance !== undefined" class="title ellipsis">
     <span class="shrinkable ellipsis">{{title}}</span>
       <div class="button-container">
-        <button mat-icon-button color="primary" class="v-center" (click)="showReferenceValueColumn()">
+        <button mat-icon-button color="primary" class="v-center" (click)="showReferenceValueColumn()"
+        matTooltip="Compare instance">
           <mat-icon>compare</mat-icon>
         </button>
-        <button mat-icon-button color="primary" class="v-center" (click)="upload()"
+        <button mat-icon-button color="primary" class="v-center" (click)="upload()" matTooltip="upload to db"
                 [disabled]="!isUploadable()">
           <mat-icon>upload</mat-icon>
         </button>
