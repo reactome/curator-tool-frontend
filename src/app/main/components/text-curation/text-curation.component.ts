@@ -1,16 +1,19 @@
-import { Component, input } from '@angular/core';
-import { MatLabel } from '@angular/material/form-field';
-import { ChatOpenAI } from '@langchain/openai';
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { DataService } from 'src/app/core/services/data.service';
-import { Store } from '@ngrx/store';
-import { Router } from '@angular/router';
-import { NewInstanceActions } from 'src/app/instance/state/new-instance/new-instance.actions';
-import { MatTooltip } from '@angular/material/tooltip';
 import { NgIf } from '@angular/common';
-import { Input } from '@angular/core';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { Component, Input } from '@angular/core';
+import { MatLabel } from '@angular/material/form-field';
+import { MatTooltip } from '@angular/material/tooltip';
+import { Router } from '@angular/router';
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { ChatOpenAI } from '@langchain/openai';
+import { Store } from '@ngrx/store';
+import { AgentExecutor, createOpenAIFunctionsAgent } from "langchain/agents";
+import { pull } from 'langchain/hub';
+import { DataService } from 'src/app/core/services/data.service';
 import { InstanceTableComponent } from 'src/app/instance/components/instance-view/instance-table/instance-table.component';
+import { NewInstanceActions } from 'src/app/instance/state/new-instance/new-instance.actions';
+import { z } from "zod";
+
+import { DynamicStructuredTool, DynamicTool } from "@langchain/core/tools";
 
 @Component({
   selector: 'app-text-curation',
@@ -53,44 +56,74 @@ export class TextCurationComponent {
     private objectStore: Store,
     private router: Router) { }
 
+  // The following implementation is based on: 
+  // https://js.langchain.com/docs/modules/agents/tools/dynamic
   async execute(command: string) {
     console.debug('Execute: ', command);
-    const modelWithStructuredOutput = this.chatModel.withStructuredOutput(this.operationSchema);
-    const prompt = ChatPromptTemplate.fromMessages([
-      ['system',
-        `Extract the operations and their related arguements from the user's input below.
-        Respond with a JSON object containing required keys:
-        'operation': the type of operation to execute.
-        if the operation is createNewInstance, provide 'schemaClassName', which is the class name of the new instance.
-        If the operation is setAttribute, provide two arguments: attribute for the property name and value for the property
-        value. 
-        If the operation is editInstance, provide one argument: dbId.
-        Make sure the class names and attribute names follow the standard object-oriented class and property naming
-        convention using "CAMELCASE", e.g., class names should start with Upper case.
-        `
-      ],
-      ['user', '{command}']
-    ]
+    // These tools may work together sequentially. Need to figure out how to leverage
+    // this powerful feature in the current curator tool (i.e. we need a better software archutecture).
+    const tools = [
+      new DynamicStructuredTool({
+        name: "createNewInstance",
+        description: "Create a new instance for the specificed class.",
+        schema: z.object({
+          schemaClassName: z.string().describe('The schema class name of the new instance'),
+        }),
+        func: async ({schemaClassName}) => {
+          this.createNewInstance(schemaClassName);
+          return 'a new instance is created.';
+        },
+      }),
+      new DynamicStructuredTool({
+        name: "setAttribute",
+        description: "Set the attribute value for the displayed instance",
+        schema: z.object({
+          attributeName: z.string().describe("The attribute name"),
+          value: z.any().describe("The attribute value"),
+        }),
+        func: async ({ attributeName, value }) => {
+          console.debug('Attriute name: ', attributeName, 'value: ', value);
+          this.setAttribute(attributeName, value);
+          return 'assign attribute done';
+        },
+      }),
+      new DynamicStructuredTool({
+        name: "editInstance",
+        description: "Open the instance specified by its dbId for editing",
+        schema: z.object({
+          dbId: z.number().describe("The dbId of the instance to be edited"),
+        }),
+        func: async ({dbId}) => {
+          console.debug('Instance to be edited: ', dbId);
+          this.editInstance(dbId);
+          return "instance view opened";
+        },
+      }),
+    ];
+    // Get the prompt to use - you can modify this!\
+    // If you want to see the prompt in full, you can at:
+    // https://smith.langchain.com/hub/hwchase17/openai-functions-agent
+    const prompt = await pull<ChatPromptTemplate>(
+      "hwchase17/openai-functions-agent"
     );
-    const chain = prompt.pipe(modelWithStructuredOutput);
-    let answer = await chain.invoke({
-      command: command,
-    })
-    console.debug('Answer: ', answer);
-    if (answer['operation'] === 'createNewInstance') {
-      if (answer['schemaClassName']) {
-        // Need to normalize the class name
-        this.createNewInstance(answer['schemaClassName']);
-      }
-    }
-    else if (answer['operation'] === 'editInstance') {
-      if (answer['dbId']) {
-        this.editInstance(answer['dbId']);
-      }
-    }
-    else if (answer['operation'] === 'setAttribute') {
-      this.setAttribute(answer['attribute'], answer['value']);
-    }
+    const llm = this.chatModel;
+    const agent = await createOpenAIFunctionsAgent({
+      llm,
+      tools,
+      prompt,
+    });
+    
+    const agentExecutor = new AgentExecutor({
+      agent,
+      tools,
+      verbose: true,
+    });
+    
+    const result = await agentExecutor.invoke({
+      input: command,
+    });
+    
+    console.debug("Got output ", result['output']);
   }
 
   //TODO: Copied from schema-class-tree.component.ts. Need refactor to create a new service so that all functions
