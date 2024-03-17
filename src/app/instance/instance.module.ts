@@ -27,6 +27,7 @@ import { DatabaseObjectEffects } from './state/instance.effects';
 import {NewInstanceEffects} from "./state/new-instance/new-instance.effects";
 import {NEW_INSTANCES_STATE_NAME} from "./state/new-instance/new-instance.selectors";
 import {newInstancesReducer} from "./state/new-instance/new-instance.reducers";
+import { TextCurationComponent } from "../main/components/text-curation/text-curation.component";
 
 @NgModule({
     declarations: [
@@ -58,7 +59,8 @@ import {newInstancesReducer} from "./state/new-instance/new-instance.reducers";
     ListInstancesModule,
     CdkDropList,
     NgOptimizedImage,
-    CdkDragPlaceholder
+    CdkDragPlaceholder,
+    TextCurationComponent
   ],
   exports: [
     InstanceTableComponent,

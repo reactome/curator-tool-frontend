@@ -17,14 +17,15 @@ export class AppComponent {
 
 
   ngOnInit() {
-    this.loggedIn = sessionStorage.getItem('authenticated') === 'true';
+    // this.loggedIn = sessionStorage.getItem('authenticated') === 'true';
     // Bypass for the time being
-    // this.loggedIn = true;
+    this.loggedIn = true;
     let url = window.location.pathname;
+    console.debug('url: ', url);
     if (url.includes('llm_apps')) {
       this.current_view = 'llm_apps_view';
     }
-    else if (url.includes('home')) {
+    else if (url.includes('home') || (url === '/')) { // This should be the default
       this.current_view = 'home_view';
     }
     else {
