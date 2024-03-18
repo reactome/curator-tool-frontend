@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, EventEmitter, Output} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
@@ -19,10 +19,13 @@ interface Species {
   standalone: true,
   imports: [MatFormFieldModule, MatSelectModule, MatInputModule, FormsModule]
 })
-export class SelectSpecies {
-  defaultSpecies = "All";
+export class SelectSpeciesComponent {
+  selected = "All";
+  @Output() updateEventTree = new EventEmitter<string>();
   species: Species[] = [
     {value: 'All', viewValue: 'All'},
+    // TODO: The value below is for temporary testing only
+    {value: 'Control', viewValue: 'Control'},
     {value: 'Homo sapiens', viewValue: 'Homo sapiens'},
     {value: 'Caenorhabditis elegans', viewValue: 'Caenorhabditis elegans'},
     {value: 'Danio rerio', viewValue: 'Danio rerio'},
@@ -31,5 +34,10 @@ export class SelectSpecies {
     {value: 'Fugu Rubripes', viewValue: 'Fugu Rubripes'},
     {value: 'Mus musculus', viewValue: 'Mus musculus'}
   ];
+
+  onSelectionChange(): void {
+    console.debug('selected: ' + this.selected)
+    this.updateEventTree.emit(this.selected);
+  }
 }
 

@@ -8,8 +8,7 @@ import {MatTooltipModule} from "@angular/material/tooltip";
 import {RouterLink} from "@angular/router";
 import {Icon1Component} from "../icon1/icon1.component";
 import {Icon2Component} from "../icon2/icon2.component";
-
-
+import {SelectSpeciesComponent} from "../select_species/select_species.component";
 
 @NgModule({
   declarations: [
@@ -25,7 +24,8 @@ import {Icon2Component} from "../icon2/icon2.component";
     CdkVirtualForOf,
     SharedModule,
     MatTooltipModule,
-    RouterLink
+    RouterLink,
+    SelectSpeciesComponent
   ],
   exports: [MaterialModule, EventTreeComponent]
 })

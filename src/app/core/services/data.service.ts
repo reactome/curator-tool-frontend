@@ -132,9 +132,9 @@ export class DataService {
    * @param className
    * @returns
    */
-  fetchEventTree(): Observable<SchemaClass> {
-    // Check cached results first
-    if (this.rootClass) {
+  fetchEventTree(skipCache: boolean): Observable<SchemaClass> {
+    //Check cached results first
+    if (this.rootClass && !skipCache) {
       return of(this.rootClass!);
     }
     // Otherwise call the restful API
