@@ -9,10 +9,15 @@ const routes: Routes = [
     pathMatch: "full",
   },
   {
+    path: "",
+    redirectTo: "login",
+    pathMatch: "full",
+  },
+  {
     path: "login",
     loadChildren: () =>
-      import("./auth/auth.module").then((m) =>
-        m.AuthModule),
+      import("./auth/auth.module").then((m) => m.AuthModule),
+
   },
   {
     path: "home",

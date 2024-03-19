@@ -52,7 +52,7 @@ export class StatusComponent implements OnInit{
     }
   }
 
-  logout() {
-    this.authenticateService.setEnabled(false);
-  }
+  // logout() {
+  //   this.authenticateService.setEnabled(false);
+  // }
 }

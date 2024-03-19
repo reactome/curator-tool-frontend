@@ -1,4 +1,4 @@
-import { HttpClientModule } from '@angular/common/http'; // importing the http module
+import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http'; // importing the http module
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
@@ -22,6 +22,8 @@ import {LoginComponent} from "./auth/login/login.component";
 import {HomeModule} from "./home/home.module";
 import { GeneLlmComponentComponent } from './gene-llm/gene-llm-component/gene-llm-component.component';
 import {AuthModule} from "./auth/auth.module";
+import {HeaderInterceptor} from "./core/interceptors/header.interceptor";
+import {JwtModule} from "@auth0/angular-jwt";
 
 export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
   return localStorageSync({
@@ -29,6 +31,10 @@ export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionRedu
     rehydrate: true,})(reducer);}
 
 const metaReducers: Array<MetaReducer<any, any>> = [localStorageSyncReducer]
+
+export function tokenGetter() {
+  return localStorage.getItem("token");
+}
 
 @NgModule({
   declarations: [
@@ -55,9 +61,16 @@ const metaReducers: Array<MetaReducer<any, any>> = [localStorageSyncReducer]
     StatusModule,
     HomeModule,
     GeneLlmComponentComponent,
-    AuthModule
+    AuthModule,
+    JwtModule.forRoot({ // for JwtHelperService
+      config: {
+        tokenGetter
+      }
+    })
   ],
-  providers: [],
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: HeaderInterceptor, multi: true }
+  ],
   bootstrap: [AppComponent],
 })
 export class AppModule {
