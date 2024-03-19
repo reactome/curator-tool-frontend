@@ -20,15 +20,15 @@
     "@angular/platform-browser": "^17.2.4",
     "@angular/platform-browser-dynamic": "^17.2.4",
     "@angular/router": "^17.2.4",
-    "@auth0/angular-jwt": "^5.2.0",
+    "@langchain/openai": "^0.0.18",
     "@ngrx/effects": "^17.1.1",
     "@ngrx/entity": "^17.1.1",
     "@ngrx/router-store": "^17.1.1",
     "@ngrx/store": "^17.1.1",
     "@ngrx/store-devtools": "^17.1.1",
+    "langchain": "^0.1.27",
     "ngrx-store-localstorage": "^17.0.0",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0",
     "zone.js": "~0.14.4"
   },
   "devDependencies": {
@@ -42,6 +42,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.0.0",
+    "tslib": "^2.6.2",
     "typescript": "~5.3.3"
   }
 }

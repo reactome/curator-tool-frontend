@@ -20,7 +20,7 @@ export class MainComponent {
     console.log(url)
     if (url.includes("home")){this.closeSidenav(); this.sideWidth=0}
     else{this.openSidenav()}
-    }
+  }
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
 

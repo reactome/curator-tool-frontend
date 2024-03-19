@@ -1,23 +1,13 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { GeneLlmComponentComponent } from './gene-llm/gene-llm-component/gene-llm-component.component';
 
 const routes: Routes = [
   {
-    path: "",
-    // redirectTo: "attribute-table",
-    redirectTo: "instance_view/141429", // To a reaction for the development: https://reactome.org/PathwayBrowser/#/R-HSA-69620&SEL=R-HSA-141429&PATH=R-HSA-1640170
-    pathMatch: "full",
-  },
-  {
-    path: "",
-    redirectTo: "login",
-    pathMatch: "full",
-  },
-  {
     path: "login",
     loadChildren: () =>
-      import("./auth/auth.module").then((m) => m.AuthModule),
-
+      import("./auth/auth.module").then((m) =>
+        m.AuthModule),
   },
   {
     path: "home",
@@ -26,7 +16,7 @@ const routes: Routes = [
         m.HomeModule),
   },
   {
-    path: "main",
+    path: "schema_view",
     loadChildren: () =>
       import("./main/main.module").then((m) =>
         m.MainModule),
@@ -48,6 +38,17 @@ const routes: Routes = [
     loadChildren: () =>
       import("./instance/instance.module").then((m) =>
       m.InstanceModule),
+  },
+  {
+    path: "llm_apps",
+    component: GeneLlmComponentComponent
+  },
+  {
+    path: "",
+    // redirectTo: "attribute-table",
+    // redirectTo: "instance_view/141429", // To a reaction for the development: https://reactome.org/PathwayBrowser/#/R-HSA-69620&SEL=R-HSA-141429&PATH=R-HSA-1640170
+    redirectTo: "home",
+    pathMatch: "full",
   },
   { path: '**',
     loadChildren: () =>

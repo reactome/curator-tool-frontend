@@ -19,6 +19,7 @@
     "target": "ES2022",
     "module": "ES2022",
     "useDefineForClassFields": false,
+    "skipLibCheck": true, // Based on to fix langchain issue:https://github.com/langchain-ai/langchainjs/issues/3793
     "lib": [
       "ES2022",
       "dom"

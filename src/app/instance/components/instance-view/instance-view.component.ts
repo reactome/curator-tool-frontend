@@ -1,15 +1,14 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import {ActivatedRoute, Router} from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
+import { DragDropService } from "../../../instance-bookmark/drag-drop.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
-import {CdkDragMove} from "@angular/cdk/drag-drop";
-import {DragDropService} from "../../../instance-bookmark/drag-drop.service";
 
 @Component({
   selector: 'app-instance-view',
   templateUrl: './instance-view.component.html',
-  styleUrls: ['./instance-view.component.scss']
+  styleUrls: ['./instance-view.component.scss'],
 })
 export class InstanceViewComponent implements OnInit {
   // Used to force the update of table content

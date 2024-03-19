@@ -1,0 +1,13 @@
+.text_curation {
+    display: flex; 
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    // width: 100vw;
+    height: 75vh;
+}
+
+.embedded {
+    display: inline;
+    margin-left: 16px;
+}

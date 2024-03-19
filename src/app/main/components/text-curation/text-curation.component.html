@@ -1,0 +1,14 @@
+<div class="text_curation" *ngIf="!embedded">
+    <mat-label>Type to curation (type return or click execute):</mat-label>
+    <input matInput style="width: 450px; margin-top: 8px; margin-bottom: 8px;"
+    placeholder="Create a new pathway" #command value="create a new pathway" (keydown.enter)="execute(command.value)">
+    <button mat-button (click)="execute(command.value)">Execute</button>
+</div>
+<div class="embedded" *ngIf="embedded">
+    <mat-label style="font-weight: bold;">Type to curation:</mat-label>
+    <input matInput style="width: 450px; margin-left: 8px; margin-bottom: 8px; margin-top: 8px;" 
+    matTooltip="type enter to execute"
+    placeholder="set name = 'new name'" 
+    #command value="set name = 'new name'" 
+    (keydown.enter)="execute(command.value)">
+</div>
