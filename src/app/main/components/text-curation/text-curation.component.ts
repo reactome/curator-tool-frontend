@@ -31,7 +31,7 @@ export class TextCurationComponent {
   // Test code: Need to remove it
   chatModel: ChatOpenAI = new ChatOpenAI(
     {
-      openAIApiKey: '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',
+      openAIApiKey: '{}', // This is needed. Right now it is hard-coded. To be pulled from the server-side.
       modelName: 'gpt-3.5-turbo',
       temperature: 0,
     }
