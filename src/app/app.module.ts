@@ -22,6 +22,7 @@ import {LoginComponent} from "./auth/login/login.component";
 import {HomeModule} from "./home/home.module";
 import { GeneLlmComponentComponent } from './gene-llm/gene-llm-component/gene-llm-component.component';
 import {AuthModule} from "./auth/auth.module";
+import {MainEventModule} from "./main-event/main-event.module";
 
 export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
   return localStorageSync({
@@ -52,6 +53,7 @@ const metaReducers: Array<MetaReducer<any, any>> = [localStorageSyncReducer]
     }),
     SharedModule,
     MainModule,
+    MainEventModule,
     StatusModule,
     HomeModule,
     GeneLlmComponentComponent,
