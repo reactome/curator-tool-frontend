@@ -275,7 +275,7 @@ export class InstanceTableComponent {
     }
   }
 
-  private addModifiedAttributeName(attName: string) {
+  addModifiedAttributeName(attName: string) {
     // Do nothing if there is no instance
     if (this._instance === undefined)
       return;
