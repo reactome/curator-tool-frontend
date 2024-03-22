@@ -9,7 +9,7 @@ import { Router } from '@angular/router';
 export class AppComponent {
   title = 'curator-tool-frontend';
   loggedIn: boolean | null = false;
-  
+
   // This is a hack to show different views at the top. We should use angular route to manage these views!
   current_view: string = 'home_view';
 
@@ -17,9 +17,9 @@ export class AppComponent {
 
 
   ngOnInit() {
-    // this.loggedIn = sessionStorage.getItem('authenticated') === 'true';
+    this.loggedIn = sessionStorage.getItem('authenticated') === 'true';
     // Bypass for the time being
-    this.loggedIn = true;
+    //this.loggedIn = false;
     let url = window.location.pathname;
     console.debug('url: ', url);
     if (url.includes('llm_apps')) {

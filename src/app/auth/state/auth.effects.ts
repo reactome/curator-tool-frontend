@@ -7,9 +7,6 @@ import { AuthenticateService } from 'src/app/core/services/authenticate.service'
 import { User } from '../components/auth-form/user.interface';
 import { AuthActions } from './auth.actions';
 
-
-
-
 @Injectable()
 export class AuthEffects {
 
@@ -20,7 +17,9 @@ export class AuthEffects {
         mergeMap(((data: {type: string, payload: User}) => this.authService.login(data.payload)
           .pipe(
             map(data => ({ type: AuthActions.SET_TOKEN, token: data.token })),
-            tap(() =>  this.router.navigate(["anti-heroes"])),
+            tap(() =>  {
+              sessionStorage.setItem('authenticated', 'true');
+              this.router.navigate(["/home"])}),
             catchError(async (data) => ({ type: AuthActions.LOGIN_ERROR, error: data.error }))
           ))
         ))

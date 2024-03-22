@@ -68,7 +68,7 @@ export class LoginComponent{
 
   checkJWT() {
     if(this.authService.isAuthenticated()) {
-      this.router.navigate(['/anti-heroes'])
+      this.router.navigate(['/home'])
     }
   }
 
