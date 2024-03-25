@@ -1,0 +1,24 @@
+.event-table {
+  width: 100%;
+  overflow: scroll;
+}
+
+.mat-mdc-row {
+  height: 30px;
+}
+
+.mat-mdc-row:hover .mat-mdc-cell {
+  border-color: currentColor;
+}
+
+th {
+  background: var(--primary-container) !important;
+  color: var(--on-primary-container) !important;
+}
+
+.table-container {
+  max-height: calc(100vh - var(--title-height));
+  height: calc(100vh - var(--title-height));
+  overflow: auto;
+  border: none;
+}

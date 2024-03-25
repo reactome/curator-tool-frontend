@@ -22,10 +22,22 @@ const routes: Routes = [
         m.MainModule),
   },
   {
+    path: "event_view",
+    loadChildren: () =>
+      import("./main-event/main-event.module").then((m) =>
+        m.MainEventModule),
+  },
+  {
     path: "table",
     loadChildren: () =>
       import("./schema-class/components/table/schema-class-table.module").then((m) =>
           m.SchemaClassTableModule),
+  },
+  {
+    path: "event_table",
+    loadChildren: () =>
+      import("./event/components/table/event-table.module").then((m) =>
+        m.EventTableModule),
   },
   {
     path: "list_instances",

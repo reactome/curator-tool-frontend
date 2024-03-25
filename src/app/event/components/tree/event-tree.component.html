@@ -1,0 +1,36 @@
+<select-species (updateEventTree)="filterData($event)" ></select-species>
+<mat-tree [dataSource]="dataSource" [treeControl]="treeControl" >
+  <!-- This is the table node template for leaf nodes -->
+  <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding class="event_text" matTreeNodeToggle
+    matTreeNodePaddingIndent="15">
+    <!-- use a disabled button to provide padding for table leaf -->
+    <button mat-icon-button disabled></button>
+    <icon1-image [className]="node.name"></icon1-image>
+    <icon2-image [className]="node.name"></icon2-image>
+    <a class="event_text" routerLink="/table/{{node.name}}">{{node.name}}</a>&nbsp;
+    <a routerLink="/list_instances/{{node.name}}">[{{[node.count]}}]</a>
+    <!-- Not use mat-icon-button to avoid the minimum touch-target size requirment from material design: 40px x 48px. This is just
+    too big and hide some clicks in other places. -->
+    <button (click)="createNewInstance(node.name)" class="mat-icon-button"
+      matTooltip="Click to create new {{node.name}}" matTooltipPosition="right" [matTooltipShowDelay]="500">
+      <mat-icon color="primary">add_box</mat-icon>
+    </button>
+  </mat-tree-node>
+  <!-- This is the table node template for expandable nodes -->
+  <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding class="event_text"
+    matTreeNodePaddingIndent="15">
+    <button mat-icon-button matTreeNodeToggle>
+      <mat-icon class="mat-icon-rtl-mirror">
+        {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+      </mat-icon>
+    </button>
+    <icon1-image [className]="node.name"></icon1-image>
+    <icon2-image [className]="node.name"></icon2-image>
+    <a class="event_text" routerLink="/table/{{node.name}}">{{node.name}}</a>&nbsp;
+    <a routerLink="/list_instances/{{node.name}}"> [{{[node.count]}}]</a>
+    <button *ngIf="!node.abstract" (click)="createNewInstance(node.name)" class="mat-icon-button"
+      matTooltip="Click to create new {{node.name}}" matTooltipPosition="right" [matTooltipShowDelay]="500">
+      <mat-icon color="primary">add_box</mat-icon>
+    </button>
+  </mat-tree-node>
+</mat-tree>
