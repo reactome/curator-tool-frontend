@@ -29,6 +29,7 @@
     "@ngrx/store-devtools": "^17.1.1",
     "langchain": "^0.1.27",
     "ngrx-store-localstorage": "^17.0.0",
+    "openai": "^4.29.2",
     "rxjs": "~7.8.0",
     "zone.js": "~0.14.4"
   },

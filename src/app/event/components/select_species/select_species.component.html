@@ -1,0 +1,8 @@
+<mat-form-field>
+  <mat-label>Show in</mat-label>
+  <mat-select class="text-sm" [(value)]="selected" (selectionChange)="onSelectionChange()">
+    @for (specie of species; track specie) {
+      <mat-option class="text-sm" [value]="specie.value">{{specie.viewValue}}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
