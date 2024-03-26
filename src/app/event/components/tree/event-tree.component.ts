@@ -3,19 +3,17 @@ import {ChangeDetectorRef, Component} from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
 import { Router } from "@angular/router";
 import { Store } from "@ngrx/store";
-import { SchemaClass } from "../../../core/models/reactome-schema.model";
+import {Instance} from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
 import { EDIT_ACTION } from "../../../instance/components/instance-view/instance-table/instance-table.model";
 import {NewInstanceActions} from "../../../instance/state/new-instance/new-instance.actions";
-
 
 /** Tree node with expandable and level information */
 interface EventNode {
   expandable: boolean;
   name: string;
   level: number;
-  count: number;
-  abstract: boolean;
+  dbId: string;
 }
 
 @Component({
@@ -24,13 +22,13 @@ interface EventNode {
   styleUrls: ['./event-tree.component.scss']
 })
 export class EventTreeComponent {
-  private _transformer = (node: SchemaClass, level: number) => {
+  private _transformer = (node: Instance, level: number) => {
+    // TODO: Why does Typescript think that node.attributes is an Object and not a Map (has/get/set methods don't work)
     return {
-      expandable: !!node.children && node.children.length > 0,
-      name: node.name,
-      count: node.count ?? 0,
+      expandable: !!node.attributes && (node.attributes["hasEvent"] ?? []).length > 0,
+      name: node.displayName ?? "",
       level: level,
-      abstract: node.abstract ?? false, // Default is false
+      dbId: node.dbId
     };
   };
 
@@ -43,9 +41,11 @@ export class EventTreeComponent {
     this._transformer,
     node => node.level,
     node => node.expandable,
-    node => node.children,
+    node => node.attributes["hasEvent"] ?? []
   );
 
+  // TODO: Eliminate @ts-ignore below
+  // @ts-ignore
   dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
 
   constructor(
@@ -55,33 +55,26 @@ export class EventTreeComponent {
     private store: Store) {
       service.fetchEventTree(false).subscribe(data => {
         this.dataSource.data = [data]
-        this.treeControl.expandAll();
+        // Note: this.treeControl.expandAll() here breaks the page - hence we expand just one level from the top node
+        this.treeControl.expand(this.treeControl.dataNodes[0]);
       })
   }
 
   hasChild = (_: number, node: EventNode) => node.expandable;
 
-  createNewInstance(eventName: string) {
-    this.service.createNewInstance(eventName).subscribe(instance => {
-      this.service.registerNewInstance(instance);
-      this.store.dispatch(NewInstanceActions.register_new_instances(instance));
-      let dbId = instance.dbId.toString();
-      this.router.navigate(["/instance_view/" + dbId]);
-    });
-  }
-
   filterData(speciesFilter: string) {
     this.service.fetchEventTree(true).subscribe(data => {
-      let filtered_children: SchemaClass[];
-      filtered_children = [];
-      data.children?.forEach((child): void => {
-        if (child.name.includes(speciesFilter) || speciesFilter == 'All') {
-          filtered_children.push(child)
+      let filteredTopEvents: Array<Instance>;
+      filteredTopEvents = [];
+      data.attributes["hasEvent"]?.forEach((event: Instance): void => {
+        if (speciesFilter == 'All' ||
+          (event.attributes["speciesName"] === speciesFilter)) {
+          filteredTopEvents.push(event)
         }
       });
-      data.children = filtered_children;
+      data.attributes["hasEvent"] = filteredTopEvents;
       this.dataSource.data = [data];
-      this.treeControl.expandAll();
+      this.treeControl.expand(this.treeControl.dataNodes[0]);
       this.cdr.detectChanges();
     })
   }

@@ -24,8 +24,6 @@ export class SelectSpeciesComponent {
   @Output() updateEventTree = new EventEmitter<string>();
   species: Species[] = [
     {value: 'All', viewValue: 'All'},
-    // TODO: The value below is for temporary testing only
-    {value: 'Control', viewValue: 'Control'},
     {value: 'Homo sapiens', viewValue: 'Homo sapiens'},
     {value: 'Caenorhabditis elegans', viewValue: 'Caenorhabditis elegans'},
     {value: 'Danio rerio', viewValue: 'Danio rerio'},

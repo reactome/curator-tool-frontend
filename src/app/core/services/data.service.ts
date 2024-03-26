@@ -27,6 +27,7 @@ export class DataService {
   private schemaClassDataUrl = `${environment.ApiRoot}/getAttributes/` // TODO: Need to consider using Angular ConfigService!
   private entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
   private schemaClassTreeUrl = `${environment.ApiRoot}/getSchemaClassTree/`;
+  private eventsTreeUrl = `${environment.ApiRoot}/getAllEventsTree/`;
   private listInstancesUrl = `${environment.ApiRoot}/listInstances/`;
   private countInstancesUrl = `${environment.ApiRoot}/countInstances/`;
   private commitInstanceUrl = `${environment.ApiRoot}/commit/`;
@@ -34,6 +35,7 @@ export class DataService {
   private nextNewDbId: number = -1;
   // The root class is cached for performance
   private rootClass: SchemaClass | undefined;
+  private rootEvent: Instance | undefined;
   private name2class?: Map<string, SchemaClass>;
   public static newDisplayName: string = 'To be generated';
 
@@ -132,21 +134,26 @@ export class DataService {
    * @param className
    * @returns
    */
-  fetchEventTree(skipCache: boolean): Observable<SchemaClass> {
+  fetchEventTree(skipCache: boolean): Observable<Instance> {
     //Check cached results first
-    if (this.rootClass && !skipCache) {
-      return of(this.rootClass!);
+    if (this.rootEvent && !skipCache) {
+      return of(this.rootEvent!);
     }
     // Otherwise call the restful API
-    return this.http.get<SchemaClass>(this.schemaClassTreeUrl)
+    return this.http.get<Array<Instance>>(this.eventsTreeUrl)
       .pipe(
-        map((data: SchemaClass) => {
-          // console.debug("fetchSchemaClassTree:", data);
-          this.rootClass = data;
-          return this.rootClass;
+        map((data: Array<Instance>) => {
+          // console.debug("fetchEventTree:", data);
+          let rootEvent: Instance = {
+            dbId: 0,
+            displayName: "Event",
+            schemaClassName: "Event",
+            attributes: { "hasEvent" : data}
+          };
+          return rootEvent;
         }),
         catchError((err: Error) => {
-          console.log("The schema class table could not been loaded: \n" + err.message, "Close", {
+          console.log("The events tree could not been loaded: \n" + err.message, "Close", {
             panelClass: ['warning-snackbar'],
             duration: 10000
           });
