@@ -12,7 +12,7 @@ interface EventNode {
   expandable: boolean;
   name: string;
   level: number;
-  dbId: string;
+  dbId: number;
   className: string;
   doRelease: boolean;
 }
@@ -32,7 +32,7 @@ export class EventTreeComponent {
       level: level,
       dbId: node.dbId,
       className: node.schemaClassName,
-      doRelease: !!node.attributes && node.attributes["_doRelease"] as boolean
+      doRelease: !!node.attributes && node.attributes["_doRelease"]
     };
   };
 
@@ -48,8 +48,6 @@ export class EventTreeComponent {
     node => node.attributes["hasEvent"] ?? []
   );
 
-  // TODO: Eliminate @ts-ignore below
-  // @ts-ignore
   dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
 
   constructor(
