@@ -11,9 +11,9 @@ import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { environment } from 'src/environments/environment.dev';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { ListInstancesModule } from "./list-instances/list-instances.module";
-import { MainModule } from "./main/main.module";
-import { SchemaClassTableModule } from './schema-class/components/table/schema-class-table.module';
+import { ListInstancesModule } from "./schema-view/list-instances/list-instances.module";
+import { MainSchemaViewModule } from "./schema-view/main-schema-view/main-schema-view.module";
+import { SchemaClassTableModule } from './schema-view/schema-class/components/table/schema-class-table.module';
 import { SharedModule } from "./shared/shared.module";
 import { StatusModule } from './status/status.module';
 import { CustomSerializer } from "./store/custom-serializer";
@@ -24,7 +24,7 @@ import { GeneLlmComponentComponent } from './gene-llm/gene-llm-component/gene-ll
 import {AuthModule} from "./auth/auth.module";
 import {HeaderInterceptor} from "./core/interceptors/header.interceptor";
 import {JwtModule} from "@auth0/angular-jwt";
-import {MainEventModule} from "./main-event/main-event.module";
+import {MainEventModule} from "./event-view/main-event/main-event.module";
 
 export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
   return localStorageSync({
@@ -58,7 +58,7 @@ export function tokenGetter() {
       autoPause: true,
     }),
     SharedModule,
-    MainModule,
+    MainSchemaViewModule,
     MainEventModule,
     StatusModule,
     HomeModule,

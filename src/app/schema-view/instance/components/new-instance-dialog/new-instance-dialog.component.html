@@ -1,0 +1,24 @@
+<h2 class="dialog_title" mat-dialog-title cdkdraghandle>Create a New Instance</h2>
+<mat-dialog-content style="width: 100%">
+  <mat-label>Select a Schema Class: </mat-label>
+  <mat-select [(value)]="selected" class="drop_down" (selectionChange)="onSelectionChange()">
+<!--   TODO: Check on touchscreen if touch works for 'click' event-view -->
+    <ng-container>
+      <mat-option *ngFor="let value of candidateClasses" [value]="value">
+        {{value}}
+      </mat-option>
+    </ng-container>
+  </mat-select>
+<!--  TODO: change to case statement-->
+  <ng-container *ngIf="attributeValue.editAction === 0">
+    <app-instance-table [instance]="instance"></app-instance-table>
+  </ng-container>
+  <ng-container *ngIf="attributeValue.editAction === 1">
+    <app-instance-selection [setClassName]="candidateClasses[0]" [isSelection]="true"
+    ></app-instance-selection>
+  </ng-container>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onOK()" cdkFocusInitial>OK</button>
+  <button mat-button (click)="onCancel()">Cancel</button>
+</mat-dialog-actions>

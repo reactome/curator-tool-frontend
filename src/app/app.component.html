@@ -1,15 +1,16 @@
-<ng-container *ngIf="!loggedIn">
-  <app-login></app-login>
-</ng-container>
-<ng-container *ngIf="loggedIn">
-  <!-- The following is a hack to show something for he time being. They should be changed to use Angular route!!!-->
-  <ng-container *ngIf="current_view === 'home_view'">
-    <app-home-page (viewChangeEvent)="switch_view($event)"></app-home-page>
-  </ng-container>
-  <ng-container *ngIf="current_view === 'schema_view' || current_view === 'event_view' || current_view === 'elv_view'">
-    <app-main></app-main>
-  </ng-container>
-  <ng-container *ngIf="current_view === 'llm_apps_view'">
-    <app-gene-llm-component></app-gene-llm-component>
-  </ng-container>
-</ng-container>
+<!--<ng-container *ngIf="!loggedIn">-->
+<!--  <app-login></app-login>-->
+<!--</ng-container>-->
+<!--<ng-container *ngIf="loggedIn">-->
+<!--  &lt;!&ndash; The following is a hack to show something for he time being. They should be changed to use Angular route!!!&ndash;&gt;-->
+<!--  <ng-container *ngIf="current_view === 'home_view'">-->
+<!--    <app-home-page (viewChangeEvent)="switch_view($event-view)"></app-home-page>-->
+<!--  </ng-container>-->
+<!--  <ng-container *ngIf="current_view === 'schema_view' || current_view === 'event_view' || current_view === 'elv_view'">-->
+<!--    <app-main-schema-view></app-main-schema-view>-->
+<!--  </ng-container>-->
+<!--  <ng-container *ngIf="current_view === 'llm_apps_view'">-->
+<!--    <app-gene-llm-component></app-gene-llm-component>-->
+<!--  </ng-container>-->
+<!--</ng-container>-->
+<router-outlet></router-outlet>

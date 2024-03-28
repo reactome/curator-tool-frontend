@@ -6,9 +6,9 @@ import {MatListModule} from '@angular/material/list';
 import {MatTableModule} from '@angular/material/table';
 import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {Router} from "@angular/router";
-import {ListInstancesModule} from "../../../list-instances/list-instances.module";
+import {ListInstancesModule} from "../../../schema-view/list-instances/list-instances.module";
 import {Store} from "@ngrx/store";
-import {newInstances, newInstanceState} from "../../../instance/state/new-instance/new-instance.selectors";
+import {newInstances, newInstanceState} from "../../../schema-view/instance/state/new-instance/new-instance.selectors";
 
 @Component({
   selector: 'app-updated-instance-list',

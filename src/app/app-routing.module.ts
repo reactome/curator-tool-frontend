@@ -18,38 +18,14 @@ const routes: Routes = [
   {
     path: "schema_view",
     loadChildren: () =>
-      import("./main/main.module").then((m) =>
-        m.MainModule),
+      import("./schema-view/main-schema-view/main-schema-view.module").then((m) =>
+        m.MainSchemaViewModule),
   },
   {
     path: "event_view",
     loadChildren: () =>
-      import("./main-event/main-event.module").then((m) =>
+      import("./event-view/main-event/main-event.module").then((m) =>
         m.MainEventModule),
-  },
-  {
-    path: "table",
-    loadChildren: () =>
-      import("./schema-class/components/table/schema-class-table.module").then((m) =>
-          m.SchemaClassTableModule),
-  },
-  {
-    path: "event_table",
-    loadChildren: () =>
-      import("./event/components/table/event-table.module").then((m) =>
-        m.EventTableModule),
-  },
-  {
-    path: "list_instances",
-    loadChildren: () =>
-      import("./list-instances/list-instances.module").then((m) =>
-        m.ListInstancesModule),
-  },
-  {
-    path: "instance_view",
-    loadChildren: () =>
-      import("./instance/instance.module").then((m) =>
-      m.InstanceModule),
   },
   {
     path: "llm_apps",
@@ -59,12 +35,12 @@ const routes: Routes = [
     path: "",
     // redirectTo: "attribute-table",
     // redirectTo: "instance_view/141429", // To a reaction for the development: https://reactome.org/PathwayBrowser/#/R-HSA-69620&SEL=R-HSA-141429&PATH=R-HSA-1640170
-    redirectTo: "home",
+    redirectTo: "login",
     pathMatch: "full",
   },
   { path: '**',
     loadChildren: () =>
-      import("./schema-class/components/table/schema-class-table.module").then((m) =>
+      import("./schema-view/schema-class/components/table/schema-class-table.module").then((m) =>
         m.SchemaClassTableModule),
   },
 ];
