@@ -15,6 +15,8 @@ interface EventNode {
   dbId: number;
   className: string;
   doRelease: boolean;
+  match: boolean;
+  expand: boolean;
 }
 
 @Component({
@@ -32,9 +34,12 @@ export class EventTreeComponent {
       level: level,
       dbId: node.dbId,
       className: node.schemaClassName,
-      doRelease: !!node.attributes && node.attributes["_doRelease"]
+      doRelease: !!node.attributes && node.attributes["_doRelease"],
+      match: !!node.attributes && node.attributes["match"],
+      expand: !!node.attributes && node.attributes["expand"]
     };
   };
+
 
   treeControl = new FlatTreeControl<EventNode>(
     node => node.level,
@@ -55,7 +60,8 @@ export class EventTreeComponent {
     private service: DataService,
     private router: Router,
     private store: Store) {
-      service.fetchEventTree(false).subscribe(data => {
+      let searchKey = undefined;
+      service.fetchEventTree(false, "All").subscribe(data => {
         this.dataSource.data = [data]
         // Note: this.treeControl.expandAll() here breaks the page - hence we expand just one level from the top node
         this.treeControl.expand(this.treeControl.dataNodes[0]);
@@ -67,19 +73,15 @@ export class EventTreeComponent {
 
   filterData(speciesFilter: string) {
     this.showProgressSpinner = true;
-    this.service.fetchEventTree(true).subscribe(data => {
-      let filteredTopEvents: Array<Instance>;
-      filteredTopEvents = [];
-      data.attributes["hasEvent"]?.forEach((event: Instance): void => {
-        if (speciesFilter == 'All' ||
-          (event.attributes["speciesName"] === speciesFilter)) {
-          filteredTopEvents.push(event)
-        }
-      });
+    this.service.fetchEventTree(true, speciesFilter, "WNT").subscribe(data => {
       this.showProgressSpinner = false;
-      data.attributes["hasEvent"] = filteredTopEvents;
       this.dataSource.data = [data];
       this.treeControl.expand(this.treeControl.dataNodes[0]);
+      this.treeControl.dataNodes.forEach( (node) => {
+        if (node.expand === true) {
+          this.treeControl.expand(node);
+        }
+      });
       this.cdr.detectChanges();
     })
   }

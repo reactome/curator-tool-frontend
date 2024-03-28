@@ -27,7 +27,7 @@ export class DataService {
   private schemaClassDataUrl = `${environment.ApiRoot}/getAttributes/` // TODO: Need to consider using Angular ConfigService!
   private entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
   private schemaClassTreeUrl = `${environment.ApiRoot}/getSchemaClassTree/`;
-  private eventsTreeUrl = `${environment.ApiRoot}/getAllEventsTree/`;
+  private eventsTreeUrl = `${environment.ApiRoot}/getEventTree/`;
   private listInstancesUrl = `${environment.ApiRoot}/listInstances/`;
   private countInstancesUrl = `${environment.ApiRoot}/countInstances/`;
   private commitInstanceUrl = `${environment.ApiRoot}/commit/`;
@@ -132,18 +132,24 @@ export class DataService {
   /**
    * Fetch the schema class table.
    * @param className
+   * @param species
+   * @param searchKey
    * @returns
    */
-  fetchEventTree(skipCache: boolean): Observable<Instance> {
+  fetchEventTree(skipCache: boolean, species: string, searchKey?: string): Observable<Instance> {
     //Check cached results first
     if (this.rootEvent && !skipCache) {
       return of(this.rootEvent!);
     }
     // Otherwise call the restful API
-    return this.http.get<Array<Instance>>(this.eventsTreeUrl)
+    let url = this.eventsTreeUrl + `${species}/`;
+    if (searchKey !== undefined) {
+      url += '?query=' + searchKey;
+    }
+
+    return this.http.get<Array<Instance>>(url)
       .pipe(
         map((data: Array<Instance>) => {
-          // console.debug("fetchEventTree:", data);
           let rootEvent: Instance = {
             dbId: 0,
             displayName: "Event",
