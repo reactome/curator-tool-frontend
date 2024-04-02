@@ -25,14 +25,14 @@ import { HttpClient } from '@angular/common/http';
   templateUrl: './text-curation.component.html',
   styleUrl: './text-curation.component.scss'
 })
-export class TextCurationComponent implements OnInit {
+export class TextCurationComponent {
 
   @Input() embedded: boolean = false;
   //TODO: Make sure this component is higher than InstanceTableComponent.
   @Input() instanceTable: InstanceTableComponent | undefined = undefined;
 
   // Test code: Need to remove it
-  chatModel: ChatOpenAI = new ChatOpenAI(); // Just an empty model and will be populated later.
+  chatModel: ChatOpenAI | undefined = undefined;
 
   operationSchema = {
     type: "object",
@@ -52,13 +52,10 @@ export class TextCurationComponent implements OnInit {
   constructor(private dataService: DataService,
     private objectStore: Store,
     private router: Router,
-    private http: HttpClient) { 
-    }
-
-  ngOnInit(): void {
+    private http: HttpClient) {
     // Fetch OpenAI API key
     const llm_url_openai_key = 'http://127.0.0.1:5000/openai_key';
-    this.http.get<string>(llm_url_openai_key).subscribe(result => {
+    this.http.get(llm_url_openai_key, {responseType: 'text'}).subscribe(result => {
       this.chatModel = new ChatOpenAI(
         {
           openAIApiKey: result,
@@ -68,6 +65,7 @@ export class TextCurationComponent implements OnInit {
       )
     });
   }
+
 
   // The following implementation is based on: 
   // https://js.langchain.com/docs/modules/agents/tools/dynamic
@@ -143,7 +141,7 @@ export class TextCurationComponent implements OnInit {
     // into UpperCamelCase, with the first letter of every word capitalized. Don't do this format for other functions.\
     // \n\nHUMAN: {input}\n\n{agent_scratchpad}");
 
-    const llm = this.chatModel;
+    const llm = this.chatModel!;
     const agent = await createOpenAIFunctionsAgent({
       llm,
       tools,
@@ -179,13 +177,13 @@ export class TextCurationComponent implements OnInit {
       this.dataService.registerNewInstance(instance);
       this.objectStore.dispatch(NewInstanceActions.register_new_instances(instance));
       let dbId = instance.dbId.toString();
-      this.router.navigate(["/instance_view/" + dbId]);
+      this.router.navigate(["/schema_view/instance/" + dbId]);
     });
   }
 
   editInstance(dbId: number) {
     if (dbId !== undefined)
-      this.router.navigate(["/instance_view/" + dbId]);
+      this.router.navigate(["/schema_view/instance/" + dbId]);
   }
 
   setAttribute(attribute: string, value: any, append: boolean = false) {
@@ -266,7 +264,7 @@ export class TextCurationComponent implements OnInit {
     else {
       if (append) {
         let values = instance.attributes.get(clsAtt.name);
-        if (values) 
+        if (values)
           values.push(attValue);
         else
           instance.attributes.set(clsAtt.name, [attValue]);
