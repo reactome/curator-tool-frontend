@@ -28,7 +28,7 @@ const routes: Routes = [
         m.MainEventModule),
   },
   {
-    path: "llm_apps",
+    path: "llm_apps_view",
     component: GeneLlmComponentComponent
   },
   {

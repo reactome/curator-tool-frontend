@@ -1,5 +1,5 @@
 import { NgIf } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { MatLabel } from '@angular/material/form-field';
 import { MatTooltip } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
@@ -16,6 +16,7 @@ import { z } from "zod";
 
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-text-curation',
@@ -24,21 +25,14 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
   templateUrl: './text-curation.component.html',
   styleUrl: './text-curation.component.scss'
 })
-export class TextCurationComponent {
+export class TextCurationComponent implements OnInit {
 
   @Input() embedded: boolean = false;
   //TODO: Make sure this component is higher than InstanceTableComponent.
   @Input() instanceTable: InstanceTableComponent | undefined = undefined;
 
   // Test code: Need to remove it
-  chatModel: ChatOpenAI = new ChatOpenAI(
-    {
-      // !!!Don't push this key to GitHub!!!
-      openAIApiKey: '', // This is needed. Right now it is hard-coded. To be pulled from the server-side.
-      modelName: 'gpt-3.5-turbo',
-      temperature: 0,
-    }
-  );
+  chatModel: ChatOpenAI = new ChatOpenAI(); // Just an empty model and will be populated later.
 
   operationSchema = {
     type: "object",
@@ -57,7 +51,23 @@ export class TextCurationComponent {
 
   constructor(private dataService: DataService,
     private objectStore: Store,
-    private router: Router) { }
+    private router: Router,
+    private http: HttpClient) { 
+    }
+
+  ngOnInit(): void {
+    // Fetch OpenAI API key
+    const llm_url_openai_key = 'http://127.0.0.1:5000/openai_key';
+    this.http.get<string>(llm_url_openai_key).subscribe(result => {
+      this.chatModel = new ChatOpenAI(
+        {
+          openAIApiKey: result,
+          modelName: 'gpt-3.5-turbo',
+          temperature: 0,
+        }
+      )
+    });
+  }
 
   // The following implementation is based on: 
   // https://js.langchain.com/docs/modules/agents/tools/dynamic
