@@ -7,7 +7,7 @@
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" *ngIf="!showProgressSpinner">
   <!-- This is the table node template for leaf nodes -->
   <mat-tree-node *matTreeNodeDef="let node;" matTreeNodePadding matTreeNodeToggle
-    matTreeNodePaddingIndent="15">
+    matTreeNodePaddingIndent="15" [ngClass] = "node.inFocus === true ? 'inFocus' : ''">
     <!-- use a disabled button to provide padding for table leaf -->
     <button mat-icon-button disabled></button>
     <icon1-image [doRelease]="node.doRelease" ></icon1-image>
@@ -16,7 +16,7 @@
   </mat-tree-node>
   <!-- This is the table node template for expandable nodes -->
   <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding
-    matTreeNodePaddingIndent="15">
+    matTreeNodePaddingIndent="15" [ngClass] = "node.inFocus === true ? 'inFocus' : ''">
     <button mat-icon-button matTreeNodeToggle>
       <mat-icon class="mat-icon-rtl-mirror">
         {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
