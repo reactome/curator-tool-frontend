@@ -17,6 +17,7 @@ interface EventNode {
   doRelease: boolean;
   match: boolean;
   expand: boolean;
+  inFocus: boolean;
 }
 
 @Component({
@@ -36,7 +37,8 @@ export class EventTreeComponent {
       className: node.schemaClassName,
       doRelease: !!node.attributes && node.attributes["_doRelease"],
       match: !!node.attributes && node.attributes["match"],
-      expand: !!node.attributes && node.attributes["expand"]
+      expand: !!node.attributes && node.attributes["expand"],
+      inFocus: false
     };
   };
 
@@ -71,18 +73,30 @@ export class EventTreeComponent {
 
   hasChild = (_: number, node: EventNode) => node.expandable;
 
+  inFocus = (node: EventNode) => node.inFocus;
+
   filterData(speciesFilter: string) {
     this.showProgressSpinner = true;
     this.service.fetchEventTree(true, speciesFilter, "WNT").subscribe(data => {
       this.showProgressSpinner = false;
       this.dataSource.data = [data];
       this.treeControl.expand(this.treeControl.dataNodes[0]);
+      let focus = false;
       this.treeControl.dataNodes.forEach( (node) => {
-        if (node.expand === true) {
+        if (node.expand) {
           this.treeControl.expand(node);
+        }
+        if (node.match && !focus) {
+          node.inFocus = true;
+          focus = true;
         }
       });
       this.cdr.detectChanges();
+      // Scroll to the first matching node of the tree
+      if (focus) {
+        const element = document.querySelector('.inFocus') as HTMLElement;
+        element.scrollIntoView({behavior: 'smooth'});
+      }
     })
   }
 
