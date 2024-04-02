@@ -34,7 +34,7 @@ export class TextCurationComponent {
   chatModel: ChatOpenAI = new ChatOpenAI(
     {
       // !!!Don't push this key to GitHub!!!
-      openAIApiKey: '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', // This is needed. Right now it is hard-coded. To be pulled from the server-side.
+      openAIApiKey: '', // This is needed. Right now it is hard-coded. To be pulled from the server-side.
       modelName: 'gpt-3.5-turbo',
       temperature: 0,
     }
