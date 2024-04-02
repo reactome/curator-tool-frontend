@@ -75,9 +75,11 @@ export class EventTreeComponent {
 
   inFocus = (node: EventNode) => node.inFocus;
 
-  filterData(speciesFilter: string) {
+  filterData(searchFilters: Array<string | undefined>, ) {
+    let speciesFilter = searchFilters[0] as string;
+    let searchKey = searchFilters[1];
     this.showProgressSpinner = true;
-    this.service.fetchEventTree(true, speciesFilter, "WNT").subscribe(data => {
+    this.service.fetchEventTree(true, speciesFilter, searchKey).subscribe(data => {
       this.showProgressSpinner = false;
       this.dataSource.data = [data];
       this.treeControl.expand(this.treeControl.dataNodes[0]);

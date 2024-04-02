@@ -20,8 +20,10 @@ interface Species {
   imports: [MatFormFieldModule, MatSelectModule, MatInputModule, FormsModule]
 })
 export class SelectSpeciesComponent {
+  // For doing search
+  searchKey: string | undefined = undefined;
   selected = "All";
-  @Output() updateEventTree = new EventEmitter<string>();
+  @Output() updateEventTree = new EventEmitter<Array<string | undefined>>();
   species: Species[] = [
     {value: 'All', viewValue: 'All'},
     {value: 'Homo sapiens', viewValue: 'Homo sapiens'},
@@ -34,8 +36,20 @@ export class SelectSpeciesComponent {
   ];
 
   onSelectionChange(): void {
-    console.debug('selected: ' + this.selected)
-    this.updateEventTree.emit(this.selected);
+    console.debug('selected: ' + this.selected + "; searchKey: " + this.searchKey);
+    this.updateEventTree.emit([this.selected, this.searchKey]);
+  }
+
+
+
+  recordSearchKey(event: Event) {
+    const text = (event.target as HTMLInputElement).value;
+    this.searchKey = text;
+    // Make sure reset it to undefined if nothing there so that
+    // no empty string sent to the server
+    if (this.searchKey !== undefined && this.searchKey.length === 0) {
+      this.searchKey = undefined;
+    }
   }
 }
 
