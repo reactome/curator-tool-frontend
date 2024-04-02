@@ -13,13 +13,13 @@ interface Species {
  * @title Basic select
  */
 @Component({
-  selector: 'select-species',
-  templateUrl: './select_species.component.html',
-  styleUrls: ['./select_species.component.scss'],
+  selector: 'filter-events',
+  templateUrl: './filter_events.component.html',
+  styleUrls: ['./filter_events.component.scss'],
   standalone: true,
   imports: [MatFormFieldModule, MatSelectModule, MatInputModule, FormsModule]
 })
-export class SelectSpeciesComponent {
+export class FilterEventsComponent {
   // For doing search
   searchKey: string | undefined = undefined;
   selected = "All";
