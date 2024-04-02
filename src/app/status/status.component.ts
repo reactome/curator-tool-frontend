@@ -4,16 +4,17 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { updatedInstances } from 'src/app/instance/state/instance.selectors';
+import { updatedInstances } from 'src/app/schema-view/instance/state/instance.selectors';
 import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 import { MatListModule } from '@angular/material/list';
 import {CdkAccordionModule} from "@angular/cdk/accordion";
-import {newInstances} from "../instance/state/new-instance/new-instance.selectors";
-import {InstanceBookmarkModule} from "../instance-bookmark/instance-bookmark.module";
-import {bookmarkedInstances, bookmarkState} from "../instance-bookmark/state/bookmark.selectors";
+import {newInstances} from "../schema-view/instance/state/new-instance/new-instance.selectors";
+import {InstanceBookmarkModule} from "../schema-view/instance-bookmark/instance-bookmark.module";
+import {bookmarkedInstances, bookmarkState} from "../schema-view/instance-bookmark/state/bookmark.selectors";
 import {MatIconModule} from "@angular/material/icon";
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {AuthenticateService} from "../core/services/authenticate.service";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-status',
@@ -29,7 +30,9 @@ export class StatusComponent implements OnInit{
   newInstances: Instance[] = [];
   bookmarkList: Instance[] = [];
 
-  constructor(private store: Store, private authenticateService: AuthenticateService) {
+  constructor(private store: Store,
+              private authenticateService: AuthenticateService,
+              private router: Router) {
   }
 
   ngOnInit(): void {
@@ -53,6 +56,7 @@ export class StatusComponent implements OnInit{
   }
 
   logout() {
-    this.authenticateService.setEnabled(false);
+    this.router.navigate(["/login"]);
+    this.authenticateService.logout();
   }
 }

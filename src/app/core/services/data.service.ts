@@ -29,6 +29,7 @@ export class DataService {
   private schemaClassTreeUrl = `${environment.ApiRoot}/getSchemaClassTree/`;
   private eventsTreeUrl = `${environment.ApiRoot}/getEventTree/`;
   private listInstancesUrl = `${environment.ApiRoot}/listInstances/`;
+  private findInstanceByDisplayNameUrl = `${environment.ApiRoot}/findByDisplayName`;
   private countInstancesUrl = `${environment.ApiRoot}/countInstances/`;
   private commitInstanceUrl = `${environment.ApiRoot}/commit/`;
   // Track the negative dbId to be used
@@ -424,6 +425,28 @@ export class DataService {
   }
 
   /**
+   * Find an Instance based on its display name and a list of class names.
+   * @param displayName
+   * @param className
+   */
+  findInstanceByDisplayName(displayName: string,
+    className: string[]): Observable<Instance> {
+    let clsNameText = className.join(',');
+    // The URL should encode itself
+    let url = this.findInstanceByDisplayNameUrl + '?displayName=' + displayName + "&classNames=" + clsNameText;
+    // console.debug('list instances url: ' + url);
+    return this.http.get<Instance>(url)
+      .pipe(map((data: Instance) => data), // Nothing needs to be done.
+        catchError((err: Error) => {
+          console.log("No instance can be found: \n" + err.message, "Close", {
+            panelClass: ['warning-snackbar'],
+            duration: 10000
+          });
+          return throwError(() => err);
+        }));
+  }
+
+  /**
    * Commit the passed instance back to the database.
    * @param instance
    */
@@ -442,7 +465,7 @@ export class DataService {
   }
 
   private cloneInstanceForCommit(source: Instance): Instance {
-    let instance : Instance = {
+    let instance: Instance = {
       dbId: source.dbId,
       displayName: source.displayName,
       schemaClassName: source.schemaClassName,
@@ -456,10 +479,10 @@ export class DataService {
   }
 
   // TODO: Create a separate service for instance/attribute logic
-  setCandidateClasses(schemaAttribute: SchemaAttribute): any[]  {
+  setCandidateClasses(schemaAttribute: SchemaAttribute): any[] {
     // @ts-ignore
     let concreteClassNames = new Set<string>();
-    if(schemaAttribute.allowedClases) {
+    if (schemaAttribute.allowedClases) {
       for (let clsName of schemaAttribute.allowedClases) {
         let schemaClass: SchemaClass = this.getSchemaClass(clsName)!;
         this.grepConcreteClasses(schemaClass, concreteClassNames);

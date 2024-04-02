@@ -5,7 +5,7 @@ import {RouterModule, Routes} from "@angular/router";
 
 const routes: Routes = [
   {
-    path: ``,
+    path: "",
     component: LoginComponent
   }
 ]
@@ -15,6 +15,7 @@ const routes: Routes = [
   imports: [
     RouterModule.forChild(routes),
     CommonModule
-  ]
+  ],
+  exports: [RouterModule]
 })
 export class AuthRoutingModule {}

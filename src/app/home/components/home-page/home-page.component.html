@@ -16,14 +16,15 @@
   <div class="center-content">
     <mat-card class="card">
       <mat-card-content>
-        <!-- <a routerLink="/main">Schema View</a> -->
-        <button mat-button (click)="switch_view('schema_view')">Schema View</button>
+         <a routerLink="/schema_view">Schema View</a>
+<!--        <button mat-button (click)="switch_view('schema_view')">Schema View</button>-->
       </mat-card-content>
     </mat-card>
     <br>
     <mat-card class="card">
       <mat-card-content>
-        <button mat-button (click)="switch_view('event_view')">Event View</button>
+        <a routerLink="/event_view">Event View</a>
+        <!--        <button mat-button (click)="switch_view('event_view')">Event View</button>-->
       </mat-card-content>
     </mat-card>
     <mat-card class="card">
@@ -55,6 +56,8 @@
       <mat-card-content>Logged-in Curators (3 curators)</mat-card-content>
     </mat-card>
   </div>
+<app-status></app-status>
+
 <!--</section>-->
 
 <!--Fill whole page: search, cypher, last edited history table, last viewed-->

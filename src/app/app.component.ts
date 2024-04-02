@@ -17,9 +17,9 @@ export class AppComponent {
 
 
   ngOnInit() {
-    // this.loggedIn = sessionStorage.getItem('authenticated') === 'true';
+    this.loggedIn = sessionStorage.getItem('authenticated') === 'true';
     // Bypass for the time being
-    this.loggedIn = true;
+    //this.loggedIn = false;
     let url = window.location.pathname;
     console.debug('url: ', url);
     if (url.includes('llm_apps')) {
