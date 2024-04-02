@@ -27,6 +27,7 @@
     "@ngrx/router-store": "^17.1.1",
     "@ngrx/store": "^17.1.1",
     "@ngrx/store-devtools": "^17.1.1",
+    "angular-jwt": "^0.1.11",
     "langchain": "^0.1.27",
     "ngrx-store-localstorage": "^17.0.0",
     "openai": "^4.29.2",
