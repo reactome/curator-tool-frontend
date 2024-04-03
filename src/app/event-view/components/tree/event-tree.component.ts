@@ -6,6 +6,7 @@ import { Store } from "@ngrx/store";
 import {Instance} from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
 import { EDIT_ACTION } from "../../../schema-view/instance/components/instance-view/instance-table/instance-table.model";
+import {MatSnackBar} from '@angular/material/snack-bar'
 
 /** Tree node with expandable and level information */
 interface EventNode {
@@ -61,7 +62,8 @@ export class EventTreeComponent {
     private cdr: ChangeDetectorRef,
     private service: DataService,
     private router: Router,
-    private store: Store) {
+    private store: Store,
+    private _snackBar: MatSnackBar) {
       let searchKey = undefined;
       service.fetchEventTree(false, "All").subscribe(data => {
         this.dataSource.data = [data]
@@ -98,6 +100,13 @@ export class EventTreeComponent {
       if (focus) {
         const element = document.querySelector('.inFocus') as HTMLElement;
         element.scrollIntoView({behavior: 'smooth'});
+      } else if (searchKey != undefined) {
+        let snackBarRef = this._snackBar.open(
+          'No data matching search key: ' + searchKey, 'Close',
+          {
+            horizontalPosition: 'center',
+            verticalPosition: 'top'
+           });
       }
     })
   }
