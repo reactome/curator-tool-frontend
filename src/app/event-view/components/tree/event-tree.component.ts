@@ -19,6 +19,7 @@ interface EventNode {
   match: boolean;
   expand: boolean;
   inFocus: boolean;
+  rootNode: boolean;
 }
 
 @Component({
@@ -39,7 +40,8 @@ export class EventTreeComponent {
       doRelease: !!node.attributes && node.attributes["_doRelease"],
       match: !!node.attributes && node.attributes["match"],
       expand: !!node.attributes && node.attributes["expand"],
-      inFocus: false
+      inFocus: false,
+      rootNode: false
     };
   };
 
@@ -68,8 +70,11 @@ export class EventTreeComponent {
       service.fetchEventTree(false, "All").subscribe(data => {
         this.dataSource.data = [data]
         // Note: this.treeControl.expandAll() here breaks the page - hence we expand just one level from the top node
-        this.treeControl.expand(this.treeControl.dataNodes[0]);
+        let rootNode = this.treeControl.dataNodes[0];
+        this.treeControl.expand(rootNode);
         this.showProgressSpinner = false;
+        // The following is needed to hide the top (dummy) node
+        this.filterData(['All']);
       })
   }
 
@@ -84,7 +89,10 @@ export class EventTreeComponent {
     this.service.fetchEventTree(true, speciesFilter, searchKey).subscribe(data => {
       this.showProgressSpinner = false;
       this.dataSource.data = [data];
-      this.treeControl.expand(this.treeControl.dataNodes[0]);
+      let rootNode = this.treeControl.dataNodes[0];
+      this.treeControl.expand(rootNode);
+      // Tag root (dummy) node so that the corresponding element can be hidden when the tree is displayed
+      rootNode.rootNode = true;
       let focus = false;
       this.treeControl.dataNodes.forEach( (node) => {
         if (node.expand) {
@@ -96,6 +104,9 @@ export class EventTreeComponent {
         }
       });
       this.cdr.detectChanges();
+      // Hide root (dummy) node
+      const rootNodeElement = document.querySelector('.rootNode') as HTMLElement;
+      rootNodeElement.style.display = "none";
       // Scroll to the first matching node of the tree
       if (focus) {
         const element = document.querySelector('.inFocus') as HTMLElement;
