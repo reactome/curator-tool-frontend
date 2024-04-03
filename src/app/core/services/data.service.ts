@@ -145,7 +145,7 @@ export class DataService {
     // Otherwise call the restful API
     let url = this.eventsTreeUrl + `${species}/`;
     if (searchKey !== undefined) {
-      url += '?query=' + searchKey;
+      url += '?query=' + encodeURI(searchKey.replaceAll("'","\\'"));
     }
 
     return this.http.get<Array<Instance>>(url)
