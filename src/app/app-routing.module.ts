@@ -1,8 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { GeneLlmComponentComponent } from './gene-llm/gene-llm-component/gene-llm-component.component';
-import {InstanceViewComponent} from "./schema-view/instance/components/instance-view/instance-view.component";
-import {InstanceModule} from "./schema-view/instance/instance.module";
 
 const routes: Routes = [
   {
@@ -36,7 +34,7 @@ const routes: Routes = [
         m.InstanceModule),
   },
   {
-    path: "llm_apps",
+    path: "llm_apps_view",
     component: GeneLlmComponentComponent
   },
   {

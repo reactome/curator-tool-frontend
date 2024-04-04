@@ -1,5 +1,5 @@
 import { NgIf } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { MatLabel } from '@angular/material/form-field';
 import { MatTooltip } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
@@ -16,6 +16,7 @@ import { z } from "zod";
 
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-text-curation',
@@ -31,14 +32,7 @@ export class TextCurationComponent {
   @Input() instanceTable: InstanceTableComponent | undefined = undefined;
 
   // Test code: Need to remove it
-  chatModel: ChatOpenAI = new ChatOpenAI(
-    {
-      // !!!Don't push this key to GitHub!!!
-      openAIApiKey: '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', // This is needed. Right now it is hard-coded. To be pulled from the server-side.
-      modelName: 'gpt-3.5-turbo',
-      temperature: 0,
-    }
-  );
+  chatModel: ChatOpenAI | undefined = undefined;
 
   operationSchema = {
     type: "object",
@@ -57,7 +51,21 @@ export class TextCurationComponent {
 
   constructor(private dataService: DataService,
     private objectStore: Store,
-    private router: Router) { }
+    private router: Router,
+    private http: HttpClient) {
+    // Fetch OpenAI API key
+    const llm_url_openai_key = 'http://127.0.0.1:5000/openai_key';
+    this.http.get(llm_url_openai_key, {responseType: 'text'}).subscribe(result => {
+      this.chatModel = new ChatOpenAI(
+        {
+          openAIApiKey: result,
+          modelName: 'gpt-3.5-turbo',
+          temperature: 0,
+        }
+      )
+    });
+  }
+
 
   // The following implementation is based on: 
   // https://js.langchain.com/docs/modules/agents/tools/dynamic
@@ -133,7 +141,7 @@ export class TextCurationComponent {
     // into UpperCamelCase, with the first letter of every word capitalized. Don't do this format for other functions.\
     // \n\nHUMAN: {input}\n\n{agent_scratchpad}");
 
-    const llm = this.chatModel;
+    const llm = this.chatModel!;
     const agent = await createOpenAIFunctionsAgent({
       llm,
       tools,
@@ -169,13 +177,13 @@ export class TextCurationComponent {
       this.dataService.registerNewInstance(instance);
       this.objectStore.dispatch(NewInstanceActions.register_new_instances(instance));
       let dbId = instance.dbId.toString();
-      this.router.navigate(["/instance_view/" + dbId]);
+      this.router.navigate(["/schema_view/instance/" + dbId]);
     });
   }
 
   editInstance(dbId: number) {
     if (dbId !== undefined)
-      this.router.navigate(["/instance_view/" + dbId]);
+      this.router.navigate(["/schema_view/instance/" + dbId]);
   }
 
   setAttribute(attribute: string, value: any, append: boolean = false) {
@@ -256,7 +264,7 @@ export class TextCurationComponent {
     else {
       if (append) {
         let values = instance.attributes.get(clsAtt.name);
-        if (values) 
+        if (values)
           values.push(attValue);
         else
           instance.attributes.set(clsAtt.name, [attValue]);
