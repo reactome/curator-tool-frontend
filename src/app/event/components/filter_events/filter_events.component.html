@@ -1,0 +1,13 @@
+<mat-form-field>
+  <mat-label>Show in</mat-label>
+    <mat-select class="text-sm" [(value)]="selected" (selectionChange)="onSelectionChange()">
+      @for (specie of species; track specie) {
+        <mat-option class="text-sm" [value]="specie.value">{{specie.viewValue}}</mat-option>
+      }
+    </mat-select>
+</mat-form-field>
+<mat-form-field>
+  <mat-label>Search </mat-label>
+  <input placeholder="E.g. WNT or dbId:997411" class="text-sm" matInput (keydown.enter)="onSelectionChange()" (keyup)="recordSearchKey($event)" #input>
+</mat-form-field>
+

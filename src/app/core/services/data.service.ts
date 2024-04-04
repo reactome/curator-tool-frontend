@@ -27,6 +27,7 @@ export class DataService {
   private schemaClassDataUrl = `${environment.ApiRoot}/getAttributes/` // TODO: Need to consider using Angular ConfigService!
   private entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
   private schemaClassTreeUrl = `${environment.ApiRoot}/getSchemaClassTree/`;
+  private eventsTreeUrl = `${environment.ApiRoot}/getEventTree/`;
   private listInstancesUrl = `${environment.ApiRoot}/listInstances/`;
   private findInstanceByDisplayNameUrl = `${environment.ApiRoot}/findByDisplayName`;
   private countInstancesUrl = `${environment.ApiRoot}/countInstances/`;
@@ -35,6 +36,7 @@ export class DataService {
   private nextNewDbId: number = -1;
   // The root class is cached for performance
   private rootClass: SchemaClass | undefined;
+  private rootEvent: Instance | undefined;
   private name2class?: Map<string, SchemaClass>;
   public static newDisplayName: string = 'To be generated';
 
@@ -47,6 +49,36 @@ export class DataService {
    * @returns
    */
   fetchSchemaClass(className: string): Observable<SchemaClass> {
+    // Check cached results first
+    if (this.name2SchemaClass.has(className)) {
+      return of(this.name2SchemaClass.get(className)!);
+    }
+    // Otherwise call the restful API
+    return this.http.get<SchemaClass>(this.schemaClassDataUrl + `${className}`)
+      .pipe(
+        map((data: any) => {
+          // console.log("fetchSchemaClass:");
+          // console.log(data);
+          // convert data to schemaClass
+          let schemaCls = this.convertToSchemaClass(className, data);
+          this.name2SchemaClass.set(schemaCls.name, schemaCls);
+          return schemaCls;
+        }),
+        catchError((err: Error) => {
+          console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
+            panelClass: ['warning-snackbar'],
+            duration: 10000
+          });
+          return throwError(() => err);
+        }));
+  }
+
+  /**
+   * Fetch the instance data.
+   * @param className
+   * @returns
+   */
+  fetchEvent(className: string): Observable<SchemaClass> {
     // Check cached results first
     if (this.name2SchemaClass.has(className)) {
       return of(this.name2SchemaClass.get(className)!);
@@ -98,10 +130,48 @@ export class DataService {
         }));
   }
 
+  /**
+   * Fetch the schema class table.
+   * @param className
+   * @param species
+   * @param searchKey
+   * @returns
+   */
+  fetchEventTree(skipCache: boolean, species: string, searchKey?: string): Observable<Instance> {
+    //Check cached results first
+    if (this.rootEvent && !skipCache) {
+      return of(this.rootEvent!);
+    }
+    // Otherwise call the restful API
+    let url = this.eventsTreeUrl + `${species}/`;
+    if (searchKey !== undefined) {
+      url += '?query=' + encodeURI(searchKey.replaceAll("'","\\'"));
+    }
+
+    return this.http.get<Array<Instance>>(url)
+      .pipe(
+        map((data: Array<Instance>) => {
+          let rootEvent: Instance = {
+            dbId: 0,
+            displayName: "Event",
+            schemaClassName: "Event",
+            attributes: { "hasEvent" : data}
+          };
+          return rootEvent;
+        }),
+        catchError((err: Error) => {
+          console.log("The events tree could not been loaded: \n" + err.message, "Close", {
+            panelClass: ['warning-snackbar'],
+            duration: 10000
+          });
+          return throwError(() => err);
+        }));
+  }
+
   getSchemaClass(clsName: string): SchemaClass | undefined {
     if (this.name2class && this.name2class.size > 0) {
-      return this.name2class.get(clsName);
-    }
+    return this.name2class.get(clsName);
+  }
     this.name2class = new Map<string, SchemaClass>();
     if (this.rootClass)
       this.buildSchemaClassMap(this.rootClass, this.name2class);
@@ -355,9 +425,9 @@ export class DataService {
   }
 
   /**
-   * Find an Instance based on its display name and a list of class names. 
+   * Find an Instance based on its display name and a list of class names.
    * @param displayName
-   * @param className 
+   * @param className
    */
   findInstanceByDisplayName(displayName: string,
     className: string[]): Observable<Instance> {
@@ -430,63 +500,6 @@ export class DataService {
         this.grepConcreteClasses(child, concreteClsNames)
       }
     }
-  }
-
-  /**
-   * Fetch the instance data.
-   * @param className
-   * @returns
-   */
-  fetchEvent(className: string): Observable<SchemaClass> {
-    // Check cached results first
-    if (this.name2SchemaClass.has(className)) {
-      return of(this.name2SchemaClass.get(className)!);
-    }
-    // Otherwise call the restful API
-    return this.http.get<SchemaClass>(this.schemaClassDataUrl + `${className}`)
-      .pipe(
-        map((data: any) => {
-          // console.log("fetchSchemaClass:");
-          // console.log(data);
-          // convert data to schemaClass
-          let schemaCls = this.convertToSchemaClass(className, data);
-          this.name2SchemaClass.set(schemaCls.name, schemaCls);
-          return schemaCls;
-        }),
-        catchError((err: Error) => {
-          console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 10000
-          });
-          return throwError(() => err);
-        }));
-  }
-
-  /**
-   * Fetch the schema class table.
-   * @param className
-   * @returns
-   */
-  fetchEventTree(skipCache: boolean): Observable<SchemaClass> {
-    //Check cached results first
-    if (this.rootClass && !skipCache) {
-      return of(this.rootClass!);
-    }
-    // Otherwise call the restful API
-    return this.http.get<SchemaClass>(this.schemaClassTreeUrl)
-      .pipe(
-        map((data: SchemaClass) => {
-          // console.debug("fetchSchemaClassTree:", data);
-          this.rootClass = data;
-          return this.rootClass;
-        }),
-        catchError((err: Error) => {
-          console.log("The schema class table could not been loaded: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 10000
-          });
-          return throwError(() => err);
-        }));
   }
 
 }

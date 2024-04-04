@@ -3,19 +3,23 @@ import {ChangeDetectorRef, Component} from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
 import { Router } from "@angular/router";
 import { Store } from "@ngrx/store";
-import { SchemaClass } from "../../../core/models/reactome-schema.model";
+import {Instance} from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
 import { EDIT_ACTION } from "../../../schema-view/instance/components/instance-view/instance-table/instance-table.model";
-import {NewInstanceActions} from "../../../schema-view/instance/state/new-instance/new-instance.actions";
-
+import {MatSnackBar} from '@angular/material/snack-bar'
 
 /** Tree node with expandable and level information */
 interface EventNode {
   expandable: boolean;
   name: string;
   level: number;
-  count: number;
-  abstract: boolean;
+  dbId: number;
+  className: string;
+  doRelease: boolean;
+  match: boolean;
+  expand: boolean;
+  inFocus: boolean;
+  rootNode: boolean;
 }
 
 @Component({
@@ -24,15 +28,23 @@ interface EventNode {
   styleUrls: ['./event-tree.component.scss']
 })
 export class EventTreeComponent {
-  private _transformer = (node: SchemaClass, level: number) => {
+  showProgressSpinner: boolean = true;
+  private _transformer = (node: Instance, level: number) => {
+    // TODO: Why does Typescript think that node.attributes is an Object and not a Map (has/get/set methods don't work)
     return {
-      expandable: !!node.children && node.children.length > 0,
-      name: node.name,
-      count: node.count ?? 0,
+      expandable: !!node.attributes && (node.attributes["hasEvent"] ?? []).length > 0,
+      name: node.displayName ?? "",
       level: level,
-      abstract: node.abstract ?? false, // Default is false
+      dbId: node.dbId,
+      className: node.schemaClassName,
+      doRelease: !!node.attributes && node.attributes["_doRelease"],
+      match: !!node.attributes && node.attributes["match"],
+      expand: !!node.attributes && node.attributes["expand"],
+      inFocus: false,
+      rootNode: false
     };
   };
+
 
   treeControl = new FlatTreeControl<EventNode>(
     node => node.level,
@@ -43,7 +55,7 @@ export class EventTreeComponent {
     this._transformer,
     node => node.level,
     node => node.expandable,
-    node => node.children,
+    node => node.attributes["hasEvent"] ?? []
   );
 
   dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
@@ -52,37 +64,61 @@ export class EventTreeComponent {
     private cdr: ChangeDetectorRef,
     private service: DataService,
     private router: Router,
-    private store: Store) {
-      service.fetchEventTree(false).subscribe(data => {
+    private store: Store,
+    private _snackBar: MatSnackBar) {
+      let searchKey = undefined;
+      service.fetchEventTree(false, "All").subscribe(data => {
         this.dataSource.data = [data]
-        this.treeControl.expandAll();
+        // Note: this.treeControl.expandAll() here breaks the page - hence we expand just one level from the top node
+        let rootNode = this.treeControl.dataNodes[0];
+        this.treeControl.expand(rootNode);
+        this.showProgressSpinner = false;
+        // The following is needed to hide the top (dummy) node
+        this.filterData(['All']);
       })
   }
 
   hasChild = (_: number, node: EventNode) => node.expandable;
 
-  createNewInstance(eventName: string) {
-    this.service.createNewInstance(eventName).subscribe(instance => {
-      this.service.registerNewInstance(instance);
-      this.store.dispatch(NewInstanceActions.register_new_instances(instance));
-      let dbId = instance.dbId.toString();
-      this.router.navigate(["/instance_view/" + dbId]);
-    });
-  }
+  inFocus = (node: EventNode) => node.inFocus;
 
-  filterData(speciesFilter: string) {
-    this.service.fetchEventTree(true).subscribe(data => {
-      let filtered_children: SchemaClass[];
-      filtered_children = [];
-      data.children?.forEach((child): void => {
-        if (child.name.includes(speciesFilter) || speciesFilter == 'All') {
-          filtered_children.push(child)
+  filterData(searchFilters: Array<string | undefined>, ) {
+    let speciesFilter = searchFilters[0] as string;
+    let searchKey = searchFilters[1];
+    this.showProgressSpinner = true;
+    this.service.fetchEventTree(true, speciesFilter, searchKey).subscribe(data => {
+      this.showProgressSpinner = false;
+      this.dataSource.data = [data];
+      let rootNode = this.treeControl.dataNodes[0];
+      this.treeControl.expand(rootNode);
+      // Tag root (dummy) node so that the corresponding element can be hidden when the tree is displayed
+      rootNode.rootNode = true;
+      let focus = false;
+      this.treeControl.dataNodes.forEach( (node) => {
+        if (node.expand) {
+          this.treeControl.expand(node);
+        }
+        if (node.match && !focus) {
+          node.inFocus = true;
+          focus = true;
         }
       });
-      data.children = filtered_children;
-      this.dataSource.data = [data];
-      this.treeControl.expandAll();
       this.cdr.detectChanges();
+      // Hide root (dummy) node
+      const rootNodeElement = document.querySelector('.rootNode') as HTMLElement;
+      rootNodeElement.style.display = "none";
+      // Scroll to the first matching node of the tree
+      if (focus) {
+        const element = document.querySelector('.inFocus') as HTMLElement;
+        element.scrollIntoView({behavior: 'smooth'});
+      } else if (searchKey != undefined) {
+        let snackBarRef = this._snackBar.open(
+          'No data matching search key: ' + searchKey, 'Close',
+          {
+            horizontalPosition: 'center',
+            verticalPosition: 'top'
+           });
+      }
     })
   }
 

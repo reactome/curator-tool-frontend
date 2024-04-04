@@ -28,6 +28,12 @@ const routes: Routes = [
         m.MainEventModule),
   },
   {
+    path: "instance_view",
+    loadChildren: () =>
+      import("./schema-view/instance/instance.module").then((m) =>
+        m.InstanceModule),
+  },
+  {
     path: "llm_apps_view",
     component: GeneLlmComponentComponent
   },

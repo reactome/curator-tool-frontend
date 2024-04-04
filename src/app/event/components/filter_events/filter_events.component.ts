@@ -13,19 +13,19 @@ interface Species {
  * @title Basic select
  */
 @Component({
-  selector: 'select-species',
-  templateUrl: './select_species.component.html',
-  styleUrls: ['./select_species.component.scss'],
+  selector: 'filter-events',
+  templateUrl: './filter_events.component.html',
+  styleUrls: ['./filter_events.component.scss'],
   standalone: true,
   imports: [MatFormFieldModule, MatSelectModule, MatInputModule, FormsModule]
 })
-export class SelectSpeciesComponent {
+export class FilterEventsComponent {
+  // For doing search
+  searchKey: string | undefined = undefined;
   selected = "All";
-  @Output() updateEventTree = new EventEmitter<string>();
+  @Output() updateEventTree = new EventEmitter<Array<string | undefined>>();
   species: Species[] = [
     {value: 'All', viewValue: 'All'},
-    // TODO: The value below is for temporary testing only
-    {value: 'Control', viewValue: 'Control'},
     {value: 'Homo sapiens', viewValue: 'Homo sapiens'},
     {value: 'Caenorhabditis elegans', viewValue: 'Caenorhabditis elegans'},
     {value: 'Danio rerio', viewValue: 'Danio rerio'},
@@ -36,8 +36,20 @@ export class SelectSpeciesComponent {
   ];
 
   onSelectionChange(): void {
-    console.debug('selected: ' + this.selected)
-    this.updateEventTree.emit(this.selected);
+    console.debug('selected: ' + this.selected + "; searchKey: " + this.searchKey);
+    this.updateEventTree.emit([this.selected, this.searchKey]);
+  }
+
+
+
+  recordSearchKey(event: Event) {
+    const text = (event.target as HTMLInputElement).value;
+    this.searchKey = text;
+    // Make sure reset it to undefined if nothing there so that
+    // no empty string sent to the server
+    if (this.searchKey !== undefined && this.searchKey.length === 0) {
+      this.searchKey = undefined;
+    }
   }
 }
 

@@ -18,14 +18,21 @@ export class Icon2Component implements OnInit{
   }
 
   getImage() {
-    if (this.className == "DatabaseObject") {
+    if (this.className == "Reaction") {
       this.icon2Image = 'assets/images/Reaction.gif';
-    } else if (this.className == "AbstractModifiedResidue") {
+    } else if (this.className == "Pathway") {
+      this.icon2Image = 'assets/images/Pathway.gif';
+    } else if (this.className == "BlackBoxEvent") {
       this.icon2Image = 'assets/images/BlackboxEvent.gif';
-    } else if (this.className == "GeneticallyModifiedResidue") {
-      this.hidden = 'hidden';
+    } else if (this.className == "Polymerisation") {
+      this.icon2Image = 'assets/images/Polymerization.gif';
+    } else if (this.className == "Depolymerisation") {
+      this.icon2Image = 'assets/images/Depolymerisation.gif';
+    } else if (this.className == "FailedReaction") {
+      this.icon2Image = 'assets/images/FailedReaction.gif';
     } else {
-      this.icon2Image = 'assets/images/Deploymerization.gif';
+      this.hidden = 'hidden';
     }
+
   }
 }

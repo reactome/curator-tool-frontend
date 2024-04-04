@@ -10,7 +10,7 @@ export class Icon1Component implements OnInit{
   width = '15px';
   height = '15px';
   icon1Image = '';
-  @Input() className: string = '';
+  @Input() doRelease: boolean = false;
   hidden = '';
 
   ngOnInit() {
@@ -18,10 +18,8 @@ export class Icon1Component implements OnInit{
   }
 
   getImage() {
-    if (this.className == "DatabaseObject") {
+    if (this.doRelease) {
       this.icon1Image = 'assets/images/Selected.png';
-    } else if (this.className == "AbstractModifiedResidue") {
-      this.hidden = 'hidden';
     } else {
       this.icon1Image = 'assets/images/Unselected.png';
     }
