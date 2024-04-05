@@ -13,7 +13,7 @@
     <button mat-icon-button disabled></button>
     <icon1-image [doRelease]="node.doRelease" ></icon1-image>
     <icon2-image [className]="node.className"></icon2-image>
-    <a [ngClass]="node.match === true ? 'event_text_match' : 'event_text'" routerLink="/instance_view/{{node.dbId}}">{{node.name}}</a>&nbsp;
+    <a [ngClass]="node.match === true ? 'event_text_match' : 'event_text'" routerLink="/schema_view/instance/{{node.dbId}}">{{node.name}}</a>&nbsp;
   </mat-tree-node>
   <!-- This is the table node template for expandable nodes -->
   <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding
@@ -26,6 +26,6 @@
     </button>
     <icon1-image [doRelease]="node.doRelease"></icon1-image>
     <icon2-image [className]="node.className"></icon2-image>
-    <a [ngClass]="node.match === true ? 'event_text_match' : 'event_text'" routerLink="/instance_view/{{node.dbId}}">{{node.name}}</a>&nbsp;
+    <a [ngClass]="node.match === true ? 'event_text_match' : 'event_text'" routerLink="/schema_view/instance/{{node.dbId}}">{{node.name}}</a>&nbsp;
   </mat-tree-node>
 </mat-tree>
