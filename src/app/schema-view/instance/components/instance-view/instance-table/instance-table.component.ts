@@ -14,6 +14,7 @@ import {
   CdkDragEnter, moveItemInArray,
   transferArrayItem
 } from "@angular/cdk/drag-drop";
+import { InstanceNameService } from 'src/app/core/services/instance-name.service';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -79,7 +80,8 @@ export class InstanceTableComponent {
     private dialogService: NewInstanceDialogService,
     private dragDropService: DragDropService,
     private selectInstanceDialogService: SelectInstanceDialogService,
-    private store: Store) {
+    private store: Store,
+    private nameService: InstanceNameService) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
       this.categories.set(AttributeCategory[categoryKey], true)
@@ -113,8 +115,6 @@ export class InstanceTableComponent {
   }
 
   onNoInstanceAttributeEdit(data: AttributeValue) {
-    this.addModifiedAttributeName(data.attribute.name);
-
     if (data.attribute.cardinality === '1') {
       this._instance?.attributes?.set(data.attribute.name, data.value);
     } else { // This should be a list
@@ -126,6 +126,8 @@ export class InstanceTableComponent {
         console.debug(valueList);
       }
     }
+    this.postEdit(data.attribute.name);
+    this.updateTableContent(); // In case the display name is changed
     // Change in this type of attribute doesn't need to update the table content.
     // Therefore, we need to register it here
     this.registerUpdatedInstance();
@@ -155,7 +157,6 @@ export class InstanceTableComponent {
   // this value will disable the action menu popup!
   private deleteInstanceAttribute(attributeValue: AttributeValue): void {
     console.debug('deleteInstanceAttribute: ', attributeValue);
-    this.addModifiedAttributeName(attributeValue.attribute.name);
     if (attributeValue.attribute.cardinality === '1') {
       // This should not occur. Just in case
       //this._instance?.attributes?.delete(attributeValue.attribute?.name);
@@ -172,6 +173,7 @@ export class InstanceTableComponent {
         this._instance?.attributes?.set(attributeValue.attribute?.name, undefined);
       }
     }
+    this.postEdit(attributeValue.attribute.name);
     this.updateTableContent();
   }
 
@@ -212,10 +214,10 @@ export class InstanceTableComponent {
           value.splice(attributeValue.index, 0, ...result);
         }
       }
+      //Only add attribute name if value was added
+      this.postEdit(attributeValue.attribute.name);
       //TODO: Add a new value may reset the scroll position. This needs to be changed!
       this.updateTableContent();
-      //Only add attribute name if value was added
-      this.addModifiedAttributeName(attributeValue.attribute.name);
     });
   }
 
@@ -242,11 +244,11 @@ export class InstanceTableComponent {
         value.splice(attributeValue.index, 0, result);
       }
     }
-    //TODO: Add a new value may reset the scroll position. This needs to be changed!
-    this.updateTableContent();
     // Only add attribute name if value was added
     //TODO: This causes the Angular N100 error about state change after view established. Need more refactoring!
-    this.addModifiedAttributeName(attributeValue.attribute.name);
+    this.postEdit(attributeValue.attribute.name);
+    //TODO: Add a new value may reset the scroll position. This needs to be changed!
+    this.updateTableContent();
   }
 
   updateTableContent(): void {
@@ -284,6 +286,16 @@ export class InstanceTableComponent {
     else if (!this._instance.modifiedAttributes.includes(attName))
       // Somehow ngrx/store make modifiedAttributes immutable
       this._instance.modifiedAttributes.push(attName);
+  }
+
+  /**
+   * Provide a hook to do something (e.g. update display name, perform QA etc) after 
+   * any editing.
+   * @param attName
+   */
+  postEdit(attName: string) {
+    this.nameService.updateDisplayName(this._instance!);
+    this.addModifiedAttributeName(attName);
   }
 
   drop(event: CdkDragDrop<string[]>, value: SchemaAttribute) {

@@ -17,6 +17,7 @@ import { z } from "zod";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { HttpClient } from '@angular/common/http';
+import { InstanceNameService } from 'src/app/core/services/instance-name.service';
 
 @Component({
   selector: 'app-text-curation',
@@ -52,7 +53,8 @@ export class TextCurationComponent {
   constructor(private dataService: DataService,
     private objectStore: Store,
     private router: Router,
-    private http: HttpClient) {
+    private http: HttpClient,
+    private nameService: InstanceNameService) {
     // Fetch OpenAI API key
     const llm_url_openai_key = 'http://127.0.0.1:5000/openai_key';
     this.http.get(llm_url_openai_key, {responseType: 'text'}).subscribe(result => {
@@ -219,7 +221,7 @@ export class TextCurationComponent {
     if (this.instanceTable === undefined) return;
     this.instanceTable.updateTableContent();
     //TODO: This function should be refactor to something related to Instance only, not in the table!
-    this.instanceTable.addModifiedAttributeName(attributeName);
+    this.instanceTable.postEdit(attributeName);
   }
 
   /**
