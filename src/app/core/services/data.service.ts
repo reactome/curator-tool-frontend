@@ -131,21 +131,32 @@ export class DataService {
   }
 
   /**
-   * Fetch the schema class table.
-   * @param className
-   * @param species
+   * Fetch Event Tree
+   * @param skipCache
+   * @param selectedClass
+   * @param selectedAttribute
+   * @param selectedOperand
+   * @param selectedSpecies
    * @param searchKey
-   * @returns
    */
-  fetchEventTree(skipCache: boolean, species: string, searchKey?: string): Observable<Instance> {
+  fetchEventTree(skipCache: boolean,
+                 selectedSpecies: string,
+                 selectedClass: string,
+                 selectedAttribute: string,
+                 selectedOperand: string,
+                 searchKey?: string): Observable<Instance> {
+
     //Check cached results first
     if (this.rootEvent && !skipCache) {
       return of(this.rootEvent!);
     }
     // Otherwise call the restful API
-    let url = this.eventsTreeUrl + `${species}/`;
-    if (searchKey !== undefined) {
-      url += '?query=' + encodeURI(searchKey.replaceAll("'","\\'"));
+    let url = this.eventsTreeUrl + `${selectedSpecies}`;
+    if (searchKey !== undefined || selectedOperand.includes("NULL")) {
+      url += '?class=' + selectedClass
+        + '&attribute=' + selectedAttribute
+        + '&operand=' + encodeURI(selectedOperand)
+        + '&query=' + encodeURI(searchKey!.replaceAll("'", "\\'"));
     }
 
     return this.http.get<Array<Instance>>(url)

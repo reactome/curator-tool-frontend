@@ -22,8 +22,9 @@ interface Species {
 export class FilterEventsComponent {
   // For doing search
   searchKey: string | undefined = undefined;
-  selected = "All";
+
   @Output() updateEventTree = new EventEmitter<Array<string | undefined>>();
+  selectedSpecies = "All";
   species: Species[] = [
     {value: 'All', viewValue: 'All'},
     {value: 'Homo sapiens', viewValue: 'Homo sapiens'},
@@ -35,12 +36,69 @@ export class FilterEventsComponent {
     {value: 'Mus musculus', viewValue: 'Mus musculus'}
   ];
 
+  // TODO:  Retrieve all recursive children of Event dynamically from the Schema
+  selectedClass = "Event";
+  classNames: string[] = [
+    'BlackBoxEvent',
+    'CellDevelopmentStep',
+    'CellLineagePath',
+    'Depolymerisation',
+    'Event',
+    'FailedReaction',
+    'InteractionEvent',
+    'Pathway',
+    'Polymerisation',
+    'ReactionlikeEvent',
+    'TopLevelPathway'
+  ];
+
+  // TODO:  Retrieve all attributes of selectedClass dynamically from the Schema
+  selectedAttribute = "displayName";
+  classToAttributes: Map<string, string[]> = new Map(
+    [
+      ['BlackBoxEvent', ["displayName", "dbId"]],
+      ['CellDevelopmentStep',["displayName", "dbId"]],
+      ['CellLineagePath',["displayName", "dbId"]],
+      ['Depolymerisation',["displayName", "dbId"]],
+      ['Event',["displayName", "dbId"]],
+      ['FailedReaction',["displayName", "dbId"]],
+      ['InteractionEvent',["displayName", "dbId"]],
+      ['Pathway',["displayName", "dbId"]],
+      ['Polymerisation',["displayName", "dbId"]],
+      ['ReactionlikeEvent',["displayName", "dbId"]],
+      ['TopLevelPathway', ["displayName", "dbId"]]
+    ]);
+
+  selectedOperand = "Equals";
+  operands: string[] = [
+    'Equals',
+    'Contains',
+    'Does not contain',
+    '!=',
+    'Use REGEXP',
+    'IS NOT NULL',
+    'IS NULL'
+  ];
+
   onSelectionChange(): void {
-    console.debug('selected: ' + this.selected + "; searchKey: " + this.searchKey);
-    this.updateEventTree.emit([this.selected, this.searchKey]);
+    console.debug(
+      'selectedSpecies: ' + this.selectedSpecies +
+      'selectedClass: ' + this.selectedClass +
+      'selectedAttribute: ' + this.selectedAttribute +
+      'selectedOperand: ' + this.selectedOperand +
+      "; searchKey: " + this.searchKey);
+      this.updateEventTree.emit([
+        this.selectedSpecies,
+        this.selectedClass,
+        this.selectedAttribute,
+        this.selectedOperand,
+        this.searchKey]);
+}
+
+
+  getAttributes(className: string): string[] | undefined {
+    return this.classToAttributes.get(className);
   }
-
-
 
   recordSearchKey(event: Event) {
     const text = (event.target as HTMLInputElement).value;
