@@ -71,7 +71,6 @@ export class EventTreeComponent {
         this.dataSource.data = [data]
         // Note: this.treeControl.expandAll() here breaks the page - hence we expand just one level from the top node
         let rootNode = this.treeControl.dataNodes[0];
-        // this.treeControl.expand(rootNode);
         this.showProgressSpinner = false;
         // The following is needed to expand and then hide the top (dummy) node
         this.filterData(['All']);
