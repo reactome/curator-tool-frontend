@@ -153,8 +153,8 @@ export class DataService {
         map((data: Array<Instance>) => {
           let rootEvent: Instance = {
             dbId: 0,
-            displayName: "Event",
-            schemaClassName: "Event",
+            displayName: "TopLevelPathway",
+            schemaClassName: "TopLevelPathway",
             attributes: { "hasEvent" : data}
           };
           return rootEvent;

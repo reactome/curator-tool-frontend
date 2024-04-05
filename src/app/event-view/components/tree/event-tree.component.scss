@@ -25,8 +25,6 @@
   height: calc(100vh - 2 * var(--body-margin, 8px)) / 2;
   border: 1px solid var(--outline-variant);
   overflow: scroll;
-  // The following shifts the whole tree to the left, to account for removing the top (dummy) node
-  margin-left: -30px;
 }
 
 .mat-icon {
