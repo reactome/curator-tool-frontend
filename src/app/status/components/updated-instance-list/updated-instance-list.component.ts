@@ -39,7 +39,7 @@ export class UpdatedInstanceListComponent implements OnInit{
   }
 
   compareWithDB(instance: Instance) {
-    this.router.navigate(["/instance_view/", instance.dbId, "comparison"]);
+    this.router.navigate(["/schema_view/instance/", instance.dbId, "comparison"]);
   }
 
   onSelectionChange(instance: Instance, event: MatCheckboxChange) {
