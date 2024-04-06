@@ -111,10 +111,11 @@ export class EventTreeComponent {
         element.scrollIntoView({behavior: 'smooth'});
       } else if (searchKey != undefined) {
         let snackBarRef = this._snackBar.open(
-          'No data matching search key: ' + searchKey, 'Close',
+          'No data matching search key: ' + searchKey, '',
           {
             horizontalPosition: 'center',
-            verticalPosition: 'top'
+            verticalPosition: 'top',
+            duration: 4000
            });
       }
     })

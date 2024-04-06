@@ -8,7 +8,7 @@
 </mat-form-field>
 <mat-form-field>
   <mat-label>Select class</mat-label>
-    <mat-select class="text-sm" [(value)]="selectedClass" (selectionChange)="onSelectionChange()">
+    <mat-select class="text-sm" [(value)]="selectedClass">
       @for (className of classNames; track className) {
         <mat-option class="text-sm" [value]="className">{{className}}</mat-option>
       }
@@ -16,7 +16,7 @@
 </mat-form-field>
 <mat-form-field>
   <mat-label>Select attribute</mat-label>
-  <mat-select class="text-sm" [(value)]="selectedAttribute" (selectionChange)="onSelectionChange()">
+  <mat-select class="text-sm" [(value)]="selectedAttribute">
     @for (attribute of getAttributes(selectedClass); track attribute) {
       <mat-option class="text-sm" [value]="attribute">{{attribute}}</mat-option>
     }
@@ -24,14 +24,14 @@
 </mat-form-field>
 <mat-form-field>
   <mat-label>Select operand</mat-label>
-  <mat-select class="text-sm" [(value)]="selectedOperand" (selectionChange)="onSelectionChange()">
+  <mat-select class="text-sm" [(value)]="selectedOperand">
     @for (operand of operands; track operand) {
       <mat-option class="text-sm" [value]="operand">{{operand}}</mat-option>
     }
   </mat-select>
 </mat-form-field>
 <mat-form-field>
-<!--  <mat-label>Attribute Value:</mat-label>-->
   <input placeholder="Enter search token" class="text-sm" matInput (keydown.enter)="onSelectionChange()" (keyup)="recordSearchKey($event)" #input>
 </mat-form-field>
+  <button style="margin-left: 10px; margin-bottom: 20px;" mat-button (click)="onSelectionChange()">Search</button>
 
