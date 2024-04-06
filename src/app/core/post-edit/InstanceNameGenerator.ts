@@ -1,16 +1,19 @@
-import { Injectable } from '@angular/core';
 import { Instance } from '../models/reactome-instance.model';
 import { SchemaClass } from '../models/reactome-schema.model';
-import { DataService } from './data.service';
+import { DataService } from '../services/data.service';
+import { PostEditOperation } from './PostEditOperation';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class InstanceNameService {
+export class InstanceNameGenerator implements PostEditOperation {
   // For unknown display name
   private unknown: string = 'unknown';
 
-  constructor(private dataService: DataService) { }
+  constructor(private dataService: DataService) { 
+  }
+
+  postEdit(instance: Instance, editedAttributeName: string | undefined): boolean {
+    this.updateDisplayName(instance);
+    return true;
+  }
 
   updateDisplayName(instance: Instance) {
     let displayName = this.generateDisplayName(instance);
