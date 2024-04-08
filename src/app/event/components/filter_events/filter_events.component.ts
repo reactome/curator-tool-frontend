@@ -4,7 +4,7 @@ import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {DataService} from "../../../core/services/data.service";
-import {SchemaClass} from "../../../core/models/reactome-schema.model";
+import {AttributeDataType, SchemaClass} from "../../../core/models/reactome-schema.model";
 
 interface Species {
   value: string;
@@ -41,6 +41,7 @@ export class FilterEventsComponent {
   ];
   classNames: string[] = [];
   classToAttributes: Map<string, string[]> = new Map();
+  classToAttributeToType: Map<string, Map<string, number>> = new Map();
   operands: string[] = [
     'Equals',
     'Contains',
@@ -66,8 +67,13 @@ export class FilterEventsComponent {
           if (populatedSchemaClass.attributes) {
             populatedSchemaClass.attributes.forEach(attr => {
               this.classToAttributes.get(className)!.push(attr.name);
+              if (!this.classToAttributeToType.has(className)) {
+                this.classToAttributeToType.set(className, new Map());
+              }
+              this.classToAttributeToType.get(className)!.set(attr.name, attr.type);
             });
-            this.classToAttributes.get(className)!.sort((a, b) => a.localeCompare(b));
+            this.classToAttributes.get(className)!.sort(
+              (a, b) => a.localeCompare(b));
           }
         })
       })
@@ -77,16 +83,21 @@ export class FilterEventsComponent {
   @Output() updateEventTree = new EventEmitter<Array<string | undefined>>();
 
   onSelectionChange(): void {
+    let selectedAttributeType =
+      this.classToAttributeToType.get(this.selectedClass)!.get(this.selectedAttribute) == AttributeDataType.INSTANCE ?
+      "instance" : "primitive";
     console.debug(
       'selectedSpecies: ' + this.selectedSpecies +
       'selectedClass: ' + this.selectedClass +
       'selectedAttribute: ' + this.selectedAttribute +
+      'selectedAttributeType: ' + selectedAttributeType +
       'selectedOperand: ' + this.selectedOperand +
       "; searchKey: " + this.searchKey);
       this.updateEventTree.emit([
         this.selectedSpecies,
         this.selectedClass,
         this.selectedAttribute,
+        selectedAttributeType,
         this.selectedOperand,
         this.searchKey]);
   }

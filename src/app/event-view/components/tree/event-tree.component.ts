@@ -65,7 +65,7 @@ export class EventTreeComponent {
     private store: Store,
     private _snackBar: MatSnackBar) {
       let searchKey = undefined;
-      service.fetchEventTree(false, "All", "", "", "")
+      service.fetchEventTree(false, "All", "", "", "", "")
         .subscribe(data => {
         this.dataSource.data = [data]
         this.showProgressSpinner = false;
@@ -80,14 +80,16 @@ export class EventTreeComponent {
     let selectedSpecies = searchFilters[0] as string;
     let selectedClass = searchFilters[1] as string;
     let selectedAttribute = searchFilters[2] as string;
-    let selectedOperand = searchFilters[3] as string;
-    let searchKey = searchFilters[4];
+    let selectedAttributeType = searchFilters[3] as string;
+    let selectedOperand = searchFilters[4] as string;
+    let searchKey = searchFilters[5] as string;
     this.showProgressSpinner = true;
     this.service.fetchEventTree(
       true,
        selectedSpecies,
        selectedClass,
        selectedAttribute,
+       selectedAttributeType,
        selectedOperand,
        searchKey).subscribe(data => {
       this.showProgressSpinner = false;

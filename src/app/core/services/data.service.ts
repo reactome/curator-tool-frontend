@@ -135,6 +135,7 @@ export class DataService {
    * @param skipCache
    * @param selectedClass
    * @param selectedAttribute
+   * @param selectedAttributeType
    * @param selectedOperand
    * @param selectedSpecies
    * @param searchKey
@@ -143,6 +144,7 @@ export class DataService {
                  selectedSpecies: string,
                  selectedClass: string,
                  selectedAttribute: string,
+                 selectedAttributeType: string,
                  selectedOperand: string,
                  searchKey?: string): Observable<Instance> {
 
@@ -152,9 +154,11 @@ export class DataService {
     }
     // Otherwise call the restful API
     let url = this.eventsTreeUrl + `${selectedSpecies}`;
-    if (searchKey !== undefined || selectedOperand.includes("NULL")) {
+    if (selectedAttribute !== undefined &&
+      (searchKey !== undefined || selectedOperand.includes("NULL"))) {
       url += '?class=' + selectedClass
         + '&attribute=' + selectedAttribute
+        + "&attributeType=" + selectedAttributeType
         + '&operand=' + encodeURI(selectedOperand)
         + '&query=' + encodeURI(searchKey!.replaceAll("'", "\\'"));
     }
