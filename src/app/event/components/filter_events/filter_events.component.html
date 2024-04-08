@@ -30,8 +30,9 @@
     }
   </mat-select>
 </mat-form-field>
-<mat-form-field>
-  <input placeholder="Enter search token" class="text-sm" matInput (keydown.enter)="onSelectionChange()" (keyup)="recordSearchKey($event)" #input>
-</mat-form-field>
+<div>
+  <mat-form-field>
+    <input placeholder="Enter search token" class="text-sm" matInput (keydown.enter)="onSelectionChange()" (keyup)="recordSearchKey($event)" #input>
+  </mat-form-field>
   <button style="margin-left: 10px; margin-bottom: 20px;" mat-button (click)="onSelectionChange()">Search</button>
-
+</div>

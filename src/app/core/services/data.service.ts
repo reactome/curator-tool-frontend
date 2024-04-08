@@ -136,16 +136,18 @@ export class DataService {
    * @param skipCache
    * @param selectedClass
    * @param selectedAttribute
+   * @param selectedAttributeType
    * @param selectedOperand
    * @param selectedSpecies
    * @param searchKey
    */
   fetchEventTree(skipCache: boolean,
-    selectedSpecies: string,
-    selectedClass: string,
-    selectedAttribute: string,
-    selectedOperand: string,
-    searchKey?: string): Observable<Instance> {
+                 selectedSpecies: string,
+                 selectedClass: string,
+                 selectedAttribute: string,
+                 selectedAttributeType: string,
+                 selectedOperand: string,
+                 searchKey?: string): Observable<Instance> {
 
     //Check cached results first
     if (this.rootEvent && !skipCache) {
@@ -153,9 +155,11 @@ export class DataService {
     }
     // Otherwise call the restful API
     let url = this.eventsTreeUrl + `${selectedSpecies}`;
-    if (searchKey !== undefined || selectedOperand.includes("NULL")) {
+    if (selectedAttribute !== undefined &&
+      (searchKey !== undefined || selectedOperand.includes("NULL"))) {
       url += '?class=' + selectedClass
         + '&attribute=' + selectedAttribute
+        + "&attributeType=" + selectedAttributeType
         + '&operand=' + encodeURI(selectedOperand)
         + '&query=' + encodeURI(searchKey!.replaceAll("'", "\\'"));
     }
@@ -491,7 +495,7 @@ export class DataService {
     return this.http.post<Instance>(this.fillReferenceUrl, copy).pipe(
       map((inst: Instance) => {
         console.debug('filled reference: \n', inst);
-        this.handleInstanceAttributes(inst); 
+        this.handleInstanceAttributes(inst);
         return inst;
       }),
       catchError(error => {
