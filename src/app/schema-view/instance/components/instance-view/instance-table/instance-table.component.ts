@@ -1,20 +1,21 @@
-import { ApplicationRef, ChangeDetectorRef, Component, Input } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { InstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
-import { AttributeCategory, SchemaAttribute } from "../../../../../core/models/reactome-schema.model";
-import {
-  SelectInstanceDialogService
-} from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
-import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
-import { AttributeValue, DragDropStatus, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
-import { DragDropService } from "../../../../instance-bookmark/drag-drop.service";
 import {
   CdkDragDrop,
   CdkDragEnter, moveItemInArray,
   transferArrayItem
 } from "@angular/cdk/drag-drop";
-import { InstanceNameService } from 'src/app/core/services/instance-name.service';
+import { ChangeDetectorRef, Component, Input } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { PostEditService } from 'src/app/core/services/post-edit.service';
+import { InstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
+import { AttributeCategory, SchemaAttribute } from "../../../../../core/models/reactome-schema.model";
+import { DragDropService } from "../../../../instance-bookmark/drag-drop.service";
+import {
+  SelectInstanceDialogService
+} from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
+import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
+import { AttributeValue, DragDropStatus, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
+import { PostEditListener } from "src/app/core/post-edit/PostEditOperation";
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -24,7 +25,7 @@ import { InstanceNameService } from 'src/app/core/services/instance-name.service
   templateUrl: './instance-table.component.html',
   styleUrls: ['./instance-table.component.scss'],
 })
-export class InstanceTableComponent {
+export class InstanceTableComponent implements PostEditListener {
   displayedColumns: string[] = ['name', 'value'];
   showFilterOptions: boolean = false;
   showHeaderActions: boolean = false;
@@ -81,7 +82,7 @@ export class InstanceTableComponent {
     private dragDropService: DragDropService,
     private selectInstanceDialogService: SelectInstanceDialogService,
     private store: Store,
-    private nameService: InstanceNameService) {
+    private postEditService: PostEditService) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
       this.categories.set(AttributeCategory[categoryKey], true)
@@ -251,6 +252,11 @@ export class InstanceTableComponent {
     this.updateTableContent();
   }
 
+  donePostEdit(instance: Instance, editedAttributeName: string | undefined): boolean {
+    this.updateTableContent();
+    return true;
+  }
+
   updateTableContent(): void {
     this.instanceDataSource = new InstanceDataSource(this._instance,
                                                     this.categories,
@@ -294,7 +300,8 @@ export class InstanceTableComponent {
    * @param attName
    */
   postEdit(attName: string) {
-    this.nameService.updateDisplayName(this._instance!);
+    if (this._instance)
+      this.postEditService.postEdit(this._instance, attName, this);
     this.addModifiedAttributeName(attName);
   }
 

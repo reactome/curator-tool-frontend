@@ -1,5 +1,5 @@
 import { NgIf } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { MatLabel } from '@angular/material/form-field';
 import { MatTooltip } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
@@ -14,10 +14,9 @@ import { InstanceTableComponent } from 'src/app/schema-view/instance/components/
 import { NewInstanceActions } from 'src/app/schema-view/instance/state/new-instance/new-instance.actions';
 import { z } from "zod";
 
+import { HttpClient } from '@angular/common/http';
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { HttpClient } from '@angular/common/http';
-import { InstanceNameService } from 'src/app/core/services/instance-name.service';
 
 @Component({
   selector: 'app-text-curation',
@@ -53,8 +52,7 @@ export class TextCurationComponent {
   constructor(private dataService: DataService,
     private objectStore: Store,
     private router: Router,
-    private http: HttpClient,
-    private nameService: InstanceNameService) {
+    private http: HttpClient) {
     // Fetch OpenAI API key
     const llm_url_openai_key = 'http://127.0.0.1:5000/openai_key';
     this.http.get(llm_url_openai_key, {responseType: 'text'}).subscribe(result => {
