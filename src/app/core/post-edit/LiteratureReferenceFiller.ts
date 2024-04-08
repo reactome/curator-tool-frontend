@@ -1,7 +1,9 @@
+import { concatMap } from "rxjs";
 import { Instance } from "../models/reactome-instance.model";
 import { DataService } from "../services/data.service";
 import { InstanceNameGenerator } from "./InstanceNameGenerator";
 import { PostEditListener, PostEditOperation } from "./PostEditOperation";
+import { SchemaClass } from "../models/reactome-schema.model";
 
 export class LiteratureReferenceFiller implements PostEditOperation {
 
@@ -25,9 +27,11 @@ export class LiteratureReferenceFiller implements PostEditOperation {
             if (this.nameGenerator) {
                 this.nameGenerator.updateDisplayName(instance);
             }
-            this.handleAuthors(instance);
-            if (postEditListener)
-                postEditListener.donePostEdit(instance, editedAttributeName);
+            this.dataService.fetchSchemaClass('Person').subscribe((personCls: SchemaClass) => {
+                this.handleAuthors(instance, personCls);
+                if (postEditListener)
+                    postEditListener.donePostEdit(instance, editedAttributeName);
+            })
         });
         return true;
     }
@@ -37,7 +41,8 @@ export class LiteratureReferenceFiller implements PostEditOperation {
      * @param instance
      * @returns 
      */
-    private handleAuthors(instance: Instance) {
+    private handleAuthors(instance: Instance,
+                          personCls: SchemaClass) {
         let authors = instance.attributes?.get('author');
         if (!authors) return;
         for (let author of authors) {
@@ -46,6 +51,7 @@ export class LiteratureReferenceFiller implements PostEditOperation {
             // This is a new author created by the server
             // Need to assign a new dbId
             author.dbId = this.dataService.getNextNewDbId();
+            author.schemaClass = personCls;
             this.dataService.registerNewInstance(author);
             this.dataService.handleInstanceAttributes(author);
             if (this.nameGenerator)
