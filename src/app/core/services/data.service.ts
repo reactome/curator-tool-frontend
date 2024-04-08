@@ -32,6 +32,7 @@ export class DataService {
   private findInstanceByDisplayNameUrl = `${environment.ApiRoot}/findByDisplayName`;
   private countInstancesUrl = `${environment.ApiRoot}/countInstances/`;
   private commitInstanceUrl = `${environment.ApiRoot}/commit/`;
+  private fillReferenceUrl = `${environment.ApiRoot}/fillReference/`;
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
   // The root class is cached for performance
@@ -140,11 +141,11 @@ export class DataService {
    * @param searchKey
    */
   fetchEventTree(skipCache: boolean,
-                 selectedSpecies: string,
-                 selectedClass: string,
-                 selectedAttribute: string,
-                 selectedOperand: string,
-                 searchKey?: string): Observable<Instance> {
+    selectedSpecies: string,
+    selectedClass: string,
+    selectedAttribute: string,
+    selectedOperand: string,
+    searchKey?: string): Observable<Instance> {
 
     //Check cached results first
     if (this.rootEvent && !skipCache) {
@@ -166,7 +167,7 @@ export class DataService {
             dbId: 0,
             displayName: "TopLevelPathway",
             schemaClassName: "TopLevelPathway",
-            attributes: { "hasEvent" : data}
+            attributes: { "hasEvent": data }
           };
           return rootEvent;
         }),
@@ -181,8 +182,8 @@ export class DataService {
 
   getSchemaClass(clsName: string): SchemaClass | undefined {
     if (this.name2class && this.name2class.size > 0) {
-    return this.name2class.get(clsName);
-  }
+      return this.name2class.get(clsName);
+    }
     this.name2class = new Map<string, SchemaClass>();
     if (this.rootClass)
       this.buildSchemaClassMap(this.rootClass, this.name2class);
@@ -318,14 +319,19 @@ export class DataService {
       );
   }
 
+  getNextNewDbId(): number {
+    let rtn = this.nextNewDbId;
+    this.nextNewDbId -= 1;
+    return rtn;
+  }
+
   /**
    * Create a new instance for the specified class.
    */
   createNewInstance(schemaClassName: string): Observable<Instance> {
     return this.fetchSchemaClass(schemaClassName).pipe(map((schemaClass: SchemaClass) => {
       const attributes = new Map();
-      attributes.set('dbId', this.nextNewDbId);
-      this.nextNewDbId -= 1;
+      attributes.set('dbId', this.getNextNewDbId());
       attributes.set('displayName', DataService.newDisplayName);
       let instance: Instance = {
         dbId: attributes.get('dbId'),
@@ -379,7 +385,7 @@ export class DataService {
    * doesn't care about the type. Therefore, we need to do some converting here.
    * @param instance
    */
-  private handleInstanceAttributes(instance: Instance): void {
+  handleInstanceAttributes(instance: Instance): void {
     if (instance.attributes === undefined)
       return;
     let attributeMap = new Map<string, any>();
@@ -467,6 +473,29 @@ export class DataService {
       map((inst: Instance) => inst),
       catchError(error => {
         console.log("An error is thrown during committing: \n" + error.message, "Close", {
+          panelClass: ['warning-snackbar'],
+          duration: 10000
+        });
+        return throwError(() => error);
+      })
+    )
+  }
+
+  /**
+ * Commit the passed instance back to the database.
+ * @param instance
+ */
+  fillReference(instance: Instance): Observable<Instance> {
+    // Need to handle attributes. The map cannot be converted into JSON automatically!!!
+    const copy = this.cloneInstanceForCommit(instance);
+    return this.http.post<Instance>(this.fillReferenceUrl, copy).pipe(
+      map((inst: Instance) => {
+        console.debug('filled reference: \n', inst);
+        this.handleInstanceAttributes(inst); 
+        return inst;
+      }),
+      catchError(error => {
+        console.log("An error is thrown during filling LiteratureReference: \n" + error.message, "Close", {
           panelClass: ['warning-snackbar'],
           duration: 10000
         });

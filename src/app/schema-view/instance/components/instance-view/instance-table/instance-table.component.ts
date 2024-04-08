@@ -15,6 +15,7 @@ import {
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
 import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
 import { AttributeValue, DragDropStatus, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
+import { PostEditListener } from "src/app/core/post-edit/PostEditOperation";
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -24,7 +25,7 @@ import { AttributeValue, DragDropStatus, EDIT_ACTION, InstanceDataSource } from 
   templateUrl: './instance-table.component.html',
   styleUrls: ['./instance-table.component.scss'],
 })
-export class InstanceTableComponent {
+export class InstanceTableComponent implements PostEditListener {
   displayedColumns: string[] = ['name', 'value'];
   showFilterOptions: boolean = false;
   showHeaderActions: boolean = false;
@@ -251,6 +252,11 @@ export class InstanceTableComponent {
     this.updateTableContent();
   }
 
+  donePostEdit(instance: Instance, editedAttributeName: string | undefined): boolean {
+    this.updateTableContent();
+    return true;
+  }
+
   updateTableContent(): void {
     this.instanceDataSource = new InstanceDataSource(this._instance,
                                                     this.categories,
@@ -295,7 +301,7 @@ export class InstanceTableComponent {
    */
   postEdit(attName: string) {
     if (this._instance)
-      this.postEditService.postEdit(this._instance, attName);
+      this.postEditService.postEdit(this._instance, attName, this);
     this.addModifiedAttributeName(attName);
   }
 
