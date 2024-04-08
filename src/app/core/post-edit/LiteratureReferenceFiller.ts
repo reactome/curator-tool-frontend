@@ -4,13 +4,16 @@ import { DataService } from "../services/data.service";
 import { InstanceNameGenerator } from "./InstanceNameGenerator";
 import { PostEditListener, PostEditOperation } from "./PostEditOperation";
 import { SchemaClass } from "../models/reactome-schema.model";
+import { Store } from "@ngrx/store";
+import { NewInstanceActions } from "src/app/schema-view/instance/state/new-instance/new-instance.actions";
 
 export class LiteratureReferenceFiller implements PostEditOperation {
 
     // Also need a display name generator after filling
     private nameGenerator?: InstanceNameGenerator;
 
-    constructor(private dataService: DataService) {
+    constructor(private dataService: DataService,
+                private store: Store) {
         this.nameGenerator = new InstanceNameGenerator(this.dataService);
     }
 
@@ -52,10 +55,13 @@ export class LiteratureReferenceFiller implements PostEditOperation {
             // Need to assign a new dbId
             author.dbId = this.dataService.getNextNewDbId();
             author.schemaClass = personCls;
-            this.dataService.registerNewInstance(author);
             this.dataService.handleInstanceAttributes(author);
             if (this.nameGenerator)
                 this.nameGenerator.updateDisplayName(author);
+            // May need to bound these two calls together somewhere
+            // Make sure to call these two at the end.
+            this.dataService.registerNewInstance(author);
+            this.store.dispatch(NewInstanceActions.register_new_instances(author));
         }
     }
 

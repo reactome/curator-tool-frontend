@@ -4,6 +4,8 @@ import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {DataService} from 'src/app/core/services/data.service';
 import {AttributeValue} from '../instance-view/instance-table/instance-table.model';
 import {SchemaClass} from "../../../../core/models/reactome-schema.model";
+import { Store } from '@ngrx/store';
+import { NewInstanceActions } from '../../state/new-instance/new-instance.actions';
 
 /**
  * A dialog component that is used to create a new Instance object.
@@ -24,7 +26,8 @@ export class NewInstanceDialogComponent {
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public attributeValue: AttributeValue,
               public dialogRef: MatDialogRef<NewInstanceDialogComponent>,
-              private dataService: DataService) {
+              private dataService: DataService,
+              private store: Store) {
       this.candidateClasses = dataService.setCandidateClasses(attributeValue.attribute);
       this.selected = this.candidateClasses![0];
       this.dataService.createNewInstance(this.selected).subscribe(instance => this.instance = instance);
@@ -45,7 +48,10 @@ export class NewInstanceDialogComponent {
   onOK() {
     // Just return the instance newly created. Don't close it. The template
     // will handle close.
-    this.dataService.registerNewInstance(this.instance!);
+    if (this.instance) {
+      this.dataService.registerNewInstance(this.instance);
+      this.store.dispatch(NewInstanceActions.register_new_instances(this.instance));
+    }
     this.dialogRef.close(this.instance);
   }
 

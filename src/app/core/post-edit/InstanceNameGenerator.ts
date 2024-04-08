@@ -1,3 +1,4 @@
+import { Input } from '@angular/core';
 import { Instance } from '../models/reactome-instance.model';
 import { SchemaClass } from '../models/reactome-schema.model';
 import { DataService } from '../services/data.service';
@@ -6,7 +7,8 @@ import { PostEditOperation } from './PostEditOperation';
 export class InstanceNameGenerator implements PostEditOperation {
   // For unknown display name
   private unknown: string = 'unknown';
-
+  
+  //TODO: May need to make sure this is a singleton!!!
   constructor(private dataService: DataService) { 
   }
 
