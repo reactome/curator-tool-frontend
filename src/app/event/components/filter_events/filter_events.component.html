@@ -10,29 +10,104 @@
   <mat-label>Select class</mat-label>
     <mat-select class="text-sm" [(value)]="selectedClass">
       @for (className of classNames; track className) {
-        <mat-option class="text-sm" [value]="className">{{className}}</mat-option>
+        <mat-option class="text-sm" [value]="className" (click)="onClassSelection()">{{className}}</mat-option>
       }
     </mat-select>
 </mat-form-field>
-<mat-form-field>
-  <mat-label>Select attribute</mat-label>
-  <mat-select class="text-sm" [(value)]="selectedAttribute">
-    @for (attribute of getAttributes(selectedClass); track attribute) {
-      <mat-option class="text-sm" [value]="attribute">{{attribute}}</mat-option>
-    }
-  </mat-select>
-</mat-form-field>
-<mat-form-field>
-  <mat-label>Select operand</mat-label>
-  <mat-select class="text-sm" [(value)]="selectedOperand">
-    @for (operand of operands; track operand) {
-      <mat-option class="text-sm" [value]="operand">{{operand}}</mat-option>
-    }
-  </mat-select>
-</mat-form-field>
 <div>
-  <mat-form-field>
-    <input placeholder="Enter search token" class="text-sm" matInput (keydown.enter)="onSelectionChange()" (keyup)="recordSearchKey($event)" #input>
+  <mat-form-field [class.cdk-visually-hidden]="hide_clauses[0]">
+    <mat-label>Select attribute</mat-label>
+    <mat-select class="text-sm" [(value)]="selectedAttributes[0]">
+      @for (attribute of getAttributes(selectedClass); track attribute) {
+        <mat-option class="text-sm" [value]="attribute">{{attribute}}</mat-option>
+      }
+    </mat-select>
   </mat-form-field>
-  <button style="margin-left: 10px; margin-bottom: 20px;" mat-button (click)="onSelectionChange()">Search</button>
+  <mat-form-field [class.cdk-visually-hidden]="hide_clauses[0]">
+    <mat-label>Select operand</mat-label>
+    <mat-select class="text-sm" [(value)]="selectedOperands[0]">
+      @for (operand of operands; track operand) {
+        <mat-option class="text-sm" [value]="operand">{{operand}}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field [class.cdk-visually-hidden]="hide_clauses[0]">
+    <mat-label>Enter search token</mat-label>
+    <input id="searchKey0" class="text-sm" matInput (keyup)="recordSearchKey($event, 0)" #input>
+  </mat-form-field>
+  <button matTooltip="Add another attribute to query" (click)="showClause(1)" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">+</button>
 </div>
+<div>
+  <mat-form-field [class.cdk-visually-hidden]="hide_clauses[1]">
+    <mat-label>Select attribute</mat-label>
+    <mat-select class="text-sm" [(value)]="selectedAttributes[1]">
+      @for (attribute of getAttributes(selectedClass); track attribute) {
+        <mat-option class="text-sm" [value]="attribute">{{attribute}}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field [class.cdk-visually-hidden]="hide_clauses[1]">
+    <mat-label>Select operand</mat-label>
+    <mat-select class="text-sm" [(value)]="selectedOperands[1]">
+      @for (operand of operands; track operand) {
+        <mat-option class="text-sm" [value]="operand">{{operand}}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field [class.cdk-visually-hidden]="hide_clauses[1]">
+    <mat-label>Enter search token</mat-label>
+    <input id="searchKey1" class="text-sm" matInput (keyup)="recordSearchKey($event, 1)" #input>
+  </mat-form-field>
+  <button [hidden]="hide_clauses[1]" matTooltip="Remove this attribute" (click)="hideClause(1)" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">-</button>
+  <button [hidden]="hide_clauses[1]" matTooltip="Add another attribute to query" (click)="showClause(2)" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">+</button>
+</div>
+<div>
+  <mat-form-field [class.cdk-visually-hidden]="hide_clauses[2]">
+    <mat-label>Select attribute</mat-label>
+    <mat-select class="text-sm" [(value)]="selectedAttributes[2]">
+      @for (attribute of getAttributes(selectedClass); track attribute) {
+        <mat-option class="text-sm" [value]="attribute">{{attribute}}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field [class.cdk-visually-hidden]="hide_clauses[2]">
+    <mat-label>Select operand</mat-label>
+    <mat-select class="text-sm" [(value)]="selectedOperands[2]">
+      @for (operand of operands; track operand) {
+        <mat-option class="text-sm" [value]="operand">{{operand}}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field [class.cdk-visually-hidden]="hide_clauses[2]">
+    <mat-label>Enter search token</mat-label>
+    <input id="searchKey2"  class="text-sm" matInput (keyup)="recordSearchKey($event, 2)" #input>
+  </mat-form-field>
+  <button [hidden]="hide_clauses[2]" matTooltip="Remove this attribute" (click)="hideClause(2)" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">-</button>
+  <button [hidden]="hide_clauses[2]" matTooltip="Add another attribute to query" (click)="showClause(3)" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">+</button>
+</div>
+<div>
+  <mat-form-field [class.cdk-visually-hidden]="hide_clauses[3]">
+    <mat-label>Select attribute</mat-label>
+    <mat-select class="text-sm" [(value)]="selectedAttributes[3]">
+      @for (attribute of getAttributes(selectedClass); track attribute) {
+        <mat-option class="text-sm" [value]="attribute">{{attribute}}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field [class.cdk-visually-hidden]="hide_clauses[3]">
+    <mat-label>Select operand</mat-label>
+    <mat-select class="text-sm" [(value)]="selectedOperands[3]">
+      @for (operand of operands; track operand) {
+        <mat-option class="text-sm" [value]="operand">{{operand}}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field [class.cdk-visually-hidden]="hide_clauses[3]">
+    <mat-label>Enter search token</mat-label>
+    <input id="searchKey3"  class="text-sm" matInput (keyup)="recordSearchKey($event, 3)" #input>
+  </mat-form-field>
+  <button [hidden]="hide_clauses[3]" matTooltip="Remove this attribute" (click)="hideClause(3)" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">-</button>
+
+</div>
+<button style="margin-left: 10px; margin-bottom: 20px;" mat-button (click)="onSelectionChange()">Search</button>
+

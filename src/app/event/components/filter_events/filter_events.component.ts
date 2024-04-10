@@ -1,6 +1,8 @@
-import {Component, EventEmitter, Output} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Output} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {MatInputModule} from '@angular/material/input';
+import {MatButtonModule} from '@angular/material/button';
+import {MatTooltipModule} from '@angular/material/tooltip'
 import {MatSelectModule} from '@angular/material/select';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {DataService} from "../../../core/services/data.service";
@@ -19,15 +21,23 @@ interface Species {
   templateUrl: './filter_events.component.html',
   styleUrls: ['./filter_events.component.scss'],
   standalone: true,
-  imports: [MatFormFieldModule, MatSelectModule, MatInputModule, FormsModule]
+  imports: [MatFormFieldModule, MatSelectModule, MatInputModule, FormsModule, MatButtonModule, MatTooltipModule]
 })
 export class FilterEventsComponent {
   // For doing search
-  searchKey: string | undefined = undefined;
   selectedSpecies = "All";
   selectedClass = "Event";
-  selectedAttribute = "displayName";
-  selectedOperand = "Equals";
+  selectedAttributes: string[] = ["displayName"];
+  selectedOperands: string[] = ["Equals"];
+  /* NB. Since 'IS NOT NULL' and 'IS NULL' don't require a searchKey, populating every of the four
+  possible positions in searchKeys with a non-empty string placeholder ensures that each attribute-operand
+  tuple gets assigned the correct searchKey at the curator-tool-ws end. If searchKeys had been assigned []
+  or ["","","",""] below, e.g. in the case of: 'displayName IS NOT NULL' and 'dbId contains "12"', the back-end
+  would have incorrectly reconstructed 'displayName IS NOT NULL "12"'.
+  */
+  searchKeys: string[] = ["na", "na", "na", "na"];
+  hide_clauses: boolean[] = [false, true, true, true];
+
   // TODO: There are many more species in Neo4J than those below (offered as filters in CuratorTool)
   species: Species[] = [
     {value: 'All', viewValue: 'All'},
@@ -52,7 +62,9 @@ export class FilterEventsComponent {
     'IS NULL'
   ];
 
-  constructor(private service: DataService) {
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private service: DataService) {
     // Populate all Event (and children) classes into this.classNames
     service.fetchSchemaClassTree().subscribe(_ => {
       let eventSchemaClass = service.getSchemaClass("Event");
@@ -80,26 +92,52 @@ export class FilterEventsComponent {
     })
   }
 
-  @Output() updateEventTree = new EventEmitter<Array<string | undefined>>();
+  @Output() updateEventTree = new EventEmitter<Array<string[]>>();
 
   onSelectionChange(): void {
-    let selectedAttributeType =
-      this.classToAttributeToType.get(this.selectedClass)!.get(this.selectedAttribute) == AttributeDataType.INSTANCE ?
-      "instance" : "primitive";
+    let selectedAttributeTypes: string[] = [];
+    this.selectedAttributes.forEach(attribute => {
+      if (attribute) {
+        let selectedAttributeType =
+          this.classToAttributeToType.get(this.selectedClass)!.get(attribute) == AttributeDataType.INSTANCE ?
+            "instance" : "primitive";
+        selectedAttributeTypes.push(selectedAttributeType);
+      }
+    });
     console.debug(
       'selectedSpecies: ' + this.selectedSpecies +
       'selectedClass: ' + this.selectedClass +
-      'selectedAttribute: ' + this.selectedAttribute +
-      'selectedAttributeType: ' + selectedAttributeType +
-      'selectedOperand: ' + this.selectedOperand +
-      "; searchKey: " + this.searchKey);
+      'selectedAttributes: ' + this.selectedAttributes +
+      'selectedAttributeTypes: ' + selectedAttributeTypes +
+      'selectedOperands: ' + this.selectedOperands +
+      "; searchKeys: " + this.searchKeys);
       this.updateEventTree.emit([
-        this.selectedSpecies,
-        this.selectedClass,
-        this.selectedAttribute,
-        selectedAttributeType,
-        this.selectedOperand,
-        this.searchKey]);
+        [this.selectedSpecies],
+        [this.selectedClass],
+        this.selectedAttributes,
+        selectedAttributeTypes,
+        this.selectedOperands,
+        this.searchKeys]);
+  }
+
+  onClassSelection(): void {
+    // Reflect the newly selectedClass's attributes in all 'select attributes' mat-form-fields
+    this.cdr.detectChanges();
+  }
+
+  showClause(pos: number): void {
+    this.hide_clauses[pos] = false;
+    this.cdr.detectChanges();
+  }
+
+  hideClause(pos: number): void {
+    this.hide_clauses[pos] = true;
+    // Remove any user-selected values in clause at pos
+    this.selectedAttributes.splice(pos, 1);
+    this.selectedOperands.splice(pos, 1);
+    this.searchKeys[pos] = "na";
+    (<HTMLInputElement>document.getElementById("searchKey"+pos)).value="";
+    this.cdr.detectChanges();
   }
 
 
@@ -107,14 +145,9 @@ export class FilterEventsComponent {
     return this.classToAttributes.get(className);
   }
 
-  recordSearchKey(event: Event) {
+  recordSearchKey(event: Event, pos: number) {
     const text = (event.target as HTMLInputElement).value;
-    this.searchKey = text;
-    // Make sure reset it to undefined if nothing there so that
-    // no empty string sent to the server
-    if (this.searchKey !== undefined && this.searchKey.length === 0) {
-      this.searchKey = undefined;
-    }
+    this.searchKeys[pos] = text;
   }
 
   /**
