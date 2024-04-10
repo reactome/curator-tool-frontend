@@ -65,7 +65,7 @@ export class EventTreeComponent {
     private store: Store,
     private _snackBar: MatSnackBar) {
       let searchKey = undefined;
-      service.fetchEventTree(false, "All", "", "", "", "")
+      service.fetchEventTree(false, "All", "", [], [], [], [])
         .subscribe(data => {
         this.dataSource.data = [data]
         this.showProgressSpinner = false;
@@ -76,22 +76,31 @@ export class EventTreeComponent {
 
   inFocus = (node: EventNode) => node.inFocus;
 
-  filterData(searchFilters: Array<string | undefined>, ) {
-    let selectedSpecies = searchFilters[0] as string;
-    let selectedClass = searchFilters[1] as string;
-    let selectedAttribute = searchFilters[2] as string;
-    let selectedAttributeType = searchFilters[3] as string;
-    let selectedOperand = searchFilters[4] as string;
-    let searchKey = searchFilters[5] as string;
+  atLeastOneQueryClausePresent(selectedOperands: string[], searchKeys: string[]): boolean {
+    let ret = selectedOperands.includes("IS NULL") || selectedOperands.includes("IS NOT NULL");
+    if (!ret) {
+      let sks = new Set(searchKeys);
+      ret = sks.size > 1 || !sks.values().next().value.equals("na");
+    }
+    return ret;
+  }
+
+  filterData(searchFilters: Array<string[]>) {
+    let selectedSpecies = searchFilters[0][0] as string;
+    let selectedClass = searchFilters[1][0] as string;
+    let selectedAttributes = searchFilters[2];
+    let selectedAttributeTypes = searchFilters[3];
+    let selectedOperands = searchFilters[4];
+    let searchKeys = searchFilters[5];
     this.showProgressSpinner = true;
     this.service.fetchEventTree(
       true,
        selectedSpecies,
        selectedClass,
-       selectedAttribute,
-       selectedAttributeType,
-       selectedOperand,
-       searchKey).subscribe(data => {
+       selectedAttributes,
+       selectedAttributeTypes,
+       selectedOperands,
+       searchKeys).subscribe(data => {
       this.showProgressSpinner = false;
       this.dataSource.data = [data];
       let rootNode = this.treeControl.dataNodes[0];
@@ -111,9 +120,9 @@ export class EventTreeComponent {
       if (focus) {
         const element = document.querySelector('.inFocus') as HTMLElement;
         element.scrollIntoView({behavior: 'smooth'});
-      } else if (searchKey != undefined) {
+      } else if (this.atLeastOneQueryClausePresent(selectedOperands, searchKeys)) {
         let snackBarRef = this._snackBar.open(
-          'No data matching search key: ' + searchKey, '',
+          'No data matching the query', '',
           {
             horizontalPosition: 'center',
             verticalPosition: 'top',

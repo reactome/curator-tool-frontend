@@ -135,19 +135,19 @@ export class DataService {
    * Fetch Event Tree
    * @param skipCache
    * @param selectedClass
-   * @param selectedAttribute
-   * @param selectedAttributeType
-   * @param selectedOperand
+   * @param selectedAttributes
+   * @param selectedAttributeTypes
+   * @param selectedOperands
    * @param selectedSpecies
-   * @param searchKey
+   * @param searchKeys
    */
   fetchEventTree(skipCache: boolean,
                  selectedSpecies: string,
                  selectedClass: string,
-                 selectedAttribute: string,
-                 selectedAttributeType: string,
-                 selectedOperand: string,
-                 searchKey?: string): Observable<Instance> {
+                 selectedAttributes: string[],
+                 selectedAttributeTypes: string[],
+                 selectedOperands: string[],
+                 searchKeys: string[]): Observable<Instance> {
 
     //Check cached results first
     if (this.rootEvent && !skipCache) {
@@ -155,13 +155,12 @@ export class DataService {
     }
     // Otherwise call the restful API
     let url = this.eventsTreeUrl + `${selectedSpecies}`;
-    if (selectedAttribute !== undefined &&
-      (searchKey !== undefined || selectedOperand.includes("NULL"))) {
+    if (searchKeys.length > 0) {
       url += '?class=' + selectedClass
-        + '&attribute=' + selectedAttribute
-        + "&attributeType=" + selectedAttributeType
-        + '&operand=' + encodeURI(selectedOperand)
-        + '&query=' + encodeURI(searchKey!.replaceAll("'", "\\'"));
+        + '&attributes=' + selectedAttributes.toString()
+        + "&attributeTypes=" + selectedAttributeTypes.toString()
+        + '&operands=' + encodeURI(selectedOperands.toString())
+        + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'"));
     }
 
     return this.http.get<Array<Instance>>(url)
