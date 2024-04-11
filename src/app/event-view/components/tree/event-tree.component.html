@@ -26,6 +26,7 @@
     </button>
     <icon1-image [doRelease]="node.doRelease"></icon1-image>
     <icon2-image [className]="node.className"></icon2-image>
-    <a [ngClass]="node.match === true ? 'event_text_match' : 'event_text'" routerLink="/schema_view/instance/{{node.dbId}}">{{node.name}}</a>&nbsp;
+    <a *ngIf="node.name !== 'TopLevelPathway'" [ngClass]="node.match === true ? 'event_text_match' : 'event_text'" routerLink="/schema_view/instance/{{node.dbId}}">{{node.name}}</a>&nbsp;
+    <label *ngIf="node.name === 'TopLevelPathway'">{{node.name}}</label>&nbsp;
   </mat-tree-node>
 </mat-tree>
