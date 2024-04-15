@@ -19,7 +19,8 @@
         cdkDropList
         [cdkDropListData]="element.value"
         (cdkDropListDropped)="drop($event, element.attribute)">
-        <app-instance-table-row-element cdkDrag *ngFor="let object of element.value; let i = index" class="example-box"
+        <app-instance-table-row-element
+                                        cdkDrag *ngFor="let object of element.value; let i = index" class="example-box"
                                         [attribute]="element.attribute" [value]="object"
                                         [dragDropStatus]="dragDropStatus"
                                         (newValueEvent)="onNoInstanceAttributeEdit($event)"
@@ -55,17 +56,18 @@
          id="cdk-drop-list-instance-table">
     <!-- Attribute Name Column -->
     <ng-container matColumnDef="name">
-      <th class="" mat-header-cell (mouseenter)="changeShowHeaderActions()" (mouseleave)="changeShowHeaderActions()"
+      <th mat-header-cell (mouseenter)="changeShowHeaderActions()" (mouseleave)="changeShowHeaderActions()"
           *matHeaderCellDef>Attribute
-        <button matTooltip="Sort attributes by name" *ngIf="showHeaderActions" mat-icon-button (click)="sort()">
+        <button style="bottom:5px; right: 110px; position: absolute;" matTooltip="Sort attributes by name" *ngIf="showHeaderActions" mat-icon-button (click)="sort()">
           <mat-icon>sort_by_alpha</mat-icon>
         </button>
-        <button matTooltip="Sort by defined attributes" *ngIf="showHeaderActions" mat-icon-button
+        <button style="bottom:5px; right:140px; position: absolute;" matTooltip="Sort by defined attributes" *ngIf="showHeaderActions" mat-icon-button
                 (click)="sortByDefined()">
           <mat-icon>sort</mat-icon>
         </button>
       </th>
       <td class="attColumn" mat-cell *matCellDef="let element">
+        <div class="attColumn">
         <ng-container *ngIf="element.attribute.category === AttributeCategory.MANDATORY">
           <img ngSrc="../../../../../../assets/images/Mandatory.gif" alt="Mandatory" width="16" height="16" priority>
         </ng-container>
@@ -78,7 +80,7 @@
         <ng-container *ngIf="element.attribute.category === AttributeCategory.NOMANUALEDIT">
           <img ngSrc="../../../../../../assets/images/NoManualEdit.gif" alt="NoManualEdit" width="16" height="16" priority>
         </ng-container>
-        {{element.attribute.name}}
+        {{element.attribute.name}}</div>
       </td>
     </ng-container>
 
@@ -87,7 +89,7 @@
       <th mat-header-cell (mouseenter)="changeShowHeaderActions()" (mouseleave)="changeShowHeaderActions()"
           *matHeaderCellDef> Value
         <ng-container *ngIf="showHeaderActions">
-          <button mat-icon-button (click)="changeShowFilterOptions()">
+          <button style="bottom:5px; position: absolute;" mat-icon-button (click)="changeShowFilterOptions()">
             <mat-icon>filter_alt</mat-icon>
           </button>
           <section *ngIf="showFilterOptions">
@@ -96,7 +98,7 @@
           </section>
         </ng-container>
       </th>
-      <td mat-cell *matCellDef="let element" style="padding:0">
+      <td mat-cell *matCellDef="let element" style="padding:0" [ngClass]="{highlight: compareToDbInstance(element.attribute.name)}">
         <ng-container *ngTemplateOutlet="valueColTemplate; context: {$implicit: element}"></ng-container>
       </td>
     </ng-container>
@@ -104,7 +106,7 @@
     <!-- Reference value column is any -->
     <ng-container matColumnDef="referenceValue" *ngIf="showReferenceColumn">
       <th mat-header-cell *matHeaderCellDef>Reference Value</th>
-      <td mat-cell *matCellDef="let element" style="padding: 0">
+      <td mat-cell *matCellDef="let element" style="padding: 0" [ngClass]="{highlight: compareToDbInstance(element.attribute.name)}">
         <ng-container *ngTemplateOutlet="refValueColTemplate; context: {$implicit: element}"></ng-container>
       </td>
     </ng-container>

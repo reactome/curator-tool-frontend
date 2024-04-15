@@ -266,6 +266,8 @@ export class DataService {
   fetchInstance(dbId: number): Observable<Instance> {
     // Check cached results first
     if (this.id2instance.has(dbId)) {
+      this.handleModifiedAttributes(this.id2instance.get(dbId)!);
+      console.log('instance', this.id2instance.get(dbId)!)
       return of(this.id2instance.get(dbId)!);
     }
     return this.fetchInstanceFromDatabase(dbId, true);
@@ -364,6 +366,21 @@ export class DataService {
       attributeMap.set(key, value);
     })
     instance.attributes = attributeMap;
+  }
+
+  /**
+   * Modified attributes cached from edited instances
+   * @param instance
+   */
+  private handleModifiedAttributes(instance: Instance): void {
+    if(instance.modifiedAttributes === undefined) return;
+    let modifiedAttMap = new Map<string, any>();
+    let modifiedAttributes: any = instance.modifiedAttributes;
+    Object.keys(modifiedAttributes).map((key: string) => {
+      const value = modifiedAttributes[key];
+      modifiedAttMap.set(key, value);
+    })
+    instance.modifiedAttributes = modifiedAttMap;
   }
 
   /**

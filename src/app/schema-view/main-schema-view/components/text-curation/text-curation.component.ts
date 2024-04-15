@@ -150,7 +150,7 @@ export class TextCurationComponent {
     instance.attributes.set(attribute, [value]);
     this.instanceTable.updateTableContent();
     //TODO: This function should be refactor to something related to Instance only, not in the table!
-    this.instanceTable.addModifiedAttributeName(attribute);
+    this.instanceTable.addModifiedAttribute(attribute, value);
   }
 
 }

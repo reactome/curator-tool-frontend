@@ -7,36 +7,15 @@
   height: 30px;
 }
 
-.valueRow {
-  padding: 0;
-
-  &.dragging:hover {
-    padding: 0;
-
-    &.green {
-      border-color: green;
-      border-width: 4px;
-    }
-
-    &.red {
-      border-color: red;
-      border-width: 4px;
-    }
-  }
-  &.notDragging{
-    border-color: #8a9296;
-  }
+.highlight {
+  background: #0C9509;
 }
-
-//.mat-mdc-row:hover .mat-mdc-cell {
-//  border-color: currentColor;
-//}
 
 .attColumn {
   background: var(--primary-container);
   color: var(--on-primary-container);
-  width: 30px;
-  min-width: 30px;
+  width: 200px;
+  min-width: 100px;
 }
 
 .thead {
@@ -79,10 +58,6 @@
 
 .example-list.cdk-drop-list-dragging .example-box:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-}
-
-.mat-icon {
-  color: var(--primary);
 }
 
 .table-container {

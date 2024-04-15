@@ -2,7 +2,7 @@ import { ApplicationRef, ChangeDetectorRef, Component, Input } from '@angular/co
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { InstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
-import { AttributeCategory, SchemaAttribute } from "../../../../../core/models/reactome-schema.model";
+import {AttributeCategory, AttributeDataType, SchemaAttribute} from "../../../../../core/models/reactome-schema.model";
 import {
   SelectInstanceDialogService
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
@@ -43,7 +43,7 @@ export class InstanceTableComponent {
   // For comparison
   _referenceInstance?: Instance;
   showReferenceColumn: boolean = false;
-  draggedInstance?: Instance;
+  modifiedAtts: string[] = [];
 
   // For highlighting rows during drag/drop event-view
   dragDropStatus: DragDropStatus = {
@@ -113,8 +113,8 @@ export class InstanceTableComponent {
   }
 
   onNoInstanceAttributeEdit(data: AttributeValue) {
-    this.addModifiedAttributeName(data.attribute.name);
-
+    let value = this._instance?.attributes?.get(data.attribute.name);
+    this.addModifiedAttribute(data.attribute.name, value);
     if (data.attribute.cardinality === '1') {
       this._instance?.attributes?.set(data.attribute.name, data.value);
     } else { // This should be a list
@@ -153,9 +153,11 @@ export class InstanceTableComponent {
 
   //TODO: There is a bug here. If there is only one value in an attribute, delete
   // this value will disable the action menu popup!
+  private newMap: any;
   private deleteInstanceAttribute(attributeValue: AttributeValue): void {
     console.debug('deleteInstanceAttribute: ', attributeValue);
-    this.addModifiedAttributeName(attributeValue.attribute.name);
+    let value = this._instance?.attributes?.get(attributeValue.attribute.name);
+    this.addModifiedAttribute(attributeValue.attribute.name, value);
     if (attributeValue.attribute.cardinality === '1') {
       // This should not occur. Just in case
       //this._instance?.attributes?.delete(attributeValue.attribute?.name);
@@ -215,7 +217,7 @@ export class InstanceTableComponent {
       //TODO: Add a new value may reset the scroll position. This needs to be changed!
       this.updateTableContent();
       //Only add attribute name if value was added
-      this.addModifiedAttributeName(attributeValue.attribute.name);
+      this.addModifiedAttribute(attributeValue.attribute.name, value);
     });
   }
 
@@ -242,11 +244,11 @@ export class InstanceTableComponent {
         value.splice(attributeValue.index, 0, result);
       }
     }
+    //TODO: This causes the Angular N100 error about state change after view established. Need more refactoring!
+    // Only add attribute name if value was added
+    this.addModifiedAttribute(attributeValue.attribute.name, value);
     //TODO: Add a new value may reset the scroll position. This needs to be changed!
     this.updateTableContent();
-    // Only add attribute name if value was added
-    //TODO: This causes the Angular N100 error about state change after view established. Need more refactoring!
-    this.addModifiedAttributeName(attributeValue.attribute.name);
   }
 
   updateTableContent(): void {
@@ -268,22 +270,26 @@ export class InstanceTableComponent {
       let cloned: Instance = {
         dbId: this._instance!.dbId,
         displayName: this._instance!.displayName,
-        schemaClassName: this._instance!.schemaClassName
+        schemaClassName: this._instance!.schemaClassName,
+        //modifiedAttributes: this.modifiedAtts
       };
       // Have to make a clone to avoid any change to the current _instance!
       this.store.dispatch(InstanceActions.register_updated_instance(cloned));
     }
   }
 
-  addModifiedAttributeName(attName: string) {
+  addModifiedAttribute(attributeName: string, attributeVal: any) {
     // Do nothing if there is no instance
     if (this._instance === undefined)
       return;
-    if (this._instance.modifiedAttributes == undefined)
-      this._instance.modifiedAttributes = [attName];
-    else if (!this._instance.modifiedAttributes.includes(attName))
-      // Somehow ngrx/store make modifiedAttributes immutable
-      this._instance.modifiedAttributes.push(attName);
+    if (this._instance.modifiedAttributes === undefined) {
+      let newModAtt: Map<string, any> = new Map<string, any>;
+      newModAtt.set(attributeName, attributeVal);
+      this._instance.modifiedAttributes = newModAtt;
+    }
+    this._instance?.modifiedAttributes?.set(attributeName, attributeVal);
+    //this.modifiedAtts.push(attributeName);
+    console.log(this._instance);
   }
 
   drop(event: CdkDragDrop<string[]>, value: SchemaAttribute) {
@@ -331,4 +337,43 @@ export class InstanceTableComponent {
       draggedInstance: $event.item.data
     }
   }
+
+  isAttributeModified(attName: string): boolean {
+    if(!this._instance || !this._instance.modifiedAttributes) return false;
+    //console.log(this._instance);
+    return !!this._instance.modifiedAttributes.get(attName);
+  }
+
+  compareToDbInstance(attName: string): boolean {
+    if(!this._referenceInstance) return false;
+    let instanceVal = this._instance?.attributes.get(attName);
+    let refVal = this._referenceInstance?.attributes.get(attName);
+    console.log(instanceVal);
+    if(instanceVal && instanceVal.dbId || instanceVal instanceof Array){
+      return this.getValueTypeForComparison(instanceVal, refVal);
+      //return instanceVal.dbId !== refVal.dbId
+    }
+    return instanceVal !== refVal;
+  }
+
+  getValueTypeForComparison(instanceVal: any, refVal: any){
+    if(instanceVal.dbId) {
+      if(refVal === undefined) return true;
+      else {
+        return instanceVal.dbId !== refVal.dbId
+      }
+    }
+    else {
+      if(refVal === undefined || instanceVal.length !== refVal.length) return true;
+      else {
+        for (let i = 0; i < instanceVal.length; i++) {
+          if (instanceVal[i].dbId !== refVal[i].dbId) {
+              return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
 }

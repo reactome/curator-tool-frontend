@@ -62,6 +62,13 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
           attributeValues.push(attributeValue);
         }
       }
+      if(this.instance?.modifiedAttributes) {
+        for (let attribute of this.instance.modifiedAttributes) {
+          let value = this.instance.modifiedAttributes.get(attribute);
+          console.log(value)
+        }
+
+      }
 
       // Sort attributes alphabetically by name ascending, otherwise descending.
       if (this.sort) {

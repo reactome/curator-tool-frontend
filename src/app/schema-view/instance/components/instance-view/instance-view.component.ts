@@ -66,12 +66,11 @@ export class InstanceViewComponent implements OnInit {
       this.showProgressSpinner = false;
       let title = instance.schemaClass?.name + ": " + instance.displayName + "[" + instance.dbId + "]"
       this.title = this.setTitle(title);
+      console.log('modifiedAtts', this.instance.modifiedAttributes);
     })
   }
 
   setTitle(title: string): string {
-    // if(title.length < 50) return title
-    // else return title.substring(0, 50) + "..."
     return title;
   }
 
