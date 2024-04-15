@@ -71,5 +71,19 @@
 
   &:hover {
     text-decoration: underline ;
+  }
 }
+
+.event_text_match {
+  color: dodgerblue;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline ;
+  }
+}
+
+
+.spinner {
+  margin:0 auto;
 }

@@ -1,19 +1,22 @@
-import { ApplicationRef, ChangeDetectorRef, Component, Input } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { InstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
-import {AttributeCategory, AttributeDataType, SchemaAttribute} from "../../../../../core/models/reactome-schema.model";
-import {
-  SelectInstanceDialogService
-} from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
-import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
-import { AttributeValue, DragDropStatus, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
-import { DragDropService } from "../../../../instance-bookmark/drag-drop.service";
 import {
   CdkDragDrop,
   CdkDragEnter, moveItemInArray,
   transferArrayItem
 } from "@angular/cdk/drag-drop";
+import { ChangeDetectorRef, Component, Input } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { PostEditService } from 'src/app/core/services/post-edit.service';
+import { InstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
+import {AttributeCategory, AttributeDataType, SchemaAttribute} from "../../../../../core/models/reactome-schema.model";
+import { AttributeCategory, SchemaAttribute } from "../../../../../core/models/reactome-schema.model";
+import { DragDropService } from "../../../../instance-bookmark/drag-drop.service";
+import {
+  SelectInstanceDialogService
+} from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
+import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
+import { AttributeValue, DragDropStatus, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
+import { PostEditListener } from "src/app/core/post-edit/PostEditOperation";
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -23,7 +26,7 @@ import {
   templateUrl: './instance-table.component.html',
   styleUrls: ['./instance-table.component.scss'],
 })
-export class InstanceTableComponent {
+export class InstanceTableComponent implements PostEditListener {
   displayedColumns: string[] = ['name', 'value'];
   showFilterOptions: boolean = false;
   showHeaderActions: boolean = false;
@@ -79,7 +82,8 @@ export class InstanceTableComponent {
     private dialogService: NewInstanceDialogService,
     private dragDropService: DragDropService,
     private selectInstanceDialogService: SelectInstanceDialogService,
-    private store: Store) {
+    private store: Store,
+    private postEditService: PostEditService) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
       this.categories.set(AttributeCategory[categoryKey], true)
@@ -126,6 +130,8 @@ export class InstanceTableComponent {
         console.debug(valueList);
       }
     }
+    this.postEdit(data.attribute.name);
+    this.updateTableContent(); // In case the display name is changed
     // Change in this type of attribute doesn't need to update the table content.
     // Therefore, we need to register it here
     this.registerUpdatedInstance();
@@ -174,6 +180,7 @@ export class InstanceTableComponent {
         this._instance?.attributes?.set(attributeValue.attribute?.name, undefined);
       }
     }
+    this.postEdit(attributeValue.attribute.name);
     this.updateTableContent();
   }
 
@@ -214,6 +221,8 @@ export class InstanceTableComponent {
           value.splice(attributeValue.index, 0, ...result);
         }
       }
+      //Only add attribute name if value was added
+      this.postEdit(attributeValue.attribute.name);
       //TODO: Add a new value may reset the scroll position. This needs to be changed!
       this.updateTableContent();
       //Only add attribute name if value was added
@@ -247,8 +256,16 @@ export class InstanceTableComponent {
     //TODO: This causes the Angular N100 error about state change after view established. Need more refactoring!
     // Only add attribute name if value was added
     this.addModifiedAttribute(attributeValue.attribute.name, value);
+    // Only add attribute name if value was added
+    //TODO: This causes the Angular N100 error about state change after view established. Need more refactoring!
+    this.postEdit(attributeValue.attribute.name);
     //TODO: Add a new value may reset the scroll position. This needs to be changed!
     this.updateTableContent();
+  }
+
+  donePostEdit(instance: Instance, editedAttributeName: string | undefined): boolean {
+    this.updateTableContent();
+    return true;
   }
 
   updateTableContent(): void {
@@ -290,6 +307,17 @@ export class InstanceTableComponent {
     this._instance?.modifiedAttributes?.set(attributeName, attributeVal);
     //this.modifiedAtts.push(attributeName);
     console.log(this._instance);
+  }
+
+  /**
+   * Provide a hook to do something (e.g. update display name, perform QA etc) after
+   * any editing.
+   * @param attName
+   */
+  postEdit(attName: string) {
+    if (this._instance)
+      this.postEditService.postEdit(this._instance, attName, this);
+    this.addModifiedAttributeName(attName);
   }
 
   drop(event: CdkDragDrop<string[]>, value: SchemaAttribute) {

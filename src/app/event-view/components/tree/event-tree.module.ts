@@ -8,7 +8,7 @@ import {MatTooltipModule} from "@angular/material/tooltip";
 import {RouterLink} from "@angular/router";
 import {Icon1Component} from "../icon1/icon1.component";
 import {Icon2Component} from "../icon2/icon2.component";
-import {SelectSpeciesComponent} from "../select_species/select_species.component";
+import {FilterEventsComponent} from "../../../event/components/filter_events/filter_events.component";
 
 @NgModule({
   declarations: [
@@ -25,7 +25,7 @@ import {SelectSpeciesComponent} from "../select_species/select_species.component
     SharedModule,
     MatTooltipModule,
     RouterLink,
-    SelectSpeciesComponent
+    FilterEventsComponent
   ],
   exports: [MaterialModule, EventTreeComponent]
 })

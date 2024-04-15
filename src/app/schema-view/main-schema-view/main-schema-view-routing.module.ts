@@ -1,17 +1,9 @@
-import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {RouterModule, Routes} from "@angular/router";
-import {MainSchemaViewComponent} from "./main-schema-view.component";
-import {InstanceModule} from "../instance/instance.module";
-import {ListInstancesModule} from "../list-instances/list-instances.module";
-import {InstanceViewComponent} from "../instance/components/instance-view/instance-view.component";
+import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from "@angular/router";
+import { MainSchemaViewComponent } from "./main-schema-view.component";
 
 const routes: Routes = [
-  {
-    path: ``,
-    component: MainSchemaViewComponent,
-
-  },
   {
     path: `instance`,
     component: MainSchemaViewComponent,
@@ -32,6 +24,15 @@ const routes: Routes = [
     loadChildren: () =>
       import("../schema-class/components/table/schema-class-table.module").then((m) =>
         m.SchemaClassTableModule),
+  },
+  {
+    path: '',
+    component: MainSchemaViewComponent,
+    loadChildren: () => 
+      import('./text-curation/text-curation.module').then(m => 
+        m.TextCurationModule),
+    // redirectTo: 'llm/*',
+    // pathMatch: 'full',
   },
 ]
 
