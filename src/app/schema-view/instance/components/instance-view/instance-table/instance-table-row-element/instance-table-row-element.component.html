@@ -1,65 +1,76 @@
 <ng-container *ngIf="showField">
-  <ng-container *ngIf="control.disabled; else editView">
-    <ng-container *ngIf="attribute?.type === DATA_TYPES.INSTANCE && value; else simple">
-      <a routerLink="/schema_view/instance/{{value.dbId}}" [queryParamsHandling]="'preserve'"
-        class="padding span-menu-trigger">
-        {{value.displayName}}
-        [{{value.dbId}}]</a><br>
-    </ng-container>
-    <ng-template #simple>
-      <span class="padding">{{value}}</span>
+  <!--  <ng-container *ngIf="control.disabled; else editView">-->
+  <!--    <ng-container *ngIf="attribute?.type === DATA_TYPES.INSTANCE && value; else simple">-->
+  <!--      <a routerLink="/schema_view/instance/{{value.dbId}}" [queryParamsHandling]="'preserve'"-->
+  <!--        class="padding span-menu-trigger">-->
+  <!--        {{value.displayName}}-->
+  <!--        [{{value.dbId}}]</a><br>-->
+  <!--    </ng-container>-->
+  <!--    <ng-template #simple>-->
+  <!--      <span class="padding">{{value}}</span>-->
+  <!--    </ng-template>-->
+  <!--  </ng-container>-->
+  <!--  <ng-template #editView>-->
+
+  <ng-container [ngSwitch]="attribute?.type">
+    <ng-template [ngSwitchCase]="DATA_TYPES.BOOLEAN">
+      <mat-slide-toggle [formControl]="control" color="primary" class="padding" (change)="onChange()">
+      </mat-slide-toggle>
     </ng-template>
-  </ng-container>
-  <ng-template #editView>
 
-    <ng-container [ngSwitch]="attribute?.type">
-      <ng-template [ngSwitchCase]="DATA_TYPES.BOOLEAN">
-        <mat-slide-toggle [formControl]="control" color="primary" class="padding" (change)="onChange()">
-        </mat-slide-toggle>
-      </ng-template>
-
-      <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
-        <mat-form-field appearance="fill" subscriptSizing="dynamic">
+    <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" [cdkContextMenuTriggerFor]="row_menu">
           <textarea matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize" cdkAutosizeMinRows="1"
-            cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()">
+                    cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()">
       </textarea>
-        </mat-form-field>
-      </ng-template>
+      </mat-form-field>
+    </ng-template>
 
-      <ng-template [ngSwitchCase]="DATA_TYPES.INTEGER">
-        <mat-form-field appearance="fill" subscriptSizing="dynamic" class="input-style">
-          <input [formControl]="control" matInput type="number" (change)="onChange()">
-        </mat-form-field>
-      </ng-template>
+    <ng-template [ngSwitchCase]="DATA_TYPES.INTEGER">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="input-style">
+        <input [formControl]="control" matInput type="number" (change)="onChange()">
+      </mat-form-field>
+    </ng-template>
 
-      <ng-template [ngSwitchCase]="DATA_TYPES.FLOAT">
-        <mat-form-field appearance="fill" subscriptSizing="dynamic" class="input-style">
-          <input [formControl]="control" matInput type="number" (change)="onChange()">
-        </mat-form-field>
-      </ng-template>
+    <ng-template [ngSwitchCase]="DATA_TYPES.FLOAT">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="input-style">
+        <input [formControl]="control" matInput type="number" (change)="onChange()">
+      </mat-form-field>
+    </ng-template>
 
-      <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
-      <div (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="valueRow" [ngClass]="{dragging: dragging, red: !color, green: color}">
-        <!-- TODO: Also need to determine if it is required or disabled-->
-        <ng-container *ngIf="value !== undefined; else elseblock">
-          <a routerLink="/schema_view/instance/{{value.dbId}}" [cdkContextMenuTriggerFor]="row_menu"
-            class="padding span-menu-trigger">
+    <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
+      <ng-container *ngIf="control.disabled; else editInstance">
+        <ng-container *ngIf="value !== undefined">
+          <a routerLink="/schema_view/instance/{{value.dbId}}" [queryParamsHandling]="'preserve'"
+             class="padding span-menu-trigger">
             {{value.displayName}}
             [{{value.dbId}}]</a><br>
         </ng-container>
-        <!-- Add this empty space so that we can pop up the context menu to handle action.
-      For the time being, the popup works for instance type only. -->
-        <ng-template #elseblock>
-          <!-- Use a customized class to force the empty span to show the menu.-->
-          <span [cdkContextMenuTriggerFor]="row_menu" class="span-menu-trigger"></span>
-        </ng-template>
+      </ng-container>
+      <ng-template #editInstance>
+        <div (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="valueRow"
+             [ngClass]="{dragging: dragging, red: !color, green: color}">
+          <!-- TODO: Also need to determine if it is required or disabled-->
+          <ng-container *ngIf="value !== undefined; else elseblock">
+            <a routerLink="/schema_view/instance/{{value.dbId}}" [cdkContextMenuTriggerFor]="row_menu"
+               class="padding span-menu-trigger">
+              {{value.displayName}}
+              [{{value.dbId}}]</a><br>
+          </ng-container>
+          <!-- Add this empty space so that we can pop up the context menu to handle action.
+        For the time being, the popup works for instance type only. -->
+          <ng-template #elseblock>
+            <!-- Use a customized class to force the empty span to show the menu.-->
+            <span [cdkContextMenuTriggerFor]="row_menu" class="span-menu-trigger"></span>
+          </ng-template>
         </div>
       </ng-template>
+    </ng-template>
 
-      <ng-template #row_menu>
-        <app-action-menu (actionItem)="onEditAction($event)"></app-action-menu>
-      </ng-template>
-    </ng-container>
+    <ng-template #row_menu>
+      <app-action-menu (actionItem)="onEditAction($event)"></app-action-menu>
+    </ng-template>
+  </ng-container>
 
-  </ng-template>
+  <!--  </ng-template>-->
 </ng-container>

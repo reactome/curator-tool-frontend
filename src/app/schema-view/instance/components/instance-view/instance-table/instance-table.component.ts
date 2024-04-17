@@ -9,7 +9,6 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { PostEditService } from 'src/app/core/services/post-edit.service';
 import { InstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
 import {AttributeCategory, AttributeDataType, SchemaAttribute} from "../../../../../core/models/reactome-schema.model";
-import { AttributeCategory, SchemaAttribute } from "../../../../../core/models/reactome-schema.model";
 import { DragDropService } from "../../../../instance-bookmark/drag-drop.service";
 import {
   SelectInstanceDialogService
@@ -317,7 +316,7 @@ export class InstanceTableComponent implements PostEditListener {
   postEdit(attName: string) {
     if (this._instance)
       this.postEditService.postEdit(this._instance, attName, this);
-    this.addModifiedAttributeName(attName);
+    //this.addModifiedAttribute(attName);
   }
 
   drop(event: CdkDragDrop<string[]>, value: SchemaAttribute) {
@@ -376,27 +375,35 @@ export class InstanceTableComponent implements PostEditListener {
     if(!this._referenceInstance) return false;
     let instanceVal = this._instance?.attributes.get(attName);
     let refVal = this._referenceInstance?.attributes.get(attName);
-    console.log(instanceVal);
     if(instanceVal && instanceVal.dbId || instanceVal instanceof Array){
       return this.getValueTypeForComparison(instanceVal, refVal);
-      //return instanceVal.dbId !== refVal.dbId
     }
     return instanceVal !== refVal;
   }
 
   getValueTypeForComparison(instanceVal: any, refVal: any){
+    // One singular instance
     if(instanceVal.dbId) {
       if(refVal === undefined) return true;
       else {
         return instanceVal.dbId !== refVal.dbId
       }
     }
+    // An array of instances
     else {
       if(refVal === undefined || instanceVal.length !== refVal.length) return true;
-      else {
+      else if(instanceVal[0].dbId) {
         for (let i = 0; i < instanceVal.length; i++) {
           if (instanceVal[i].dbId !== refVal[i].dbId) {
               return true;
+          }
+        }
+      }
+      // An array of non-instances
+      else {
+        for (let i = 0; i < instanceVal.length; i++) {
+          if (instanceVal[i] !== refVal[i]) {
+            return true;
           }
         }
       }
@@ -404,4 +411,8 @@ export class InstanceTableComponent implements PostEditListener {
     return false;
   }
 
+  undoEdit(attributeValue: AttributeValue) {
+    let refVal = this._referenceInstance?.attributes.get(attributeValue.attribute.name);
+    this.addValueToAttribute(attributeValue, refVal);
+  }
 }
