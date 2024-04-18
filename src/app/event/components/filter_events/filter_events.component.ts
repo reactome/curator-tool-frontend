@@ -70,6 +70,8 @@ export class FilterEventsComponent {
       let eventSchemaClass = service.getSchemaClass("Event");
       let classNames: Set<string> = new Set(['Event']);
       this.getChildren(eventSchemaClass!, classNames);
+      // Disallow search by attribute value for class TopLevelPathway - not necessary and not catered for anyway
+      classNames.delete("TopLevelPathway");
       this.classNames = Array.from(classNames).sort((a, b) => a.localeCompare(b));
 
       // Populate className's attribute names into classToAttributes
