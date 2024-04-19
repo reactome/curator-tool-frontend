@@ -173,6 +173,7 @@ export class DataService {
             schemaClassName: "TopLevelPathway",
             attributes: { "hasEvent": data }
           };
+          this.rootEvent = rootEvent;
           return rootEvent;
         }),
         catchError((err: Error) => {
