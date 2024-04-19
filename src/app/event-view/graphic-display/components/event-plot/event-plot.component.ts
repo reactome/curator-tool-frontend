@@ -241,7 +241,6 @@ export class EventPlotComponent {
       graph.on('node:click', evt => {
         const node = evt.item;
         const plotParams = node!._cfg!.model!['plotParams'] as string;
-        this.generatePlot(plotParams);
         // Passing the event with the selected plot dbId:ClassName (plotParams)
         // as well as the original one (dbIdAndClassName) - so that event tree node
         // corresponding to the original one can be expanded - in order to show
