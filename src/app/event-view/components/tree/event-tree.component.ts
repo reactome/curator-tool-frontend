@@ -82,30 +82,28 @@ export class EventTreeComponent {
     return ret;
   }
 
-    ngOnChanges() {
-      if (this.dbIdAndClassNameFromPlotToEventTree) {
-          let selectedParams: string = this.dbIdAndClassNameFromPlotToEventTree.split(",")[0];
-          let parentParams: string = this.dbIdAndClassNameFromPlotToEventTree.split(",")[1];
-          let selectedDbId = parseInt(selectedParams.split(":")[0]);
-          let parentDbId = parseInt(parentParams.split(":")[0]);
-          // Highlight in the event tree the node corresponding to the event selected by the user within the plot
-          // (and remove highlighting from all the other nodes); also - expand the parent node of the selected one -
-          // in order to bring the selected one into view.
-          this.treeControl.dataNodes.forEach( (node) => {
-            if (node.dbId === selectedDbId) {
-              node.match = true;
-            } else if (node.dbId === parentDbId) {
-              this.treeControl.expand(node);
-              node.match = false;
-            } else {
-              node.match = false;
-            }
-          });
-          const element = document.querySelector('.match') as HTMLElement;
-          element.scrollIntoView({behavior: 'smooth'});
-          this.cdr.detectChanges();
-      }
+  ngOnChanges() {
+    if (this.dbIdAndClassNameFromPlotToEventTree) {
+        let selectedParams: string = this.dbIdAndClassNameFromPlotToEventTree.split(",")[0];
+        let parentParams: string = this.dbIdAndClassNameFromPlotToEventTree.split(",")[1];
+        let selectedDbId = parseInt(selectedParams.split(":")[0]);
+        let parentDbId = parseInt(parentParams.split(":")[0]);
+        // Highlight in the event tree the node corresponding to the event selected by the user within the plot
+        // (and remove highlighting from all the other nodes); also - expand the parent node of the selected one -
+        // in order to bring the selected one into view.
+        this.treeControl.dataNodes.forEach( (node) => {
+          if (node.dbId === selectedDbId) {
+            node.match = true;
+          } else if (node.dbId === parentDbId) {
+            this.treeControl.expand(node);
+            node.match = false;
+          } else {
+            node.match = false;
+          }
+        });
+        this.cdr.detectChanges();
     }
+  }
 
 
   // Emit an event to the parent: side-navigation.component
