@@ -92,6 +92,7 @@ export class EventPlotComponent {
   }
 
   @Input() dbIdAndClassName: string = "";
+  @Output() updateEventTreeFromPlotSelection = new EventEmitter<string>();
 
   ngOnChanges() {
     if (this.dbIdAndClassName) {
@@ -241,6 +242,11 @@ export class EventPlotComponent {
         const node = evt.item;
         const plotParams = node!._cfg!.model!['plotParams'] as string;
         this.generatePlot(plotParams);
+        // Passing the event with the selected plot dbId:ClassName (plotParams)
+        // as well as the original one (dbIdAndClassName) - so that event tree node
+        // corresponding to the original one can be expanded - in order to show
+        // the selected one.
+        this.updateEventTreeFromPlotSelection.emit(plotParams + "," + dbIdAndClassName);
       });
     });
   }

@@ -16,6 +16,7 @@ export class MainEventComponent {
   showInstanceList: number = 0;
   status = {closed: true, opened: false, dragging: false};
   public dbIdAndClassName: string = "";
+  public dbIdAndClassNameFromPlot: string = "";
 
   constructor() {
     let url = window.location.href.split("/");
@@ -68,7 +69,11 @@ export class MainEventComponent {
     })
   }
 
-  generatePlotToEventPlot(param: string) {
-    this.dbIdAndClassName = param;
+  generatePlotToEventPlot(dbIdAndClassName: string) {
+    this.dbIdAndClassName = dbIdAndClassName;
+  }
+
+  updateEventTreeToSideNavigation(dbIdAndClassNameFromPlot: string) {
+    this.dbIdAndClassNameFromPlot = dbIdAndClassNameFromPlot;
   }
 }

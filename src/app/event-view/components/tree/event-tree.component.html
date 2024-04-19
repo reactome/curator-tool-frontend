@@ -30,6 +30,5 @@
     <a *ngIf="node.name !== 'TopLevelPathway'" [ngClass]="node.match === true ? 'event_text_match' : 'event_text'" routerLink="/schema_view/instance/{{node.dbId}}">{{node.name}}</a>&nbsp;
     <label *ngIf="node.name === 'TopLevelPathway'">{{node.name}}</label>&nbsp;
     <button [hidden]="node.name === 'TopLevelPathway'" mat-button (click)="generatePlotToSideNavigation(node.dbId, node.className)" cdkFocusInitial>&gt;</button>
-
   </mat-tree-node>
 </mat-tree>
