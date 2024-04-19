@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild, EventEmitter, Input, Output, OnChanges } from '@angular/core';
 import { ActivatedRoute, Router } from "@angular/router";
 import { DataService } from 'src/app/core/services/data.service';
 import { Graph } from '@antv/g6';
@@ -9,7 +9,7 @@ import { Graph } from '@antv/g6';
   styleUrls: ['./event-plot.component.scss'],
 })
 
-export class EventPlotComponent implements OnInit {
+export class EventPlotComponent {
   title: string = '';
 
   fillColors = new Map(Object.entries({
@@ -91,153 +91,163 @@ export class EventPlotComponent implements OnInit {
              ) {
   }
 
-  ngOnInit() {
-    this.route.params.subscribe((params) => {
-      if (params['dbIdAndClassName']) {
-        let dbId = parseInt(params['dbIdAndClassName'].split(":")[0]);
-        let className = params['dbIdAndClassName'].split(":")[1];
-        let plotType;
-        if (className === 'Reaction') {
-          plotType = "reaction";
-        } else {
-          plotType = "hierarchical";
-        }
-        this.title = this.setTitle(dbId.toString());
-        this.dataService.fetchEventPlotData(dbId, plotType).subscribe((data) => {
-          const container = document.getElementById('event_plot');
-          container!.innerHTML = "";
-          const graph = new Graph({
-            container: 'event_plot',
-            width: 1000,
-            height: 1000,
-            fitViewPadding: 0,
-            fitView: true,
-            modes: {
-              // Note that on Chrome, moving nodes via drag-canvas, zoom-canvas and drag-node leaves trail of characters
-              // (coming from the nodes label) - this is a Chrome bug, as Firefox and Safari work just fine.
-              default: ['drag-canvas', 'zoom-canvas', 'click-select','drag-node',
-              {
-                type: 'tooltip',
-                formatText: function formatText(model: any) {
-                  return model.description;
-                },
-                offset: 20
-              }]
+  @Input() dbIdAndClassName: string = "";
+  @Output() updateEventTreeFromPlotSelection = new EventEmitter<string>();
+
+  ngOnChanges() {
+    if (this.dbIdAndClassName) {
+      this.generatePlot(this.dbIdAndClassName);
+    }
+  }
+
+  generatePlot(dbIdAndClassName: string): void {
+    let dbId = parseInt(dbIdAndClassName.split(":")[0]);
+    let className = dbIdAndClassName.split(":")[1];
+    let plotType;
+    if (className === 'Reaction') {
+      plotType = "reaction";
+    } else {
+      plotType = "hierarchical";
+    }
+    this.title = this.setTitle(dbId.toString());
+    this.dataService.fetchEventPlotData(dbId, plotType).subscribe((data) => {
+      const container = document.getElementById('event_plot');
+      container!.innerHTML = "";
+      const graph = new Graph({
+        container: 'event_plot',
+        width: 1000,
+        height: 1000,
+        fitViewPadding: 0,
+        fitView: true,
+        modes: {
+          // Note that on Chrome, moving nodes via drag-canvas, zoom-canvas and drag-node leaves trail of characters
+          // (coming from the nodes label) - this is a Chrome bug, as Firefox and Safari work just fine.
+          default: ['drag-canvas', 'zoom-canvas', 'click-select','drag-node',
+          {
+            type: 'tooltip',
+            formatText: function formatText(model: any) {
+              return model.description;
             },
-            nodeStateStyles: {
-              // The state styles taking effect on keyShape only
-              hover: {
-                fillOpacity: 0.1,
-                lineWidth: 3,
-              }
+            offset: 20
+          }]
+        },
+        nodeStateStyles: {
+          // The state styles taking effect on keyShape only
+          hover: {
+            fillOpacity: 0.1,
+            lineWidth: 3,
+          }
+        },
+        layout: {
+          type: 'dagre',
+          nodeSize: [40, 20],
+          nodesep: 40,
+          ranksep: 40,
+          rankdir: 'LR',
+          // rankdir: 'TB',
+          align: 'UR'
+        },
+        animate: true,
+        defaultNode: {
+          size: [40, 20],
+          type: 'rect',
+          style: {
+            lineWidth: 1,
+            stroke: '#5B8FF9',
+            fill: '#C6E5FF',
+          },
+        },
+        defaultEdge: {
+          size: 1,
+          color: '#141414',
+          type: "cubic-horizontal",
+          style: {
+            endArrow: {
+              // black arrow
+              path: 'M 0,0 L 8,4 L 8,-4 Z',
+              fill: '#000000',
             },
-            layout: {
-              type: 'dagre',
-              nodeSize: [40, 20],
-              nodesep: 40,
-              ranksep: 40,
-              rankdir: 'LR',
-              // rankdir: 'TB',
-              align: 'UR'
-            },
-            animate: true,
-            defaultNode: {
-              size: [40, 20],
-              type: 'rect',
-              style: {
-                lineWidth: 1,
-                stroke: '#5B8FF9',
-                fill: '#C6E5FF',
-              },
-            },
-            defaultEdge: {
-              size: 1,
-              color: '#141414',
-              type: "cubic-horizontal",
-              style: {
-                endArrow: {
-                  // black arrow
-                  path: 'M 0,0 L 8,4 L 8,-4 Z',
-                  fill: '#000000',
-                },
-              },
-              labelCfg: {
-                autoRotate: true,
-                style: {
-                  opacity: 0.8
-                }
-              }
+          },
+          labelCfg: {
+            autoRotate: true,
+            style: {
+              opacity: 0.8
             }
-          });
-
-          // Convert json to an object
-          const dataMap: Map<string, Array<Node | Edge>> = new Map(Object.entries(data));
-          const nodes = dataMap.get('nodes') as Array<Node>;
-          const edges = dataMap.get('edges') as Array<Edge>;
-
-          if (nodes !== undefined) {
-            nodes.forEach(node => {
-              if (!node.style) {
-                node.style = {}; // graph.cfg.defaultNode.style;
-              }
-              node.shape = this.shapes.get(node.class);
-              node.style.fill = this.fillColors.get(node.class);
-              node.labelCfg = {};
-              node.labelCfg.style = {};
-              node.style.radius = this.nodeStyleRadii.get(node.class);
-              node.size = this.nodeSizes.get(node.class);
-              node.labelCfg.position = 'bottom';
-              node.style.lineWidth = this.nodeStyleLineWidths(node.class);
-
-              if (node.id === "0") {
-                node.anchorPoints = [
-                    [0.5, 0], // input
-                    [0, 0.3], // catalyst activity
-                    [0.5, 1], // positive regulation
-                    [0, 0.9], // negative regulation
-                    [1, 0.5], // sourceAnchor for output
-                  ]
-              }
-            });
           }
+        }
+      });
 
-          // Traverse the edges data
-          if (edges !== undefined) {
-            edges.forEach(edge => {
-              if (edge.source == edge.target) {
-                edge.type = "loop";
-              }
-              if (!edge.style) {
-                edge.style = {};
-              }
-              edge.style.endArrow = edge.edgeEndShape ? this.edgeEndShapes.get(edge.edgeEndShape): "";
-              edge.label = edge.stoichiometry;
-            });
+      // Convert json to an object
+      const dataMap: Map<string, Array<Node | Edge>> = new Map(Object.entries(data));
+      const nodes = dataMap.get('nodes') as Array<Node>;
+      const edges = dataMap.get('edges') as Array<Edge>;
+
+      if (nodes !== undefined) {
+        nodes.forEach(node => {
+          if (!node.style) {
+            node.style = {}; // graph.cfg.defaultNode.style;
           }
+          node.shape = this.shapes.get(node.class);
+          node.style.fill = this.fillColors.get(node.class);
+          node.labelCfg = {};
+          node.labelCfg.style = {};
+          node.style.radius = this.nodeStyleRadii.get(node.class);
+          node.size = this.nodeSizes.get(node.class);
+          node.labelCfg.position = 'bottom';
+          node.style.lineWidth = this.nodeStyleLineWidths(node.class);
 
-          graph.data(data);
-          graph.render();
-
-          // Listen to the mouse enter event on node
-          graph.on('node:mouseenter', evt => {
-            const node = evt.item;
-            // activate the hover state of the node
-            graph.setItemState(node!, 'hover', true);
-          });
-          // Listen to the mouse leave event on node
-          graph.on('node:mouseleave', evt => {
-            const node = evt.item;
-            // inactivate the hover state of the node
-            graph.setItemState(node!, 'hover', false);
-          });
-          // Click on node
-          graph.on('node:dblclick', evt => {
-            const node = evt.item;
-            const url = node!._cfg!.model!['url'] as string;
-            window.open(url, '_blank')!.focus();
-          });
+          if (node.id === "0") {
+            node.anchorPoints = [
+                [0.5, 0], // input
+                [0, 0.3], // catalyst activity
+                [0.5, 1], // positive regulation
+                [0, 0.9], // negative regulation
+                [1, 0.5], // sourceAnchor for output
+              ]
+          }
         });
       }
+
+      // Traverse the edges data
+      if (edges !== undefined) {
+        edges.forEach(edge => {
+          if (edge.source == edge.target) {
+            edge.type = "loop";
+          }
+          if (!edge.style) {
+            edge.style = {};
+          }
+          edge.style.endArrow = edge.edgeEndShape ? this.edgeEndShapes.get(edge.edgeEndShape): "";
+          edge.label = edge.stoichiometry;
+        });
+      }
+
+      graph.data(data);
+      graph.render();
+
+      // Listen to the mouse enter event on node
+      graph.on('node:mouseenter', evt => {
+        const node = evt.item;
+        // activate the hover state of the node
+        graph.setItemState(node!, 'hover', true);
+      });
+      // Listen to the mouse leave event on node
+      graph.on('node:mouseleave', evt => {
+        const node = evt.item;
+        // inactivate the hover state of the node
+        graph.setItemState(node!, 'hover', false);
+      });
+      // Click on node
+      graph.on('node:click', evt => {
+        const node = evt.item;
+        const plotParams = node!._cfg!.model!['plotParams'] as string;
+        this.generatePlot(plotParams);
+        // Passing the event with the selected plot dbId:ClassName (plotParams)
+        // as well as the original one (dbIdAndClassName) - so that event tree node
+        // corresponding to the original one can be expanded - in order to show
+        // the selected one.
+        this.updateEventTreeFromPlotSelection.emit(plotParams + "," + dbIdAndClassName);
+      });
     });
   }
 
@@ -258,7 +268,8 @@ interface Node {
     class: string;
     description?: string;
     label?: string;
-    url?: string;
+    instanceViewUrl?: string;
+    plotUrl?: string;
     style?: any;
     shape?: string
     labelCfg?: any;

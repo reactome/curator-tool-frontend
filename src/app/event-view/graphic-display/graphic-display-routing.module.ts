@@ -8,25 +8,13 @@ const routes: Routes = [
     path: `:dbIdAndClassName`,
     component: EventPlotComponent,
   },
-//   {
-//     path:`:dbId/:mode`,
-//     component: InstanceViewComponent
-//   },
-//   {
-//     path:`:dbId/:mode/:dbId2`,
-//     component: InstanceViewComponent
-//   },
-//   {
-//     path: `schemaClass/:className`,
-//     component: InstanceViewComponent
-//   },
 ]
 
 @NgModule({
   declarations: [],
   imports: [
     CommonModule,
-    RouterModule.forChild(routes),
+    RouterModule.forChild(routes)
   ],
   exports: [RouterModule]
 })
