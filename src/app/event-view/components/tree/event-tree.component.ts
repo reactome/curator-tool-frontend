@@ -1,8 +1,6 @@
 import { FlatTreeControl } from "@angular/cdk/tree";
-import {ChangeDetectorRef, Component} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Output } from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
-import { Router } from "@angular/router";
-import { Store } from "@ngrx/store";
 import {Instance} from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
 import { EDIT_ACTION } from "../../../schema-view/instance/components/instance-view/instance-table/instance-table.model";
@@ -61,16 +59,14 @@ export class EventTreeComponent {
   constructor(
     private cdr: ChangeDetectorRef,
     private service: DataService,
-    private router: Router,
-    private store: Store,
     private _snackBar: MatSnackBar) {
-      let searchKey = undefined;
-      service.fetchEventTree(false, "All", "", [], [], [], [])
-        .subscribe(data => {
-        this.dataSource.data = [data]
+      service.fetchEventTree(false, "All", "", [], [], [], []).subscribe(data => {
+        this.dataSource.data = [data];
         this.showProgressSpinner = false;
-      })
+      });
   }
+
+  @Output() generatePlotFromEventTreeSel = new EventEmitter<string>();
 
   hasChild = (_: number, node: EventNode) => node.expandable;
 
@@ -83,6 +79,23 @@ export class EventTreeComponent {
       ret = sks.size > 1 || !sks.values().next().value.equals("na");
     }
     return ret;
+  }
+
+  // Emit an event to the parent: side-navigation.component
+  // (with the final destination of event-plot.component)
+  generatePlotToSideNavigation(dbId: string, className: string) {
+    let plotParam = dbId + ":" + className;
+    this.generatePlotFromEventTreeSel.emit(plotParam);
+    // Additionally, highlight in the event tree the node corresponding to the plot
+    // about to be generated (and remove highlighting from all the other nodes)
+    this.treeControl.dataNodes.forEach( (node) => {
+      if (node.dbId === parseInt(dbId)) {
+        node.match = true;
+      } else {
+        node.match = false;
+      }
+    });
+    this.cdr.detectChanges();
   }
 
   filterData(searchFilters: Array<string[]>) {

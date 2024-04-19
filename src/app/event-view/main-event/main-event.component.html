@@ -2,12 +2,16 @@
   <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh">
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true" [style.width]="sideWidth + 'px'">
       <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)"
+                           (generatePlotFromEventTreeSel)="generatePlotToEventPlot($event)"
                            [showUpdatedList]="showInstanceList"></app-side-navigation>
       <div class="resize-container" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
            (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
         <div class="resize-bar"></div>
       </div>
     </mat-sidenav>
+    <mat-sidenav-content>
+      <app-event-plot [dbIdAndClassName]="dbIdAndClassName" ></app-event-plot>
+    </mat-sidenav-content>
     <mat-sidenav-content class="instance-view-container">
       <router-outlet></router-outlet>
     </mat-sidenav-content>

@@ -11,6 +11,7 @@ import { updatedInstances } from 'src/app/schema-view/instance/state/instance.se
 export class EventSideNavigationComponent implements OnInit {
   @Input() showUpdatedList: number = 0;
   @Output() updateTabIndexEvent = new EventEmitter<boolean>();
+  @Output() generatePlotFromEventTreeSel = new EventEmitter<string>();
   data: Instance[] = [];
   constructor(private store: Store) {
   }
@@ -24,5 +25,9 @@ export class EventSideNavigationComponent implements OnInit {
   updateTabIndex() {
     let showList = this.showUpdatedList !== 0;
     this.updateTabIndexEvent.emit(showList);
+  }
+
+  generatePlotToMainEvent(param: string) {
+    this.generatePlotFromEventTreeSel.emit(param);
   }
 }

@@ -12,6 +12,7 @@ import {StatusComponent} from "../../status/status.component";
 import {CdkAccordionModule} from "@angular/cdk/accordion";
 import {InstanceBookmarkModule} from "../../schema-view/instance-bookmark/instance-bookmark.module";
 import {MainEventRoutingModule} from "./main-event-routing.module";
+import {GraphicDisplayModule} from "../graphic-display/graphic-display.module";
 
 @NgModule({
   declarations: [
@@ -34,7 +35,8 @@ import {MainEventRoutingModule} from "./main-event-routing.module";
     CdkAccordionModule,
     InstanceBookmarkModule,
     CdkDragHandle,
-    MainEventRoutingModule
+    MainEventRoutingModule,
+    GraphicDisplayModule
     ]
 })
 export class MainEventModule { }

@@ -2,6 +2,7 @@ import {Component, ViewChild} from '@angular/core';
 import {CdkDragMove} from "@angular/cdk/drag-drop";
 import {MatSidenav} from "@angular/material/sidenav";
 import {ActivatedRoute, Router} from "@angular/router";
+import {EventPlotComponent} from "../graphic-display/components/event-plot/event-plot.component";
 
 @Component({
   selector: 'app-main-schema-view-event-view',
@@ -14,6 +15,7 @@ export class MainEventComponent {
   resizing: boolean = false;
   showInstanceList: number = 0;
   status = {closed: true, opened: false, dragging: false};
+  public dbIdAndClassName: string = "";
 
   constructor() {
     let url = window.location.href.split("/");
@@ -64,5 +66,9 @@ export class MainEventComponent {
       this.status.opened = !this.status.opened;
       this.status.closed = !this.status.opened;
     })
+  }
+
+  generatePlotToEventPlot(param: string) {
+    this.dbIdAndClassName = param;
   }
 }
