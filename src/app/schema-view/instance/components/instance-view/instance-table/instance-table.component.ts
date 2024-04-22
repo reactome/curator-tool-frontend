@@ -117,13 +117,13 @@ export class InstanceTableComponent implements PostEditListener {
     if (data.attribute.cardinality === '1') {
       this._instance?.attributes?.set(data.attribute.name, data.value);
     } else { // This should be a list
-      if(data.value === undefined || ''){this.deleteInstanceAttribute(data); return}
+      if(data.value === ''){this.deleteAttributeValue(data); return}
       let valueList = this._instance?.attributes!.get(data.attribute.name);
       if (valueList === undefined) {
         this._instance?.attributes?.set(data.attribute.name, [data.value]);
       } else {
         //valueList[data.index!] = data.value;
-        value.splice(data.index, 0, ...[data.value]);
+        value.splice(data.value.length, 0, ...[data.value]);
 
         console.debug(valueList);
       }
@@ -135,7 +135,29 @@ export class InstanceTableComponent implements PostEditListener {
     this.registerUpdatedInstance();
   }
 
-  deleteAttributeValue(){}
+  deleteAttributeValue(attributeValue: AttributeValue){
+    console.debug('deleteAttributeValue: ', attributeValue);
+    let value = this._instance?.attributes?.get(attributeValue.attribute.name);
+    //this.addModifiedAttribute(attributeValue.attribute.name, value);
+    if (attributeValue.attribute.cardinality === '1') {
+      // This should not occur. Just in case
+      //this._instance?.attributes?.delete(attributeValue.attribute?.name);
+      this._instance?.attributes?.set(attributeValue.attribute?.name, undefined);
+    } else {
+      // This should be a list
+      const valueList: [] = this._instance?.attributes?.get(attributeValue.attribute.name);
+      // Remove the value if more than one
+      if(valueList.length > 1){
+        valueList.splice(attributeValue.index!, 1);
+      }
+      // Otherwise need to set the value to undefined so a value is assigned
+      else {
+        this._instance?.attributes?.set(attributeValue.attribute?.name, undefined);
+      }
+    }
+    this.postEdit(attributeValue.attribute.name);
+    this.updateTableContent();
+  }
 
   onInstanceAttributeEdit(attributeValue: AttributeValue) {
     console.debug("onEdit: ", attributeValue);
