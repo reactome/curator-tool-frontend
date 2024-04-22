@@ -263,7 +263,8 @@ export class InstanceTableComponent implements PostEditListener {
     this.updateTableContent();
   }
 
-  donePostEdit(instance: Instance, editedAttributeName: string | undefined): boolean {
+  donePostEdit(instance: Instance, 
+               editedAttributeName: string | undefined): boolean {
     this.updateTableContent();
     return true;
   }
@@ -306,7 +307,13 @@ export class InstanceTableComponent implements PostEditListener {
     }
     this._instance?.modifiedAttributes?.set(attributeName, attributeVal);
     //this.modifiedAtts.push(attributeName);
-    console.log(this._instance);
+    // console.log(this._instance);
+  }
+
+  removeModifiedAttribute(attributeName: string) {
+    if (this._instance === undefined || this._instance.modifiedAttributes === undefined)
+      return;
+    this._instance.modifiedAttributes.delete(attributeName);
   }
 
   /**
@@ -412,9 +419,15 @@ export class InstanceTableComponent implements PostEditListener {
     return false;
   }
 
-  undoEdit(attributeValue: AttributeValue) {
-    let refVal = this._referenceInstance?.attributes.get(attributeValue.attribute.name);
-    this.addValueToAttribute(attributeValue, refVal);
+  resetEdit(attributeValue: AttributeValue) {
+    if (!this._instance)
+      return; // Do nothing
+    this._instance.attributes.set(attributeValue.attribute.name, attributeValue.referenceValue)
+    
+    // Update the status of this table
+    this.removeModifiedAttribute(attributeValue.attribute.name);
+    this.postEdit(attributeValue.attribute.name);
+    this.updateTableContent();
   }
 
   showTextArea(attributeValue: AttributeValue) {
