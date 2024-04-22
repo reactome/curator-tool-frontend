@@ -1,8 +1,6 @@
 import { FlatTreeControl } from "@angular/cdk/tree";
-import {ChangeDetectorRef, Component} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Output, Input, OnChanges} from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
-import { Router } from "@angular/router";
-import { Store } from "@ngrx/store";
 import {Instance} from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
 import { EDIT_ACTION } from "../../../schema-view/instance/components/instance-view/instance-table/instance-table.model";
@@ -61,16 +59,15 @@ export class EventTreeComponent {
   constructor(
     private cdr: ChangeDetectorRef,
     private service: DataService,
-    private router: Router,
-    private store: Store,
     private _snackBar: MatSnackBar) {
-      let searchKey = undefined;
-      service.fetchEventTree(false, "All", "", [], [], [], [])
-        .subscribe(data => {
-        this.dataSource.data = [data]
+      service.fetchEventTree(false, "All", "", [], [], [], []).subscribe(data => {
+        this.dataSource.data = [data];
         this.showProgressSpinner = false;
-      })
+      });
   }
+
+  @Output() generatePlotFromEventTreeSel = new EventEmitter<string>();
+  @Input() dbIdAndClassNameFromPlotToEventTree: string = "";
 
   hasChild = (_: number, node: EventNode) => node.expandable;
 
@@ -83,6 +80,47 @@ export class EventTreeComponent {
       ret = sks.size > 1 || !sks.values().next().value.equals("na");
     }
     return ret;
+  }
+
+  ngOnChanges() {
+    if (this.dbIdAndClassNameFromPlotToEventTree) {
+        let selectedParams: string = this.dbIdAndClassNameFromPlotToEventTree.split(",")[0];
+        let parentParams: string = this.dbIdAndClassNameFromPlotToEventTree.split(",")[1];
+        let selectedDbId = parseInt(selectedParams.split(":")[0]);
+        let parentDbId = parseInt(parentParams.split(":")[0]);
+        // Highlight in the event tree the node corresponding to the event selected by the user within the plot
+        // (and remove highlighting from all the other nodes); also - expand the parent node of the selected one -
+        // in order to bring the selected one into view.
+        this.treeControl.dataNodes.forEach( (node) => {
+          if (node.dbId === selectedDbId) {
+            node.match = true;
+          } else if (node.dbId === parentDbId) {
+            this.treeControl.expand(node);
+            node.match = false;
+          } else {
+            node.match = false;
+          }
+        });
+        this.cdr.detectChanges();
+    }
+  }
+
+
+  // Emit an event to the parent: side-navigation.component
+  // (with the final destination of event-plot.component)
+  generatePlotToSideNavigation(dbId: string, className: string) {
+    let plotParam = dbId + ":" + className;
+    this.generatePlotFromEventTreeSel.emit(plotParam);
+    // Additionally, highlight in the event tree the node corresponding to the plot
+    // about to be generated (and remove highlighting from all the other nodes)
+    this.treeControl.dataNodes.forEach( (node) => {
+      if (node.dbId === parseInt(dbId)) {
+        node.match = true;
+      } else {
+        node.match = false;
+      }
+    });
+    this.cdr.detectChanges();
   }
 
   filterData(searchFilters: Array<string[]>) {

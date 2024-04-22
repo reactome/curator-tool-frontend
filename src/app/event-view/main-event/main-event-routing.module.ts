@@ -13,6 +13,13 @@ const routes: Routes = [
         m.InstanceModule),
   },
   {
+    path: `graphic-display`,
+    component: MainEventComponent,
+    loadChildren: () =>
+      import("../graphic-display/graphic-display.module").then((m) =>
+        m.GraphicDisplayModule),
+  },
+  {
     path: '',
     component: MainEventComponent
   }

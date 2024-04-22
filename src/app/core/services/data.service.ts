@@ -33,6 +33,7 @@ export class DataService {
   private countInstancesUrl = `${environment.ApiRoot}/countInstances/`;
   private commitInstanceUrl = `${environment.ApiRoot}/commit/`;
   private fillReferenceUrl = `${environment.ApiRoot}/fillReference/`;
+  private eventPlotDataUrl = `${environment.ApiRoot}/getEventPlotData/`;
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
   // The root class is cached for performance
@@ -172,6 +173,7 @@ export class DataService {
             schemaClassName: "TopLevelPathway",
             attributes: { "hasEvent": data }
           };
+          this.rootEvent = rootEvent;
           return rootEvent;
         }),
         catchError((err: Error) => {
@@ -316,6 +318,19 @@ export class DataService {
 
         catchError((err: Error) => {
           console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
+            panelClass: ['warning-snackbar'],
+            duration: 100
+          });
+          return throwError(() => err);
+        }),
+      );
+  }
+
+  fetchEventPlotData(dbId: number, plotType: string): Observable<JSON> {
+    return this.http.get<JSON>(this.eventPlotDataUrl + `${dbId}` + "?type=" + plotType)
+        .pipe(map((data: JSON) => data),
+        catchError((err: Error) => {
+          console.log("Plot data could not be retrieved: \n" + err.message, "Close", {
             panelClass: ['warning-snackbar'],
             duration: 100
           });

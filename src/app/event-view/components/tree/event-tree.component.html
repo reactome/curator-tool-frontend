@@ -1,4 +1,4 @@
-<filter-events (updateEventTree)="filterData($event)" ></filter-events>
+<filter-events (updateEventTree)="filterData($event)"></filter-events>
 <div>
   <ng-container *ngIf="showProgressSpinner">
     <mat-spinner class="spinner"></mat-spinner>
@@ -11,9 +11,10 @@
                  [ngClass] = "[node.inFocus === true ? 'inFocus' : '', node.rootNode === true ? 'rootNode' : '']">
     <!-- use a disabled button to provide padding for table leaf -->
     <button mat-icon-button disabled></button>
-    <icon1-image [doRelease]="node.doRelease" ></icon1-image>
+    <icon1-image [doRelease]="node.doRelease"></icon1-image>
     <icon2-image [className]="node.className"></icon2-image>
     <a [ngClass]="node.match === true ? 'event_text_match' : 'event_text'" routerLink="/schema_view/instance/{{node.dbId}}">{{node.name}}</a>&nbsp;
+    <button mat-button (click)="generatePlotToSideNavigation(node.dbId, node.className)" cdkFocusInitial>&gt;</button>
   </mat-tree-node>
   <!-- This is the table node template for expandable nodes -->
   <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding
@@ -26,6 +27,8 @@
     </button>
     <icon1-image [doRelease]="node.doRelease"></icon1-image>
     <icon2-image [className]="node.className"></icon2-image>
-    <a [ngClass]="node.match === true ? 'event_text_match' : 'event_text'" routerLink="/schema_view/instance/{{node.dbId}}">{{node.name}}</a>&nbsp;
+    <a *ngIf="node.name !== 'TopLevelPathway'" [ngClass]="node.match === true ? 'event_text_match' : 'event_text'" routerLink="/schema_view/instance/{{node.dbId}}">{{node.name}}</a>&nbsp;
+    <label *ngIf="node.name === 'TopLevelPathway'">{{node.name}}</label>&nbsp;
+    <button [hidden]="node.name === 'TopLevelPathway'" mat-button (click)="generatePlotToSideNavigation(node.dbId, node.className)" cdkFocusInitial>&gt;</button>
   </mat-tree-node>
 </mat-tree>

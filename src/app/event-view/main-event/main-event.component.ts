@@ -2,6 +2,7 @@ import {Component, ViewChild} from '@angular/core';
 import {CdkDragMove} from "@angular/cdk/drag-drop";
 import {MatSidenav} from "@angular/material/sidenav";
 import {ActivatedRoute, Router} from "@angular/router";
+import {EventPlotComponent} from "../graphic-display/components/event-plot/event-plot.component";
 
 @Component({
   selector: 'app-main-schema-view-event-view',
@@ -14,6 +15,8 @@ export class MainEventComponent {
   resizing: boolean = false;
   showInstanceList: number = 0;
   status = {closed: true, opened: false, dragging: false};
+  public dbIdAndClassName: string = "";
+  public dbIdAndClassNameFromPlot: string = "";
 
   constructor() {
     let url = window.location.href.split("/");
@@ -64,5 +67,20 @@ export class MainEventComponent {
       this.status.opened = !this.status.opened;
       this.status.closed = !this.status.opened;
     })
+  }
+
+  generatePlotToEventPlot(dbIdAndClassName: string) {
+    this.dbIdAndClassName = dbIdAndClassName;
+  }
+
+  updateEventTreeToSideNavigation(dbIdAndClassNameFromPlot: string) {
+    this.dbIdAndClassNameFromPlot = dbIdAndClassNameFromPlot;
+    // Note that the below has an effect of the new plot being generated (as this.dbIdAndClassName is an input to
+    // event-plot.component), but we trigger plot generation from here rather than within event-plot.component
+    // so that we can override this.dbIdAndClassName with the new event selection in the plot (if we hadn't, the next time
+    // the user selects in the event tree the previously selected event, ngOnChanges() in event-plot.component won't kick in
+    // and no plot will be generated).
+    let selectedDbIdAndClassName = dbIdAndClassNameFromPlot.split(",")[0];
+    this.dbIdAndClassName = selectedDbIdAndClassName;
   }
 }
