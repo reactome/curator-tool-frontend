@@ -5,7 +5,7 @@ import { InstanceNameGenerator } from "./InstanceNameGenerator";
 import { PostEditListener, PostEditOperation } from "./PostEditOperation";
 import { SchemaClass } from "../models/reactome-schema.model";
 import { Store } from "@ngrx/store";
-import { NewInstanceActions } from "src/app/schema-view/instance/state/new-instance/new-instance.actions";
+import { NewInstanceActions } from "src/app/schema-view/instance/state/instance.actions";
 
 export class LiteratureReferenceFiller implements PostEditOperation {
 

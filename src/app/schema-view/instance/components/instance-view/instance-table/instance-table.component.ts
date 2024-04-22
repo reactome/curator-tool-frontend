@@ -12,6 +12,7 @@ import {
 import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
 import {AttributeValue, DragDropStatus, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
 import {PostEditListener} from "src/app/core/post-edit/PostEditOperation";
+import { NewInstanceActions } from "src/app/schema-view/instance/state/instance.actions";
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -309,15 +310,18 @@ export class InstanceTableComponent implements PostEditListener {
 
   private registerUpdatedInstance(): void {
     // Only register updates to exisiting instances
+    let cloned: Instance = {
+      dbId: this._instance!.dbId,
+      displayName: this._instance!.displayName,
+      schemaClassName: this._instance!.schemaClassName,
+      //modifiedAttributes: this.modifiedAtts
+    };
     if (this._instance!.dbId > 0) {
-      let cloned: Instance = {
-        dbId: this._instance!.dbId,
-        displayName: this._instance!.displayName,
-        schemaClassName: this._instance!.schemaClassName,
-        //modifiedAttributes: this.modifiedAtts
-      };
       // Have to make a clone to avoid any change to the current _instance!
       this.store.dispatch(InstanceActions.register_updated_instance(cloned));
+    }
+    else { // Force the state to update if needed
+      this.store.dispatch(NewInstanceActions.register_new_instances(cloned))
     }
   }
 

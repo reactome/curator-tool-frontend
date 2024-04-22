@@ -1,6 +1,6 @@
-import {CdkDrag, CdkDragPlaceholder, CdkDropList} from "@angular/cdk/drag-drop";
+import { CdkDrag, CdkDragPlaceholder, CdkDropList } from "@angular/cdk/drag-drop";
 import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem } from "@angular/cdk/menu";
-import {CommonModule, NgOptimizedImage} from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { MatSidenavModule } from "@angular/material/sidenav";
 import { MatTooltipModule } from "@angular/material/tooltip";
@@ -24,9 +24,8 @@ import { InstanceViewComponent } from './components/instance-view/instance-view.
 import { NewInstanceDialogComponent } from './components/new-instance-dialog/new-instance-dialog.component';
 import { InstanceRoutingModule } from './instance-routing.module';
 import { DatabaseObjectEffects } from './state/instance.effects';
-import {NewInstanceEffects} from "./state/new-instance/new-instance.effects";
-import {NEW_INSTANCES_STATE_NAME} from "./state/new-instance/new-instance.selectors";
-import {newInstancesReducer} from "./state/new-instance/new-instance.reducers";
+import { NEW_INSTANCES_STATE_NAME } from "./state/instance.selectors";
+import { newInstancesReducer } from "./state/instance.reducers";
 import { TextCurationComponent } from "../main-schema-view/text-curation/components/text-curation.component";
 
 @NgModule({
@@ -43,7 +42,7 @@ import { TextCurationComponent } from "../main-schema-view/text-curation/compone
     CommonModule,
     InstanceRoutingModule,
     EffectsModule.forFeature(DatabaseObjectEffects),
-    EffectsModule.forFeature(NewInstanceEffects),
+    // EffectsModule.forFeature(NewInstanceEffects),
     StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer),
 
     // Need to register here for update. The registered state can be used out of this module.

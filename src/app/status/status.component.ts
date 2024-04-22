@@ -12,7 +12,7 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { updatedInstances } from 'src/app/schema-view/instance/state/instance.selectors';
 import { AuthenticateService } from "../core/services/authenticate.service";
 import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instance-bookmark.module";
-import { newInstances } from "../schema-view/instance/state/new-instance/new-instance.selectors";
+import { newInstances } from "src/app/schema-view/instance/state/instance.selectors";
 import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 
 @Component({

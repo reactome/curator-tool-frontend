@@ -1,4 +1,3 @@
-import { Input } from '@angular/core';
 import { Instance } from '../models/reactome-instance.model';
 import { SchemaClass } from '../models/reactome-schema.model';
 import { DataService } from '../services/data.service';
@@ -12,7 +11,8 @@ export class InstanceNameGenerator implements PostEditOperation {
   constructor(private dataService: DataService) { 
   }
 
-  postEdit(instance: Instance, editedAttributeName: string | undefined): boolean {
+  postEdit(instance: Instance, 
+           editedAttributeName: string | undefined): boolean {
     this.updateDisplayName(instance);
     return true;
   }

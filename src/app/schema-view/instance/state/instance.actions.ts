@@ -10,3 +10,12 @@ export const InstanceActions = createActionGroup({
     get_updated_instances: emptyProps(),
   }
 })
+
+export const NewInstanceActions = createActionGroup({
+  source: "new_instance_actions",
+  events: {
+    // Record new instances
+    register_new_instances: props<Instance>(),
+    get_new_instance: props<Instance>()
+  }
+})

@@ -11,7 +11,7 @@ import { pull } from 'langchain/hub';
 import { AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { InstanceTableComponent } from 'src/app/schema-view/instance/components/instance-view/instance-table/instance-table.component';
-import { NewInstanceActions } from 'src/app/schema-view/instance/state/new-instance/new-instance.actions';
+import { NewInstanceActions } from "src/app/schema-view/instance/state/instance.actions";
 import { z } from "zod";
 
 import { HttpClient } from '@angular/common/http';
