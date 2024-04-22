@@ -1,21 +1,17 @@
-import {
-  CdkDragDrop,
-  CdkDragEnter, moveItemInArray,
-  transferArrayItem
-} from "@angular/cdk/drag-drop";
-import { ChangeDetectorRef, Component, Input } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { PostEditService } from 'src/app/core/services/post-edit.service';
-import { InstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
+import {CdkDragDrop, CdkDragEnter, moveItemInArray, transferArrayItem} from "@angular/cdk/drag-drop";
+import {ChangeDetectorRef, Component, Input} from '@angular/core';
+import {Store} from '@ngrx/store';
+import {Instance} from 'src/app/core/models/reactome-instance.model';
+import {PostEditService} from 'src/app/core/services/post-edit.service';
+import {InstanceActions} from 'src/app/schema-view/instance/state/instance.actions';
 import {AttributeCategory, AttributeDataType, SchemaAttribute} from "../../../../../core/models/reactome-schema.model";
-import { DragDropService } from "../../../../instance-bookmark/drag-drop.service";
+import {DragDropService} from "../../../../instance-bookmark/drag-drop.service";
 import {
   SelectInstanceDialogService
 } from "../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service";
-import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
-import { AttributeValue, DragDropStatus, EDIT_ACTION, InstanceDataSource } from './instance-table.model';
-import { PostEditListener } from "src/app/core/post-edit/PostEditOperation";
+import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
+import {AttributeValue, DragDropStatus, EDIT_ACTION, InstanceDataSource} from './instance-table.model';
+import {PostEditListener} from "src/app/core/post-edit/PostEditOperation";
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -117,15 +113,18 @@ export class InstanceTableComponent implements PostEditListener {
 
   onNoInstanceAttributeEdit(data: AttributeValue) {
     let value = this._instance?.attributes?.get(data.attribute.name);
-    this.addModifiedAttribute(data.attribute.name, value);
+    //this.addModifiedAttribute(data.attribute.name, value);
     if (data.attribute.cardinality === '1') {
       this._instance?.attributes?.set(data.attribute.name, data.value);
     } else { // This should be a list
+      if(data.value === undefined || ''){this.deleteInstanceAttribute(data); return}
       let valueList = this._instance?.attributes!.get(data.attribute.name);
       if (valueList === undefined) {
         this._instance?.attributes?.set(data.attribute.name, [data.value]);
       } else {
-        valueList[data.index!] = data.value;
+        //valueList[data.index!] = data.value;
+        value.splice(data.index, 0, ...[data.value]);
+
         console.debug(valueList);
       }
     }
@@ -135,6 +134,8 @@ export class InstanceTableComponent implements PostEditListener {
     // Therefore, we need to register it here
     this.registerUpdatedInstance();
   }
+
+  deleteAttributeValue(){}
 
   onInstanceAttributeEdit(attributeValue: AttributeValue) {
     console.debug("onEdit: ", attributeValue);
@@ -414,5 +415,9 @@ export class InstanceTableComponent implements PostEditListener {
   undoEdit(attributeValue: AttributeValue) {
     let refVal = this._referenceInstance?.attributes.get(attributeValue.attribute.name);
     this.addValueToAttribute(attributeValue, refVal);
+  }
+
+  showTextArea(attributeValue: AttributeValue) {
+    return attributeValue.attribute.type === AttributeDataType.STRING
   }
 }

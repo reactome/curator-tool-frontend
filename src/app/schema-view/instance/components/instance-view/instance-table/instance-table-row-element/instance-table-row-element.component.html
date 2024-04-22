@@ -20,9 +20,9 @@
 
     <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
       <mat-form-field appearance="outline" subscriptSizing="dynamic" [cdkContextMenuTriggerFor]="row_menu">
-          <textarea matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize" cdkAutosizeMinRows="1"
-                    cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()">
-      </textarea>
+        <textarea matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize" cdkAutosizeMinRows="1"
+                  cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()">
+        </textarea>
       </mat-form-field>
     </ng-template>
 
@@ -41,6 +41,7 @@
     <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
       <ng-container *ngIf="control.disabled; else editInstance">
         <ng-container *ngIf="value !== undefined">
+<!--          TODO: FIX LINK-->
           <a routerLink="/schema_view/instance/{{value.dbId}}" [queryParamsHandling]="'preserve'"
              class="padding span-menu-trigger">
             {{value.displayName}}
