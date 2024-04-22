@@ -8,19 +8,14 @@ import { updatedInstances } from 'src/app/schema-view/instance/state/instance.se
   templateUrl: './side-navigation.component.html',
   styleUrls: ['./side-navigation.component.scss']
 })
-export class SideNavigationComponent implements OnInit {
+export class SideNavigationComponent {
   @Input() showUpdatedList: number = 0;
   @Output() updateTabIndexEvent = new EventEmitter<boolean>();
-  data: Instance[] = [];
-  constructor(private store: Store) {
+
+  constructor() {
   }
 
-  ngOnInit(): void {
-    this.store.select(updatedInstances()).subscribe((instances) => {
-      if (instances !== undefined)
-        this.data = instances;
-    })
-  }
+
   updateTabIndex() {
     let showList = this.showUpdatedList !== 0;
     this.updateTabIndexEvent.emit(showList);

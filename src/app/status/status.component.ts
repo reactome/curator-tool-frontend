@@ -1,20 +1,19 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import { MatBottomSheet, MatBottomSheetModule } from '@angular/material/bottom-sheet';
+import { CdkAccordionModule } from "@angular/cdk/accordion";
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from "@angular/material/icon";
+import { MatListModule } from '@angular/material/list';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from "@angular/material/tooltip";
+import { Router } from "@angular/router";
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { updatedInstances } from 'src/app/schema-view/instance/state/instance.selectors';
+import { AuthenticateService } from "../core/services/authenticate.service";
+import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instance-bookmark.module";
+import { newInstances } from "../schema-view/instance/state/new-instance/new-instance.selectors";
 import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
-import { MatListModule } from '@angular/material/list';
-import {CdkAccordionModule} from "@angular/cdk/accordion";
-import {newInstances} from "../schema-view/instance/state/new-instance/new-instance.selectors";
-import {InstanceBookmarkModule} from "../schema-view/instance-bookmark/instance-bookmark.module";
-import {bookmarkedInstances, bookmarkState} from "../schema-view/instance-bookmark/state/bookmark.selectors";
-import {MatIconModule} from "@angular/material/icon";
-import {MatTooltipModule} from "@angular/material/tooltip";
-import {AuthenticateService} from "../core/services/authenticate.service";
-import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-status',
