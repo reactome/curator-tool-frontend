@@ -16,7 +16,8 @@
           [attribute]="element.attribute" [value]="object"
           [dragDropStatus]="dragDropStatus"
           (newValueEvent)="onNoInstanceAttributeEdit($event)"
-          (editAction)="onInstanceAttributeEdit($event)"/>
+          (editAction)="onInstanceAttributeEdit($event)"
+          [index]="i"/>
       </div>
     </ng-container>
     <ng-container *ngIf="showTextArea(element)">

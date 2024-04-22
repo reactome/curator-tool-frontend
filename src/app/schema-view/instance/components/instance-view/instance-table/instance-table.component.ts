@@ -117,7 +117,10 @@ export class InstanceTableComponent implements PostEditListener {
     if (data.attribute.cardinality === '1') {
       this._instance?.attributes?.set(data.attribute.name, data.value);
     } else { // This should be a list
-      if(data.value === ''){this.deleteAttributeValue(data); return}
+      if(data.value === ''){
+        console.log(data);
+        this.deleteAttributeValue(data);
+        return}
       let valueList = this._instance?.attributes!.get(data.attribute.name);
       if (valueList === undefined) {
         this._instance?.attributes?.set(data.attribute.name, [data.value]);
@@ -136,7 +139,7 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   deleteAttributeValue(attributeValue: AttributeValue){
-    console.debug('deleteAttributeValue: ', attributeValue);
+    console.log('deleteAttributeValue: ', attributeValue);
     let value = this._instance?.attributes?.get(attributeValue.attribute.name);
     //this.addModifiedAttribute(attributeValue.attribute.name, value);
     if (attributeValue.attribute.cardinality === '1') {
@@ -285,7 +288,7 @@ export class InstanceTableComponent implements PostEditListener {
     this.updateTableContent();
   }
 
-  donePostEdit(instance: Instance, 
+  donePostEdit(instance: Instance,
                editedAttributeName: string | undefined): boolean {
     this.updateTableContent();
     return true;
@@ -445,7 +448,7 @@ export class InstanceTableComponent implements PostEditListener {
     if (!this._instance)
       return; // Do nothing
     this._instance.attributes.set(attributeValue.attribute.name, attributeValue.referenceValue)
-    
+
     // Update the status of this table
     this.removeModifiedAttribute(attributeValue.attribute.name);
     this.postEdit(attributeValue.attribute.name);
