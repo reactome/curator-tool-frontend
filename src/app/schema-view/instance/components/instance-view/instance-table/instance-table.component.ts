@@ -161,9 +161,7 @@ export class InstanceTableComponent implements PostEditListener {
         }
       }
     }
-    this.postEdit(data.attribute.name);
-    this.updateTableContent(); // In case the display name is changed
-    this.addModifiedAttribute(data.attribute.name, data.value);
+    this.finishEdit(data.attribute.name, data.value);
   }
 
   deleteAttributeValue(attributeValue: AttributeValue) {
@@ -224,7 +222,6 @@ export class InstanceTableComponent implements PostEditListener {
   private deleteInstanceAttribute(attributeValue: AttributeValue): void {
     console.debug('deleteInstanceAttribute: ', attributeValue);
     let value = this._instance?.attributes?.get(attributeValue.attribute.name);
-    this.addModifiedAttribute(attributeValue.attribute.name, value);
     if (attributeValue.attribute.cardinality === '1') {
       // This should not occur. Just in case
       //this._instance?.attributes?.delete(attributeValue.attribute?.name);
@@ -249,8 +246,7 @@ export class InstanceTableComponent implements PostEditListener {
         );
       }
     }
-    this.postEdit(attributeValue.attribute.name);
-    this.updateTableContent();
+    this.finishEdit(attributeValue.attribute.name, value);
   }
 
   private addNewInstanceAttribute(attributeValue: AttributeValue): void {
@@ -301,13 +297,16 @@ export class InstanceTableComponent implements PostEditListener {
           value.splice(attributeValue.index, 0, ...result);
         }
       }
-      //Only add attribute name if value was added
-      this.postEdit(attributeValue.attribute.name);
-      //TODO: Add a new value may reset the scroll position. This needs to be changed!
-      this.updateTableContent();
-      //Only add attribute name if value was added
-      this.addModifiedAttribute(attributeValue.attribute.name, value);
+      this.finishEdit(attributeValue.attribute.name, value);
     });
+  }
+
+  private finishEdit(attName: string, value: any) {
+    //Only add attribute name if value was added
+    this.postEdit(attName);
+    //TODO: Add a new value may reset the scroll position. This needs to be changed!
+    this.updateTableContent();
+    this.addModifiedAttribute(attName, value);
   }
 
   addBookmarkedInstance(attributeValue: AttributeValue) {
@@ -336,14 +335,7 @@ export class InstanceTableComponent implements PostEditListener {
         value.splice(attributeValue.index, 0, result);
       }
     }
-    //TODO: This causes the Angular N100 error about state change after view established. Need more refactoring!
-    // Only add attribute name if value was added
-    this.addModifiedAttribute(attributeValue.attribute.name, value);
-    // Only add attribute name if value was added
-    //TODO: This causes the Angular N100 error about state change after view established. Need more refactoring!
-    this.postEdit(attributeValue.attribute.name);
-    //TODO: Add a new value may reset the scroll position. This needs to be changed!
-    this.updateTableContent();
+    this.finishEdit(attributeValue.attribute.name, value);
   }
 
   donePostEdit(
@@ -440,8 +432,7 @@ export class InstanceTableComponent implements PostEditListener {
     }
     console.debug('value', this._instance);
     this._instance?.attributes?.set(value.name, event.container.data);
-    this.postEdit(value.name);
-    this.updateTableContent(); // In case the display name is changed.
+    this.finishEdit(value.name, event.container.data);
   }
 
   stopDragging() {

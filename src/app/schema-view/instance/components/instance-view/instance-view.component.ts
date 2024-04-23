@@ -22,6 +22,7 @@ export class InstanceViewComponent implements OnInit {
   showReferenceColumn: boolean = false;
   dbInstance: Instance | undefined;
   title: string = '';
+  
   constructor(private router: Router,
               private route: ActivatedRoute,
               private dataService: DataService,
@@ -64,13 +65,8 @@ export class InstanceViewComponent implements OnInit {
         this.viewHistory.push(this.instance);
       this.dbIds.push(this.instance.dbId)
       this.showProgressSpinner = false;
-      let title = instance.schemaClass?.name + ": " + instance.displayName + "[" + instance.dbId + "]"
-      this.title = this.setTitle(title);
+      this.title = instance.schemaClass?.name + ": " + instance.displayName + "[" + instance.dbId + "]"
     })
-  }
-
-  setTitle(title: string): string {
-    return title;
   }
 
   changeTable(instance: Instance) {
@@ -94,7 +90,16 @@ export class InstanceViewComponent implements OnInit {
   isUploadable() {
     //TODO: an attribute may add a new value and then delete this new value. Need to have a better
     // control!
-    return this.instance ? (this.instance.dbId < 0 || this.instance.modifiedAttributes): false;
+    return this.instance ? (this.instance.dbId < 0 || this.instance.modifiedAttributes?.size > 0): false;
+  }
+
+  isComparable() {
+    if (this.dbInstance)
+      return true; // Make sure the comparison can be turned off
+    if (this.instance && this.instance.dbId > 0 && 
+        this.instance.modifiedAttributes?.size > 0)
+      return true;
+    return false;
   }
 
   upload(): void {
@@ -118,7 +123,7 @@ export class InstanceViewComponent implements OnInit {
         updatedTable = true;
       }
       // Most likely this is not a good idea. However, since this view is tied to the table,
-      // probably it is OK for noew!
+      // probably it is OK for now!
       if (updatedTable)
         this.instanceTable.updateTableContent();
       // TODO: Remove the register in update_instance_state!
