@@ -6,7 +6,7 @@
                                     (editAction)="onInstanceAttributeEdit($event)"/>
   </ng-container>
   <ng-container *ngIf="element.attribute.cardinality === '+'">
-    <ng-container *ngIf="element.value !== undefined">
+    <ng-container *ngIf="element.value !== undefined; else noValue">
       <div
         cdkDropList
         [cdkDropListData]="element.value"
@@ -19,13 +19,21 @@
           (editAction)="onInstanceAttributeEdit($event)"
           [index]="i"/>
       </div>
+      <!-- Add an empty row for non-instance type slot-->
+      <ng-container *ngIf="element.attribute.type !== DATA_TYPES.INSTANCE">
+        <app-instance-table-row-element [attribute]="element.attribute"
+                                        [dragDropStatus]="dragDropStatus"
+                                        (newValueEvent)="onNoInstanceAttributeEdit($event)"
+                                        (editAction)="onInstanceAttributeEdit($event)"/>
+      </ng-container>
     </ng-container>
-    <ng-container *ngIf="showTextArea(element)">
+    <!-- <ng-container *ngIf="showTextArea(element)"> -->
+    <ng-template #noValue>
       <app-instance-table-row-element [attribute]="element.attribute"
                                       [dragDropStatus]="dragDropStatus"
                                       (newValueEvent)="onNoInstanceAttributeEdit($event)"
                                       (editAction)="onInstanceAttributeEdit($event)"/>
-    </ng-container>
+    </ng-template>
   </ng-container>
 </ng-template>
 

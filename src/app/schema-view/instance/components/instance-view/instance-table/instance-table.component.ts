@@ -31,6 +31,8 @@ export class InstanceTableComponent implements PostEditListener {
 
   categoryNames = Object.keys(AttributeCategory).filter((v) => isNaN(Number(v)));
   categories: Map<AttributeCategory, boolean> = new Map<AttributeCategory, boolean>();
+  // So that we can use it in the template
+  DATA_TYPES = AttributeDataType;
 
   // The instance to be displayed
   instanceDataSource: InstanceDataSource = new InstanceDataSource(undefined, this.categories, this.sortAttNames, this.sortAttDefined);
@@ -459,7 +461,4 @@ export class InstanceTableComponent implements PostEditListener {
     this.updateTableContent();
   }
 
-  showTextArea(attributeValue: AttributeValue) {
-    return attributeValue.attribute.type === AttributeDataType.STRING
-  }
 }
