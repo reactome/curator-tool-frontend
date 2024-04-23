@@ -23,7 +23,7 @@ import { MatSort, MatSortHeader, MatSortModule } from '@angular/material/sort';
 //TODO: Enhance the table display so that it is more like
 // https://curator.reactome.org/cgi-bin/classbrowser?DB=gk_central&CLASS=ModifiedResidue
 export class SchemaClassTableComponent implements OnInit {
-  displayedColumns: string[] = ['name','type', 'category', 'allowedClasses', 'attributeOrigin', 'cardinality', 'definingType'];
+  displayedColumns: string[] = ['name','type', 'category', 'allowedClases', 'origin', 'cardinality', 'definingType'];
   dataSource: any;
 
   constructor(private store: Store, private route: ActivatedRoute) {
