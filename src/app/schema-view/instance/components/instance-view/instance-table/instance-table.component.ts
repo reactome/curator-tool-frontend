@@ -337,8 +337,6 @@ export class InstanceTableComponent implements PostEditListener {
       this._instance.modifiedAttributes = newModAtt;
     }
     this._instance?.modifiedAttributes?.set(attributeName, attributeVal);
-    //this.modifiedAtts.push(attributeName);
-    // console.log(this._instance);
   }
 
   removeModifiedAttribute(attributeName: string) {
