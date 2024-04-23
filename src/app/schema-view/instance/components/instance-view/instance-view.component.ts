@@ -22,7 +22,7 @@ export class InstanceViewComponent implements OnInit {
   showReferenceColumn: boolean = false;
   dbInstance: Instance | undefined;
   title: string = '';
-  
+
   constructor(private router: Router,
               private route: ActivatedRoute,
               private dataService: DataService,
@@ -65,8 +65,15 @@ export class InstanceViewComponent implements OnInit {
         this.viewHistory.push(this.instance);
       this.dbIds.push(this.instance.dbId)
       this.showProgressSpinner = false;
-      this.title = instance.schemaClass?.name + ": " + instance.displayName + "[" + instance.dbId + "]"
+      this.updateTitle(instance);
     })
+  }
+
+  updateTitle(instance: Instance) {
+    if (instance)
+      this.title = instance.schemaClass?.name + ": " + instance.displayName + "[" + instance.dbId + "]"
+    else
+      this.title = ""
   }
 
   changeTable(instance: Instance) {

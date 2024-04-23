@@ -208,18 +208,18 @@ export class TextCurationComponent {
         else
           instance.attributes.set(attribute, [value]);
       }
-      this.validateTable(attribute);
+      this.validateTable(attribute, [value]);
     }
     else {
       this.setInstanceAttribute(clsAtt, value, instance, append);
     }
   }
 
-  private validateTable(attributeName: string) {
+  private validateTable(attributeName: string,
+    attributeValue: any
+  ) {
     if (this.instanceTable === undefined) return;
-    this.instanceTable.updateTableContent();
-    //TODO: This function should be refactor to something related to Instance only, not in the table!
-    this.instanceTable.postEdit(attributeName);
+    this.instanceTable.finishEdit(attributeName, attributeValue);
   }
 
   /**
@@ -272,7 +272,7 @@ export class TextCurationComponent {
       else
         instance.attributes.set(clsAtt.name, [attValue]);
     }
-    this.validateTable(clsAtt.name);
+    this.validateTable(clsAtt.name, attValue);
   }
 
   /**
