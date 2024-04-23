@@ -161,4 +161,12 @@ export class InstanceTableRowElementComponent implements OnInit {
     }
     this.editAction.emit(attributeValue);
   }
+
+  onkeypress(e: any){
+    //ctrl and enter key
+    if(e.ctrlKey && e.keyCode == 13){
+      this.onChange();
+   }
+  }
+
 }
