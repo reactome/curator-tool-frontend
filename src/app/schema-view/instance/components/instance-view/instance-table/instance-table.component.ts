@@ -62,8 +62,6 @@ export class InstanceTableComponent implements PostEditListener {
   );
   // Keep it for editing
   _instance?: Instance;
-  // flag to indicate if it is in a edit mode
-  isInEditing: boolean = false;
 
   // For comparison
   _referenceInstance?: Instance;
@@ -80,16 +78,12 @@ export class InstanceTableComponent implements PostEditListener {
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
     this._instance = instance;
-    this.isInEditing = false;
     this.updateTableContent();
-    this.isInEditing = true; // After the table is shown, the instance is in editing mode
   }
 
   @Input() set referenceInstance(refInstance: Instance | undefined) {
     this._referenceInstance = refInstance;
-    this.isInEditing = false;
     this.updateTableContent();
-    this.isInEditing = true; // After the table is shown, the instance is in editing mode
     if (refInstance === undefined) {
       this.showReferenceColumn = false;
       this.displayedColumns = ['name', 'value'];
@@ -307,6 +301,8 @@ export class InstanceTableComponent implements PostEditListener {
     this.postEdit(attName);
     //TODO: Add a new value may reset the scroll position. This needs to be changed!
     this.updateTableContent();
+    // Register the updated instances
+    this.registerUpdatedInstance();
     this.addModifiedAttribute(attName, value);
     // Fire an event for other components to update their display (e.g. display name)
     this.editedInstance.emit(this._instance);
@@ -358,10 +354,6 @@ export class InstanceTableComponent implements PostEditListener {
       this._referenceInstance
     );
     this.instanceDataSource.connect();
-    if (this.isInEditing) {
-      // Register the updated instances
-      this.registerUpdatedInstance();
-    }
   }
 
   private registerUpdatedInstance(): void {
@@ -377,7 +369,7 @@ export class InstanceTableComponent implements PostEditListener {
       this.store.dispatch(InstanceActions.register_updated_instance(cloned));
     } else {
       // Force the state to update if needed
-      this.store.dispatch(NewInstanceActions.register_new_instances(cloned));
+      this.store.dispatch(NewInstanceActions.register_new_instance(cloned));
     }
   }
 

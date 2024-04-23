@@ -175,7 +175,7 @@ export class TextCurationComponent {
   createNewInstance(schemaClassName: string) {
     this.dataService.createNewInstance(schemaClassName).subscribe(instance => {
       this.dataService.registerNewInstance(instance);
-      this.objectStore.dispatch(NewInstanceActions.register_new_instances(instance));
+      this.objectStore.dispatch(NewInstanceActions.register_new_instance(instance));
       let dbId = instance.dbId.toString();
       this.router.navigate(["/schema_view/instance/" + dbId]);
     });

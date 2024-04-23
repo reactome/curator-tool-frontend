@@ -39,8 +39,11 @@ export const newInstancesAdaptor = createEntityAdapter<Instance>({
 
 export const newInstancesReducer = createReducer(
   newInstancesAdaptor.getInitialState(),
-  on(NewInstanceActions.register_new_instances,
+  on(NewInstanceActions.register_new_instance,
     (state, instance) => newInstancesAdaptor.upsertOne(instance, state)
-  )
+  ),
+  on(NewInstanceActions.remove_new_instance,
+    (state, instance) => newInstancesAdaptor.removeOne(instance.dbId, state)
+  ),
 )
 
