@@ -39,6 +39,11 @@ mat-form-field {
 }
 
 .valueRow {
+  :hover {
+    border: 1px solid grey;
+    border-radius: 4px;
+    transition: border-color 0.3s;
+  }
 
   &.dragging:hover {
 

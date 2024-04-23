@@ -41,7 +41,6 @@
     <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
       <ng-container *ngIf="control.disabled; else editInstance">
         <ng-container *ngIf="value !== undefined">
-<!--          TODO: FIX LINK-->
           <a routerLink="/schema_view/instance/{{value.dbId}}" [queryParamsHandling]="'preserve'"
              class="padding span-menu-trigger">
             {{value.displayName}}

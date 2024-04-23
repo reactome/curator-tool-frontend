@@ -345,6 +345,10 @@ export class InstanceTableComponent implements PostEditListener {
     if (this._instance === undefined || this._instance.modifiedAttributes === undefined)
       return;
     this._instance.modifiedAttributes.delete(attributeName);
+    // If nothing is in the modifiedAttributes, remove this instance from the changed list
+    if (this._instance.modifiedAttributes.size === 0) {
+      this.store.dispatch(InstanceActions.remove_updated_instance(this._instance));
+    }
   }
 
   /**
@@ -370,8 +374,10 @@ export class InstanceTableComponent implements PostEditListener {
         event.currentIndex,
       );
     }
-    console.log("value", this._instance)
+    console.debug("value", this._instance)
     this._instance?.attributes?.set(value.name, event.container.data);
+    this.postEdit(value.name);
+    this.updateTableContent(); // In case the display name is changed.
   }
 
 
@@ -454,11 +460,11 @@ export class InstanceTableComponent implements PostEditListener {
     if (!this._instance)
       return; // Do nothing
     this._instance.attributes.set(attributeValue.attribute.name, attributeValue.referenceValue)
-
     // Update the status of this table
-    this.removeModifiedAttribute(attributeValue.attribute.name);
     this.postEdit(attributeValue.attribute.name);
     this.updateTableContent();
+    // Call this as the last step to update the list of changed instances.
+    this.removeModifiedAttribute(attributeValue.attribute.name);
   }
 
 }

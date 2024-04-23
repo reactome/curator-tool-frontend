@@ -42,6 +42,6 @@ export class BookmarkListComponent implements OnInit {
   }
 
   navigate(instance: Instance) {
-    this.router.navigate(["/instance_view/" + instance.dbId.toString()], {queryParamsHandling: 'preserve'});
+    this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()], {queryParamsHandling: 'preserve'});
   }
 }
