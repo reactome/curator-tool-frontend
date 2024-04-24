@@ -116,7 +116,7 @@ export class InstanceTableComponent implements PostEditListener {
 
   onNoInstanceAttributeEdit(data: AttributeValue) {
     let value = this._instance?.attributes?.get(data.attribute.name);
-    //this.addModifiedAttribute(data.attribute.name, value);
+    this.addModifiedAttribute(data.attribute.name, value);
     if (data.attribute.cardinality === '1') {
       this._instance?.attributes?.set(data.attribute.name, data.value);
     } else { // This should be a list

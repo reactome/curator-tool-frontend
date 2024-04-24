@@ -7,6 +7,13 @@
 <mat-toolbar class="toolbar" *ngIf="!showProgressSpinner">
   <div *ngIf="instance !== undefined" class="title ellipsis">
     <span class="shrinkable ellipsis">{{title}}</span>
+
+    <div class="button-container">
+      <button mat-stroked-button color="warn" style="border: 1px;" (click)="showReferenceValueColumn()"
+              [hidden]="instance.qaIssues !== undefined && instance.qaIssues.size > 0 ? '' : 'hidden'">QA Issues
+      </button>
+    </div>
+
       <div class="button-container">
         <button mat-icon-button color="primary" class="v-center" (click)="showReferenceValueColumn()"
         matTooltip="Compare instance">

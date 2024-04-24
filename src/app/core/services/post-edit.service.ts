@@ -7,6 +7,7 @@ import { InstanceNameGenerator } from '../post-edit/InstanceNameGenerator';
 import { DataService } from './data.service';
 import { Instance } from '../models/reactome-instance.model';
 import { LiteratureReferenceFiller } from '../post-edit/LiteratureReferenceFiller';
+import { TestQACheck } from '../post-edit/TestQACheck';
 import { Store } from '@ngrx/store';
 
 @Injectable({
@@ -25,6 +26,8 @@ export class PostEditService {
     // Make sure display name generation service is at the bottom
     const nameOperation = new InstanceNameGenerator(this.dataService);
     this.postEditOperations.push(nameOperation);
+    const testQACheck = new TestQACheck(this.dataService);
+    this.postEditOperations.push(testQACheck);
   }
 
   postEdit(
