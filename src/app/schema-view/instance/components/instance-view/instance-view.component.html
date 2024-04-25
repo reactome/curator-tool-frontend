@@ -19,7 +19,7 @@
   </div>
 </mat-toolbar>
 <app-text-curation [embedded]="true" [instanceTable]="instanceTable"></app-text-curation>
-<app-instance-table [instance]="instance" [referenceInstance]="dbInstance"
+<app-instance-table [instance]="instance" [referenceInstance]="dbInstance" (editedInstance)="updateTitle($event)"
                     *ngIf="!showProgressSpinner"></app-instance-table>
 <!--<iframe [src]="'https://reactome-pwp.github.io/PathwayBrowser/' + '453279' | safe" width="1980" height="1020" title="Diagram Editor"></iframe>-->
 

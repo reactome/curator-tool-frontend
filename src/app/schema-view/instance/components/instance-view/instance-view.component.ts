@@ -4,6 +4,8 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { DragDropService } from "../../../instance-bookmark/drag-drop.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
+import { Store } from '@ngrx/store';
+import { InstanceActions, NewInstanceActions } from '../../state/instance.actions';
 
 @Component({
   selector: 'app-instance-view',
@@ -22,11 +24,12 @@ export class InstanceViewComponent implements OnInit {
   showReferenceColumn: boolean = false;
   dbInstance: Instance | undefined;
   title: string = '';
-  
+
   constructor(private router: Router,
-              private route: ActivatedRoute,
-              private dataService: DataService,
-              private dragDropService: DragDropService) {
+    private route: ActivatedRoute,
+    private dataService: DataService,
+    private dragDropService: DragDropService,
+    private store: Store) {
   }
 
   ngOnInit() {
@@ -41,15 +44,15 @@ export class InstanceViewComponent implements OnInit {
         dbId = parseInt(dbId);
         this.loadInstance(dbId);
         // May want to change to case statement if multiple modes
-        if(params['mode']) {
+        if (params['mode']) {
           this.showReferenceColumn = (params['mode'] === 'comparison');
-          if(params['dbId2']) {
+          if (params['dbId2']) {
             let dbId2 = params['dbId2'];
             // Make sure dbId is a number
             dbId2 = parseInt(dbId2);
             this.loadReferenceInstance(dbId2);
           }
-          else{
+          else {
             this.loadReferenceInstance(dbId);
           }
         }
@@ -65,18 +68,25 @@ export class InstanceViewComponent implements OnInit {
         this.viewHistory.push(this.instance);
       this.dbIds.push(this.instance.dbId)
       this.showProgressSpinner = false;
-      this.title = instance.schemaClass?.name + ": " + instance.displayName + "[" + instance.dbId + "]"
+      this.updateTitle(instance);
     })
+  }
+
+  updateTitle(instance: Instance) {
+    if (instance)
+      this.title = instance.schemaClass?.name + ": " + instance.displayName + "[" + instance.dbId + "]"
+    else
+      this.title = ""
   }
 
   changeTable(instance: Instance) {
     this.dragDropService.resetList();
-    this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()], {queryParamsHandling: 'preserve'});
+    this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()], { queryParamsHandling: 'preserve' });
   }
 
   showReferenceValueColumn() {
     this.showReferenceColumn = !this.showReferenceColumn;
-    if(this.showReferenceColumn)
+    if (this.showReferenceColumn)
       this.loadReferenceInstance(this.instance!.dbId);
     else
       this.dbInstance = undefined;
@@ -90,14 +100,14 @@ export class InstanceViewComponent implements OnInit {
   isUploadable() {
     //TODO: an attribute may add a new value and then delete this new value. Need to have a better
     // control!
-    return this.instance ? (this.instance.dbId < 0 || this.instance.modifiedAttributes?.size > 0): false;
+    return this.instance ? (this.instance.dbId < 0 || this.instance.modifiedAttributes?.size > 0) : false;
   }
 
   isComparable() {
     if (this.dbInstance)
       return true; // Make sure the comparison can be turned off
-    if (this.instance && this.instance.dbId > 0 && 
-        this.instance.modifiedAttributes?.size > 0)
+    if (this.instance && this.instance.dbId > 0 &&
+      this.instance.modifiedAttributes?.size > 0)
       return true;
     return false;
   }
@@ -110,7 +120,9 @@ export class InstanceViewComponent implements OnInit {
       this.instance!.modifiedAttributes = undefined;
       // Check if the table content needs to be updated
       let updatedTable: boolean = false;
+      let oldDbId = undefined;
       if (storedInst.dbId !== this.instance?.dbId) {
+        oldDbId = this.instance!.dbId; // keep it for remove in the registration
         this.instance!.dbId = storedInst.dbId;
         if (this.instance!.attributes)
           this.instance!.attributes.set('dbId', storedInst.dbId);
@@ -126,7 +138,17 @@ export class InstanceViewComponent implements OnInit {
       // probably it is OK for now!
       if (updatedTable)
         this.instanceTable.updateTableContent();
-      // TODO: Remove the register in update_instance_state!
+      if (oldDbId) {
+        // Just need a simple clone 
+        let oldInst : Instance = {
+          dbId: oldDbId,
+          displayName: this.instance?.displayName,
+          schemaClassName: this.instance!.schemaClassName
+        }
+        this.store.dispatch(NewInstanceActions.remove_new_instance(oldInst));
+      }
+      else
+        this.store.dispatch(InstanceActions.remove_updated_instance(this.instance!));
       // Also update the breakcrunch!
     })
   }

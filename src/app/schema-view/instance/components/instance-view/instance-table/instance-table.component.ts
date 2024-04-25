@@ -9,6 +9,11 @@ import {Store} from '@ngrx/store';
 import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {PostEditService} from 'src/app/core/services/post-edit.service';
 import {InstanceActions} from 'src/app/schema-view/instance/state/instance.actions';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { PostEditService } from 'src/app/core/services/post-edit.service';
+import { InstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
 import {
   AttributeCategory,
   AttributeDataType,
@@ -37,6 +42,8 @@ import {NewInstanceActions} from 'src/app/schema-view/instance/state/instance.ac
   styleUrls: ['./instance-table.component.scss'],
 })
 export class InstanceTableComponent implements PostEditListener {
+  // Fire an event when this instance is edited
+  @Output() editedInstance = new EventEmitter<Instance>();
   displayedColumns: string[] = ['name', 'value'];
   showFilterOptions: boolean = false;
   showHeaderActions: boolean = false;
@@ -62,8 +69,6 @@ export class InstanceTableComponent implements PostEditListener {
   );
   // Keep it for editing
   _instance?: Instance;
-  // flag to indicate if it is in a edit mode
-  isInEditing: boolean = false;
 
   // For comparison
   _referenceInstance?: Instance;
@@ -80,16 +85,12 @@ export class InstanceTableComponent implements PostEditListener {
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
     this._instance = instance;
-    this.isInEditing = false;
     this.updateTableContent();
-    this.isInEditing = true; // After the table is shown, the instance is in editing mode
   }
 
   @Input() set referenceInstance(refInstance: Instance | undefined) {
     this._referenceInstance = refInstance;
-    this.isInEditing = false;
     this.updateTableContent();
-    this.isInEditing = true; // After the table is shown, the instance is in editing mode
     if (refInstance === undefined) {
       this.showReferenceColumn = false;
       this.displayedColumns = ['name', 'value'];
@@ -192,8 +193,7 @@ export class InstanceTableComponent implements PostEditListener {
         );
       }
     }
-    this.postEdit(attributeValue.attribute.name);
-    this.updateTableContent();
+    this.finishEdit(attributeValue.attribute.name, undefined);
   }
 
   onInstanceAttributeEdit(attributeValue: AttributeValue) {
@@ -302,12 +302,16 @@ export class InstanceTableComponent implements PostEditListener {
     });
   }
 
-  private finishEdit(attName: string, value: any) {
+  finishEdit(attName: string, value: any) {
     //Only add attribute name if value was added
     this.postEdit(attName);
     //TODO: Add a new value may reset the scroll position. This needs to be changed!
     this.updateTableContent();
+    // Register the updated instances
+    this.registerUpdatedInstance();
     this.addModifiedAttribute(attName, value);
+    // Fire an event for other components to update their display (e.g. display name)
+    this.editedInstance.emit(this._instance);
   }
 
   addBookmarkedInstance(attributeValue: AttributeValue) {
@@ -356,10 +360,6 @@ export class InstanceTableComponent implements PostEditListener {
       this._referenceInstance
     );
     this.instanceDataSource.connect();
-    if (this.isInEditing) {
-      // Register the updated instances
-      this.registerUpdatedInstance();
-    }
   }
 
   private registerUpdatedInstance(): void {
@@ -375,7 +375,7 @@ export class InstanceTableComponent implements PostEditListener {
       this.store.dispatch(InstanceActions.register_updated_instance(cloned));
     } else {
       // Force the state to update if needed
-      this.store.dispatch(NewInstanceActions.register_new_instances(cloned));
+      this.store.dispatch(NewInstanceActions.register_new_instance(cloned));
     }
   }
 
@@ -413,7 +413,6 @@ export class InstanceTableComponent implements PostEditListener {
   postEdit(attName: string) {
     if (this._instance)
       this.postEditService.postEdit(this._instance, attName, this);
-    //this.addModifiedAttribute(attName);
   }
 
   drop(event: CdkDragDrop<string[]>, value: SchemaAttribute) {
