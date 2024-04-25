@@ -1,0 +1,10 @@
+<mat-action-list class="qa-reports-action-menu" cdkMenu *ngIf="!hidePanel">
+  <button class="action-button" (click)="onClick('TestQANonNullCheck')"
+          [hidden]="qaIssueKeys.includes('TestQANonNullCheck') ? '' : 'hidden'">
+  <mat-icon>report</mat-icon> NonNull Check
+  </button>
+  <button class="action-button" (click)="onClick('TestQANegativeValueCheck')"
+          [hidden]="qaIssueKeys.includes('TestQANegativeValueCheck') ? '' : 'hidden'">
+    <mat-icon>report</mat-icon> NegValue Check
+  </button>
+</mat-action-list>

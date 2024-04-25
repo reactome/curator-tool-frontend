@@ -26,8 +26,10 @@ export class PostEditService {
     // Make sure display name generation service is at the bottom
     const nameOperation = new InstanceNameGenerator(this.dataService);
     this.postEditOperations.push(nameOperation);
-    const testQACheck = new TestQACheck(this.dataService);
-    this.postEditOperations.push(testQACheck);
+    const testQACheck1 = new TestQACheck(this.dataService, "NonNullCheck");
+    this.postEditOperations.push(testQACheck1);
+    const testQACheck2 = new TestQACheck(this.dataService, "NegativeValueCheck");
+    this.postEditOperations.push(testQACheck2);
   }
 
   postEdit(

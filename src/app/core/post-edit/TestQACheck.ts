@@ -8,7 +8,7 @@ import { NewInstanceActions } from "src/app/schema-view/instance/state/instance.
 
 export class TestQACheck implements PostEditOperation {
 
-    constructor(private dataService: DataService) {
+    constructor(private dataService: DataService, private checkType: string) {
     }
 
     postEdit(instance: Instance,
@@ -27,15 +27,17 @@ export class TestQACheck implements PostEditOperation {
 
        this.dataService.testQACheckReport(
               instance.dbId,
+              this.checkType,
               editedAttributeNames.toString(),
               editedAttributeValues.toString())
           .subscribe(data => {
           if (instance.qaIssues === undefined) {
             instance.qaIssues = new Map();
           }
-          instance.qaIssues.set("TestQACheck", data);
-          if (instance.qaIssues.get("TestQACheck")!.length === 0) {
-              instance.qaIssues.delete("TestQACheck");
+          let key = "TestQA" + this.checkType;
+          instance.qaIssues.set(key, data);
+          if (instance.qaIssues.get(key)!.length === 0) {
+              instance.qaIssues.delete(key);
           }
           console.log(instance.qaIssues);
           if (postEditListener)

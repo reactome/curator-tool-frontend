@@ -10,6 +10,7 @@ import { InstanceTableComponent } from './instance-table/instance-table.componen
   templateUrl: './instance-view.component.html',
   styleUrls: ['./instance-view.component.scss'],
 })
+
 export class InstanceViewComponent implements OnInit {
   // Used to force the update of table content
   @ViewChild(InstanceTableComponent) instanceTable!: InstanceTableComponent;
@@ -125,5 +126,9 @@ export class InstanceViewComponent implements OnInit {
       // Also update the breakcrunch!
     })
   }
+
+    onQAReportAction(action: string) {
+      console.log("onQAReportAction: ", action);
+    }
 
 }

@@ -14,6 +14,9 @@ import {
   ActionMenuComponent
 } from "./components/instance-view/instance-table/instance-table-row-element/action-menu/action-menu.component";
 import {
+  QAReportsActionMenuComponent
+} from "./components/instance-view/qa-reports-action-menu/qa-reports-action-menu.component";
+import {
   DisableControlDirective
 } from "./components/instance-view/instance-table/instance-table-row-element/disableControlDirective";
 import {
@@ -32,6 +35,7 @@ import { TextCurationComponent } from "../main-schema-view/text-curation/compone
     declarations: [
         InstanceTableComponent,
         ActionMenuComponent,
+        QAReportsActionMenuComponent,
         InstanceTableRowElementComponent,
         BreadCrumbComponent,
         InstanceViewComponent,

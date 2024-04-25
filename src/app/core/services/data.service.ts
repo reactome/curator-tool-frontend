@@ -579,10 +579,12 @@ export class DataService {
   }
 
   testQACheckReport(dbId: number,
+                    checkType: string,
                           editedAttributeName: string | undefined,
                           editedAttributeValue: string | undefined): Observable<string[][]> {
     return this.http.get<string[][]>(this.testQACheckReportUrl + `${dbId}`
-          + "?editedAttributeNames=" + editedAttributeName
+          + "?checkType=" + checkType
+          + "&editedAttributeNames=" + editedAttributeName
           + "&editedAttributeValues=" + editedAttributeValue
           )
             .pipe(map((data: string[][]) => data),
