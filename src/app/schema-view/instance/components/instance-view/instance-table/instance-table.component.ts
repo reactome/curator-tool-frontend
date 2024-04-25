@@ -4,27 +4,29 @@ import {
   moveItemInArray,
   transferArrayItem,
 } from '@angular/cdk/drag-drop';
-import { ChangeDetectorRef, Component, Input } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { PostEditService } from 'src/app/core/services/post-edit.service';
-import { InstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
+import {ChangeDetectorRef, Component, Input} from '@angular/core';
+import {Store} from '@ngrx/store';
+import {Instance} from 'src/app/core/models/reactome-instance.model';
+import {PostEditService} from 'src/app/core/services/post-edit.service';
+import {InstanceActions} from 'src/app/schema-view/instance/state/instance.actions';
 import {
   AttributeCategory,
   AttributeDataType,
   SchemaAttribute,
 } from '../../../../../core/models/reactome-schema.model';
-import { DragDropService } from '../../../../instance-bookmark/drag-drop.service';
-import { SelectInstanceDialogService } from '../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service';
-import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
+import {DragDropService} from '../../../../instance-bookmark/drag-drop.service';
+import {
+  SelectInstanceDialogService
+} from '../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service';
+import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
 import {
   AttributeValue,
   DragDropStatus,
   EDIT_ACTION,
   InstanceDataSource,
 } from './instance-table.model';
-import { PostEditListener } from 'src/app/core/post-edit/PostEditOperation';
-import { NewInstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
+import {PostEditListener} from 'src/app/core/post-edit/PostEditOperation';
+import {NewInstanceActions} from 'src/app/schema-view/instance/state/instance.actions';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -146,16 +148,14 @@ export class InstanceTableComponent implements PostEditListener {
       // This should be a list
       if (data.value === '') {
         value.splice(data.index, 1);
-      }
-      else {
+      } else {
         let valueList = this._instance?.attributes!.get(data.attribute.name);
         if (valueList === undefined) {
           this._instance?.attributes?.set(data.attribute.name, [data.value]);
         } else {
           if (data.index! < 0) {
             value.push(data.value);
-          }
-          else {
+          } else {
             value[data.index!] = data.value;
           }
         }
@@ -219,6 +219,7 @@ export class InstanceTableComponent implements PostEditListener {
   //TODO: There is a bug here. If there is only one value in an attribute, delete
   // this value will disable the action menu popup!
   private newMap: any;
+
   private deleteInstanceAttribute(attributeValue: AttributeValue): void {
     console.debug('deleteInstanceAttribute: ', attributeValue);
     let value = this._instance?.attributes?.get(attributeValue.attribute.name);
@@ -464,12 +465,6 @@ export class InstanceTableComponent implements PostEditListener {
     };
   }
 
-  isAttributeModified(attName: string): boolean {
-    if (!this._instance || !this._instance.modifiedAttributes) return false;
-    //console.log(this._instance);
-    return !!this._instance.modifiedAttributes.get(attName);
-  }
-
   compareToDbInstance(attName: string): boolean {
     if (!this._referenceInstance) return false;
     let instanceVal = this._instance?.attributes.get(attName);
@@ -513,10 +508,22 @@ export class InstanceTableComponent implements PostEditListener {
 
   resetEdit(attributeValue: AttributeValue) {
     if (!this._instance) return; // Do nothing
-    this._instance.attributes.set(
-      attributeValue.attribute.name,
-      attributeValue.referenceValue
-    );
+    let refValue = attributeValue.referenceValue;
+    if (refValue) {
+      if (attributeValue.attribute.cardinality === '1') {
+        this._instance.attributes.set(
+          attributeValue.attribute.name,
+          refValue
+        );
+      } else {
+        this._instance.attributes.set(
+          attributeValue.attribute.name,
+          [...refValue]
+        );
+      }
+    } else {
+      this._instance.attributes.remove(attributeValue.attribute.name);
+    }
     // Update the status of this table
     this.postEdit(attributeValue.attribute.name);
     this.updateTableContent();

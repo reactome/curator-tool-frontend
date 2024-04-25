@@ -57,6 +57,7 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
             value: value
           };
           if (this.referenceInstance !== undefined) {
+            console.log(this.referenceInstance)
             attributeValue.referenceValue = this.referenceInstance.attributes!.get(attribute.name);
           }
           attributeValues.push(attributeValue);
