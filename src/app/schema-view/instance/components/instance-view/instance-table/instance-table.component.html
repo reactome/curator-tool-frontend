@@ -135,7 +135,7 @@
       <div style="display: flex;">
       <th style="flex: 1" mat-header-cell *matHeaderCellDef (mouseenter)="changeShowHeaderActions()" (mouseleave)="changeShowHeaderActions()">Reference Value
         <button style="bottom:5px; right: 0; position: absolute" matTooltip="Only show edited attributes"
-                *ngIf="showHeaderActions" mat-icon-button (click)="sort()">
+                *ngIf="showHeaderActions" mat-icon-button (click)="filterEditedValues()">
           <mat-icon>filter_list</mat-icon>
         </button>
       </th>

@@ -4,11 +4,6 @@ import {
   moveItemInArray,
   transferArrayItem,
 } from '@angular/cdk/drag-drop';
-import {ChangeDetectorRef, Component, Input} from '@angular/core';
-import {Store} from '@ngrx/store';
-import {Instance} from 'src/app/core/models/reactome-instance.model';
-import {PostEditService} from 'src/app/core/services/post-edit.service';
-import {InstanceActions} from 'src/app/schema-view/instance/state/instance.actions';
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
@@ -49,6 +44,7 @@ export class InstanceTableComponent implements PostEditListener {
   showHeaderActions: boolean = false;
   sortAttNames: boolean = true;
   sortAttDefined: boolean = false;
+  filterEdited: boolean = false;
 
   categoryNames = Object.keys(AttributeCategory).filter((v) =>
     isNaN(Number(v))
@@ -65,7 +61,8 @@ export class InstanceTableComponent implements PostEditListener {
     undefined,
     this.categories,
     this.sortAttNames,
-    this.sortAttDefined
+    this.sortAttDefined,
+    this.filterEdited
   );
   // Keep it for editing
   _instance?: Instance;
@@ -357,7 +354,8 @@ export class InstanceTableComponent implements PostEditListener {
       this.categories,
       this.sortAttNames,
       this.sortAttDefined,
-      this._referenceInstance
+      this.filterEdited,
+    this._referenceInstance
     );
     this.instanceDataSource.connect();
   }
@@ -528,5 +526,10 @@ export class InstanceTableComponent implements PostEditListener {
     this.updateTableContent();
     // Call this as the last step to update the list of changed instances.
     this.removeModifiedAttribute(attributeValue.attribute.name);
+  }
+
+  filterEditedValues() {
+    this.filterEdited = !this.filterEdited;
+    this.updateTableContent();
   }
 }
