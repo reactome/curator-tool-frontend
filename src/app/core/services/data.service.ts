@@ -34,6 +34,7 @@ export class DataService {
   private commitInstanceUrl = `${environment.ApiRoot}/commit/`;
   private fillReferenceUrl = `${environment.ApiRoot}/fillReference/`;
   private eventPlotDataUrl = `${environment.ApiRoot}/getEventPlotData/`;
+  private testQACheckReportUrl = `${environment.ApiRoot}/getTestQACheckReport/`;
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
   // The root class is cached for performance
@@ -575,6 +576,26 @@ export class DataService {
         this.grepConcreteClasses(child, concreteClsNames)
       }
     }
+  }
+
+  testQACheckReport(dbId: number,
+                    checkType: string,
+                          editedAttributeName: string | undefined,
+                          editedAttributeValue: string | undefined): Observable<string[][]> {
+    return this.http.get<string[][]>(this.testQACheckReportUrl + `${dbId}`
+          + "?checkType=" + checkType
+          + "&editedAttributeNames=" + editedAttributeName
+          + "&editedAttributeValues=" + editedAttributeValue
+          )
+            .pipe(map((data: string[][]) => data),
+            catchError((err: Error) => {
+              console.log("TestQACheck report could not be retrieved: \n" + err.message, "Close", {
+                panelClass: ['warning-snackbar'],
+                duration: 100
+              });
+              return throwError(() => err);
+            }),
+          );
   }
 
 }

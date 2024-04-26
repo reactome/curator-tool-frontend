@@ -1,0 +1,28 @@
+.qa-reports-action-menu {
+  width: 124px;
+  background: var(--surface2);
+  padding: 0;
+  border: 1px solid var(--outline-variant);
+  border-bottom: 0;
+}
+
+.action-button {
+  font-size: 12px;
+  width: 124px;
+  height: 24px;
+  border-bottom: 1px solid var(--outline-variant);
+  justify-content: center;
+}
+
+.action-button:hover {
+  background-color: var(--hover);
+}
+
+.mat-icon {
+  font-size: 12px;
+  width: 12px;
+  height: 12px;
+  color: var(--primary);
+  vertical-align: middle;
+}
+

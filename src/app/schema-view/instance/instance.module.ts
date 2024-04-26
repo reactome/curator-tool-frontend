@@ -14,6 +14,9 @@ import {
   ActionMenuComponent
 } from "./components/instance-view/instance-table/instance-table-row-element/action-menu/action-menu.component";
 import {
+  QAReportsActionMenuComponent
+} from "./components/instance-view/qa-reports-action-menu/qa-reports-action-menu.component";
+import {
   DisableControlDirective
 } from "./components/instance-view/instance-table/instance-table-row-element/disableControlDirective";
 import {
@@ -22,6 +25,7 @@ import {
 import { InstanceTableComponent } from './components/instance-view/instance-table/instance-table.component';
 import { InstanceViewComponent } from './components/instance-view/instance-view.component';
 import { NewInstanceDialogComponent } from './components/new-instance-dialog/new-instance-dialog.component';
+import { QAReportDialogComponent } from './components/qa-report-dialog/qa-report-dialog.component';
 import { InstanceRoutingModule } from './instance-routing.module';
 import { DatabaseObjectEffects } from './state/instance.effects';
 import { NEW_INSTANCES_STATE_NAME } from "./state/instance.selectors";
@@ -32,10 +36,12 @@ import { TextCurationComponent } from "../main-schema-view/text-curation/compone
     declarations: [
         InstanceTableComponent,
         ActionMenuComponent,
+        QAReportsActionMenuComponent,
         InstanceTableRowElementComponent,
         BreadCrumbComponent,
         InstanceViewComponent,
         NewInstanceDialogComponent,
+        QAReportDialogComponent,
         DisableControlDirective
     ],
   imports: [

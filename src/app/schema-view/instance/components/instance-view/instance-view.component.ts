@@ -4,6 +4,7 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { DragDropService } from "../../../instance-bookmark/drag-drop.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
+import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
 import { Store } from '@ngrx/store';
 import { InstanceActions, NewInstanceActions } from '../../state/instance.actions';
 
@@ -12,6 +13,7 @@ import { InstanceActions, NewInstanceActions } from '../../state/instance.action
   templateUrl: './instance-view.component.html',
   styleUrls: ['./instance-view.component.scss'],
 })
+
 export class InstanceViewComponent implements OnInit {
   // Used to force the update of table content
   @ViewChild(InstanceTableComponent) instanceTable!: InstanceTableComponent;
@@ -29,7 +31,8 @@ export class InstanceViewComponent implements OnInit {
     private route: ActivatedRoute,
     private dataService: DataService,
     private dragDropService: DragDropService,
-    private store: Store) {
+    private store: Store,
+    private qaReportDialogService: QAReportDialogService) {
   }
 
   ngOnInit() {
@@ -139,7 +142,7 @@ export class InstanceViewComponent implements OnInit {
       if (updatedTable)
         this.instanceTable.updateTableContent();
       if (oldDbId) {
-        // Just need a simple clone 
+        // Just need a simple clone
         let oldInst : Instance = {
           dbId: oldDbId,
           displayName: this.instance?.displayName,
@@ -152,5 +155,16 @@ export class InstanceViewComponent implements OnInit {
       // Also update the breakcrunch!
     })
   }
+
+    onQAReportAction(reportName: string) {
+      // console.debug(" ** onQAReportAction: ", reportName, this.instance!.qaIssues);
+      let qaReportData = this.instance!.qaIssues!.get(reportName)!;
+      const matDialogRef = this.qaReportDialogService.openDialog(reportName, qaReportData);
+//       matDialogRef.afterClosed().subscribe(result => {
+//         if (result !== undefined) {
+//           console.debug("QA report dialog closed", result);
+//         }
+//       });
+    }
 
 }
