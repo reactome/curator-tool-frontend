@@ -25,6 +25,7 @@ import {
 import { InstanceTableComponent } from './components/instance-view/instance-table/instance-table.component';
 import { InstanceViewComponent } from './components/instance-view/instance-view.component';
 import { NewInstanceDialogComponent } from './components/new-instance-dialog/new-instance-dialog.component';
+import { QAReportDialogComponent } from './components/qa-report-dialog/qa-report-dialog.component';
 import { InstanceRoutingModule } from './instance-routing.module';
 import { DatabaseObjectEffects } from './state/instance.effects';
 import { NEW_INSTANCES_STATE_NAME } from "./state/instance.selectors";
@@ -40,6 +41,7 @@ import { TextCurationComponent } from "../main-schema-view/text-curation/compone
         BreadCrumbComponent,
         InstanceViewComponent,
         NewInstanceDialogComponent,
+        QAReportDialogComponent,
         DisableControlDirective
     ],
   imports: [

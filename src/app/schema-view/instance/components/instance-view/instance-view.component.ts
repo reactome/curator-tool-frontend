@@ -4,6 +4,7 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { DragDropService } from "../../../instance-bookmark/drag-drop.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
+import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
 
 @Component({
   selector: 'app-instance-view',
@@ -26,7 +27,8 @@ export class InstanceViewComponent implements OnInit {
   constructor(private router: Router,
               private route: ActivatedRoute,
               private dataService: DataService,
-              private dragDropService: DragDropService) {
+              private dragDropService: DragDropService,
+              private qaReportDialogService: QAReportDialogService) {
   }
 
   ngOnInit() {
@@ -127,8 +129,15 @@ export class InstanceViewComponent implements OnInit {
     })
   }
 
-    onQAReportAction(action: string) {
-      console.log("onQAReportAction: ", action);
+    onQAReportAction(reportName: string) {
+      // console.debug(" ** onQAReportAction: ", reportName, this.instance!.qaIssues);
+      let qaReportData = this.instance!.qaIssues!.get(reportName)!;
+      const matDialogRef = this.qaReportDialogService.openDialog(reportName, qaReportData);
+//       matDialogRef.afterClosed().subscribe(result => {
+//         if (result !== undefined) {
+//           console.debug("QA report dialog closed", result);
+//         }
+//       });
     }
 
 }

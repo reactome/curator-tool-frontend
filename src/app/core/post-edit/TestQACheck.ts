@@ -39,7 +39,7 @@ export class TestQACheck implements PostEditOperation {
           if (instance.qaIssues.get(key)!.length === 0) {
               instance.qaIssues.delete(key);
           }
-          console.log(instance.qaIssues);
+          // console.debug(instance.qaIssues);
           if (postEditListener)
               postEditListener.donePostEdit(instance, editedAttributeName);
 
