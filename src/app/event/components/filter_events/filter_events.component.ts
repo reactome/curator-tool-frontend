@@ -26,16 +26,16 @@ interface Species {
 export class FilterEventsComponent {
   // For doing search
   selectedSpecies = "All";
-  selectedClass = "Event";
+  selectedClass = "Reaction";
   selectedAttributes: string[] = ["displayName"];
-  selectedOperands: string[] = ["Equals"];
-  /* NB. Since 'IS NOT NULL' and 'IS NULL' don't require a searchKey, populating every of the four
+  selectedOperands: string[] = ["Contains"];
+  /* NB. Since 'IS NOT NULL' and 'IS NULL' don't require a searchKey, populating every 'empty' of the four
   possible positions in searchKeys with a non-empty string placeholder ensures that each attribute-operand
   tuple gets assigned the correct searchKey at the curator-tool-ws end. If searchKeys had been assigned []
   or ["","","",""] below, e.g. in the case of: 'displayName IS NOT NULL' and 'dbId contains "12"', the back-end
   would have incorrectly reconstructed 'displayName IS NOT NULL "12"'.
   */
-  searchKeys: string[] = ["na", "na", "na", "na"];
+  searchKeys: string[] = ["Nephrin", "na", "na", "na"];
   hide_clauses: boolean[] = [false, true, true, true];
 
   // TODO: There are many more species in Neo4J than those below (offered as filters in CuratorTool)

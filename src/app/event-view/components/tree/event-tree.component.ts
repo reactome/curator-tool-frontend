@@ -77,7 +77,7 @@ export class EventTreeComponent {
     let ret = selectedOperands.includes("IS NULL") || selectedOperands.includes("IS NOT NULL");
     if (!ret) {
       let sks = new Set(searchKeys);
-      ret = sks.size > 1 || !sks.values().next().value.equals("na");
+      ret = sks.size > 1 || sks.values().next().value !== "na";
     }
     return ret;
   }
