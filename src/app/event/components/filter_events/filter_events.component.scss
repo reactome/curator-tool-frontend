@@ -1,3 +1,7 @@
 .text-sm {
   font-size: 13px !important;
 }
+
+::ng-deep .mat-mdc-option {
+  min-height: 13px !important;
+}
