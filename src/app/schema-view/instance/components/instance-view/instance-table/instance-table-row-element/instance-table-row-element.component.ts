@@ -31,7 +31,7 @@ export class InstanceTableRowElementComponent implements OnInit {
   // Value to be displayed here
   @Input() attribute: SchemaAttribute | undefined = undefined;
   @Input() value: any;
-  @Input() index: number = 0; // The position for a value in multi-slot
+  @Input() index: number = -1; // The position for a value in multi-slot
 
   // The following properties and attributes are used for DnD from bookmarks
   private isMouseIn: boolean = false;
@@ -161,4 +161,12 @@ export class InstanceTableRowElementComponent implements OnInit {
     }
     this.editAction.emit(attributeValue);
   }
+
+  onkeypress(e: any){
+    //ctrl and enter key
+    if(e.ctrlKey && e.keyCode == 13){
+      this.onChange();
+   }
+  }
+
 }

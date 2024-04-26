@@ -49,7 +49,7 @@ export class NewInstanceDialogComponent {
     // will handle close.
     if (this.instance) {
       this.dataService.registerNewInstance(this.instance);
-      this.store.dispatch(NewInstanceActions.register_new_instances(this.instance));
+      this.store.dispatch(NewInstanceActions.register_new_instance(this.instance));
     }
     this.dialogRef.close(this.instance);
   }

@@ -41,6 +41,7 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
               private categories: Map<AttributeCategory, boolean>,
               public sort: boolean,
               public sortAttDefined: boolean,
+              public filterEdited: boolean,
               private referenceInstance?: Instance) {
     super();
   }
@@ -65,9 +66,21 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
       if(this.instance?.modifiedAttributes) {
         for (let attribute of this.instance.modifiedAttributes) {
           let value = this.instance.modifiedAttributes.get(attribute);
-          console.log(value)
         }
 
+      }
+
+      // Only show attributes that have been edited
+      if(this.filterEdited) {
+        let editedAtts: AttributeValue[] = [];
+        console.log(this.instance.modifiedAttributes)
+        attributeValues.forEach(att => {
+          if(this.instance?.modifiedAttributes.get(att.attribute.name)){
+            console.log(att.attribute.name)
+            editedAtts.push(att);
+          }
+        })
+        return of(editedAtts);
       }
 
       // Sort attributes alphabetically by name ascending, otherwise descending.
@@ -82,7 +95,6 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
         attributeValues.sort((a, b) => a.attribute.definingType < b.attribute.definingType ?
           -1 : 1)
       }
-
     }
     return of(attributeValues);
   }

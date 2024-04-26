@@ -1,7 +1,6 @@
 <app-bread-crumb [newMenuItem]="viewHistory" (clickEvent)="changeTable($event)">
 </app-bread-crumb>
 <ng-container *ngIf="showProgressSpinner">
-  <!-- Probably should not use this hard-coded min-height? -->
   <mat-spinner class="spinner"></mat-spinner>
 </ng-container>
 <mat-toolbar class="toolbar" *ngIf="!showProgressSpinner">
@@ -14,7 +13,7 @@
       </span>
       <div class="button-container">
         <button mat-icon-button color="primary" class="v-center" (click)="showReferenceValueColumn()"
-        matTooltip="Compare instance">
+        matTooltip="Compare instance" [disabled]="!isComparable()">
           <mat-icon>compare</mat-icon>
         </button>
         <button mat-icon-button color="primary" class="v-center" (click)="upload()" matTooltip="upload to db"
@@ -25,7 +24,7 @@
   </div>
 </mat-toolbar>
 <app-text-curation [embedded]="true" [instanceTable]="instanceTable"></app-text-curation>
-<app-instance-table [instance]="instance" [referenceInstance]="dbInstance"
+<app-instance-table [instance]="instance" [referenceInstance]="dbInstance" (editedInstance)="updateTitle($event)"
                     *ngIf="!showProgressSpinner"></app-instance-table>
 <ng-template #qa_issues>
   <qa-reports-action-menu

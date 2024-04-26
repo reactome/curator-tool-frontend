@@ -19,9 +19,9 @@
     </ng-template>
 
     <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
-      <mat-form-field appearance="outline" subscriptSizing="dynamic" [cdkContextMenuTriggerFor]="row_menu">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <textarea matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize" cdkAutosizeMinRows="1"
-                  cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()">
+                  cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()" (keydown)="onkeypress($event)">
         </textarea>
       </mat-form-field>
     </ng-template>
@@ -60,8 +60,10 @@
           <!-- Add this empty space so that we can pop up the context menu to handle action.
         For the time being, the popup works for instance type only. -->
           <ng-template #elseblock>
-            <!-- Use a customized class to force the empty span to show the menu.-->
-            <span [cdkContextMenuTriggerFor]="row_menu" class="span-menu-trigger"></span>
+            <ng-container>
+              <!-- Use a customized class to force the empty span to show the menu.-->
+              <span [cdkContextMenuTriggerFor]="row_menu" class="span-menu-trigger"></span>
+            </ng-container>
           </ng-template>
         </div>
       </ng-template>

@@ -23,25 +23,28 @@ import { MatSort, MatSortHeader, MatSortModule } from '@angular/material/sort';
 //TODO: Enhance the table display so that it is more like
 // https://curator.reactome.org/cgi-bin/classbrowser?DB=gk_central&CLASS=ModifiedResidue
 export class SchemaClassTableComponent implements OnInit {
-  displayedColumns: string[] = ['name','type', 'category', 'allowedClasses', 'attributeOrigin', 'cardinality', 'definingType'];
+  displayedColumns: string[] = ['name', 'type', 'category', 'allowedClases', 'origin', 'cardinality', 'definingType'];
   dataSource: any;
 
   constructor(private store: Store, private route: ActivatedRoute) {
   }
 
-  @ViewChild(MatSort) sort: MatSort|undefined;
+  @ViewChild(MatSort) sort: MatSort | undefined;
 
   className: any = "";
 
   ngOnInit(): void {
     this.route.params.subscribe((clsNameParams) => {
-      this.store.dispatch(SchemaClassTableActions.get({className: clsNameParams['className']}));
+      this.store.dispatch(SchemaClassTableActions.get({ className: clsNameParams['className'] }));
     });
 
     this.store.select(getSchemaClass()).subscribe((schemaClass) => {
-      this.dataSource = new MatTableDataSource(schemaClass.attributes)
+      // Do a sort first
+      let sorted_attributes = [...schemaClass.attributes!];
+      sorted_attributes.sort((a, b) => a.name.localeCompare(b.name));
+      this.dataSource = new MatTableDataSource(sorted_attributes);
       this.dataSource.sort = this.sort;
-      }
+    }
     );
   }
 
