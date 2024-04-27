@@ -4,6 +4,7 @@ import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
 import {MatTooltipModule} from '@angular/material/tooltip'
 import {MatSelectModule} from '@angular/material/select';
+import {MatCardModule} from '@angular/material/card';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {DataService} from "../../../core/services/data.service";
 import {AttributeDataType, SchemaClass} from "../../../core/models/reactome-schema.model";
@@ -21,7 +22,7 @@ interface Species {
   templateUrl: './filter_events.component.html',
   styleUrls: ['./filter_events.component.scss'],
   standalone: true,
-  imports: [MatFormFieldModule, MatSelectModule, MatInputModule, FormsModule, MatButtonModule, MatTooltipModule]
+  imports: [MatFormFieldModule, MatSelectModule, MatInputModule, FormsModule, MatButtonModule, MatTooltipModule, MatCardModule]
 })
 export class FilterEventsComponent {
   // For doing search
@@ -61,6 +62,8 @@ export class FilterEventsComponent {
     'IS NOT NULL',
     'IS NULL'
   ];
+  hideShowButtonLabel: string = "Show Filters";
+  hideSearchPanel: string = "hidden";
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -96,7 +99,7 @@ export class FilterEventsComponent {
 
   @Output() updateEventTree = new EventEmitter<Array<string[]>>();
 
-  onSelectionChange(): void {
+  onSearchSelectionChange(): void {
     let selectedAttributeTypes: string[] = [];
     this.selectedAttributes.forEach(attribute => {
       if (attribute) {
@@ -120,6 +123,16 @@ export class FilterEventsComponent {
         selectedAttributeTypes,
         this.selectedOperands,
         this.searchKeys]);
+  }
+
+  onHideSelectionChange(): void {
+    if (this.hideSearchPanel === "") {
+      this.hideShowButtonLabel = "Show Filters";
+      this.hideSearchPanel = "hidden";
+    } else {
+      this.hideShowButtonLabel = "Hide Panel";
+      this.hideSearchPanel = "";
+    }
   }
 
   onClassSelection(): void {
