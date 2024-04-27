@@ -5,10 +5,16 @@
   </ng-container>
 </div>
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" *ngIf="!showProgressSpinner">
+
+  <!-- Hide the root node -->
+  <mat-tree-node style="display: hidden;" class="mat-tree-root-node"
+                 *matTreeNodeDef="let node; when: isRootNode">
+  </mat-tree-node>
+
   <!-- This is the table node template for leaf nodes -->
   <mat-tree-node *matTreeNodeDef="let node;" matTreeNodePadding matTreeNodeToggle
     matTreeNodePaddingIndent="15"
-                 [ngClass] = "[node.inFocus === true ? 'inFocus' : '', node.rootNode === true ? 'rootNode' : '']">
+                 [ngClass] = "node.inFocus === true ? 'inFocus' : ''">
     <!-- use a disabled button to provide padding for table leaf -->
     <button mat-icon-button disabled></button>
     <icon1-image [doRelease]="node.doRelease"></icon1-image>
@@ -19,7 +25,7 @@
   <!-- This is the table node template for expandable nodes -->
   <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding
     matTreeNodePaddingIndent="15"
-                 [ngClass] = "[node.inFocus === true ? 'inFocus' : '', node.rootNode === true ? 'rootNode' : '']">
+                 [ngClass] = "node.inFocus === true ? 'inFocus' : ''">
     <button mat-icon-button matTreeNodeToggle>
       <mat-icon class="mat-icon-rtl-mirror">
         {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}

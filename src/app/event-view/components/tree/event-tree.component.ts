@@ -17,6 +17,7 @@ interface EventNode {
   match: boolean;
   expand: boolean;
   inFocus: boolean;
+  rootNode: boolean;
 }
 
 @Component({
@@ -37,7 +38,8 @@ export class EventTreeComponent {
       doRelease: !!node.attributes && node.attributes["_doRelease"],
       match: !!node.attributes && node.attributes["match"],
       expand: !!node.attributes && node.attributes["expand"],
-      inFocus: false
+      inFocus: false,
+      rootNode: node.displayName === "TopLevelPathway" ? true : false
     };
   };
 
@@ -63,6 +65,9 @@ export class EventTreeComponent {
       service.fetchEventTree(false, "All", "", [], [], [], []).subscribe(data => {
         this.dataSource.data = [data];
         this.showProgressSpinner = false;
+        // Expand the root note and tag it as rootNode - so that it can be hidden in html
+        let rootNode = this.treeControl.dataNodes[0];
+        this.treeControl.expand(rootNode);
       });
   }
 
@@ -71,7 +76,8 @@ export class EventTreeComponent {
 
   hasChild = (_: number, node: EventNode) => node.expandable;
 
-  inFocus = (node: EventNode) => node.inFocus;
+  inFocus = (_: number, node: EventNode) => node.inFocus;
+  isRootNode = (_: number, node: EventNode) => node.rootNode;
 
   atLeastOneQueryClausePresent(selectedOperands: string[], searchKeys: string[]): boolean {
     let ret = selectedOperands.includes("IS NULL") || selectedOperands.includes("IS NOT NULL");
