@@ -33,7 +33,7 @@
   </mat-form-field>
   <mat-form-field [class.cdk-visually-hidden]="hide_clauses[0]">
     <mat-label>Enter search token</mat-label>
-    <input id="searchKey0" value="Nephrin" class="text-sm" matInput (keyup)="recordSearchKey($event, 0)" #input>
+    <input id="searchKey0" class="text-sm" matInput (keyup)="recordSearchKey($event, 0)" #input>
   </mat-form-field>
   <button matTooltip="Add another attribute to query" (click)="showClause(1)" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">+</button>
 </div>

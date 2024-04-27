@@ -178,7 +178,7 @@ export class DataService {
           return rootEvent;
         }),
         catchError((err: Error) => {
-          console.log("The events tree could not been loaded: \n" + err.message, "Close", {
+          console.log("The events tree could not be loaded: \n" + err.message, "Close", {
             panelClass: ['warning-snackbar'],
             duration: 10000
           });

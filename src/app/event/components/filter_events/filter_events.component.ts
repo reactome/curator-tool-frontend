@@ -35,7 +35,7 @@ export class FilterEventsComponent {
   or ["","","",""] below, e.g. in the case of: 'displayName IS NOT NULL' and 'dbId contains "12"', the back-end
   would have incorrectly reconstructed 'displayName IS NOT NULL "12"'.
   */
-  searchKeys: string[] = ["Nephrin", "na", "na", "na"];
+  searchKeys: string[] = ["na", "na", "na", "na"];
   hide_clauses: boolean[] = [false, true, true, true];
 
   // TODO: There are many more species in Neo4J than those below (offered as filters in CuratorTool)
@@ -149,7 +149,11 @@ export class FilterEventsComponent {
 
   recordSearchKey(event: Event, pos: number) {
     const text = (event.target as HTMLInputElement).value;
-    this.searchKeys[pos] = text;
+    if (text !== '') {
+      this.searchKeys[pos] = text;
+    } else {
+      this.searchKeys[pos] = 'na';
+    }
   }
 
   /**
