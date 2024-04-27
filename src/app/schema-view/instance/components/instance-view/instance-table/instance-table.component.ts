@@ -14,19 +14,19 @@ import {
   AttributeDataType,
   SchemaAttribute,
 } from '../../../../../core/models/reactome-schema.model';
-import {DragDropService} from '../../../../instance-bookmark/drag-drop.service';
+import { DragDropService } from '../../../../instance-bookmark/drag-drop.service';
 import {
   SelectInstanceDialogService
 } from '../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service';
-import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
+import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
 import {
   AttributeValue,
   DragDropStatus,
   EDIT_ACTION,
   InstanceDataSource,
 } from './instance-table.model';
-import {PostEditListener} from 'src/app/core/post-edit/PostEditOperation';
-import {NewInstanceActions} from 'src/app/schema-view/instance/state/instance.actions';
+import { PostEditListener } from 'src/app/core/post-edit/PostEditOperation';
+import { NewInstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -355,7 +355,7 @@ export class InstanceTableComponent implements PostEditListener {
       this.sortAttNames,
       this.sortAttDefined,
       this.filterEdited,
-    this._referenceInstance
+      this._referenceInstance
     );
     this.instanceDataSource.connect();
   }
@@ -381,11 +381,10 @@ export class InstanceTableComponent implements PostEditListener {
     // Do nothing if there is no instance
     if (this._instance === undefined) return;
     if (this._instance.modifiedAttributes === undefined) {
-      let newModAtt: Map<string, any> = new Map<string, any>();
-      newModAtt.set(attributeName, attributeVal);
-      this._instance.modifiedAttributes = newModAtt;
+      this._instance.modifiedAttributes = [];
     }
-    this._instance?.modifiedAttributes?.set(attributeName, attributeVal);
+    if (!this._instance.modifiedAttributes.includes(attributeName))
+      this._instance.modifiedAttributes.push(attributeName);
   }
 
   removeModifiedAttribute(attributeName: string) {
@@ -394,9 +393,11 @@ export class InstanceTableComponent implements PostEditListener {
       this._instance.modifiedAttributes === undefined
     )
       return;
-    this._instance.modifiedAttributes.delete(attributeName);
+    let index = this._instance.modifiedAttributes.indexOf(attributeName);
+    if (index > -1)
+      this._instance.modifiedAttributes.splice(index, 1);
     // If nothing is in the modifiedAttributes, remove this instance from the changed list
-    if (this._instance.modifiedAttributes.size === 0) {
+    if (this._instance.modifiedAttributes.length === 0) {
       this.store.dispatch(
         InstanceActions.remove_updated_instance(this._instance)
       );

@@ -16,7 +16,7 @@ export interface Instance {
   dbId: number;
   displayName?: string;
   attributes?: Map<string, any> | any; // This is optional so that we can have a simple shell instance. Use also any for easy converting
-  modifiedAttributes?: Map<string, any> | any // Optional map of modified attribute names and original value.
+  modifiedAttributes?: string[] // Optional list flagging names of modified attributes
   qaIssues?: Map<string, string[][]>; // Optional map of QA check label to the corresponding tabular report
 }
 

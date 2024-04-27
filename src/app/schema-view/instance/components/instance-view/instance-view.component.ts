@@ -103,14 +103,15 @@ export class InstanceViewComponent implements OnInit {
   isUploadable() {
     //TODO: an attribute may add a new value and then delete this new value. Need to have a better
     // control!
-    return this.instance ? (this.instance.dbId < 0 || this.instance.modifiedAttributes?.size > 0) : false;
+    return this.instance ? (this.instance.dbId < 0 || (this.instance.modifiedAttributes && this.instance.modifiedAttributes.length)) : false;
   }
 
   isComparable() {
     if (this.dbInstance)
       return true; // Make sure the comparison can be turned off
     if (this.instance && this.instance.dbId > 0 &&
-      this.instance.modifiedAttributes?.size > 0)
+      this.instance.modifiedAttributes &&
+      this.instance.modifiedAttributes.length)
       return true;
     return false;
   }
