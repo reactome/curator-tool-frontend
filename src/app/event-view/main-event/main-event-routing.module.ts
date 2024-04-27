@@ -9,7 +9,7 @@ const routes: Routes = [
     path: `instance`,
     component: MainSchemaViewComponent,
     loadChildren: () =>
-      import("../../schema-view/instance/instance.module").then((m) =>
+      import("../../instance/instance.module").then((m) =>
         m.InstanceModule),
   },
   {

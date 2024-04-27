@@ -6,9 +6,9 @@ import { MatSidenavModule } from "@angular/material/sidenav";
 import { MatTooltipModule } from "@angular/material/tooltip";
 import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
-import { ListInstancesModule } from "../list-instances/list-instances.module";
-import { SchemaClassTreeModule } from "../schema-class/components/tree/schema-class-tree.module";
-import { SharedModule } from '../../shared/shared.module';
+import { ListInstancesModule } from "../schema-view/list-instances/list-instances.module";
+import { SchemaClassTreeModule } from "../schema-view/schema-class/components/tree/schema-class-tree.module";
+import { SharedModule } from '../shared/shared.module';
 import { BreadCrumbComponent } from './components/instance-view/bread-crumb/bread-crumb.component';
 import {
   ActionMenuComponent
@@ -30,7 +30,7 @@ import { InstanceRoutingModule } from './instance-routing.module';
 import { DatabaseObjectEffects } from './state/instance.effects';
 import { NEW_INSTANCES_STATE_NAME } from "./state/instance.selectors";
 import { newInstancesReducer } from "./state/instance.reducers";
-import { TextCurationComponent } from "../main-schema-view/text-curation/components/text-curation.component";
+import { TextCurationComponent } from "../schema-view/main-schema-view/text-curation/components/text-curation.component";
 
 @NgModule({
     declarations: [

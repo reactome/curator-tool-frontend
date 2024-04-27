@@ -8,7 +8,7 @@ const routes: Routes = [
     path: `instance`,
     component: MainSchemaViewComponent,
     loadChildren: () =>
-      import("../instance/instance.module").then((m) =>
+      import("src/app/instance/instance.module").then((m) =>
         m.InstanceModule),
   },
   {
@@ -28,8 +28,8 @@ const routes: Routes = [
   {
     path: '',
     component: MainSchemaViewComponent,
-    loadChildren: () => 
-      import('./text-curation/text-curation.module').then(m => 
+    loadChildren: () =>
+      import('./text-curation/text-curation.module').then(m =>
         m.TextCurationModule),
     // redirectTo: 'llm/*',
     // pathMatch: 'full',

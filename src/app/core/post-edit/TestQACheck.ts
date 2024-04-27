@@ -4,7 +4,7 @@ import { DataService } from "../services/data.service";
 import { InstanceNameGenerator } from "./InstanceNameGenerator";
 import { PostEditListener, PostEditOperation } from "./PostEditOperation";
 import { SchemaClass } from "../models/reactome-schema.model";
-import { NewInstanceActions } from "src/app/schema-view/instance/state/instance.actions";
+import { NewInstanceActions } from "src/app/instance/state/instance.actions";
 
 export class TestQACheck implements PostEditOperation {
 

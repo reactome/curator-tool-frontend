@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Input, OnInit, Output, OnChanges} from '@angular/core';
 import {Instance} from "../../../../core/models/reactome-instance.model";
 import {Store} from "@ngrx/store";
-import { updatedInstances } from 'src/app/schema-view/instance/state/instance.selectors';
+import { updatedInstances } from 'src/app/instance/state/instance.selectors';
 
 @Component({
   selector: 'app-side-navigation',

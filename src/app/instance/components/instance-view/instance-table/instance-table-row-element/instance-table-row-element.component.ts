@@ -14,10 +14,10 @@ import { AttributeValue, DragDropStatus, EDIT_ACTION } from '../instance-table.m
 import { CdkTextareaAutosize } from "@angular/cdk/text-field";
 import { take } from "rxjs";
 import { FormControl, Validators } from "@angular/forms";
-import { ViewOnlyService } from "../../../../../../core/services/view-only.service";
-import { DataService } from "../../../../../../core/services/data.service";
-import { DragDropService } from "../../../../../instance-bookmark/drag-drop.service";
-import { Instance } from "../../../../../../core/models/reactome-instance.model";
+import { ViewOnlyService } from "../../../../../core/services/view-only.service";
+import { DataService } from "../../../../../core/services/data.service";
+import { DragDropService } from "../../../../../schema-view/instance-bookmark/drag-drop.service";
+import { Instance } from "../../../../../core/models/reactome-instance.model";
 
 /**
  * Used to display a single value of an Instance object.

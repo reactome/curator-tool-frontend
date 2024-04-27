@@ -1,6 +1,6 @@
 import {NG_ASYNC_VALIDATORS, NgControl} from '@angular/forms';
 import {Directive, forwardRef, Input} from "@angular/core";
-import {AttributeCategory, SchemaAttribute} from "../../../../../../core/models/reactome-schema.model";
+import {AttributeCategory, SchemaAttribute} from "../../../../../core/models/reactome-schema.model";
 
 @Directive({
   selector: '[disableControl]',

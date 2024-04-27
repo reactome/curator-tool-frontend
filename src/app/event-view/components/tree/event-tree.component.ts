@@ -3,7 +3,7 @@ import {ChangeDetectorRef, Component, EventEmitter, Output, Input, OnChanges} fr
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
 import {Instance} from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
-import { EDIT_ACTION } from "../../../schema-view/instance/components/instance-view/instance-table/instance-table.model";
+import { EDIT_ACTION } from "../../../instance/components/instance-view/instance-table/instance-table.model";
 import {MatSnackBar} from '@angular/material/snack-bar'
 
 /** Tree node with expandable and level information */

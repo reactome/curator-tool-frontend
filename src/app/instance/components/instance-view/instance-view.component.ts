@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from "@angular/router";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
-import { DragDropService } from "../../../instance-bookmark/drag-drop.service";
+import { DragDropService } from "../../../schema-view/instance-bookmark/drag-drop.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
 import { Store } from '@ngrx/store';

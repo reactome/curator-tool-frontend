@@ -4,7 +4,7 @@
 //TODO: Use ngrx/store or entity to manage this.
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Instance } from "../../../../../core/models/reactome-instance.model";
+import { Instance } from "../../../../core/models/reactome-instance.model";
 
 @Component({
   selector: 'app-bread-crumb',

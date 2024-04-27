@@ -10,8 +10,8 @@ import { AgentExecutor, createOpenAIFunctionsAgent } from "langchain/agents";
 import { pull } from 'langchain/hub';
 import { AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
 import { DataService } from 'src/app/core/services/data.service';
-import { InstanceTableComponent } from 'src/app/schema-view/instance/components/instance-view/instance-table/instance-table.component';
-import { NewInstanceActions } from "src/app/schema-view/instance/state/instance.actions";
+import { InstanceTableComponent } from 'src/app/instance/components/instance-view/instance-table/instance-table.component';
+import { NewInstanceActions } from "src/app/instance/state/instance.actions";
 import { z } from "zod";
 
 import { HttpClient } from '@angular/common/http';
@@ -67,7 +67,7 @@ export class TextCurationComponent {
   }
 
 
-  // The following implementation is based on: 
+  // The following implementation is based on:
   // https://js.langchain.com/docs/modules/agents/tools/dynamic
   async execute(command: string) {
     console.debug('Execute: ', command);
@@ -117,7 +117,7 @@ export class TextCurationComponent {
         schema: z.object({
           dbId: z.number().describe("The dbId of the instance to be edited")
           // className: z.string().optional().describe('The className of the instance to be edited'),
-          // displayName: z.string().optional().describe('The displayName of the instance to be edited') 
+          // displayName: z.string().optional().describe('The displayName of the instance to be edited')
         }),
         func: async ({ dbId }) => {
           console.debug('Instance to be edited: ', dbId);
@@ -223,10 +223,10 @@ export class TextCurationComponent {
   }
 
   /**
-   * Find an instance that matches display name as passed or dbId. 
-   * @param clsAtt 
-   * @param value 
-   * @returns 
+   * Find an instance that matches display name as passed or dbId.
+   * @param clsAtt
+   * @param value
+   * @returns
    */
   private setInstanceAttribute(clsAtt: SchemaAttribute,
     value: string,
@@ -277,9 +277,9 @@ export class TextCurationComponent {
 
   /**
    * Perform a linear search to find the attribute defined in the instance's class.
-   * @param attName 
-   * @param instance 
-   * @returns 
+   * @param attName
+   * @param instance
+   * @returns
    */
   private getClassAttribute(attName: string,
     instance: Instance): SchemaAttribute | undefined {

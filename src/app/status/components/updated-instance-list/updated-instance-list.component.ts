@@ -8,8 +8,8 @@ import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {Router} from "@angular/router";
 import {ListInstancesModule} from "../../../schema-view/list-instances/list-instances.module";
 import {Store} from "@ngrx/store";
-import { updatedInstances } from 'src/app/schema-view/instance/state/instance.selectors';
-import { newInstances } from 'src/app/schema-view/instance/state/instance.selectors';
+import { updatedInstances } from 'src/app/instance/state/instance.selectors';
+import { newInstances } from 'src/app/instance/state/instance.selectors';
 
 @Component({
   selector: 'app-updated-instance-list',
