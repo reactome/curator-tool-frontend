@@ -10,26 +10,27 @@ import { AgentExecutor, createOpenAIFunctionsAgent } from "langchain/agents";
 import { pull } from 'langchain/hub';
 import { AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
 import { DataService } from 'src/app/core/services/data.service';
-import { InstanceTableComponent } from 'src/app/schema-view/instance/components/instance-view/instance-table/instance-table.component';
 import { NewInstanceActions } from "src/app/schema-view/instance/state/instance.actions";
 import { z } from "zod";
 
 import { HttpClient } from '@angular/common/http';
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { InstanceViewComponent } from 'src/app/schema-view/instance/components/instance-view/instance-view.component';
 
 @Component({
   selector: 'app-text-curation',
   standalone: true,
   imports: [MatLabel, MatTooltip, NgIf],
   templateUrl: './text-curation.component.html',
-  styleUrl: './text-curation.component.scss'
+  styleUrl: './text-curation.component.scss',
 })
 export class TextCurationComponent {
 
   @Input() embedded: boolean = false;
-  //TODO: Make sure this component is higher than InstanceTableComponent.
-  @Input() instanceTable: InstanceTableComponent | undefined = undefined;
+  //Instead of refer to a table, here we refer to the view to avoid NG0100 error: view changed after checking!
+  // But this may need to be refactored in the future.
+  @Input() instanceView: InstanceViewComponent | undefined;
 
   // Test code: Need to remove it
   chatModel: ChatOpenAI | undefined = undefined;
@@ -65,7 +66,6 @@ export class TextCurationComponent {
       )
     });
   }
-
 
   // The following implementation is based on: 
   // https://js.langchain.com/docs/modules/agents/tools/dynamic
@@ -187,10 +187,10 @@ export class TextCurationComponent {
   }
 
   setAttribute(attribute: string, value: any, append: boolean = false) {
-    if (this.instanceTable === undefined || this.instanceTable._instance === undefined)
+    if (this.instanceView!.instanceTable === undefined || this.instanceView!.instanceTable._instance === undefined)
       return;
     // Make sure the value is validated
-    const instance = this.instanceTable._instance;
+    const instance = this.instanceView!.instanceTable._instance;
     // Determinte if the attribute is an instance type
     const clsAtt = this.getClassAttribute(attribute, instance);
     if (clsAtt === undefined) return;
@@ -218,8 +218,8 @@ export class TextCurationComponent {
   private validateTable(attributeName: string,
     attributeValue: any
   ) {
-    if (this.instanceTable === undefined) return;
-    this.instanceTable.finishEdit(attributeName, attributeValue);
+    if (this.instanceView!.instanceTable === undefined) return;
+    this.instanceView!.instanceTable.finishEdit(attributeName, attributeValue);
   }
 
   /**
