@@ -55,8 +55,12 @@ export class StatusComponent implements OnInit {
   persistInstances(): void {
     console.debug('Calling persist instance before window closing...');
     const instances = [...this.newInstances, ...this.updatedInstances];
-    if (instances.length == 0)
+    if (instances.length == 0) {
+      this.dataService.deletePersistedInstances('test').subscribe(() => {
+        console.debug('Delete any persisted instance at the server.');
+      });
       return; // Do nothing
+    }
     this.dataService.persistInstances(instances, 'test').subscribe(() => {
       console.debug('New and updated instances have been persisted at the server.');
     });

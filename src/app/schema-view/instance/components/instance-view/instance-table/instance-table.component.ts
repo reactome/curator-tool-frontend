@@ -520,7 +520,8 @@ export class InstanceTableComponent implements PostEditListener {
         );
       }
     } else {
-      this._instance.attributes.remove(attributeValue.attribute.name);
+      // Use delete for the map!
+      this._instance.attributes.delete(attributeValue.attribute.name);
     }
     // Update the status of this table
     this.postEdit(attributeValue.attribute.name);

@@ -38,6 +38,7 @@ export class DataService {
   private testQACheckReportUrl = `${environment.ApiRoot}/getTestQACheckReport/`;
   private loadInstancesUrl = `${environment.ApiRoot}/loadInstances/`;
   private persistInstancesUrl = `${environment.ApiRoot}/persistInstances/`;
+  private deletePersistedInstancesUrl = `${environment.ApiRoot}/deletePersistedInstances/`;
 
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
@@ -513,9 +514,26 @@ loadInstances(userName: string): Observable<Instance[]> {
         clonedInstances.push(this.cloneInstanceForCommit(full_inst));
       }
     }
-    return this.http.post<Instance>(this.persistInstancesUrl + userName, clonedInstances).pipe(
+    return this.http.post<any>(this.persistInstancesUrl + userName, clonedInstances).pipe(
       catchError(error => {
         console.log("An error is thrown during persistInstances: \n" + error.message, "Close", {
+          panelClass: ['warning-snackbar'],
+          duration: 10000
+        });
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Empty the persisted instances at the server.
+   * @param userName 
+   * @returns 
+   */
+  deletePersistedInstances(userName: string): Observable<any> {
+    return this.http.delete<any>(this.deletePersistedInstancesUrl + userName).pipe(
+      catchError(error => {
+        console.log("An error is thrown during deletePersistedInstances: \n" + error.message, "Close", {
           panelClass: ['warning-snackbar'],
           duration: 10000
         });
