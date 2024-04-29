@@ -63,19 +63,12 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
           attributeValues.push(attributeValue);
         }
       }
-      if(this.instance?.modifiedAttributes) {
-        for (let attribute of this.instance.modifiedAttributes) {
-          let value = this.instance.modifiedAttributes.get(attribute);
-        }
-
-      }
-
       // Only show attributes that have been edited
       if(this.filterEdited) {
         let editedAtts: AttributeValue[] = [];
         console.log(this.instance.modifiedAttributes)
         attributeValues.forEach(att => {
-          if(this.instance?.modifiedAttributes.get(att.attribute.name)){
+          if(this.instance?.modifiedAttributes?.includes(att.attribute.name)){
             console.log(att.attribute.name)
             editedAtts.push(att);
           }

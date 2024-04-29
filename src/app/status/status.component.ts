@@ -1,5 +1,5 @@
 import { CdkAccordionModule } from "@angular/cdk/accordion";
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from "@angular/material/icon";
@@ -14,6 +14,8 @@ import { AuthenticateService } from "../core/services/authenticate.service";
 import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instance-bookmark.module";
 import { newInstances } from "src/app/instance/state/instance.selectors";
 import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
+import { DataService } from "../core/services/data.service";
+import { InstanceActions, NewInstanceActions } from "src/app/instance/state/instance.actions";
 
 @Component({
   selector: 'app-status',
@@ -22,7 +24,7 @@ import { UpdatedInstanceListComponent } from './components/updated-instance-list
   standalone: true,
     imports: [MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule, CdkAccordionModule, UpdatedInstanceListComponent, InstanceBookmarkModule, MatIconModule, MatTooltipModule]
 })
-export class StatusComponent implements OnInit{
+export class StatusComponent implements OnInit {
   @Input() sidePanelState: number = 0;
   @Output() showUpdatedEvent = new EventEmitter<boolean>();
   updatedInstances: Instance[] = [];
@@ -31,6 +33,7 @@ export class StatusComponent implements OnInit{
 
   constructor(private store: Store,
               private authenticateService: AuthenticateService,
+              private dataService: DataService,
               private router: Router) {
   }
 
@@ -45,6 +48,22 @@ export class StatusComponent implements OnInit{
         this.newInstances = instances;
       }
     })
+  }
+
+  // Calling ngOnDestroy is not reliable: https://blog.devgenius.io/where-ngondestroy-fails-you-54a8c2eca0e0.
+  @HostListener('window:beforeunload', ['$event'])
+  persistInstances(): void {
+    console.debug('Calling persist instance before window closing...');
+    const instances = [...this.newInstances, ...this.updatedInstances];
+    if (instances.length == 0) {
+      this.dataService.deletePersistedInstances('test').subscribe(() => {
+        console.debug('Delete any persisted instance at the server.');
+      });
+      return; // Do nothing
+    }
+    this.dataService.persistInstances(instances, 'test').subscribe(() => {
+      console.debug('New and updated instances have been persisted at the server.');
+    });
   }
 
   showUpdated(): void {

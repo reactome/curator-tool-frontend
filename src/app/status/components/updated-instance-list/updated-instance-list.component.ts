@@ -10,6 +10,9 @@ import {ListInstancesModule} from "../../../schema-view/list-instances/list-inst
 import {Store} from "@ngrx/store";
 import { updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { newInstances } from 'src/app/instance/state/instance.selectors';
+import { InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
+import { DataService } from 'src/app/core/services/data.service';
+
 
 @Component({
   selector: 'app-updated-instance-list',
@@ -21,14 +24,17 @@ import { newInstances } from 'src/app/instance/state/instance.selectors';
 export class UpdatedInstanceListComponent implements OnInit{
   // instances to be committed
   toBeUploaded: Instance[] = [];
-  actionButtons: string[] = ["compare"];
+  actionButtons: string[] = ["compare", "undo"];
   isSelection: boolean = false;
   newInstances: Instance[] = [];
   updatedInstances: Instance[] = [];
   showHeader: boolean = false;
-  newInstancesActionButtons: string[] = ["launch"];
+  newInstancesActionButtons: string[] = ["launch", "delete"];
 
-  constructor(private router: Router, private store: Store, private route: ActivatedRoute) {
+  constructor(private router: Router,
+              private route: ActivatedRoute,
+              private store: Store,
+              private dataService: DataService) {
   }
 
   ngOnInit(): void {
@@ -73,10 +79,41 @@ export class UpdatedInstanceListComponent implements OnInit{
         this.launchNewInstance(actionButton.instance)
         break;
       }
+
+      case "delete": {
+        this.deleteNewInstance(actionButton.instance);
+        break;
+      }
+
+      case "undo": {
+        this.resetUpdatedInstance(actionButton.instance);
+      }
     }
   }
 
+  //TODO: Should try to use effects to handle this to avoid
+  // referring DataService, which has been referred too many
+  // places now!
+  private resetUpdatedInstance(instance: Instance) {
+    console.debug('Reset updated instance: ', instance);
+    this.dataService.removeInstanceInCache(instance);
+    this.store.dispatch(InstanceActions.remove_updated_instance(instance));
+  }
+
+  private deleteNewInstance(instance: Instance) {
+    this.store.dispatch(NewInstanceActions.remove_new_instance(instance));
+    // TODO: The following cleaning up needs to be done:
+    // 1). Remove the reference to this instance in any local changed instances
+    // 2). Remove it from the bookmarks in case it is registered there.
+    // To implement the above, consider to use ngrx's effects and add a new action.
+  }
+
   launchNewInstance(instance: Instance) {
-    this.router.navigate(["/instance_view/", instance.dbId]);
+    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+                                                     .reduce((acc, val) => acc.concat(val), [])
+                                                     .map(urlSegment => urlSegment.path);
+      let newUrl =  currentPathRoot[0] + "/instance/" + instance.dbId.toString();
+
+    this.router.navigate([newUrl]);
   }
 }

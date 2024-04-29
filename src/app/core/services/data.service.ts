@@ -1,6 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
-import { catchError, concatMap, map, Observable, of, throwError } from 'rxjs';
+import { catchError, concatMap, forkJoin, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import {
   AttributeCategory,
@@ -23,6 +23,7 @@ export class DataService {
   // Cache fetched SchemaClass objects
   private name2SchemaClass: Map<string, SchemaClass> = new Map<string, SchemaClass>();
   // Cache fetched instances
+  // List of URLs
   private id2instance: Map<number, Instance> = new Map<number, Instance>();
   private schemaClassDataUrl = `${environment.ApiRoot}/getAttributes/` // TODO: Need to consider using Angular ConfigService!
   private entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
@@ -35,6 +36,10 @@ export class DataService {
   private fillReferenceUrl = `${environment.ApiRoot}/fillReference/`;
   private eventPlotDataUrl = `${environment.ApiRoot}/getEventPlotData/`;
   private testQACheckReportUrl = `${environment.ApiRoot}/getTestQACheckReport/`;
+  private loadInstancesUrl = `${environment.ApiRoot}/loadInstances/`;
+  private persistInstancesUrl = `${environment.ApiRoot}/persistInstances/`;
+  private deletePersistedInstancesUrl = `${environment.ApiRoot}/deletePersistedInstances/`;
+
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
   // The root class is cached for performance
@@ -298,7 +303,6 @@ export class DataService {
   fetchInstance(dbId: number): Observable<Instance> {
     // Check cached results first
     if (this.id2instance.has(dbId)) {
-      this.handleModifiedAttributes(this.id2instance.get(dbId)!);
       console.log('instance', this.id2instance.get(dbId)!)
       return of(this.id2instance.get(dbId)!);
     }
@@ -380,6 +384,11 @@ export class DataService {
     this.id2instance.set(instance.dbId, instance);
   }
 
+  removeInstanceInCache(instance: Instance): void {
+    if (this.id2instance.has(instance.dbId))
+      this.id2instance.delete(instance.dbId);
+  }
+
   /**
    * Call the server to get the counts.
    * @param className
@@ -416,21 +425,6 @@ export class DataService {
       attributeMap.set(key, value);
     })
     instance.attributes = attributeMap;
-  }
-
-  /**
-   * Modified attributes cached from edited instances
-   * @param instance
-   */
-  private handleModifiedAttributes(instance: Instance): void {
-    if(instance.modifiedAttributes === undefined) return;
-    let modifiedAttMap = new Map<string, any>();
-    let modifiedAttributes: any = instance.modifiedAttributes;
-    Object.keys(modifiedAttributes).map((key: string) => {
-      const value = modifiedAttributes[key];
-      modifiedAttMap.set(key, value);
-    })
-    instance.modifiedAttributes = modifiedAttMap;
   }
 
   /**
@@ -475,6 +469,82 @@ export class DataService {
           });
           return throwError(() => err);
         }));
+  }
+
+  /**
+   * Load the persistence instances for a user
+   * @param userName
+   * @returns 
+   */
+loadInstances(userName: string): Observable<Instance[]> {
+  return this.http.get<Instance[]>(this.loadInstancesUrl + userName)
+    .pipe(
+      switchMap((data: Instance[]) => {
+        return forkJoin(
+          data.map(inst => {
+            this.handleInstanceAttributes(inst);
+            this.id2instance.set(inst.dbId, inst);
+            return this.handleSchemaClassForInstance(inst).pipe(
+              map((inst) => inst)
+            );
+          })
+        );
+      }),
+      catchError((err: Error) => {
+        console.log("Error in loadInstances: \n" + err.message, "Close", {
+          panelClass: ['warning-snackbar'],
+          duration: 100
+        });
+        return throwError(() => err);
+      }),
+    );
+}
+
+  /**
+   * Persist new and updated instances to the server.
+   * @param instances 
+   * @param userName 
+   * @returns 
+   */
+  //TODO: See if it is possible to persist only changed attributes for updated instances to increase the
+  // performance.
+  persistInstances(instances: Instance[], userName: string): Observable<any> {
+    let clonedInstances = [];
+    for (let inst of instances) {
+      let full_inst = this.id2instance.get(inst.dbId);
+      if (full_inst === undefined) {
+        console.error('Cannot find the cached instance for ', inst);
+      }
+      else {
+        clonedInstances.push(this.cloneInstanceForCommit(full_inst));
+      }
+    }
+    return this.http.post<any>(this.persistInstancesUrl + userName, clonedInstances).pipe(
+      catchError(error => {
+        console.log("An error is thrown during persistInstances: \n" + error.message, "Close", {
+          panelClass: ['warning-snackbar'],
+          duration: 10000
+        });
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Empty the persisted instances at the server.
+   * @param userName 
+   * @returns 
+   */
+  deletePersistedInstances(userName: string): Observable<any> {
+    return this.http.delete<any>(this.deletePersistedInstancesUrl + userName).pipe(
+      catchError(error => {
+        console.log("An error is thrown during deletePersistedInstances: \n" + error.message, "Close", {
+          panelClass: ['warning-snackbar'],
+          duration: 10000
+        });
+        return throwError(() => error);
+      })
+    );
   }
 
   /**
@@ -546,8 +616,10 @@ export class DataService {
       displayName: source.displayName,
       schemaClassName: source.schemaClassName,
     }
+    if (source.modifiedAttributes && source.modifiedAttributes.length)
+      instance.modifiedAttributes = [...source.modifiedAttributes]
     // Need to manually convert the instance to a string because the use of map for attributes
-    if (source.attributes) {
+    if (source.attributes && source.attributes.size) {
       let attributesJson = Object.fromEntries(source.attributes);
       instance.attributes = attributesJson;
     }

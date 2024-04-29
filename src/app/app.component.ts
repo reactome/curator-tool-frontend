@@ -1,5 +1,8 @@
 import {Component, Input} from '@angular/core';
 import { Router } from '@angular/router';
+import { DataService } from './core/services/data.service';
+import { Store } from '@ngrx/store';
+import { InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
 
 @Component({
   selector: 'app-root',
@@ -13,11 +16,14 @@ export class AppComponent {
   // This is a hack to show different views at the top. We should use angular route to manage these views!
   current_view: string = 'home_view';
 
-  constructor(private router: Router) {}
-
+  constructor(private router: Router,
+    private dataService: DataService,
+    private store: Store
+  ) {}
 
   ngOnInit() {
     this.loggedIn = sessionStorage.getItem('authenticated') === 'true';
+    // this.loggedIn = true;
     // Bypass for the time being
     //this.loggedIn = false;
     let url = window.location.pathname;
@@ -34,24 +40,20 @@ export class AppComponent {
     else {
       this.current_view = 'schema_view'; // Only support this now.
     }
-    this.router.navigate([url]);
-  }
 
-  switch_view(view: any) {
-    this.current_view = view;
-    // Another hack to show something here
-    if (this.current_view === 'home_view') {
-      this.router.navigate(['/home'])
-    }
-    else if (this.current_view === 'llm_apps_view') {
-      this.router.navigate(['/llm_apps_view'])
-    }
-    else if (this.current_view === 'event_view') {
-      this.router.navigate(['/event_view'])
-    }
-    else {
-      this.router.navigate(['/schema_view']);
-    }
+    // Before we do anything, load the persisted instances if any
+    console.debug('App loading instances from server...');
+    this.dataService.loadInstances('test').subscribe((instances) => {
+      console.debug(instances);
+      for (let inst of instances) {
+        if (inst.dbId < 0)
+          this.store.dispatch(NewInstanceActions.register_new_instance(inst));
+        else
+          this.store.dispatch(InstanceActions.register_updated_instance(inst));
+      }
+    });
+
+    this.router.navigate([url]);
   }
 
 }

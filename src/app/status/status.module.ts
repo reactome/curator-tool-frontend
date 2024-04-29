@@ -10,9 +10,6 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { StoreModule } from '@ngrx/store';
 import { updatedInstancesReducer } from '../instance/state/instance.reducers';
 import { UPDATE_INSTANCES_STATE_NAME } from '../instance/state/instance.selectors';
-import {
-  InstanceComparisonDialog
-} from "./components/instance-comparison-dialog/instance-comparison-dialog.component";
 import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 import { StatusComponent } from './status.component';
 import { InstanceModule } from '../instance/instance.module';
@@ -35,9 +32,6 @@ import { InstanceModule } from '../instance/instance.module';
   ],
   exports: [
     StatusComponent // Have to export it!!!
-  ],
-  declarations: [
-    InstanceComparisonDialog
   ],
 })
 export class StatusModule { }

@@ -7,6 +7,7 @@ import { InstanceTableComponent } from './instance-table/instance-table.componen
 import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
 import { Store } from '@ngrx/store';
 import { InstanceActions, NewInstanceActions } from '../../state/instance.actions';
+import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 
 @Component({
   selector: 'app-instance-view',
@@ -95,6 +96,11 @@ export class InstanceViewComponent implements OnInit {
     this.router.navigate([newUrl], { queryParamsHandling: 'preserve' });
   }
 
+  addBookmark() {
+    if (this.instance)
+      this.store.dispatch(BookmarkActions.add_bookmark(this.instance));
+  }
+
   showReferenceValueColumn() {
     this.showReferenceColumn = !this.showReferenceColumn;
     if (this.showReferenceColumn)
@@ -111,14 +117,15 @@ export class InstanceViewComponent implements OnInit {
   isUploadable() {
     //TODO: an attribute may add a new value and then delete this new value. Need to have a better
     // control!
-    return this.instance ? (this.instance.dbId < 0 || this.instance.modifiedAttributes?.size > 0) : false;
+    return this.instance ? (this.instance.dbId < 0 || (this.instance.modifiedAttributes && this.instance.modifiedAttributes.length)) : false;
   }
 
   isComparable() {
     if (this.dbInstance)
       return true; // Make sure the comparison can be turned off
     if (this.instance && this.instance.dbId > 0 &&
-      this.instance.modifiedAttributes?.size > 0)
+      this.instance.modifiedAttributes &&
+      this.instance.modifiedAttributes.length)
       return true;
     return false;
   }

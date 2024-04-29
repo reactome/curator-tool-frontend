@@ -18,7 +18,7 @@ export class TestQACheck implements PostEditOperation {
        let editedAttributeNames: string[] = [];
        let editedAttributeValues: string[] = [];
        if (instance.modifiedAttributes !== undefined) {
-         instance.modifiedAttributes.forEach((value: string, attr: string) => {
+         instance.modifiedAttributes.forEach((attr: string) => {
            editedAttributeNames.push(attr);
            let new_val = instance.attributes.get(attr);
            editedAttributeValues.push(new_val != null ? new_val : "null");
