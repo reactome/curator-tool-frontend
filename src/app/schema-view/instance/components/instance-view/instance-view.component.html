@@ -12,6 +12,10 @@
               </button>
       </span>
       <div class="button-container">
+        <button mat-icon-button color="primary" class="v-center" (click)="addBookmark()"
+        matTooltip="Add Bookmark">
+          <mat-icon>bookmark</mat-icon>
+        </button>
         <button mat-icon-button color="primary" class="v-center" (click)="showReferenceValueColumn()"
         matTooltip="Compare instance" [disabled]="!isComparable()">
           <mat-icon>compare</mat-icon>

@@ -384,6 +384,11 @@ export class DataService {
     this.id2instance.set(instance.dbId, instance);
   }
 
+  removeInstanceInCache(instance: Instance): void {
+    if (this.id2instance.has(instance.dbId))
+      this.id2instance.delete(instance.dbId);
+  }
+
   /**
    * Call the server to get the counts.
    * @param className

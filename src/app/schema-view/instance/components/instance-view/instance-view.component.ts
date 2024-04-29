@@ -7,6 +7,7 @@ import { InstanceTableComponent } from './instance-table/instance-table.componen
 import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
 import { Store } from '@ngrx/store';
 import { InstanceActions, NewInstanceActions } from '../../state/instance.actions';
+import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 
 @Component({
   selector: 'app-instance-view',
@@ -85,6 +86,11 @@ export class InstanceViewComponent implements OnInit {
   changeTable(instance: Instance) {
     this.dragDropService.resetList();
     this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()], { queryParamsHandling: 'preserve' });
+  }
+
+  addBookmark() {
+    if (this.instance)
+      this.store.dispatch(BookmarkActions.add_bookmark(this.instance));
   }
 
   showReferenceValueColumn() {
