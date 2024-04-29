@@ -19,7 +19,8 @@ export class MainEventComponent {
   public dbIdAndClassNameFromPlot: string = "";
   public dbIdFromURL: string = "";
 
-  constructor(private route: ActivatedRoute) {
+  constructor(private route: ActivatedRoute,
+              private router: Router) {
       let url = window.location.href.split("/");
       console.log(url)
       if (url.includes("home")){this.closeSidenav(); this.sideWidth=0}
@@ -85,5 +86,14 @@ export class MainEventComponent {
     // and no plot will be generated).
     let selectedDbIdAndClassName = dbIdAndClassNameFromPlot.split(",")[0];
     this.dbIdAndClassName = selectedDbIdAndClassName;
+
+    // The code below refreshes the instance view when a node is selected in the event plot
+    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+                                                       .reduce((acc, val) => acc.concat(val), [])
+                                                       .map(urlSegment => urlSegment.path);
+    let selectedParams: string = this.dbIdAndClassNameFromPlot.split(",")[0];
+    let selectedDbId = parseInt(selectedParams.split(":")[0]);
+    let newUrl =  currentPathRoot[0] + "/instance/" + selectedDbId;
+    this.router.navigate([newUrl]);
   }
 }
