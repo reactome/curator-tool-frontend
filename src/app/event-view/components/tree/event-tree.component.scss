@@ -72,25 +72,24 @@
 //   background-color: green;
 // }
 
-
 .event_text {
-  color: var(--surface1);
   text-decoration: none;
-
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  z-index: 1 !important;
   &:hover {
     text-decoration: underline ;
   }
+  font-family: Roboto, sans-serif !important;
+}
+
+.event_text_non_match {
+  color: var(--surface1) !important;
 }
 
 .event_text_match {
-  color: dodgerblue;
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline ;
-  }
+  color: dodgerblue !important;
 }
-
 
 .spinner {
   margin:0 auto;

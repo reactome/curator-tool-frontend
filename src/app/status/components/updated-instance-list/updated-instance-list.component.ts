@@ -5,7 +5,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatListModule} from '@angular/material/list';
 import {MatTableModule} from '@angular/material/table';
 import {Instance} from 'src/app/core/models/reactome-instance.model';
-import {Router} from "@angular/router";
+import {Router, ActivatedRoute} from "@angular/router";
 import {ListInstancesModule} from "../../../schema-view/list-instances/list-instances.module";
 import {Store} from "@ngrx/store";
 import { updatedInstances } from 'src/app/instance/state/instance.selectors';
@@ -28,7 +28,7 @@ export class UpdatedInstanceListComponent implements OnInit{
   showHeader: boolean = false;
   newInstancesActionButtons: string[] = ["launch"];
 
-  constructor(private router: Router, private store: Store) {
+  constructor(private router: Router, private store: Store, private route: ActivatedRoute) {
   }
 
   ngOnInit(): void {
@@ -43,7 +43,11 @@ export class UpdatedInstanceListComponent implements OnInit{
   }
 
   compareWithDB(instance: Instance) {
-    this.router.navigate(["/schema_view/instance/", instance.dbId, "comparison"]);
+    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+                                                   .reduce((acc, val) => acc.concat(val), [])
+                                                   .map(urlSegment => urlSegment.path);
+    let newUrl =  currentPathRoot[0] + "/instance/" + instance.dbId.toString();
+    this.router.navigate([newUrl, "comparison"]);
   }
 
   onSelectionChange(instance: Instance, event: MatCheckboxChange) {

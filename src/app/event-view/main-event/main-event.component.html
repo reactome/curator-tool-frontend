@@ -11,13 +11,23 @@
       </div>
     </mat-sidenav>
     <mat-sidenav-content>
-      <app-event-plot (updateEventTreeFromPlotSelection)="updateEventTreeToSideNavigation($event)"
-                      [dbIdAndClassName]="dbIdAndClassName" ></app-event-plot>
-    </mat-sidenav-content>
-    <mat-sidenav-content class="instance-view-container">
-      <router-outlet></router-outlet>
+      <div style="margin-left: 10px; margin-right: 10px;">
+        <mat-grid-list cols="2" rowHeight="1000px">
+          <mat-toolbar color="primary" class="toolbar">
+Graphic display</mat-toolbar>
+          <mat-grid-tile>
+            <app-event-plot (updateEventTreeFromPlotSelection)="updateEventTreeToSideNavigation($event)"
+                            [dbIdAndClassName]="dbIdAndClassName">
+            </app-event-plot>
+          </mat-grid-tile>
+          <mat-grid-tile>
+            <router-outlet></router-outlet>
+          </mat-grid-tile>
+        </mat-grid-list>
+      </div>
     </mat-sidenav-content>
   </mat-sidenav-container>
+
   <div id="bookmark-boundary">
     <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="#bookmark-boundary" id="bookmark-container" [ngClass]="status"
          [style.height]="container.clientHeight + 'px'" (cdkDragStarted)="onDrag()" (cdkDragEnded)="onDragEnd()">

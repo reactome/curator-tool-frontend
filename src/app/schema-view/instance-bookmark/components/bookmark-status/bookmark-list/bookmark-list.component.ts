@@ -5,7 +5,7 @@ import {DragDropService} from "../../../drag-drop.service";
 import {bookmarkedInstances} from "../../../state/bookmark.selectors";
 import {Store} from "@ngrx/store";
 import {BookmarkActions} from "../../../state/bookmark.actions";
-import {Router} from "@angular/router";
+import {Router, ActivatedRoute} from "@angular/router";
 
 @Component({
   selector: 'app-bookmark-list',
@@ -19,7 +19,8 @@ export class BookmarkListComponent implements OnInit {
 
   constructor(public dragDropService: DragDropService,
               public store: Store,
-              private router: Router) {
+              private router: Router,
+              private route: ActivatedRoute) {
   }
 
   ngOnInit() {
@@ -42,6 +43,10 @@ export class BookmarkListComponent implements OnInit {
   }
 
   navigate(instance: Instance) {
-    this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()], {queryParamsHandling: 'preserve'});
+    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+                                                   .reduce((acc, val) => acc.concat(val), [])
+                                                   .map(urlSegment => urlSegment.path);
+    let newUrl =  currentPathRoot[0] + "/instance/" + instance.dbId.toString();
+    this.router.navigate([newUrl], {queryParamsHandling: 'preserve'});
   }
 }

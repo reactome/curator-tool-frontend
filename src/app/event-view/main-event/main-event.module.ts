@@ -13,6 +13,7 @@ import {CdkAccordionModule} from "@angular/cdk/accordion";
 import {InstanceBookmarkModule} from "../../schema-view/instance-bookmark/instance-bookmark.module";
 import {MainEventRoutingModule} from "./main-event-routing.module";
 import {GraphicDisplayModule} from "../graphic-display/graphic-display.module";
+import {MatGridListModule} from '@angular/material/grid-list';
 
 @NgModule({
   declarations: [
@@ -36,7 +37,8 @@ import {GraphicDisplayModule} from "../graphic-display/graphic-display.module";
     InstanceBookmarkModule,
     CdkDragHandle,
     MainEventRoutingModule,
-    GraphicDisplayModule
+    GraphicDisplayModule,
+    MatGridListModule
     ]
 })
 export class MainEventModule { }

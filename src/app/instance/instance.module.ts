@@ -7,7 +7,6 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
 import { ListInstancesModule } from "../schema-view/list-instances/list-instances.module";
-import { SchemaClassTreeModule } from "../schema-view/schema-class/components/tree/schema-class-tree.module";
 import { SharedModule } from '../shared/shared.module';
 import { BreadCrumbComponent } from './components/instance-view/bread-crumb/bread-crumb.component';
 import {
@@ -57,7 +56,6 @@ import { TextCurationComponent } from "../schema-view/main-schema-view/text-cura
     CdkContextMenuTrigger,
     CdkMenu,
     CdkMenuItem,
-    SchemaClassTreeModule,
     MatTooltipModule,
     MatSidenavModule,
     CdkDrag,

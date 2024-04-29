@@ -2,14 +2,13 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {RouterModule, Routes} from "@angular/router";
 import {MainEventComponent} from "./main-event.component";
-import {MainSchemaViewComponent} from "../../schema-view/main-schema-view/main-schema-view.component";
 
 const routes: Routes = [
   {
     path: `instance`,
-    component: MainSchemaViewComponent,
+    component: MainEventComponent,
     loadChildren: () =>
-      import("../../instance/instance.module").then((m) =>
+      import("src/app/instance/instance.module").then((m) =>
         m.InstanceModule),
   },
   {

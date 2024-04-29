@@ -16,11 +16,14 @@
     matTreeNodePaddingIndent="15"
                  [ngClass] = "node.inFocus === true ? 'inFocus' : ''">
     <!-- use a disabled button to provide padding for table leaf -->
-    <button mat-icon-button disabled></button>
-    <icon1-image [doRelease]="node.doRelease"></icon1-image>
-    <icon2-image [className]="node.className"></icon2-image>
-    <a [ngClass]="node.match === true ? 'event_text_match' : 'event_text'" routerLink="/schema_view/instance/{{node.dbId}}">{{node.name}}</a>&nbsp;
-    <button mat-button (click)="generatePlotToSideNavigation(node.dbId, node.className)" cdkFocusInitial>&gt;</button>
+    <div>
+      <button mat-icon-button disabled></button>
+      <icon1-image [doRelease]="node.doRelease"></icon1-image>
+      <icon2-image [className]="node.className"></icon2-image>
+      <button mat-button [ngClass]="[node.match === true ? 'event_text_match' : 'event_text_non_match', 'event_text']"
+              routerLink="/event_view/instance/{{node.dbId}}"
+              (click)="generatePlotToSideNavigation(node.dbId, node.className)" cdkFocusInitial>{{node.name}}</button>
+    </div>
   </mat-tree-node>
   <!-- This is the table node template for expandable nodes -->
   <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding
@@ -31,10 +34,13 @@
         {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
       </mat-icon>
     </button>
-    <icon1-image [doRelease]="node.doRelease"></icon1-image>
-    <icon2-image [className]="node.className"></icon2-image>
-    <a *ngIf="node.name !== 'TopLevelPathway'" [ngClass]="node.match === true ? 'event_text_match' : 'event_text'" routerLink="/schema_view/instance/{{node.dbId}}">{{node.name}}</a>&nbsp;
-    <label *ngIf="node.name === 'TopLevelPathway'">{{node.name}}</label>&nbsp;
-    <button [hidden]="node.name === 'TopLevelPathway'" mat-button (click)="generatePlotToSideNavigation(node.dbId, node.className)" cdkFocusInitial>&gt;</button>
+    <div>
+      <icon1-image [doRelease]="node.doRelease"></icon1-image>
+      <icon2-image [className]="node.className"></icon2-image>
+      <button mat-button [ngClass]="[node.match === true ? 'event_text_match' : 'event_text_non_match', 'event_text']"
+              [hidden]="node.name === 'TopLevelPathway'"
+              routerLink="/event_view/instance/{{node.dbId}}"
+              (click)="generatePlotToSideNavigation(node.dbId, node.className)" cdkFocusInitial>{{node.name}}</button>
+    </div>
   </mat-tree-node>
 </mat-tree>

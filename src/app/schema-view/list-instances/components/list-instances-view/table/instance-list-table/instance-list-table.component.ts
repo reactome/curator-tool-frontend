@@ -3,6 +3,7 @@ import {Instance} from "../../../../../../core/models/reactome-instance.model";
 import {DataService} from "../../../../../../core/services/data.service";
 import {Store} from "@ngrx/store";
 import {BookmarkActions} from "../../../../../instance-bookmark/state/bookmark.actions";
+import {ActivatedRoute} from "@angular/router";
 
 @Component({
   selector: 'app-instance-list-table',
@@ -20,7 +21,7 @@ export class InstanceListTableComponent {
   selected: number = 0;
   displayName: string | undefined = '';
 
-  constructor(private store: Store) {
+  constructor(private store: Store, private route: ActivatedRoute) {
   }
 
   click(instance: Instance, action: string) {
@@ -35,6 +36,13 @@ export class InstanceListTableComponent {
 
   addBookmark(instance: Instance) {
     this.store.dispatch(BookmarkActions.add_bookmark(instance));
+  }
+
+  getInstanceUrlRoot(instance: Instance) {
+      let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+                                                     .reduce((acc, val) => acc.concat(val), [])
+                                                     .map(urlSegment => urlSegment.path);
+      return "/" + currentPathRoot[0] + "/instance/" + instance.dbId.toString();
   }
 
   protected readonly DataService = DataService;
