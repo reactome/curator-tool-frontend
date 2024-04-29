@@ -73,6 +73,7 @@ export class EventTreeComponent {
 
   @Output() generatePlotFromEventTreeSel = new EventEmitter<string>();
   @Input() dbIdAndClassNameFromPlotToEventTree: string = "";
+  @Input() dbIdFromURLToEventTree: string = "";
 
   hasChild = (_: number, node: EventNode) => node.expandable;
 
@@ -94,21 +95,27 @@ export class EventTreeComponent {
         let parentParams: string = this.dbIdAndClassNameFromPlotToEventTree.split(",")[1];
         let selectedDbId = parseInt(selectedParams.split(":")[0]);
         let parentDbId = parseInt(parentParams.split(":")[0]);
-        // Highlight in the event tree the node corresponding to the event selected by the user within the plot
-        // (and remove highlighting from all the other nodes); also - expand the parent node of the selected one -
-        // in order to bring the selected one into view.
-        this.treeControl.dataNodes.forEach( (node) => {
-          if (node.dbId === selectedDbId) {
-            node.match = true;
-          } else if (node.dbId === parentDbId) {
-            this.treeControl.expand(node);
-            node.match = false;
-          } else {
-            node.match = false;
-          }
-        });
+        this.highlightSelected(selectedDbId, parentDbId);
         this.cdr.detectChanges();
-    }
+    } else if (this.dbIdFromURLToEventTree) {
+        this.filterData([["All"], [""],["dbId"],["primitive"],["Equals"], [this.dbIdFromURLToEventTree]], true);
+      }
+  }
+
+  // Highlight in the event tree the node corresponding to the event selected by the user within the plot
+  // (and remove highlighting from all the other nodes); also - expand the parent node of the selected one -
+  // in order to bring the selected one into view.
+  highlightSelected(selectedDbId: number, parentDbId: number) {
+    this.treeControl.dataNodes.forEach( (node) => {
+      if (node.dbId === selectedDbId) {
+        node.match = true;
+      } else if (node.dbId === parentDbId) {
+        this.treeControl.expand(node);
+        node.match = false;
+      } else {
+        node.match = false;
+      }
+    });
   }
 
 
@@ -129,13 +136,17 @@ export class EventTreeComponent {
     this.cdr.detectChanges();
   }
 
-  filterData(searchFilters: Array<string[]>) {
+  filterData(searchFilters: Array<string[]>, generatePlot?: boolean) {
+    let schemaClass: string = "";
     let selectedSpecies = searchFilters[0][0] as string;
     let selectedClass = searchFilters[1][0] as string;
     let selectedAttributes = searchFilters[2];
     let selectedAttributeTypes = searchFilters[3];
     let selectedOperands = searchFilters[4];
     let searchKeys = searchFilters[5];
+    if (selectedClass !== "") {
+      schemaClass = selectedClass;
+    }
     this.showProgressSpinner = true;
     this.service.fetchEventTree(
       true,
@@ -153,6 +164,10 @@ export class EventTreeComponent {
       this.treeControl.dataNodes.forEach( (node) => {
         if (node.expand) {
           this.treeControl.expand(node);
+        }
+        if (node.match && schemaClass === "") {
+          // ie. When filterData is run using dbId provided in the URL
+          schemaClass = node.className;
         }
         if (node.match && !focus) {
           node.inFocus = true;
@@ -173,7 +188,12 @@ export class EventTreeComponent {
             duration: 4000
            });
       }
-    })
+      if (generatePlot !== undefined || generatePlot === true) {
+        // This is used when dbId is taken from the URL
+        let plotParam = searchKeys[0] + ":" + schemaClass;
+        this.generatePlotFromEventTreeSel.emit(plotParam);
+      }
+    });
   }
 
   protected readonly EDIT_ACTION = EDIT_ACTION;

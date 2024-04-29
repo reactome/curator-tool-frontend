@@ -1,6 +1,7 @@
 <mat-tab-group [(selectedIndex)]="showUpdatedList" animationDuration="0ms">
   <mat-tab label="Event" (click)="updateTabIndex()">
     <app-event-tree [dbIdAndClassNameFromPlotToEventTree]="dbIdAndClassNameFromPlotToEventTree"
+                    [dbIdFromURLToEventTree]="dbIdFromURLToEventTree"
       (generatePlotFromEventTreeSel)="generatePlotToMainEvent($event)"></app-event-tree>
   </mat-tab>
   <mat-tab label="Changes">

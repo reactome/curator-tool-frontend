@@ -14,6 +14,8 @@ export class EventSideNavigationComponent implements OnInit {
   @Output() generatePlotFromEventTreeSel = new EventEmitter<string>();
   @Input() dbIdAndClassName: string = "";
   @Input() dbIdAndClassNameFromPlot: string = "";
+  @Input() dbIdFromURL: string = "";
+  @Input() dbIdFromURLToEventTree: string = "";
   public dbIdAndClassNameFromPlotToEventTree: string = "";
 
   data: Instance[] = [];
@@ -30,6 +32,8 @@ export class EventSideNavigationComponent implements OnInit {
   ngOnChanges() {
     if (this.dbIdAndClassNameFromPlot) {
         this.dbIdAndClassNameFromPlotToEventTree = this.dbIdAndClassNameFromPlot;
+    } else if (this.dbIdFromURL) {
+      this.dbIdFromURLToEventTree = this.dbIdFromURL;
     }
   }
 

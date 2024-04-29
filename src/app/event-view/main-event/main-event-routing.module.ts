@@ -9,18 +9,7 @@ const routes: Routes = [
     component: MainEventComponent,
     loadChildren: () =>
       import("src/app/instance/instance.module").then((m) =>
-        m.InstanceModule),
-  },
-  {
-    path: `graphic-display`,
-    component: MainEventComponent,
-    loadChildren: () =>
-      import("../graphic-display/graphic-display.module").then((m) =>
-        m.GraphicDisplayModule),
-  },
-  {
-    path: '',
-    component: MainEventComponent
+        m.InstanceModule)
   }
 ]
 
@@ -31,4 +20,5 @@ const routes: Routes = [
     RouterModule.forChild(routes)],
   exports: [RouterModule]
 })
+
 export class MainEventRoutingModule {}

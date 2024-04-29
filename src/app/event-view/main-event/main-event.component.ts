@@ -1,4 +1,4 @@
-import {Component, ViewChild} from '@angular/core';
+import {Component, ViewChild, Input} from '@angular/core';
 import {CdkDragMove} from "@angular/cdk/drag-drop";
 import {MatSidenav} from "@angular/material/sidenav";
 import {ActivatedRoute, Router} from "@angular/router";
@@ -17,13 +17,16 @@ export class MainEventComponent {
   status = {closed: true, opened: false, dragging: false};
   public dbIdAndClassName: string = "";
   public dbIdAndClassNameFromPlot: string = "";
+  public dbIdFromURL: string = "";
 
-  constructor() {
-    let url = window.location.href.split("/");
-    console.log(url)
-    if (url.includes("home")){this.closeSidenav(); this.sideWidth=0}
-    else{this.openSidenav()}
+  constructor(private route: ActivatedRoute) {
+      let url = window.location.href.split("/");
+      console.log(url)
+      if (url.includes("home")){this.closeSidenav(); this.sideWidth=0}
+      else{this.openSidenav()}
+      this.dbIdFromURL = url.slice(-1)[0];
     }
+
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
 

@@ -4,7 +4,9 @@
       <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)"
                            (generatePlotFromEventTreeSel)="generatePlotToEventPlot($event)"
                            [showUpdatedList]="showInstanceList"
-                           [dbIdAndClassNameFromPlot]="dbIdAndClassNameFromPlot"></app-side-navigation>
+                           [dbIdAndClassNameFromPlot]="dbIdAndClassNameFromPlot"
+                           [dbIdFromURL]="dbIdFromURL">
+      </app-side-navigation>
       <div class="resize-container" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
            (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
         <div class="resize-bar"></div>
