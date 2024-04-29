@@ -19,6 +19,7 @@ import { DataService } from "../../../../../core/services/data.service";
 import { DragDropService } from "../../../../../schema-view/instance-bookmark/drag-drop.service";
 import { Instance } from "../../../../../core/models/reactome-instance.model";
 import {ActivatedRoute} from "@angular/router";
+import {DataSubjectService} from "src/app/core/services/data.subject.service";
 /**
  * Used to display a single value of an Instance object.
  */
@@ -78,7 +79,8 @@ export class InstanceTableRowElementComponent implements OnInit {
               private route: ActivatedRoute,
               public viewOnly: ViewOnlyService,
               public dragDropService: DragDropService,
-    private elementRef: ElementRef<HTMLElement>) {
+              private dataSubjectService: DataSubjectService,
+              private elementRef: ElementRef<HTMLElement>) {
     if (viewOnly.enabled)
       this.control.disable();
   }
@@ -173,6 +175,11 @@ export class InstanceTableRowElementComponent implements OnInit {
       this.onChange();
    }
   }
+
+  onInstanceLinkClicked(instance: Instance) {
+    this.dataSubjectService.setDbId(instance.dbId.toString());
+  }
+
 
   getInstanceUrlRoot(instance: Instance) {
       let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)

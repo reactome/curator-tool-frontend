@@ -2,10 +2,7 @@
   <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh">
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true" [style.width]="sideWidth + 'px'">
       <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)"
-                           (generatePlotFromEventTreeSel)="generatePlotToEventPlot($event)"
-                           [showUpdatedList]="showInstanceList"
-                           [dbIdAndClassNameFromPlot]="dbIdAndClassNameFromPlot"
-                           [dbIdFromURL]="dbIdFromURL">
+                           [showUpdatedList]="showInstanceList">
       </app-side-navigation>
       <div class="resize-container" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
            (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
@@ -18,9 +15,7 @@
           <mat-toolbar color="primary" class="toolbar">
 Graphic display</mat-toolbar>
           <mat-grid-tile>
-            <app-event-plot (updateEventTreeFromPlotSelection)="updateEventTreeToSideNavigation($event)"
-                            [dbIdAndClassName]="dbIdAndClassName">
-            </app-event-plot>
+            <app-event-plot></app-event-plot>
           </mat-grid-tile>
           <mat-grid-tile>
             <router-outlet></router-outlet>

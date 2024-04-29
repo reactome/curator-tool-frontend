@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit, Output, OnChanges} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, OnDestroy} from '@angular/core';
 import {Instance} from "../../../../core/models/reactome-instance.model";
 import {Store} from "@ngrx/store";
 import { updatedInstances } from 'src/app/instance/state/instance.selectors';
@@ -11,12 +11,6 @@ import { updatedInstances } from 'src/app/instance/state/instance.selectors';
 export class EventSideNavigationComponent implements OnInit {
   @Input() showUpdatedList: number = 0;
   @Output() updateTabIndexEvent = new EventEmitter<boolean>();
-  @Output() generatePlotFromEventTreeSel = new EventEmitter<string>();
-  @Input() dbIdAndClassName: string = "";
-  @Input() dbIdAndClassNameFromPlot: string = "";
-  @Input() dbIdFromURL: string = "";
-  @Input() dbIdFromURLToEventTree: string = "";
-  public dbIdAndClassNameFromPlotToEventTree: string = "";
 
   data: Instance[] = [];
   constructor(private store: Store) {
@@ -29,20 +23,8 @@ export class EventSideNavigationComponent implements OnInit {
     })
   }
 
-  ngOnChanges() {
-    if (this.dbIdAndClassNameFromPlot) {
-        this.dbIdAndClassNameFromPlotToEventTree = this.dbIdAndClassNameFromPlot;
-    } else if (this.dbIdFromURL) {
-      this.dbIdFromURLToEventTree = this.dbIdFromURL;
-    }
-  }
-
   updateTabIndex() {
     let showList = this.showUpdatedList !== 0;
     this.updateTabIndexEvent.emit(showList);
-  }
-
-  generatePlotToMainEvent(param: string) {
-    this.generatePlotFromEventTreeSel.emit(param);
   }
 }

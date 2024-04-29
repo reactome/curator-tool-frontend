@@ -22,7 +22,7 @@
       <icon2-image [className]="node.className"></icon2-image>
       <button mat-button [ngClass]="[node.match === true ? 'event_text_match' : 'event_text_non_match', 'event_text']"
               routerLink="/event_view/instance/{{node.dbId}}"
-              (click)="generatePlotToSideNavigation(node.dbId, node.className)" cdkFocusInitial>{{node.name}}</button>
+              (click)="generatePlot(node.dbId, node.className)" cdkFocusInitial>{{node.name}}</button>
     </div>
   </mat-tree-node>
   <!-- This is the table node template for expandable nodes -->
@@ -40,7 +40,7 @@
       <button mat-button [ngClass]="[node.match === true ? 'event_text_match' : 'event_text_non_match', 'event_text']"
               [hidden]="node.name === 'TopLevelPathway'"
               routerLink="/event_view/instance/{{node.dbId}}"
-              (click)="generatePlotToSideNavigation(node.dbId, node.className)" cdkFocusInitial>{{node.name}}</button>
+              (click)="generatePlot(node.dbId, node.className)" cdkFocusInitial>{{node.name}}</button>
     </div>
   </mat-tree-node>
 </mat-tree>

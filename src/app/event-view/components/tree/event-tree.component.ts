@@ -1,10 +1,12 @@
 import { FlatTreeControl } from "@angular/cdk/tree";
-import {ChangeDetectorRef, Component, EventEmitter, Output, Input, OnChanges} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Output, Input, OnDestroy} from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
 import {Instance} from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
 import { EDIT_ACTION } from "../../../instance/components/instance-view/instance-table/instance-table.model";
 import {MatSnackBar} from '@angular/material/snack-bar'
+import {DataSubjectService} from "src/app/core/services/data.subject.service";
+import {Subscription} from 'rxjs';
 
 /** Tree node with expandable and level information */
 interface EventNode {
@@ -25,8 +27,10 @@ interface EventNode {
   templateUrl: './event-tree.component.html',
   styleUrls: ['./event-tree.component.scss']
 })
-export class EventTreeComponent {
+export class EventTreeComponent implements OnDestroy {
   showProgressSpinner: boolean = true;
+  dbIdSubscription: Subscription;
+  eventTreeParamSubscription: Subscription;
   private _transformer = (node: Instance, level: number) => {
     // TODO: Why does Typescript think that node.attributes is an Object and not a Map (has/get/set methods don't work)
     return {
@@ -43,6 +47,10 @@ export class EventTreeComponent {
     };
   };
 
+  ngOnDestroy() {
+    this.dbIdSubscription.unsubscribe();
+    this.eventTreeParamSubscription.unsubscribe();
+  }
 
   treeControl = new FlatTreeControl<EventNode>(
     node => node.level,
@@ -61,19 +69,42 @@ export class EventTreeComponent {
   constructor(
     private cdr: ChangeDetectorRef,
     private service: DataService,
-    private _snackBar: MatSnackBar) {
-      service.fetchEventTree(false, "All", "", [], [], [], []).subscribe(data => {
-        this.dataSource.data = [data];
-        this.showProgressSpinner = false;
-        // Expand the root note and tag it as rootNode - so that it can be hidden in html
-        let rootNode = this.treeControl.dataNodes[0];
-        this.treeControl.expand(rootNode);
+    private _snackBar: MatSnackBar,
+    private dataSubjectService: DataSubjectService) {
+      this.eventTreeParamSubscription = this.dataSubjectService.eventTreeParam$.subscribe(eventTreeParam => {
+        if (eventTreeParam) {
+          // Update the tree in response to the user clicking a node in the event tree
+          let selectedParams: string = eventTreeParam.split(",")[0];
+          let parentParams: string = eventTreeParam.split(",")[1];
+          let selectedDbId = parseInt(selectedParams.split(":")[0]);
+          let parentDbId = parseInt(parentParams.split(":")[0]);
+          this.highlightSelected(selectedDbId, parentDbId);
+          this.cdr.detectChanges();
+        }
       });
-  }
+      this.dbIdSubscription = this.dataSubjectService.dbId$.subscribe(dbId => {
+        if (dbId !== "0") {
+          // Update the tree in response to the user clicking on an instance link in instance view
+          this.filterData([["All"], [""],["dbId"],["primitive"],["Equals"], [dbId]], true);
+        }
+      });
 
-  @Output() generatePlotFromEventTreeSel = new EventEmitter<string>();
-  @Input() dbIdAndClassNameFromPlotToEventTree: string = "";
-  @Input() dbIdFromURLToEventTree: string = "";
+      let url = window.location.href.split("/");
+      let dbId = url.slice(-1)[0];
+      if (dbId !== "0") {
+         // Update the tree based on the dbId provided in the URL
+         this.filterData([["All"], [""],["dbId"],["primitive"],["Equals"], [dbId]], true);
+      } else {
+        // Otherwise just retrieve the full tree
+        service.fetchEventTree(false, "All", "", [], [], [], []).subscribe(data => {
+          this.dataSource.data = [data];
+          this.showProgressSpinner = false;
+          // Expand the root note and tag it as rootNode - so that it can be hidden in html
+          let rootNode = this.treeControl.dataNodes[0];
+          this.treeControl.expand(rootNode);
+        });
+      }
+  }
 
   hasChild = (_: number, node: EventNode) => node.expandable;
 
@@ -87,19 +118,6 @@ export class EventTreeComponent {
       ret = sks.size > 1 || sks.values().next().value !== "na";
     }
     return ret;
-  }
-
-  ngOnChanges() {
-    if (this.dbIdAndClassNameFromPlotToEventTree) {
-        let selectedParams: string = this.dbIdAndClassNameFromPlotToEventTree.split(",")[0];
-        let parentParams: string = this.dbIdAndClassNameFromPlotToEventTree.split(",")[1];
-        let selectedDbId = parseInt(selectedParams.split(":")[0]);
-        let parentDbId = parseInt(parentParams.split(":")[0]);
-        this.highlightSelected(selectedDbId, parentDbId);
-        this.cdr.detectChanges();
-    } else if (this.dbIdFromURLToEventTree) {
-        this.filterData([["All"], [""],["dbId"],["primitive"],["Equals"], [this.dbIdFromURLToEventTree]], true);
-      }
   }
 
   // Highlight in the event tree the node corresponding to the event selected by the user within the plot
@@ -119,11 +137,9 @@ export class EventTreeComponent {
   }
 
 
-  // Emit an event to the parent: side-navigation.component
-  // (with the final destination of event-plot.component)
-  generatePlotToSideNavigation(dbId: string, className: string) {
+  generatePlot(dbId: string, className: string) {
     let plotParam = dbId + ":" + className;
-    this.generatePlotFromEventTreeSel.emit(plotParam);
+    this.dataSubjectService.setPlotParam(plotParam);
     // Additionally, highlight in the event tree the node corresponding to the plot
     // about to be generated (and remove highlighting from all the other nodes)
     this.treeControl.dataNodes.forEach( (node) => {
@@ -191,7 +207,7 @@ export class EventTreeComponent {
       if (generatePlot !== undefined || generatePlot === true) {
         // This is used when dbId is taken from the URL
         let plotParam = searchKeys[0] + ":" + schemaClass;
-        this.generatePlotFromEventTreeSel.emit(plotParam);
+        this.dataSubjectService.setPlotParam(plotParam);
       }
     });
   }

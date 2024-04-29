@@ -52,7 +52,8 @@
              [ngClass]="{dragging: dragging, red: !color, green: color}">
           <!-- TODO: Also need to determine if it is required or disabled-->
           <ng-container *ngIf="value !== undefined; else elseblock">
-            <a [routerLink]="getInstanceUrlRoot(value)" [cdkContextMenuTriggerFor]="row_menu"
+            <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
+               [cdkContextMenuTriggerFor]="row_menu"
                class="padding span-menu-trigger">
               {{value.displayName}}
               [{{value.dbId}}]</a><br>
