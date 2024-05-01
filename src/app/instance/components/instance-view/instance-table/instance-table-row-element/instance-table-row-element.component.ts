@@ -14,11 +14,12 @@ import { AttributeValue, DragDropStatus, EDIT_ACTION } from '../instance-table.m
 import { CdkTextareaAutosize } from "@angular/cdk/text-field";
 import { take } from "rxjs";
 import { FormControl, Validators } from "@angular/forms";
-import { ViewOnlyService } from "../../../../../../core/services/view-only.service";
-import { DataService } from "../../../../../../core/services/data.service";
-import { DragDropService } from "../../../../../instance-bookmark/drag-drop.service";
-import { Instance } from "../../../../../../core/models/reactome-instance.model";
-
+import { ViewOnlyService } from "../../../../../core/services/view-only.service";
+import { DataService } from "../../../../../core/services/data.service";
+import { DragDropService } from "../../../../../schema-view/instance-bookmark/drag-drop.service";
+import { Instance } from "../../../../../core/models/reactome-instance.model";
+import {ActivatedRoute} from "@angular/router";
+import {DataSubjectService} from "src/app/core/services/data.subject.service";
 /**
  * Used to display a single value of an Instance object.
  */
@@ -72,8 +73,14 @@ export class InstanceTableRowElementComponent implements OnInit {
 
   // viewOnly as a service is drilled down too deep in the component hierarchy. Better not been here and disable
   // the editing using a simple flag!
-  constructor(private store: Store, private _ngZone: NgZone, private dataService: DataService, public viewOnly: ViewOnlyService, public dragDropService: DragDropService,
-    private elementRef: ElementRef<HTMLElement>) {
+  constructor(private store: Store,
+              private _ngZone: NgZone,
+              private dataService: DataService,
+              private route: ActivatedRoute,
+              public viewOnly: ViewOnlyService,
+              public dragDropService: DragDropService,
+              private dataSubjectService: DataSubjectService,
+              private elementRef: ElementRef<HTMLElement>) {
     if (viewOnly.enabled)
       this.control.disable();
   }
@@ -167,6 +174,18 @@ export class InstanceTableRowElementComponent implements OnInit {
     if(e.ctrlKey && e.keyCode == 13){
       this.onChange();
    }
+  }
+
+  onInstanceLinkClicked(instance: Instance) {
+    this.dataSubjectService.setDbId(instance.dbId.toString());
+  }
+
+
+  getInstanceUrlRoot(instance: Instance) {
+      let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+                                                     .reduce((acc, val) => acc.concat(val), [])
+                                                     .map(urlSegment => urlSegment.path);
+      return "/" + currentPathRoot[0] + "/instance/" + instance.dbId.toString();
   }
 
 }

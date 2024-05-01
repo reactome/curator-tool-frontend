@@ -5,13 +5,14 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatListModule} from '@angular/material/list';
 import {MatTableModule} from '@angular/material/table';
 import {Instance} from 'src/app/core/models/reactome-instance.model';
-import {Router} from "@angular/router";
+import {Router, ActivatedRoute} from "@angular/router";
 import {ListInstancesModule} from "../../../schema-view/list-instances/list-instances.module";
 import {Store} from "@ngrx/store";
-import { updatedInstances } from 'src/app/schema-view/instance/state/instance.selectors';
-import { newInstances } from 'src/app/schema-view/instance/state/instance.selectors';
-import { InstanceActions, NewInstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
+import { updatedInstances } from 'src/app/instance/state/instance.selectors';
+import { newInstances } from 'src/app/instance/state/instance.selectors';
+import { InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { DataService } from 'src/app/core/services/data.service';
+
 
 @Component({
   selector: 'app-updated-instance-list',
@@ -30,7 +31,10 @@ export class UpdatedInstanceListComponent implements OnInit{
   showHeader: boolean = false;
   newInstancesActionButtons: string[] = ["launch", "delete"];
 
-  constructor(private router: Router, private store: Store, private dataService: DataService) {
+  constructor(private router: Router,
+              private route: ActivatedRoute,
+              private store: Store,
+              private dataService: DataService) {
   }
 
   ngOnInit(): void {
@@ -44,8 +48,12 @@ export class UpdatedInstanceListComponent implements OnInit{
     })
   }
 
-  private compareWithDB(instance: Instance) {
-    this.router.navigate(["/schema_view/instance/", instance.dbId, "comparison"]);
+  compareWithDB(instance: Instance) {
+    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+                                                   .reduce((acc, val) => acc.concat(val), [])
+                                                   .map(urlSegment => urlSegment.path);
+    let newUrl =  currentPathRoot[0] + "/instance/" + instance.dbId.toString();
+    this.router.navigate([newUrl, "comparison"]);
   }
 
   onSelectionChange(instance: Instance, event: MatCheckboxChange) {
@@ -100,7 +108,12 @@ export class UpdatedInstanceListComponent implements OnInit{
     // To implement the above, consider to use ngrx's effects and add a new action.
   }
 
-  private launchNewInstance(instance: Instance) {
-    this.router.navigate(["/schema_view/instance/", instance.dbId]);
+  launchNewInstance(instance: Instance) {
+    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+                                                     .reduce((acc, val) => acc.concat(val), [])
+                                                     .map(urlSegment => urlSegment.path);
+      let newUrl =  currentPathRoot[0] + "/instance/" + instance.dbId.toString();
+
+    this.router.navigate([newUrl]);
   }
 }

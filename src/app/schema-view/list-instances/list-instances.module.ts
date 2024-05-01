@@ -9,7 +9,7 @@ import {SelectInstanceDialogComponent} from "./components/select-instance-dialog
 import { SelectedInstancesTableComponent } from './components/select-instance-dialog/selected-instances-table/selected-instances-table.component';
 import {MatTooltipModule} from "@angular/material/tooltip";
 import { InstanceListTableComponent } from './components/list-instances-view/table/instance-list-table/instance-list-table.component';
-import {InstanceModule} from "../instance/instance.module";
+import {InstanceModule} from "../../instance/instance.module";
 
 @NgModule({
   declarations: [

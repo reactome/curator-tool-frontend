@@ -2,7 +2,7 @@ import {Component, Input} from '@angular/core';
 import { Router } from '@angular/router';
 import { DataService } from './core/services/data.service';
 import { Store } from '@ngrx/store';
-import { InstanceActions, NewInstanceActions } from './schema-view/instance/state/instance.actions';
+import { InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
 
 @Component({
   selector: 'app-root',
@@ -40,7 +40,7 @@ export class AppComponent {
     else {
       this.current_view = 'schema_view'; // Only support this now.
     }
-   
+
     // Before we do anything, load the persisted instances if any
     console.debug('App loading instances from server...');
     this.dataService.loadInstances('test').subscribe((instances) => {

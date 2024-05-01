@@ -5,8 +5,8 @@ import { Router } from "@angular/router";
 import { Store } from "@ngrx/store";
 import { SchemaClass } from "../../../../core/models/reactome-schema.model";
 import { DataService } from "../../../../core/services/data.service";
-import { EDIT_ACTION } from "../../../instance/components/instance-view/instance-table/instance-table.model";
-import { NewInstanceActions } from "src/app/schema-view/instance/state/instance.actions";
+import { EDIT_ACTION } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
+import { NewInstanceActions } from "src/app/instance/state/instance.actions";
 
 /** Tree node with expandable and level information */
 interface SchemaClassNode {

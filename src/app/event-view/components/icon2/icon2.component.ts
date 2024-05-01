@@ -20,7 +20,7 @@ export class Icon2Component implements OnInit{
   getImage() {
     if (this.className == "Reaction") {
       this.icon2Image = 'assets/images/Reaction.gif';
-    } else if (this.className == "Pathway") {
+    } else if (this.className == "Pathway" || this.className == "TopLevelPathway") {
       this.icon2Image = 'assets/images/Pathway.gif';
     } else if (this.className == "BlackBoxEvent") {
       this.icon2Image = 'assets/images/BlackboxEvent.gif';

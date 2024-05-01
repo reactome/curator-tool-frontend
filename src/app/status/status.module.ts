@@ -8,11 +8,11 @@ import { MatSortModule } from "@angular/material/sort";
 import { MatTableModule } from "@angular/material/table";
 import { MatTooltipModule } from "@angular/material/tooltip";
 import { StoreModule } from '@ngrx/store';
-import { updatedInstancesReducer } from '../schema-view/instance/state/instance.reducers';
-import { UPDATE_INSTANCES_STATE_NAME } from '../schema-view/instance/state/instance.selectors';
+import { updatedInstancesReducer } from '../instance/state/instance.reducers';
+import { UPDATE_INSTANCES_STATE_NAME } from '../instance/state/instance.selectors';
 import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 import { StatusComponent } from './status.component';
-import { InstanceModule } from '../schema-view/instance/instance.module';
+import { InstanceModule } from '../instance/instance.module';
 
 @NgModule({
   imports: [

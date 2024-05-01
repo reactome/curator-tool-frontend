@@ -8,25 +8,25 @@ import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angu
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { PostEditService } from 'src/app/core/services/post-edit.service';
-import { InstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
+import { InstanceActions } from 'src/app/instance/state/instance.actions';
 import {
   AttributeCategory,
   AttributeDataType,
   SchemaAttribute,
-} from '../../../../../core/models/reactome-schema.model';
-import { DragDropService } from '../../../../instance-bookmark/drag-drop.service';
+} from '../../../../core/models/reactome-schema.model';
+import {DragDropService} from '../../../../schema-view/instance-bookmark/drag-drop.service';
 import {
   SelectInstanceDialogService
-} from '../../../../list-instances/components/select-instance-dialog/select-instance-dialog.service';
-import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
+} from 'src/app/schema-view/list-instances/components/select-instance-dialog/select-instance-dialog.service';
+import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
 import {
   AttributeValue,
   DragDropStatus,
   EDIT_ACTION,
   InstanceDataSource,
 } from './instance-table.model';
-import { PostEditListener } from 'src/app/core/post-edit/PostEditOperation';
-import { NewInstanceActions } from 'src/app/schema-view/instance/state/instance.actions';
+import {PostEditListener} from 'src/app/core/post-edit/PostEditOperation';
+import {NewInstanceActions} from 'src/app/instance/state/instance.actions';
 
 /**
  * This is the actual table component to show the content of an Instance.

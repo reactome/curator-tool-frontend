@@ -9,13 +9,13 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { Router } from "@angular/router";
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { updatedInstances } from 'src/app/schema-view/instance/state/instance.selectors';
+import { updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { AuthenticateService } from "../core/services/authenticate.service";
 import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instance-bookmark.module";
-import { newInstances } from "src/app/schema-view/instance/state/instance.selectors";
+import { newInstances } from "src/app/instance/state/instance.selectors";
 import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 import { DataService } from "../core/services/data.service";
-import { InstanceActions, NewInstanceActions } from "../schema-view/instance/state/instance.actions";
+import { InstanceActions, NewInstanceActions } from "src/app/instance/state/instance.actions";
 
 @Component({
   selector: 'app-status',

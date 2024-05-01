@@ -7,7 +7,6 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { EffectsModule } from '@ngrx/effects';
 import { SharedModule } from '../../shared/shared.module';
 import { EventPlotComponent } from './components/event-plot/event-plot.component';
-import { GraphicDisplayRoutingModule } from './graphic-display-routing.module';
 
 @NgModule({
     declarations: [
@@ -15,7 +14,6 @@ import { GraphicDisplayRoutingModule } from './graphic-display-routing.module';
     ],
   imports: [
     CommonModule,
-    GraphicDisplayRoutingModule,
     SharedModule,
     CdkContextMenuTrigger,
     CdkMenu,

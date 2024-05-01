@@ -5,7 +5,7 @@ import { InstanceNameGenerator } from "./InstanceNameGenerator";
 import { PostEditListener, PostEditOperation } from "./PostEditOperation";
 import { SchemaClass } from "../models/reactome-schema.model";
 import { Store } from "@ngrx/store";
-import { NewInstanceActions } from "src/app/schema-view/instance/state/instance.actions";
+import { NewInstanceActions } from "src/app/instance/state/instance.actions";
 
 export class LiteratureReferenceFiller implements PostEditOperation {
 
@@ -18,7 +18,7 @@ export class LiteratureReferenceFiller implements PostEditOperation {
     }
 
     //TODO: This is a slow process and needs to add a waiting spin.
-    postEdit(instance: Instance, 
+    postEdit(instance: Instance,
              editedAttributeName: string | undefined,
              postEditListener: PostEditListener | undefined): boolean {
         if (editedAttributeName !== 'pubMedIdentifier' || instance.schemaClassName !== 'LiteratureReference')
@@ -42,7 +42,7 @@ export class LiteratureReferenceFiller implements PostEditOperation {
     /**
      * Authors created by the server have not display names and dbIds. This method is used to make sure they have.
      * @param instance
-     * @returns 
+     * @returns
      */
     private handleAuthors(instance: Instance,
                           personCls: SchemaClass) {

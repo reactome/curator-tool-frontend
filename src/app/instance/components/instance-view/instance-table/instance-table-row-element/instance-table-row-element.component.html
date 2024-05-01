@@ -1,7 +1,7 @@
 <ng-container *ngIf="showField">
   <!--  <ng-container *ngIf="control.disabled; else editView">-->
   <!--    <ng-container *ngIf="attribute?.type === DATA_TYPES.INSTANCE && value; else simple">-->
-  <!--      <a routerLink="/schema_view/instance/{{value.dbId}}" [queryParamsHandling]="'preserve'"-->
+  <!--      <a [routerLink]="getInstanceUrlRoot(value)" [queryParamsHandling]="'preserve'"-->
   <!--        class="padding span-menu-trigger">-->
   <!--        {{value.displayName}}-->
   <!--        [{{value.dbId}}]</a><br>-->
@@ -41,7 +41,7 @@
     <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
       <ng-container *ngIf="control.disabled; else editInstance">
         <ng-container *ngIf="value !== undefined">
-          <a routerLink="/schema_view/instance/{{value.dbId}}" [queryParamsHandling]="'preserve'"
+          <a [routerLink]="getInstanceUrlRoot(value)" [queryParamsHandling]="'preserve'"
              class="padding span-menu-trigger">
             {{value.displayName}}
             [{{value.dbId}}]</a><br>
@@ -52,7 +52,8 @@
              [ngClass]="{dragging: dragging, red: !color, green: color}">
           <!-- TODO: Also need to determine if it is required or disabled-->
           <ng-container *ngIf="value !== undefined; else elseblock">
-            <a routerLink="/schema_view/instance/{{value.dbId}}" [cdkContextMenuTriggerFor]="row_menu"
+            <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
+               [cdkContextMenuTriggerFor]="row_menu"
                class="padding span-menu-trigger">
               {{value.displayName}}
               [{{value.dbId}}]</a><br>

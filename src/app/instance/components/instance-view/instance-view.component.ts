@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from "@angular/router";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
-import { DragDropService } from "../../../instance-bookmark/drag-drop.service";
+import { DragDropService } from "../../../schema-view/instance-bookmark/drag-drop.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
 import { Store } from '@ngrx/store';
@@ -46,6 +46,10 @@ export class InstanceViewComponent implements OnInit {
         let dbId = params['dbId'];
         // Make sure dbId is a number
         dbId = parseInt(dbId);
+        // This is the case for the default event_view landing page: event_view/instance/0
+        if (dbId === 0) {
+          return;
+        }
         this.loadInstance(dbId);
         // May want to change to case statement if multiple modes
         if (params['mode']) {
@@ -85,7 +89,11 @@ export class InstanceViewComponent implements OnInit {
 
   changeTable(instance: Instance) {
     this.dragDropService.resetList();
-    this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()], { queryParamsHandling: 'preserve' });
+    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+                                                   .reduce((acc, val) => acc.concat(val), [])
+                                                   .map(urlSegment => urlSegment.path);
+    let newUrl =  currentPathRoot[0] + "/instance/" + instance.dbId.toString();
+    this.router.navigate([newUrl], { queryParamsHandling: 'preserve' });
   }
 
   addBookmark() {

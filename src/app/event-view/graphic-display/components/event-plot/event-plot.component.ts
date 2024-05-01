@@ -1,7 +1,9 @@
-import { ChangeDetectorRef, Component, OnInit, ViewChild, EventEmitter, Input, Output, OnChanges } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild, EventEmitter, Input, Output, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from "@angular/router";
 import { DataService } from 'src/app/core/services/data.service';
 import { Graph } from '@antv/g6';
+import {DataSubjectService} from "src/app/core/services/data.subject.service";
+import {Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-event-plot',
@@ -9,8 +11,9 @@ import { Graph } from '@antv/g6';
   styleUrls: ['./event-plot.component.scss'],
 })
 
-export class EventPlotComponent {
+export class EventPlotComponent implements OnDestroy {
   title: string = '';
+  subscription: Subscription;
 
   fillColors = new Map(Object.entries({
       'DefinedSet':'#9cf7ba',
@@ -87,17 +90,18 @@ export class EventPlotComponent {
 
   constructor(private router: Router,
               private route: ActivatedRoute,
-              private dataService: DataService
+              private dataService: DataService,
+              private dataSubjectService: DataSubjectService
              ) {
+           this.subscription = this.dataSubjectService.plotParam$.subscribe(plotParam => {
+             if (plotParam) {
+                this.generatePlot(plotParam);
+             }
+           });
   }
 
-  @Input() dbIdAndClassName: string = "";
-  @Output() updateEventTreeFromPlotSelection = new EventEmitter<string>();
-
-  ngOnChanges() {
-    if (this.dbIdAndClassName) {
-      this.generatePlot(this.dbIdAndClassName);
-    }
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 
   generatePlot(dbIdAndClassName: string): void {
@@ -245,7 +249,16 @@ export class EventPlotComponent {
         // as well as the original one (dbIdAndClassName) - so that event tree node
         // corresponding to the original one can be expanded - in order to show
         // the selected one.
-        this.updateEventTreeFromPlotSelection.emit(plotParams + "," + dbIdAndClassName);
+        this.dataSubjectService.setEventTreeParam(plotParams + "," + dbIdAndClassName);
+
+        //The code below refreshes the instance view when a node is selected in the event plot
+        let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+                                                           .reduce((acc, val) => acc.concat(val), [])
+                                                           .map(urlSegment => urlSegment.path);
+        let selectedParams: string = plotParams.split(",")[0];
+        let selectedDbId = parseInt(plotParams.split(":")[0]);
+        let newUrl =  currentPathRoot[0] + "/instance/" + selectedDbId;
+        this.router.navigate([newUrl]);
       });
     });
   }

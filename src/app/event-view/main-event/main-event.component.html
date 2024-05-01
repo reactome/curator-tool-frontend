@@ -2,22 +2,29 @@
   <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh">
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true" [style.width]="sideWidth + 'px'">
       <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)"
-                           (generatePlotFromEventTreeSel)="generatePlotToEventPlot($event)"
-                           [showUpdatedList]="showInstanceList"
-                           [dbIdAndClassNameFromPlot]="dbIdAndClassNameFromPlot"></app-side-navigation>
+                           [showUpdatedList]="showInstanceList">
+      </app-side-navigation>
       <div class="resize-container" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
            (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
         <div class="resize-bar"></div>
       </div>
     </mat-sidenav>
     <mat-sidenav-content>
-      <app-event-plot (updateEventTreeFromPlotSelection)="updateEventTreeToSideNavigation($event)"
-                      [dbIdAndClassName]="dbIdAndClassName" ></app-event-plot>
-    </mat-sidenav-content>
-    <mat-sidenav-content class="instance-view-container">
-      <router-outlet></router-outlet>
+      <div style="margin-left: 10px; margin-right: 10px;">
+        <mat-grid-list cols="2" rowHeight="1000px">
+          <mat-toolbar color="primary" class="toolbar">
+Graphic display</mat-toolbar>
+          <mat-grid-tile>
+            <app-event-plot></app-event-plot>
+          </mat-grid-tile>
+          <mat-grid-tile>
+            <router-outlet></router-outlet>
+          </mat-grid-tile>
+        </mat-grid-list>
+      </div>
     </mat-sidenav-content>
   </mat-sidenav-container>
+
   <div id="bookmark-boundary">
     <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="#bookmark-boundary" id="bookmark-container" [ngClass]="status"
          [style.height]="container.clientHeight + 'px'" (cdkDragStarted)="onDrag()" (cdkDragEnded)="onDragEnd()">

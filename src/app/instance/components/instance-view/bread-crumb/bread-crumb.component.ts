@@ -4,7 +4,8 @@
 //TODO: Use ngrx/store or entity to manage this.
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Instance } from "../../../../../core/models/reactome-instance.model";
+import { Instance } from "../../../../core/models/reactome-instance.model";
+import {DataSubjectService} from "src/app/core/services/data.subject.service";
 
 @Component({
   selector: 'app-bread-crumb',
@@ -17,8 +18,7 @@ export class BreadCrumbComponent {
   @Output() clickEvent = new EventEmitter<Instance>();
 
   dbIdsRemove: Instance[] = new Array<Instance>;
-
-  constructor() {
+  constructor(private dataSubjectService: DataSubjectService) {
   }
 
   breadCrumb(menu: any, index: any) {
@@ -27,5 +27,6 @@ export class BreadCrumbComponent {
     this.newMenuItem.splice(index + 1, this.newMenuItem.length);
     if (menu[index] && menu[index].items && menu[index].items.length) {
     }
+    this.dataSubjectService.setDbId(this.newMenuItem[index].dbId.toString());
   }
 }

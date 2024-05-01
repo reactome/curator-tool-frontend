@@ -103,3 +103,17 @@ side-nav {
     }
   }
 }
+
+::ng-deep .mat-grid-tile-content{
+//    display: block !important;
+    justify-content: flex-start !important ;
+    align-items: flex-start !important;
+    overflow: scroll;
+}
+
+.toolbar {
+  height: var(--bread-crumb-height, 40px);
+  font-size: 15px;
+  position: sticky;
+  min-height: var(--bread-crumb-height, 40px);
+}

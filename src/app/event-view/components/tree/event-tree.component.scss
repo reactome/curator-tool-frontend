@@ -20,11 +20,19 @@
   white-space: nowrap;
 }
 
+// Reduce white space the root node takes - as it's always hidden
+.mat-tree-root-node {
+  min-height: 0px;
+  height: 0px;
+}
+
 .mat-tree {
   background: var(--surface2);
   height: calc(100vh - 2 * var(--body-margin, 8px)) / 2;
   border: 1px solid var(--outline-variant);
   overflow: scroll;
+  // The following shifts the whole tree to the left, to account for removing the top (dummy) node
+  margin-left: -30px;
 }
 
 .mat-icon {
@@ -64,25 +72,24 @@
 //   background-color: green;
 // }
 
-
 .event_text {
-  color: var(--surface1);
   text-decoration: none;
-
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  z-index: 1 !important;
   &:hover {
     text-decoration: underline ;
   }
+  font-family: Roboto, sans-serif !important;
+}
+
+.event_text_non_match {
+  color: var(--surface1) !important;
 }
 
 .event_text_match {
-  color: dodgerblue;
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline ;
-  }
+  color: dodgerblue !important;
 }
-
 
 .spinner {
   margin:0 auto;
