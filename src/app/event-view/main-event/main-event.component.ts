@@ -1,18 +1,19 @@
-import {Component, ViewChild, Input} from '@angular/core';
+import {Component, ViewChild, Input, AfterViewInit} from '@angular/core';
 import {CdkDragMove} from "@angular/cdk/drag-drop";
 import {MatSidenav} from "@angular/material/sidenav";
 import {EventPlotComponent} from "../graphic-display/components/event-plot/event-plot.component";
 import {ActivatedRoute} from "@angular/router";
 import {map} from "rxjs/operators";
+import {DiagramComponent} from "ngx-reactome-diagram";
 
 @Component({
   selector: 'app-main-schema-view-event-view',
   templateUrl: './main-event.component.html',
   styleUrls: ['./main-event.component.scss'],
 })
-export class MainEventComponent {
+export class MainEventComponent implements AfterViewInit {
   sideWidth = 400;
-  schemaPanelOpen= false;
+  schemaPanelOpen = false;
   resizing: boolean = false;
   showInstanceList: number = 0;
   status = {closed: true, opened: false, dragging: false};
@@ -20,8 +21,18 @@ export class MainEventComponent {
   id$ = this.route.params.pipe(
     map(params => params['id'])
   )
+  @ViewChild('diagramComponent')
+  diagram!: DiagramComponent;
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(private route: ActivatedRoute) {
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      this.diagram.cy.nodes().grabify().unpanify();
+      this.diagram.cy.nodes('.Compartment').ungrabify().panify();
+    }, 1000)
+  }
 
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
@@ -40,8 +51,11 @@ export class MainEventComponent {
 
   showUpdatedInstances(showList: boolean) {
     console.log(showList);
-    if(showList) {this.showInstanceList = 1}
-    else {this.showInstanceList = 0;}
+    if (showList) {
+      this.showInstanceList = 1
+    } else {
+      this.showInstanceList = 0;
+    }
   }
 
   onDrag() {
