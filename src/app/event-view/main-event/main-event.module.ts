@@ -14,6 +14,7 @@ import {InstanceBookmarkModule} from "../../schema-view/instance-bookmark/instan
 import {MainEventRoutingModule} from "./main-event-routing.module";
 import {GraphicDisplayModule} from "../graphic-display/graphic-display.module";
 import {MatGridListModule} from '@angular/material/grid-list';
+import {DiagramComponent} from "ngx-reactome-diagram";
 
 @NgModule({
   declarations: [
@@ -38,7 +39,8 @@ import {MatGridListModule} from '@angular/material/grid-list';
     CdkDragHandle,
     MainEventRoutingModule,
     GraphicDisplayModule,
-    MatGridListModule
-    ]
+    MatGridListModule,
+    DiagramComponent
+  ]
 })
 export class MainEventModule { }

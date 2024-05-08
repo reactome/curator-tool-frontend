@@ -2,6 +2,8 @@ import {Component, ViewChild, Input} from '@angular/core';
 import {CdkDragMove} from "@angular/cdk/drag-drop";
 import {MatSidenav} from "@angular/material/sidenav";
 import {EventPlotComponent} from "../graphic-display/components/event-plot/event-plot.component";
+import {ActivatedRoute} from "@angular/router";
+import {map} from "rxjs/operators";
 
 @Component({
   selector: 'app-main-schema-view-event-view',
@@ -15,12 +17,11 @@ export class MainEventComponent {
   showInstanceList: number = 0;
   status = {closed: true, opened: false, dragging: false};
 
-  constructor() {
-      let url = window.location.href.split("/");
-      console.log(url)
-      if (url.includes("home")){this.closeSidenav(); this.sideWidth=0}
-      else{this.openSidenav()}
-    }
+  id$ = this.route.params.pipe(
+    map(params => params['id'])
+  )
+
+  constructor(private route: ActivatedRoute) {}
 
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;

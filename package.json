@@ -23,6 +23,7 @@
     "@antv/g6": "^4.8.24",
     "@auth0/angular-jwt": "^5.2.0",
     "@langchain/openai": "^0.0.18",
+    "@ngneat/until-destroy": "^10.0.0",
     "@ngrx/effects": "^17.1.1",
     "@ngrx/entity": "^17.1.1",
     "@ngrx/router-store": "^17.1.1",
@@ -31,8 +32,11 @@
     "angular-jwt": "^0.1.11",
     "langchain": "^0.1.27",
     "ngrx-store-localstorage": "^17.0.0",
+    "ngx-reactome-cytoscape-style": "file:../ngx-reactome-cytoscape-style-0.0.6.tgz",
+    "ngx-reactome-diagram": "file:../ngx-reactome-diagram-0.0.6.tgz",
     "openai": "^4.29.2",
     "rxjs": "~7.8.0",
+    "vectorious": "^6.1.14",
     "zone.js": "~0.14.4"
   },
   "devDependencies": {

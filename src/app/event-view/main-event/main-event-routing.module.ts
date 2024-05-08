@@ -5,7 +5,7 @@ import {MainEventComponent} from "./main-event.component";
 
 const routes: Routes = [
   {
-    path: `instance`,
+    path: `instance/:id`,
     component: MainEventComponent,
     loadChildren: () =>
       import("src/app/instance/instance.module").then((m) =>
