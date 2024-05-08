@@ -3,7 +3,7 @@ import {CdkDragMove} from "@angular/cdk/drag-drop";
 import {MatSidenav} from "@angular/material/sidenav";
 import {EventPlotComponent} from "../graphic-display/components/event-plot/event-plot.component";
 import {ActivatedRoute} from "@angular/router";
-import {map} from "rxjs/operators";
+import {delay, map} from "rxjs/operators";
 import {DiagramComponent} from "ngx-reactome-diagram";
 
 @Component({
@@ -28,10 +28,10 @@ export class MainEventComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    setTimeout(() => {
+    this.id$.pipe(delay(500)).subscribe(id => {
       this.diagram.cy.nodes().grabify().unpanify();
       this.diagram.cy.nodes('.Compartment').ungrabify().panify();
-    }, 1000)
+    })
   }
 
 
