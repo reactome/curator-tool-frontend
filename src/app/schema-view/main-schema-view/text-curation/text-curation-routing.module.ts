@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { TextCurationComponent } from './components/text-curation.component';
+import {CommonModule} from "@angular/common";
 
 const routes: Routes = [
   {
@@ -16,7 +17,8 @@ const routes: Routes = [
 @NgModule({
   imports: [
     RouterModule.forChild(routes),
-    TextCurationComponent
+    TextCurationComponent,
+    CommonModule,
   ],
   exports: [RouterModule]
 })

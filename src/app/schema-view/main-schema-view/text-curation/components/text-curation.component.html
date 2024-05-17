@@ -1,14 +1,39 @@
 <div class="text_curation" *ngIf="!embedded">
-    <mat-label>Type to curate (press return or click execute):</mat-label>
-    <input matInput style="width: 450px; margin-top: 8px; margin-bottom: 8px;"
-    placeholder="Create a new pathway" #command value="create a new pathway" (keydown.enter)="execute(command.value)">
-    <button mat-button (click)="execute(command.value)">Execute</button>
+  <mat-label>Type to curate (press return or click execute):</mat-label>
+  <input matInput style="width: 450px; margin-top: 8px; margin-bottom: 8px;"
+         placeholder="Create a new pathway" #command value="create a new pathway"
+         (keydown.enter)="execute(command.value)">
+  <button mat-button (click)="execute(command.value)">Execute</button>
 </div>
 <div class="embedded" *ngIf="embedded">
-    <mat-label style="font-weight: bold;">Type to curate:</mat-label>
-    <input matInput style="width: 450px; margin-left: 8px; margin-bottom: 8px; margin-top: 8px;" 
-    matTooltip="type enter to execute"
-    placeholder="set name = 'new name'" 
-    #command value="set name = 'new name'" 
-    (keydown.enter)="execute(command.value)">
+  <mat-label style="font-weight: bold;">Type to curate:</mat-label>
+  <!--    <input matInput style="width: 450px; margin-left: 8px; margin-bottom: 8px; margin-top: 8px;"-->
+  <!--    matTooltip="type enter to execute"-->
+  <!--    placeholder="set name = 'new name'"-->
+  <!--    #command value="set name = 'new name'"-->
+  <!--    (keydown.enter)="execute(command.value)">-->
+  <!--  <form class="example-form">-->
+  <!--    <mat-form-field class="example-full-width">-->
+  <!--      <mat-label>Assignee</mat-label>-->
+<!--  <div style="border: #a4acb1">-->
+    <input placeholder="{{commandList[0]}}" matInput style="width: 75px; margin-left: 8px; margin-bottom: 8px; margin-top: 8px;" [formControl]="commandControl"
+           [matAutocomplete]="auto1">
+    <input placeholder="{{attributeList[0].name}}" matInput style="width: 100px; margin-bottom: 8px; margin-top: 8px;" [formControl]="attributeControl"
+           [matAutocomplete]="auto2">
+<!--    <div style="margin-bottom: 8px; margin-top: 8px;" >=</div>-->
+    <input matInput style="width: 200px; margin-bottom: 8px; margin-top: 8px;"
+           matTooltip="type enter to execute"
+           placeholder="= 'new value'"
+           #command value="= 'new value'"
+           (keydown.enter)="execute(command.value)">
+<!--  </div>-->
+
+  <mat-autocomplete #auto1="matAutocomplete" [displayWith]="displayCommands">
+    <mat-option *ngFor="let command of filteredCommandList | async" [value]="command" >{{command}}</mat-option>
+  </mat-autocomplete>
+  <mat-autocomplete #auto2="matAutocomplete" [displayWith]="displayAttributes">
+    <mat-option *ngFor="let option of filteredAttributeList | async" [value]="option" >{{option.name}}</mat-option>
+  </mat-autocomplete>
+  <!--    </mat-form-field>-->
+  <!--  </form>-->
 </div>

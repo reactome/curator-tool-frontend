@@ -1,5 +1,5 @@
 .text_curation {
-    display: flex; 
+    display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -10,4 +10,9 @@
 .embedded {
     display: inline;
     margin-left: 16px;
+}
+
+input {
+  outline: none;
+  border: none;
 }
