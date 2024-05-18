@@ -4,6 +4,7 @@ import { DataService } from 'src/app/core/services/data.service';
 import { Graph } from '@antv/g6';
 import {DataSubjectService} from "src/app/core/services/data.subject.service";
 import {Subscription} from 'rxjs';
+import { LayoutService } from 'src/app/core/services/layout.service';
 
 @Component({
   selector: 'app-event-plot',
