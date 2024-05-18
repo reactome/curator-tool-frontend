@@ -4,6 +4,7 @@ import { Point } from './Point';
 import { Rectangle } from './Rectangle';
 import { Renderable } from './Renderable';
 import { RenderablePathway } from './RenderablePathway';
+import { RenderableCompartment } from './RenderableCompartment';
 import { Note } from './Note';
 import { DefaultRenderConstants } from './DefaultRenderConstants';
 import { Node, SelectionPosition } from './Node';
@@ -624,7 +625,7 @@ export class RenderableComplex extends ContainerNode {
             return false; // This container has not be materialized
         if (renderableObject instanceof Node) {
             if (
-                // TODO: renderableObject instanceof RenderableCompartment ||
+                renderableObject instanceof RenderableCompartment ||
                 renderableObject instanceof RenderablePathway ||
                 renderableObject instanceof Note)
                 return false;

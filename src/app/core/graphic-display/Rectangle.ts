@@ -60,4 +60,31 @@ export class Rectangle {
       this.y += dy;
     }
 
+    public isEmpty(): boolean {
+        return (this.width <= 0) || (this.height <= 0);
+    }
+
+    public intersects(r: Rectangle): boolean {
+        let tw = this.width;
+        let th = this.height;
+        let rw = r.width;
+        let rh = r.height;
+        if (rw <= 0 || rh <= 0 || tw <= 0 || th <= 0) {
+            return false;
+        }
+        let tx = this.x;
+        let ty = this.y;
+        let rx = r.x;
+        let ry = r.y;
+        rw += rx;
+        rh += ry;
+        tw += tx;
+        th += ty;
+        // overflow || intersect
+        return ((rw < rx || rw > tx) &&
+                (rh < ry || rh > ty) &&
+                (tw < tx || tw > rx) &&
+                (th < ty || th > ry));
+    }
+
 }

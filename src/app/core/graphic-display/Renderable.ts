@@ -34,7 +34,8 @@ export abstract class Renderable {
     // Used to store all attribute values
     protected attributes: Map<string, string> = new Map();
     // For property change event
-    // TODO: &&&& private propertyChangeListeners: java.util.List;
+    // TODO: Commented out due to lack of PropertyChangeListener
+    // TODO: private propertyChangeListeners: java.util.List;
     // Color mode
     protected foregroundColor: Maybe<Color>;
     protected backgroundColor: Maybe<Color>;
