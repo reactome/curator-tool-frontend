@@ -1,11 +1,11 @@
 import { ConnectWidget } from './ConnectWidget';
 import { ConnectInfo } from './ConnectInfo';
-import { HyperEdge } from './HyperEdge';
 import { Renderable } from './Renderable';
 import { Rectangle } from './Rectangle';
 import { Point } from './Point';
 import { Node } from './Node';
 import { Maybe, isUndef } from './Utils';
+import { HyperEdgeConstants } from './HyperEdgeConstants';
 
 /**
  * This class holds information related to a Reaction connecting to other nodes
@@ -29,7 +29,7 @@ export class HyperEdgeConnectInfo extends ConnectInfo {
         const inputs: ConnectWidget[] = [];
         if (!isUndef(this.connectWidgets)) {
             for (let widget of this.connectWidgets!) {
-                if (widget.getRole() == HyperEdge.INPUT) {
+                if (widget.getRole() == HyperEdgeConstants.INPUT) {
                     inputs.push(widget);
                 }
             }
@@ -46,7 +46,7 @@ export class HyperEdgeConnectInfo extends ConnectInfo {
         const outputs: Array<ConnectWidget> = new Array();
         if (!isUndef(this.connectWidgets)) {
             for (let widget of this.connectWidgets!) {
-                if (widget.getRole() == HyperEdge.OUTPUT) {
+                if (widget.getRole() == HyperEdgeConstants.OUTPUT) {
                     outputs.push(widget);
                 }
             }
@@ -63,7 +63,7 @@ export class HyperEdgeConnectInfo extends ConnectInfo {
         const helpers: ConnectWidget[] = [];
         if (!isUndef(this.connectWidgets)) {
             for (let widget of this.connectWidgets!) {
-                if (widget.getRole() === HyperEdge.CATALYST) {
+                if (widget.getRole() === HyperEdgeConstants.CATALYST) {
                     helpers.push(widget);
                 }
             }
@@ -80,7 +80,7 @@ export class HyperEdgeConnectInfo extends ConnectInfo {
         const inhibitors: ConnectWidget[] = [];
         if (!isUndef(this.connectWidgets)) {
             for (const widget of this.connectWidgets!) {
-                if (widget.getRole() === HyperEdge.INHIBITOR) {
+                if (widget.getRole() === HyperEdgeConstants.INHIBITOR) {
                     inhibitors.push(widget);
                 }
             }
@@ -97,7 +97,7 @@ export class HyperEdgeConnectInfo extends ConnectInfo {
         const activators: ConnectWidget[] = [];
         if (!isUndef(this.connectWidgets)) {
             for (let widget of this.connectWidgets!) {
-                if (widget.getRole() === HyperEdge.ACTIVATOR) {
+                if (widget.getRole() === HyperEdgeConstants.ACTIVATOR) {
                     activators.push(widget);
                 }
             }
@@ -114,7 +114,7 @@ export class HyperEdgeConnectInfo extends ConnectInfo {
     public getInputConnectWidget(renderable: Renderable): Maybe<ConnectWidget> {
         if (!isUndef(this.connectWidgets)) {
             for (let widget of this.connectWidgets!) {
-                if (widget.getRole() == HyperEdge.INPUT &&
+                if (widget.getRole() == HyperEdgeConstants.INPUT &&
                     widget.getConnectedNode() == renderable)
                     return widget;
             }
@@ -131,7 +131,7 @@ export class HyperEdgeConnectInfo extends ConnectInfo {
     public getOutputConnectWidget(renderable: Renderable): Maybe<ConnectWidget> {
         if (!isUndef(this.connectWidgets)) {
             for (let widget of this.connectWidgets!) {
-                if (widget.getRole() == HyperEdge.OUTPUT &&
+                if (widget.getRole() == HyperEdgeConstants.OUTPUT &&
                     widget.getConnectedNode() == renderable)
                     return widget;
             }

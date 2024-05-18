@@ -3,8 +3,6 @@ import { Graphics } from './Graphics';
 import { Point } from './Point';
 import { Rectangle } from './Rectangle';
 import { Renderable } from './Renderable';
-import { RenderablePathway } from './RenderablePathway';
-import { RenderableCompartment } from './RenderableCompartment';
 import { Note } from './Note';
 import { DefaultRenderConstants } from './DefaultRenderConstants';
 import { Node, SelectionPosition } from './Node';
@@ -625,8 +623,8 @@ export class RenderableComplex extends ContainerNode {
             return false; // This container has not be materialized
         if (renderableObject instanceof Node) {
             if (
-                renderableObject instanceof RenderableCompartment ||
-                renderableObject instanceof RenderablePathway ||
+                renderableObject.getType() === "Compartment" ||
+                renderableObject.getType() === "Pathway" ||
                 renderableObject instanceof Note)
                 return false;
             // Need to check based on bounds. Should have a full containing

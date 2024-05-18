@@ -1,6 +1,7 @@
 import { Point } from './Point';
-import { HyperEdge } from './HyperEdge';
 import { ConnectWidget } from './ConnectWidget';
+import { HyperEdgeConstants } from './HyperEdgeConstants';
+
 
 export class HyperEdgeSelectionInfo {
     selectPoint: Point | undefined;
@@ -22,7 +23,7 @@ export class HyperEdgeSelectionInfo {
     reset(): void {
         this.selectPoint = undefined;
         this.connectWidget = undefined;
-        this.selectedType = HyperEdge.NONE;
+        this.selectedType = HyperEdgeConstants.NONE;
         this.selectedBranch = -1;
     }
 

@@ -1,7 +1,6 @@
 import { Node } from './Node';
 import { DefaultRenderConstants } from './DefaultRenderConstants';
 import { Renderable } from './Renderable';
-import { RenderablePathway } from './RenderablePathway';
 import { Rectangle } from './Rectangle';
 import { Point } from './Point';
 import { Graphics } from './Graphics';
@@ -147,7 +146,7 @@ export abstract class ContainerNode extends Node {
                 break;
         }
         this.validatePositionFromBounds();
-        if (!isUndef(this.getContainer()) && !(this.getContainer() instanceof RenderablePathway))
+        if (!isUndef(this.getContainer()) && !(this.getContainer()!.getType() === "Pathway"))
             this.getContainer()!.invalidateBounds();
         this.invalidateConnectWidgets();
         this.invalidateNodeAttachments();
@@ -289,7 +288,7 @@ export abstract class ContainerNode extends Node {
             if (r.getContainer() !== this) {
                 // It should not be removed from a pathway container.
                 if (!isUndef(r.getContainer()) &&
-                    r.getContainer()! instanceof RenderablePathway) {
+                    r.getContainer()!.getType() === "Pathway") {
                     r.getContainer()!.removeComponent(r);
                 }
                 r.setContainer(this);
@@ -310,7 +309,7 @@ export abstract class ContainerNode extends Node {
      */
     public contains(renderable: Renderable): boolean {
         let container: Maybe<Renderable> = renderable.getContainer();
-        while (!isUndef(container) && !(container! instanceof RenderablePathway)) {
+        while (!isUndef(container) && !(container!.getType() === "Pathway")) {
             if (container === this) {
                 return true;
             }

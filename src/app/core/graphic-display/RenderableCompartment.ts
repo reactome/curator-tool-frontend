@@ -1,6 +1,4 @@
 import { Renderable } from './Renderable';
-import { RenderablePathway } from './RenderablePathway';
-import { RenderableComplex } from './RenderableComplex';
 import { Graphics } from './Graphics';
 import { Point } from './Point';
 import { Rectangle } from './Rectangle';
@@ -118,14 +116,14 @@ export class RenderableCompartment extends ContainerNode {
             return false;
         }
         // Don't assign a compartment to a pathway
-        if (renderable instanceof RenderablePathway) {
+        if (renderable.getType() === "Pathway") {
             return false;
         }
         // If a Renderable object is a subunit of a Renderable complex,
         // it should not be assigned to this compartment.
         //TODO: Need to check a case: a complex component has different component setting
         // from its container complex.
-        if (renderable.getContainer() instanceof RenderableComplex) {
+        if (renderable.getContainer().getType() === "Complex") {
             return false;
         }
         const renderableBounds = renderable.getBounds();
@@ -355,7 +353,7 @@ export class RenderableCompartment extends ContainerNode {
                 break;
         }
         this.validatePositionFromBounds();
-        if (!isUndef(this.getContainer()) && this.getContainer()! instanceof RenderablePathway) {
+        if (!isUndef(this.getContainer()) && this.getContainer()!.getType() === "Pathway") {
             this.getContainer()!.invalidateBounds();
         }
         this.invalidateConnectWidgets();

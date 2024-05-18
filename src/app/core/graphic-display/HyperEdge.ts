@@ -1,25 +1,18 @@
 // This class is a placeholder for the port from
-// https://github.com/reactome/CuratorTool/blob/4615acb7fb20c444333cc458e14ada00c6d0603f/src/org/gk/render/HyperEdge.java#L71
+// https://github.com/reactome/CuratorTool/blob/4615acb7fb20c444333cc458e14ada00c6d0603f/src/org/gk/render/HyperEdgeConstants.java#L71
 
 import { Point } from './Point';
 import { Rectangle } from './Rectangle';
 import { Node } from './Node';
 import { HyperEdgeSelectionInfo } from './HyperEdgeSelectionInfo';
 import { HyperEdgeConnectInfo } from './HyperEdgeConnectInfo';
+import { HyperEdgeConstants } from './HyperEdgeConstants';
 import { ConnectInfo } from './ConnectInfo';
 import { ConnectWidget } from './ConnectWidget';
 import { Renderable } from './Renderable';
 import { Maybe, isUndef } from './Utils';
 
 export class HyperEdge extends Renderable {
-
-    static readonly NONE = 0;
-    static readonly INPUT = 1;
-    static readonly OUTPUT = 2;
-    static readonly CATALYST = 3;
-    static readonly INHIBITOR = 4;
-    static readonly ACTIVATOR = 5;
-    static readonly BACKBONE = 10;
 
     // backbone is the central line that input or output can be attached. backbonesPoints shouldn't be null if
     // the reaction needed to be displayed.
@@ -389,23 +382,23 @@ export class HyperEdge extends Renderable {
         let rtn: boolean = false;
         let needValidateControl: boolean = this.validatePoints(this.inputPoints);
         if (needValidateControl)
-            this.validateWidgetControlPoints(HyperEdge.INPUT);
+            this.validateWidgetControlPoints(HyperEdgeConstants.INPUT);
         rtn ||= needValidateControl;
         needValidateControl = this.validatePoints(this.outputPoints);
         if (needValidateControl)
-            this.validateWidgetControlPoints(HyperEdge.OUTPUT);
+            this.validateWidgetControlPoints(HyperEdgeConstants.OUTPUT);
         rtn ||= needValidateControl;
         needValidateControl = this.validatePoints(this.helperPoints);
         if (needValidateControl)
-            this.validateWidgetControlPoints(HyperEdge.CATALYST);
+            this.validateWidgetControlPoints(HyperEdgeConstants.CATALYST);
         rtn ||= needValidateControl;
         needValidateControl = this.validatePoints(this.inhibitorPoints);
         if (needValidateControl)
-            this.validateWidgetControlPoints(HyperEdge.INHIBITOR);
+            this.validateWidgetControlPoints(HyperEdgeConstants.INHIBITOR);
         rtn ||= needValidateControl;
         needValidateControl = this.validatePoints(this.activatorPoints);
         if (needValidateControl)
-            this.validateWidgetControlPoints(HyperEdge.ACTIVATOR);
+            this.validateWidgetControlPoints(HyperEdgeConstants.ACTIVATOR);
         rtn ||= needValidateControl;
         this.validatePosition();
         return rtn;
@@ -525,27 +518,27 @@ export class HyperEdge extends Renderable {
                   const node: Renderable = widget.getConnectedNode()! as Renderable;
                   let list: Point[] = [];
                   let p: Maybe<Point>;
-                  if (widget.getRole() === HyperEdge.INPUT) {
+                  if (widget.getRole() === HyperEdgeConstants.INPUT) {
                       if (isUndef(this.inputPoints) || this.inputPoints!.length === 0) {
                           p = this.backbonePoints[0];
                       } else {
                           list = this.inputPoints![widget.getIndex()];
                           p = list[0];
                       }
-                  } else if (widget.getRole() === HyperEdge.OUTPUT) {
+                  } else if (widget.getRole() === HyperEdgeConstants.OUTPUT) {
                       if (isUndef(this.outputPoints)  || this.outputPoints!.length === 0) {
                           p = this.backbonePoints[2];
                       } else {
                           list = this.outputPoints![widget.getIndex()];
                           p = list[0];
                       }
-                  } else if (widget.getRole() === HyperEdge.CATALYST) {
+                  } else if (widget.getRole() === HyperEdgeConstants.CATALYST) {
                         list = this.helperPoints![widget.getIndex()];
                         p = list[0];
-                  } else if (widget.getRole() === HyperEdge.INHIBITOR) {
+                  } else if (widget.getRole() === HyperEdgeConstants.INHIBITOR) {
                         list = this.inhibitorPoints![widget.getIndex()];
                         p = list[0];
-                  } else if (widget.getRole() === HyperEdge.ACTIVATOR) {
+                  } else if (widget.getRole() === HyperEdgeConstants.ACTIVATOR) {
                         list = this.activatorPoints![widget.getIndex()];
                         p = list[0];
                   }
@@ -687,7 +680,7 @@ export class HyperEdge extends Renderable {
             }
         }
         if (!found) {
-            throw new Error("HyperEdge.setBackbonePoints(): backbone points should contain the position point: " +
+            throw new Error("HyperEdgeConstants.setBackbonePoints(): backbone points should contain the position point: " +
                                                 this.getDisplayName() + " (" + this.getID() + ")");
         } else {
             this.backbonePoints = points;
@@ -947,19 +940,19 @@ export class HyperEdge extends Renderable {
         let hub: Maybe<Point>;
 
         switch (direction) {
-            case HyperEdge.INPUT:
+            case HyperEdgeConstants.INPUT:
                 hub = this.getInputHub();
                 break;
-            case HyperEdge.OUTPUT:
+            case HyperEdgeConstants.OUTPUT:
                 hub = this.getOutputHub();
                 break;
-            case HyperEdge.CATALYST:
+            case HyperEdgeConstants.CATALYST:
                 hub = this.getPosition();
                 break;
-            case HyperEdge.INHIBITOR:
+            case HyperEdgeConstants.INHIBITOR:
                 hub = this.getPosition();
                 break;
-            case HyperEdge.ACTIVATOR:
+            case HyperEdgeConstants.ACTIVATOR:
                 hub = this.getPosition();
                 break;
         }
@@ -1018,7 +1011,7 @@ export class HyperEdge extends Renderable {
             if (distSq < this.SENSING_DISTANCE_SQ) {
                 // When a FlowLine has nodes attached, insert points automatically.
                 // Otherwise do nothing.
-                this.selectionInfo.selectedType = HyperEdge.BACKBONE;
+                this.selectionInfo.selectedType = HyperEdgeConstants.BACKBONE;
                 return true;
             }
             prevP = nextP;
@@ -1061,15 +1054,15 @@ export class HyperEdge extends Renderable {
     public getBranchFromType(type: Maybe<number>): Maybe<Point[][]> {
         if (!isUndef(type)) {
             switch (type) {
-                case HyperEdge.INPUT:
+                case HyperEdgeConstants.INPUT:
                     return this.inputPoints;
-                case HyperEdge.OUTPUT:
+                case HyperEdgeConstants.OUTPUT:
                     return this.outputPoints;
-                case HyperEdge.CATALYST:
+                case HyperEdgeConstants.CATALYST:
                     return this.helperPoints;
-                case HyperEdge.INHIBITOR:
+                case HyperEdgeConstants.INHIBITOR:
                     return this.inhibitorPoints;
-                case HyperEdge.ACTIVATOR:
+                case HyperEdgeConstants.ACTIVATOR:
                     return this.activatorPoints;
             }
         }
@@ -1078,19 +1071,19 @@ export class HyperEdge extends Renderable {
 
     private getControlFromBackbone(type: number): Maybe<Point> {
         switch (type) {
-            case HyperEdge.INPUT:
+            case HyperEdgeConstants.INPUT:
                 if (!isUndef(this.inputPoints) && this.inputPoints!.length > 0)
                     return this.backbonePoints[0];
                 else
                     return this.backbonePoints[1];
-            case HyperEdge.OUTPUT:
+            case HyperEdgeConstants.OUTPUT:
                 if (!isUndef(this.outputPoints) && this.outputPoints!.length > 0)
                     return this.backbonePoints[this.backbonePoints.length - 1];
                 else
                     return this.backbonePoints[this.backbonePoints.length - 2];
-            case HyperEdge.INHIBITOR:
-            case HyperEdge.ACTIVATOR:
-            case HyperEdge.CATALYST:
+            case HyperEdgeConstants.INHIBITOR:
+            case HyperEdgeConstants.ACTIVATOR:
+            case HyperEdgeConstants.CATALYST:
                 return this.getPosition();
         }
         return undefined;
@@ -1145,7 +1138,7 @@ export class HyperEdge extends Renderable {
         this.selectionInfo.reset();
 
         if (!isUndef(this.inputPoints) && this.inputPoints!.length > 0) {
-            if (this.isBranchPointPicked(this.inputPoints!, HyperEdge.INPUT, p)) {
+            if (this.isBranchPointPicked(this.inputPoints!, HyperEdgeConstants.INPUT, p)) {
                 return true;
             }
         }
@@ -1154,9 +1147,9 @@ export class HyperEdge extends Renderable {
         distSq = p1.distanceSq(p);
         if (distSq < this.SENSING_DISTANCE_SQ) {
             this.selectionInfo.selectPoint = p1;
-            this.selectionInfo.selectedType = HyperEdge.BACKBONE;
+            this.selectionInfo.selectedType = HyperEdgeConstants.BACKBONE;
             if (isUndef(this.inputPoints) || this.inputPoints!.length === 0) {
-                this.selectionInfo.connectWidget = new ConnectWidget(this.selectionInfo.selectPoint, this.backbonePoints[1], HyperEdge.INPUT, 0);
+                this.selectionInfo.connectWidget = new ConnectWidget(this.selectionInfo.selectPoint, this.backbonePoints[1], HyperEdgeConstants.INPUT, 0);
             }
             return true;
         }
@@ -1165,9 +1158,9 @@ export class HyperEdge extends Renderable {
         distSq = p1.distanceSq(p);
         if (distSq < this.SENSING_DISTANCE_SQ) {
             this.selectionInfo.selectPoint = p1;
-            this.selectionInfo.selectedType = HyperEdge.BACKBONE;
+            this.selectionInfo.selectedType = HyperEdgeConstants.BACKBONE;
             if (isUndef(this.outputPoints) || this.outputPoints!.length === 0) {
-                this.selectionInfo.connectWidget = new ConnectWidget(this.selectionInfo.selectPoint, this.backbonePoints[this.backbonePoints.length - 2], HyperEdge.OUTPUT, 0);
+                this.selectionInfo.connectWidget = new ConnectWidget(this.selectionInfo.selectPoint, this.backbonePoints[this.backbonePoints.length - 2], HyperEdgeConstants.OUTPUT, 0);
             }
             return true;
         }
@@ -1177,37 +1170,37 @@ export class HyperEdge extends Renderable {
             distSq = p1.distanceSq(p);
             if (distSq < this.SENSING_DISTANCE_SQ) {
                 this.selectionInfo.selectPoint = p1;
-                this.selectionInfo.selectedType = HyperEdge.BACKBONE;
+                this.selectionInfo.selectedType = HyperEdgeConstants.BACKBONE;
                 return true;
             }
         }
 
         if (!isUndef(this.outputPoints) && this.outputPoints!.length > 0) {
-            if (this.isBranchPointPicked(this.outputPoints!, HyperEdge.OUTPUT, p)) {
+            if (this.isBranchPointPicked(this.outputPoints!, HyperEdgeConstants.OUTPUT, p)) {
                 return true;
             }
         }
 
         if (!isUndef(this.helperPoints) && this.helperPoints!.length > 0) {
-            if (this.isBranchPointPicked(this.helperPoints!, HyperEdge.CATALYST, p)) {
+            if (this.isBranchPointPicked(this.helperPoints!, HyperEdgeConstants.CATALYST, p)) {
                 return true;
             }
         }
 
         if (!isUndef(this.inhibitorPoints) && this.inhibitorPoints!.length > 0) {
-            if (this.isBranchPointPicked(this.inhibitorPoints!, HyperEdge.INHIBITOR, p)) {
+            if (this.isBranchPointPicked(this.inhibitorPoints!, HyperEdgeConstants.INHIBITOR, p)) {
                 return true;
             }
         }
 
         if (!isUndef(this.activatorPoints) && this.activatorPoints!.length > 0) {
-            if (this.isBranchPointPicked(this.activatorPoints!, HyperEdge.ACTIVATOR, p)) {
+            if (this.isBranchPointPicked(this.activatorPoints!, HyperEdgeConstants.ACTIVATOR, p)) {
                 return true;
             }
         }
 
         if (!isUndef(this.inputPoints) && this.inputPoints!.length > 0) {
-            if (this.isBranchPicked(this.inputPoints!, this.getInputHub(), p, HyperEdge.INPUT)) {
+            if (this.isBranchPicked(this.inputPoints!, this.getInputHub(), p, HyperEdgeConstants.INPUT)) {
                 return true;
             }
         }
@@ -1217,25 +1210,25 @@ export class HyperEdge extends Renderable {
         }
 
         if (!isUndef(this.outputPoints) && this.outputPoints!.length > 0) {
-            if (this.isBranchPicked(this.outputPoints!, this.getOutputHub(), p, HyperEdge.OUTPUT)) {
+            if (this.isBranchPicked(this.outputPoints!, this.getOutputHub(), p, HyperEdgeConstants.OUTPUT)) {
                 return true;
             }
         }
 
         if (!isUndef(this.helperPoints) && this.helperPoints!.length > 0) {
-            if (this.isBranchPicked(this.helperPoints!, this.position, p, HyperEdge.CATALYST)) {
+            if (this.isBranchPicked(this.helperPoints!, this.position, p, HyperEdgeConstants.CATALYST)) {
                 return true;
             }
         }
 
         if (!isUndef(this.inhibitorPoints) && this.inhibitorPoints!.length > 0) {
-            if (this.isBranchPicked(this.inhibitorPoints!, this.position, p, HyperEdge.INHIBITOR)) {
+            if (this.isBranchPicked(this.inhibitorPoints!, this.position, p, HyperEdgeConstants.INHIBITOR)) {
                 return true;
             }
         }
 
         if (!isUndef(this.activatorPoints) && this.activatorPoints!.length > 0) {
-            if (this.isBranchPicked(this.activatorPoints!, this.position, p, HyperEdge.ACTIVATOR)) {
+            if (this.isBranchPicked(this.activatorPoints!, this.position, p, HyperEdgeConstants.ACTIVATOR)) {
                 return true;
             }
         }
@@ -1245,7 +1238,7 @@ export class HyperEdge extends Renderable {
 
     /**
      * This method is used to check if a passed point can be used to pick up
-     * this HyperEdge. This method is different from another method isPicked(Point).
+     * this HyperEdgeConstants. This method is different from another method isPicked(Point).
      * The internal data structure will not be changed in this method. So a client
      * that should not make changes to the internal data structure should call this method.
      * For example, getToolTipText(MouseEvent)
@@ -1582,7 +1575,7 @@ export class HyperEdge extends Renderable {
             node.setPosition(new Point(inputP.x, inputP.y));
         let widget: ConnectWidget = new ConnectWidget(inputP,
                                                      controlP,
-                                                     HyperEdge.INPUT,
+                                                     HyperEdgeConstants.INPUT,
                                                      index);
         widget.setConnectedNode(node);
         widget.setEdge(this);
@@ -1594,7 +1587,7 @@ export class HyperEdge extends Renderable {
     public removeInput(index: number): void {
         if (index === 0 && (isUndef(this.inputPoints) || this.inputPoints!.length === 0)) {
             // Just disconnect
-            this.removeConnectWidgetHE(index, HyperEdge.INPUT);
+            this.removeConnectWidgetHE(index, HyperEdgeConstants.INPUT);
             return;
         }
         const inputBranch: Maybe<Point[]> = this.removeInputBranch(index);
@@ -1648,7 +1641,7 @@ export class HyperEdge extends Renderable {
         // Don't remove the first or last point in the backbones or other
         // branches
         let branch: Maybe<Point[][]> = this.getBranchFromType(this.selectionInfo.selectedType!);
-        if (this.selectionInfo.selectedType == HyperEdge.BACKBONE) {
+        if (this.selectionInfo.selectedType == HyperEdgeConstants.BACKBONE) {
             let index = this.backbonePoints.indexOf(this.selectionInfo.selectPoint!);
             if (index == 0 || index == this.backbonePoints.length - 1)
                 return false;
@@ -1675,15 +1668,15 @@ export class HyperEdge extends Renderable {
         }
         let branch: Maybe<Point[][]> = this.getBranchFromType(type!);
         let points: Point[];
-        if (type! === HyperEdge.BACKBONE)
+        if (type! === HyperEdgeConstants.BACKBONE)
             points = this.backbonePoints;
         else
             points = branch![index];
         this.removePoint(points, this.selectionInfo.selectPoint);
         this.selectionInfo.selectPoint = undefined;
         this.selectionInfo.selectedBranch = -1;
-        this.selectionInfo.selectedType = HyperEdge.NONE;
-        if (type! === HyperEdge.BACKBONE)
+        this.selectionInfo.selectedType = HyperEdgeConstants.NONE;
+        if (type! === HyperEdgeConstants.BACKBONE)
             this.validateAllWidgetControlPoints();
         else
             this.validateWidgetControlPoints(type!);
@@ -1761,7 +1754,7 @@ export class HyperEdge extends Renderable {
         }
         let branch: Maybe<Point[][]> = this.getBranchFromType(type!);
         let points: Point[];
-        if (type! == HyperEdge.BACKBONE)
+        if (type! == HyperEdgeConstants.BACKBONE)
             points = this.backbonePoints;
         else
             points = branch![index];
@@ -1770,7 +1763,7 @@ export class HyperEdge extends Renderable {
         let min: number = Number.MAX_VALUE;
         let insert: number = 0;
         let checking: Point[] = new Array<Point>(...points);
-        if (type! != HyperEdge.BACKBONE) {
+        if (type! != HyperEdgeConstants.BACKBONE) {
             // Need to add the position
             if (!isUndef(this.getPosition())){
                 checking.push(this.getPosition()!);
@@ -1792,7 +1785,7 @@ export class HyperEdge extends Renderable {
         else
             points.splice(insert + 1, 0, point);
 
-        if (type! == HyperEdge.BACKBONE)
+        if (type! == HyperEdgeConstants.BACKBONE)
             this.validateAllWidgetControlPoints();
         else
             this.validateWidgetControlPoints(type!);
@@ -1809,11 +1802,11 @@ export class HyperEdge extends Renderable {
      * All control points should be validated
      */
     public validateAllWidgetControlPoints(): void {
-        this.validateWidgetControlPoints(HyperEdge.INPUT);
-        this.validateWidgetControlPoints(HyperEdge.OUTPUT);
-        this.validateWidgetControlPoints(HyperEdge.CATALYST);
-        this.validateWidgetControlPoints(HyperEdge.INHIBITOR);
-        this.validateWidgetControlPoints(HyperEdge.ACTIVATOR);
+        this.validateWidgetControlPoints(HyperEdgeConstants.INPUT);
+        this.validateWidgetControlPoints(HyperEdgeConstants.OUTPUT);
+        this.validateWidgetControlPoints(HyperEdgeConstants.CATALYST);
+        this.validateWidgetControlPoints(HyperEdgeConstants.INHIBITOR);
+        this.validateWidgetControlPoints(HyperEdgeConstants.ACTIVATOR);
     }
 
     public addOutput(node: Node): void {
@@ -1881,7 +1874,7 @@ export class HyperEdge extends Renderable {
         }
         if (isUndef(node.getPosition()))
             node.setPosition(new Point(outputP.x, outputP.y));
-        let widget: ConnectWidget = new ConnectWidget(outputP, controlP, HyperEdge.OUTPUT, index);
+        let widget: ConnectWidget = new ConnectWidget(outputP, controlP, HyperEdgeConstants.OUTPUT, index);
         widget.setConnectedNode(node);
         widget.setEdge(this);
         widget.doInvalidate();
@@ -1903,7 +1896,7 @@ export class HyperEdge extends Renderable {
     public removeOutput(index: number): void {
         if (index === 0 &&
             (isUndef(this.outputPoints) || this.outputPoints!.length === 0)) {
-            this.removeConnectWidgetHE(index, HyperEdge.OUTPUT);
+            this.removeConnectWidgetHE(index, HyperEdgeConstants.OUTPUT);
             return;
         }
         let outputBranch: Maybe<Point[]> = this.removeOutputBranch(index);
@@ -1911,7 +1904,7 @@ export class HyperEdge extends Renderable {
     }
 
     /**
-     * Detach a Node from this HyperEdge.
+     * Detach a Node from this HyperEdgeConstants.
      *
      * @param node Node to remove from this HyperEdge
      */
@@ -1958,7 +1951,7 @@ export class HyperEdge extends Renderable {
 
     removeNodeOfType(node: Renderable, type: number): void {
        switch (type) {
-           case HyperEdge.INPUT:
+           case HyperEdgeConstants.INPUT:
                let inputNodes: Maybe<Node[]> = this.getInputNodes();
                if (!isUndef(inputNodes)) {
                    let index: number = inputNodes!.indexOf(node as Node);
@@ -1966,7 +1959,7 @@ export class HyperEdge extends Renderable {
                        this.removeInput(index);
                }
                break;
-           case HyperEdge.OUTPUT:
+           case HyperEdgeConstants.OUTPUT:
                let outputNodes: Maybe<Node[]> = this.getOutputNodes();
                if (!isUndef(outputNodes)) {
                    let index = outputNodes!.indexOf(node as Node);
@@ -1974,7 +1967,7 @@ export class HyperEdge extends Renderable {
                        this.removeOutput(index);
                }
                break;
-           case HyperEdge.CATALYST:
+           case HyperEdgeConstants.CATALYST:
                let helperNodes: Maybe<Node[]> = this.getHelperNodes();
                if (!isUndef(helperNodes)) {
                    let index = helperNodes!.indexOf(node as Node);
@@ -1982,7 +1975,7 @@ export class HyperEdge extends Renderable {
                        this.removeHelper(index);
                }
                break;
-           case HyperEdge.INHIBITOR:
+           case HyperEdgeConstants.INHIBITOR:
                let inhibitorNodes: Maybe<Node[]> = this.getInhibitorNodes();
                if (!isUndef(inhibitorNodes)) {
                    let index = inhibitorNodes!.indexOf(node as Node);
@@ -1990,7 +1983,7 @@ export class HyperEdge extends Renderable {
                        this.removeInhibitor(index);
                }
                break;
-           case HyperEdge.ACTIVATOR:
+           case HyperEdgeConstants.ACTIVATOR:
                let activatorNodes: Maybe<Node[]> = this.getActivatorNodes();
                if (!isUndef(activatorNodes)) {
                    let index = activatorNodes!.indexOf(node as Node);
@@ -2059,7 +2052,7 @@ export class HyperEdge extends Renderable {
            node.setPosition(new Point(helperP.x, helperP.y));
        }
 
-       let widget: ConnectWidget = new ConnectWidget(helperP, controlP, HyperEdge.CATALYST, index);
+       let widget: ConnectWidget = new ConnectWidget(helperP, controlP, HyperEdgeConstants.CATALYST, index);
        widget.setConnectedNode(node);
        widget.setEdge(this);
        widget.doInvalidate();
@@ -2121,8 +2114,8 @@ export class HyperEdge extends Renderable {
         this.selectionInfo.selectPoint = newP;
         let index: number = this.inputPoints!.length - 1;
         this.selectionInfo.selectedBranch = index;
-        this.selectionInfo.selectedType = HyperEdge.INPUT;
-        this.selectionInfo.connectWidget = new ConnectWidget(newP, this.getInputHub(), HyperEdge.INPUT, index);
+        this.selectionInfo.selectedType = HyperEdgeConstants.INPUT;
+        this.selectionInfo.connectWidget = new ConnectWidget(newP, this.getInputHub(), HyperEdgeConstants.INPUT, index);
     }
 
     private generateRandomPoint(branches: Point[][]): Point {
@@ -2196,8 +2189,8 @@ export class HyperEdge extends Renderable {
             this.inputPoints = [];
             this.inputPoints = undefined;
             this.validatePosition();
-            if (this.selectionInfo.selectedType === HyperEdge.INPUT)
-                this.selectionInfo.selectedType = HyperEdge.BACKBONE;
+            if (this.selectionInfo.selectedType === HyperEdgeConstants.INPUT)
+                this.selectionInfo.selectedType = HyperEdgeConstants.BACKBONE;
         }
         // Have to update index in the ConnectWidget objects
         const inputWidgets: ConnectWidget[] = (this.connectInfo as HyperEdgeConnectInfo).getInputWidgets();
@@ -2237,8 +2230,8 @@ export class HyperEdge extends Renderable {
         this.selectionInfo.selectPoint = newP;
         let index: number = this.outputPoints!.length - 1;
         this.selectionInfo.selectedBranch = index;
-        this.selectionInfo.selectedType = HyperEdge.OUTPUT;
-        this.selectionInfo.connectWidget = new ConnectWidget(newP, this.getOutputHub(), HyperEdge.OUTPUT, index);
+        this.selectionInfo.selectedType = HyperEdgeConstants.OUTPUT;
+        this.selectionInfo.connectWidget = new ConnectWidget(newP, this.getOutputHub(), HyperEdgeConstants.OUTPUT, index);
     }
 
     public removeOutputBranch(index: number): Maybe<Point[]> {
@@ -2272,8 +2265,8 @@ export class HyperEdge extends Renderable {
             this.outputPoints = [];
             this.outputPoints = undefined;
             this.validatePosition(); // The position may be changed
-            if (this.selectionInfo.selectedType === HyperEdge.OUTPUT)
-                this.selectionInfo.selectedType = HyperEdge.BACKBONE;
+            if (this.selectionInfo.selectedType === HyperEdgeConstants.OUTPUT)
+                this.selectionInfo.selectedType = HyperEdgeConstants.BACKBONE;
         }
         // Have to update index in the ConnectWidget objects
         let outputWidgets: ConnectWidget[] = (this.connectInfo as HyperEdgeConnectInfo).getOutputWidgets();
@@ -2307,8 +2300,8 @@ export class HyperEdge extends Renderable {
         this.selectionInfo.selectPoint = p;
         let index: number = this.helperPoints!.length - 1;
         this.selectionInfo.selectedBranch = index;
-        this.selectionInfo.selectedType = HyperEdge.CATALYST;
-        this.selectionInfo.connectWidget = new ConnectWidget(p, this.position, HyperEdge.CATALYST, index);
+        this.selectionInfo.selectedType = HyperEdgeConstants.CATALYST;
+        this.selectionInfo.connectWidget = new ConnectWidget(p, this.position, HyperEdgeConstants.CATALYST, index);
     }
 
     removeHelperBranch(index: number): Maybe<Point[]> {
@@ -2337,15 +2330,15 @@ export class HyperEdge extends Renderable {
     deleteUnAttachedBranch(connectWidget: ConnectWidget): void {
         const role: number = connectWidget.getRole();
         const index: number = connectWidget.getIndex();
-        if (role === HyperEdge.INPUT)
+        if (role === HyperEdgeConstants.INPUT)
             this.removeInputBranch(index);
-        else if (role === HyperEdge.OUTPUT)
+        else if (role === HyperEdgeConstants.OUTPUT)
             this.removeOutputBranch(index);
-        else if (role === HyperEdge.CATALYST)
+        else if (role === HyperEdgeConstants.CATALYST)
             this.removeHelperBranch(index);
-        else if (role === HyperEdge.INHIBITOR)
+        else if (role === HyperEdgeConstants.INHIBITOR)
             this.removeInhibitorBranch(index);
-        else if (role === HyperEdge.ACTIVATOR)
+        else if (role === HyperEdgeConstants.ACTIVATOR)
             this.removeActivatorBranch(index);
     }
 
@@ -2400,8 +2393,8 @@ export class HyperEdge extends Renderable {
         this.selectionInfo.selectPoint = p;
         let index: number = this.inhibitorPoints!.length - 1;
         this.selectionInfo.selectedBranch = index;
-        this.selectionInfo.selectedType = HyperEdge.CATALYST;
-        this.selectionInfo.connectWidget = new ConnectWidget(p, this.position, HyperEdge.INHIBITOR, index);
+        this.selectionInfo.selectedType = HyperEdgeConstants.CATALYST;
+        this.selectionInfo.connectWidget = new ConnectWidget(p, this.position, HyperEdgeConstants.INHIBITOR, index);
     }
 
     public removeInhibitor(index: number): void {
@@ -2514,7 +2507,7 @@ export class HyperEdge extends Renderable {
             controlP = this.getPosition();
         if (isUndef(node.getPosition()))
             node.setPosition(new Point(inhibitorP.x, inhibitorP.y));
-        let widget: ConnectWidget = new ConnectWidget(inhibitorP, controlP, HyperEdge.INHIBITOR, index);
+        let widget: ConnectWidget = new ConnectWidget(inhibitorP, controlP, HyperEdgeConstants.INHIBITOR, index);
         widget.setConnectedNode(node);
         widget.setEdge(this);
         widget.doInvalidate();
@@ -2548,8 +2541,8 @@ export class HyperEdge extends Renderable {
         this.selectionInfo.selectPoint = p;
         let index: number = this.activatorPoints.length - 1;
         this.selectionInfo.selectedBranch = index;
-        this.selectionInfo.selectedType = HyperEdge.CATALYST;
-        this.selectionInfo.connectWidget = new ConnectWidget(p, this.position, HyperEdge.ACTIVATOR, index);
+        this.selectionInfo.selectedType = HyperEdgeConstants.CATALYST;
+        this.selectionInfo.connectWidget = new ConnectWidget(p, this.position, HyperEdgeConstants.ACTIVATOR, index);
     }
 
     public addActivator(node: Node): void {
@@ -2611,7 +2604,7 @@ export class HyperEdge extends Renderable {
             node.setPosition(new Point(activatorP.x, activatorP.y));
         }
 
-        const widget: ConnectWidget = new ConnectWidget(activatorP, controlP, HyperEdge.ACTIVATOR, index);
+        const widget: ConnectWidget = new ConnectWidget(activatorP, controlP, HyperEdgeConstants.ACTIVATOR, index);
         widget.setConnectedNode(node);
         widget.setEdge(this);
         widget.doInvalidate();

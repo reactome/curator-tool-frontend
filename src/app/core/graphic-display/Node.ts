@@ -11,7 +11,6 @@ import { ConnectInfo } from './ConnectInfo';
 import { ConnectWidget } from './ConnectWidget';
 import { RenderableFeature } from './RenderableFeature';
 import { RenderableState } from './RenderableState';
-import { RenderableComplex } from './RenderableComplex';
 import { HyperEdge } from './HyperEdge';
 import { FlowLine } from './FlowLine';
 import { Maybe, isUndef } from './Utils';
@@ -818,7 +817,7 @@ export class Node extends Renderable {
     public override setContainer(renderable: Renderable): void {
         super.setContainer(renderable);
         // A complex component cannot be used to link to other node.
-        if (renderable instanceof RenderableComplex) {
+        if (renderable.getType() === "Complex") {
             if (!isUndef(this.linkWidgetPositions))
                 this.linkWidgetPositions = undefined;
         }

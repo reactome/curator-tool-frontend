@@ -18,4 +18,8 @@ export class LayoutService {
   constructor(private store: Store) {
     this.hyperEdge = new HyperEdge();
   }
+
+  getLayout(): string {
+    return "hello";
+  }
 }
