@@ -45,6 +45,18 @@
     </td>
   </ng-container>
 
+  <!-- Show complex tree Column -->
+  <ng-container matColumnDef="complexTree">
+    <th mat-header-cell *matHeaderCellDef></th>
+    <td class="column-right" mat-cell *matCellDef="let element">
+      <button *ngIf="element.schemaClassName === 'Complex'" color="primary"
+              mat-icon-button (click)="displayComplexHierarchy(element)"
+              matTooltip="View complex hierarchy" matTooltipPosition="left">
+        <mat-icon>zoom_in</mat-icon>
+      </button>
+    </td>
+  </ng-container>
+
   <!-- Bookmark Column -->
   <ng-container matColumnDef="bookmark">
     <th mat-header-cell *matHeaderCellDef></th>

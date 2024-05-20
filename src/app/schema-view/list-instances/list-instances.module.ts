@@ -10,6 +10,8 @@ import { SelectedInstancesTableComponent } from './components/select-instance-di
 import {MatTooltipModule} from "@angular/material/tooltip";
 import { InstanceListTableComponent } from './components/list-instances-view/table/instance-list-table/instance-list-table.component';
 import {InstanceModule} from "../../instance/instance.module";
+import { ComplexTreeComponent } from './components/list-instances-view/complex-tree/complex-tree.component';
+import {ComplexTreeIconComponent} from "./components/list-instances-view/complex-tree-icon/complex-tree-icon.component";
 
 @NgModule({
   declarations: [
@@ -17,7 +19,9 @@ import {InstanceModule} from "../../instance/instance.module";
     ListInstancesViewComponent,
     SelectInstanceDialogComponent,
     SelectedInstancesTableComponent,
-    InstanceListTableComponent
+    InstanceListTableComponent,
+    ComplexTreeComponent,
+    ComplexTreeIconComponent
   ],
   exports: [
     InstanceSelectionComponent,

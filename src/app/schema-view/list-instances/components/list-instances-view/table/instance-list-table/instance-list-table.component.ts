@@ -4,6 +4,7 @@ import {DataService} from "../../../../../../core/services/data.service";
 import {Store} from "@ngrx/store";
 import {BookmarkActions} from "../../../../../instance-bookmark/state/bookmark.actions";
 import {ActivatedRoute} from "@angular/router";
+import {ComplexTreeService} from '../../complex-tree/complex-tree.service';
 
 @Component({
   selector: 'app-instance-list-table',
@@ -15,13 +16,15 @@ export class InstanceListTableComponent {
   @Input() actionButtons: string[] = [];
   @Input() isSelection: boolean = false;
   @Input() showHeader: boolean = true;
-  displayedColumns: string[] = ['dbId', 'displayName', 'actionButtons', 'bookmark'];
+  displayedColumns: string[] = ['dbId', 'displayName', 'actionButtons', 'complexTree', 'bookmark'];
   @Output() selectionEvent = new EventEmitter<Instance>();
   @Output() actionEvent = new EventEmitter<{ instance: Instance, action: string }>();
   selected: number = 0;
   displayName: string | undefined = '';
 
-  constructor(private store: Store, private route: ActivatedRoute) {
+  constructor(private store: Store,
+              private route: ActivatedRoute,
+              private complexTreeService: ComplexTreeService) {
   }
 
   click(instance: Instance, action: string) {
@@ -46,4 +49,8 @@ export class InstanceListTableComponent {
   }
 
   protected readonly DataService = DataService;
+
+  displayComplexHierarchy(element: Instance) {
+      const matDialogRef = this.complexTreeService.openDialog(element.dbId);
+  }
 }

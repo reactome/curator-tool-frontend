@@ -1,0 +1,30 @@
+<h2 class="dialog_title" mat-dialog-title cdkdraghandle>Complex Hierarchy</h2>
+<mat-dialog-content style="width: 100%">
+  <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" *ngIf="!showProgressSpinner">
+
+
+    <!-- This is the table node template for leaf nodes -->
+    <mat-tree-node *matTreeNodeDef="let node;" matTreeNodePadding matTreeNodeToggle
+                   matTreeNodePaddingIndent="15">
+      <!-- use a disabled button to provide padding for table leaf -->
+      <div>
+        <button mat-icon-button disabled></button>
+        <complex-tree-icon [schemaClass]="node.className"></complex-tree-icon>
+        <button mat-button cdkFocusInitial class="complex_node_text">{{node.name}}</button>
+      </div>
+    </mat-tree-node>
+    <!-- This is the table node template for expandable nodes -->
+    <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding
+                   matTreeNodePaddingIndent="15">
+      <button mat-icon-button matTreeNodeToggle>
+        <mat-icon class="mat-icon-rtl-mirror">
+          {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+        </mat-icon>
+      </button>
+      <div>
+        <complex-tree-icon [schemaClass]="node.className"></complex-tree-icon>
+        <button mat-button cdkFocusInitial class="complex_node_text">{{node.name}}</button>
+      </div>
+    </mat-tree-node>
+  </mat-tree>
+</mat-dialog-content>

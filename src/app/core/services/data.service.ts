@@ -29,6 +29,7 @@ export class DataService {
   private entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
   private schemaClassTreeUrl = `${environment.ApiRoot}/getSchemaClassTree/`;
   private eventsTreeUrl = `${environment.ApiRoot}/getEventTree/`;
+  private complexTreeUrl = `${environment.ApiRoot}/getComplexTree/`;
   private listInstancesUrl = `${environment.ApiRoot}/listInstances/`;
   private findInstanceByDisplayNameUrl = `${environment.ApiRoot}/findByDisplayName`;
   private countInstancesUrl = `${environment.ApiRoot}/countInstances/`;
@@ -190,6 +191,26 @@ export class DataService {
           return throwError(() => err);
         }));
   }
+
+    /**
+     * Fetch Complex Tree
+     * @param dbId
+     */
+    fetchComplexTree(dbId: number): Observable<Instance> {
+      let url = this.complexTreeUrl + `${dbId}`;
+      return this.http.get<Instance>(url)
+        .pipe(
+          map((data: Instance) => {
+            return data;
+          }),
+          catchError((err: Error) => {
+            console.log("The complex tree could not be loaded: \n" + err.message, "Close", {
+              panelClass: ['warning-snackbar'],
+              duration: 10000
+            });
+            return throwError(() => err);
+          }));
+    }
 
   getSchemaClass(clsName: string): SchemaClass | undefined {
     if (this.name2class && this.name2class.size > 0) {
@@ -474,7 +495,7 @@ export class DataService {
   /**
    * Load the persistence instances for a user
    * @param userName
-   * @returns 
+   * @returns
    */
 loadInstances(userName: string): Observable<Instance[]> {
   return this.http.get<Instance[]>(this.loadInstancesUrl + userName)
@@ -502,9 +523,9 @@ loadInstances(userName: string): Observable<Instance[]> {
 
   /**
    * Persist new and updated instances to the server.
-   * @param instances 
-   * @param userName 
-   * @returns 
+   * @param instances
+   * @param userName
+   * @returns
    */
   //TODO: See if it is possible to persist only changed attributes for updated instances to increase the
   // performance.
@@ -532,8 +553,8 @@ loadInstances(userName: string): Observable<Instance[]> {
 
   /**
    * Empty the persisted instances at the server.
-   * @param userName 
-   * @returns 
+   * @param userName
+   * @returns
    */
   deletePersistedInstances(userName: string): Observable<any> {
     return this.http.delete<any>(this.deletePersistedInstancesUrl + userName).pipe(

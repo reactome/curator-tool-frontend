@@ -1,0 +1,78 @@
+.dialog_title {
+  text-align: left;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.dialog_area {
+  width: 1000px;
+  height: 3000px;
+}
+
+.drop_down {
+  max-width: 150px;
+  margin: auto;
+}
+
+.highlightCol {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+  width: 200px;
+  min-width: 100px;
+}
+
+.mat-tree-node {
+  min-height: 20px;
+  height: 20px;
+  margin: 3px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.mat-tree {
+  background: var(--surface2);
+  height: calc(100vh - 2 * var(--body-margin, 8px)) / 2;
+  border: 1px solid var(--outline-variant);
+  overflow: scroll;
+  // The following shifts the whole tree to the left, to account for removing the top (dummy) node
+  margin-left: -30px;
+}
+
+.mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--primary);
+}
+
+.mat-icon-button {
+  flex-direction: row-reverse;
+  width: 36px; // This is important to show the icon
+  height: 18px; // 2px is added
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  background: transparent; // these two to make sure no background and border for tree nodes having children.
+  border: none;
+  cursor: pointer;
+}
+
+.mat-icon-button:hover {
+  background-color: var(--hover);
+}
+
+.spinner {
+  margin:0 auto;
+}
+
+.complex_node_text {
+  text-decoration: none;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  z-index: 1 !important;
+  &:hover {
+    text-decoration: underline ;
+  }
+  font-family: Roboto, sans-serif !important;
+}
