@@ -31,6 +31,11 @@ export class MainEventComponent implements AfterViewInit {
     this.id$.pipe(delay(500)).subscribe(id => {
       this.diagram.cy.nodes().grabify().unpanify();
       this.diagram.cy.nodes('.Compartment').ungrabify().panify();
+      // Have to add the following to make zooming using mouse scroll. 
+      this.diagram.cy.zoomingEnabled(true);
+      this.diagram.cy.userZoomingEnabled(true);
+      this.diagram.cy.panningEnabled(true);
+      this.diagram.cy.userPanningEnabled(true);
     })
   }
 
