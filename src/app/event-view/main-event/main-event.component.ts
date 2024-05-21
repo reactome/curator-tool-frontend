@@ -32,6 +32,9 @@ export class MainEventComponent implements AfterViewInit {
       this.diagram.cy.nodes().grabify().unpanify();
       this.diagram.cy.nodes('.Compartment').ungrabify().panify();
       this.diagram.cy.nodes('.Legend').ungrabify().panify();
+      console.log('diagram', this.diagram.legend.$id('#legend-boundary').width())
+      this.diagram.legend.data().opened;
+      this.diagram.legend.width().toFixed(360);
     })
   }
 

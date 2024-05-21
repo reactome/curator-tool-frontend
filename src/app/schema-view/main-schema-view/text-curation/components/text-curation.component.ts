@@ -25,11 +25,13 @@ import {FormControl, ReactiveFormsModule} from "@angular/forms";
 import {Observable, startWith, async} from "rxjs";
 import {map} from "rxjs/operators";
 import {MatInput} from "@angular/material/input";
+import {MatMenu, MatMenuItem, MatMenuTrigger} from "@angular/material/menu";
+import {MatButton} from "@angular/material/button";
 
 @Component({
   selector: 'app-text-curation',
   standalone: true,
-  imports: [MatLabel, MatTooltip, NgIf, MatFormField, MatAutocomplete, ReactiveFormsModule, MatAutocompleteTrigger, MatOption, NgForOf, MatInput, AsyncPipe],
+  imports: [MatLabel, MatTooltip, NgIf, MatFormField, MatAutocomplete, ReactiveFormsModule, MatAutocompleteTrigger, MatOption, NgForOf, MatInput, AsyncPipe, MatMenuTrigger, MatMenu, MatMenuItem, MatButton],
   templateUrl: './text-curation.component.html',
   styleUrl: './text-curation.component.scss',
 })
@@ -346,6 +348,10 @@ export class TextCurationComponent implements OnInit {
       }
     }
     return undefined;
+  }
+
+  checkInput(command: string): boolean {
+    return true;
   }
 }
 
