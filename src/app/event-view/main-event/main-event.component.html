@@ -11,6 +11,11 @@
     </mat-sidenav>
     <mat-sidenav-content>
       <cr-diagram #diagramComponent [id]="id$ | async"></cr-diagram>
+      <div *ngIf="showMenu" [ngStyle]="{ 'position': 'absolute', 'top': menuPositionY, 'left': menuPositionX }">
+        <button>Item 1</button>
+        <button>Item 2</button>
+        <button>Item 3</button>
+      </div>
       <!--      <div style="margin-left: 10px; margin-right: 10px;">-->
 <!--        <mat-grid-list cols="2" rowHeight="1000px">-->
 <!--          <mat-toolbar color="primary" class="toolbar">-->
