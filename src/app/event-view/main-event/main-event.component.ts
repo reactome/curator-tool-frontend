@@ -42,9 +42,9 @@ export class MainEventComponent implements AfterViewInit {
       this.diagram.cy.panningEnabled(true);
       this.diagram.cy.userPanningEnabled(true);
       // May need to use cxtapstart or end for Safari. Apparently cxttap cannot work with Safari!
-      this.diagram.cy.nodes().on('cxttapstart', (e:any) => {
-        this.showCyPopup(e);
-      });
+      // this.diagram.cy.nodes().on('cxttapstart', (e:any) => {
+      //   this.showCyPopup(e);
+      // });
       this.diagram.cy.edges().on('cxttapstart', (e:any) => {
         this.showCyPopup(e);
       });
@@ -60,9 +60,12 @@ export class MainEventComponent implements AfterViewInit {
     this.menuPositionX = (event.renderedPosition.x + 5) + "px";
     this.menuPositionY = (event.renderedPosition.y + 5) + "px";
     this.showMenu = true;
-    event.preventDefault();
+    // event.preventDefault();
   }
 
+  onAction(button: any) {
+    this.showMenu = false;
+  }
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
 
