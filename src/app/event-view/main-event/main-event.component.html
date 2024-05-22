@@ -10,14 +10,7 @@
       </div>
     </mat-sidenav>
     <mat-sidenav-content>
-      <cr-diagram #diagramComponent [id]="id$ | async"></cr-diagram>
-      <div *ngIf="showMenu" [ngStyle]="{ 'position': 'absolute', 'top': menuPositionY, 'left': menuPositionX }">
-        <div style="display: flex; flex-direction: column; background-color: rgba(255, 255, 255, 0.50);">
-          <button style="margin-bottom: 1px;" (click)="onAction('item1')">Item 1</button>
-          <button style="margin-bottom: 1px;" (click)="onAction('item2')">Item 2</button>
-          <button style="margin-bottom: 1px;" (click)="onAction('item3')">Item 3</button>
-        </div>
-      </div>
+      <app-pathway-diagram></app-pathway-diagram>
       <!--      <div style="margin-left: 10px; margin-right: 10px;">-->
 <!--        <mat-grid-list cols="2" rowHeight="1000px">-->
 <!--          <mat-toolbar color="primary" class="toolbar">-->
@@ -30,7 +23,6 @@
 <!--          </mat-grid-tile>-->
 <!--        </mat-grid-list>-->
 <!--      </div>-->
-      <
     </mat-sidenav-content>
   </mat-sidenav-container>
 
