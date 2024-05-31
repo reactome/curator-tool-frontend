@@ -5,16 +5,18 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import {DiagramComponent} from 'ngx-reactome-diagram'
+import { DiagramComponent } from 'ngx-reactome-diagram';
 import { delay, map } from 'rxjs';
-
+import { EditorActionsComponent } from './editor-actions/editor-actions.component';
+import { PathwayDiagramUtilService } from './pathway-diagram-utils';
 
 @Component({
   selector: 'app-pathway-diagram',
   standalone: true,
-  imports: [DiagramComponent, CommonModule],
+  imports: [DiagramComponent, CommonModule, EditorActionsComponent],
   templateUrl: './pathway-diagram.component.html',
-  styleUrl: './pathway-diagram.component.scss'
+  styleUrl: './pathway-diagram.component.scss',
+  providers: [PathwayDiagramUtilService]
 })
 export class PathwayDiagramComponent implements AfterViewInit {
 
@@ -29,7 +31,11 @@ export class PathwayDiagramComponent implements AfterViewInit {
   menuPositionX: string = "0px";
   menuPositionY: string = "0px";
 
-  constructor(private route: ActivatedRoute) {
+  renderedEdges: any;
+
+  constructor(private route: ActivatedRoute,
+    private diagramUtils: PathwayDiagramUtilService
+  ){
   }
 
   ngAfterViewInit(): void {
@@ -48,9 +54,14 @@ export class PathwayDiagramComponent implements AfterViewInit {
       this.diagram.cy.edges().on('cxttapstart', (e:any) => {
         this.showCyPopup(e);
       });
+      this.diagram.cy.on('cxttapstart', (e:any) => {
+        this.showCyPopup(e);
+      });
       this.diagram.cy.on('mousedown', (e: any) => {
-        this.showMenu = false;
-        e.preventDefault();
+        if (this.showMenu) {
+          this.showMenu = false;
+          e.preventDefault();
+        }
       });
     })
   }
@@ -60,11 +71,14 @@ export class PathwayDiagramComponent implements AfterViewInit {
     this.menuPositionX = (event.renderedPosition.x + 5) + "px";
     this.menuPositionY = (event.renderedPosition.y + 5) + "px";
     this.showMenu = true;
-    // event.preventDefault();
   }
 
-  onAction(button: any) {
+  onAction(action: string) {
+    console.debug('action is fired: ' + action);
+    if (action === 'enableEditing')
+      this.diagramUtils.enableEditing(this.diagram);
     this.showMenu = false;
   }
 
 }
+
