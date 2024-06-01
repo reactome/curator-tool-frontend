@@ -10,13 +10,6 @@ export class PathwayDiagramUtilService {
     constructor() { }
 
     enableEditing(diagram: DiagramComponent) {
-        const diagramService: DiagramService = diagram.getDiagramService();
-        // diagram.cy.edges().style('curve-style', 'segments');
-        // diagram.cy.edges().forEach((edge: any) => {
-        //   let curveStyle = edge.style('curve-style');
-        //   if (curveStyle === 'round-segments')
-        //     edge.style('curve-style', 'segments');
-        // });
         // Get the position of nodes to be used for edges
         const id2node = new Map<string, any>();
         diagram.cy.nodes().forEach((node: any) => id2node.set(node.data('id'), node));
@@ -38,62 +31,95 @@ export class PathwayDiagramUtilService {
             }
             if (inputs.length > 1) {
                 // Add a new node to connect these inputs together
-                const sharedPos = this.getSharedPosition(inputs, id2node);
-                console.debug('Shared position: ' + sharedPos?.x + ', ' + sharedPos?.y);
-                // Need to convert id to string
-                const reactionNode = id2node.get(id.toString());
-                // Need to replace these edges with another set
-                if (sharedPos !== undefined) {
-                    // Add a new input node
-                    const inputNodeId = id + '_input';
-                    let data = JSON.parse(JSON.stringify(reactionNode.data()));
-                    data.id = inputNodeId;
-                    const inputNode: NodeDefinition = {
-                        data: data,
-                        position: { x: sharedPos.x, y: sharedPos.y },
-                        style: {
-                            width: 10,
-                            height: 10
-                        },
-                        // Use this for the time being
-                        classes: diagramService.reactionTypeMap.get('transition')
-                    };
-                    diagram.cy.add(inputNode);
-
-                    // This input node should be linked to the reaction node
-                    data = JSON.parse(JSON.stringify(reactionNode.data()));
-                    data.id = id + '_input_reaction';
-                    data.source = inputNodeId;
-                    data.target = reactionNode.data('id');
-                    const inputNode2ReactionEdge: EdgeDefinition = {
-                        data: data,
-                        classes: diagramService.edgeTypeMap.get('INPUT')
-                    };
-                    diagram.cy.add(inputNode2ReactionEdge);
-
-                    for (let edge of inputs) {
-                        const data = edge.data();
-                        data.target = inputNodeId;
-                        // We don't need these two fields
-                        delete data.weights;
-                        delete data.distances;
-                        // We want to keep the connecting positions flexiable
-                        delete data.sourceEndpoint;
-                        delete data.targetEndpoint;
-                        const newEdge: EdgeDefinition = {
-                            data: data,
-                            classes: edge.classes(),
-                            selectable: true
-                        }
-                        diagram.cy.remove(edge);
-                        diagram.cy.add(newEdge);
-                    }
-                }
+                this.convertEdges(inputs, id2node, id, diagram, true);
             }
             if (outputs.length > 1) {
                 // Add a new node to connect these outputs together
+                this.convertEdges(outputs, id2node, id, diagram, false);
             }
         });
+        // Make sure all round-segments have been converted for editing
+        diagram.cy.edges().forEach((edge: any) => {
+          let curveStyle = edge.style('curve-style');
+          if (curveStyle === 'round-segments') {
+            const edgeData = this.copyData(edge.data());
+            edgeData.curveStyle = 'segments';
+            const edgeCopy : EdgeDefinition = {
+                data: edgeData,
+                classes: edge.classes()
+            }
+            diagram.cy.remove(edge);
+            diagram.cy.add(edgeCopy);
+          }
+        });
+    }
+
+    //TODO: There is a bug with added input or output edges, the highlight works for the partial reaction edges (e.g. just added input edges).
+    // This is due to the following functions: hoverReaction() -> applyToReaction() -> expandReaction(). The original reaction node is not
+    // included during expandReaction() because only one hop nodes are checked. This needs to be updated.
+    private convertEdges(edges: any[], id2node: Map<string, any>, id: number, diagram: DiagramComponent, isInput: boolean) {
+        const sharedPos = this.getSharedPosition(edges, id2node);
+        if (sharedPos === undefined)
+            return; // Do nothing
+        // Need to convert id to string
+        const reactionNode = id2node.get(id.toString());
+        // Need to replace these edges with another set
+        // Add a new input node
+        const inputNodeId = id + (isInput ? '_input' : '_output');
+        let data = this.copyData(reactionNode.data());
+        data.id = inputNodeId;
+        data.displayName = "";
+        // Default 15 px
+        data.width = 15;
+        data.height = 15;
+        const inputNode: NodeDefinition = {
+            data: data,
+            position: { x: sharedPos.x, y: sharedPos.y },
+            //Need to figure out how to make it hoverable: Right now has to use reaction
+            classes: ['reaction', 'input_output'] // Hack to use this style to show an circle
+        };
+        // There is only one chance to create this inputNode. So no need to check it!
+        diagram.cy.add(inputNode);
+
+        // This input node should be linked to the reaction node
+        //TODO: To be updated when there are multiple positions in the reaction edge.
+        data = this.copyData(reactionNode.data());
+        data.id = id + (isInput ? '_input' : '_output') + '_reaction';
+        if (isInput) {
+            data.source = inputNodeId;
+            data.target = reactionNode.data('id');
+        }
+        else {
+            data.source = reactionNode.data('id');
+            data.target = inputNodeId;
+        }
+        const inputNode2ReactionEdge: EdgeDefinition = {
+            data: data,
+            // Here we use INPUT to avoid showing the arrow of the edge
+            classes: diagram.getDiagramService().edgeTypeMap.get('INPUT')
+        };
+        diagram.cy.add(inputNode2ReactionEdge);
+
+        for (let edge of edges) {
+            const data = this.copyData(edge.data());
+            if (isInput)
+                data.target = inputNodeId;
+            else
+                data.source = inputNodeId;
+            data.curveStyle = 'segments';
+            // We don't need these two fields
+            delete data.weights;
+            delete data.distances;
+            // We want to keep the connecting positions flexiable
+            delete data.sourceEndpoint;
+            delete data.targetEndpoint;
+            const newEdge: EdgeDefinition = {
+                data: data,
+                classes: edge.classes()
+            };
+            diagram.cy.remove(edge);
+            diagram.cy.add(newEdge);
+        }
     }
 
     private getSharedPosition(edges: any[],
@@ -183,4 +209,14 @@ export class PathwayDiagramUtilService {
         }
         return absolutePositions;
     }
+
+    private copyData(data: any): any {
+        // Filter out undefined values from the edge data
+        const filteredData = Object.fromEntries(Object.entries(data).filter(([key, value]) => value !== undefined));
+        // Stringify the filtered data
+        const jsonString = JSON.stringify(filteredData);
+        const dataCopy = JSON.parse(jsonString);
+        return dataCopy;
+    }
+
 }
