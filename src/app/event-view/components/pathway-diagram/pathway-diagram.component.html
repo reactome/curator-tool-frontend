@@ -1,5 +1,5 @@
 <div>
-    <cr-diagram #diagramComponent [id]="id$ | async"></cr-diagram>
+    <cr-diagram #diagramComponent [id]="id$ | async" (reactomeEvents$)="handleReactomeEvent($event)"></cr-diagram>
     <div *ngIf="showMenu" [ngStyle]="{ 'position': 'absolute', 'top': menuPositionY, 'left': menuPositionX }">
       <app-editor-actions (action)="onAction($event)"></app-editor-actions>
     </div>

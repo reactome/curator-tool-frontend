@@ -9,6 +9,7 @@ import { DiagramComponent } from 'ngx-reactome-diagram';
 import { delay, map } from 'rxjs';
 import { EditorActionsComponent } from './editor-actions/editor-actions.component';
 import { PathwayDiagramUtilService } from './pathway-diagram-utils';
+import { ReactomeEvent, ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -78,6 +79,32 @@ export class PathwayDiagramComponent implements AfterViewInit {
     if (action === 'enableEditing')
       this.diagramUtils.enableEditing(this.diagram);
     this.showMenu = false;
+  }
+
+  handleReactomeEvent(event: any) {
+    const reactomeEvent = event as ReactomeEvent;
+    // if (reactomeEvent.type !== ReactomeEventTypes.select)
+    //   return;
+    let affectedElms = undefined;
+    // Apparently we cannot use isNode or isEdge to check the detail's type.
+    // We have to use this this way to check if a reaction or a node is used. 
+    if (reactomeEvent.detail.type !== 'reaction') {
+      affectedElms = this.diagram.cy.nodes().filter((node: any) => {
+        // The second is to check nodeReactomeId (Make sure return is here!!!)
+        return node.data('nodeReactomeId') && node.data('nodeReactomeId') === event.detail.reactomeId;
+      }
+      );
+    }
+    else {
+      affectedElms = this.diagram.cy.edges().filter((edge: any) => {
+        // The second is to check nodeReactomeId (Make sure return is here!!!)
+        return edge.data('reactomeId') && edge.data('reactomeId') === event.detail.reactomeId;
+      }
+      );
+    }
+    if (affectedElms === undefined || affectedElms.length === 0)
+      return;
+    this.diagram.applyEvent(event, affectedElms);
   }
 
 }
