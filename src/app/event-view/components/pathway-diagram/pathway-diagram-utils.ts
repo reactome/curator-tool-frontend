@@ -3,7 +3,6 @@ import { EdgeDefinition, NodeDefinition, Core } from 'cytoscape';
 import { array } from 'vectorious';
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { Injectable } from "@angular/core";
-import { first } from "rxjs";
 
 @Injectable()
 export class PathwayDiagramUtilService {
@@ -40,6 +39,8 @@ export class PathwayDiagramUtilService {
                 diagram.cy.add(edgeCopy);
             }
         });
+        // Call this to make sure all new edges can be flagged for sub-pathways if any
+        diagram.flag([], diagram.cy);
     }
 
     positionsFromRelativeToAbsolute(edge: any,
