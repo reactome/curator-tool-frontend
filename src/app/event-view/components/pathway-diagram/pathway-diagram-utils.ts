@@ -219,12 +219,44 @@ class HyperEdge {
         while (isChanged) {
             isChanged = false;
             this.id2objects.forEach((element, id) => {
-                if (element.isEdge()) {
+                if (element.isEdge() && !element.hasClass('trivial')) {
                     const connectedNodes = element.connectedNodes();
                     for (let node of connectedNodes) {
                         if (node.hasClass('trivial')) {
                             element.addClass('trivial');
-                            isChanged;
+                            isChanged = true;
+                        }
+                    }
+                }
+                // TODO: Need to find use cases for this
+                else if (element.isNode() && element.hasClass('input_output') && !element.hasClass('trivial')) {
+                    // Have to check connected edges for a node
+                    const connectedEdges = element.connectedEdges();
+                    let totalNoTrivialEdge = 0;
+                    let noTrivialEdge = undefined;
+                    for (let edge of connectedEdges) {
+                        if (!edge.hasClass('trivial')) {
+                            totalNoTrivialEdge ++;
+                            noTrivialEdge = edge;
+                        }
+                    }
+                    if (totalNoTrivialEdge > 1) {
+                        return; // Try again late
+                    }
+                    if (totalNoTrivialEdge === undefined) {
+                        element.addClass('trivial');
+                        isChanged = true;
+                    }
+                    else {
+                        // If this edge connected to another input_output
+                        const connectedNodes = noTrivialEdge.connectedNodes();
+                        for (let node of connectedNodes) {
+                            if (node === element)
+                                continue;
+                            if (node.hasClass('input_output')) {
+                                element.addClass('trivial');
+                                isChanged = true;
+                            }
                         }
                     }
                 }
