@@ -178,8 +178,8 @@ class HyperEdge {
                         // TODO: Make sure this is what we need
                         classes: ['reaction', 'input_output'] 
                     }
-                    this.cy.add(pointNode);
-                    this.id2objects.set(nodeId, pointNode);
+                    const newNode = this.cy.add(pointNode)[0];
+                    this.id2objects.set(nodeId, newNode);
                 }
                 target = nodeId;
                 // Use input for any internal edges to avoid show arrows.
@@ -197,6 +197,38 @@ class HyperEdge {
             if (newEdge !== undefined)
                 newEdge.data.stoichiometry = edgeData.stoichiometry;
             this.cy.remove(edge);
+        }
+        this.resetTrivial();
+    }
+
+    /**
+     * Make sure the trvial list is correct.
+     */
+    private resetTrivial() {
+        // Remove trivial from all edges first
+        this.id2objects.forEach((element, id) => {
+            if (element.isEdge() && element.hasClass('trivial')) {
+                element.removeClass('trivial');
+            }
+        })
+        // Now we want to add trivial back for whatever is needed
+        let isChanged = true;
+        //TODO: This has not done yet. Also need to check input_output nodes and 
+        // edges links between input_output nodes and trivial nodes
+        // Will wait for new classes.
+        while (isChanged) {
+            isChanged = false;
+            this.id2objects.forEach((element, id) => {
+                if (element.isEdge()) {
+                    const connectedNodes = element.connectedNodes();
+                    for (let node of connectedNodes) {
+                        if (node.hasClass('trivial')) {
+                            element.addClass('trivial');
+                            isChanged;
+                        }
+                    }
+                }
+            })
         }
     }
 
@@ -219,8 +251,8 @@ class HyperEdge {
             data: data,
             classes: [...edgeClasses],
         };
-        this.cy.add(edge);
-        this.id2objects.set(newEdgeId, edge);
-        return edge;
+        const newEdge = this.cy.add(edge)[0];
+        this.id2objects.set(newEdgeId, newEdge);
+        return newEdge;
     }
 }
