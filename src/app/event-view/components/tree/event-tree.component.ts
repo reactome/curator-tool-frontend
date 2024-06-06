@@ -196,13 +196,13 @@ export class EventTreeComponent implements OnDestroy {
         const element = document.querySelector('.inFocus') as HTMLElement;
         element.scrollIntoView({behavior: 'smooth'});
       } else if (this.atLeastOneQueryClausePresent(selectedOperands, searchKeys)) {
-        let snackBarRef = this._snackBar.open(
-          'No data matching the query', '',
-          {
-            horizontalPosition: 'center',
-            verticalPosition: 'top',
-            duration: 4000
-           });
+        // let snackBarRef = this._snackBar.open(
+        //   'No data matching the query', '',
+        //   {
+        //     horizontalPosition: 'center',
+        //     verticalPosition: 'top',
+        //     duration: 4000
+        //    });
       }
       if (generatePlot !== undefined || generatePlot === true) {
         // This is used when dbId is taken from the URL

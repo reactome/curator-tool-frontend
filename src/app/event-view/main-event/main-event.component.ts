@@ -11,20 +11,14 @@ import {DiagramComponent} from "ngx-reactome-diagram";
   templateUrl: './main-event.component.html',
   styleUrls: ['./main-event.component.scss'],
 })
-export class MainEventComponent implements AfterViewInit {
+export class MainEventComponent {
   sideWidth = 400;
   schemaPanelOpen = false;
   resizing: boolean = false;
   showInstanceList: number = 0;
   status = {closed: true, opened: false, dragging: false};
 
-  id$ = this.route.params.pipe(
-    map(params => params['id'])
-  )
-  @ViewChild('diagramComponent')
-  diagram!: DiagramComponent;
-
-  constructor(private route: ActivatedRoute) {
+  constructor() {
   }
 
   ngAfterViewInit(): void {
@@ -85,4 +79,9 @@ export class MainEventComponent implements AfterViewInit {
       this.status.closed = !this.status.opened;
     })
   }
+
+  handleContextMenu(event: any) {
+    console.log('context menu');
+  }
+
 }

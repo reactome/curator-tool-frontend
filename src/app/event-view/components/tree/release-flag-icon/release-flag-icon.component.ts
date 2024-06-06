@@ -1,12 +1,12 @@
 import {Component, Input, OnInit} from '@angular/core';
 
 @Component({
-  selector: 'icon1-image',
-  templateUrl: './icon1.component.html',
-  styleUrls: ['./icon1.component.scss']
+  selector: 'release-flag-icon',
+  templateUrl: './release-flag-icon.component.html',
+  styleUrls: ['./release-flag-icon.component.scss']
 })
 
-export class Icon1Component implements OnInit{
+export class ReleaseFlagComponent implements OnInit{
   width = '15px';
   height = '15px';
   icon1Image = '';

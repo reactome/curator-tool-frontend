@@ -6,15 +6,15 @@ import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} fr
 import {SharedModule} from "../../../shared/shared.module";
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {RouterLink} from "@angular/router";
-import {Icon1Component} from "../icon1/icon1.component";
-import {Icon2Component} from "../icon2/icon2.component";
+import {ReleaseFlagComponent} from "./release-flag-icon/release-flag-icon.component";
 import {FilterEventsComponent} from "../../../event/components/filter_events/filter_events.component";
+import { ClassNameIconComponent } from './class-name-icon/class-name-icon.component';
 
 @NgModule({
   declarations: [
     EventTreeComponent,
-    Icon1Component,
-    Icon2Component
+    ClassNameIconComponent,
+    ReleaseFlagComponent
   ],
   imports: [
     CommonModule,
