@@ -3,27 +3,47 @@ import { EdgeDefinition, NodeDefinition, Core } from 'cytoscape';
 import { array } from 'vectorious';
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { Injectable } from "@angular/core";
+import { PathwayDiagramComponent } from "./pathway-diagram.component";
 
 @Injectable()
 export class PathwayDiagramUtilService {
+    // Cache all converted HyperEdges for easy editing
+    private id2hyperEdges : Map<number, HyperEdge> = new Map();
 
     constructor() { }
 
+    addPoint(diagram: DiagramComponent,
+             renderedPosition: Position,
+             element: any
+    ) {
+        if (!element.isEdge()) // Work for edge only
+            return;
+        // Find the HyperEdge this edge belong to
+        const hyperEdge = this.id2hyperEdges.get(element.data('reactomeId'));
+        if (hyperEdge === undefined)
+            return; // Nothing should be done if no HyperEdge here
+        hyperEdge.insertNode(renderedPosition, element, diagram.getDiagramService());
+    }
+
     enableEditing(diagram: DiagramComponent) {
+        // Enable node dragging first
+        diagram.cy.nodes().grabify().unpanify();
+        // But not compartment
+        diagram.cy.nodes('.Compartment').panify();
         // Get the position of nodes to be used for edges
         const id2node = new Map<string, any>();
         diagram.cy.nodes().forEach((node: any) => id2node.set(node.data('id'), node));
         const id2edges = new Map<number, any[]>();
         diagram.cy.edges().forEach((edge: any) => {
-            const id = edge.data('reactionId');
+            const id = edge.data('reactomeId');
             id2edges.set(id, [...(id2edges.get(id) || []), edge]);
         });
-        const id2hyperEdges = new Map<number, HyperEdge>();
+        this.id2hyperEdges.clear();
         id2edges.forEach((edges, id) => {
             // convert all edges for a reaction into an HyperEdge object for easy editing
-            let hyperEdge: HyperEdge = new HyperEdge(this, diagram.cy);
+            const hyperEdge: HyperEdge = new HyperEdge(this, diagram.cy);
             hyperEdge.expandEdges(edges, id2node, diagram.getDiagramService());
-            id2hyperEdges.set(id, hyperEdge);
+            this.id2hyperEdges.set(id, hyperEdge);
         });
         // Make sure all round-segments have been converted for editing
         diagram.cy.edges().forEach((edge: any) => {
@@ -166,21 +186,7 @@ class HyperEdge {
             let target = targetNode;
             let firstEdge = undefined;
             for (let point of points) {
-                let nodeId = edgeData.reactomeId + ":" + point.x + "_" + point.y;
-                let pointNode : NodeDefinition = this.id2objects.get(nodeId);
-                if (pointNode === undefined) {
-                    let data = this.utils.copyData(edgeData);
-                    data.id = nodeId;
-                    pointNode = {
-                        group: 'nodes', // Make sure this is defined
-                        data: data,
-                        position: {x: point.x, y: point.y},
-                        // TODO: Make sure this is what we need
-                        classes: ['reaction', 'input_output'] 
-                    }
-                    const newNode = this.cy.add(pointNode)[0];
-                    this.id2objects.set(nodeId, newNode);
-                }
+                let nodeId = this.createPointNode(edgeData, point);
                 target = nodeId;
                 // Use input for any internal edges to avoid show arrows.
                 let newEdge = this.createNewEdge(source, target, edgeData, diagramServive.edgeTypeMap.get("INPUT"));
@@ -199,6 +205,29 @@ class HyperEdge {
             this.cy.remove(edge);
         }
         this.resetTrivial();
+    }
+
+    private createPointNode(edgeData: any, point: Position, isRenderedPosition: boolean = false) {
+        let nodeId = edgeData.reactomeId + ":" + point.x + "_" + point.y;
+        let pointNode: NodeDefinition = this.id2objects.get(nodeId);
+        if (pointNode === undefined) {
+            let data = this.utils.copyData(edgeData);
+            data.id = nodeId;
+            pointNode = {
+                group: 'nodes', // Make sure this is defined
+                data: data,
+                // position: { x: point.x, y: point.y },
+                // TODO: Make sure this is what we need
+                classes: ['reaction', 'input_output']
+            };
+            const newNode = this.cy.add(pointNode)[0];
+            if (isRenderedPosition)
+                newNode.renderedPosition(point as any);
+            else
+                newNode.position(point);
+            this.id2objects.set(nodeId, newNode);
+        }
+        return nodeId;
     }
 
     /**
@@ -287,4 +316,21 @@ class HyperEdge {
         this.id2objects.set(newEdgeId, newEdge);
         return newEdge;
     }
+
+    /**
+     * Insert a new node into a HyperEdge
+     * @param position
+     * @param edge 
+     */
+    insertNode(renderedPosition: Position, edge: any, diagramServive: DiagramService) {
+        const pointNodeId = this.createPointNode(edge.data(), renderedPosition, true);
+        const srcId = edge.data('source');
+        const targetId = edge.data('target');
+        // Split the original edge as two: Use INPUT so that no arrow will show
+        this.createNewEdge(srcId, pointNodeId, edge.data(), diagramServive.edgeTypeMap.get("INPUT"))
+        this.createNewEdge(pointNodeId, targetId, edge.data(), diagramServive.edgeTypeMap.get("INPUT"))
+        this.cy.remove(edge);
+        this.id2objects.delete(edge.data('id'));
+    }
+
 }

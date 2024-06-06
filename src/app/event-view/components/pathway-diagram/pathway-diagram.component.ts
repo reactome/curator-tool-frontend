@@ -10,6 +10,7 @@ import { delay, map } from 'rxjs';
 import { EditorActionsComponent } from './editor-actions/editor-actions.component';
 import { PathwayDiagramUtilService } from './pathway-diagram-utils';
 import { ReactomeEvent, ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
+import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -31,8 +32,11 @@ export class PathwayDiagramComponent implements AfterViewInit {
   showMenu: boolean = false;
   menuPositionX: string = "0px";
   menuPositionY: string = "0px";
+  // A little bit buffer between the mouse point and the menu position
+  MENU_POSITION_BUFFER = 5;
 
-  renderedEdges: any;
+  // The current node or edge under the mouse
+  elementUnderMouse: any;
 
   constructor(private route: ActivatedRoute,
     private diagramUtils: PathwayDiagramUtilService
@@ -41,17 +45,15 @@ export class PathwayDiagramComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this.id$.pipe(delay(500)).subscribe(id => {
-      this.diagram.cy.nodes().grabify().unpanify();
-      this.diagram.cy.nodes('.Compartment').panify();
+      // When the diagram is loaded first, disable node dragging to avoid
+      // change the coordinates
+      this.diagram.cy.nodes().grabify().panify();
       // Have to add the following to zoom using mouse scroll. 
       this.diagram.cy.zoomingEnabled(true);
       this.diagram.cy.userZoomingEnabled(true);
       this.diagram.cy.panningEnabled(true);
       this.diagram.cy.userPanningEnabled(true);
-      // May need to use cxtapstart or end for Safari. Apparently cxttap cannot work with Safari!
-      // this.diagram.cy.nodes().on('cxttapstart', (e:any) => {
-      //   this.showCyPopup(e);
-      // });
+
       this.diagram.cy.edges().on('cxttapstart', (e:any) => {
         this.showCyPopup(e);
       });
@@ -69,15 +71,26 @@ export class PathwayDiagramComponent implements AfterViewInit {
 
   private showCyPopup(event: any) { // Use any to avoid any compiling error
     // The offset set 5px is important to prevent the native popup menu appear
-    this.menuPositionX = (event.renderedPosition.x + 5) + "px";
-    this.menuPositionY = (event.renderedPosition.y + 5) + "px";
+    this.menuPositionX = (event.renderedPosition.x + this.MENU_POSITION_BUFFER) + "px";
+    this.menuPositionY = (event.renderedPosition.y + this.MENU_POSITION_BUFFER) + "px";
     this.showMenu = true;
+    this.elementUnderMouse = event.target;
   }
 
   onAction(action: string) {
     console.debug('action is fired: ' + action);
     if (action === 'enableEditing')
       this.diagramUtils.enableEditing(this.diagram);
+    else if (action === 'addPoint') {
+      // Get the current mouse position when the popup menu appears
+      const mousePosition : Position = {
+        x: parseInt(this.menuPositionX) - this.MENU_POSITION_BUFFER,
+        y: parseInt(this.menuPositionY) - this.MENU_POSITION_BUFFER
+      }
+      this.diagramUtils.addPoint(this.diagram, 
+        mousePosition, 
+        this.elementUnderMouse);
+    }
     this.showMenu = false;
   }
 
