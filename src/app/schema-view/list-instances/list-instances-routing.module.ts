@@ -6,8 +6,18 @@ import {ListInstancesViewComponent} from "./components/list-instances-view/list-
 const routes: Routes = [
   {
     path: `:className`,
-    component: ListInstancesViewComponent
+    component: ListInstancesViewComponent,
+    // children: [{
+    //   path: `:attributes/:regex/:searchKey`,
+    //   component: ListInstancesViewComponent
+    // }]
+  },
+  {
+    path: `:className/:attributes/:attributeTypes/:regex/:searchKey`,
+    component: ListInstancesViewComponent,
+    title: 'FilterSearch',
   }
+
 ]
 
 @NgModule({

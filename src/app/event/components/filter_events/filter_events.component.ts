@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, EventEmitter, Output} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
@@ -8,6 +8,8 @@ import {MatCardModule} from '@angular/material/card';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {DataService} from "../../../core/services/data.service";
 import {AttributeDataType, SchemaClass} from "../../../core/models/reactome-schema.model";
+import {Instance} from "../../../core/models/reactome-instance.model";
+import {NgIf} from "@angular/common";
 
 interface Species {
   value: string;
@@ -22,9 +24,12 @@ interface Species {
   templateUrl: './filter_events.component.html',
   styleUrls: ['./filter_events.component.scss'],
   standalone: true,
-  imports: [MatFormFieldModule, MatSelectModule, MatInputModule, FormsModule, MatButtonModule, MatTooltipModule, MatCardModule]
+  imports: [MatFormFieldModule, MatSelectModule, MatInputModule, FormsModule, MatButtonModule, MatTooltipModule, MatCardModule, NgIf]
 })
 export class FilterEventsComponent {
+  // Adding flags to use the filter in the schema
+  @Input() isSchemaView: boolean = false;
+  @Input() schemaClassNodes: SchemaClass[] = [];
   // For doing search
   selectedSpecies = "All";
   selectedClass = "Reaction";
@@ -70,12 +75,20 @@ export class FilterEventsComponent {
     private service: DataService) {
     // Populate all Event (and children) classes into this.classNames
     service.fetchSchemaClassTree().subscribe(_ => {
-      let eventSchemaClass = service.getSchemaClass("Event");
-      let classNames: Set<string> = new Set(['Event']);
-      this.getChildren(eventSchemaClass!, classNames);
-      // Disallow search by attribute value for class TopLevelPathway - not necessary and not catered for anyway
-      classNames.delete("TopLevelPathway");
-      this.classNames = Array.from(classNames).sort((a, b) => a.localeCompare(b));
+      if(this.isSchemaView){
+        let schemaClass = service.getSchemaClass(this.schemaClassNodes[0].name);
+        let classNames: Set<string> = new Set([this.schemaClassNodes[0].name]);
+        this.getChildren(schemaClass!, classNames);
+        this.classNames = Array.from(classNames).sort((a, b) => a.localeCompare(b));
+      }
+      else {
+        let eventSchemaClass = service.getSchemaClass("Event");
+        let classNames: Set<string> = new Set(['Event']);
+        this.getChildren(eventSchemaClass!, classNames);
+        // Disallow search by attribute value for class TopLevelPathway - not necessary and not catered for anyway
+        classNames.delete("TopLevelPathway");
+        this.classNames = Array.from(classNames).sort((a, b) => a.localeCompare(b));
+      }
 
       // Populate className's attribute names into classToAttributes
       this.classNames.forEach(className => {

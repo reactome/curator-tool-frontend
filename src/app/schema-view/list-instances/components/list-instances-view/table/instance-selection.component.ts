@@ -36,6 +36,11 @@ export class InstanceSelectionComponent implements OnInit {
     this.loadInstances();
   }
 
+  @Input() attributes: Array<string> = [];
+  @Input() attributeTypes: Array<string> = [];
+  @Input() regex: Array<string> = [];
+  @Input() searchKeys: Array<string> = [];
+
   constructor(private dataService: DataService) {
   }
 
@@ -47,9 +52,10 @@ export class InstanceSelectionComponent implements OnInit {
   }
 
   loadInstances() {
+    console.log(this.attributes, this.regex, this.searchKeys)
     combineLatest([
       this.dataService.getInstanceCount(this.className, this.searchKey),
-      this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
+      this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey, this.attributes, this.attributeTypes, this.regex, this.searchKeys)
     ]).subscribe(([count, instances]) => {
         this.instanceCount = count;
         this.data = instances;

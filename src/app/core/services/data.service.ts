@@ -1,7 +1,7 @@
-import { HttpClient } from "@angular/common/http";
-import { Injectable } from '@angular/core';
-import { catchError, concatMap, forkJoin, map, Observable, of, switchMap, throwError } from 'rxjs';
-import { environment } from 'src/environments/environment.dev';
+import {HttpClient} from "@angular/common/http";
+import {Injectable} from '@angular/core';
+import {catchError, concatMap, forkJoin, map, Observable, of, switchMap, throwError} from 'rxjs';
+import {environment} from 'src/environments/environment.dev';
 import {
   AttributeCategory,
   AttributeDataType,
@@ -9,7 +9,7 @@ import {
   SchemaAttribute,
   SchemaClass
 } from '../models/reactome-schema.model';
-import { Instance } from "../models/reactome-instance.model";
+import {Instance} from "../models/reactome-instance.model";
 
 
 @Injectable({
@@ -114,15 +114,37 @@ export class DataService {
   /**
    * Fetch the schema class table.
    * @param className
+   * @param skipCache
+   * @param selectedClass
+   * @param selectedAttributes
+   * @param selectedAttributeTypes
+   * @param selectedOperands
+   * @param selectedSpecies
+   * @param searchKeys
    * @returns
    */
-  fetchSchemaClassTree(): Observable<SchemaClass> {
+  fetchSchemaClassTree(skipCache?: boolean,
+                       selectedSpecies?: string,
+                       selectedClass?: string,
+                       selectedAttributes?: string[],
+                       selectedAttributeTypes?: string[],
+                       selectedOperands?: string[],
+                       searchKeys?: string[]): Observable<SchemaClass> {
     // Check cached results first
-    if (this.rootClass) {
+    if (this.rootClass && !skipCache) {
       return of(this.rootClass!);
     }
     // Otherwise call the restful API
-    return this.http.get<SchemaClass>(this.schemaClassTreeUrl)
+    let url = this.schemaClassTreeUrl;
+    if (searchKeys && searchKeys.length > 0) {
+      url += '?class=' + selectedClass
+        + '&attributes=' + selectedAttributes?.toString()
+        + "&attributeTypes=" + selectedAttributeTypes?.toString()
+        + '&operands=' + encodeURI(selectedOperands!.toString())
+        + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'"));
+    }
+    console.log('url', url)
+    return this.http.get<SchemaClass>(url)
       .pipe(
         map((data: SchemaClass) => {
           // console.debug("fetchSchemaClassTree:", data);
@@ -177,7 +199,7 @@ export class DataService {
             dbId: 0,
             displayName: "TopLevelPathway",
             schemaClassName: "TopLevelPathway",
-            attributes: { "hasEvent": data }
+            attributes: {"hasEvent": data}
           };
           this.rootEvent = rootEvent;
           return rootEvent;
@@ -333,7 +355,7 @@ export class DataService {
 
   fetchEventPlotData(dbId: number, plotType: string): Observable<JSON> {
     return this.http.get<JSON>(this.eventPlotDataUrl + `${dbId}` + "?type=" + plotType)
-        .pipe(map((data: JSON) => data),
+      .pipe(map((data: JSON) => data),
         catchError((err: Error) => {
           console.log("Plot data could not be retrieved: \n" + err.message, "Close", {
             panelClass: ['warning-snackbar'],
@@ -355,18 +377,18 @@ export class DataService {
    */
   createNewInstance(schemaClassName: string): Observable<Instance> {
     return this.fetchSchemaClass(schemaClassName).pipe(map((schemaClass: SchemaClass) => {
-      const attributes = new Map();
-      attributes.set('dbId', this.getNextNewDbId());
-      attributes.set('displayName', DataService.newDisplayName);
-      let instance: Instance = {
-        dbId: attributes.get('dbId'),
-        displayName: attributes.get('displayName'),
-        schemaClassName: schemaClassName,
-        attributes: attributes
-      };
-      instance.schemaClass = schemaClass;
-      return instance;
-    }),
+        const attributes = new Map();
+        attributes.set('dbId', this.getNextNewDbId());
+        attributes.set('displayName', DataService.newDisplayName);
+        let instance: Instance = {
+          dbId: attributes.get('dbId'),
+          displayName: attributes.get('displayName'),
+          schemaClassName: schemaClassName,
+          attributes: attributes
+        };
+        instance.schemaClass = schemaClass;
+        return instance;
+      }),
       catchError((err: Error) => {
         console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
           panelClass: ['warning-snackbar'],
@@ -449,15 +471,30 @@ export class DataService {
    * @param className
    * @param skip
    * @param limit
+   * @param searchKey
+   * @param selectedAttributes
+   * @param selectedAttributeTypes
+   * @param selectedOperands
+   * @param searchKeys
    * @returns
    */
   listInstances(className: string,
-    skip: number,
-    limit: number,
-    searchKey: string | undefined): Observable<Instance[]> {
+                skip: number,
+                limit: number,
+                searchKey: string | undefined,
+                selectedAttributes?: string[] | undefined,
+                selectedAttributeTypes?: string[] | undefined,
+                selectedOperands?: string[] | undefined,
+                searchKeys?: string[] | undefined): Observable<Instance[]> {
     let url = this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
     if (searchKey !== undefined) {
       url += '?query=' + searchKey;
+    }
+    if (selectedAttributes !== undefined && selectedAttributeTypes !== undefined && selectedOperands !== undefined && searchKeys !== undefined){
+      url += '?attributes=' + selectedAttributes.toString()
+      + '&attributeTypes=' + encodeURI(selectedAttributeTypes.toString()
+      + '&operands=' + encodeURI(selectedOperands.toString())
+      + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'")));
     }
     // console.debug('list instances url: ' + url);
     return this.http.get<Instance[]>(url)
@@ -474,37 +511,37 @@ export class DataService {
   /**
    * Load the persistence instances for a user
    * @param userName
-   * @returns 
+   * @returns
    */
-loadInstances(userName: string): Observable<Instance[]> {
-  return this.http.get<Instance[]>(this.loadInstancesUrl + userName)
-    .pipe(
-      switchMap((data: Instance[]) => {
-        return forkJoin(
-          data.map(inst => {
-            this.handleInstanceAttributes(inst);
-            this.id2instance.set(inst.dbId, inst);
-            return this.handleSchemaClassForInstance(inst).pipe(
-              map((inst) => inst)
-            );
-          })
-        );
-      }),
-      catchError((err: Error) => {
-        console.log("Error in loadInstances: \n" + err.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 100
-        });
-        return throwError(() => err);
-      }),
-    );
-}
+  loadInstances(userName: string): Observable<Instance[]> {
+    return this.http.get<Instance[]>(this.loadInstancesUrl + userName)
+      .pipe(
+        switchMap((data: Instance[]) => {
+          return forkJoin(
+            data.map(inst => {
+              this.handleInstanceAttributes(inst);
+              this.id2instance.set(inst.dbId, inst);
+              return this.handleSchemaClassForInstance(inst).pipe(
+                map((inst) => inst)
+              );
+            })
+          );
+        }),
+        catchError((err: Error) => {
+          console.log("Error in loadInstances: \n" + err.message, "Close", {
+            panelClass: ['warning-snackbar'],
+            duration: 100
+          });
+          return throwError(() => err);
+        }),
+      );
+  }
 
   /**
    * Persist new and updated instances to the server.
-   * @param instances 
-   * @param userName 
-   * @returns 
+   * @param instances
+   * @param userName
+   * @returns
    */
   //TODO: See if it is possible to persist only changed attributes for updated instances to increase the
   // performance.
@@ -514,8 +551,7 @@ loadInstances(userName: string): Observable<Instance[]> {
       let full_inst = this.id2instance.get(inst.dbId);
       if (full_inst === undefined) {
         console.error('Cannot find the cached instance for ', inst);
-      }
-      else {
+      } else {
         clonedInstances.push(this.cloneInstanceForCommit(full_inst));
       }
     }
@@ -532,8 +568,8 @@ loadInstances(userName: string): Observable<Instance[]> {
 
   /**
    * Empty the persisted instances at the server.
-   * @param userName 
-   * @returns 
+   * @param userName
+   * @returns
    */
   deletePersistedInstances(userName: string): Observable<any> {
     return this.http.delete<any>(this.deletePersistedInstancesUrl + userName).pipe(
@@ -553,7 +589,7 @@ loadInstances(userName: string): Observable<Instance[]> {
    * @param className
    */
   findInstanceByDisplayName(displayName: string,
-    className: string[]): Observable<Instance> {
+                            className: string[]): Observable<Instance> {
     let clsNameText = className.join(',');
     // The URL should encode itself
     let url = this.findInstanceByDisplayNameUrl + '?displayName=' + displayName + "&classNames=" + clsNameText;
@@ -588,9 +624,9 @@ loadInstances(userName: string): Observable<Instance[]> {
   }
 
   /**
- * Commit the passed instance back to the database.
- * @param instance
- */
+   * Commit the passed instance back to the database.
+   * @param instance
+   */
   fillReference(instance: Instance): Observable<Instance> {
     // Need to handle attributes. The map cannot be converted into JSON automatically!!!
     const copy = this.cloneInstanceForCommit(instance);
@@ -652,22 +688,22 @@ loadInstances(userName: string): Observable<Instance[]> {
 
   testQACheckReport(dbId: number,
                     checkType: string,
-                          editedAttributeName: string | undefined,
-                          editedAttributeValue: string | undefined): Observable<string[][]> {
+                    editedAttributeName: string | undefined,
+                    editedAttributeValue: string | undefined): Observable<string[][]> {
     return this.http.get<string[][]>(this.testQACheckReportUrl + `${dbId}`
-          + "?checkType=" + checkType
-          + "&editedAttributeNames=" + editedAttributeName
-          + "&editedAttributeValues=" + editedAttributeValue
-          )
-            .pipe(map((data: string[][]) => data),
-            catchError((err: Error) => {
-              console.log("TestQACheck report could not be retrieved: \n" + err.message, "Close", {
-                panelClass: ['warning-snackbar'],
-                duration: 100
-              });
-              return throwError(() => err);
-            }),
-          );
+      + "?checkType=" + checkType
+      + "&editedAttributeNames=" + editedAttributeName
+      + "&editedAttributeValues=" + editedAttributeValue
+    )
+      .pipe(map((data: string[][]) => data),
+        catchError((err: Error) => {
+          console.log("TestQACheck report could not be retrieved: \n" + err.message, "Close", {
+            panelClass: ['warning-snackbar'],
+            duration: 100
+          });
+          return throwError(() => err);
+        }),
+      );
   }
 
 }

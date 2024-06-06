@@ -1,7 +1,7 @@
 import { FlatTreeControl } from "@angular/cdk/tree";
 import { Component } from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
-import { Router } from "@angular/router";
+import {Router, ROUTES} from "@angular/router";
 import { Store } from "@ngrx/store";
 import { SchemaClass } from "../../../../core/models/reactome-schema.model";
 import { DataService } from "../../../../core/services/data.service";
@@ -65,5 +65,29 @@ export class SchemaClassTreeComponent {
     });
   }
 
+  filterData(searchFilters: Array<string[]>, generatePlot?: boolean) {
+    let schemaClass: string = "";
+    let selectedClass = searchFilters[1][0] as string;
+    let selectedAttributes = searchFilters[2];
+    let selectedAttributeTypes = searchFilters[3];
+    let selectedOperands = searchFilters[4];
+    let searchKeys = searchFilters[5];
+    if (selectedClass !== "") {
+      schemaClass = selectedClass;
+    }
+    let url =  "/schema_view/list_instances/" + schemaClass + "/";
+    console.log('params', schemaClass, selectedAttributes, selectedOperands, searchKeys );
+    this.router.navigate(["/schema_view/list_instances/", schemaClass,
+      selectedAttributes.join(','),
+      selectedAttributeTypes.join(','),
+      selectedOperands.join(','),
+      searchKeys.join(',')])
+  }
+
   protected readonly EDIT_ACTION = EDIT_ACTION;
 }
+
+// className: schemaClass,
+//   attributes: selectedAttributes,
+//   regex: selectedOperands,
+//   searchKey: searchKeys
