@@ -12,6 +12,21 @@ export class PathwayDiagramUtilService {
 
     constructor() { }
 
+    /**
+     * Remove a node representing a connecting point from the diagram.
+     * @param diagram
+     * @param element the node to be removed.
+     */
+    removePoint(element: any) {
+        if (!element.isNode()) // Only a node can be removed
+            return;
+        // Find the HyperEdge this edge belong to
+        const hyperEdge = this.id2hyperEdges.get(element.data('reactomeId'));
+        if (hyperEdge === undefined)
+            return; // Nothing should be done if no HyperEdge here
+        hyperEdge.removeNode(element);
+}
+
     addPoint(diagram: DiagramComponent,
              renderedPosition: Position,
              element: any
@@ -331,6 +346,43 @@ class HyperEdge {
         this.createNewEdge(pointNodeId, targetId, edge.data(), diagramServive.edgeTypeMap.get("INPUT"))
         this.cy.remove(edge);
         this.id2objects.delete(edge.data('id'));
+    }
+
+    /**
+     * Remove a node from this HyperEdge. Only input_output node can be removed.
+     * @param node 
+     */
+    removeNode(node: any) {
+        if (!node.hasClass('input_output') || !node.hasClass('reaction'))
+            return;
+        const connectedEdges = node.connectedEdges();
+        // Don't remove any node that is connected more than two edges: 
+        // these are nodes in the reaction backbone.
+        // Actually only nodes that are used as connecting can be removed
+        // these node should have connection degree == 2.
+        if (connectedEdges.length !== 2) 
+            return;
+        // Find the input edge
+        let inputEdge = undefined;
+        let outputEdge = undefined;
+        for (let edge of connectedEdges) {
+            if (edge.source() === node)
+                outputEdge = edge;
+            else
+                inputEdge = edge;
+        }
+        // Do nothing if either of them cannot be found
+        if (inputEdge === undefined || outputEdge === undefined)
+            return;
+        const newEdge = this.createNewEdge(inputEdge.source().data('id'),
+                                           outputEdge.target().data('id'),
+                                           inputEdge.data(),
+                                           inputEdge.classes());
+        this.cy.remove(node);
+        for (let edge of connectedEdges) {
+            this.cy.remove(edge);
+            this.id2objects.delete(edge.data('id'));
+        }
     }
 
 }

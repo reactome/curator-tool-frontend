@@ -91,6 +91,9 @@ export class PathwayDiagramComponent implements AfterViewInit {
         mousePosition, 
         this.elementUnderMouse);
     }
+    else if (action === 'removePoint') {
+      this.diagramUtils.removePoint(this.elementUnderMouse);
+    }
     this.showMenu = false;
   }
 
