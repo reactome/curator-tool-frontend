@@ -21,16 +21,16 @@ export class MainEventComponent {
   constructor() {
   }
 
-  ngAfterViewInit(): void {
-    this.id$.pipe(delay(500)).subscribe(id => {
-      this.diagram.cy.nodes().grabify().unpanify();
-      this.diagram.cy.nodes('.Compartment').ungrabify().panify();
-      this.diagram.cy.nodes('.Legend').ungrabify().panify();
-      console.log('diagram', this.diagram.legend.$id('#legend-boundary').width())
-      this.diagram.legend.data().opened;
-      this.diagram.legend.width().toFixed(360);
-    })
-  }
+  // ngAfterViewInit(): void {
+  //   this.id$.pipe(delay(500)).subscribe(id => {
+  //     this.diagram.cy.nodes().grabify().unpanify();
+  //     this.diagram.cy.nodes('.Compartment').ungrabify().panify();
+  //     this.diagram.cy.nodes('.Legend').ungrabify().panify();
+  //     console.log('diagram', this.diagram.legend.$id('#legend-boundary').width())
+  //     this.diagram.legend.data().opened;
+  //     this.diagram.legend.width().toFixed(360);
+  //   })
+  // }
 
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
