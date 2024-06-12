@@ -33,6 +33,11 @@ export class TextCurationComponent {
   // But this may need to be refactored in the future.
   @Input() instanceView: InstanceViewComponent | undefined;
 
+  // @Input() set instanceView(instanceView: InstanceViewComponent | undefined) {
+  //   if (instanceView !== undefined)
+  //     console.log('attribute: ', instanceView);
+  // }
+
   // Test code: Need to remove it
   chatModel: ChatOpenAI | undefined = undefined;
 

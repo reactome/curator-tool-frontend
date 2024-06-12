@@ -4,9 +4,11 @@ import { array } from 'vectorious';
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { Injectable } from "@angular/core";
 import { PathwayDiagramComponent } from "./pathway-diagram.component";
+import { first } from "rxjs";
 
 @Injectable()
 export class PathwayDiagramUtilService {
+    diagramService: DiagramService | undefined = undefined;
     // Cache all converted HyperEdges for easy editing
     private id2hyperEdges : Map<number, HyperEdge> = new Map();
 
@@ -25,10 +27,9 @@ export class PathwayDiagramUtilService {
         if (hyperEdge === undefined)
             return; // Nothing should be done if no HyperEdge here
         hyperEdge.removeNode(element);
-}
+    }
 
-    addPoint(diagram: DiagramComponent,
-             renderedPosition: Position,
+    addPoint(renderedPosition: Position,
              element: any
     ) {
         if (!element.isEdge()) // Work for edge only
@@ -37,7 +38,19 @@ export class PathwayDiagramUtilService {
         const hyperEdge = this.id2hyperEdges.get(element.data('reactomeId'));
         if (hyperEdge === undefined)
             return; // Nothing should be done if no HyperEdge here
-        hyperEdge.insertNode(renderedPosition, element, diagram.getDiagramService());
+        hyperEdge.insertNode(renderedPosition, element);
+    }
+
+    disableEditing(diagram: DiagramComponent) {
+        if (this.id2hyperEdges === undefined || this.id2hyperEdges.size === 0)
+            return; // Nothing needs to be done
+        // Disable node dragging
+        diagram.cy.nodes().grabify().panify();
+        diagram.cy.nodes('.Compartment').panify();
+        this.id2hyperEdges.forEach((hyperEdge, _) => {
+            hyperEdge.enableRoundSegments();
+        });
+
     }
 
     enableEditing(diagram: DiagramComponent) {
@@ -57,7 +70,7 @@ export class PathwayDiagramUtilService {
         id2edges.forEach((edges, id) => {
             // convert all edges for a reaction into an HyperEdge object for easy editing
             const hyperEdge: HyperEdge = new HyperEdge(this, diagram.cy);
-            hyperEdge.expandEdges(edges, id2node, diagram.getDiagramService());
+            hyperEdge.expandEdges(edges, id2node);
             this.id2hyperEdges.set(id, hyperEdge);
         });
         // Make sure all round-segments have been converted for editing
@@ -149,6 +162,33 @@ export class PathwayDiagramUtilService {
         return absolutePositions;
     }
 
+    /**
+     * Copied directly from diagram.service.ts to avoid changing the code there.
+     * @param source
+     * @param target 
+     * @param toConvert 
+     * @returns 
+     */
+    absoluteToRelative(source: Position, target: Position, toConvert: Position[]) {
+        const distances = [];
+        const weights = [];
+        const mainVector = array([target.x - source.x, target.y - source.y]); // Edge vector
+        const orthoVector = array([-mainVector.y, mainVector.x]) // Perpendicular vector
+          .normalize(); //Normalized to have the distance expressed in pixels https://math.stackexchange.com/a/413235/683621
+        let transform = array([
+          [mainVector.x, mainVector.y],
+          [orthoVector.x, orthoVector.y],
+        ]).inv(); // Should always be invertible if the ortho vector is indeed perpendicular
+    
+        for (let coord of toConvert) {
+          const absolute = array([[coord.x - source.x, coord.y - source.y]]);
+          const relative = absolute.multiply(transform);
+          weights.push(relative.get(0, 0))
+          distances.push(relative.get(0, 1))
+        }
+        return {distances: distances, weights: weights};
+    }
+
     copyData(data: any): any {
         // Filter out undefined values from the edge data
         const filteredData = Object.fromEntries(Object.entries(data).filter(([key, value]) => value !== undefined));
@@ -179,9 +219,137 @@ class HyperEdge {
         this.cy = cy;
     }
 
+    // TODO: Need to review the code; bug: after disable, 
+    // the selection and highlight cannot get the whole reaction;
+    // cannot do multiple round enable/disable
+    /**
+     * Enable round-segment style for this HyperEdge. 
+     * Some edges and nodes will be removed. 
+     */
+    enableRoundSegments() {
+        // Find the reaction node first
+        // Create round-segment from nodes to reaction node
+        let reactionNode = undefined;
+        for (let node of this.id2objects.values()) {
+            if (this.isReactionNode(node)) {
+                reactionNode = node;
+                break;
+            }
+        }
+        if (reactionNode === undefined)
+            return; // Nothing needs to be done
+        console.debug('Found reaction node: ', reactionNode);
+        // Use aStart function to find the paths. dfs and bfs apparently cannot work!
+        const collection = this.cy.collection(Array.from(this.id2objects.values()));
+        const toBeRemoved = new Set<any>();
+        for (let elm of this.id2objects.values()) {
+            if (elm.isEdge() || elm === reactionNode)
+                continue;
+            if (!elm.hasClass('PhysicalEntity'))
+                continue; // For PE only
+            
+            let path = collection.aStar({
+                root: '#' + reactionNode.data('id'),
+                goal: '#' + elm.data('id')
+            });
+            console.debug(path.path);
+            this.createRoundSegmentEdgeForPath(path, toBeRemoved);
+        }
+        this.cy.remove(this.cy.collection(Array.from(toBeRemoved)));
+    }
+
+    private createRoundSegmentEdgeForPath(path: any, toBeRemoved: Set<any>) {
+        // If the path distance is 1, the edge is a line. Nothing to work on it.
+        if (!path.found || path.distance === 1) return; // Nothing can or need to be done
+        const rxtNode: any = path.path[0];
+        const peNode: any = path.path[path.path.length - 1];
+        if (!peNode.isNode()) 
+            return; // Work with node only
+        let points: Position[] = [];
+        let lastEdge = undefined;
+        let firstEdge = undefined;
+        for (let i = 1; i < path.path.length - 1; i++) { // Path has both nodes and edges
+            let element = path.path[i];
+            // Mark to be removed
+            toBeRemoved.add(element);
+            if (element.isNode())
+                points.push(element.position());
+            else if (element.isEdge()) {
+                if (firstEdge === undefined)
+                    firstEdge = element;
+                lastEdge = element;
+            }
+        }
+        // Use the lastEdge's data for the new edge
+        const edgeType = this.getEdgeType(lastEdge);
+        let data = undefined;
+        let edgeClasses = undefined;
+        let source = undefined;
+        let target = undefined;
+        if (edgeType === "OUTPUT") {
+            data = this.utils.copyData(lastEdge.data());
+            source = rxtNode;
+            target = peNode;
+            edgeClasses = lastEdge.classes();
+        }
+        else {
+            data = this.utils.copyData(firstEdge.data());
+            source = peNode;
+            target = rxtNode;
+            edgeClasses = firstEdge.classes();
+            points = points.reverse();
+        }
+        data.source = source.data('id');
+        data.target = target.data('id');
+        const edgeTypeText = " --" + this.utils.diagramService?.edgeTypeToStr.get(edgeType) + " ";
+        let newEdgeId = data.source + edgeTypeText + data.target;
+        newEdgeId = this.getNewEdgeId(newEdgeId);
+        data.id = newEdgeId;
+        const relPos = this.utils.absoluteToRelative(source.position(), 
+                                              target.position(),
+                                              points);
+        data.weights = relPos.weights.join(" ");
+        data.distances = relPos.distances.join(" ");
+        data.curveStyle = "round-segments";
+        data.sourceEndpoint = '0 0';
+        data.targetEndpoint = '0 0';
+        const edge: EdgeDefinition = {
+            data: data,
+            classes: [...edgeClasses],
+        };
+        this.cy.add(edge);
+    }
+
+    private getNewEdgeId(id: string) {
+        if (!this.id2objects.has(id)) return id;
+        let count = 1;
+        while (this.id2objects.has(id)) {
+            id = id + "_" + count;
+        }
+        return id;
+    }
+
+    private getEdgeType(edge: any): string {
+        // Based on the original definition
+        if (edge.hasClass('consumption')) return "INPUT";
+        if (edge.hasClass('positive-regulation')) return "ACTIVATOR";
+        // Cannot map back to "required"
+        if (edge.hasClass('negative-regulation')) return "INHIBITOR";
+        if (edge.hasClass('catalysis')) return "CATALYST";
+        if (edge.hasClass('production')) return "OUTPUT";
+        return "UNKNOWN"; // The default
+    }
+
+    private isReactionNode(element: any): boolean {
+        if (!element.isNode())
+            return false;
+        if (element.hasClass('reaction') && !element.hasClass('input_output'))
+            return true;
+        return false;
+    }
+
     expandEdges(currentEdges: any[],
-        id2node: Map<string, any>,
-        diagramServive: DiagramService
+        id2node: Map<string, any>
     ) {
         this.id2objects = new Map<string, any>();
         for (let edge of currentEdges) {
@@ -204,7 +372,7 @@ class HyperEdge {
                 let nodeId = this.createPointNode(edgeData, point);
                 target = nodeId;
                 // Use input for any internal edges to avoid show arrows.
-                let newEdge = this.createNewEdge(source, target, edgeData, diagramServive.edgeTypeMap.get("INPUT"));
+                let newEdge = this.createNewEdge(source, target, edgeData, this.utils.diagramService!.edgeTypeMap.get("INPUT"));
                 source = target;
                 if (!firstEdge) firstEdge = newEdge;
             }
@@ -337,13 +505,13 @@ class HyperEdge {
      * @param position
      * @param edge 
      */
-    insertNode(renderedPosition: Position, edge: any, diagramServive: DiagramService) {
+    insertNode(renderedPosition: Position, edge: any) {
         const pointNodeId = this.createPointNode(edge.data(), renderedPosition, true);
         const srcId = edge.data('source');
         const targetId = edge.data('target');
         // Split the original edge as two: Use INPUT so that no arrow will show
-        this.createNewEdge(srcId, pointNodeId, edge.data(), diagramServive.edgeTypeMap.get("INPUT"))
-        this.createNewEdge(pointNodeId, targetId, edge.data(), diagramServive.edgeTypeMap.get("INPUT"))
+        this.createNewEdge(srcId, pointNodeId, edge.data(), this.utils.diagramService!.edgeTypeMap.get("INPUT"))
+        this.createNewEdge(pointNodeId, targetId, edge.data(), this.utils.diagramService!.edgeTypeMap.get("INPUT"))
         this.cy.remove(edge);
         this.id2objects.delete(edge.data('id'));
     }
