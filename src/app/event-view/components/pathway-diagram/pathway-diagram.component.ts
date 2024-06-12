@@ -9,7 +9,7 @@ import { DiagramComponent } from 'ngx-reactome-diagram';
 import { delay, map } from 'rxjs';
 import { EditorActionsComponent } from './editor-actions/editor-actions.component';
 import { PathwayDiagramUtilService } from './pathway-diagram-utils';
-import { ReactomeEvent, ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
+import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
 
 @Component({
@@ -37,6 +37,8 @@ export class PathwayDiagramComponent implements AfterViewInit {
 
   // The current node or edge under the mouse
   elementUnderMouse: any;
+  // Tracking the diting status
+  isEditing: boolean = false;
 
   constructor(private route: ActivatedRoute,
     private diagramUtils: PathwayDiagramUtilService
@@ -45,6 +47,7 @@ export class PathwayDiagramComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this.id$.pipe(delay(500)).subscribe(id => {
+      this.diagramUtils.diagramService = this.diagram.getDiagramService();
       // When the diagram is loaded first, disable node dragging to avoid
       // change the coordinates
       this.diagram.cy.nodes().grabify().panify();
@@ -79,17 +82,21 @@ export class PathwayDiagramComponent implements AfterViewInit {
 
   onAction(action: string) {
     console.debug('action is fired: ' + action);
-    if (action === 'enableEditing')
+    if (action === 'enableEditing') {
       this.diagramUtils.enableEditing(this.diagram);
+      this.isEditing = true;
+    }
+    else if (action === 'disableEditing') {
+      this.diagramUtils.disableEditing(this.diagram);
+      this.isEditing = false;
+    }
     else if (action === 'addPoint') {
       // Get the current mouse position when the popup menu appears
       const mousePosition : Position = {
         x: parseInt(this.menuPositionX) - this.MENU_POSITION_BUFFER,
         y: parseInt(this.menuPositionY) - this.MENU_POSITION_BUFFER
       }
-      this.diagramUtils.addPoint(this.diagram, 
-        mousePosition, 
-        this.elementUnderMouse);
+      this.diagramUtils.addPoint(mousePosition, this.elementUnderMouse);
     }
     else if (action === 'removePoint') {
       this.diagramUtils.removePoint(this.elementUnderMouse);
@@ -101,22 +108,23 @@ export class PathwayDiagramComponent implements AfterViewInit {
     const reactomeEvent = event as ReactomeEvent;
     // if (reactomeEvent.type !== ReactomeEventTypes.select)
     //   return;
-    let affectedElms = undefined;
     // Apparently we cannot use isNode or isEdge to check the detail's type.
-    // We have to use this this way to check if a reaction or a node is used. 
-    if (reactomeEvent.detail.type !== 'reaction') {
+    // We have to use this way to check if a reaction or a node is used. 
+    let reactomeId = event.detail.reactomeId;
+    let affectedElms = undefined;
+    if (reactomeEvent.detail.type !== 'reaction') { // Check for node attachment only
       affectedElms = this.diagram.cy.nodes().filter((node: any) => {
-        // The second is to check nodeReactomeId (Make sure return is here!!!)
-        return node.data('nodeReactomeId') && node.data('nodeReactomeId') === event.detail.reactomeId;
+        // This is for nodeAttachments!
+        return node.data('nodeReactomeId') && node.data('nodeReactomeId') === reactomeId;
       }
       );
     }
     else {
-      affectedElms = this.diagram.cy.edges().filter((edge: any) => {
-        // The second is to check nodeReactomeId (Make sure return is here!!!)
-        return edge.data('reactomeId') && edge.data('reactomeId') === event.detail.reactomeId;
-      }
-      );
+      // We'd like to get the reaction node too. Therefore, scan all elements.
+      affectedElms = this.diagram.cy.elements().filter((elm: any) => {
+        return  (elm.data('reactomeId') && (elm.data('reactomeId') === reactomeId)) ||
+                (elm.data('nodeReactomeId') && (elm.data('nodeReactomeId') === reactomeId));
+      });
     }
     if (affectedElms === undefined || affectedElms.length === 0)
       return;

@@ -1,52 +1,42 @@
-import {AsyncPipe, NgForOf, NgIf} from '@angular/common';
-import {AfterViewInit, Component, Input, OnInit} from '@angular/core';
-import {MatFormField, MatLabel} from '@angular/material/form-field';
-import {MatTooltip} from '@angular/material/tooltip';
-import {Router} from '@angular/router';
-import {ChatPromptTemplate} from "@langchain/core/prompts";
-import {ChatOpenAI} from '@langchain/openai';
-import {Store} from '@ngrx/store';
-import {AgentExecutor, createOpenAIFunctionsAgent} from "langchain/agents";
-import {pull} from 'langchain/hub';
-import {AttributeDataType, SchemaAttribute} from 'src/app/core/models/reactome-schema.model';
-import {DataService} from 'src/app/core/services/data.service';
-import {
-  InstanceTableComponent
-} from 'src/app/instance/components/instance-view/instance-table/instance-table.component';
-import {NewInstanceActions} from "src/app/instance/state/instance.actions";
-import {z} from "zod";
+import { NgIf } from '@angular/common';
+import { Component, Input } from '@angular/core';
+import { MatLabel } from '@angular/material/form-field';
+import { MatTooltip } from '@angular/material/tooltip';
+import { Router } from '@angular/router';
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { ChatOpenAI } from '@langchain/openai';
+import { Store } from '@ngrx/store';
+import { AgentExecutor, createOpenAIFunctionsAgent } from "langchain/agents";
+import { pull } from 'langchain/hub';
+import { AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
+import { DataService } from 'src/app/core/services/data.service';
+import { InstanceTableComponent } from 'src/app/instance/components/instance-view/instance-table/instance-table.component';
+import { NewInstanceActions } from "src/app/instance/state/instance.actions";
+import { z } from "zod";
 
-import {HttpClient} from '@angular/common/http';
-import {DynamicStructuredTool} from "@langchain/core/tools";
-import {Instance} from 'src/app/core/models/reactome-instance.model';
-import {InstanceViewComponent} from 'src/app/instance/components/instance-view/instance-view.component';
-import {MatAutocomplete, MatAutocompleteTrigger, MatOption} from "@angular/material/autocomplete";
-import {FormControl, ReactiveFormsModule} from "@angular/forms";
-import {Observable, startWith, async} from "rxjs";
-import {map} from "rxjs/operators";
-import {MatInput} from "@angular/material/input";
-import {MatMenu, MatMenuItem, MatMenuTrigger} from "@angular/material/menu";
-import {MatButton} from "@angular/material/button";
+import { HttpClient } from '@angular/common/http';
+import { DynamicStructuredTool } from "@langchain/core/tools";
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
 
 @Component({
   selector: 'app-text-curation',
   standalone: true,
-  imports: [MatLabel, MatTooltip, NgIf, MatFormField, MatAutocomplete, ReactiveFormsModule, MatAutocompleteTrigger, MatOption, NgForOf, MatInput, AsyncPipe, MatMenuTrigger, MatMenu, MatMenuItem, MatButton],
+  imports: [MatLabel, MatTooltip, NgIf],
   templateUrl: './text-curation.component.html',
   styleUrl: './text-curation.component.scss',
 })
-export class TextCurationComponent implements OnInit {
+export class TextCurationComponent {
 
   @Input() embedded: boolean = false;
   //Instead of refer to a table, here we refer to the view to avoid NG0100 error: view changed after checking!
   // But this may need to be refactored in the future.
   @Input() instanceView: InstanceViewComponent | undefined;
 
-  @Input() set instance(instance: Instance | undefined) {
-    if (instance) {
-      this.attributeList = instance.schemaClass?.attributes ? instance.schemaClass?.attributes : [];
-    }
-  }
+  // @Input() set instanceView(instanceView: InstanceViewComponent | undefined) {
+  //   if (instanceView !== undefined)
+  //     console.log('attribute: ', instanceView);
+  // }
 
   // Test code: Need to remove it
   chatModel: ChatOpenAI | undefined = undefined;
@@ -58,73 +48,29 @@ export class TextCurationComponent implements OnInit {
         type: "string",
         enum: ["createNewInstance", "setAttribute", "searchInstance", "editInstance"],
       },
-      schemaClassName: {type: "string"},
-      attribute: {type: "string"},
-      value: {type: "string"},
-      dbId: {type: "number"}
+      schemaClassName: { type: "string" },
+      attribute: { type: "string" },
+      value: { type: "string" },
+      dbId: { type: "number" }
     },
     required: ["operation", "schemaClassName", "attribute", "value", "dbId"],
   };
-  commandControl = new FormControl<string>('');
-  attributeControl = new FormControl<string | SchemaAttribute>('');
-  commandList: string[] = ['set', 'create', 'delete'];
-  filteredCommandList: Observable<string[]> = new Observable<string[]>();
-  attributeList: SchemaAttribute[] = [];
-  filteredAttributeList: Observable<SchemaAttribute[]> = new Observable<SchemaAttribute[]>();
-
 
   constructor(private dataService: DataService,
-              private objectStore: Store,
-              private router: Router,
-              private http: HttpClient) {
+    private objectStore: Store,
+    private router: Router,
+    private http: HttpClient) {
     // Fetch OpenAI API key
-    // const llm_url_openai_key = 'http://127.0.0.1:5000/openai_key';
-    // this.http.get(llm_url_openai_key, {responseType: 'text'}).subscribe(result => {
-    //   this.chatModel = new ChatOpenAI(
-    //     {
-    //       openAIApiKey: result,
-    //       modelName: 'gpt-3.5-turbo',
-    //       temperature: 0,
-    //     }
-    //   )
-    // });
-  }
-
-  ngOnInit() {
-    this.filteredAttributeList = this.attributeControl.valueChanges.pipe(
-      startWith(''),
-      map(value => {
-        const name = typeof value === 'string' ? value : value?.name;
-        return name ? this._filter(name as string) : this.attributeList?.slice();
-      }),
-    );
-
-    this.filteredCommandList = this.commandControl.valueChanges.pipe(
-      startWith(''),
-      map(value => {
-        return this._commandFilter(value!)
-      })
-    )
-
-  }
-
-  displayCommands(command: string): string {
-    return command ? command : '';
-  }
-  displayAttributes(attribute: SchemaAttribute): string {
-    return attribute && attribute.name ? attribute.name : '';
-  }
-
-  private _filter(attribute: string) {
-    const filterValue = attribute.toLowerCase();
-
-    return this.attributeList?.filter(option => option.name.toLowerCase().includes(filterValue));
-  }
-
-  private _commandFilter(command: string) {
-    const filterValue = command.toLowerCase();
-
-    return this.commandList.filter(option => option.toLowerCase().includes(filterValue));
+    const llm_url_openai_key = 'http://127.0.0.1:5000/openai_key';
+    this.http.get(llm_url_openai_key, {responseType: 'text'}).subscribe(result => {
+      this.chatModel = new ChatOpenAI(
+        {
+          openAIApiKey: result,
+          modelName: 'gpt-3.5-turbo',
+          temperature: 0,
+        }
+      )
+    });
   }
 
   // The following implementation is based on:
@@ -140,7 +86,7 @@ export class TextCurationComponent implements OnInit {
         schema: z.object({
           schemaClassName: z.string().describe('The schema class name of the new instance'),
         }),
-        func: async ({schemaClassName}) => {
+        func: async ({ schemaClassName }) => {
           this.createNewInstance(schemaClassName);
           return 'a new instance is created.';
         },
@@ -152,7 +98,7 @@ export class TextCurationComponent implements OnInit {
           attributeName: z.string().describe("The attribute name"),
           value: z.any().describe("The attribute value"),
         }),
-        func: async ({attributeName, value}) => {
+        func: async ({ attributeName, value }) => {
           console.debug('Attriute name: ', attributeName, 'value: ', value);
           this.setAttribute(attributeName, value);
           return 'assign attribute done';
@@ -165,7 +111,7 @@ export class TextCurationComponent implements OnInit {
           attributeName: z.string().describe("The attribute name"),
           value: z.any().describe("The attribute value"),
         }),
-        func: async ({attributeName, value}) => {
+        func: async ({ attributeName, value }) => {
           console.debug('Attriute name: ', attributeName, 'value: ', value);
           this.setAttribute(attributeName, value, true);
           return 'assign attribute done';
@@ -179,7 +125,7 @@ export class TextCurationComponent implements OnInit {
           // className: z.string().optional().describe('The className of the instance to be edited'),
           // displayName: z.string().optional().describe('The displayName of the instance to be edited')
         }),
-        func: async ({dbId}) => {
+        func: async ({ dbId }) => {
           console.debug('Instance to be edited: ', dbId);
           this.editInstance(dbId);
           return "instance view opened";
@@ -251,7 +197,6 @@ export class TextCurationComponent implements OnInit {
       return;
     // Make sure the value is validated
     const instance = this.instanceView!.instanceTable._instance;
-    this.attributeList = instance.attributes;
     // Determinte if the attribute is an instance type
     const clsAtt = this.getClassAttribute(attribute, instance);
     if (clsAtt === undefined) return;
@@ -265,17 +210,19 @@ export class TextCurationComponent implements OnInit {
             values.push(value);
           else
             instance.attributes.set(attribute, [value]);
-        } else
+        }
+        else
           instance.attributes.set(attribute, [value]);
       }
       this.validateTable(attribute, [value]);
-    } else {
+    }
+    else {
       this.setInstanceAttribute(clsAtt, value, instance, append);
     }
   }
 
   private validateTable(attributeName: string,
-                        attributeValue: any
+    attributeValue: any
   ) {
     if (this.instanceView!.instanceTable === undefined) return;
     this.instanceView!.instanceTable.finishEdit(attributeName, attributeValue);
@@ -288,16 +235,17 @@ export class TextCurationComponent implements OnInit {
    * @returns
    */
   private setInstanceAttribute(clsAtt: SchemaAttribute,
-                               value: string,
-                               instance: Instance,
-                               append: boolean = false) {
+    value: string,
+    instance: Instance,
+    append: boolean = false) {
     if (typeof value === 'number') {
       // This should be a DB_ID of the instance
       const dbId = value as number;
       this.dataService.fetchInstance(dbId).subscribe(attInst => {
         this._setInstanceAttribute(instance, clsAtt, attInst, append);
       });
-    } else { // display name is assumed
+    }
+    else { // display name is assumed
       this.dataService.findInstanceByDisplayName(value, clsAtt.allowedClases!).subscribe(attInst => {
         this._setInstanceAttribute(instance, clsAtt, attInst, append);
       })
@@ -306,9 +254,9 @@ export class TextCurationComponent implements OnInit {
 
   // A helper function to set the instance type of attribute actually.
   private _setInstanceAttribute(instance: Instance,
-                                clsAtt: SchemaAttribute,
-                                attInst: Instance,
-                                append: boolean = false) {
+    clsAtt: SchemaAttribute,
+    attInst: Instance,
+    append: boolean = false) {
     if (attInst === undefined)
       return;
     // We just need the following information for an instance value
@@ -326,7 +274,8 @@ export class TextCurationComponent implements OnInit {
           values.push(attValue);
         else
           instance.attributes.set(clsAtt.name, [attValue]);
-      } else
+      }
+      else
         instance.attributes.set(clsAtt.name, [attValue]);
     }
     this.validateTable(clsAtt.name, attValue);
@@ -339,7 +288,7 @@ export class TextCurationComponent implements OnInit {
    * @returns
    */
   private getClassAttribute(attName: string,
-                            instance: Instance): SchemaAttribute | undefined {
+    instance: Instance): SchemaAttribute | undefined {
     if (instance.schemaClass?.attributes) {
       for (let att of instance.schemaClass?.attributes) {
         if (att.name === attName) {
@@ -350,8 +299,5 @@ export class TextCurationComponent implements OnInit {
     return undefined;
   }
 
-  checkInput(command: string): boolean {
-    return true;
-  }
 }
 
