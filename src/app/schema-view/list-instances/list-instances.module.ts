@@ -10,6 +10,7 @@ import { SelectedInstancesTableComponent } from './components/select-instance-di
 import {MatTooltipModule} from "@angular/material/tooltip";
 import { InstanceListTableComponent } from './components/list-instances-view/table/instance-list-table/instance-list-table.component';
 import {InstanceModule} from "../../instance/instance.module";
+import {FilterEventsComponent} from "../../event/components/filter_events/filter_events.component";
 
 @NgModule({
   declarations: [
@@ -24,12 +25,13 @@ import {InstanceModule} from "../../instance/instance.module";
     SelectInstanceDialogComponent,
     InstanceListTableComponent
   ],
-  imports: [
-    CommonModule,
-    ListInstancesRoutingModule,
-    MaterialModule,
-    MatTooltipModule,
-  ]
+    imports: [
+        CommonModule,
+        ListInstancesRoutingModule,
+        MaterialModule,
+        MatTooltipModule,
+        FilterEventsComponent,
+    ]
 })
 export class ListInstancesModule {
 }

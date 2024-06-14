@@ -9,7 +9,7 @@
             }
           </mat-select>
       </mat-form-field>
-      <mat-form-field class="fc-margin">
+      <mat-form-field *ngIf="!isSchemaView" class="fc-margin">
         <mat-label>Select class</mat-label>
           <mat-select class="text-sm" [(value)]="selectedClass">
             @for (className of classNames; track className) {
@@ -21,9 +21,14 @@
     <div>
       <mat-form-field class="fc-margin" [class.cdk-visually-hidden]="hide_clauses[0]">
         <mat-label>Select attribute</mat-label>
-        <mat-select class="text-sm" [(value)]="selectedAttributes[0]">
+        <mat-select *ngIf="!isSchemaView" class="text-sm" [(value)]="selectedAttributes[0]">
           @for (attribute of getAttributes(selectedClass); track attribute) {
             <mat-option class="text-sm" [value]="attribute">{{attribute}}</mat-option>
+          }
+        </mat-select>
+        <mat-select *ngIf="isSchemaView" class="text-sm" [(value)]="selectedAttributes[0]">
+          @for (attribute of schemaClassAttributes; track attribute) {
+          <mat-option class="text-sm" [value]="attribute.name">{{attribute.name}}</mat-option>
           }
         </mat-select>
       </mat-form-field>

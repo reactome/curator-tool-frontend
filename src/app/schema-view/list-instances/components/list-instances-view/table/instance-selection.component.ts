@@ -5,6 +5,7 @@ import { combineLatest } from 'rxjs';
 import { Instance } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
 import { ViewOnlyService } from "../../../../../core/services/view-only.service";
+import {SchemaAttribute, SchemaClass} from "../../../../../core/models/reactome-schema.model";
 
 @Component({
   selector: 'app-instance-selection',
@@ -27,6 +28,8 @@ export class InstanceSelectionComponent implements OnInit {
   @Input() isSelection: boolean = false;
   data: Instance[] = [];
   actionButtons: string[] = ["launch"];
+  schemaClasses: SchemaClass[] = [];
+  schemaClassAttributes: SchemaAttribute[] = [];
 
   @Input() set setClassName(inputClassName: string) {
     this.className = inputClassName;
@@ -49,6 +52,7 @@ export class InstanceSelectionComponent implements OnInit {
     this.pageIndex = 0;
     this.showProgressSpinner = true;
     this.loadInstances();
+    this.loadSchemaClasses();
   }
 
   loadInstances() {
@@ -63,6 +67,16 @@ export class InstanceSelectionComponent implements OnInit {
         this.showProgressSpinner = false;
       }
     )
+  }
+
+  loadSchemaClasses() {
+    this.dataService.fetchSchemaClass(this.className).subscribe(att => {
+      this.schemaClassAttributes = att.attributes!;
+    });
+    console.log("attributes", this.schemaClassAttributes);
+    this.dataService.fetchSchemaClassTree().subscribe(schemaClass => {
+      this.schemaClasses.push(schemaClass);
+    })
   }
 
   searchForName(event: Event) {
@@ -103,5 +117,21 @@ export class InstanceSelectionComponent implements OnInit {
 
   navigate(instance: Instance) {
     window.open(`instance_view/${instance.dbId}?${ViewOnlyService.KEY}=true`, '_blank');
+  }
+
+  filterData(searchFilters: Array<string[]>) {
+    console.log('searchFilters', searchFilters)
+    this.showProgressSpinner = true;
+    this.attributes = searchFilters[2];
+    this.attributeTypes = searchFilters[3];
+    this.regex = searchFilters[4];
+    this.searchKeys = searchFilters[5];
+
+    this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey, this.attributes, this.attributeTypes, this.regex, this.searchKeys)
+      .subscribe(instances => {
+      this.data = instances;
+      this.matDataSource.data = instances;
+      this.showProgressSpinner = false;
+    })
   }
 }

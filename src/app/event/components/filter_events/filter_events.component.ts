@@ -7,7 +7,7 @@ import {MatSelectModule} from '@angular/material/select';
 import {MatCardModule} from '@angular/material/card';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {DataService} from "../../../core/services/data.service";
-import {AttributeDataType, SchemaClass} from "../../../core/models/reactome-schema.model";
+import {AttributeDataType, SchemaAttribute, SchemaClass} from "../../../core/models/reactome-schema.model";
 import {Instance} from "../../../core/models/reactome-instance.model";
 import {NgIf} from "@angular/common";
 
@@ -29,10 +29,11 @@ interface Species {
 export class FilterEventsComponent {
   // Adding flags to use the filter in the schema
   @Input() isSchemaView: boolean = false;
+  @Input() schemaClassAttributes: SchemaAttribute[] = [];
   @Input() schemaClassNodes: SchemaClass[] = [];
   // For doing search
   selectedSpecies = "All";
-  selectedClass = "Reaction";
+  @Input() selectedClass = "Reaction";
   selectedAttributes: string[] = ["displayName"];
   selectedOperands: string[] = ["Contains"];
   /* NB. Since 'IS NOT NULL' and 'IS NULL' don't require a searchKey, populating every 'empty' of the four
@@ -75,13 +76,12 @@ export class FilterEventsComponent {
     private service: DataService) {
     // Populate all Event (and children) classes into this.classNames
     service.fetchSchemaClassTree().subscribe(_ => {
-      if(this.isSchemaView){
-        let schemaClass = service.getSchemaClass(this.schemaClassNodes[0].name);
-        let classNames: Set<string> = new Set([this.schemaClassNodes[0].name]);
+      if (this.isSchemaView) {
+        let schemaClass = service.getSchemaClass(this.selectedClass);
+        let classNames: Set<string> = new Set([this.selectedClass]);
         this.getChildren(schemaClass!, classNames);
         this.classNames = Array.from(classNames).sort((a, b) => a.localeCompare(b));
-      }
-      else {
+      } else {
         let eventSchemaClass = service.getSchemaClass("Event");
         let classNames: Set<string> = new Set(['Event']);
         this.getChildren(eventSchemaClass!, classNames);
@@ -114,6 +114,7 @@ export class FilterEventsComponent {
 
   onSearchSelectionChange(): void {
     let selectedAttributeTypes: string[] = [];
+
     this.selectedAttributes.forEach(attribute => {
       if (attribute) {
         let selectedAttributeType =
@@ -129,13 +130,13 @@ export class FilterEventsComponent {
       'selectedAttributeTypes: ' + selectedAttributeTypes +
       'selectedOperands: ' + this.selectedOperands +
       "; searchKeys: " + this.searchKeys);
-      this.updateEventTree.emit([
-        [this.selectedSpecies],
-        [this.selectedClass],
-        this.selectedAttributes,
-        selectedAttributeTypes,
-        this.selectedOperands,
-        this.searchKeys]);
+    this.updateEventTree.emit([
+      [this.selectedSpecies],
+      [this.selectedClass],
+      this.selectedAttributes,
+      selectedAttributeTypes,
+      this.selectedOperands,
+      this.searchKeys]);
   }
 
   onHideSelectionChange(): void {
@@ -164,7 +165,7 @@ export class FilterEventsComponent {
     this.selectedAttributes.splice(pos, 1);
     this.selectedOperands.splice(pos, 1);
     this.searchKeys[pos] = "na";
-    (<HTMLInputElement>document.getElementById("searchKey"+pos)).value="";
+    (<HTMLInputElement>document.getElementById("searchKey" + pos)).value = "";
     this.cdr.detectChanges();
   }
 
