@@ -18,11 +18,12 @@ import { HttpClient } from '@angular/common/http';
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
+import {MatMenu, MatMenuTrigger} from "@angular/material/menu";
 
 @Component({
   selector: 'app-text-curation',
   standalone: true,
-  imports: [MatLabel, MatTooltip, NgIf],
+  imports: [MatLabel, MatTooltip, NgIf, MatMenuTrigger, MatMenu],
   templateUrl: './text-curation.component.html',
   styleUrl: './text-curation.component.scss',
 })

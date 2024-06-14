@@ -71,17 +71,26 @@ export class SchemaClassTreeComponent {
     let selectedAttributes = searchFilters[2];
     let selectedAttributeTypes = searchFilters[3];
     let selectedOperands = searchFilters[4];
-    let searchKeys = searchFilters[5];
+    let searchKeys = [];
     if (selectedClass !== "") {
       schemaClass = selectedClass;
     }
+    for(let i=0; i<searchFilters[5].length; i++){
+      if(searchFilters[5].at(i)?.includes(" ")) {
+        console.log('key', searchFilters[5].at(i)?.split(' ')[0])
+        searchKeys.push(searchFilters[5].at(i)?.split(' ').join('--'));
+      }
+      else if(searchFilters[5].at(i) === 'na'){}
+      else searchKeys.push(searchFilters[5].at(i));
+    }
+    console.log('searchKeys', searchKeys);
     let url =  "/schema_view/list_instances/" + schemaClass + "/";
     console.log('params', schemaClass, selectedAttributes, selectedOperands, searchKeys );
     this.router.navigate(["/schema_view/list_instances/", schemaClass,
       selectedAttributes.join(','),
       selectedAttributeTypes.join(','),
       selectedOperands.join(','),
-      searchKeys.join(',')])
+      searchKeys.join(',').toString()])
   }
 
   protected readonly EDIT_ACTION = EDIT_ACTION;

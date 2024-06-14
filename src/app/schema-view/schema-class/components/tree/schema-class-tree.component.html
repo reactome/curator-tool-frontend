@@ -1,5 +1,5 @@
 <script src="schema-class-tree.component.ts"></script>
-<filter-events [isSchemaView]="true" [schemaClassNodes]="dataSource.data" (updateEventTree)="filterData($event)"></filter-events>
+<!--<filter-events [isSchemaView]="true" [schemaClassNodes]="dataSource.data" (updateEventTree)="filterData($event)"></filter-events>-->
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
   <!-- This is the table node template for leaf nodes -->
   <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding class="schema_class_text" matTreeNodeToggle

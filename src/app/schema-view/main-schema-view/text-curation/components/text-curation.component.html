@@ -16,7 +16,7 @@
       [matMenuTriggerData]="command.value.split(' ')[1]">
 <!--  <button mat-button [matMenuTriggerFor]="aboveMenu">Above</button>-->
   <mat-menu #aboveMenu="matMenu" yPosition="above">
-    <button *ngFor="let option of filteredAttributeList | async" [value]="option" mat-menu-item>{{option}}</button>
+<!--    <button *ngFor="let option of filteredAttributeList | async" [value]="option" mat-menu-item>{{option}}</button>-->
   </mat-menu>
 <!--    <input placeholder="{{commandList[0]}}" matInput style="width: 75px; margin-left: 8px; margin-bottom: 8px; margin-top: 8px;" [formControl]="commandControl"-->
 <!--           [matAutocomplete]="auto1">-->
