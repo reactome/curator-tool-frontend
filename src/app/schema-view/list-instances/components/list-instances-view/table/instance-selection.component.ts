@@ -6,6 +6,7 @@ import { Instance } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
 import { ViewOnlyService } from "../../../../../core/services/view-only.service";
 import {SchemaAttribute, SchemaClass} from "../../../../../core/models/reactome-schema.model";
+import {ActivatedRoute} from "@angular/router";
 
 @Component({
   selector: 'app-instance-selection',
@@ -44,27 +45,28 @@ export class InstanceSelectionComponent implements OnInit {
   @Input() regex: Array<string> = [];
   @Input() searchKeys: Array<string> = [];
 
-  constructor(private dataService: DataService) {
+  constructor(private dataService: DataService, private route: ActivatedRoute) {
   }
 
   ngOnInit(): void {
     this.skip = 0;
     this.pageIndex = 0;
     this.showProgressSpinner = true;
+    this.queryParams();
     this.loadInstances();
     this.loadSchemaClasses();
+    console.log('data', this.data)
   }
 
   loadInstances() {
     console.log(this.attributes, this.regex, this.searchKeys)
-    combineLatest([
-      this.dataService.getInstanceCount(this.className, this.searchKey),
-      this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey, this.attributes, this.attributeTypes, this.regex, this.searchKeys)
-    ]).subscribe(([count, instances]) => {
-        this.instanceCount = count;
-        this.data = instances;
-        this.matDataSource.data = instances;
+      this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
+    .subscribe((instancesList) => {
+        this.instanceCount = instancesList.totalCount;
         this.showProgressSpinner = false;
+        this.data = instancesList.instances;
+        this.matDataSource.data = instancesList.instances;
+
       }
     )
   }
@@ -119,6 +121,25 @@ export class InstanceSelectionComponent implements OnInit {
     window.open(`instance_view/${instance.dbId}?${ViewOnlyService.KEY}=true`, '_blank');
   }
 
+  queryParams() {
+    this.route.params.subscribe((params) => {
+      console.log('name from view', params['className'].toString())
+      this.className = params['className'];
+      this.attributes = params['attributes'];
+      this.attributeTypes = params['attributeTypes'];
+      this.regex = params['regex'];
+      this.searchKey = params['searchKey'];
+    });
+
+    this.dataService.searchInstances(this.className, this.skip, this.pageSize, this.attributes, this.regex, this.searchKeys)
+      .subscribe(instanceList => {
+        this.instanceCount = instanceList.totalCount;
+        this.data = instanceList.instances;
+        this.matDataSource.data = instanceList.instances;
+        this.showProgressSpinner = false;
+      })
+  }
+
   filterData(searchFilters: Array<string[]>) {
     console.log('searchFilters', searchFilters)
     this.showProgressSpinner = true;
@@ -127,11 +148,13 @@ export class InstanceSelectionComponent implements OnInit {
     this.regex = searchFilters[4];
     this.searchKeys = searchFilters[5];
 
-    this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey, this.attributes, this.attributeTypes, this.regex, this.searchKeys)
-      .subscribe(instances => {
-      this.data = instances;
-      this.matDataSource.data = instances;
-      this.showProgressSpinner = false;
+    this.dataService.searchInstances(this.className, this.skip, this.pageSize, this.attributes, this.regex, this.searchKeys)
+      .subscribe(instanceList => {
+        this.instanceCount = instanceList.totalCount;
+        this.data = instanceList.instances;
+        this.matDataSource.data = instanceList.instances;
+        this.showProgressSpinner = false;
     })
+    this.loadSchemaClasses();
   }
 }

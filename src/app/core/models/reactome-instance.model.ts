@@ -20,3 +20,8 @@ export interface Instance {
   qaIssues?: Map<string, string[][]>; // Optional map of QA check label to the corresponding tabular report
 }
 
+export interface InstanceList {
+  instances: Instance[];
+  totalCount: number;
+}
+

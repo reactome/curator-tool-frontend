@@ -27,13 +27,19 @@ interface Species {
   imports: [MatFormFieldModule, MatSelectModule, MatInputModule, FormsModule, MatButtonModule, MatTooltipModule, MatCardModule, NgIf]
 })
 export class FilterEventsComponent {
+  @Input() set selectedSchemaClass(selectedSchemaClass: string) {
+    this.selectedClass = selectedSchemaClass;
+  }
   // Adding flags to use the filter in the schema
   @Input() isSchemaView: boolean = false;
-  @Input() schemaClassAttributes: SchemaAttribute[] = [];
+  @Input() set schemaClassAttributes(schemaClassAttributes: SchemaAttribute[]){
+    this.schemaAttributes = schemaClassAttributes;
+  }
   @Input() schemaClassNodes: SchemaClass[] = [];
   // For doing search
+  schemaAttributes: SchemaAttribute[] = [];
   selectedSpecies = "All";
-  @Input() selectedClass = "Reaction";
+  selectedClass = "Reaction";
   selectedAttributes: string[] = ["displayName"];
   selectedOperands: string[] = ["Contains"];
   /* NB. Since 'IS NOT NULL' and 'IS NULL' don't require a searchKey, populating every 'empty' of the four

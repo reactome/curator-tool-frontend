@@ -5,7 +5,7 @@
 </mat-form-field>
 <filter-events [isSchemaView]="true"
                [schemaClassAttributes]="schemaClassAttributes"
-               [selectedClass]="className"
+               [selectedSchemaClass]="className"
                (updateEventTree)="filterData($event)"></filter-events>
 <section class="table-container" tabindex="0">
   <ng-container *ngIf="showProgressSpinner">

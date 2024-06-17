@@ -9,7 +9,7 @@ import {
   SchemaAttribute,
   SchemaClass
 } from '../models/reactome-schema.model';
-import {Instance} from "../models/reactome-instance.model";
+import {Instance, InstanceList} from "../models/reactome-instance.model";
 
 
 @Injectable({
@@ -30,6 +30,7 @@ export class DataService {
   private schemaClassTreeUrl = `${environment.ApiRoot}/getSchemaClassTree/`;
   private eventsTreeUrl = `${environment.ApiRoot}/getEventTree/`;
   private listInstancesUrl = `${environment.ApiRoot}/listInstances/`;
+  private searchInstancesUrl = `${environment.ApiRoot}/searchInstances/`;
   private findInstanceByDisplayNameUrl = `${environment.ApiRoot}/findByDisplayName`;
   private countInstancesUrl = `${environment.ApiRoot}/countInstances/`;
   private commitInstanceUrl = `${environment.ApiRoot}/commit/`;
@@ -472,33 +473,61 @@ export class DataService {
    * @param skip
    * @param limit
    * @param searchKey
+   * @returns
+   */
+  listInstances(className: string,
+                skip: number,
+                limit: number,
+                searchKey: string | undefined) {
+    let url = this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
+    if (searchKey !== undefined) {
+      url += '?query=' + searchKey;
+    }
+    console.log('list instances url: ' + url);
+    return this.http.get<InstanceList>(url)
+      .pipe(
+        map((data: InstanceList) => {
+        return data;
+    }, // Nothing needs to be done.
+        catchError((err: Error) => {
+          console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
+            panelClass: ['warning-snackbar'],
+            duration: 10000
+          });
+          return throwError(() => err);
+        })));
+  }
+
+  /**
+   * Fetch the list of instances for a schema class.
+   * @param className
+   * @param skip
+   * @param limit
+   * @param searchKey
    * @param selectedAttributes
    * @param selectedAttributeTypes
    * @param selectedOperands
    * @param searchKeys
    * @returns
    */
-  listInstances(className: string,
+  searchInstances(className: string,
                 skip: number,
                 limit: number,
-                searchKey: string | undefined,
                 selectedAttributes?: string[] | undefined,
-                selectedAttributeTypes?: string[] | undefined,
                 selectedOperands?: string[] | undefined,
-                searchKeys?: string[] | undefined): Observable<Instance[]> {
-    let url = this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
-    if (searchKey !== undefined) {
-      url += '?query=' + searchKey;
-    }
-    if (selectedAttributes !== undefined && selectedAttributeTypes !== undefined && selectedOperands !== undefined && searchKeys !== undefined){
-      url += '?attributes=' + selectedAttributes.toString()
-      + '&attributeTypes=' + encodeURI(selectedAttributeTypes.toString()
+                searchKeys?: string[] | undefined): Observable<InstanceList> {
+    let url = this.searchInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
+
+    if (selectedAttributes !== undefined && selectedOperands !== undefined && searchKeys !== undefined){
+      url += '?attributes=' + encodeURI(selectedAttributes.toString())
       + '&operands=' + encodeURI(selectedOperands.toString())
-      + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'")));
+      + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'"));
     }
-    console.log('list instances url: ' + url);
-    return this.http.get<Instance[]>(url)
-      .pipe(map((data: Instance[]) => data), // Nothing needs to be done.
+    console.log('search instances url: ' + url);
+    return this.http.get<InstanceList>(url)
+      .pipe(map((data: InstanceList) => {
+        return data;
+    }), // Nothing needs to be done.
         catchError((err: Error) => {
           console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
             panelClass: ['warning-snackbar'],

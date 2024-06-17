@@ -27,7 +27,7 @@
           }
         </mat-select>
         <mat-select *ngIf="isSchemaView" class="text-sm" [(value)]="selectedAttributes[0]">
-          @for (attribute of schemaClassAttributes; track attribute) {
+          @for (attribute of schemaAttributes; track attribute) {
           <mat-option class="text-sm" [value]="attribute.name">{{attribute.name}}</mat-option>
           }
         </mat-select>
