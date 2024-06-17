@@ -144,9 +144,8 @@ export class InstanceSelectionComponent implements OnInit {
     console.log('searchFilters', searchFilters)
     this.showProgressSpinner = true;
     this.attributes = searchFilters[2];
-    this.attributeTypes = searchFilters[3];
-    this.regex = searchFilters[4];
-    this.searchKeys = searchFilters[5];
+    this.regex = searchFilters[3];
+    this.searchKeys = searchFilters[4];
 
     this.dataService.searchInstances(this.className, this.skip, this.pageSize, this.attributes, this.regex, this.searchKeys)
       .subscribe(instanceList => {

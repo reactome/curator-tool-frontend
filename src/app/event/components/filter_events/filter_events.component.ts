@@ -48,7 +48,7 @@ export class FilterEventsComponent {
   or ["","","",""] below, e.g. in the case of: 'displayName IS NOT NULL' and 'dbId contains "12"', the back-end
   would have incorrectly reconstructed 'displayName IS NOT NULL "12"'.
   */
-  searchKeys: string[] = ["na", "na", "na", "na"];
+  searchKeys: string[] = [];
   hide_clauses: boolean[] = [false, true, true, true];
 
   // TODO: There are many more species in Neo4J than those below (offered as filters in CuratorTool)
@@ -119,28 +119,24 @@ export class FilterEventsComponent {
   @Output() updateEventTree = new EventEmitter<Array<string[]>>();
 
   onSearchSelectionChange(): void {
-    let selectedAttributeTypes: string[] = [];
-
-    this.selectedAttributes.forEach(attribute => {
-      if (attribute) {
-        let selectedAttributeType =
-          this.classToAttributeToType.get(this.selectedClass)!.get(attribute) == AttributeDataType.INSTANCE ?
-            "instance" : "primitive";
-        selectedAttributeTypes.push(selectedAttributeType);
-      }
-    });
+    // this.selectedAttributes.forEach(attribute => {
+    //   if (attribute) {
+    //     let selectedAttributeType =
+    //       this.classToAttributeToType.get(this.selectedClass)!.get(attribute) == AttributeDataType.INSTANCE ?
+    //         "instance" : "primitive";
+    //     selectedAttributeTypes.push(selectedAttributeType);
+    //   }
+    // });
     console.debug(
       'selectedSpecies: ' + this.selectedSpecies +
       'selectedClass: ' + this.selectedClass +
       'selectedAttributes: ' + this.selectedAttributes +
-      'selectedAttributeTypes: ' + selectedAttributeTypes +
       'selectedOperands: ' + this.selectedOperands +
       "; searchKeys: " + this.searchKeys);
     this.updateEventTree.emit([
       [this.selectedSpecies],
       [this.selectedClass],
       this.selectedAttributes,
-      selectedAttributeTypes,
       this.selectedOperands,
       this.searchKeys]);
   }
