@@ -3,16 +3,151 @@ import { EdgeDefinition, NodeDefinition, Core } from 'cytoscape';
 import { array } from 'vectorious';
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { Injectable } from "@angular/core";
-import { PathwayDiagramComponent } from "./pathway-diagram.component";
-import { first } from "rxjs";
 
 @Injectable()
 export class PathwayDiagramUtilService {
     diagramService: DiagramService | undefined = undefined;
     // Cache all converted HyperEdges for easy editing
     private id2hyperEdges : Map<number, HyperEdge> = new Map();
+    // For resizing
+    private readonly RESIZE_NODE_LOCATIONS: string[] = ['ne', 'nw', 'se', 'sw'];
 
     constructor() { }
+
+    resizeCompartment(node: any, e: any, previousDragPos: Position) {
+        // Used to determine the direction
+        const nodeId = node.data('id') as string;
+        const pos = node.position();
+        let deltaX = pos.x - previousDragPos.x;
+        let deltaY = pos.y - previousDragPos.y;
+        const compartmentId = node.data('compartment');
+        const compartment = e.cy.$('#' + compartmentId);
+        if (compartment !== undefined) {
+            const comp_pos = compartment.position();
+            const new_pos = {
+                x: comp_pos.x + deltaX / 2.0,
+                y: comp_pos.y + deltaY / 2.0
+            };
+            compartment.position(new_pos);
+            if (nodeId.endsWith('_sw') || nodeId.endsWith('_se')) {
+                deltaY = -deltaY; // Flip the direction: negative for reduce the height. But the position should be right.
+            }
+            if (nodeId.endsWith('_ne') || nodeId.endsWith('_se')) {
+                deltaX = -deltaX; // Flip the direction: negative for redue the width
+            }
+            compartment.data('width', compartment.data('width') - deltaX);
+            compartment.data('height', compartment.data('height') - deltaY);
+            this.updateResizeNodesPosition(compartment, nodeId, e.cy);
+        }
+        previousDragPos.x = node.position().x;
+        previousDragPos.y = node.position().y;
+    }
+
+    private updateResizeNodesPosition(compartment: any,
+        nodeId: string,
+        cy: Core
+    ) {
+        // Need to update other resizing nodes for this compartment
+        const compartmentWidth = compartment.data('width');
+        const compartmentHeight = compartment.data('height');
+        const compartmentPos = compartment.position();
+        const compartmentId = compartment.data('id');
+        for (let location of this.RESIZE_NODE_LOCATIONS) {
+            const resizeNodeId = this.createResizeNodeId(compartmentId, location);
+            if (resizeNodeId === nodeId)
+                continue;
+            const resizeNode = cy.$('#' + resizeNodeId);
+            if (resizeNode === undefined) 
+                continue; // This should not happen
+            const resizeNodePos = this.getResizeNodePosition(location,
+                 compartmentPos, 
+                 compartmentWidth, 
+                 compartmentHeight);
+            resizeNode.position(resizeNodePos);
+        }
+    }
+
+    /**
+     * Add resizing widgets as nodes to the compartment so that the user can resize the compartment
+     * by dragging these widgets.
+     * @param compartment
+     */
+    enableResizeCompartment(compartment: any,
+        diagram: DiagramComponent
+    ) {
+        // console.debug('Resizing compartment: ', compartment);
+        const position : Position = compartment.position();
+        const width = compartment.data('width');
+        const height = compartment.data('height');
+        for (let location of this.RESIZE_NODE_LOCATIONS) {
+            let nodePosition: Position = this.getResizeNodePosition(location, position, width, height);
+            const nodeData = {
+                id: this.createResizeNodeId(compartment.data('id'), location),
+                compartment: compartment.data('id'),
+                //TODO: To be determined the best size of these nodes
+                width: '16px',
+                height: '16px',
+                displayName: '' // Add this for "Modification" node type to avoid an error!
+            };
+            const node: NodeDefinition = {
+                data: nodeData,
+                position: nodePosition,
+                //TODO: Will create a new class css for resizing.
+                // Borrow nodeAttachment (modification) for the timebeing
+                classes: ['Modification', 'resizing']
+            };
+            diagram.cy.add(node);
+        }
+    }
+
+    private getResizeNodePosition(location: string, nodePos: Position, nodeWidth: number, nodeHeight: number) {
+        let nodePosition: Position = { x: 0, y: 0 };
+        // Divided by 2.0 for easy typing
+        nodeWidth = nodeWidth / 2.0;
+        nodeHeight = nodeHeight / 2.0;
+        // Create four nodes at the four corners of this compartment
+        // North-west (top-left)
+        if (location === 'nw') {
+            nodePosition.x = nodePos.x - nodeWidth;
+            nodePosition.y = nodePos.y - nodeHeight;
+        }
+        else if (location === 'ne') {
+            nodePosition.x = nodePos.x + nodeWidth;
+            nodePosition.y = nodePos.y - nodeHeight;
+        }
+        else if (location === 'sw') {
+            nodePosition.x = nodePos.x - nodeWidth;
+            nodePosition.y = nodePos.y + nodeHeight;
+        }
+        else if (location === 'se') {
+            nodePosition.x = nodePos.x + nodeWidth;
+            nodePosition.y = nodePos.y + nodeHeight;
+        }
+        return nodePosition;
+    }
+
+    private createResizeNodeId(nodeId: string,
+        location: string
+    ) {
+        return nodeId + "_resize_node_" + location;
+    }
+
+    /**
+     * Remove resizing widget nodes added to the compartment.
+     * @param compartment
+     */
+    disableResizeCompartment(compartment: any,
+            diagram: DiagramComponent
+    ) {
+        // The ids of these nodes should have the following patterns
+        const resize_id = this.createResizeNodeId(compartment.data('id'), '');
+        const resizeNodes = diagram.cy.nodes().filter((node: any) => {
+            const id = node.data('id') as string;
+            return id.startsWith(resize_id);
+        });
+        if (resizeNodes)
+            diagram.cy.remove(resizeNodes);
+    }
 
     /**
      * Remove a node representing a connecting point from the diagram.
@@ -219,9 +354,6 @@ class HyperEdge {
         this.cy = cy;
     }
 
-    // TODO: Need to review the code; bug: after disable, 
-    // the selection and highlight cannot get the whole reaction;
-    // cannot do multiple round enable/disable
     /**
      * Enable round-segment style for this HyperEdge. 
      * Some edges and nodes will be removed. 

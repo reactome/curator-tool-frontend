@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import exp from 'vectorious/dist/core/exp';
 
 @Component({
   selector: 'app-editor-actions',
@@ -12,6 +13,10 @@ export class EditorActionsComponent {
 
   @Output() action = new EventEmitter<string>();
   @Input() isEditing: boolean = false;
+  // Default is cytoscape
+  @Input() elmType: ElementType = ElementType.CYTOSCAPE; 
+  // Include this so that we can compare
+  elmTypes = ElementType;
   
   constructor() {
   }
@@ -20,4 +25,11 @@ export class EditorActionsComponent {
     this.action.emit(action);
   }
 
+}
+
+export enum ElementType {
+  CYTOSCAPE = "cytoscape",
+  EDGE = "edge",
+  NODE = "node",
+  COMPARTMENT = "compartment"
 }

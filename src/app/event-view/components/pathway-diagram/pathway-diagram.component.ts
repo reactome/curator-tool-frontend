@@ -7,10 +7,11 @@ import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
 import { delay, map } from 'rxjs';
-import { EditorActionsComponent } from './editor-actions/editor-actions.component';
+import { EditorActionsComponent, ElementType } from './editor-actions/editor-actions.component';
 import { PathwayDiagramUtilService } from './pathway-diagram-utils';
 import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
+import { act } from '@ngrx/effects';
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -37,8 +38,12 @@ export class PathwayDiagramComponent implements AfterViewInit {
 
   // The current node or edge under the mouse
   elementUnderMouse: any;
+  elementTypeForPopup: ElementType = ElementType.CYTOSCAPE; // Default always
   // Tracking the diting status
   isEditing: boolean = false;
+  // Tracking the previous dragging position: should cytoscape provides this?
+  previousDragPos: Position = {x: 0, y: 0};
+
 
   constructor(private route: ActivatedRoute,
     private diagramUtils: PathwayDiagramUtilService
@@ -51,33 +56,68 @@ export class PathwayDiagramComponent implements AfterViewInit {
       // When the diagram is loaded first, disable node dragging to avoid
       // change the coordinates
       this.diagram.cy.nodes().grabify().panify();
+
       // Have to add the following to zoom using mouse scroll. 
       this.diagram.cy.zoomingEnabled(true);
       this.diagram.cy.userZoomingEnabled(true);
       this.diagram.cy.panningEnabled(true);
       this.diagram.cy.userPanningEnabled(true);
 
-      this.diagram.cy.edges().on('cxttapstart', (e:any) => {
-        this.showCyPopup(e);
-      });
+      // Add the popup trigger to the whole cytoscape and let
+      // showCyPopup to figure out what menus should be shown.
       this.diagram.cy.on('cxttapstart', (e:any) => {
         this.showCyPopup(e);
       });
       this.diagram.cy.on('mousedown', (e: any) => {
+        // Make sure isNode is defined as a function to avoid an error
+        if (e.target !== undefined && typeof e.target.isNode === 'function') {
+          // Since we cannot get the mouse position during dragging
+          // we use the target's position for the relative changes.
+          const pos = e.target.position();
+          this.previousDragPos.x = pos.x;
+          this.previousDragPos.y = pos.y;
+        }
         if (this.showMenu) {
           this.showMenu = false;
           e.preventDefault();
+        }
+      });
+      this.diagram.cy.on('mouseup', (e: any) => {
+        // reset previous drag position
+        this.previousDragPos.x = 0;
+        this.previousDragPos.y = 0;
+      });
+      // Resize the compartment for resizing nodes
+      this.diagram.cy.on('drag', 'node', (e: any) => {
+        let node = e.target;
+        if (node.hasClass('resizing')) {
+          this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);
         }
       });
     })
   }
 
   private showCyPopup(event: any) { // Use any to avoid any compiling error
+    this.elementUnderMouse = event.target;
+    if (this.elementUnderMouse === undefined || 
+        this.elementUnderMouse === this.diagram!.cy) { // Should check for instanceof. But not sure how!
+      this.elementTypeForPopup = ElementType.CYTOSCAPE; // As the default
+    }
+    else if (this.elementUnderMouse.isEdge()) {
+      this.elementTypeForPopup = ElementType.EDGE;
+    }
+    else if (this.elementUnderMouse.isNode()) {
+      if (this.elementUnderMouse.hasClass("Compartment"))
+        this.elementTypeForPopup = ElementType.COMPARTMENT;
+      else
+        this.elementTypeForPopup = ElementType.NODE;
+    }
+    else
+      this.elementTypeForPopup = ElementType.CYTOSCAPE;
     // The offset set 5px is important to prevent the native popup menu appear
     this.menuPositionX = (event.renderedPosition.x + this.MENU_POSITION_BUFFER) + "px";
     this.menuPositionY = (event.renderedPosition.y + this.MENU_POSITION_BUFFER) + "px";
     this.showMenu = true;
-    this.elementUnderMouse = event.target;
   }
 
   onAction(action: string) {
@@ -100,6 +140,14 @@ export class PathwayDiagramComponent implements AfterViewInit {
     }
     else if (action === 'removePoint') {
       this.diagramUtils.removePoint(this.elementUnderMouse);
+    }
+    else if (action === 'resizeCompartment') {
+      this.diagramUtils.enableResizeCompartment(this.elementUnderMouse,
+        this.diagram
+      );
+    }
+    else if (action === 'disableResize') {
+      this.diagramUtils.disableResizeCompartment(this.elementUnderMouse, this.diagram);
     }
     this.showMenu = false;
   }

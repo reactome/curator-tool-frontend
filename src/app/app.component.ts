@@ -43,8 +43,9 @@ export class AppComponent {
 
     // Before we do anything, load the persisted instances if any
     console.debug('App loading instances from server...');
+    // TODO: Make sure this is updated during deployment
     this.dataService.loadInstances('test').subscribe((instances) => {
-      console.debug(instances);
+      // console.debug(instances);
       for (let inst of instances) {
         if (inst.dbId < 0)
           this.store.dispatch(NewInstanceActions.register_new_instance(inst));
