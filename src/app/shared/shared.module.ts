@@ -3,10 +3,16 @@ import {CommonModule} from '@angular/common';
 import {MaterialModule} from './material/material.module';
 import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} from "@angular/cdk/scrolling";
 import { SafePipe } from './safe.pipe';
+import {SearchFilterComponent} from "./components/search-filter/search-filter.component";
+import {
+  AttributeConditionComponent
+} from "./components/search-filter/attribute-condition/attribute-condition.component";
 
 @NgModule({
   declarations: [
-    SafePipe
+    SafePipe,
+    SearchFilterComponent,
+    AttributeConditionComponent
   ],
   imports: [
     CommonModule,
@@ -15,7 +21,11 @@ import { SafePipe } from './safe.pipe';
     CdkFixedSizeVirtualScroll,
     CdkVirtualForOf
   ],
-    exports: [MaterialModule, SafePipe]
+    exports: [
+      MaterialModule,
+      SafePipe,
+      SearchFilterComponent,
+      AttributeConditionComponent]
 })
 export class SharedModule {
 }

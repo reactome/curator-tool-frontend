@@ -1,0 +1,28 @@
+<div [hidden]="hideSearchPanel">
+  <mat-card style="margin: 20px; background-color:#E5E4E2;">
+    <div *ngIf="!isSchemaView" style="margin-top: 20px;">
+      <mat-form-field class="fc-margin" >
+        <mat-label>Select species</mat-label>
+        <mat-select class="text-sm mat-select" [(value)]="selectedSpecies" (selectionChange)="onSearchSelectionChange()">
+          @for (specie of species; track specie) {
+          <mat-option class="text-sm" [value]="specie.value">{{specie.viewValue}}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field class="fc-margin">
+        <mat-label>Select class</mat-label>
+        <mat-select class="text-sm" [(value)]="selectedClass">
+          @for (className of classNames; track className) {
+          <mat-option class="text-sm" [value]="className" (click)="onClassSelection()">{{className}}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div>
+      <button style="margin: 18px;" mat-raised-button (click)="onSearchSelectionChange()">Search</button>
+      <button mat-raised-button (click)="onHideSelectionChange()">{{hideShowButtonLabel}}</button>
+    </div>
+  </mat-card>
+</div>
+<button style="margin: 10px;" [hidden]="hideSearchPanel === '' ? 'hidden' : ''" mat-raised-button (click)="onHideSelectionChange()">{{hideShowButtonLabel}}</button>
+

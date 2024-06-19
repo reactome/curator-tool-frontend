@@ -20,13 +20,11 @@ interface Species {
  * @title Basic select
  */
 @Component({
-  selector: 'filter-events',
-  templateUrl: './filter_events.component.html',
-  styleUrls: ['./filter_events.component.scss'],
-  standalone: true,
-  imports: [MatFormFieldModule, MatSelectModule, MatInputModule, FormsModule, MatButtonModule, MatTooltipModule, MatCardModule, NgIf]
+  selector: 'search-filter',
+  templateUrl: './search-filter.component.html',
+  styleUrls: ['./search-filter.component.scss'],
 })
-export class FilterEventsComponent {
+export class SearchFilterComponent {
   @Input() set selectedSchemaClass(selectedSchemaClass: string) {
     this.selectedClass = selectedSchemaClass;
   }
@@ -199,4 +197,3 @@ export class FilterEventsComponent {
     }
   }
 }
-

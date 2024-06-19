@@ -1,7 +1,7 @@
 <div [hidden]="hideSearchPanel">
   <mat-card style="margin: 20px; background-color:#E5E4E2;">
-    <div style="margin-top: 20px;">
-      <mat-form-field *ngIf="!isSchemaView" class="fc-margin" >
+    <div *ngIf="!isSchemaView" style="margin-top: 20px;">
+      <mat-form-field class="fc-margin" >
         <mat-label>Select species</mat-label>
           <mat-select class="text-sm mat-select" [(value)]="selectedSpecies" (selectionChange)="onSearchSelectionChange()">
             @for (specie of species; track specie) {
@@ -9,7 +9,7 @@
             }
           </mat-select>
       </mat-form-field>
-      <mat-form-field *ngIf="!isSchemaView" class="fc-margin">
+      <mat-form-field class="fc-margin">
         <mat-label>Select class</mat-label>
           <mat-select class="text-sm" [(value)]="selectedClass">
             @for (className of classNames; track className) {

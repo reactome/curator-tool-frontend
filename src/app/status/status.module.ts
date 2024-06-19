@@ -28,7 +28,7 @@ import { InstanceModule } from '../instance/instance.module';
     MatSortModule,
     MatTableModule,
     MatTooltipModule,
-    InstanceModule
+    // InstanceModule
   ],
   exports: [
     StatusComponent // Have to export it!!!
