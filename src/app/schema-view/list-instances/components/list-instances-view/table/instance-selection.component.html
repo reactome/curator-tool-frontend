@@ -3,10 +3,14 @@
   <!-- Need to track the text using keyup in case the text is deleted but still used for instance list -->
   <input matInput (keydown.enter)="searchForName($event)" (keyup)="recordSearchKey($event)" #input>
 </mat-form-field>
-<filter-events [isSchemaView]="true"
+<!--<filter-events [isSchemaView]="true"-->
+<!--               [schemaClassAttributes]="schemaClassAttributes"-->
+<!--               [selectedSchemaClass]="className"-->
+<!--               (updateEventTree)="filterData($event)"></filter-events>-->
+<search-filter [isSchemaView]="true"
                [schemaClassAttributes]="schemaClassAttributes"
                [selectedSchemaClass]="className"
-               (updateEventTree)="filterData($event)"></filter-events>
+               (updateEventTree)="filterData($event)"></search-filter>
 <section class="table-container" tabindex="0">
   <ng-container *ngIf="showProgressSpinner">
     <mat-spinner class="spinner instance-list-table"></mat-spinner>

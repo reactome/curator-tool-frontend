@@ -1,15 +1,7 @@
 import {ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
-import {FormsModule} from '@angular/forms';
-import {MatInputModule} from '@angular/material/input';
-import {MatButtonModule} from '@angular/material/button';
-import {MatTooltipModule} from '@angular/material/tooltip'
-import {MatSelectModule} from '@angular/material/select';
-import {MatCardModule} from '@angular/material/card';
-import {MatFormFieldModule} from '@angular/material/form-field';
 import {DataService} from "../../../core/services/data.service";
 import {AttributeDataType, SchemaAttribute, SchemaClass} from "../../../core/models/reactome-schema.model";
-import {Instance} from "../../../core/models/reactome-instance.model";
-import {NgIf} from "@angular/common";
+import {NgFor} from "@angular/common";
 
 interface Species {
   value: string;
@@ -48,6 +40,7 @@ export class SearchFilterComponent {
   */
   searchKeys: string[] = [];
   hide_clauses: boolean[] = [false, true, true, true];
+  numberOfAttributes: number = 1;
 
   // TODO: There are many more species in Neo4J than those below (offered as filters in CuratorTool)
   species: Species[] = [
@@ -195,5 +188,9 @@ export class SearchFilterComponent {
         this.getChildren(child, clsNames);
       });
     }
+  }
+
+  addAttribute() {
+
   }
 }

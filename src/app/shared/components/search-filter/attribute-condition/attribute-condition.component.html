@@ -1,26 +1,26 @@
-<!--<div>-->
-<!--  <mat-form-field class="fc-margin">-->
-<!--    <mat-label>Select attribute</mat-label>-->
-<!--    <mat-select class="text-sm" [(value)]="selectedAttributes[0]">-->
-<!--      @for (attribute of getAttributes(selectedClass); track attribute) {-->
-<!--      <mat-option class="text-sm" [value]="attribute">{{attribute}}</mat-option>-->
-<!--      }-->
-<!--    </mat-select>-->
-<!--  </mat-form-field>-->
+<div>
+  <mat-form-field class="fc-margin">
+    <mat-label>Select attribute</mat-label>
+    <mat-select class="text-sm" [(value)]="selectedAttribute">
+      @for (attribute of schemaAttributes; track attribute) {
+      <mat-option class="text-sm" [value]="attribute">{{attribute.name}}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
 
-<!--  <mat-form-field class="fc-margin">-->
-<!--    <mat-label>Select operand</mat-label>-->
-<!--    <mat-select class="text-sm" [(value)]="selectedOperands[0]">-->
-<!--      @for (operand of operands; track operand) {-->
-<!--      <mat-option class="text-sm" [value]="operand">{{operand}}</mat-option>-->
-<!--      }-->
-<!--    </mat-select>-->
-<!--  </mat-form-field>-->
+  <mat-form-field class="fc-margin">
+    <mat-label>Select operand</mat-label>
+    <mat-select class="text-sm" [(value)]="selectedOperand">
+      @for (operand of operands; track operand) {
+      <mat-option class="text-sm" [value]="operand">{{operand}}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
 
-<!--  <mat-form-field class="fc-margin">-->
-<!--    <mat-label>Enter search token</mat-label>-->
-<!--    <input id="searchKey0" class="text-sm" matInput #input>-->
-<!--  </mat-form-field>-->
-<!--  <button matTooltip="Add another attribute to query"  mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">+</button>-->
-<!--</div>-->
+  <mat-form-field class="fc-margin">
+    <mat-label>Enter search token</mat-label>
+    <input id="searchKey0" class="text-sm" matInput (keyup)="recordSearchKey($event)" #input>
+  </mat-form-field>
+  <button matTooltip="Add another attribute to query"  mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">+</button>
+</div>
 <!--<button style="margin: 10px;" [hidden]="hideSearchPanel === '' ? 'hidden' : ''" mat-raised-button (click)="onHideSelectionChange()">{{hideShowButtonLabel}}</button>-->

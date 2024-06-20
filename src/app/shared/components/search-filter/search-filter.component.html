@@ -18,6 +18,10 @@
         </mat-select>
       </mat-form-field>
     </div>
+    <ng-container *ngFor="let attribute of selectedAttributes">
+      <app-attribute-condition
+        [schemaClassAttributes]="schemaAttributes"></app-attribute-condition>
+    </ng-container>
     <div>
       <button style="margin: 18px;" mat-raised-button (click)="onSearchSelectionChange()">Search</button>
       <button mat-raised-button (click)="onHideSelectionChange()">{{hideShowButtonLabel}}</button>

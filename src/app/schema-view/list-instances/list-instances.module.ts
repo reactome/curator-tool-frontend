@@ -31,6 +31,7 @@ import {FilterEventsComponent} from "../../event/components/filter_events/filter
         MaterialModule,
         MatTooltipModule,
         FilterEventsComponent,
+        SharedModule,
     ]
 })
 export class ListInstancesModule {

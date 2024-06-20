@@ -1,5 +1,5 @@
 import {NgModule} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import {CommonModule, NgFor} from '@angular/common';
 import {MaterialModule} from './material/material.module';
 import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} from "@angular/cdk/scrolling";
 import { SafePipe } from './safe.pipe';
@@ -7,6 +7,7 @@ import {SearchFilterComponent} from "./components/search-filter/search-filter.co
 import {
   AttributeConditionComponent
 } from "./components/search-filter/attribute-condition/attribute-condition.component";
+import {MatTooltip} from "@angular/material/tooltip";
 
 @NgModule({
   declarations: [
@@ -19,7 +20,9 @@ import {
     MaterialModule,
     CdkVirtualScrollViewport,
     CdkFixedSizeVirtualScroll,
-    CdkVirtualForOf
+    CdkVirtualForOf,
+    NgFor,
+    MatTooltip
   ],
     exports: [
       MaterialModule,
