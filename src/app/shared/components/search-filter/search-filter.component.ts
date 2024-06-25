@@ -25,13 +25,13 @@ export class SearchFilterComponent implements OnInit{
   }
   // Adding flags to use the filter in the schema
   @Input() isSchemaView: boolean = false;
-  @Input() set schemaClassAttributes(schemaClassAttributes: SchemaAttribute[]){
-    this.schemaAttributes = schemaClassAttributes.sort((a, b) => a.name.localeCompare(b.name));
+  @Input() set schemaClassAttributes(schemaClassAttributes: string[]){
+    this.schemaAttributes = schemaClassAttributes.sort((a, b) => a.localeCompare(b));
   }
   @Input() schemaClassNodes: SchemaClass[] = [];
   @Output() addAttributeCondition: EventEmitter<any> = new EventEmitter();
   // For doing search
-  schemaAttributes: SchemaAttribute[] = [];
+  schemaAttributes: string[] = [];
   selectedSpecies = "All";
   selectedClass = "Reaction";
   selectedAttributes: string[] = ["displayName"];
@@ -101,6 +101,7 @@ export class SearchFilterComponent implements OnInit{
           }
         })
       })
+      this.schemaAttributes = this.getAttributes(this.selectedClass)!;
     })
   }
 
@@ -138,21 +139,7 @@ export class SearchFilterComponent implements OnInit{
 
   onClassSelection(): void {
     // Reflect the newly selectedClass's attributes in all 'select attributes' mat-form-fields
-    this.cdr.detectChanges();
-  }
-
-  showClause(pos: number): void {
-    this.hide_clauses[pos] = false;
-    this.cdr.detectChanges();
-  }
-
-  hideClause(pos: number): void {
-    this.hide_clauses[pos] = true;
-    // Remove any user-selected values in clause at pos
-    this.selectedAttributes.splice(pos, 1);
-    this.selectedOperands.splice(pos, 1);
-    this.searchKeys[pos] = "na";
-    (<HTMLInputElement>document.getElementById("searchKey" + pos)).value = "";
+    this.schemaAttributes = this.getAttributes(this.selectedClass)!;
     this.cdr.detectChanges();
   }
 
@@ -185,10 +172,6 @@ export class SearchFilterComponent implements OnInit{
       index: number = index;
     }
     this.attributeConditions.push(blankAttributeCondition);
-    this.numberOfConditionsToDisplay++;
-  }
-
-  addAttributeToQuery() {
     this.numberOfConditionsToDisplay++;
   }
 

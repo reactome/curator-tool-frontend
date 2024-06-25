@@ -33,7 +33,7 @@ export class InstanceSelectionComponent implements OnInit {
   data: Instance[] = [];
   actionButtons: string[] = ["launch"];
   schemaClasses: SchemaClass[] = [];
-  schemaClassAttributes: SchemaAttribute[] = [];
+  schemaClassAttributes: string[] = [];
 
   @Input() set setClassName(inputClassName: string) {
     this.className = inputClassName;
@@ -70,7 +70,9 @@ export class InstanceSelectionComponent implements OnInit {
 
   loadSchemaClasses() {
     this.dataService.fetchSchemaClass(this.className).subscribe(att => {
-      this.schemaClassAttributes = att.attributes!;
+      att.attributes?.forEach(attr => {
+        this.schemaClassAttributes.push(attr.name);
+      });
     });
     console.log("attributes", this.schemaClassAttributes);
     this.dataService.fetchSchemaClassTree().subscribe(schemaClass => {
@@ -119,22 +121,20 @@ export class InstanceSelectionComponent implements OnInit {
   }
 
   queryParams() {
-    // this.route.params.subscribe((params) => {
-    //   console.log('name from view', params['className'].toString())
-    //   this.className = params['className'];
-    //   this.attributes = params['attributes'];
-    //   this.attributeTypes = params['attributeTypes'];
-    //   this.regex = params['regex'];
-    //   this.searchKey = params['searchKey'];
-    // });
-    //
-    // this.dataService.searchInstances(this.className, this.skip, this.pageSize, this.attributes, this.regex, this.searchKeys)
-    //   .subscribe(instanceList => {
-    //     this.instanceCount = instanceList.totalCount;
-    //     this.data = instanceList.instances;
-    //     this.matDataSource.data = instanceList.instances;
-    //     this.showProgressSpinner = false;
-    //   })
+    this.route.params.subscribe((params) => {
+      console.log('name from view', params)
+      this.className = params['className'];
+      let attributes = params['attributes'];
+      let regex = params['regex'];
+      let searchKey = params['searchKey'];
+      this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributes, regex, searchKey)
+        .subscribe(instanceList => {
+          this.instanceCount = instanceList.totalCount;
+          this.data = instanceList.instances;
+          this.matDataSource.data = instanceList.instances;
+          this.showProgressSpinner = false;
+        })
+    });
   }
 
   filterData(searchFilters: AttributeCondition[]) {

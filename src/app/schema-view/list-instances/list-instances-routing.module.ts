@@ -13,7 +13,7 @@ const routes: Routes = [
     // }]
   },
   {
-    path: `:className/:attributes/:attributeTypes/:regex/:searchKey`,
+    path: `:className/:attributes/:regex/:searchKey`,
     component: ListInstancesViewComponent,
     title: 'FilterSearch',
   }

@@ -3,7 +3,7 @@
     <mat-label>Select attribute</mat-label>
     <mat-select class="text-sm" [(value)]="selectedAttribute">
       @for (attribute of schemaAttributes; track attribute) {
-      <mat-option class="text-sm" [value]="attribute.name">{{attribute.name}}</mat-option>
+      <mat-option class="text-sm" [value]="attribute">{{attribute}}</mat-option>
       }
     </mat-select>
   </mat-form-field>

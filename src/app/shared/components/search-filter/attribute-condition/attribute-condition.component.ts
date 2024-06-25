@@ -14,7 +14,7 @@ export interface AttributeCondition {
   styleUrl: './attribute-condition.component.scss'
 })
 export class AttributeConditionComponent {
-  @Input() set schemaClassAttributes(schemaClassAttributes: SchemaAttribute[]) {
+  @Input() set schemaClassAttributes(schemaClassAttributes: string[]) {
     this.schemaAttributes = schemaClassAttributes;
   }
   // To display existing conditions
@@ -29,7 +29,7 @@ export class AttributeConditionComponent {
   @Output() removeAttributeCondition: EventEmitter<any> = new EventEmitter();
   @Output() updateAttributeCondition: EventEmitter<any> = new EventEmitter();
 
-  schemaAttributes: SchemaAttribute[] = [];
+  schemaAttributes: string[] = [];
   selectedAttribute: string = "displayName";
   selectedOperand: string = "Contains";
   searchKey: string = "";

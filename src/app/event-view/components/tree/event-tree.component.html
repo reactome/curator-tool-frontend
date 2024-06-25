@@ -1,4 +1,6 @@
-<filter-events (updateEventTree)="filterData($event)"></filter-events>
+<!--<filter-events (updateEventTree)="filterData($event)"></filter-events>-->
+<search-filter [isSchemaView]="false"
+               (addAttributeCondition)="filterData($event)"></search-filter>
 <div>
   <ng-container *ngIf="showProgressSpinner">
     <mat-spinner class="spinner"></mat-spinner>
