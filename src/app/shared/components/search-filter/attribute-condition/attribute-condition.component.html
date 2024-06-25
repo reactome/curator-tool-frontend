@@ -3,7 +3,7 @@
     <mat-label>Select attribute</mat-label>
     <mat-select class="text-sm" [(value)]="selectedAttribute">
       @for (attribute of schemaAttributes; track attribute) {
-      <mat-option class="text-sm" [value]="attribute">{{attribute.name}}</mat-option>
+      <mat-option class="text-sm" [value]="attribute.name">{{attribute.name}}</mat-option>
       }
     </mat-select>
   </mat-form-field>
@@ -16,11 +16,15 @@
       }
     </mat-select>
   </mat-form-field>
-
   <mat-form-field class="fc-margin">
     <mat-label>Enter search token</mat-label>
-    <input id="searchKey0" class="text-sm" matInput (keyup)="recordSearchKey($event)" #input>
+    <input id="searchKey" (keyup)="recordSearchKey($event)" class="text-sm" matInput #input>
   </mat-form-field>
-  <button matTooltip="Add another attribute to query"  mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">+</button>
+  <ng-container *ngIf="index <= 8">
+    <button matTooltip="Add attribute to query" (click)="add()" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">+</button>
+  </ng-container>
+  <ng-container *ngIf="index > 0">
+    <button matTooltip="Remove attribute" (click)="remove()" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">-</button>
+  </ng-container>
 </div>
 <!--<button style="margin: 10px;" [hidden]="hideSearchPanel === '' ? 'hidden' : ''" mat-raised-button (click)="onHideSelectionChange()">{{hideShowButtonLabel}}</button>-->

@@ -18,10 +18,23 @@
         </mat-select>
       </mat-form-field>
     </div>
-    <ng-container *ngFor="let attribute of selectedAttributes">
-      <app-attribute-condition
-        [schemaClassAttributes]="schemaAttributes"></app-attribute-condition>
-    </ng-container>
+    <div>
+      <ng-container *ngFor="let attribute of attributeConditions">
+        <ng-container *ngIf="attribute.index < numberOfConditionsToDisplay">
+          <app-attribute-condition
+            [schemaClassAttributes]="schemaAttributes"
+            [attributeCondition]="attribute"
+            (addAttributeCondition)="addAttribute()"
+            (removeAttributeCondition)="removeAttribute($event)"
+            (updateAttributeCondition)="updateAttributeCondition($event)">
+          </app-attribute-condition>
+        </ng-container>
+      </ng-container>
+<!--      <ng-container *ngIf="numberOfConditionsToDisplay <= 8">-->
+<!--        <button matTooltip="Add another attribute to query" mat-icon-button (click)="addAttribute()"-->
+<!--                style="margin-left: 5px; margin-bottom: 20px; float: right;">+</button>-->
+<!--      </ng-container>-->
+    </div>
     <div>
       <button style="margin: 18px;" mat-raised-button (click)="onSearchSelectionChange()">Search</button>
       <button mat-raised-button (click)="onHideSelectionChange()">{{hideShowButtonLabel}}</button>

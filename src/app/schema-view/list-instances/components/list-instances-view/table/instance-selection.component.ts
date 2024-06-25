@@ -7,6 +7,9 @@ import { DataService } from "../../../../../core/services/data.service";
 import { ViewOnlyService } from "../../../../../core/services/view-only.service";
 import {SchemaAttribute, SchemaClass} from "../../../../../core/models/reactome-schema.model";
 import {ActivatedRoute} from "@angular/router";
+import {
+  AttributeCondition
+} from "../../../../../shared/components/search-filter/attribute-condition/attribute-condition.component";
 
 @Component({
   selector: 'app-instance-selection',
@@ -40,11 +43,6 @@ export class InstanceSelectionComponent implements OnInit {
     this.loadInstances();
   }
 
-  @Input() attributes: Array<string> = [];
-  @Input() attributeTypes: Array<string> = [];
-  @Input() regex: Array<string> = [];
-  @Input() searchKeys: Array<string> = [];
-
   constructor(private dataService: DataService, private route: ActivatedRoute) {
   }
 
@@ -59,7 +57,6 @@ export class InstanceSelectionComponent implements OnInit {
   }
 
   loadInstances() {
-    console.log(this.attributes, this.regex, this.searchKeys)
       this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
     .subscribe((instancesList) => {
         this.instanceCount = instancesList.totalCount;
@@ -122,32 +119,38 @@ export class InstanceSelectionComponent implements OnInit {
   }
 
   queryParams() {
-    this.route.params.subscribe((params) => {
-      console.log('name from view', params['className'].toString())
-      this.className = params['className'];
-      this.attributes = params['attributes'];
-      this.attributeTypes = params['attributeTypes'];
-      this.regex = params['regex'];
-      this.searchKey = params['searchKey'];
-    });
-
-    this.dataService.searchInstances(this.className, this.skip, this.pageSize, this.attributes, this.regex, this.searchKeys)
-      .subscribe(instanceList => {
-        this.instanceCount = instanceList.totalCount;
-        this.data = instanceList.instances;
-        this.matDataSource.data = instanceList.instances;
-        this.showProgressSpinner = false;
-      })
+    // this.route.params.subscribe((params) => {
+    //   console.log('name from view', params['className'].toString())
+    //   this.className = params['className'];
+    //   this.attributes = params['attributes'];
+    //   this.attributeTypes = params['attributeTypes'];
+    //   this.regex = params['regex'];
+    //   this.searchKey = params['searchKey'];
+    // });
+    //
+    // this.dataService.searchInstances(this.className, this.skip, this.pageSize, this.attributes, this.regex, this.searchKeys)
+    //   .subscribe(instanceList => {
+    //     this.instanceCount = instanceList.totalCount;
+    //     this.data = instanceList.instances;
+    //     this.matDataSource.data = instanceList.instances;
+    //     this.showProgressSpinner = false;
+    //   })
   }
 
-  filterData(searchFilters: Array<string[]>) {
+  filterData(searchFilters: AttributeCondition[]) {
     console.log('searchFilters', searchFilters)
     this.showProgressSpinner = true;
-    this.attributes = searchFilters[2];
-    this.regex = searchFilters[3];
-    this.searchKeys = searchFilters[4];
+    let attributeNames: string[] = [];
+    let regex: string[] = [];
+    let searchKeys: string[] = [];
+    for(let attributeCondition of searchFilters) {
+      attributeNames.push(attributeCondition.attributeName);
+      regex.push(attributeCondition.operand);
+      searchKeys.push(attributeCondition.searchKey);
+      console.log(attributeCondition);
+    }
 
-    this.dataService.searchInstances(this.className, this.skip, this.pageSize, this.attributes, this.regex, this.searchKeys)
+    this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributeNames, regex, searchKeys)
       .subscribe(instanceList => {
         this.instanceCount = instanceList.totalCount;
         this.data = instanceList.instances;

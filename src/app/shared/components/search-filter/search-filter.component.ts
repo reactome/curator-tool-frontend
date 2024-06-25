@@ -1,7 +1,10 @@
-import {ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {DataService} from "../../../core/services/data.service";
 import {AttributeDataType, SchemaAttribute, SchemaClass} from "../../../core/models/reactome-schema.model";
 import {NgFor} from "@angular/common";
+import {AttributeCondition} from "./attribute-condition/attribute-condition.component";
+import {classNames} from "@angular/cdk/schematics";
+import {Event} from "@angular/router";
 
 interface Species {
   value: string;
@@ -16,22 +19,25 @@ interface Species {
   templateUrl: './search-filter.component.html',
   styleUrls: ['./search-filter.component.scss'],
 })
-export class SearchFilterComponent {
+export class SearchFilterComponent implements OnInit{
   @Input() set selectedSchemaClass(selectedSchemaClass: string) {
     this.selectedClass = selectedSchemaClass;
   }
   // Adding flags to use the filter in the schema
   @Input() isSchemaView: boolean = false;
   @Input() set schemaClassAttributes(schemaClassAttributes: SchemaAttribute[]){
-    this.schemaAttributes = schemaClassAttributes;
+    this.schemaAttributes = schemaClassAttributes.sort((a, b) => a.name.localeCompare(b.name));
   }
   @Input() schemaClassNodes: SchemaClass[] = [];
+  @Output() addAttributeCondition: EventEmitter<any> = new EventEmitter();
   // For doing search
   schemaAttributes: SchemaAttribute[] = [];
   selectedSpecies = "All";
   selectedClass = "Reaction";
   selectedAttributes: string[] = ["displayName"];
   selectedOperands: string[] = ["Contains"];
+  attributeConditions: AttributeCondition[] = [];
+  numberOfConditionsToDisplay: number = 1;
   /* NB. Since 'IS NOT NULL' and 'IS NULL' don't require a searchKey, populating every 'empty' of the four
   possible positions in searchKeys with a non-empty string placeholder ensures that each attribute-operand
   tuple gets assigned the correct searchKey at the curator-tool-ws end. If searchKeys had been assigned []
@@ -56,15 +62,6 @@ export class SearchFilterComponent {
   classNames: string[] = [];
   classToAttributes: Map<string, string[]> = new Map();
   classToAttributeToType: Map<string, Map<string, number>> = new Map();
-  operands: string[] = [
-    'Equal',
-    'Contains',
-    'Does not contain',
-    '!=',
-    'Use REGEXP',
-    'IS NOT NULL',
-    'IS NULL'
-  ];
   hideShowButtonLabel: string = "Show Filters";
   hideSearchPanel: string = "hidden";
 
@@ -109,27 +106,24 @@ export class SearchFilterComponent {
 
   @Output() updateEventTree = new EventEmitter<Array<string[]>>();
 
+  ngOnInit(): void {
+    this.addAttribute();
+  }
+
   onSearchSelectionChange(): void {
-    // this.selectedAttributes.forEach(attribute => {
-    //   if (attribute) {
-    //     let selectedAttributeType =
-    //       this.classToAttributeToType.get(this.selectedClass)!.get(attribute) == AttributeDataType.INSTANCE ?
-    //         "instance" : "primitive";
-    //     selectedAttributeTypes.push(selectedAttributeType);
-    //   }
-    // });
     console.debug(
       'selectedSpecies: ' + this.selectedSpecies +
       'selectedClass: ' + this.selectedClass +
       'selectedAttributes: ' + this.selectedAttributes +
       'selectedOperands: ' + this.selectedOperands +
       "; searchKeys: " + this.searchKeys);
-    this.updateEventTree.emit([
-      [this.selectedSpecies],
-      [this.selectedClass],
-      this.selectedAttributes,
-      this.selectedOperands,
-      this.searchKeys]);
+    // this.updateEventTree.emit([
+    //   [this.selectedSpecies],
+    //   [this.selectedClass],
+    //   this.selectedAttributes,
+    //   this.selectedOperands,
+    //   this.searchKeys]);
+    this.addAttributeCondition.emit(this.attributeConditions);
   }
 
   onHideSelectionChange(): void {
@@ -167,14 +161,6 @@ export class SearchFilterComponent {
     return this.classToAttributes.get(className);
   }
 
-  recordSearchKey(event: Event, pos: number) {
-    const text = (event.target as HTMLInputElement).value;
-    if (text !== '') {
-      this.searchKeys[pos] = text;
-    } else {
-      this.searchKeys[pos] = 'na';
-    }
-  }
 
   /**
    * Populate into clsNames all the recursive child classes of schemaClass
@@ -191,6 +177,32 @@ export class SearchFilterComponent {
   }
 
   addAttribute() {
+    let index = this.numberOfConditionsToDisplay - 1;
+    let blankAttributeCondition: AttributeCondition = new class implements AttributeCondition {
+      attributeName: string = "displayName";
+      operand: string = "Contains";
+      searchKey: string = "";
+      index: number = index;
+    }
+    this.attributeConditions.push(blankAttributeCondition);
+    this.numberOfConditionsToDisplay++;
+  }
+
+  addAttributeToQuery() {
+    this.numberOfConditionsToDisplay++;
+  }
+
+  removeAttribute(attCondition: AttributeCondition) {
+    this.attributeConditions.splice(this.attributeConditions.indexOf(attCondition), 1);
+    this.numberOfConditionsToDisplay--;
+  }
+
+  updateAttributeCondition(attCondition: AttributeCondition) {
+    let attribute = this.attributeConditions.at(this.attributeConditions.indexOf(attCondition));
+    attribute!.attributeName = attCondition.attributeName;
+    attribute!.operand = attCondition.operand;
+    attribute!.searchKey = attCondition.searchKey;
+    attribute!.index = attCondition.index;
 
   }
 }
