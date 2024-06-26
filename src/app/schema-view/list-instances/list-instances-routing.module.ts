@@ -17,6 +17,7 @@ const routes: Routes = [
     component: ListInstancesViewComponent,
     title: 'FilterSearch',
   }
+  //path: `:className/:attributes/:regex/:searchKey`,
 
 ]
 

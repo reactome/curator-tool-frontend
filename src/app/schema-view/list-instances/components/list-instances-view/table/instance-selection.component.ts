@@ -50,10 +50,10 @@ export class InstanceSelectionComponent implements OnInit {
     this.skip = 0;
     this.pageIndex = 0;
     this.showProgressSpinner = true;
-    this.queryParams();
     this.loadInstances();
     this.loadSchemaClasses();
     console.log('data', this.data)
+    this.queryParams();
   }
 
   loadInstances() {

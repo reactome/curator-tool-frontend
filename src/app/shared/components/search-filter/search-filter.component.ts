@@ -4,7 +4,7 @@ import {AttributeDataType, SchemaAttribute, SchemaClass} from "../../../core/mod
 import {NgFor} from "@angular/common";
 import {AttributeCondition} from "./attribute-condition/attribute-condition.component";
 import {classNames} from "@angular/cdk/schematics";
-import {Event} from "@angular/router";
+import {Event, Router} from "@angular/router";
 
 interface Species {
   value: string;
@@ -66,6 +66,7 @@ export class SearchFilterComponent implements OnInit{
   hideSearchPanel: string = "hidden";
 
   constructor(
+    private router: Router,
     private cdr: ChangeDetectorRef,
     private service: DataService) {
     // Populate all Event (and children) classes into this.classNames
@@ -118,13 +119,30 @@ export class SearchFilterComponent implements OnInit{
       'selectedAttributes: ' + this.selectedAttributes +
       'selectedOperands: ' + this.selectedOperands +
       "; searchKeys: " + this.searchKeys);
-    // this.updateEventTree.emit([
-    //   [this.selectedSpecies],
-    //   [this.selectedClass],
-    //   this.selectedAttributes,
-    //   this.selectedOperands,
-    //   this.searchKeys]);
-    this.addAttributeCondition.emit(this.attributeConditions);
+    this.updateEventTree.emit([
+      [this.selectedSpecies],
+      [this.selectedClass],
+      this.selectedAttributes,
+      this.selectedOperands,
+      this.searchKeys]);
+    //this.addAttributeCondition.emit(this.attributeConditions);
+    if(this.isSchemaView) {
+      let attributes = [];
+      let regex = [];
+      let searchKeys = [];
+
+      for(let attribute of this.attributeConditions) {
+        attributes.push(attribute.attributeName);
+        regex.push(attribute.operand);
+        searchKeys.push(attribute.searchKey);
+
+      }
+      this.router.navigate(["/schema_view/list_instances/" + this.selectedClass,
+        {
+          attributes: attributes,
+          regex: regex,
+          searchKey: searchKeys}])
+    }
   }
 
   onHideSelectionChange(): void {
