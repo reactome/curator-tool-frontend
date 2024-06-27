@@ -11,7 +11,7 @@ export class PathwayDiagramUtilService {
     private id2hyperEdges : Map<number, HyperEdge> = new Map();
     // For resizing
     private readonly RESIZE_NODE_LOCATIONS: string[] = ['ne', 'nw', 'se', 'sw'];
-
+    
     constructor() { }
 
     resizeCompartment(node: any, e: any, previousDragPos: Position) {
@@ -38,9 +38,128 @@ export class PathwayDiagramUtilService {
             compartment.data('width', compartment.data('width') - deltaX);
             compartment.data('height', compartment.data('height') - deltaY);
             this.updateResizeNodesPosition(compartment, nodeId, e.cy);
+            this.ensureTwoLayerCompartment(compartment, nodeId, e.cy);
         }
         previousDragPos.x = node.position().x;
         previousDragPos.y = node.position().y;
+    }
+
+    /**
+     * Make sure the two layers of compartment are in correct order: i.g. the outter layer is always 
+     * out and the inner layer is alway in.
+     * @param compartment
+     * @param cy 
+     */
+    private ensureTwoLayerCompartment(compartment: any, 
+        resizeNodeId: string,                             
+        cy: Core) 
+    {
+        let compartmentId = compartment.id();
+        // The id has two parts: graph id and inner or outer
+        let tokens = compartmentId.split('-');
+        let isInner = tokens[1] === 'inner';
+        let otherId = tokens[0] + '-' + (isInner ? 'outer' : 'inner');
+        let other = cy.$('#' + otherId);
+
+        // Figure out which is inner and which is outer
+        let inner = undefined;
+        let outer = undefined;
+        if (isInner) {
+            inner = compartment;
+            outer = other;
+        }
+        else {
+            inner = other;
+            outer = compartment;
+        }
+
+        // inner dimensions
+        let i_w = inner.data('width');
+        let i_h = inner.data('height');
+        let i_p = inner.position();
+        let i_x = i_p.x;
+        let i_y = i_p.y;
+        let i_left_x = i_x - i_w / 2.0;
+        let i_bottom_y = i_y - i_h / 2.0;
+        let i_right_x = i_x + i_w / 2.0;
+        let i_top_y = i_y + i_h / 2.0;
+        // outer dimensions
+        let o_w = outer.data('width');
+        let o_h = outer.data('height');
+        let o_x = outer.position().x;
+        let o_y = outer.position().y;
+        let o_left_x = o_x - o_w / 2.0;
+        let o_bottom_x = o_y - o_h / 2.0;
+        let o_right_x = o_x + o_w / 2.0;
+        let o_top_y = o_y + o_h / 2.0;
+        // Make sure the outer is wrapping the inner
+        // Here we will check all four edges one by one to avoid permutation
+        // Check west
+        if (resizeNodeId.endsWith('_nw') || resizeNodeId.endsWith('_sw')) {
+            if (o_left_x > i_left_x) {
+                const deltaX = o_left_x - i_left_x;
+                if (isInner) { // increase
+                    o_w += deltaX;
+                    o_x -= deltaX / 2.0;
+                }
+                else { // reduce
+                    i_w -= deltaX;
+                    i_x += deltaX / 2.0;
+                }
+            }
+        }
+        // Check east
+        if (resizeNodeId.endsWith('_ne') || resizeNodeId.endsWith('_se')) {
+            if (o_right_x < i_right_x) {
+                const deltaX = i_right_x - o_right_x;
+                if (isInner) {
+                    o_w += deltaX;
+                    o_x += deltaX / 2.0;
+                }
+                else {
+                    i_w -= deltaX;
+                    i_x -= deltaX / 2.0;
+                }
+            }
+        }
+        // Check north
+        if (resizeNodeId.endsWith('_nw') || resizeNodeId.endsWith('_ne')) {
+            if (o_bottom_x > i_bottom_y) {
+                const deltaY = o_bottom_x - i_bottom_y;
+                if (isInner) { // increase the height
+                    o_h += deltaY;
+                    o_y -= deltaY / 2.0;
+                }
+                else {
+                    i_h -= deltaY;
+                    i_y += deltaY / 2.0;
+                }
+            }
+        }
+        // Check south
+        if (resizeNodeId.endsWith('_sw') || resizeNodeId.endsWith('_se')) {
+            if (o_top_y < i_top_y) {
+                const deltaY = i_top_y - o_top_y;
+                if (isInner) {
+                    o_h += deltaY;
+                    o_y += deltaY / 2.0;
+                }
+                else {
+                    i_h -= deltaY;
+                    i_y -= deltaY / 2.0;
+                }
+            }
+        }
+        if (isInner) {
+            outer.position({x: o_x, y: o_y});
+            outer.data('width', o_w);
+            outer.data('height', o_h);
+        }
+        else {
+            inner.position({x: i_x, y: i_y});
+            inner.data('width', i_w);
+            inner.data('height', i_h);
+        }
     }
 
     private updateResizeNodesPosition(compartment: any,
