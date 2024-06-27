@@ -1,16 +1,15 @@
-<mat-form-field>
-  <mat-label>Search</mat-label>
-  <!-- Need to track the text using keyup in case the text is deleted but still used for instance list -->
-  <input matInput (keydown.enter)="searchForName($event)" (keyup)="recordSearchKey($event)" #input>
-</mat-form-field>
-<!--<filter-events [isSchemaView]="true"-->
-<!--               [schemaClassAttributes]="schemaClassAttributes"-->
-<!--               [selectedSchemaClass]="className"-->
-<!--               (updateEventTree)="filterData($event)"></filter-events>-->
-<search-filter [isSchemaView]="true"
-               [schemaClassAttributes]="schemaClassAttributes"
-               [selectedSchemaClass]="className"
-               (addAttributeCondition)="filterData($event)"></search-filter>
+<div class="test">
+  <mat-form-field style="float:left">
+    <mat-label>Search</mat-label>
+    <!-- Need to track the text using keyup in case the text is deleted but still used for instance list -->
+    <input matInput (keydown.enter)="searchForName($event)" (keyup)="recordSearchKey($event)" #input>
+  </mat-form-field>
+  <search-filter style="float: right"
+                 [isSchemaView]="true"
+                 [schemaClassAttributes]="schemaClassAttributes"
+                 [selectedSchemaClass]="className"
+                 (addAttributeCondition)="filterData($event)"></search-filter>
+</div>
 <section class="table-container" tabindex="0">
   <ng-container *ngIf="showProgressSpinner">
     <mat-spinner class="spinner instance-list-table"></mat-spinner>

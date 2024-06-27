@@ -54,6 +54,14 @@ export class InstanceSelectionComponent implements OnInit {
     this.loadSchemaClasses();
     console.log('data', this.data)
     this.queryParams();
+    combineLatest([
+      this.route.params,
+      this.route.queryParams
+    ]).subscribe(([params, queryParams]) => {
+      console.log('Params:', params);
+      console.log('Query Params:', queryParams);
+      // You can use params and queryParams here as needed
+    });
   }
 
   loadInstances() {
@@ -125,9 +133,9 @@ export class InstanceSelectionComponent implements OnInit {
       console.log('name from view', params)
       this.className = params['className'];
       let attributes = params['attributes'];
-      let regex = params['regex'];
+      let operands = params['operands'];
       let searchKey = params['searchKey'];
-      this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributes, regex, searchKey)
+      this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributes, operands, searchKey)
         .subscribe(instanceList => {
           this.instanceCount = instanceList.totalCount;
           this.data = instanceList.instances;

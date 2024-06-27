@@ -62,7 +62,7 @@ export class SearchFilterComponent implements OnInit{
   classNames: string[] = [];
   classToAttributes: Map<string, string[]> = new Map();
   classToAttributeToType: Map<string, Map<string, number>> = new Map();
-  hideShowButtonLabel: string = "Show Filters";
+  hideShowButtonLabel: string = "...";
   hideSearchPanel: string = "hidden";
 
   constructor(
@@ -139,15 +139,19 @@ export class SearchFilterComponent implements OnInit{
       }
       this.router.navigate(["/schema_view/list_instances/" + this.selectedClass,
         {
-          attributes: attributes,
-          regex: regex,
-          searchKey: searchKeys}])
+            attributes: attributes.join(','),
+            operands: regex.join(','),
+            searchKey: searchKeys.join(',')
+          }])
+      // this.router.navigate([],
+      //   { queryParams: this.attributeConditions, queryParamsHandling: 'merge'
+      //   });
     }
   }
 
   onHideSelectionChange(): void {
     if (this.hideSearchPanel === "") {
-      this.hideShowButtonLabel = "Show Filters";
+      this.hideShowButtonLabel = "...";
       this.hideSearchPanel = "hidden";
     } else {
       this.hideShowButtonLabel = "Hide Panel";

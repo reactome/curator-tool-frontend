@@ -32,6 +32,7 @@ th {
   // height: calc(100vh - var(--bread-crumb-height) - var(--filter-height) - 2 * var(--body-margin));
   overflow: auto;
   border: none;
+  width: 100%;
 }
 
 .filter {
@@ -40,13 +41,12 @@ th {
 
 mat-form-field {
   margin-top: 5px;
-  width: 100%;
+  width: 90%;
   height: var(--filter-height, 80px);
   outline: none;
   margin-bottom: -1.25em;
   line-height: 40px;
   font-size: 14px;
-
 }
 
 ::ng-deep .mat-form-field-wrapper{

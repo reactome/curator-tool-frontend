@@ -7,18 +7,12 @@ const routes: Routes = [
   {
     path: `:className`,
     component: ListInstancesViewComponent,
-    // children: [{
-    //   path: `:attributes/:regex/:searchKey`,
-    //   component: ListInstancesViewComponent
-    // }]
   },
   {
-    path: `:className/:attributes/:regex/:searchKey`,
+    path: `:className/:attributes/:operands/:searchKey`,
     component: ListInstancesViewComponent,
     title: 'FilterSearch',
   }
-  //path: `:className/:attributes/:regex/:searchKey`,
-
 ]
 
 @NgModule({
