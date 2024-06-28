@@ -13,7 +13,6 @@ import { AttributeCondition } from '../../../../../core/models/reactome-instance
   styleUrls: ['./instance-selection.component.scss'],
 })
 export class InstanceSelectionComponent implements OnInit {
-  matDataSource = new MatTableDataSource<Instance>();
   skip: number = 0;
   // For doing search
   searchKey: string | undefined = undefined;
@@ -40,6 +39,7 @@ export class InstanceSelectionComponent implements OnInit {
       this.pageIndex = 0;
       this.showProgressSpinner = true;
       this.loadInstances();
+      this.loadSchemaClasses();
   }
 
   constructor(private dataService: DataService, private router: Router, private route: ActivatedRoute) {
@@ -52,15 +52,6 @@ export class InstanceSelectionComponent implements OnInit {
     this.loadInstances();
     this.loadSchemaClasses();
     console.log('data', this.data)
-    // this.queryParams();
-    // combineLatest([
-    //   this.route.params,
-    //   this.route.queryParams
-    // ]).subscribe(([params, queryParams]) => {
-    //   console.log('Params:', params);
-    //   console.log('Query Params:', queryParams);
-    //   // You can use params and queryParams here as needed
-    // });
   }
 
   loadInstances() {
@@ -71,27 +62,28 @@ export class InstanceSelectionComponent implements OnInit {
           this.instanceCount = instancesList.totalCount;
           this.showProgressSpinner = false;
           this.data = instancesList.instances;
-          this.matDataSource.data = instancesList.instances;
         }
         )
     }
   }
 
   loadSchemaClasses() {
-    // if (this.className && this.className.length > 0) {
-    //   this.dataService.fetchSchemaClass(this.className).subscribe(att => {
-    //     att.attributes?.forEach(attr => {
-    //       this.schemaClassAttributes.push(attr.name);
-    //     });
-    //   });
-    //   console.log("attributes", this.schemaClassAttributes);
-    //   this.dataService.fetchSchemaClassTree().subscribe(schemaClass => {
-    //     this.schemaClasses.push(schemaClass);
-    //   })
-    // }
+    if (this.className && this.className.length > 0) {
+      this.dataService.fetchSchemaClass(this.className).subscribe(cls => {
+        if (cls && cls.attributes) {
+          // Make a copy and then sort
+          let attributes = [...cls.attributes];
+          attributes.sort((a, b) => a.name.localeCompare(b.name));
+          this.schemaClassAttributes.length = 0; // Empty it first
+          attributes.forEach(attr => {
+            this.schemaClassAttributes.push(attr.name);
+          });
+        }
+      });
+    }
   }
 
-  searchForName(event: Event | undefined) {
+  searchForName(_: Event | undefined) {
     this.skip = 0;
     this.pageIndex = 0;
     if (this.useRoute) {
@@ -136,47 +128,47 @@ export class InstanceSelectionComponent implements OnInit {
     }
   }
 
-  queryParams() {
-    this.route.params.subscribe((params) => {
-      console.log('name from view', params)
-      this.className = params['className'];
-      let attributes = params['attributes'];
-      let operands = params['operands'];
-      let searchKey = params['searchKey'];
-      this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributes, operands, searchKey)
-        .subscribe(instanceList => {
-          this.instanceCount = instanceList.totalCount;
-          this.data = instanceList.instances;
-          this.matDataSource.data = instanceList.instances;
-          this.showProgressSpinner = false;
-        })
-    });
-  }
-
   /**
    * Search instances based on a set of search criteria.
    * @param searchFilters
    */
-  searchInstances(searchFilters: AttributeCondition[]) {
-    console.log('searchFilters', searchFilters)
+  searchInstances(attributeNames: string[],
+                  operands: string[],
+                  searchKeys: string[]
+  ) {
     this.showProgressSpinner = true;
-    let attributeNames: string[] = [];
-    let regex: string[] = [];
-    let searchKeys: string[] = [];
-    for(let attributeCondition of searchFilters) {
-      attributeNames.push(attributeCondition.attributeName);
-      regex.push(attributeCondition.operand);
-      searchKeys.push(attributeCondition.searchKey);
-      console.log(attributeCondition);
-    }
-
-    this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributeNames, regex, searchKeys)
+    this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributeNames, operands, searchKeys)
       .subscribe(instanceList => {
         this.instanceCount = instanceList.totalCount;
         this.data = instanceList.instances;
-        this.matDataSource.data = instanceList.instances;
         this.showProgressSpinner = false;
     })
-    this.loadSchemaClasses();
+  }
+
+  /**
+   * Handle the search button action.
+   * @param searchFilters
+   */
+  searchAction(searchFilters: AttributeCondition[]) {
+    this.showProgressSpinner = true;
+    let attributeNames: string[] = [];
+    let operands: string[] = [];
+    let searchKeys: string[] = [];
+    for(let attributeCondition of searchFilters) {
+      attributeNames.push(attributeCondition.attributeName);
+      operands.push(attributeCondition.operand);
+      searchKeys.push(attributeCondition.searchKey);
+    }
+    if (this.useRoute) {
+      let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
+      let queryParams = {
+        attributes: attributeNames.join(','),
+        operands: operands.join(','),
+        searchKeys: searchKeys.join(',')
+      }
+      this.router.navigate([url], {queryParams: queryParams, queryParamsHandling: 'merge'});
+    }
+    else 
+      this.searchInstances(attributeNames, operands, searchKeys);
   }
 }

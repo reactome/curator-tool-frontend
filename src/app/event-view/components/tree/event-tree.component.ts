@@ -1,7 +1,7 @@
 import { FlatTreeControl } from "@angular/cdk/tree";
 import {ChangeDetectorRef, Component, EventEmitter, Output, Input, OnDestroy} from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
-import {Instance} from "../../../core/models/reactome-instance.model";
+import {AttributeCondition, Instance} from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
 import { EDIT_ACTION } from "../../../instance/components/instance-view/instance-table/instance-table.model";
 import {MatSnackBar} from '@angular/material/snack-bar'
@@ -150,6 +150,10 @@ export class EventTreeComponent implements OnDestroy {
       }
     });
     this.cdr.detectChanges();
+  }
+
+  searchInstances(criteria: AttributeCondition[]) {
+
   }
 
   filterData(searchFilters: Array<string[]>, generatePlot?: boolean) {

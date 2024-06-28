@@ -1,7 +1,7 @@
 <div>
   <mat-form-field class="fc-margin">
     <mat-label>Select attribute</mat-label>
-    <mat-select class="text-sm" [(value)]="selectedAttribute">
+    <mat-select class="text-sm" [(value)]="attributeCondition.attributeName">
       @for (attribute of schemaAttributes; track attribute) {
       <mat-option class="text-sm" [value]="attribute">{{attribute}}</mat-option>
       }
@@ -10,7 +10,7 @@
 
   <mat-form-field class="fc-margin">
     <mat-label>Select operand</mat-label>
-    <mat-select class="text-sm" [(value)]="selectedOperand">
+    <mat-select class="text-sm" [(value)]="attributeCondition.operand">
       @for (operand of operands; track operand) {
       <mat-option class="text-sm" [value]="operand">{{operand}}</mat-option>
       }
@@ -20,10 +20,11 @@
     <mat-label>Enter search token</mat-label>
     <input id="searchKey" (keyup)="recordSearchKey($event)" class="text-sm" matInput #input>
   </mat-form-field>
-  <ng-container *ngIf="index <= 8">
-    <button matTooltip="Add attribute to query" (click)="add()" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">+</button>
+  <!-- In total we allow 8 search criteria for now. -->
+  <ng-container *ngIf="attributeCondition.index <= 8">
+    <button matTooltip="Add more attribute" (click)="addNewPane()" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">+</button>
   </ng-container>
-  <ng-container *ngIf="index > 0">
-    <button matTooltip="Remove attribute" (click)="remove()" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">-</button>
+  <ng-container *ngIf="attributeCondition.index > 0">
+    <button matTooltip="Remove this attribute" (click)="removePane()" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">-</button>
   </ng-container>
 </div>

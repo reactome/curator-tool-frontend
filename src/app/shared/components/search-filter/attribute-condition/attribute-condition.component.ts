@@ -11,23 +11,16 @@ export class AttributeConditionComponent {
   @Input() set schemaClassAttributes(schemaClassAttributes: string[]) {
     this.schemaAttributes = schemaClassAttributes;
   }
-  // To display existing conditions
-  @Input() set attributeCondition(attributeCondition: AttributeCondition) {
-    this.selectedAttribute = attributeCondition.attributeName;
-    this.selectedOperand = attributeCondition.operand;
-    this.searchKey  = attributeCondition.attributeName;
-    this.index = attributeCondition.index;
-  }
 
-  @Output() addAttributeCondition: EventEmitter<any> = new EventEmitter();
-  @Output() removeAttributeCondition: EventEmitter<any> = new EventEmitter();
-  @Output() updateAttributeCondition: EventEmitter<any> = new EventEmitter();
+  @Input() attributeCondition! : AttributeCondition;
+
+  @Output() addAttributeCondition: EventEmitter<AttributeCondition> = new EventEmitter();
+  @Output() removeAttributeCondition: EventEmitter<AttributeCondition> = new EventEmitter();
+  // Since AttributeCondition is passed, there is no need to track the changes for outside component.
+  // @Output() updateAttributeCondition: EventEmitter<AttributeCondition> = new EventEmitter();
 
   schemaAttributes: string[] = [];
-  selectedAttribute: string = "displayName";
-  selectedOperand: string = "Contains";
-  searchKey: string = "";
-  index: number = 0;
+  
   operands: string[] = [
     'Equal',
     'Contains',
@@ -39,33 +32,15 @@ export class AttributeConditionComponent {
   ];
 
   recordSearchKey(event: Event) {
-    const text = (event.target as HTMLInputElement).value;
-    this.searchKey = text;
-    // Make sure reset it to undefined if nothing there so that
-    // no empty string sent to the server
-    if (this.searchKey !== undefined && this.searchKey.length === 0) {
-      return;
-    }
-    let attributeCondition: AttributeCondition = {
-      attributeName: this.selectedAttribute,
-      operand: this.selectedOperand,
-      searchKey: this.searchKey,
-      index : this.index
-    }
-    this.updateAttributeCondition.emit(attributeCondition);
+    let text = (event.target as HTMLInputElement).value;
+    this.attributeCondition.searchKey = text;
   }
 
-  add(){
-    let attributeCondition: AttributeCondition = {
-      attributeName: this.selectedAttribute,
-      operand: this.selectedOperand,
-      searchKey: this.searchKey,
-      index : this.index
-    }
-    this.addAttributeCondition.emit(attributeCondition);
+  addNewPane(){
+    this.addAttributeCondition.emit(undefined);
   }
 
-  remove(){
+  removePane() {
     this.removeAttributeCondition.emit(this.attributeCondition);
   }
 }
