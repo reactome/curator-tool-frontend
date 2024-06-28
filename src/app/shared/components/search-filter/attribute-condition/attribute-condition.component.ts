@@ -23,12 +23,10 @@ export class AttributeConditionComponent {
   
   operands: string[] = [
     'Equal',
+    'Not Equal',
     'Contains',
-    'Does not contain',
-    '!=',
-    'Use REGEXP',
-    'IS NOT NULL',
-    'IS NULL'
+    'IS NULL',
+    'IS NOT NULL'
   ];
 
   recordSearchKey(event: Event) {

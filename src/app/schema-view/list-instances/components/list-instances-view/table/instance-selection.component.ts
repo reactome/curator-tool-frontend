@@ -150,15 +150,25 @@ export class InstanceSelectionComponent implements OnInit {
    * @param searchFilters
    */
   searchAction(searchFilters: AttributeCondition[]) {
-    this.showProgressSpinner = true;
     let attributeNames: string[] = [];
     let operands: string[] = [];
     let searchKeys: string[] = [];
     for(let attributeCondition of searchFilters) {
+      if (!this.isValidSearchCondition(attributeCondition))
+        continue;
       attributeNames.push(attributeCondition.attributeName);
-      operands.push(attributeCondition.operand);
-      searchKeys.push(attributeCondition.searchKey);
+      // Do a little bit map
+      let operand = attributeCondition.operand;
+      operand = operand.replaceAll(' ', '_').toLocaleLowerCase();
+      operands.push(operand);
+      // Push something to make the server happy
+      if (operand.includes('null'))
+        searchKeys.push('na'); // Just something that is not used at all.
+      else
+        searchKeys.push(attributeCondition.searchKey);
     }
+    if (attributeNames.length === 0) 
+      return; // Nothing to do. No valid attribute condition found!
     if (this.useRoute) {
       let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
       let queryParams = {
@@ -171,4 +181,21 @@ export class InstanceSelectionComponent implements OnInit {
     else 
       this.searchInstances(attributeNames, operands, searchKeys);
   }
+
+  /**
+   * Check if the provided search condition is valid.
+   * @param attribuateCondition
+   */
+  private isValidSearchCondition(attribuateCondition: AttributeCondition) {
+    if (attribuateCondition.attributeName === undefined || attribuateCondition.attributeName === null)
+      return false;
+    // For operands that are not related to null, the search key must be provided
+    if (!attribuateCondition.operand.toLocaleLowerCase().includes('null')) {
+      const key = attribuateCondition.searchKey;
+      if (key === undefined || key === null || key.trim().length === 0)
+        return false;
+    }
+    return true;
+  }
+
 }

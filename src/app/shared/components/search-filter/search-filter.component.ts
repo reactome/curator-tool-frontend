@@ -36,7 +36,7 @@ export class SearchInstanceComponent implements OnInit {
 
   ngOnInit(): void {
     // Create a new attribute search criterium when the component is initialized so that the user can see something.
-    this.addAttribute();
+    setTimeout(() => this.addAttribute()); // Add a delay to avoid NG0100 error.
   }
 
   searchInstances(): void {
