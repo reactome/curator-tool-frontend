@@ -25,3 +25,12 @@ export interface InstanceList {
   totalCount: number;
 }
 
+/**
+ * Data structre defined for search instance
+ */
+export interface AttributeCondition {
+  attributeName: string;
+  operand: string;
+  searchKey: string;
+  index: number;
+}

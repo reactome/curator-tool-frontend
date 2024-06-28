@@ -1,15 +1,11 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { PageEvent } from "@angular/material/paginator";
 import { MatTableDataSource } from "@angular/material/table";
-import { combineLatest } from 'rxjs';
 import { Instance } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
 import { ViewOnlyService } from "../../../../../core/services/view-only.service";
-import {SchemaAttribute, SchemaClass} from "../../../../../core/models/reactome-schema.model";
-import {ActivatedRoute, Router} from "@angular/router";
-import {
-  AttributeCondition
-} from "../../../../../shared/components/search-filter/attribute-condition/attribute-condition.component";
+import { ActivatedRoute, Router } from "@angular/router";
+import { AttributeCondition } from '../../../../../core/models/reactome-instance.model';
 
 @Component({
   selector: 'app-instance-selection',
@@ -35,14 +31,15 @@ export class InstanceSelectionComponent implements OnInit {
   // schemaClasses: SchemaClass[] = [];
   schemaClassAttributes: string[] = [];
   // A flag to use route to load: use string so that we can set it directly in html
-  @Input() useRoute: string = 'false';
+  @Input() useRoute: boolean = false;
 
+  // TODO: There is NG0100 error here: ExpressionChagnedAfterCheckingError. setTimeOut fix cannot work here!!!
   @Input() set setClassName(inputClassName: string) {
-    this.className = inputClassName;
-    this.skip = 0;
-    this.pageIndex = 0;
-    this.showProgressSpinner = true;
-    this.loadInstances();
+      this.className = inputClassName;
+      this.skip = 0;
+      this.pageIndex = 0;
+      this.showProgressSpinner = true;
+      this.loadInstances();
   }
 
   constructor(private dataService: DataService, private router: Router, private route: ActivatedRoute) {
@@ -97,7 +94,7 @@ export class InstanceSelectionComponent implements OnInit {
   searchForName(event: Event | undefined) {
     this.skip = 0;
     this.pageIndex = 0;
-    if (this.useRoute === 'true') {
+    if (this.useRoute) {
       let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
       if (this.searchKey) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
         this.router.navigate([url], {queryParams: {query: this.searchKey}, queryParamsHandling: 'merge'});
@@ -134,7 +131,7 @@ export class InstanceSelectionComponent implements OnInit {
     switch(actionEvent.action) {
       case "launch": {
         const dbId = actionEvent.instance.dbId;
-        window.open(`instance_view/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
+        window.open(`schema_view/instance/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
       }
     }
   }

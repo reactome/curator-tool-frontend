@@ -3,7 +3,7 @@
     <div *ngIf="!isSchemaView" style="margin-top: 20px;">
       <mat-form-field class="fc-margin" >
         <mat-label>Select species</mat-label>
-        <mat-select class="text-sm mat-select" [(value)]="selectedSpecies" (selectionChange)="onSearchSelectionChange()">
+        <mat-select class="text-sm mat-select" [(value)]="selectedSpecies" (selectionChange)="searchInstances()">
           @for (specie of species; track specie) {
           <mat-option class="text-sm" [value]="specie.value">{{specie.viewValue}}</mat-option>
           }
@@ -32,10 +32,10 @@
       </ng-container>
     </div>
     <div>
-      <button style="margin: 18px;" mat-raised-button (click)="onSearchSelectionChange()">Search</button>
-      <button mat-raised-button (click)="onHideSelectionChange()">{{hideShowButtonLabel}}</button>
+      <button style="margin: 18px;" mat-raised-button (click)="searchInstances()">Search</button>
+      <button mat-raised-button (click)="hideSearchPane()">{{hideShowButtonLabel}}</button>
     </div>
   </mat-card>
 </div>
-<button style="margin: 10px;" [hidden]="hideSearchPanel === '' ? 'hidden' : ''" mat-raised-button (click)="onHideSelectionChange()">{{hideShowButtonLabel}}</button>
+<button style="margin: 10px;" [hidden]="hideSearchPanel === '' ? 'hidden' : ''" mat-raised-button (click)="hideSearchPane()">{{hideShowButtonLabel}}</button>
 

@@ -3,7 +3,7 @@ import {CommonModule, NgFor} from '@angular/common';
 import {MaterialModule} from './material/material.module';
 import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} from "@angular/cdk/scrolling";
 import { SafePipe } from './safe.pipe';
-import {SearchFilterComponent} from "./components/search-filter/search-filter.component";
+import {SearchInstanceComponent} from "./components/search-filter/search-filter.component";
 import {
   AttributeConditionComponent
 } from "./components/search-filter/attribute-condition/attribute-condition.component";
@@ -12,7 +12,7 @@ import {MatTooltip} from "@angular/material/tooltip";
 @NgModule({
   declarations: [
     SafePipe,
-    SearchFilterComponent,
+    SearchInstanceComponent,
     AttributeConditionComponent
   ],
   imports: [
@@ -27,7 +27,7 @@ import {MatTooltip} from "@angular/material/tooltip";
     exports: [
       MaterialModule,
       SafePipe,
-      SearchFilterComponent,
+      SearchInstanceComponent,
       AttributeConditionComponent]
 })
 export class SharedModule {

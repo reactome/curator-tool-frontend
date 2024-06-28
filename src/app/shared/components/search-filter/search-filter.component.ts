@@ -1,10 +1,8 @@
-import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {DataService} from "../../../core/services/data.service";
-import {AttributeDataType, SchemaAttribute, SchemaClass} from "../../../core/models/reactome-schema.model";
-import {NgFor} from "@angular/common";
-import {AttributeCondition} from "./attribute-condition/attribute-condition.component";
-import {classNames} from "@angular/cdk/schematics";
-import {Event, Router} from "@angular/router";
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { DataService } from "../../../core/services/data.service";
+import { SchemaClass } from "../../../core/models/reactome-schema.model";
+import { AttributeCondition } from 'src/app/core/models/reactome-instance.model';
+import { Router } from "@angular/router";
 
 interface Species {
   value: string;
@@ -19,9 +17,9 @@ interface Species {
   templateUrl: './search-filter.component.html',
   styleUrls: ['./search-filter.component.scss'],
 })
-export class SearchFilterComponent implements OnInit{
+export class SearchInstanceComponent implements OnInit {
   @Input() set selectedSchemaClass(selectedSchemaClass: string) {
-    // To avoid ng100 view change error
+    // To avoid ng0100 view change error
     setTimeout(() => {
       this.selectedClass = selectedSchemaClass;
     });
@@ -115,7 +113,7 @@ export class SearchFilterComponent implements OnInit{
     this.addAttribute();
   }
 
-  onSearchSelectionChange(): void {
+  searchInstances(): void {
     console.debug(
       'selectedSpecies: ' + this.selectedSpecies +
       'selectedClass: ' + this.selectedClass +
@@ -146,17 +144,15 @@ export class SearchFilterComponent implements OnInit{
             operands: regex.join(','),
             searchKey: searchKeys.join(',')
           }])
-      // this.router.navigate([],
-      //   { queryParams: this.attributeConditions, queryParamsHandling: 'merge'
-      //   });
     }
   }
 
-  onHideSelectionChange(): void {
+  hideSearchPane(): void {
     if (this.hideSearchPanel === "") {
       this.hideShowButtonLabel = "...";
       this.hideSearchPanel = "hidden";
-    } else {
+    } 
+    else {
       this.hideShowButtonLabel = "Hide Panel";
       this.hideSearchPanel = "";
     }

@@ -1,12 +1,6 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {SchemaAttribute} from "../../../../core/models/reactome-schema.model";
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { AttributeCondition } from 'src/app/core/models/reactome-instance.model';
 
-export interface AttributeCondition {
-  attributeName: string;
-  operand: string;
-  searchKey: string;
-  index: number;
-}
 
 @Component({
   selector: 'app-attribute-condition',
