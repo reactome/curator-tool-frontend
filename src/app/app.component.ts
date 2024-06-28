@@ -26,21 +26,6 @@ export class AppComponent {
     // this.loggedIn = true;
     // Bypass for the time being
     //this.loggedIn = false;
-    let url = window.location.pathname;
-    console.debug('url: ', url);
-    if (url.includes('llm_apps')) {
-      this.current_view = 'llm_apps_view';
-    }
-    else if (url.includes('home') || (url === '/')) { // This should be the default
-      this.current_view = 'home_view';
-    }
-    else if (url.includes('event')) {
-      this.current_view = 'event_view';
-    }
-    else {
-      this.current_view = 'schema_view'; // Only support this now.
-    }
-
     // Before we do anything, load the persisted instances if any
     console.debug('App loading instances from server...');
     // TODO: Make sure this is updated during deployment
@@ -53,8 +38,6 @@ export class AppComponent {
           this.store.dispatch(InstanceActions.register_updated_instance(inst));
       }
     });
-
-    this.router.navigate([url]);
   }
 
 }

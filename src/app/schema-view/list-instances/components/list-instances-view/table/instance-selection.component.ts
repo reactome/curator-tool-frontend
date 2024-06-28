@@ -6,7 +6,7 @@ import { Instance } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
 import { ViewOnlyService } from "../../../../../core/services/view-only.service";
 import {SchemaAttribute, SchemaClass} from "../../../../../core/models/reactome-schema.model";
-import {ActivatedRoute} from "@angular/router";
+import {ActivatedRoute, Router} from "@angular/router";
 import {
   AttributeCondition
 } from "../../../../../shared/components/search-filter/attribute-condition/attribute-condition.component";
@@ -32,8 +32,10 @@ export class InstanceSelectionComponent implements OnInit {
   @Input() isSelection: boolean = false;
   data: Instance[] = [];
   actionButtons: string[] = ["launch"];
-  schemaClasses: SchemaClass[] = [];
+  // schemaClasses: SchemaClass[] = [];
   schemaClassAttributes: string[] = [];
+  // A flag to use route to load: use string so that we can set it directly in html
+  @Input() useRoute: string = 'false';
 
   @Input() set setClassName(inputClassName: string) {
     this.className = inputClassName;
@@ -43,7 +45,7 @@ export class InstanceSelectionComponent implements OnInit {
     this.loadInstances();
   }
 
-  constructor(private dataService: DataService, private route: ActivatedRoute) {
+  constructor(private dataService: DataService, private router: Router, private route: ActivatedRoute) {
   }
 
   ngOnInit(): void {
@@ -53,45 +55,57 @@ export class InstanceSelectionComponent implements OnInit {
     this.loadInstances();
     this.loadSchemaClasses();
     console.log('data', this.data)
-    this.queryParams();
-    combineLatest([
-      this.route.params,
-      this.route.queryParams
-    ]).subscribe(([params, queryParams]) => {
-      console.log('Params:', params);
-      console.log('Query Params:', queryParams);
-      // You can use params and queryParams here as needed
-    });
+    // this.queryParams();
+    // combineLatest([
+    //   this.route.params,
+    //   this.route.queryParams
+    // ]).subscribe(([params, queryParams]) => {
+    //   console.log('Params:', params);
+    //   console.log('Query Params:', queryParams);
+    //   // You can use params and queryParams here as needed
+    // });
   }
 
   loadInstances() {
+    // Make sure className is set!
+    if (this.className && this.className.length > 0) {
       this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
-    .subscribe((instancesList) => {
-        this.instanceCount = instancesList.totalCount;
-        this.showProgressSpinner = false;
-        this.data = instancesList.instances;
-        this.matDataSource.data = instancesList.instances;
-
-      }
-    )
+        .subscribe((instancesList) => {
+          this.instanceCount = instancesList.totalCount;
+          this.showProgressSpinner = false;
+          this.data = instancesList.instances;
+          this.matDataSource.data = instancesList.instances;
+        }
+        )
+    }
   }
 
   loadSchemaClasses() {
-    this.dataService.fetchSchemaClass(this.className).subscribe(att => {
-      att.attributes?.forEach(attr => {
-        this.schemaClassAttributes.push(attr.name);
-      });
-    });
-    console.log("attributes", this.schemaClassAttributes);
-    this.dataService.fetchSchemaClassTree().subscribe(schemaClass => {
-      this.schemaClasses.push(schemaClass);
-    })
+    // if (this.className && this.className.length > 0) {
+    //   this.dataService.fetchSchemaClass(this.className).subscribe(att => {
+    //     att.attributes?.forEach(attr => {
+    //       this.schemaClassAttributes.push(attr.name);
+    //     });
+    //   });
+    //   console.log("attributes", this.schemaClassAttributes);
+    //   this.dataService.fetchSchemaClassTree().subscribe(schemaClass => {
+    //     this.schemaClasses.push(schemaClass);
+    //   })
+    // }
   }
 
-  searchForName(event: Event) {
+  searchForName(event: Event | undefined) {
     this.skip = 0;
     this.pageIndex = 0;
-    this.loadInstances();
+    if (this.useRoute === 'true') {
+      let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
+      if (this.searchKey) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
+        this.router.navigate([url], {queryParams: {query: this.searchKey}, queryParamsHandling: 'merge'});
+      else 
+        this.router.navigate([url]);
+    }
+    else
+      this.loadInstances();
   }
 
   recordSearchKey(event: Event) {
@@ -116,16 +130,13 @@ export class InstanceSelectionComponent implements OnInit {
     this.clickEvent.emit(row)
   }
 
-  handleAction(actionButton: {instance: Instance, action: string}) {
-    switch(actionButton.action) {
+  handleAction(actionEvent: {instance: Instance, action: string}) {
+    switch(actionEvent.action) {
       case "launch": {
-        this.navigate(actionButton.instance);
+        const dbId = actionEvent.instance.dbId;
+        window.open(`instance_view/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
       }
     }
-  }
-
-  navigate(instance: Instance) {
-    window.open(`instance_view/${instance.dbId}?${ViewOnlyService.KEY}=true`, '_blank');
   }
 
   queryParams() {
@@ -145,7 +156,11 @@ export class InstanceSelectionComponent implements OnInit {
     });
   }
 
-  filterData(searchFilters: AttributeCondition[]) {
+  /**
+   * Search instances based on a set of search criteria.
+   * @param searchFilters
+   */
+  searchInstances(searchFilters: AttributeCondition[]) {
     console.log('searchFilters', searchFilters)
     this.showProgressSpinner = true;
     let attributeNames: string[] = [];

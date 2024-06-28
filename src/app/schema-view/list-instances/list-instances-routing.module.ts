@@ -1,7 +1,8 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
-import {CommonModule} from '@angular/common';
+import {CommonModule, ɵnormalizeQueryParams} from '@angular/common';
 import {ListInstancesViewComponent} from "./components/list-instances-view/list-instances-view.component";
+import { RouterTestingHarness } from '@angular/router/testing';
 
 const routes: Routes = [
   {
@@ -9,10 +10,14 @@ const routes: Routes = [
     component: ListInstancesViewComponent,
   },
   {
-    path: `:className/:attributes/:operands/:searchKey`,
+    path: `:className/:skip/:limit`,
     component: ListInstancesViewComponent,
-    title: 'FilterSearch',
-  }
+  },
+  // {
+  //   path: `:className/:attributes/:operands/:searchKey`,
+  //   component: ListInstancesViewComponent,
+  //   title: 'FilterSearch',
+  // }
 ]
 
 @NgModule({

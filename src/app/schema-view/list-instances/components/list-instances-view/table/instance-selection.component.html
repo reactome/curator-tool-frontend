@@ -8,7 +8,7 @@
                  [isSchemaView]="true"
                  [schemaClassAttributes]="schemaClassAttributes"
                  [selectedSchemaClass]="className"
-                 (addAttributeCondition)="filterData($event)"></search-filter>
+                 (addAttributeCondition)="searchInstances($event)"></search-filter>
 </div>
 <section class="table-container" tabindex="0">
   <ng-container *ngIf="showProgressSpinner">
