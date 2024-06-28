@@ -21,7 +21,10 @@ interface Species {
 })
 export class SearchFilterComponent implements OnInit{
   @Input() set selectedSchemaClass(selectedSchemaClass: string) {
-    this.selectedClass = selectedSchemaClass;
+    // To avoid ng100 view change error
+    setTimeout(() => {
+      this.selectedClass = selectedSchemaClass;
+    });
   }
   // Adding flags to use the filter in the schema
   @Input() isSchemaView: boolean = false;

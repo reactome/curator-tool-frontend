@@ -35,7 +35,10 @@ export class ListInstancesViewComponent implements AfterViewInit {
           console.debug('query: ' + queryParams['query']);
           this.instanceList.searchKey = queryParams['query'];
         }
-        // this.schemaClassName = params['className'];
+        // Give it a little bit delay to avoid ng0100 error.
+        setTimeout(() => {
+          this.schemaClassName = params['className'];
+        });
         this.instanceList.className = params['className'];
         this.instanceList.loadInstances();
         // this.instanceList.searchForName(undefined);
