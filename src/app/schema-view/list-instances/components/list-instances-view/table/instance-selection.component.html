@@ -1,8 +1,8 @@
 <div class="test">
   <mat-form-field style="float:left">
     <mat-label>Search</mat-label>
-    <!-- Need to track the text using keyup in case the text is deleted but still used for instance list -->
-    <input matInput (keydown.enter)="searchForName($event)" (keyup)="recordSearchKey($event)" #input>
+    <input matInput (keydown.enter)="searchForName($event)"
+    #input [(ngModel)]="searchKey">
   </mat-form-field>
   <search-filter style="float: right"
                  [attributes]="schemaClassAttributes"

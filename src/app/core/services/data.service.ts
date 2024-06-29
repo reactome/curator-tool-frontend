@@ -480,8 +480,8 @@ export class DataService {
                 limit: number,
                 searchKey: string | undefined) {
     let url = this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
-    if (searchKey !== undefined) {
-      url += '?query=' + searchKey;
+    if (searchKey && searchKey.trim().length > 0) {
+      url += '?query=' + searchKey.trim();
     }
     console.log('list instances url: ' + url);
     return this.http.get<InstanceList>(url)

@@ -88,23 +88,13 @@ export class InstanceSelectionComponent implements OnInit {
     this.pageIndex = 0;
     if (this.useRoute) {
       let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
-      if (this.searchKey) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
-        this.router.navigate([url], {queryParams: {query: this.searchKey}, queryParamsHandling: 'merge'});
+      if (this.searchKey && this.searchKey.trim().length > 0) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
+        this.router.navigate([url], {queryParams: {query: this.searchKey.trim()}, queryParamsHandling: 'merge'});
       else 
         this.router.navigate([url]);
     }
     else
       this.loadInstances();
-  }
-
-  recordSearchKey(event: Event) {
-    const text = (event.target as HTMLInputElement).value;
-    this.searchKey = text;
-    // Make sure reset it to undefined if nothing there so that
-    // no empty string sent to the server
-    if (this.searchKey !== undefined && this.searchKey.length === 0) {
-      this.searchKey = undefined;
-    }
   }
 
   onPageChange(pageObject: PageEvent) {
