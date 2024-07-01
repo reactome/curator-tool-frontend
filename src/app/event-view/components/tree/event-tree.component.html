@@ -17,7 +17,7 @@
     matTreeNodePaddingIndent="15"
                  [ngClass] = "node.inFocus === true ? 'inFocus' : ''">
     <!-- use a disabled button to provide padding for table leaf -->
-    <div>
+    <div class="event_tree_node">
       <button mat-icon-button disabled></button>
       <release-flag-icon [doRelease]="node.doRelease"></release-flag-icon>
       <class-name-icon [className]="node.className"></class-name-icon>
@@ -35,7 +35,7 @@
         {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
       </mat-icon>
     </button>
-    <div>
+    <div class="event_tree_node">
       <release-flag-icon [doRelease]="node.doRelease"></release-flag-icon>
       <class-name-icon [className]="node.className"></class-name-icon>
       <button mat-button [ngClass]="[node.match === true ? 'event_text_match' : 'event_text_non_match', 'event_text']"

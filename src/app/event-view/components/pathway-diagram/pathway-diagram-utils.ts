@@ -22,7 +22,7 @@ export class PathwayDiagramUtilService {
         let deltaY = pos.y - previousDragPos.y;
         const compartmentId = node.data('compartment');
         const compartment = e.cy.$('#' + compartmentId);
-        if (compartment !== undefined) {
+        if (compartment !== undefined && compartment.length > 0) {
             const comp_pos = compartment.position();
             const new_pos = {
                 x: comp_pos.x + deltaX / 2.0,
@@ -72,6 +72,11 @@ export class PathwayDiagramUtilService {
             inner = other;
             outer = compartment;
         }
+
+        // Nothing needs to be done in case the compartment has only one layer
+        if (inner === undefined || outer === undefined ||
+            inner.length === 0 || outer.length === 0) // Cytoscape.js actually returns an empty array
+            return;
 
         // inner dimensions
         let i_w = inner.data('width');
@@ -311,7 +316,8 @@ export class PathwayDiagramUtilService {
         // Enable node dragging first
         diagram.cy.nodes().grabify().unpanify();
         // But not compartment
-        diagram.cy.nodes('.Compartment').panify();
+        //TODO: In the editing mode, the user can move compartment too
+        // diagram.cy.nodes('.Compartment').panify();
         // Get the position of nodes to be used for edges
         const id2node = new Map<string, any>();
         diagram.cy.nodes().forEach((node: any) => id2node.set(node.data('id'), node));
