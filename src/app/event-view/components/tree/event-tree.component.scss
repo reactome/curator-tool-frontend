@@ -70,6 +70,13 @@
   align-items: center;
 }
 
+.drag_place_hold {
+  display: flex;
+  align-items: center;
+  background-color: burlywood;
+  max-height: 40px;
+}
+
 .event_text {
   text-decoration: none;
   font-size: 12px !important;

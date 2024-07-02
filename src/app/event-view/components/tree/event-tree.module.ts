@@ -9,6 +9,7 @@ import {RouterLink} from "@angular/router";
 import {ReleaseFlagComponent} from "./release-flag-icon/release-flag-icon.component";
 import {FilterEventsComponent} from "../../../event/components/filter_events/filter_events.component";
 import { ClassNameIconComponent } from './class-name-icon/class-name-icon.component';
+import { CdkDrag, CdkDragPlaceholder, CdkDropList } from '@angular/cdk/drag-drop';
 
 @NgModule({
   declarations: [
@@ -25,7 +26,10 @@ import { ClassNameIconComponent } from './class-name-icon/class-name-icon.compon
     SharedModule,
     MatTooltipModule,
     RouterLink,
-    FilterEventsComponent
+    FilterEventsComponent,
+    CdkDropList,
+    CdkDrag,
+    CdkDragPlaceholder
   ],
   exports: [MaterialModule, EventTreeComponent]
 })

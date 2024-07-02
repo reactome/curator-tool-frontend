@@ -216,5 +216,30 @@ export class EventTreeComponent implements OnDestroy {
     });
   }
 
+  drop(event: any) {
+    console.debug('Dropping...');
+    if (event.previousContainer !== event.container) {
+
+    } else {
+
+    }
+    if (event.previousContainer.data) {
+
+    }
+  }
+
+  exited(event: any) {
+    // const currentIdx = event.container.data.findIndex(
+    //   (f) => f.id === event.item.data.id
+    // );
+    // this.menu.splice(currentIdx + 1, 0, {
+    //   ...event.item.data,
+    //   temp: true,
+    // });
+  }
+  entered() {
+    // this.menu = this.menu.filter((f) => !f.temp);
+  }
+
   protected readonly EDIT_ACTION = EDIT_ACTION;
 }
