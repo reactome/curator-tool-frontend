@@ -11,7 +11,6 @@ import { EditorActionsComponent, ElementType } from './editor-actions/editor-act
 import { PathwayDiagramUtilService } from './pathway-diagram-utils';
 import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
-import { act } from '@ngrx/effects';
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -94,7 +93,7 @@ export class PathwayDiagramComponent implements AfterViewInit {
           this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);
         }
       });
-    })
+    });
   }
 
   private showCyPopup(event: any) { // Use any to avoid any compiling error
@@ -177,6 +176,18 @@ export class PathwayDiagramComponent implements AfterViewInit {
     if (affectedElms === undefined || affectedElms.length === 0)
       return;
     this.diagram.applyEvent(event, affectedElms);
+  }
+
+  drop(event: any) {
+    console.debug('DnD drop: ' + event);
+  }
+
+  exited(event: any) {
+    console.debug('DnD existed');
+  }
+
+  entered() {
+    console.debug('DnD entered');
   }
 
 }

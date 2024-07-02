@@ -5,36 +5,33 @@
     <mat-spinner class="spinner"></mat-spinner>
   </ng-container>
 </div>
-<mat-tree [dataSource]="dataSource" [treeControl]="treeControl" *ngIf="!showProgressSpinner"
+<!-- Don't enable DnD. It cannot work for cytoscape.js!!! -->
+<!-- <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" *ngIf="!showProgressSpinner"
 cdkDropList
-#menuList="cdkDropList"
 cdkDropListSortingDisabled
 (cdkDropListDropped)="drop($event)"
 (cdkDropListExited)="exited($event)"
 (cdkDropListEntered)="entered()"
->
-
+[cdkDropListConnectedTo]="['diagram_view_109988']"
+> -->
+<mat-tree [dataSource]="dataSource" [treeControl]="treeControl" *ngIf="!showProgressSpinner">
   <!-- Hide the root node -->
   <mat-tree-node style="display: hidden;" class="mat-tree-root-node"
                  *matTreeNodeDef="let node; when: isRootNode">
   </mat-tree-node>
 
-  <!-- This is the table node template for leaf nodes -->
+  <!-- This is the tree node template for leaf nodes -->
   <mat-tree-node *matTreeNodeDef="let node;" matTreeNodePadding matTreeNodeToggle
     matTreeNodePaddingIndent="15"
                  [ngClass] = "node.inFocus === true ? 'inFocus' : ''">
     <!-- use a disabled button to provide padding for table leaf -->
-    <div class="event_tree_node" cdkDrag [cdkDragData]="node">
-      <div *cdkDragPlaceholder class="drag_place_hold">
+     <!--Don't enable DnD. -->
+    <!-- <div class="event_tree_node" cdkDrag [cdkDragData]="node"> -->
+      <!-- <div *cdkDragPlaceholder class="drag_place_hold">
         <ng-container *ngTemplateOutlet="leafNodeTemplate; context: {$implicit: node}"></ng-container>
-      </div>    
+      </div>     -->
+    <div class="event_tree_node">
       <ng-container *ngTemplateOutlet="leafNodeTemplate; context: {$implicit: node}"></ng-container>
-      <!-- <button mat-icon-button disabled></button>
-      <release-flag-icon [doRelease]="node.doRelease"></release-flag-icon>
-      <class-name-icon [className]="node.className"></class-name-icon>
-      <button mat-button [ngClass]="[node.match === true ? 'event_text_match' : 'event_text_non_match', 'event_text']"
-              routerLink="/event_view/instance/{{node.dbId}}"
-              (click)="generatePlot(node.dbId, node.className)" cdkFocusInitial>{{node.name}}</button> -->
     </div>
   </mat-tree-node>
   <!-- This is the table node template for expandable nodes -->
@@ -47,21 +44,22 @@ cdkDropListSortingDisabled
       </mat-icon>
     </button>
     <div class="event_tree_node">
-      <release-flag-icon [doRelease]="node.doRelease"></release-flag-icon>
-      <class-name-icon [className]="node.className"></class-name-icon>
-      <button mat-button [ngClass]="[node.match === true ? 'event_text_match' : 'event_text_non_match', 'event_text']"
-              [hidden]="node.name === 'TopLevelPathway'"
-              routerLink="/event_view/instance/{{node.dbId}}"
-              (click)="generatePlot(node.dbId, node.className)" cdkFocusInitial>{{node.name}}</button>
+      <ng-container *ngTemplateOutlet="leafNodeTemplate; context: {$implicit: node}"></ng-container>
     </div>
   </mat-tree-node>
 </mat-tree>
 
 <ng-template #leafNodeTemplate let-node>
-  <button mat-icon-button disabled></button>
+  <!-- This is used as a space filler to push the other controls to the right to have a tree-like structure. -->
+  <button mat-icon-button disabled *ngIf="!treeControl.isExpandable(node)"></button>
+  <button color="primary" class="mat-icon-button v-center" style="width: 18;"
+  matTooltip="Click to add this event to diagram" [matTooltipShowDelay]="1000">
+    <mat-icon>new_label</mat-icon>
+  </button>
   <release-flag-icon [doRelease]="node.doRelease"></release-flag-icon>
   <class-name-icon [className]="node.className"></class-name-icon>
   <button mat-button [ngClass]="[node.match === true ? 'event_text_match' : 'event_text_non_match', 'event_text']"
+          [hidden]="node.name === 'TopLevelPathway'"
           routerLink="/event_view/instance/{{node.dbId}}"
           (click)="generatePlot(node.dbId, node.className)" cdkFocusInitial>{{node.name}}</button>
 </ng-template>
