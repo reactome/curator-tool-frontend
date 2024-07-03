@@ -11,6 +11,8 @@ import { updatedInstances } from 'src/app/instance/state/instance.selectors';
 export class EventSideNavigationComponent implements OnInit {
   @Input() showUpdatedList: number = 0;
   @Output() updateTabIndexEvent = new EventEmitter<boolean>();
+  // Passover
+  @Output() addEventToDiagram = new EventEmitter<Instance>();
 
   data: Instance[] = [];
   constructor(private store: Store) {
@@ -26,5 +28,9 @@ export class EventSideNavigationComponent implements OnInit {
   updateTabIndex() {
     let showList = this.showUpdatedList !== 0;
     this.updateTabIndexEvent.emit(showList);
+  }
+
+  addEventToDiagramAction(instance: Instance) {
+    this.addEventToDiagram.emit(instance);
   }
 }

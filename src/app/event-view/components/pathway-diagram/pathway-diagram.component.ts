@@ -8,9 +8,10 @@ import { ActivatedRoute } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
 import { delay, map } from 'rxjs';
 import { EditorActionsComponent, ElementType } from './editor-actions/editor-actions.component';
-import { PathwayDiagramUtilService } from './pathway-diagram-utils';
-import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
+import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
+import { ReactomeEvent, ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
+import { Instance } from 'src/app/core/models/reactome-instance.model';
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -153,8 +154,8 @@ export class PathwayDiagramComponent implements AfterViewInit {
 
   handleReactomeEvent(event: any) {
     const reactomeEvent = event as ReactomeEvent;
-    // if (reactomeEvent.type !== ReactomeEventTypes.select)
-    //   return;
+    if (reactomeEvent.type !== ReactomeEventTypes.select)
+      return;
     // Apparently we cannot use isNode or isEdge to check the detail's type.
     // We have to use this way to check if a reaction or a node is used. 
     let reactomeId = event.detail.reactomeId;
@@ -178,16 +179,9 @@ export class PathwayDiagramComponent implements AfterViewInit {
     this.diagram.applyEvent(event, affectedElms);
   }
 
-  drop(event: any) {
-    console.debug('DnD drop: ' + event);
-  }
-
-  exited(event: any) {
-    console.debug('DnD existed');
-  }
-
-  entered() {
-    console.debug('DnD entered');
+  addEvent(event: Instance) {
+    console.debug('Add new event: ' + event);
+    this.diagramUtils.addNewEvent(event, this.diagram.cy);
   }
 
 }

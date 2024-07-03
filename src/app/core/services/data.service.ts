@@ -83,36 +83,6 @@ export class DataService {
   }
 
   /**
-   * Fetch the instance data.
-   * @param className
-   * @returns
-   */
-  fetchEvent(className: string): Observable<SchemaClass> {
-    // Check cached results first
-    if (this.name2SchemaClass.has(className)) {
-      return of(this.name2SchemaClass.get(className)!);
-    }
-    // Otherwise call the restful API
-    return this.http.get<SchemaClass>(this.schemaClassDataUrl + `${className}`)
-      .pipe(
-        map((data: any) => {
-          // console.log("fetchSchemaClass:");
-          // console.log(data);
-          // convert data to schemaClass
-          let schemaCls = this.convertToSchemaClass(className, data);
-          this.name2SchemaClass.set(schemaCls.name, schemaCls);
-          return schemaCls;
-        }),
-        catchError((err: Error) => {
-          console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 10000
-          });
-          return throwError(() => err);
-        }));
-  }
-
-  /**
    * Fetch the schema class table.
    * @param className
    * @param skipCache
@@ -222,7 +192,7 @@ export class DataService {
     if (this.rootClass)
       this.buildSchemaClassMap(this.rootClass, this.name2class);
     else
-      console.error("The class table has not been loaded. No map cannot be returned!");
+      console.error("The class table has not been loaded. No map can be returned!");
     return this.name2class.get(clsName);
   }
 

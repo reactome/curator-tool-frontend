@@ -53,7 +53,7 @@ cdkDropListSortingDisabled
   <!-- This is used as a space filler to push the other controls to the right to have a tree-like structure. -->
   <button mat-icon-button disabled *ngIf="!treeControl.isExpandable(node)"></button>
   <button color="primary" class="mat-icon-button v-center" style="width: 18;"
-  matTooltip="Click to add this event to diagram" [matTooltipShowDelay]="1000">
+  matTooltip="Click to add this event to diagram" [matTooltipShowDelay]="1000" (click)="addToDiagramAction(node)">
     <mat-icon>new_label</mat-icon>
   </button>
   <release-flag-icon [doRelease]="node.doRelease"></release-flag-icon>

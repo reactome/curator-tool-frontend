@@ -5,6 +5,8 @@ import {EventPlotComponent} from "../graphic-display/components/event-plot/event
 import {ActivatedRoute} from "@angular/router";
 import {delay, map} from "rxjs/operators";
 import {DiagramComponent} from "ngx-reactome-diagram";
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-diagram.component';
 
 @Component({
   selector: 'app-main-schema-view-event-view',
@@ -34,6 +36,7 @@ export class MainEventComponent {
 
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
+  @ViewChild('diagramView') diagramView: PathwayDiagramComponent | undefined;
 
   openSidenav() {
     this.sidenav?.open();
@@ -82,6 +85,10 @@ export class MainEventComponent {
 
   handleContextMenu(event: any) {
     console.log('context menu');
+  }
+
+  addEventToDiagram(instance: Instance) {
+    this.diagramView?.addEvent(instance);
   }
 
 }

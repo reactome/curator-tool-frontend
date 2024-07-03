@@ -9,6 +9,7 @@ import {DataSubjectService} from "src/app/core/services/data.subject.service";
 import {Subscription} from 'rxjs';
 
 /** Tree node with expandable and level information */
+//TODO: EventNode should wrap an Instance to make the data straucture easier
 interface EventNode {
   expandable: boolean;
   name: string;
@@ -28,6 +29,8 @@ interface EventNode {
   styleUrls: ['./event-tree.component.scss']
 })
 export class EventTreeComponent implements OnDestroy {
+  // Listen to add to diagram view event
+  @Output() addToDiagram = new EventEmitter<Instance>;
   showProgressSpinner: boolean = true;
   dbIdSubscription: Subscription;
   eventTreeParamSubscription: Subscription;
@@ -216,4 +219,15 @@ export class EventTreeComponent implements OnDestroy {
     });
   }
   protected readonly EDIT_ACTION = EDIT_ACTION;
+
+  addToDiagramAction(node: EventNode) {
+    // Wrap the needed informatio into an instance and then fire
+    const instance : Instance = {
+      dbId: node.dbId,
+      displayName: node.name,
+      schemaClassName: node.className
+    }
+    this.addToDiagram.emit(instance);
+  }
+
 }

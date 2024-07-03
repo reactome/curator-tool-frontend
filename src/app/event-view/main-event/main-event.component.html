@@ -2,7 +2,8 @@
   <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh">
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true" [style.width]="sideWidth + 'px'">
       <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)"
-                           [showUpdatedList]="showInstanceList">
+                           [showUpdatedList]="showInstanceList"
+                           (addEventToDiagram)="addEventToDiagram($event)">
       </app-side-navigation>
       <div class="resize-container" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
            (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
@@ -10,19 +11,7 @@
       </div>
     </mat-sidenav>
     <mat-sidenav-content>
-      <app-pathway-diagram></app-pathway-diagram>
-      <!--      <div style="margin-left: 10px; margin-right: 10px;">-->
-<!--        <mat-grid-list cols="2" rowHeight="1000px">-->
-<!--          <mat-toolbar color="primary" class="toolbar">-->
-<!--Graphic display</mat-toolbar>-->
-<!--          <mat-grid-tile>-->
-<!--            <app-event-plot></app-event-plot>-->
-<!--          </mat-grid-tile>-->
-<!--          <mat-grid-tile>-->
-<!--            <router-outlet></router-outlet>-->
-<!--          </mat-grid-tile>-->
-<!--        </mat-grid-list>-->
-<!--      </div>-->
+      <app-pathway-diagram #diagramView></app-pathway-diagram>
     </mat-sidenav-content>
   </mat-sidenav-container>
 
