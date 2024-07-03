@@ -117,7 +117,7 @@ export class InstanceConverter {
                     stId: instance.dbId
                 }
             },
-            classes: ['reaction', type]
+            classes: ['reaction', 'input_output']
         };
         return cy.add(node)[0];
     }
