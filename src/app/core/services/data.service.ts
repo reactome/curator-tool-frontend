@@ -40,6 +40,7 @@ export class DataService {
   private loadInstancesUrl = `${environment.ApiRoot}/loadInstances/`;
   private persistInstancesUrl = `${environment.ApiRoot}/persistInstances/`;
   private deletePersistedInstancesUrl = `${environment.ApiRoot}/deletePersistedInstances/`;
+  private fetchReactionParticipantsUrl = `${environment.ApiRoot}/fetchReactionWithParticipants/`;
 
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
@@ -300,6 +301,30 @@ export class DataService {
       return of(this.id2instance.get(dbId)!);
     }
     return this.fetchInstanceFromDatabase(dbId, true);
+  }
+
+  /**
+   * Fetch the reaction with all participants so that it can be laid out in a 
+   * pathway diagram.
+   * Note: the attributes here don't follow the schema definition of ReactionLikeEvent.
+   * @param dbId
+   * @returns 
+   */
+  fetchReactionParticipants(dbId: number): Observable<Instance> {
+    return this.http.get<Instance>(this.fetchReactionParticipantsUrl + `${dbId}`)
+      .pipe(map((data: Instance) => {
+        let instance: Instance = data; // Converted into the Instance object already
+        this.handleInstanceAttributes(instance);
+        return instance;
+      }),
+        catchError((err: Error) => {
+          console.log("Cannot fetch participants for `${dbId}`: \n" + err.message, "Close", {
+            panelClass: ['warning-snackbar'],
+            duration: 100
+          });
+          return throwError(() => err);
+        }),
+      );
   }
 
   fetchInstanceFromDatabase(dbId: number, cache: boolean): Observable<Instance> {

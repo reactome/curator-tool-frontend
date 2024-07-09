@@ -15,7 +15,8 @@ export class PathwayDiagramUtilService {
     private id2hyperEdges : Map<number, HyperEdge> = new Map();
     // For resizing
     private readonly RESIZE_NODE_LOCATIONS: string[] = ['ne', 'nw', 'se', 'sw'];
-    // To check reaction
+    // To check reaction: A lazy way to list all reactions so that
+    // there is no need to fetch the reaction hierarchical branch.
     private readonly REACTION_TYPES = [
         'BlackBoxEvent',
         'CellDevelopmentStep',

@@ -42,6 +42,15 @@ export class InstanceConverter {
                 outputNodes.push(outputNode);
             }
         }
+        // Catalysts
+        const cas = instance.attributes.get('catalyst');
+        const catalystNodes = [];
+        if (cas) {
+            for (let catalyst of cas) {
+                const catalystNode = this.createPENode(catalyst, cy, utils.diagramService!);
+                catalystNodes.push(catalystNode);
+            }
+        }
         // Create a reaction node
         const reactionNode = this.createReactionNode(instance, utils, cy);
         // Create edges
@@ -74,7 +83,11 @@ export class InstanceConverter {
             else
                 this.createEdge(reactionNode, outputNode, instance, 'OUTPUT', utils, cy);
         }
-        const newNodes = [...inputNodes, ...outputNodes, reactionNode]
+        // create edges to catalysts
+        for (let catalystNode of catalystNodes) {
+            this.createEdge(catalystNode, reactionNode, instance, 'CATALYST', utils, cy);
+        }
+        const newNodes = [...inputNodes, ...outputNodes, ...catalystNodes, reactionNode]
         if (inputHubNode !== undefined)
             newNodes.push(inputHubNode);
         if (outputHubNode !== undefined)

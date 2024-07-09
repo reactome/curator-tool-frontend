@@ -364,7 +364,7 @@ export class HyperEdge {
                     dataService: DataService,
                     converter: InstanceConverter) {
         console.debug('Converting an Event to HyperEdge: ' + event);
-        dataService.fetchInstance(event.dbId).subscribe((instance: Instance) => {
+        dataService.fetchReactionParticipants(event.dbId).subscribe((instance: Instance) => {
             converter.convertReactionToHyperEdge(instance, this.utils, this.cy);
         });
     }
