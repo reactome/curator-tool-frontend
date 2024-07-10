@@ -31,13 +31,7 @@ export class HyperEdge {
     enableRoundSegments() {
         // Find the reaction node first
         // Create round-segment from nodes to reaction node
-        let reactionNode = undefined;
-        for (let node of this.id2objects.values()) {
-            if (this.isReactionNode(node)) {
-                reactionNode = node;
-                break;
-            }
-        }
+        let reactionNode = this.getReactionNode();
         if (reactionNode === undefined)
             return; // Nothing needs to be done
         console.debug('Found reaction node: ', reactionNode);
@@ -173,7 +167,7 @@ export class HyperEdge {
             for (let point of points) {
                 let nodeId = this.createPointNode(edgeData, point);
                 target = nodeId;
-                // Use input for any internal edges to avoid show arrows.
+                // Use input for any internal edges to avoid showing arrows.
                 let newEdge = this.createNewEdge(source, target, edgeData, this.utils.diagramService!.edgeTypeMap.get("INPUT"));
                 source = target;
                 if (!firstEdge) firstEdge = newEdge;
@@ -365,8 +359,154 @@ export class HyperEdge {
                     converter: InstanceConverter) {
         console.debug('Converting an Event to HyperEdge: ' + event);
         dataService.fetchReactionParticipants(event.dbId).subscribe((instance: Instance) => {
-            converter.convertReactionToHyperEdge(instance, this.utils, this.cy);
+            converter.convertReactionToHyperEdge(this, instance, this.utils, this.cy);
+            // Let put it at the center for the time being
+            let extent = this.cy.extent();
+            let centerX = (extent.x1 + extent.x2) / 2;
+            let centerY = (extent.y1 + extent.y2) / 2;
+            this.layout({x: centerX, y: centerY});
         });
+    }
+
+    /**
+     * Register a cytoscape.js element (node or edge).
+     * @param object
+     */
+    registerObject(object: any) {
+        this.id2objects.set(object.id(), object);
+    }
+
+    getRegisteredObject(id: string) {
+        return this.id2objects.get(id);
+    }
+
+    /**
+     * Layout this HyperEdge in a horizonal way. This layout can be used only for a nascent HyperEdge when no extra
+     * points have been added. For HyperEdge having extra points added, use another method. 
+     * Note: This method is ported from Java version, https://github.com/reactome/CuratorTool/blob/022fc5a7cfee990f9ee4e3b696a8317f2aa05d36/src/org/gk/render/HyperEdge.java#L71.
+     * @param pos 
+     */
+    layout(pos: Position) {
+        const reactionNode = this.getReactionNode();
+        if (reactionNode === undefined)
+            return; // Nothing to do.
+        // Put the reaction node to the passed position
+        reactionNode.position({x: pos.x, y: pos.y});
+        const inputNodes = this.getNodesForClass('consumption');
+        const inputHubNode = this.getHubNode('consumption');
+        if (inputHubNode !== reactionNode) {
+            inputHubNode.position({
+                x: pos.x - 100, // Get this number from Java
+                y: pos.y
+            });
+        }
+        
+        const w = 75 * 2; // Copied from Java
+        if (inputNodes.length > 0) {
+            // Half circle so that the inputs can be arranges at the same side
+            const div = Math.PI / inputNodes.length;
+            const shift = div / 2;
+            let x, y;
+            let inputHubPos = inputHubNode.position();
+            for (let i = 0; i < inputNodes.length; i++) {
+                x = w * Math.sin((i + 1) * div - shift);
+                y = w * Math.cos((i + 1) * div - shift);
+                inputNodes[i].position({
+                    x: inputHubPos.x - x,
+                    y: inputHubPos.y - y
+                });
+            }
+        }
+        
+        const outputNodes = this.getNodesForClass('production', true);
+        const outputHubNode = this.getHubNode('production');
+        if (outputHubNode !== reactionNode) {
+            outputHubNode.position({
+                x: pos.x + 100,
+                y: pos.y
+            });
+        }
+        if (outputNodes.length > 0) {
+            // Half circle so that the inputs can be arranges at the same side
+            const div = Math.PI / outputNodes.length;
+            const shift = div / 2;
+            let x, y;
+            let outputHubPos = outputHubNode.position();
+            for (let i = 0; i < outputNodes.length; i++) {
+                x = w * Math.sin((i + 1) * div - shift);
+                y = w * Math.cos((i + 1) * div - shift);
+                outputNodes[i].position({
+                    x: outputHubPos.x + x,
+                    y: outputHubPos.y - y
+                });
+            }
+        }
+
+        const accessoryNodes = this.getAccessoryNodes();
+        if (accessoryNodes.length > 0) {
+            const div = 2 * Math.PI / accessoryNodes.length;
+            let x, y;
+            for (let i = 0; i < accessoryNodes.length; i++) {
+                x = w * Math.sin(i * div);
+                y = w * Math.cos(i * div);
+                accessoryNodes[i].position({
+                    x: pos.x - x,
+                    y: pos.y - y
+                });
+            }
+        }
+    }
+
+    private getHubNode(role: string) : any {
+        for (let elm of this.id2objects.values()) {
+            if (!elm.isEdge())
+                continue;
+            if (elm.hasClass(role)) {
+                if (role === 'consumption')
+                    return elm.target();
+                if (role === 'production')
+                    return elm.source();
+            }
+        }
+        return undefined;
+    }
+
+    private getNodesForClass(cls: string,
+        needTarget: boolean = false,
+    ): any[] {
+        const nodes : any[] = [];
+        for (let elm of this.id2objects.values()) {
+            if (!elm.isEdge())
+                continue;
+            if (elm.hasClass(cls)) {
+                if (needTarget)
+                    nodes.push(elm.target());
+                else
+                    nodes.push(elm.source());
+            }
+        }
+        return nodes;
+    }
+
+    /**
+     * Get accessory nodes, including catalyst, activators, and inhibitors.
+     */
+    private getAccessoryNodes(): any[] {
+        const catalystNodes = this.getNodesForClass('catalysis');
+        const activatorNodes = this.getNodesForClass('positive-regulation');
+        const inhibitorNodes = this.getNodesForClass('negative-regulation');
+        return [...catalystNodes, ...activatorNodes, ...inhibitorNodes];
+    }
+
+    private getReactionNode(): any {
+        let reactionNode = undefined;
+        for (let node of this.id2objects.values()) {
+            if (this.isReactionNode(node)) {
+                reactionNode = node;
+                break;
+            }
+        }
+        return reactionNode;
     }
 
 }

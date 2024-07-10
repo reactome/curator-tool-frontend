@@ -7,6 +7,7 @@ import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
 import { EdgeDefinition, NodeDefinition, Core } from 'cytoscape';
 import { DiagramService } from "ngx-reactome-diagram";
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
+import { HyperEdge } from "./hyperedge";
 
 export class InstanceConverter {
     // Get from Java desktop version
@@ -19,7 +20,15 @@ export class InstanceConverter {
 
     constructor() { }
 
+    /**
+     * Convert the instance, which should be a ReactionLikeEvent, into the passed HyperEdge.
+     * @param hyperEdge 
+     * @param instance 
+     * @param utils 
+     * @param cy 
+     */
     convertReactionToHyperEdge(
+        hyperEdge: HyperEdge, 
         instance: Instance,
         utils: PathwayDiagramUtilService,
         cy: Core
@@ -30,6 +39,7 @@ export class InstanceConverter {
         if (inputs) {
             for (let input of inputs) {
                 const inputNode = this.createPENode(input, cy, utils.diagramService!);
+                hyperEdge.registerObject(inputNode);
                 inputNodes.push(inputNode);
             }
         }
@@ -39,6 +49,7 @@ export class InstanceConverter {
         if (outputs) {
             for (let output of outputs) {
                 const outputNode = this.createPENode(output, cy, utils.diagramService!);
+                hyperEdge.registerObject(outputNode);
                 outputNodes.push(outputNode);
             }
         }
@@ -48,27 +59,33 @@ export class InstanceConverter {
         if (cas) {
             for (let catalyst of cas) {
                 const catalystNode = this.createPENode(catalyst, cy, utils.diagramService!);
+                hyperEdge.registerObject(catalystNode);
                 catalystNodes.push(catalystNode);
             }
         }
         // Create a reaction node
         const reactionNode = this.createReactionNode(instance, utils, cy);
+        hyperEdge.registerObject(reactionNode);
         // Create edges
         // See if we need an input hub node
         let inputHubNode = undefined;
         if (inputNodes.length > 1) {
             inputHubNode = this.createHubNode(instance, cy, 'input');
+            hyperEdge.registerObject(inputHubNode);
             // Create an edge from inputHubNode to reactionNode
             const edge = this.createEdge(inputHubNode, reactionNode, instance, 'INPUT', utils, cy);
+            hyperEdge.registerObject(edge);
             // Update the id
             edge.classes(['reaction', 'input']); // reset it
         }
         // Create edges
         for (let inputNode of inputNodes) {
+            let edge = undefined;
             if (inputHubNode !== undefined)
-                this.createEdge(inputNode, inputHubNode, instance, 'INPUT', utils, cy);
+                edge = this.createEdge(inputNode, inputHubNode, instance, 'INPUT', utils, cy);
             else 
-                this.createEdge(inputNode, reactionNode, instance, 'INPUT', utils, cy);
+                edge = this.createEdge(inputNode, reactionNode, instance, 'INPUT', utils, cy);
+            hyperEdge.registerObject(edge);
         }
         // Handle outputs
         let outputHubNode = undefined;
@@ -76,16 +93,21 @@ export class InstanceConverter {
             outputHubNode = this.createHubNode(instance, cy, 'output');
             const edge = this.createEdge(reactionNode, outputHubNode, instance, 'OUTPUT', utils, cy);
             edge.classes(['reaction', 'output']);
+            hyperEdge.registerObject(outputHubNode);
+            hyperEdge.registerObject(edge);
         }
         for (let outputNode of outputNodes) {
+            let edge = undefined;
             if (outputHubNode !== undefined)
-                this.createEdge(outputHubNode, outputNode, instance, 'OUTPUT', utils, cy);
+                edge = this.createEdge(outputHubNode, outputNode, instance, 'OUTPUT', utils, cy);
             else
-                this.createEdge(reactionNode, outputNode, instance, 'OUTPUT', utils, cy);
+                edge = this.createEdge(reactionNode, outputNode, instance, 'OUTPUT', utils, cy);
+            hyperEdge.registerObject(edge);
         }
         // create edges to catalysts
         for (let catalystNode of catalystNodes) {
-            this.createEdge(catalystNode, reactionNode, instance, 'CATALYST', utils, cy);
+            const edge = this.createEdge(catalystNode, reactionNode, instance, 'CATALYST', utils, cy);
+            hyperEdge.registerObject(edge);
         }
         const newNodes = [...inputNodes, ...outputNodes, ...catalystNodes, reactionNode]
         if (inputHubNode !== undefined)
