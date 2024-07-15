@@ -38,8 +38,7 @@ export class InstanceConverter {
         const inputNodes = [];
         if (inputs) {
             for (let input of inputs) {
-                const inputNode = this.createPENode(input, cy, utils.diagramService!);
-                hyperEdge.registerObject(inputNode);
+                const inputNode = this.createPENode(input, cy, hyperEdge, utils.diagramService!);
                 inputNodes.push(inputNode);
             }
         }
@@ -48,8 +47,7 @@ export class InstanceConverter {
         const outputNodes = [];
         if (outputs) {
             for (let output of outputs) {
-                const outputNode = this.createPENode(output, cy, utils.diagramService!);
-                hyperEdge.registerObject(outputNode);
+                const outputNode = this.createPENode(output, cy, hyperEdge, utils.diagramService!);
                 outputNodes.push(outputNode);
             }
         }
@@ -58,8 +56,7 @@ export class InstanceConverter {
         const catalystNodes = [];
         if (cas) {
             for (let catalyst of cas) {
-                const catalystNode = this.createPENode(catalyst, cy, utils.diagramService!);
-                hyperEdge.registerObject(catalystNode);
+                const catalystNode = this.createPENode(catalyst, cy, hyperEdge, utils.diagramService!);
                 catalystNodes.push(catalystNode);
             }
         }
@@ -157,11 +154,20 @@ export class InstanceConverter {
         return cy.add(node)[0];
     }
 
-    private createPENode(pe: Instance, cy: Core, service: DiagramService) {
+    private createPENode(pe: Instance, cy: Core, hyperedge: HyperEdge, service: DiagramService) {
+        const id = pe.dbId + '';
+        // Check if this node has been created already
+        let exitedNode = cy.$id(id);
+        if (exitedNode.length > 0) { // Always returns something
+            // Just register it regardless it has been registered before.
+            // Let hyperedge handle duplication
+            hyperedge.registerObject(exitedNode[0]);
+            return exitedNode[0];
+        }
         // This is kind of arbitray
-        const node: NodeDefinition = {
+        const node : NodeDefinition = {
             data: {
-                id: pe.dbId + '',
+                id: id,
                 reactomeId: pe.dbId,
                 displayName: pe.displayName,
                 width: this.DEFAULT_NODE_WIDTH,
@@ -180,9 +186,41 @@ export class InstanceConverter {
         const padding = 20;
         newNode.data('height', bb.h + padding);
         // Assign classes as the last step since we have not assign height previously
-        //TODO: To be changed
-        service.nodeTypeMap.get('Protein').forEach((cls: string) => newNode.addClass(cls));
+        service.nodeTypeMap.get(this.getNodeType(pe)).forEach((cls: string) => newNode.addClass(cls));
+        if (pe.schemaClassName === "RNADrug")
+            newNode.addClass("drug");
+        hyperedge.registerObject(newNode);
         return newNode;
+    }
+
+    /**
+     * This is based on the Java version: For EWAS, the node type is determined by
+     * its refType, which is provided by the server side code.
+     * @param pe 
+     */
+    private getNodeType(pe: Instance): string {
+        const schemaClass = pe.schemaClassName;
+        if (schemaClass === "SimpleEntity")
+            return "Chemical";
+        if (schemaClass === "RNADrug")
+            return "RNA"; // For the time being
+        if (schemaClass === "EntityWithAccessionedSequence") {
+            // Suppose attributes should be a map. Here we are lazy: have not transferred it 
+            // when query the server.
+            let refSchemaClass = undefined;
+            if (pe.attributes)
+                refSchemaClass = pe.attributes["refSchemaClass"];
+            if (refSchemaClass) {
+                if (refSchemaClass === "ReferenceGeneProduct")
+                    return "Protein";
+                if (refSchemaClass === "ReferenceDNASequence")
+                    return "Gene";
+                if (refSchemaClass === "ReferenceRNASequence")
+                    return "RNA";
+            }
+            return "Entity";
+        }
+        return schemaClass;
     }
 
     private createEdge(source: any, 
