@@ -10,8 +10,16 @@ import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { HyperEdge } from "./hyperedge";
 
 export class InstanceConverter {
+    // Use to breakdown a long display name
+    private readonly WORD_WRAP_RE = /([/,:;-])/;
+    private readonly WORD_WRAP_RE_G = /([/,:;-])/g;
     // Get from Java desktop version
     private readonly DEFAULT_NODE_WIDTH: number = 130;
+    private readonly MIN_NODE_WIDTH: number = 10;
+    private readonly WIDTH_RATIO_OF_BOUNDS_TO_TEXT: number = 1.3;
+    private readonly HEIGHT_RATIO_OF_BOUNDS_TO_TEXT: number = 1.5;
+    private readonly NODE_BOUND_PADDING = 10;
+
     // This is arbitray
     private readonly INIT_POSITION : Position = {
         x: 50,
@@ -154,6 +162,7 @@ export class InstanceConverter {
         return cy.add(node)[0];
     }
 
+    // TODO: How to calculate the size of the node to wrap all text?
     private createPENode(pe: Instance, cy: Core, hyperedge: HyperEdge, service: DiagramService) {
         const id = pe.dbId + '';
         // Check if this node has been created already
@@ -169,8 +178,9 @@ export class InstanceConverter {
             data: {
                 id: id,
                 reactomeId: pe.dbId,
-                displayName: pe.displayName,
+                displayName: this.generateRenderableName(pe.displayName!),
                 width: this.DEFAULT_NODE_WIDTH,
+                height: 50,
                 graph: {
                     stId: pe.dbId + '' // Use reactome id for the time being
                 }
@@ -182,15 +192,28 @@ export class InstanceConverter {
             }
         };
         const newNode = cy.add(node)[0];
-        const bb = newNode.boundingBox({ includeLabels: true });
-        const padding = 20;
-        newNode.data('height', bb.h + padding);
-        // Assign classes as the last step since we have not assign height previously
+        const font = this.getFontStyle(newNode);
+        const {label, width, height} = this.getNodeLabelAndDimensions(this.generateRenderableName(pe.displayName!), 
+                                                                      font, 
+                                                                      this.DEFAULT_NODE_WIDTH);
+        newNode.data('width', width);
+        newNode.data('height', height);
+        // newNode.data('displayName', label);
         service.nodeTypeMap.get(this.getNodeType(pe)).forEach((cls: string) => newNode.addClass(cls));
         if (pe.schemaClassName === "RNADrug")
             newNode.addClass("drug");
         hyperedge.registerObject(newNode);
         return newNode;
+    }
+
+    private generateRenderableName(displayName: string) {
+        // Get rid of the compartment name
+        const index = displayName.lastIndexOf('[');
+        if (index > 0) {
+            displayName = displayName.substring(0, index).trim();
+        }
+        displayName = displayName.replace(this.WORD_WRAP_RE_G, "$1\u200b");
+        return displayName;
     }
 
     /**
@@ -243,5 +266,74 @@ export class InstanceConverter {
         };
         return cy.add(edge)[0];
     }
+
+    private measureTextWidth(text: string, font: string): number {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) {
+            throw new Error('Canvas context not available');
+        }
+        context.font = font;
+        return context.measureText(text).width;
+    }
+    
+    private measureTextHeight(font: string): number {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) {
+            throw new Error('Canvas context not available');
+        }
+        context.font = font;
+        const metrics = context.measureText('M'); // Use 'M' to approximate the height
+        return metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+    }
+    
+    private breakTextIntoLines(text: string, font: string, maxWidth: number): { lines: string[], width: number, height: number } {
+        const words = text.split(this.WORD_WRAP_RE);
+        const lines: string[] = [];
+        let currentLine = words[0];
+        let maxLineWidth = 0;
+    
+        for (let i = 1; i < words.length; i++) {
+            const word = words[i];
+            const width = this.measureTextWidth(currentLine + ' ' + word, font);
+            if (width < maxWidth) {
+                currentLine += ' ' + word;
+            } else {
+                lines.push(currentLine);
+                maxLineWidth = Math.max(maxLineWidth, this.measureTextWidth(currentLine, font));
+                currentLine = word;
+            }
+        }
+        lines.push(currentLine);
+        maxLineWidth = Math.max(maxLineWidth, this.measureTextWidth(currentLine, font));
+    
+        const lineHeight = this.measureTextHeight(font);
+        const totalHeight = lines.length * lineHeight;
+    
+        return { lines, width: maxLineWidth, height: totalHeight };
+    }
+    
+    private getNodeLabelAndDimensions(text: string, font: string, maxWidth: number): { label: string, width: number, height: number } {
+        let { lines, width, height } = this.breakTextIntoLines(text, font, maxWidth);
+        // The following code is modified from Java curator tool codebase: Node.initBounds(Graphics)
+        width = width * this.WIDTH_RATIO_OF_BOUNDS_TO_TEXT + this.NODE_BOUND_PADDING;
+        if (width < this.MIN_NODE_WIDTH)
+            width = this.MIN_NODE_WIDTH;
+        height = height * this.HEIGHT_RATIO_OF_BOUNDS_TO_TEXT + this.NODE_BOUND_PADDING;
+        const label = lines.join('\n');
+        return { label, width, height };
+    }
+
+    private getFontStyle(node: any) {
+        let fontSize = node.style('font-size');
+        let fontFamily = node.style('font-family');
+        let fontWeight = node.style('font-weight');
+        let fontStyle = node.style('font-style');
+        
+        // Construct the font style string
+        return `${fontStyle} ${fontWeight} ${fontSize} ${fontFamily}`;
+    }
+    
 
 }
