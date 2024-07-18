@@ -9,9 +9,10 @@ import { DiagramComponent } from 'ngx-reactome-diagram';
 import { delay, map } from 'rxjs';
 import { EditorActionsComponent, ElementType } from './editor-actions/editor-actions.component';
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
-import { ReactomeEvent, ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
+import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
+
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -43,7 +44,6 @@ export class PathwayDiagramComponent implements AfterViewInit {
   isEditing: boolean = false;
   // Tracking the previous dragging position: should cytoscape provides this?
   previousDragPos: Position = {x: 0, y: 0};
-
 
   constructor(private route: ActivatedRoute,
     private diagramUtils: PathwayDiagramUtilService
@@ -148,6 +148,9 @@ export class PathwayDiagramComponent implements AfterViewInit {
     }
     else if (action === 'disableResize') {
       this.diagramUtils.disableResizeCompartment(this.elementUnderMouse, this.diagram);
+    }
+    else if (action === 'toggleDarkMode') {
+      this.diagram.dark.isDark = !this.diagram.dark.isDark;
     }
     this.showMenu = false;
   }

@@ -125,6 +125,8 @@ export class InstanceConverter {
         const collection = cy.collection(newNodes);
         // Need to set up the boundingBox to get a better layout
         collection.layout({ name: 'cose', animate: false, boundingBox: { x1: 100, y1: 100, w: 300, h: 300 } }).run();
+        // De-select whatever
+        cy.$(':selected').unselect();
         collection.select();
     }
 
