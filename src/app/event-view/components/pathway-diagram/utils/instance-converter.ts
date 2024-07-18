@@ -19,6 +19,9 @@ export class InstanceConverter {
     private readonly WIDTH_RATIO_OF_BOUNDS_TO_TEXT: number = 1.3;
     private readonly HEIGHT_RATIO_OF_BOUNDS_TO_TEXT: number = 1.5;
     private readonly NODE_BOUND_PADDING = 10;
+    // Since complex has some decoration, we need to assign a mini height. Otherwise, the decoration
+    // may be off.
+    private readonly COMPLEX_MIN_HEIGHT = 50;
 
     // This is arbitray
     private readonly INIT_POSITION : Position = {
@@ -178,8 +181,8 @@ export class InstanceConverter {
             data: {
                 id: id,
                 reactomeId: pe.dbId,
-                displayName: this.generateRenderableName(pe.displayName!),
-                width: this.DEFAULT_NODE_WIDTH,
+                displayName: pe.displayName, // Set the name temporarily
+                width: this.DEFAULT_NODE_WIDTH, // both width and height will be updated.
                 height: 50,
                 graph: {
                     stId: pe.dbId + '' // Use reactome id for the time being
@@ -193,12 +196,12 @@ export class InstanceConverter {
         };
         const newNode = cy.add(node)[0];
         const font = this.getFontStyle(newNode);
-        const {label, width, height} = this.getNodeLabelAndDimensions(this.generateRenderableName(pe.displayName!), 
+        const {label, width, height} = this.getNodeLabelAndDimensions(pe, 
                                                                       font, 
                                                                       this.DEFAULT_NODE_WIDTH);
         newNode.data('width', width);
         newNode.data('height', height);
-        // newNode.data('displayName', label);
+        newNode.data('displayName', label);
         service.nodeTypeMap.get(this.getNodeType(pe)).forEach((cls: string) => newNode.addClass(cls));
         if (pe.schemaClassName === "RNADrug")
             newNode.addClass("drug");
@@ -212,7 +215,10 @@ export class InstanceConverter {
         if (index > 0) {
             displayName = displayName.substring(0, index).trim();
         }
-        displayName = displayName.replace(this.WORD_WRAP_RE_G, "$1\u200b");
+        // By adding \u200b, cytoscape.js will break the labels there (some of them)
+        // However, we'd like to have a fine control, therefore, we break up the display name
+        // by ourselves.
+        // displayName = displayName.replace(this.WORD_WRAP_RE_G, "$1\u200b");
         return displayName;
     }
 
@@ -314,13 +320,16 @@ export class InstanceConverter {
         return { lines, width: maxLineWidth, height: totalHeight };
     }
     
-    private getNodeLabelAndDimensions(text: string, font: string, maxWidth: number): { label: string, width: number, height: number } {
+    private getNodeLabelAndDimensions(pe: Instance, font: string, maxWidth: number): { label: string, width: number, height: number } {
+        const text = this.generateRenderableName(pe.displayName!);
         let { lines, width, height } = this.breakTextIntoLines(text, font, maxWidth);
         // The following code is modified from Java curator tool codebase: Node.initBounds(Graphics)
         width = width * this.WIDTH_RATIO_OF_BOUNDS_TO_TEXT + this.NODE_BOUND_PADDING;
         if (width < this.MIN_NODE_WIDTH)
             width = this.MIN_NODE_WIDTH;
         height = height * this.HEIGHT_RATIO_OF_BOUNDS_TO_TEXT + this.NODE_BOUND_PADDING;
+        if (pe.schemaClassName === 'Complex' && height < this.COMPLEX_MIN_HEIGHT)
+            height = this.COMPLEX_MIN_HEIGHT;
         const label = lines.join('\n');
         return { label, width, height };
     }
