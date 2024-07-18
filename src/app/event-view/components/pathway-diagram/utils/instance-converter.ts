@@ -157,7 +157,7 @@ export class InstanceConverter {
                 id: nodeId,
                 reactomeId: instance.dbId,
                 graph: {
-                    stId: instance.dbId
+                    stId: instance.dbId + ''
                 }
             },
             classes: ['reaction', 'input_output']

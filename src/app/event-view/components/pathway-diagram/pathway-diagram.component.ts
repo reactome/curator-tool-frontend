@@ -154,8 +154,9 @@ export class PathwayDiagramComponent implements AfterViewInit {
 
   handleReactomeEvent(event: any) {
     const reactomeEvent = event as ReactomeEvent;
-    if (reactomeEvent.type !== ReactomeEventTypes.select)
-      return;
+    // Turn this on only for debug select. Need this for all events
+    // if (reactomeEvent.type !== ReactomeEventTypes.select)
+    //   return;
     // Apparently we cannot use isNode or isEdge to check the detail's type.
     // We have to use this way to check if a reaction or a node is used. 
     let reactomeId = event.detail.reactomeId;
