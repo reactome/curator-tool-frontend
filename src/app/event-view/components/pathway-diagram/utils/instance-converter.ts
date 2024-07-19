@@ -46,20 +46,20 @@ export class InstanceConverter {
     ) {
         // Create input nodes
         const inputs = instance.attributes.get('input');
-        const inputNodes = [];
+        const inputStoichiometry = new Map<any, number>();
         if (inputs) {
             for (let input of inputs) {
                 const inputNode = this.createPENode(input, cy, hyperEdge, utils.diagramService!);
-                inputNodes.push(inputNode);
+                inputStoichiometry.set(inputNode, (inputStoichiometry.get(inputNode) || 0) + 1);
             }
         }
         // Create output nodes
         const outputs = instance.attributes.get('output');
-        const outputNodes = [];
+        const outputStoichiometry = new Map<any, number>();
         if (outputs) {
             for (let output of outputs) {
                 const outputNode = this.createPENode(output, cy, hyperEdge, utils.diagramService!);
-                outputNodes.push(outputNode);
+                outputStoichiometry.set(outputNode, (outputStoichiometry.get(outputNode) || 0) + 1);
             }
         }
         // Catalysts
@@ -71,13 +71,31 @@ export class InstanceConverter {
                 catalystNodes.push(catalystNode);
             }
         }
+        // Handle activators
+        const activators = instance.attributes.get('activator');
+        const activatorNodes = [];
+        if (activators) {
+            for (let activator of activators) {
+                const activatorNode = this.createPENode(activator, cy, hyperEdge, utils.diagramService!);
+                activatorNodes.push(activatorNode);
+            }
+        }
+        // inhibitors
+        const inhibitors = instance.attributes.get('inhibitor');
+        const inhibitorNodes = [];
+        if (inhibitors) {
+            for (let inhibitor of inhibitors) {
+                const inhibitorNode = this.createPENode(inhibitor, cy, hyperEdge, utils.diagramService!);
+                inhibitorNodes.push(inhibitorNode);
+            }
+        }
         // Create a reaction node
         const reactionNode = this.createReactionNode(instance, utils, cy);
         hyperEdge.registerObject(reactionNode);
         // Create edges
         // See if we need an input hub node
-        let inputHubNode = undefined;
-        if (inputNodes.length > 1) {
+        let inputHubNode: any = undefined;
+        if (inputStoichiometry.size > 1) {
             inputHubNode = this.createHubNode(instance, cy, 'input');
             hyperEdge.registerObject(inputHubNode);
             // Create an edge from inputHubNode to reactionNode
@@ -87,37 +105,51 @@ export class InstanceConverter {
             edge.classes(['reaction', 'input']); // reset it
         }
         // Create edges
-        for (let inputNode of inputNodes) {
+        inputStoichiometry.forEach((stoichiometry, inputNode) => {
             let edge = undefined;
             if (inputHubNode !== undefined)
                 edge = this.createEdge(inputNode, inputHubNode, instance, 'INPUT', utils, cy);
             else 
                 edge = this.createEdge(inputNode, reactionNode, instance, 'INPUT', utils, cy);
+            edge.data('stoichiometry', stoichiometry);
             hyperEdge.registerObject(edge);
-        }
+        });
         // Handle outputs
-        let outputHubNode = undefined;
-        if (outputNodes.length > 1) {
+        let outputHubNode: any = undefined;
+        if (outputStoichiometry.size > 1) {
             outputHubNode = this.createHubNode(instance, cy, 'output');
             const edge = this.createEdge(reactionNode, outputHubNode, instance, 'OUTPUT', utils, cy);
             edge.classes(['reaction', 'output']);
             hyperEdge.registerObject(outputHubNode);
             hyperEdge.registerObject(edge);
         }
-        for (let outputNode of outputNodes) {
+        outputStoichiometry.forEach((stoichiometry, outputNode) => {
             let edge = undefined;
             if (outputHubNode !== undefined)
                 edge = this.createEdge(outputHubNode, outputNode, instance, 'OUTPUT', utils, cy);
             else
                 edge = this.createEdge(reactionNode, outputNode, instance, 'OUTPUT', utils, cy);
+            edge.data('stoichiometry', stoichiometry);
             hyperEdge.registerObject(edge);
-        }
+        })
         // create edges to catalysts
         for (let catalystNode of catalystNodes) {
             const edge = this.createEdge(catalystNode, reactionNode, instance, 'CATALYST', utils, cy);
             hyperEdge.registerObject(edge);
         }
-        const newNodes = [...inputNodes, ...outputNodes, ...catalystNodes, reactionNode]
+        for (let activatorNode of activatorNodes) {
+            const edge = this.createEdge(activatorNode, reactionNode, instance, 'ACTIVATOR', utils, cy);
+            hyperEdge.registerObject(edge);
+        }
+        for (let inhibitorNode of inhibitorNodes) {
+            const edge = this.createEdge(inhibitorNode, reactionNode, instance, 'INHIBITOR', utils, cy);
+            hyperEdge.registerObject(edge);
+        }
+        const newNodes = [...inputStoichiometry.keys(), ...outputStoichiometry.keys(), 
+            ...catalystNodes, 
+            ...activatorNodes,
+            ...inhibitorNodes,
+            reactionNode]
         if (inputHubNode !== undefined)
             newNodes.push(inputHubNode);
         if (outputHubNode !== undefined)
@@ -251,6 +283,8 @@ export class InstanceConverter {
             }
             return "Entity";
         }
+        if (schemaClass === 'DefinedSet' || schemaClass === 'CandidateSet')
+            return "EntitySet";
         return schemaClass;
     }
 

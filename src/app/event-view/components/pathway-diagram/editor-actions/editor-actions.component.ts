@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import exp from 'vectorious/dist/core/exp';
 
 @Component({
   selector: 'app-editor-actions',
@@ -15,7 +14,7 @@ export class EditorActionsComponent {
   @Input() isEditing: boolean = false;
   // Default is cytoscape
   @Input() elmType: ElementType = ElementType.CYTOSCAPE; 
-  // Include this so that we can compare
+  // Include this so that we can compare in the html template
   elmTypes = ElementType;
   
   constructor() {
