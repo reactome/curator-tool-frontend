@@ -70,7 +70,6 @@ export class InstanceTableRowElementComponent implements OnInit {
   control = new FormControl();
   showField: boolean = true;
   color: boolean = false;
-
   // viewOnly as a service is drilled down too deep in the component hierarchy. Better not been here and disable
   // the editing using a simple flag!
   constructor(private store: Store,
@@ -180,12 +179,14 @@ export class InstanceTableRowElementComponent implements OnInit {
     this.dataSubjectService.setDbId(instance.dbId.toString());
   }
 
-
   getInstanceUrlRoot(instance: Instance) {
-      let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
-                                                     .reduce((acc, val) => acc.concat(val), [])
-                                                     .map(urlSegment => urlSegment.path);
-      return "/" + currentPathRoot[0] + "/instance/" + instance.dbId.toString();
+    // Always use schema_view for the links of instances in the table
+    const url = "/schema_view/instance/" + instance.dbId;
+    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+      .reduce((acc, val) => acc.concat(val), [])
+      .map(urlSegment => urlSegment.path);
+    return url;
+    // return "/" + currentPathRoot[0] + "/instance/" + instance.dbId.toString();
   }
 
 }

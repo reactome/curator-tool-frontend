@@ -99,6 +99,8 @@ export class MainEventComponent {
    * @param event
    * @returns 
    */
+  //TODO: If nothing is selected, we need to make sure the pathway for the diagram 
+  // is shown in the instance view. 
   handleDiagramSelection(event: any) {
     if (event.type !== ReactomeEventTypes.select)
       return;

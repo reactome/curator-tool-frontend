@@ -75,15 +75,18 @@ export class InstanceViewComponent implements OnInit {
     // Avoid reloading if it has been loaded already
     if (dbId && this.instance && dbId === this.instance.dbId)
       return;
-    this.showProgressSpinner = true;
-    this.dataService.fetchInstance(dbId).subscribe((instance) => {
-      this.instance = instance;
-      if (this.instance.dbId !== 0 && !this.dbIds.includes(this.instance.dbId))
-        this.viewHistory.push(this.instance);
-      this.dbIds.push(this.instance.dbId)
-      this.showProgressSpinner = false;
-      this.updateTitle(instance);
-    })
+    setTimeout(() => {
+      // Wrap them together to avoid NG0100 error
+      this.showProgressSpinner = true;
+      this.dataService.fetchInstance(dbId).subscribe((instance) => {
+        this.instance = instance;
+        if (this.instance.dbId !== 0 && !this.dbIds.includes(this.instance.dbId))
+          this.viewHistory.push(this.instance);
+        this.dbIds.push(this.instance.dbId)
+        this.showProgressSpinner = false;
+        this.updateTitle(instance);
+      })
+    });
   }
 
   updateTitle(instance: Instance) {
