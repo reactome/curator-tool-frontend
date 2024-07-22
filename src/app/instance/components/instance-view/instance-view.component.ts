@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from "@angular/router";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
@@ -28,6 +28,9 @@ export class InstanceViewComponent implements OnInit {
   showReferenceColumn: boolean = false;
   dbInstance: Instance | undefined;
   title: string = '';
+  // Control if we need to track the loading history
+  @Input()
+  needHistory: boolean = true;
 
   constructor(private router: Router,
     private route: ActivatedRoute,
@@ -70,16 +73,22 @@ export class InstanceViewComponent implements OnInit {
     });
   }
 
-  private loadInstance(dbId: number) {
-    this.showProgressSpinner = true;
-    this.dataService.fetchInstance(dbId).subscribe((instance) => {
-      this.instance = instance;
-      if (this.instance.dbId !== 0 && !this.dbIds.includes(this.instance.dbId))
-        this.viewHistory.push(this.instance);
-      this.dbIds.push(this.instance.dbId)
-      this.showProgressSpinner = false;
-      this.updateTitle(instance);
-    })
+  loadInstance(dbId: number) {
+    // Avoid reloading if it has been loaded already
+    if (dbId && this.instance && dbId === this.instance.dbId)
+      return;
+    setTimeout(() => {
+      // Wrap them together to avoid NG0100 error
+      this.showProgressSpinner = true;
+      this.dataService.fetchInstance(dbId).subscribe((instance) => {
+        this.instance = instance;
+        if (this.instance.dbId !== 0 && !this.dbIds.includes(this.instance.dbId))
+          this.viewHistory.push(this.instance);
+        this.dbIds.push(this.instance.dbId)
+        this.showProgressSpinner = false;
+        this.updateTitle(instance);
+      })
+    });
   }
 
   updateTitle(instance: Instance) {

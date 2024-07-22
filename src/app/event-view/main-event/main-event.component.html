@@ -10,9 +10,21 @@
         <div class="resize-bar"></div>
       </div>
     </mat-sidenav>
-    <mat-sidenav-content>
-      <app-pathway-diagram #diagramView></app-pathway-diagram>
+    <!--TODO: Need to make the height distribution changable via DnD as the horizonal panel. -->
+    <mat-sidenav-content style="background-color: white;">
+      <div style="display: flex; flex-direction: column; height: 100%;">
+        <div style="flex: 2; overflow: hidden;">
+          <div style="height: 100%; overflow: auto;">
+            <app-pathway-diagram #diagramView (diagramEvent)="handleDiagramSelection($event)"></app-pathway-diagram>
+          </div>
+        </div>
+        <div style="flex: 1; min-height: 100px; overflow: auto;">
+          <app-instance-view #instanceView [needHistory]="false"></app-instance-view>
+        </div>
+      </div>
     </mat-sidenav-content>
+    
+    
   </mat-sidenav-container>
 
 <!--  <div id="bookmark-boundary">-->

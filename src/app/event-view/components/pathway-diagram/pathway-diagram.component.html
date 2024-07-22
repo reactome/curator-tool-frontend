@@ -1,6 +1,6 @@
 <!-- Apparently it is quite difficult, if not impossible, to add DnD feature to cytoscape.js from outside. 
  Therefore, for the time being, we will add a button in the event tree to add an Event to the diagram view. -->
-<div>
+<div class="cytoscape-container">
     <cr-diagram #diagramComponent [id]="id$ | async" (reactomeEvents$)="handleReactomeEvent($event)"></cr-diagram>
     <div *ngIf="showMenu" [ngStyle]="{ 'position': 'absolute', 'top': menuPositionY, 'left': menuPositionX }">
       <app-editor-actions (action)="onAction($event)" [isEditing]="isEditing" [elmType]="elementTypeForPopup"></app-editor-actions>

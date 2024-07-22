@@ -3,7 +3,7 @@
  * in cytoscape. 
  */
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, Output, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
 import { delay, map } from 'rxjs';
@@ -12,6 +12,7 @@ import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { ReactomeEvent, ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
+
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -43,7 +44,6 @@ export class PathwayDiagramComponent implements AfterViewInit {
   isEditing: boolean = false;
   // Tracking the previous dragging position: should cytoscape provides this?
   previousDragPos: Position = {x: 0, y: 0};
-
 
   constructor(private route: ActivatedRoute,
     private diagramUtils: PathwayDiagramUtilService
@@ -149,13 +149,19 @@ export class PathwayDiagramComponent implements AfterViewInit {
     else if (action === 'disableResize') {
       this.diagramUtils.disableResizeCompartment(this.elementUnderMouse, this.diagram);
     }
+    else if (action === 'toggleDarkMode') {
+      this.diagram.dark.isDark = !this.diagram.dark.isDark;
+    }
     this.showMenu = false;
   }
 
   handleReactomeEvent(event: any) {
     const reactomeEvent = event as ReactomeEvent;
-    if (reactomeEvent.type !== ReactomeEventTypes.select)
-      return;
+    // Forward event selection
+    // Turn this on only for debug select. Need this for all events
+    // if (reactomeEvent.type !== ReactomeEventTypes.select) {
+    //   return;
+    // }
     // Apparently we cannot use isNode or isEdge to check the detail's type.
     // We have to use this way to check if a reaction or a node is used. 
     let reactomeId = event.detail.reactomeId;

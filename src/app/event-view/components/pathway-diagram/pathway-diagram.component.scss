@@ -1,0 +1,11 @@
+:host {
+    display: block;
+    height: 100%; /* Ensure the component takes the full height of its parent */
+  }
+  
+  .cytoscape-container {
+    width: 100%; /* Ensure full width */
+    height: 100%; /* Ensure full height */
+    position: relative; /* Required for proper positioning */
+  }
+  

@@ -70,6 +70,7 @@ import {ReferrersDialogComponent} from "./components/referrers-dialog/referrers-
   exports: [
     InstanceTableComponent,
     InstanceTableRowElementComponent,
+    InstanceViewComponent
   ]
 })
 export class InstanceModule {

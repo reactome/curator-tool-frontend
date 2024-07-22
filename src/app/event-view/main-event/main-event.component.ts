@@ -7,6 +7,9 @@ import {delay, map} from "rxjs/operators";
 import {DiagramComponent} from "ngx-reactome-diagram";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-diagram.component';
+import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
+import { Subscription } from 'rxjs';
+import { ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 
 @Component({
   selector: 'app-main-schema-view-event-view',
@@ -20,24 +23,24 @@ export class MainEventComponent {
   showInstanceList: number = 0;
   status = {closed: true, opened: false, dragging: false};
 
+  @ViewChild('sidenav') sidenav: MatSidenav | undefined;
+  @ViewChild('diagramView') diagramView: PathwayDiagramComponent | undefined;
+  @ViewChild('instanceView') instanceView: InstanceViewComponent | undefined;
+
   constructor() {
   }
 
-  // ngAfterViewInit(): void {
-  //   this.id$.pipe(delay(500)).subscribe(id => {
-  //     this.diagram.cy.nodes().grabify().unpanify();
-  //     this.diagram.cy.nodes('.Compartment').ungrabify().panify();
-  //     this.diagram.cy.nodes('.Legend').ungrabify().panify();
-  //     console.log('diagram', this.diagram.legend.$id('#legend-boundary').width())
-  //     this.diagram.legend.data().opened;
-  //     this.diagram.legend.width().toFixed(360);
-  //   })
-  // }
-
-
-  @ViewChild('sidenav') sidenav: MatSidenav | undefined;
-  @ViewChild('diagramView') diagramView: PathwayDiagramComponent | undefined;
-
+  ngAfterViewInit(): void {
+    // Here we use a quite direct approach instead of using Angular output pattern
+    // to make it easier
+    this.diagramView?.diagram.reactomeEvents$.subscribe(event => {
+      this.handleDiagramSelection(event);
+    });
+    this.diagramView?.id$.subscribe(id => {
+      this.handleDiagramIdChange(id);
+    });
+  }
+  
   openSidenav() {
     this.sidenav?.open();
   }
@@ -89,6 +92,34 @@ export class MainEventComponent {
 
   addEventToDiagram(instance: Instance) {
     this.diagramView?.addEvent(instance);
+  }
+
+  /**
+   * This method is adopted from diagramSelect2state in diagram.component.ts in ngx-reactome-base.
+   * @param event
+   * @returns 
+   */
+  //TODO: If nothing is selected, we need to make sure the pathway for the diagram 
+  // is shown in the instance view. 
+  handleDiagramSelection(event: any) {
+    if (event.type !== ReactomeEventTypes.select)
+      return;
+    // Get the dbId from the selected elements
+    let reactomeIds = event.detail.element.map((el: any) => el.data('reactomeId'));
+    // Make sure reactomeIds don't contain duplicated element
+    const uniqueSet = new Set(reactomeIds);
+    reactomeIds = Array.from(uniqueSet).sort();
+    if (reactomeIds.length === 0)
+      return;
+    this.instanceView?.loadInstance(reactomeIds[0]);
+  }
+
+  /**
+   * Switch the instance view for the new id for the loading pathway diagram.
+   * @param id 
+   */
+  handleDiagramIdChange(id: number) {
+    this.instanceView?.loadInstance(id);
   }
 
 }
