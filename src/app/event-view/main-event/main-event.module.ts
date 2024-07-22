@@ -15,6 +15,7 @@ import { MainEventRoutingModule } from "./main-event-routing.module";
 import { GraphicDisplayModule } from "../graphic-display/graphic-display.module";
 import { MatGridListModule } from '@angular/material/grid-list';
 import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-diagram.component';
+import { InstanceModule } from 'src/app/instance/instance.module';
 
 @NgModule({
   declarations: [
@@ -40,7 +41,8 @@ import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-d
     MainEventRoutingModule,
     GraphicDisplayModule,
     MatGridListModule,
-    PathwayDiagramComponent
+    PathwayDiagramComponent,
+    InstanceModule
   ]
 })
 export class MainEventModule { }

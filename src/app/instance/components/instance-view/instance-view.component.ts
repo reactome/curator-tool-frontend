@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from "@angular/router";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
@@ -27,6 +27,9 @@ export class InstanceViewComponent implements OnInit {
   showReferenceColumn: boolean = false;
   dbInstance: Instance | undefined;
   title: string = '';
+  // Control if we need to track the loading history
+  @Input()
+  needHistory: boolean = true;
 
   constructor(private router: Router,
     private route: ActivatedRoute,
@@ -68,7 +71,10 @@ export class InstanceViewComponent implements OnInit {
     });
   }
 
-  private loadInstance(dbId: number) {
+  loadInstance(dbId: number) {
+    // Avoid reloading if it has been loaded already
+    if (dbId && this.instance && dbId === this.instance.dbId)
+      return;
     this.showProgressSpinner = true;
     this.dataService.fetchInstance(dbId).subscribe((instance) => {
       this.instance = instance;

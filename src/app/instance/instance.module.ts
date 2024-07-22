@@ -68,6 +68,7 @@ import { TextCurationComponent } from "../schema-view/main-schema-view/text-cura
   exports: [
     InstanceTableComponent,
     InstanceTableRowElementComponent,
+    InstanceViewComponent
   ]
 })
 export class InstanceModule {
