@@ -8,6 +8,7 @@ import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.serv
 import { Store } from '@ngrx/store';
 import { InstanceActions, NewInstanceActions } from '../../state/instance.actions';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
+import {ReferrersDialogService} from "../referrers-dialog/referrers-dialog.service";
 
 @Component({
   selector: 'app-instance-view',
@@ -33,7 +34,8 @@ export class InstanceViewComponent implements OnInit {
     private dataService: DataService,
     private dragDropService: DragDropService,
     private store: Store,
-    private qaReportDialogService: QAReportDialogService) {
+    private qaReportDialogService: QAReportDialogService,
+    private referrersDialogService: ReferrersDialogService) {
   }
 
   ngOnInit() {
@@ -182,4 +184,8 @@ export class InstanceViewComponent implements OnInit {
 //       });
     }
 
+  delete() {
+    const matDialogRef =
+      this.referrersDialogService.openDialog(this.instance!);
+  }
 }

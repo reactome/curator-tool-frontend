@@ -1,0 +1,20 @@
+<h2 class="dialog_title" mat-dialog-title cdkdraghandle>Referrers of {{instance.displayName}}</h2>
+<mat-dialog-content style="width: 100%;">
+
+  <section class="table-container" tabindex="0">
+<!--    <ng-container *ngIf="showProgressSpinner">-->
+<!--      <mat-spinner class="spinner instance-list-table"></mat-spinner>-->
+<!--    </ng-container>-->
+<!--    <ng-container *ngIf="!showProgressSpinner">-->
+    <ng-container *ngFor="let referrers of instanceList">
+      <mat-label>{{referrers.attributeName}}</mat-label>
+      <app-instance-list-table
+        [dataSource]="referrers.referrers">
+      </app-instance-list-table>
+    </ng-container>
+  </section>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onOK()" cdkFocusInitial>OK</button>
+  <button mat-button (click)="onCancel()">Cancel</button>
+</mat-dialog-actions>

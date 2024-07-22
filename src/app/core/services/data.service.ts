@@ -9,7 +9,7 @@ import {
   SchemaAttribute,
   SchemaClass
 } from '../models/reactome-schema.model';
-import {Instance, InstanceList} from "../models/reactome-instance.model";
+import {Instance, InstanceList, Referrer} from "../models/reactome-instance.model";
 
 
 @Injectable({
@@ -41,6 +41,7 @@ export class DataService {
   private persistInstancesUrl = `${environment.ApiRoot}/persistInstances/`;
   private deletePersistedInstancesUrl = `${environment.ApiRoot}/deletePersistedInstances/`;
   private fetchReactionParticipantsUrl = `${environment.ApiRoot}/fetchReactionWithParticipants/`;
+  private getReferrersUrl = `${environment.ApiRoot}/getReferrers/`;
 
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
@@ -304,11 +305,11 @@ export class DataService {
   }
 
   /**
-   * Fetch the reaction with all participants so that it can be laid out in a 
+   * Fetch the reaction with all participants so that it can be laid out in a
    * pathway diagram.
    * Note: the attributes here don't follow the schema definition of ReactionLikeEvent.
    * @param dbId
-   * @returns 
+   * @returns
    */
   fetchReactionParticipants(dbId: number): Observable<Instance> {
     return this.http.get<Instance>(this.fetchReactionParticipantsUrl + `${dbId}`)
@@ -728,6 +729,22 @@ export class DataService {
           return throwError(() => err);
         }),
       );
+  }
+
+  getReferrers(dbId: number): Observable<Referrer[]> {
+    return this.http.get<Referrer[]>(this.getReferrersUrl  + `${dbId}`)
+      .pipe(
+        map((data: Referrer[]) => {
+          console.log(data);
+            return data;
+          }, // Nothing needs to be done.
+          catchError((err: Error) => {
+            console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
+              panelClass: ['warning-snackbar'],
+              duration: 10000
+            });
+            return throwError(() => err);
+          })));
   }
 
 }

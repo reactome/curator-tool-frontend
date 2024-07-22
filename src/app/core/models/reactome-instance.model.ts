@@ -34,3 +34,8 @@ export interface AttributeCondition {
   searchKey: string;
   index: number;
 }
+
+export interface Referrer {
+  attributeName: string;
+  referrers: Instance[];
+}

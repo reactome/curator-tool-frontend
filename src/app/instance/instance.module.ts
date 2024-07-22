@@ -30,6 +30,7 @@ import { DatabaseObjectEffects } from './state/instance.effects';
 import { NEW_INSTANCES_STATE_NAME } from "./state/instance.selectors";
 import { newInstancesReducer } from "./state/instance.reducers";
 import { TextCurationComponent } from "../schema-view/main-schema-view/text-curation/components/text-curation.component";
+import {ReferrersDialogComponent} from "./components/referrers-dialog/referrers-dialog.component";
 
 @NgModule({
     declarations: [
@@ -41,7 +42,8 @@ import { TextCurationComponent } from "../schema-view/main-schema-view/text-cura
         InstanceViewComponent,
         NewInstanceDialogComponent,
         QAReportDialogComponent,
-        DisableControlDirective
+        DisableControlDirective,
+        ReferrersDialogComponent
     ],
   imports: [
     CommonModule,
