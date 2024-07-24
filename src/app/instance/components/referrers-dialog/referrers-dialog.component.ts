@@ -5,6 +5,7 @@ import { DataService } from 'src/app/core/services/data.service';
 import { AttributeValue } from '../instance-view/instance-table/instance-table.model';
 import { Store } from '@ngrx/store';
 import { NewInstanceActions } from "src/app/instance/state/instance.actions";
+import {ViewOnlyService} from "../../../core/services/view-only.service";
 
 /**
  * A dialog component that is used to create a new Instance object.
@@ -19,9 +20,8 @@ import { NewInstanceActions } from "src/app/instance/state/instance.actions";
 })
 export class ReferrersDialogComponent {
   selected: string = '';
-  candidateClasses: string[] = [];
   instanceList: Referrer[] = [];
-  showProgressSpinner: boolean = true;
+  actionButtons: string[] = ["launch"];
 
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public instance: Instance,
@@ -66,4 +66,12 @@ export class ReferrersDialogComponent {
     this.dialogRef.close(this.instance);
   }
 
+  handleAction(actionEvent: { instance: Instance; action: string }) {
+    switch(actionEvent.action) {
+      case "launch": {
+        const dbId = actionEvent.instance.dbId;
+        window.open(`schema_view/instance/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
+      }
+    }
+  }
 }

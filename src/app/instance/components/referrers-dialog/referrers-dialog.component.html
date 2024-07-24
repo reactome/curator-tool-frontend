@@ -9,7 +9,9 @@
     <ng-container *ngFor="let referrers of instanceList">
       <mat-label>{{referrers.attributeName}}</mat-label>
       <app-instance-list-table
-        [dataSource]="referrers.referrers">
+        [dataSource]="referrers.referrers"
+        [actionButtons]="actionButtons"
+        (actionEvent)="handleAction($event)">
       </app-instance-list-table>
     </ng-container>
   </section>
