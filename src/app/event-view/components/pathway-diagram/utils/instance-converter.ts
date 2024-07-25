@@ -11,8 +11,8 @@ import { HyperEdge } from "./hyperedge";
 
 export class InstanceConverter {
     // Use to breakdown a long display name
-    private readonly WORD_WRAP_RE = /([/,:;-])/;
-    private readonly WORD_WRAP_RE_G = /([/,:;-])/g;
+    private readonly WORD_WRAP_RE = /([\ /,:;-])/;
+    // private readonly WORD_WRAP_RE_G = /([\ /,:;-])/g;
     // Get from Java desktop version
     private readonly DEFAULT_NODE_WIDTH: number = 130;
     private readonly MIN_NODE_WIDTH: number = 10;
@@ -203,7 +203,9 @@ export class InstanceConverter {
     private createPENode(pe: Instance, cy: Core, hyperedge: HyperEdge, service: DiagramService) {
         const id = pe.dbId + '';
         // Check if this node has been created already
-        let exitedNode = cy.$id(id);
+        // In the old pathway diagram, PE nodes have their own ids based on the order
+        // To make it backward compatible, we do the search like this
+        let exitedNode = cy.nodes().filter(node => node.data('reactomeId') === pe.dbId);
         if (exitedNode.length > 0) { // Always returns something
             // Just register it regardless it has been registered before.
             // Let hyperedge handle duplication
@@ -338,9 +340,9 @@ export class InstanceConverter {
     
         for (let i = 1; i < words.length; i++) {
             const word = words[i];
-            const width = this.measureTextWidth(currentLine + ' ' + word, font);
+            const width = this.measureTextWidth(currentLine + word, font);
             if (width < maxWidth) {
-                currentLine += ' ' + word;
+                currentLine += word;
             } else {
                 lines.push(currentLine);
                 maxLineWidth = Math.max(maxLineWidth, this.measureTextWidth(currentLine, font));

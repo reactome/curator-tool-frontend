@@ -4,6 +4,7 @@ import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { Instance } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceConverter } from "./instance-converter";
+import { REACTIVE_NODE } from "@angular/core/primitives/signals";
 
 /**
  * Model a list of edges that form a HyperEdge. Here, we model this HyperEdge as a simple graph
@@ -15,13 +16,39 @@ export class HyperEdge {
     private cy: Core;
     // Cached newly created nodes and edges to avoid duplication here
     // Note: This map contains both edges and also newly created nodes.
-    private id2objects: Map<string, any> = new Map<string, any>();
-
+    private id2object: Map<string, any> = new Map<string, any>();
+    // Track the reactome id
+    private reactomeId: number;
+    
     constructor(utils: PathwayDiagramUtilService,
-        cy: Core
+        cy: Core,
+        reactomeId: number
     ) {
         this.utils = utils;
         this.cy = cy;
+        this.reactomeId = reactomeId;
+    }
+
+    /**
+     * Delete all nodes and edges created for this HyperEdge object.
+     */
+    delete() {
+        this.id2object.forEach((value, key) => {
+            if (value.hasClass('PhysicalEntity')) {
+                // We cannot just remove an element.
+                // Only element linked to objects solely belong to
+                // this hyperedge can be removed.
+                const connectedEdges = value.connectedEdges();
+                for (let edge of connectedEdges) {
+                    const edgeDbId = edge.data('reactomeId');
+                    if (edgeDbId && edgeDbId !== this.reactomeId)
+                        return; // This PE is linked to other edge. Don't delete it.
+                }
+            }
+            // Otherwise can be removed safely
+            this.cy.remove(value);
+        });
+        this.id2object.clear();
     }
 
     /**
@@ -36,9 +63,9 @@ export class HyperEdge {
             return; // Nothing needs to be done
         console.debug('Found reaction node: ', reactionNode);
         // Use aStart function to find the paths. dfs and bfs apparently cannot work!
-        const collection = this.cy.collection(Array.from(this.id2objects.values()));
+        const collection = this.cy.collection(Array.from(this.id2object.values()));
         const toBeRemoved = new Set<any>();
-        for (let elm of this.id2objects.values()) {
+        for (let elm of this.id2object.values()) {
             if (elm.isEdge() || elm === reactionNode)
                 continue;
             if (!elm.hasClass('PhysicalEntity'))
@@ -117,9 +144,9 @@ export class HyperEdge {
     }
 
     private getNewEdgeId(id: string) {
-        if (!this.id2objects.has(id)) return id;
+        if (!this.id2object.has(id)) return id;
         let count = 1;
-        while (this.id2objects.has(id)) {
+        while (this.id2object.has(id)) {
             id = id + "_" + count;
         }
         return id;
@@ -147,14 +174,14 @@ export class HyperEdge {
     expandEdges(currentEdges: any[],
         id2node: Map<string, any>
     ) {
-        this.id2objects = new Map<string, any>();
+        this.id2object = new Map<string, any>();
         for (let edge of currentEdges) {
             // Cache nodes first
-            this.id2objects.set(edge.source().data('id'), edge.source());
-            this.id2objects.set(edge.target().data('id'), edge.target());
+            this.id2object.set(edge.source().data('id'), edge.source());
+            this.id2object.set(edge.target().data('id'), edge.target());
             const points = this.utils.positionsFromRelativeToAbsolute(edge, id2node);
             if (points === undefined || points.length === 0) {
-                this.id2objects.set(edge.data('id'), edge);
+                this.id2object.set(edge.data('id'), edge);
                 continue;
             }
             // Expand the edges
@@ -188,7 +215,7 @@ export class HyperEdge {
 
     private createPointNode(edgeData: any, point: Position, isRenderedPosition: boolean = false) {
         let nodeId = edgeData.reactomeId + ":" + point.x + "_" + point.y;
-        let pointNode: NodeDefinition = this.id2objects.get(nodeId);
+        let pointNode: NodeDefinition = this.id2object.get(nodeId);
         if (pointNode === undefined) {
             let data = this.utils.copyData(edgeData);
             data.id = nodeId;
@@ -204,7 +231,7 @@ export class HyperEdge {
                 newNode.renderedPosition(point as any);
             else
                 newNode.position(point);
-            this.id2objects.set(nodeId, newNode);
+            this.id2object.set(nodeId, newNode);
         }
         return nodeId;
     }
@@ -214,7 +241,7 @@ export class HyperEdge {
      */
     private resetTrivial() {
         // Remove trivial from all edges first
-        this.id2objects.forEach((element, id) => {
+        this.id2object.forEach((element, id) => {
             if (element.isEdge() && element.hasClass('trivial')) {
                 element.removeClass('trivial');
             }
@@ -226,7 +253,7 @@ export class HyperEdge {
         // Will wait for new classes.
         while (isChanged) {
             isChanged = false;
-            this.id2objects.forEach((element, id) => {
+            this.id2object.forEach((element, id) => {
                 if (element.isEdge() && !element.hasClass('trivial')) {
                     const connectedNodes = element.connectedNodes();
                     for (let node of connectedNodes) {
@@ -275,7 +302,7 @@ export class HyperEdge {
 
     private createNewEdge(source: any, target: any, edgeData: any, edgeClasses: any) {
         const newEdgeId = source + '--' + target;
-        if (this.id2objects.has(newEdgeId)) // Make sure no duplicated eges
+        if (this.id2object.has(newEdgeId)) // Make sure no duplicated eges
             return;
         let data = this.utils.copyData(edgeData);
         data.source = source;
@@ -292,7 +319,7 @@ export class HyperEdge {
             classes: [...edgeClasses],
         };
         const newEdge = this.cy.add(edge)[0];
-        this.id2objects.set(newEdgeId, newEdge);
+        this.id2object.set(newEdgeId, newEdge);
         return newEdge;
     }
 
@@ -309,7 +336,7 @@ export class HyperEdge {
         this.createNewEdge(srcId, pointNodeId, edge.data(), this.utils.diagramService!.edgeTypeMap.get("INPUT"))
         this.createNewEdge(pointNodeId, targetId, edge.data(), this.utils.diagramService!.edgeTypeMap.get("INPUT"))
         this.cy.remove(edge);
-        this.id2objects.delete(edge.data('id'));
+        this.id2object.delete(edge.data('id'));
     }
 
     /**
@@ -345,7 +372,7 @@ export class HyperEdge {
         this.cy.remove(node);
         for (let edge of connectedEdges) {
             this.cy.remove(edge);
-            this.id2objects.delete(edge.data('id'));
+            this.id2object.delete(edge.data('id'));
         }
     }
 
@@ -373,11 +400,11 @@ export class HyperEdge {
      * @param object
      */
     registerObject(object: any) {
-        this.id2objects.set(object.id(), object);
+        this.id2object.set(object.id(), object);
     }
 
     getRegisteredObject(id: string) {
-        return this.id2objects.get(id);
+        return this.id2object.get(id);
     }
 
     /**
@@ -458,7 +485,7 @@ export class HyperEdge {
     }
 
     private getHubNode(role: string) : any {
-        for (let elm of this.id2objects.values()) {
+        for (let elm of this.id2object.values()) {
             if (!elm.isEdge())
                 continue;
             if (elm.hasClass(role)) {
@@ -475,7 +502,7 @@ export class HyperEdge {
         needTarget: boolean = false,
     ): any[] {
         const nodes : any[] = [];
-        for (let elm of this.id2objects.values()) {
+        for (let elm of this.id2object.values()) {
             if (!elm.isEdge())
                 continue;
             if (elm.hasClass(cls)) {
@@ -500,7 +527,7 @@ export class HyperEdge {
 
     private getReactionNode(): any {
         let reactionNode = undefined;
-        for (let node of this.id2objects.values()) {
+        for (let node of this.id2object.values()) {
             if (this.isReactionNode(node)) {
                 reactionNode = node;
                 break;

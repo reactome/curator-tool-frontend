@@ -3,6 +3,6 @@
 <div class="cytoscape-container">
     <cr-diagram #diagramComponent [id]="id$ | async" (reactomeEvents$)="handleReactomeEvent($event)"></cr-diagram>
     <div *ngIf="showMenu" [ngStyle]="{ 'position': 'absolute', 'top': menuPositionY, 'left': menuPositionX }">
-      <app-editor-actions (action)="onAction($event)" [isEditing]="isEditing" [elmType]="elementTypeForPopup"></app-editor-actions>
+      <app-editor-actions (action)="onAction($event)" [isDiagramEditing]="isEditing" [elmType]="elementTypeForPopup" [isEdgeEditable]="isEdgeEditable"></app-editor-actions>
     </div>
 </div>

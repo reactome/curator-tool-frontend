@@ -12,7 +12,7 @@ import { InstanceConverter } from "./instance-converter";
 export class PathwayDiagramUtilService {
     diagramService: DiagramService | undefined = undefined;
     // Cache all converted HyperEdges for easy editing
-    private id2hyperEdges : Map<number, HyperEdge> = new Map();
+    private id2hyperEdge : Map<number, HyperEdge> = new Map();
     // For resizing
     private readonly RESIZE_NODE_LOCATIONS: string[] = ['ne', 'nw', 'se', 'sw'];
     // To check reaction: A lazy way to list all reactions so that
@@ -30,14 +30,39 @@ export class PathwayDiagramUtilService {
     constructor(private dataSerice: DataService
     ) { }
 
+    isEdgeEditable(element: any): boolean {
+        if (element === undefined || element === null)
+            return false;
+        // A reaction node is a node. But its dbId should be used
+        // in id2hyperEdges if the reaction for this node has been expanded.
+        // Therefore, we don't need to check if the element is an edge.
+        const dbId = element.data('reactomeId');
+        if (dbId && this.id2hyperEdge.has(dbId))
+            return true;
+        return false; // default
+    }
+
+
+    deleteHyperEdge(element: any) {
+        if (!element) return; 
+        const dbId = element.data('reactomeId');
+        if (!dbId || !this.id2hyperEdge.has(dbId))
+            return; // Do nothing. No hyper edge associated with this dbId
+        const hyperEdge = this.id2hyperEdge.get(dbId);
+        if (!hyperEdge) return; // Just in case. This should not occur
+        hyperEdge.delete();
+        // Remove it from the register.
+        this.id2hyperEdge.delete(dbId);
+    }
+
     addNewEvent(event: Instance, cy: Core) {
         // For the time being, we will use this simple check only.
         // But the actual check should be based on schema class tree in the future
         if (this.REACTION_TYPES.includes(event.schemaClassName)) {
             // For threading issue, we have to do like this way instead of creating an HyperEdge directly by converter.
-            const hyperEdge = new HyperEdge(this, cy);
+            const hyperEdge = new HyperEdge(this, cy, event.dbId);
             hyperEdge.createFromEvent(event, this.dataSerice, this.converter);
-            this.id2hyperEdges.set(event.dbId, hyperEdge);
+            this.id2hyperEdge.set(event.dbId, hyperEdge);
         }
         // this.createNewNode(event, cy);
     }
@@ -311,7 +336,7 @@ export class PathwayDiagramUtilService {
         if (!element.isNode()) // Only a node can be removed
             return;
         // Find the HyperEdge this edge belong to
-        const hyperEdge = this.id2hyperEdges.get(element.data('reactomeId'));
+        const hyperEdge = this.id2hyperEdge.get(element.data('reactomeId'));
         if (hyperEdge === undefined)
             return; // Nothing should be done if no HyperEdge here
         hyperEdge.removeNode(element);
@@ -323,22 +348,22 @@ export class PathwayDiagramUtilService {
         if (!element.isEdge()) // Work for edge only
             return;
         // Find the HyperEdge this edge belong to
-        const hyperEdge = this.id2hyperEdges.get(element.data('reactomeId'));
+        const hyperEdge = this.id2hyperEdge.get(element.data('reactomeId'));
         if (hyperEdge === undefined)
             return; // Nothing should be done if no HyperEdge here
         hyperEdge.insertNode(renderedPosition, element);
     }
 
     disableEditing(diagram: DiagramComponent) {
-        if (this.id2hyperEdges === undefined || this.id2hyperEdges.size === 0)
+        if (this.id2hyperEdge === undefined || this.id2hyperEdge.size === 0)
             return; // Nothing needs to be done
         // Disable node dragging
         diagram.cy.nodes().grabify().panify();
         diagram.cy.nodes('.Compartment').panify();
-        this.id2hyperEdges.forEach((hyperEdge, _) => {
+        this.id2hyperEdge.forEach((hyperEdge, _) => {
             hyperEdge.enableRoundSegments();
         });
-
+        this.id2hyperEdge.clear(); // Reset it
     }
 
     enableEditing(diagram: DiagramComponent) {
@@ -355,12 +380,12 @@ export class PathwayDiagramUtilService {
             const id = edge.data('reactomeId');
             id2edges.set(id, [...(id2edges.get(id) || []), edge]);
         });
-        this.id2hyperEdges.clear();
+        this.id2hyperEdge.clear();
         id2edges.forEach((edges, id) => {
             // convert all edges for a reaction into an HyperEdge object for easy editing
-            const hyperEdge: HyperEdge = new HyperEdge(this, diagram.cy);
+            const hyperEdge: HyperEdge = new HyperEdge(this, diagram.cy, id);
             hyperEdge.expandEdges(edges, id2node);
-            this.id2hyperEdges.set(id, hyperEdge);
+            this.id2hyperEdge.set(id, hyperEdge);
         });
         // Make sure all round-segments have been converted for editing
         diagram.cy.edges().forEach((edge: any) => {

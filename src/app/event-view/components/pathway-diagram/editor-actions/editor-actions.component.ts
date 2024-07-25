@@ -11,7 +11,10 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 export class EditorActionsComponent {
 
   @Output() action = new EventEmitter<string>();
-  @Input() isEditing: boolean = false;
+  // Used to flag the selected edge
+  @Input() isEdgeEditable: boolean = false;
+  // Use to flag the whole diagram
+  @Input() isDiagramEditing: boolean = false;
   // Default is cytoscape
   @Input() elmType: ElementType = ElementType.CYTOSCAPE; 
   // Include this so that we can compare in the html template

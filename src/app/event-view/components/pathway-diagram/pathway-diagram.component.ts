@@ -42,6 +42,9 @@ export class PathwayDiagramComponent implements AfterViewInit {
   elementTypeForPopup: ElementType = ElementType.CYTOSCAPE; // Default always
   // Tracking the diting status
   isEditing: boolean = false;
+  // Flag is the edge under the mouse is edtiable
+  // If the element under the mouse is not an edge, this flag should be false
+  isEdgeEditable: boolean = false;
   // Tracking the previous dragging position: should cytoscape provides this?
   previousDragPos: Position = {x: 0, y: 0};
 
@@ -114,6 +117,7 @@ export class PathwayDiagramComponent implements AfterViewInit {
     }
     else
       this.elementTypeForPopup = ElementType.CYTOSCAPE;
+    this.isEdgeEditable = this.diagramUtils.isEdgeEditable(this.elementUnderMouse);
     // The offset set 5px is important to prevent the native popup menu appear
     this.menuPositionX = (event.renderedPosition.x + this.MENU_POSITION_BUFFER) + "px";
     this.menuPositionY = (event.renderedPosition.y + this.MENU_POSITION_BUFFER) + "px";
@@ -122,6 +126,7 @@ export class PathwayDiagramComponent implements AfterViewInit {
 
   onAction(action: string) {
     console.debug('action is fired: ' + action);
+    //TODO: Make sure enable and disable works for individual reaction too.
     if (action === 'enableEditing') {
       this.diagramUtils.enableEditing(this.diagram);
       this.isEditing = true;
@@ -140,6 +145,9 @@ export class PathwayDiagramComponent implements AfterViewInit {
     }
     else if (action === 'removePoint') {
       this.diagramUtils.removePoint(this.elementUnderMouse);
+    }
+    else if (action === 'delete') {
+      this.diagramUtils.deleteHyperEdge(this.elementUnderMouse);
     }
     else if (action === 'resizeCompartment') {
       this.diagramUtils.enableResizeCompartment(this.elementUnderMouse,

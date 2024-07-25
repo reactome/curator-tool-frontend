@@ -1,17 +1,17 @@
 <!-- Here we have a collection of scenarios to show different set of actions according to the current status-->
 <div class="actions">
-  <button style="margin-bottom: 1px" (click)="onClick('disableEditing')" *ngIf="isEditing">Disable Instance Editing</button>
-  <button style="margin-bottom: 1px" (click)="onClick('enableEditing')" *ngIf="!isEditing">Enable Instance Editing</button>
-  <ng-container *ngIf="isEditing">
-    <ng-container *ngIf="elmType === elmTypes.EDGE">
-      <button style="margin-bottom: 1px" (click)="onClick('addPoint')">Add Edge Point</button>
-      <button style="margin-bottom: 1px" (click)="onClick('removePoint')">Remove Edge Point</button>
-      <!-- Only a reaction can be deleted from the diagram -->
-      <button style="margin-bottom: 1px" (click)="onClick('delete')">Delete</button>
-    </ng-container>
-    <ng-container *ngIf="elmType === elmTypes.NODE">
+  <button style="margin-bottom: 1px" (click)="onClick('disableEditing')" *ngIf="isDiagramEditing">Disable Instance
+    Editing</button>
+  <button style="margin-bottom: 1px" (click)="onClick('enableEditing')" *ngIf="!isDiagramEditing">Enable Instance Editing</button>
+  <!--TODO: We may switch to check all objects related to object specific reaction -->
+  <ng-container *ngIf="elmType === elmTypes.EDGE && isEdgeEditable">
+    <button style="margin-bottom: 1px" (click)="onClick('addPoint')">Add Edge Point</button>
+    <button style="margin-bottom: 1px" (click)="onClick('removePoint')">Remove Edge Point</button>
+    <!-- Only a reaction can be deleted from the diagram -->
+    <button style="margin-bottom: 1px" (click)="onClick('delete')">Remove Reaction</button>
+    <!-- <ng-container *ngIf="elmType === elmTypes.NODE">
       <button style="margin-bottom: 1px" (click)="onClick('removePoint')">Edit PhysicalEntity</button>
-    </ng-container>
+    </ng-container> -->
   </ng-container>
   <!-- Compartment has its own way -->
   <ng-container *ngIf="elmType === elmTypes.COMPARTMENT">
