@@ -1,14 +1,9 @@
-import {Component, ViewChild, Input, AfterViewInit} from '@angular/core';
-import {CdkDragMove} from "@angular/cdk/drag-drop";
-import {MatSidenav} from "@angular/material/sidenav";
-import {EventPlotComponent} from "../graphic-display/components/event-plot/event-plot.component";
-import {ActivatedRoute} from "@angular/router";
-import {delay, map} from "rxjs/operators";
-import {DiagramComponent} from "ngx-reactome-diagram";
+import { Component, ViewChild } from '@angular/core';
+import { CdkDragMove } from "@angular/cdk/drag-drop";
+import { MatSidenav } from "@angular/material/sidenav";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-diagram.component';
 import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
-import { Subscription } from 'rxjs';
 import { ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 
 @Component({

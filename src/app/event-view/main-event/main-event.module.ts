@@ -16,6 +16,7 @@ import { GraphicDisplayModule } from "../graphic-display/graphic-display.module"
 import { MatGridListModule } from '@angular/material/grid-list';
 import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-diagram.component';
 import { InstanceModule } from 'src/app/instance/instance.module';
+import { SharedModule } from 'src/app/shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -42,7 +43,8 @@ import { InstanceModule } from 'src/app/instance/instance.module';
     GraphicDisplayModule,
     MatGridListModule,
     PathwayDiagramComponent,
-    InstanceModule
-  ]
+    InstanceModule,
+    SharedModule
+]
 })
 export class MainEventModule { }

@@ -3,7 +3,7 @@
  * in cytoscape. 
  */
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, EventEmitter, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, inject, Output, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
 import { delay, map } from 'rxjs';
@@ -12,6 +12,8 @@ import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { ReactomeEvent, ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { MatDialog } from '@angular/material/dialog';
+import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 
 
 @Component({
@@ -47,6 +49,9 @@ export class PathwayDiagramComponent implements AfterViewInit {
   isEdgeEditable: boolean = false;
   // Tracking the previous dragging position: should cytoscape provides this?
   previousDragPos: Position = {x: 0, y: 0};
+
+  // To show information
+  readonly dialog = inject(MatDialog);
 
   constructor(private route: ActivatedRoute,
     private diagramUtils: PathwayDiagramUtilService
@@ -194,7 +199,16 @@ export class PathwayDiagramComponent implements AfterViewInit {
   }
 
   addEvent(event: Instance) {
-    console.debug('Add new event: ' + event);
+    if (this.diagramUtils.isEventAdded(event, this.diagram.cy)) {
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Error',
+          message: 'This reaction is in the diagram already: ',
+          instanceInfo: event.displayName + '[' + event.dbId + ']'
+        }
+      });
+      return;
+    }
     this.diagramUtils.addNewEvent(event, this.diagram.cy);
   }
 

@@ -8,6 +8,7 @@ import {
   AttributeConditionComponent
 } from "./components/search-filter/attribute-condition/attribute-condition.component";
 import {MatTooltip} from "@angular/material/tooltip";
+import { InfoDialogComponent } from './components/info-dialog/info-dialog.component';
 
 @NgModule({
   declarations: [
@@ -22,13 +23,16 @@ import {MatTooltip} from "@angular/material/tooltip";
     CdkFixedSizeVirtualScroll,
     CdkVirtualForOf,
     NgFor,
-    MatTooltip
+    MatTooltip,
+    InfoDialogComponent
   ],
     exports: [
       MaterialModule,
       SafePipe,
       SearchInstanceComponent,
-      AttributeConditionComponent]
+      AttributeConditionComponent,
+      InfoDialogComponent
+    ]
 })
 export class SharedModule {
 }
