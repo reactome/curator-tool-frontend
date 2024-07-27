@@ -21,6 +21,8 @@ export class MainEventComponent {
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
   @ViewChild('diagramView') diagramView: PathwayDiagramComponent | undefined;
   @ViewChild('instanceView') instanceView: InstanceViewComponent | undefined;
+  // A flag to avoid show empty instance view
+  showInstanceView: boolean = true; // Have to set the default to true. Otherwise, it is not there to load.
 
   constructor() {
   }
@@ -73,7 +75,6 @@ export class MainEventComponent {
 
   toggleBookmarks() {
     setTimeout(() => {
-
       console.log('toggle')
       if (this.status.dragging) return;
       this.status.opened = !this.status.opened;
@@ -114,7 +115,11 @@ export class MainEventComponent {
    * @param id 
    */
   handleDiagramIdChange(id: number) {
-    this.instanceView?.loadInstance(id);
+    setTimeout(() => {
+      this.showInstanceView = (id !== undefined);
+      this.instanceView?.loadInstance(id);
+    });
+
   }
 
 }

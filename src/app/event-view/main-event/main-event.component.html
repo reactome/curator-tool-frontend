@@ -18,7 +18,7 @@
             <app-pathway-diagram #diagramView (diagramEvent)="handleDiagramSelection($event)"></app-pathway-diagram>
           </div>
         </div>
-        <div style="flex: 1; min-height: 100px; overflow: auto;">
+        <div style="flex: 1; min-height: 100px; overflow: auto;" *ngIf="showInstanceView">
           <app-instance-view #instanceView [needHistory]="false"></app-instance-view>
         </div>
       </div>

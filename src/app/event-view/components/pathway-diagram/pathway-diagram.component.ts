@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, EventEmitter, inject, Output, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
-import { delay, map } from 'rxjs';
+import { delay, filter, map } from 'rxjs';
 import { EditorActionsComponent, ElementType } from './editor-actions/editor-actions.component';
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { ReactomeEvent, ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
@@ -27,7 +27,8 @@ import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-
 export class PathwayDiagramComponent implements AfterViewInit {
 
   id$ = this.route.params.pipe(
-    map(params => params['id'])
+    map(params => params['id']),
+    filter(id => id !== undefined)
   )
   @ViewChild('diagramComponent')
   diagram!: DiagramComponent;
@@ -60,6 +61,8 @@ export class PathwayDiagramComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this.id$.pipe(delay(500)).subscribe(id => {
+      // Do nothing if nothing is loaded
+      if (!id) return;
       this.diagramUtils.diagramService = this.diagram.getDiagramService();
       // When the diagram is loaded first, disable node dragging to avoid
       // change the coordinates

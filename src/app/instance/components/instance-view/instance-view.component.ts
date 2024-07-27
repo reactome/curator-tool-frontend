@@ -74,6 +74,8 @@ export class InstanceViewComponent implements OnInit {
   }
 
   loadInstance(dbId: number) {
+    // avoid to do anything if nothing there
+    if (!dbId) return;
     // Avoid reloading if it has been loaded already
     if (dbId && this.instance && dbId === this.instance.dbId)
       return;
