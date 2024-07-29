@@ -20,6 +20,9 @@
     "target": "ES2022",
     "module": "ES2022",
     "useDefineForClassFields": false,
+    // Enable the following can import cytoscape.js directly. However, many some of
+    // major functions, e.g. panify cannot work any more. So have to disable it!
+    // "allowSyntheticDefaultImports": true,
     "skipLibCheck": true, // Based on to fix langchain issue:https://github.com/langchain-ai/langchainjs/issues/3793
     "lib": [
       "ES2022",
