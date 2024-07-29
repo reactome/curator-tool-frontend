@@ -42,6 +42,10 @@ export class DataService {
   private deletePersistedInstancesUrl = `${environment.ApiRoot}/deletePersistedInstances/`;
   private fetchReactionParticipantsUrl = `${environment.ApiRoot}/fetchReactionWithParticipants/`;
   private getReferrersUrl = `${environment.ApiRoot}/getReferrers/`;
+  private uploadCyNetworkUrl = `${environment.ApiRoot}/uploadCyNetwork/`;
+  private hasCyNetworkUrl = `${environment.ApiRoot}/hasCyNetwork/`;
+  private getCyNetworkUrl = `${environment.ApiRoot}/getCyNetwork/`;
+  
 
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
@@ -590,6 +594,48 @@ export class DataService {
       })
     );
   }
+
+
+  uploadCytoscapeNetwork(pathwayId: any, network: any): Observable<boolean> {
+    // console.debug('Uploading cytoscape network for ' + pathwayId + "...");
+    return this.http.post<boolean>(this.uploadCyNetworkUrl + pathwayId, network).pipe(
+      // Since there is nothing needed to be done for the returned value (just true or false),
+      // We don't need to do anything here!
+      catchError(error => {
+        console.log("An error is thrown during uploadCytoscapeNetwork: \n" + error.message, "Close", {
+          panelClass: ['warning-snackbar'],
+          duration: 10000
+        });
+        return throwError(() => error);
+      })
+    );
+  }
+
+  hasCytoscapeNetwork(pathwayId: any): Observable<boolean> {
+    return this.http.get<boolean>(this.hasCyNetworkUrl + pathwayId).pipe(
+      catchError(error => {
+        console.log("An error is thrown during calling hasCytoscapeNetwork: \n" + error.message, "Close", {
+          panelClass: ['warning-snackbar'],
+          duration: 10000
+        });
+        return throwError(() => error);
+      })
+    );
+  }
+  
+
+  getCytoscapeNetwork(pathwayId: any): Observable<any> {
+    return this.http.get<any>(this.getCyNetworkUrl + pathwayId).pipe(
+      catchError(error => {
+        console.log("An error is thrown during getCytoscapeNetwork: \n" + error.message, "Close", {
+          panelClass: ['warning-snackbar'],
+          duration: 10000
+        });
+        return throwError(() => error);
+      })
+    );
+  }
+
 
   /**
    * Empty the persisted instances at the server.

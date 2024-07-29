@@ -30,6 +30,10 @@ export class PathwayDiagramUtilService {
     constructor(private dataSerice: DataService
     ) { }
 
+    getDataService(): DataService {
+        return this.dataSerice;
+    }
+
     isEdgeEditable(element: any): boolean {
         if (element === undefined || element === null)
             return false;

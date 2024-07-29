@@ -25,6 +25,7 @@ import {AuthModule} from "./auth/auth.module";
 import {HeaderInterceptor} from "./core/interceptors/header.interceptor";
 import {JwtModule} from "@auth0/angular-jwt";
 import {MainEventModule} from "./event-view/main-event/main-event.module";
+import { DIAGRAM_CONFIG_TOKEN } from 'ngx-reactome-diagram';
 
 export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
   return localStorageSync({
@@ -35,6 +36,12 @@ const metaReducers: Array<MetaReducer<any, any>> = [localStorageSyncReducer]
 
 export function tokenGetter() {
   return localStorage.getItem("token");
+}
+
+// diagram configuration
+const diagramServiceConfig = {
+  // diagramUrl: 'https://dev.reactome.org/download/current/diagram'
+  diagramUrl: environment.ApiRoot + '/diagram'
 }
 
 @NgModule({
@@ -71,7 +78,8 @@ export function tokenGetter() {
     })
   ],
   providers: [
-    { provide: HTTP_INTERCEPTORS, useClass: HeaderInterceptor, multi: true }
+    { provide: HTTP_INTERCEPTORS, useClass: HeaderInterceptor, multi: true },
+    {provide: DIAGRAM_CONFIG_TOKEN, useValue: diagramServiceConfig},
   ],
   bootstrap: [AppComponent],
 })

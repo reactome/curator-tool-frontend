@@ -3,18 +3,17 @@
  * in cytoscape. 
  */
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, EventEmitter, inject, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, inject, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
-import { delay, filter, map } from 'rxjs';
+import { filter, map } from 'rxjs';
 import { EditorActionsComponent, ElementType } from './editor-actions/editor-actions.component';
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
-import { ReactomeEvent, ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
+import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
-
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -30,6 +29,9 @@ export class PathwayDiagramComponent implements AfterViewInit {
     map(params => params['id']),
     filter(id => id !== undefined)
   )
+  // pathway id for the displayed diagram
+  // Note: This is not the id for the PathwayDiagram instance.
+  pathwayId: string = ""; // Use empty string to make the diagram service happy
   @ViewChild('diagramComponent')
   diagram!: DiagramComponent;
 
@@ -59,52 +61,80 @@ export class PathwayDiagramComponent implements AfterViewInit {
   ){
   }
 
+  //TODO: 1). Need to manage $id change here; 2). Pass the id directly to diagram component after checking;
+  // 3). Before passing the id, check if there is a cytoscape.js object saved. If yes, load it. Otherwise, pass
+  // id to the diagram component; 4). Make sure the code here in subscribe called after loadDiagram.
+  // May consider to change loadDiagram in diagram.component to pipe so that we can subscribe to loadDiagram function.
   ngAfterViewInit(): void {
-    this.id$.pipe(delay(500)).subscribe(id => {
+    //TODO: Check to make sure there is no threading issue. delay 0.5 second is quite arbitrary!
+    // Also this may delay the process.
+    this.id$.subscribe(id => {
       // Do nothing if nothing is loaded
       if (!id) return;
-      this.diagramUtils.diagramService = this.diagram.getDiagramService();
-      // When the diagram is loaded first, disable node dragging to avoid
-      // change the coordinates
-      this.diagram.cy.nodes().grabify().panify();
+      this.pathwayId = id;
+      this.diagram.diagramId = this.pathwayId;
+      // Check if we have cytoscape network
+      this.diagramUtils.getDataService().hasCytoscapeNetwork(this.pathwayId).subscribe((exists: boolean) => {
+        if (exists) {
+          this.diagramUtils.getDataService().getCytoscapeNetwork(this.pathwayId).subscribe((cytoscapeJson: any) => {
+            this.diagram.displayNetwork(cytoscapeJson.elements);
+          });
+        }
+        else {
+          this.diagram.loadDiagram();
+        }
+      });
+    });
+    this.diagram.cytoscapeContainer!.nativeElement.addEventListener('network_displayed', () => {
+      this.initDiagram();
+    })
+  }
 
-      // Have to add the following to zoom using mouse scroll. 
-      this.diagram.cy.zoomingEnabled(true);
-      this.diagram.cy.userZoomingEnabled(true);
-      this.diagram.cy.panningEnabled(true);
-      this.diagram.cy.userPanningEnabled(true);
+  private initDiagram() {
+    // Do nothing if nothing is loaded
+    if (!this.pathwayId || this.pathwayId.length == 0)
+      return;
+    this.diagramUtils.diagramService = this.diagram.getDiagramService();
+    // When the diagram is loaded first, disable node dragging to avoid
+    // change the coordinates
+    this.diagram.cy.nodes().grabify().panify();
 
-      // Add the popup trigger to the whole cytoscape and let
-      // showCyPopup to figure out what menus should be shown.
-      this.diagram.cy.on('cxttapstart', (e:any) => {
-        this.showCyPopup(e);
-      });
-      this.diagram.cy.on('mousedown', (e: any) => {
-        // Make sure isNode is defined as a function to avoid an error
-        if (e.target !== undefined && typeof e.target.isNode === 'function') {
-          // Since we cannot get the mouse position during dragging
-          // we use the target's position for the relative changes.
-          const pos = e.target.position();
-          this.previousDragPos.x = pos.x;
-          this.previousDragPos.y = pos.y;
-        }
-        if (this.showMenu) {
-          this.showMenu = false;
-          e.preventDefault();
-        }
-      });
-      this.diagram.cy.on('mouseup', (e: any) => {
-        // reset previous drag position
-        this.previousDragPos.x = 0;
-        this.previousDragPos.y = 0;
-      });
-      // Resize the compartment for resizing nodes
-      this.diagram.cy.on('drag', 'node', (e: any) => {
-        let node = e.target;
-        if (node.hasClass('resizing')) {
-          this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);
-        }
-      });
+    // Have to add the following to zoom using mouse scroll. 
+    this.diagram.cy.zoomingEnabled(true);
+    this.diagram.cy.userZoomingEnabled(true);
+    this.diagram.cy.panningEnabled(true);
+    this.diagram.cy.userPanningEnabled(true);
+
+    // Add the popup trigger to the whole cytoscape and let
+    // showCyPopup to figure out what menus should be shown.
+    this.diagram.cy.on('cxttapstart', (e:any) => {
+      this.showCyPopup(e);
+    });
+    this.diagram.cy.on('mousedown', (e: any) => {
+      // Make sure isNode is defined as a function to avoid an error
+      if (e.target !== undefined && typeof e.target.isNode === 'function') {
+        // Since we cannot get the mouse position during dragging
+        // we use the target's position for the relative changes.
+        const pos = e.target.position();
+        this.previousDragPos.x = pos.x;
+        this.previousDragPos.y = pos.y;
+      }
+      if (this.showMenu) {
+        this.showMenu = false;
+        e.preventDefault();
+      }
+    });
+    this.diagram.cy.on('mouseup', (e: any) => {
+      // reset previous drag position
+      this.previousDragPos.x = 0;
+      this.previousDragPos.y = 0;
+    });
+    // Resize the compartment for resizing nodes
+    this.diagram.cy.on('drag', 'node', (e: any) => {
+      let node = e.target;
+      if (node.hasClass('resizing')) {
+        this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);
+      }
     });
   }
 
@@ -158,7 +188,8 @@ export class PathwayDiagramComponent implements AfterViewInit {
       this.diagramUtils.deleteHyperEdge(this.elementUnderMouse);
     }
     else if (action === 'resizeCompartment') {
-      this.diagramUtils.enableResizeCompartment(this.elementUnderMouse,
+      this.diagramUtils.enableResizeCompartment(
+        this.elementUnderMouse,
         this.diagram
       );
     }
@@ -167,6 +198,31 @@ export class PathwayDiagramComponent implements AfterViewInit {
     }
     else if (action === 'toggleDarkMode') {
       this.diagram.dark.isDark = !this.diagram.dark.isDark;
+    }
+    else if (action === 'upload') {
+      const networkJson = this.diagram.cy.json();
+      // const networkString = JSON.stringify(networkJson);
+      // console.debug('Network JSON: \n' + networkString);
+      this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.diagram.diagramId, networkJson).subscribe((success) => {
+        if (success) {
+          // Need to show something here
+          this.dialog.open(InfoDialogComponent, {
+            data: {
+              title: 'Information',
+              message: 'The diagram has been uploaded successfully.'
+            }
+          });
+        }
+        else {
+          // Need to show something here
+          this.dialog.open(InfoDialogComponent, {
+            data: {
+              title: 'Error',
+              message: 'The diagram has not been uploaded successfully.'
+            }
+          });
+        }
+      })
     }
     this.showMenu = false;
   }
