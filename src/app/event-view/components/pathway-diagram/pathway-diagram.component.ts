@@ -61,30 +61,30 @@ export class PathwayDiagramComponent implements AfterViewInit {
   ){
   }
 
-  //TODO: 1). Need to manage $id change here; 2). Pass the id directly to diagram component after checking;
-  // 3). Before passing the id, check if there is a cytoscape.js object saved. If yes, load it. Otherwise, pass
-  // id to the diagram component; 4). Make sure the code here in subscribe called after loadDiagram.
-  // May consider to change loadDiagram in diagram.component to pipe so that we can subscribe to loadDiagram function.
+
   ngAfterViewInit(): void {
-    //TODO: Check to make sure there is no threading issue. delay 0.5 second is quite arbitrary!
-    // Also this may delay the process.
-    this.id$.subscribe(id => {
+    this.route.params.subscribe(params => {
+    // this.id$.subscribe(id => {
+      const id = params['id'];
       // Do nothing if nothing is loaded
       if (!id) return;
       this.pathwayId = id;
       this.diagram.diagramId = this.pathwayId;
-      // Check if we have cytoscape network
+      // Check if we have cytoscape network. If yes, load it.
       this.diagramUtils.getDataService().hasCytoscapeNetwork(this.pathwayId).subscribe((exists: boolean) => {
         if (exists) {
           this.diagramUtils.getDataService().getCytoscapeNetwork(this.pathwayId).subscribe((cytoscapeJson: any) => {
             this.diagram.displayNetwork(cytoscapeJson.elements);
           });
         }
+        // Otherwise, handle it in the old way to load the diagrams converted from XML.
         else {
           this.diagram.loadDiagram();
         }
       });
     });
+    // Do any post processing after the network is displayed.
+    // Use this method to avoid threading issue and any arbitray delay.
     this.diagram.cytoscapeContainer!.nativeElement.addEventListener('network_displayed', () => {
       this.initDiagram();
     })

@@ -34,7 +34,7 @@ cdkDropListSortingDisabled
       <ng-container *ngTemplateOutlet="leafNodeTemplate; context: {$implicit: node}"></ng-container>
     </div>
   </mat-tree-node>
-  <!-- This is the table node template for expandable nodes -->
+  <!-- This is the tree node template for expandable nodes -->
   <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding
     matTreeNodePaddingIndent="15"
                  [ngClass] = "node.inFocus === true ? 'inFocus' : ''">
@@ -60,6 +60,5 @@ cdkDropListSortingDisabled
   <class-name-icon [className]="node.className"></class-name-icon>
   <button mat-button [ngClass]="[node.match === true ? 'event_text_match' : 'event_text_non_match', 'event_text']"
           [hidden]="node.name === 'TopLevelPathway'"
-          routerLink="/event_view/instance/{{node.dbId}}"
-          (click)="generatePlot(node.dbId, node.className)" cdkFocusInitial>{{node.name}}</button>
+          (click)="handleEventClick(node)" cdkFocusInitial>{{node.name}}</button>
 </ng-template>
