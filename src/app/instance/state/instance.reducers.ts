@@ -1,7 +1,7 @@
 import { EntityState, createEntityAdapter } from "@ngrx/entity";
 import { createReducer, on } from "@ngrx/store";
 import { Instance } from "src/app/core/models/reactome-instance.model";
-import { InstanceActions, NewInstanceActions } from "./instance.actions";
+import {DeleteInstanceActions, InstanceActions, NewInstanceActions} from "./instance.actions";
 
 /**
  * Reducer to handle registration of updated instance
@@ -44,6 +44,26 @@ export const newInstancesReducer = createReducer(
   ),
   on(NewInstanceActions.remove_new_instance,
     (state, instance) => newInstancesAdaptor.removeOne(instance.dbId, state)
+  ),
+)
+
+/**
+ * Reducer to handle registration of updated instance
+ */
+export interface DeletedInstanceState extends EntityState<Instance> {
+}
+
+export const deletedInstancesAdaptor = createEntityAdapter<Instance>({
+  selectId: instance => instance.dbId
+})
+
+export const deletedInstancesReducer = createReducer(
+  deletedInstancesAdaptor.getInitialState(),
+  on(DeleteInstanceActions.register_deleted_instance,
+    (state, instance) => deletedInstancesAdaptor.upsertOne(instance, state)
+  ),
+  on(DeleteInstanceActions.remove_deleted_instance,
+    (state, instance) => deletedInstancesAdaptor.removeOne(instance.dbId, state)
   ),
 )
 

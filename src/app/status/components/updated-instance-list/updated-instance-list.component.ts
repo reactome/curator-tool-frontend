@@ -8,7 +8,7 @@ import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {Router, ActivatedRoute} from "@angular/router";
 import {ListInstancesModule} from "../../../schema-view/list-instances/list-instances.module";
 import {Store} from "@ngrx/store";
-import { updatedInstances } from 'src/app/instance/state/instance.selectors';
+import {deleteInstances, updatedInstances} from 'src/app/instance/state/instance.selectors';
 import { newInstances } from 'src/app/instance/state/instance.selectors';
 import { InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { DataService } from 'src/app/core/services/data.service';
@@ -28,6 +28,7 @@ export class UpdatedInstanceListComponent implements OnInit{
   isSelection: boolean = false;
   newInstances: Instance[] = [];
   updatedInstances: Instance[] = [];
+  deletedInstances: Instance[] = [];
   showHeader: boolean = false;
   newInstancesActionButtons: string[] = ["launch", "delete"];
 
@@ -45,6 +46,10 @@ export class UpdatedInstanceListComponent implements OnInit{
     this.store.select(updatedInstances()).subscribe((instances) => {
       if (instances !== undefined)
         this.updatedInstances = instances;
+    })
+    this.store.select(deleteInstances()).subscribe((instances) => {
+      if (instances !== undefined)
+        this.deletedInstances = instances;
     })
   }
 
