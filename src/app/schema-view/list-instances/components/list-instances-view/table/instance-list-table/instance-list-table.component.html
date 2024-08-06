@@ -37,10 +37,12 @@
     <td class="column-right" mat-cell *matCellDef="let element">
       <ng-container *ngIf="actionButtons.length > 0">
         <!--TODO: The tooltip needs to be improved by using a method in the component-->
-        <button color="primary" *ngFor="let button of actionButtons" mat-icon-button (click)="click(element, button)"
-                matTooltip="{{button + ' instance'}}" matTooltipPosition="left">
-          <mat-icon>{{button}}</mat-icon>
-        </button>
+        <div style="flex: 0 0 auto;">
+          <button color="primary" *ngFor="let button of actionButtons" mat-icon-button (click)="click(element, button)"
+                  matTooltip="{{button + ' instance'}}" matTooltipPosition="left">
+            <mat-icon>{{button}}</mat-icon>
+          </button>
+        </div>
       </ng-container>
     </td>
   </ng-container>

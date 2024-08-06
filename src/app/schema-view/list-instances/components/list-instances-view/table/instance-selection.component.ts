@@ -6,6 +6,8 @@ import { DataService } from "../../../../../core/services/data.service";
 import { ViewOnlyService } from "../../../../../core/services/view-only.service";
 import { ActivatedRoute, Router } from "@angular/router";
 import { AttributeCondition } from '../../../../../core/models/reactome-instance.model';
+import {ReferrersDialogService} from "../../../../../instance/components/referrers-dialog/referrers-dialog.service";
+import {DeletionDialogService} from "../../../../../instance/components/deletion-dialog/deletion-dialog.service";
 
 @Component({
   selector: 'app-instance-selection',
@@ -26,7 +28,7 @@ export class InstanceSelectionComponent implements OnInit {
   @Output() clickEvent = new EventEmitter<Instance>();
   @Input() isSelection: boolean = false;
   data: Instance[] = [];
-  actionButtons: string[] = ["launch"];
+  actionButtons: string[] = ["launch", "delete", "list_alt"];
   // schemaClasses: SchemaClass[] = [];
   schemaClassAttributes: string[] = [];
   // A flag to use route to load: use string so that we can set it directly in html
@@ -42,7 +44,11 @@ export class InstanceSelectionComponent implements OnInit {
       this.loadSchemaClasses();
   }
 
-  constructor(private dataService: DataService, private router: Router, private route: ActivatedRoute) {
+  constructor(private dataService: DataService,
+              private router: Router,
+              private route: ActivatedRoute,
+              private referrersDialogService: ReferrersDialogService,
+              private deletionDialogService: DeletionDialogService) {
   }
 
   ngOnInit(): void {
@@ -90,7 +96,7 @@ export class InstanceSelectionComponent implements OnInit {
       let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
       if (this.searchKey && this.searchKey.trim().length > 0) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
         this.router.navigate([url], {queryParams: {query: this.searchKey.trim()}, queryParamsHandling: 'merge'});
-      else 
+      else
         this.router.navigate([url]);
     }
     else
@@ -114,6 +120,16 @@ export class InstanceSelectionComponent implements OnInit {
       case "launch": {
         const dbId = actionEvent.instance.dbId;
         window.open(`schema_view/instance/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
+        break;
+      }
+      case "delete": {
+        this.deletionDialogService.openDialog(actionEvent.instance);
+        break;
+      }
+      case "list_alt": {
+        this.referrersDialogService.openDialog(actionEvent.instance);
+        break;
+
       }
     }
   }
@@ -157,7 +173,7 @@ export class InstanceSelectionComponent implements OnInit {
       else
         searchKeys.push(attributeCondition.searchKey);
     }
-    if (attributeNames.length === 0) 
+    if (attributeNames.length === 0)
       return; // Nothing to do. No valid attribute condition found!
     if (this.useRoute) {
       let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
@@ -168,7 +184,7 @@ export class InstanceSelectionComponent implements OnInit {
       }
       this.router.navigate([url], {queryParams: queryParams, queryParamsHandling: 'merge'});
     }
-    else 
+    else
       this.searchInstances(attributeNames, operands, searchKeys);
   }
 

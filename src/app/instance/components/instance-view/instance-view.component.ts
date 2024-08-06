@@ -9,6 +9,7 @@ import { Store } from '@ngrx/store';
 import { InstanceActions, NewInstanceActions } from '../../state/instance.actions';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 import {ReferrersDialogService} from "../referrers-dialog/referrers-dialog.service";
+import {DeletionDialogService} from "../deletion-dialog/deletion-dialog.service";
 
 @Component({
   selector: 'app-instance-view',
@@ -38,7 +39,8 @@ export class InstanceViewComponent implements OnInit {
     private dragDropService: DragDropService,
     private store: Store,
     private qaReportDialogService: QAReportDialogService,
-    private referrersDialogService: ReferrersDialogService) {
+    private referrersDialogService: ReferrersDialogService,
+    private deletionDialogService: DeletionDialogService) {
   }
 
   ngOnInit() {
@@ -194,7 +196,10 @@ export class InstanceViewComponent implements OnInit {
     }
 
   delete() {
-    const matDialogRef =
-      this.referrersDialogService.openDialog(this.instance!);
+    this.deletionDialogService.openDialog(this.instance!);
+  }
+
+  showReferrers() {
+    this.referrersDialogService.openDialog(this.instance!);
   }
 }
