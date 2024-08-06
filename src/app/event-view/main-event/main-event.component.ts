@@ -1,14 +1,9 @@
-import {Component, ViewChild, Input, AfterViewInit} from '@angular/core';
-import {CdkDragMove} from "@angular/cdk/drag-drop";
-import {MatSidenav} from "@angular/material/sidenav";
-import {EventPlotComponent} from "../graphic-display/components/event-plot/event-plot.component";
-import {ActivatedRoute} from "@angular/router";
-import {delay, map} from "rxjs/operators";
-import {DiagramComponent} from "ngx-reactome-diagram";
+import { Component, ViewChild } from '@angular/core';
+import { CdkDragMove } from "@angular/cdk/drag-drop";
+import { MatSidenav } from "@angular/material/sidenav";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-diagram.component';
 import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
-import { Subscription } from 'rxjs';
 import { ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 
 @Component({
@@ -26,6 +21,8 @@ export class MainEventComponent {
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
   @ViewChild('diagramView') diagramView: PathwayDiagramComponent | undefined;
   @ViewChild('instanceView') instanceView: InstanceViewComponent | undefined;
+  // A flag to avoid show empty instance view
+  showInstanceView: boolean = true; // Have to set the default to true. Otherwise, it is not there to load.
 
   constructor() {
   }
@@ -78,7 +75,6 @@ export class MainEventComponent {
 
   toggleBookmarks() {
     setTimeout(() => {
-
       console.log('toggle')
       if (this.status.dragging) return;
       this.status.opened = !this.status.opened;
@@ -119,7 +115,11 @@ export class MainEventComponent {
    * @param id 
    */
   handleDiagramIdChange(id: number) {
-    this.instanceView?.loadInstance(id);
+    setTimeout(() => {
+      this.showInstanceView = (id !== undefined);
+      this.instanceView?.loadInstance(id);
+    });
+
   }
 
 }

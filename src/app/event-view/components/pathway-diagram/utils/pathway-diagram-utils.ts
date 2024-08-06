@@ -30,6 +30,10 @@ export class PathwayDiagramUtilService {
     constructor(private dataSerice: DataService
     ) { }
 
+    getDataService(): DataService {
+        return this.dataSerice;
+    }
+
     isEdgeEditable(element: any): boolean {
         if (element === undefined || element === null)
             return false;
@@ -64,7 +68,19 @@ export class PathwayDiagramUtilService {
             hyperEdge.createFromEvent(event, this.dataSerice, this.converter);
             this.id2hyperEdge.set(event.dbId, hyperEdge);
         }
-        // this.createNewNode(event, cy);
+    }
+
+    
+    /**
+     * Check if the passed event instance has been added in the diagram already.
+     * @param event
+     * @param cy 
+     */
+    isEventAdded(event: Instance, cy: Core): boolean {
+        // We just check if any element has this dbId
+        // If a reaction has been added, an edge and a reaction node should have this.
+        const exitedNodes = cy.nodes().filter(node => node.data('reactomeId') === event.dbId);
+        return exitedNodes.length > 0;
     }
 
 

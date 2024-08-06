@@ -3,16 +3,17 @@
  * in cytoscape. 
  */
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, EventEmitter, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, inject, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
-import { delay, map } from 'rxjs';
+import { filter, map } from 'rxjs';
 import { EditorActionsComponent, ElementType } from './editor-actions/editor-actions.component';
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
-import { ReactomeEvent, ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
+import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
-
+import { MatDialog } from '@angular/material/dialog';
+import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -25,8 +26,12 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 export class PathwayDiagramComponent implements AfterViewInit {
 
   id$ = this.route.params.pipe(
-    map(params => params['id'])
+    map(params => params['id']),
+    filter(id => id !== undefined)
   )
+  // pathway id for the displayed diagram
+  // Note: This is not the id for the PathwayDiagram instance.
+  pathwayId: string = ""; // Use empty string to make the diagram service happy
   @ViewChild('diagramComponent')
   diagram!: DiagramComponent;
 
@@ -48,55 +53,88 @@ export class PathwayDiagramComponent implements AfterViewInit {
   // Tracking the previous dragging position: should cytoscape provides this?
   previousDragPos: Position = {x: 0, y: 0};
 
+  // To show information
+  readonly dialog = inject(MatDialog);
+
   constructor(private route: ActivatedRoute,
     private diagramUtils: PathwayDiagramUtilService
   ){
   }
 
+
   ngAfterViewInit(): void {
-    this.id$.pipe(delay(500)).subscribe(id => {
-      this.diagramUtils.diagramService = this.diagram.getDiagramService();
-      // When the diagram is loaded first, disable node dragging to avoid
-      // change the coordinates
-      this.diagram.cy.nodes().grabify().panify();
+    this.route.params.subscribe(params => {
+    // this.id$.subscribe(id => {
+      const id = params['id'];
+      // Do nothing if nothing is loaded
+      if (!id) return;
+      this.pathwayId = id;
+      this.diagram.diagramId = this.pathwayId;
+      // Check if we have cytoscape network. If yes, load it.
+      this.diagramUtils.getDataService().hasCytoscapeNetwork(this.pathwayId).subscribe((exists: boolean) => {
+        if (exists) {
+          this.diagramUtils.getDataService().getCytoscapeNetwork(this.pathwayId).subscribe((cytoscapeJson: any) => {
+            this.diagram.displayNetwork(cytoscapeJson.elements);
+          });
+        }
+        // Otherwise, handle it in the old way to load the diagrams converted from XML.
+        else {
+          this.diagram.loadDiagram();
+        }
+      });
+    });
+    // Do any post processing after the network is displayed.
+    // Use this method to avoid threading issue and any arbitray delay.
+    this.diagram.cytoscapeContainer!.nativeElement.addEventListener('network_displayed', () => {
+      this.initDiagram();
+    })
+  }
 
-      // Have to add the following to zoom using mouse scroll. 
-      this.diagram.cy.zoomingEnabled(true);
-      this.diagram.cy.userZoomingEnabled(true);
-      this.diagram.cy.panningEnabled(true);
-      this.diagram.cy.userPanningEnabled(true);
+  private initDiagram() {
+    // Do nothing if nothing is loaded
+    if (!this.pathwayId || this.pathwayId.length == 0)
+      return;
+    this.diagramUtils.diagramService = this.diagram.getDiagramService();
+    // When the diagram is loaded first, disable node dragging to avoid
+    // change the coordinates
+    this.diagram.cy.nodes().grabify().panify();
 
-      // Add the popup trigger to the whole cytoscape and let
-      // showCyPopup to figure out what menus should be shown.
-      this.diagram.cy.on('cxttapstart', (e:any) => {
-        this.showCyPopup(e);
-      });
-      this.diagram.cy.on('mousedown', (e: any) => {
-        // Make sure isNode is defined as a function to avoid an error
-        if (e.target !== undefined && typeof e.target.isNode === 'function') {
-          // Since we cannot get the mouse position during dragging
-          // we use the target's position for the relative changes.
-          const pos = e.target.position();
-          this.previousDragPos.x = pos.x;
-          this.previousDragPos.y = pos.y;
-        }
-        if (this.showMenu) {
-          this.showMenu = false;
-          e.preventDefault();
-        }
-      });
-      this.diagram.cy.on('mouseup', (e: any) => {
-        // reset previous drag position
-        this.previousDragPos.x = 0;
-        this.previousDragPos.y = 0;
-      });
-      // Resize the compartment for resizing nodes
-      this.diagram.cy.on('drag', 'node', (e: any) => {
-        let node = e.target;
-        if (node.hasClass('resizing')) {
-          this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);
-        }
-      });
+    // Have to add the following to zoom using mouse scroll. 
+    this.diagram.cy.zoomingEnabled(true);
+    this.diagram.cy.userZoomingEnabled(true);
+    this.diagram.cy.panningEnabled(true);
+    this.diagram.cy.userPanningEnabled(true);
+
+    // Add the popup trigger to the whole cytoscape and let
+    // showCyPopup to figure out what menus should be shown.
+    this.diagram.cy.on('cxttapstart', (e:any) => {
+      this.showCyPopup(e);
+    });
+    this.diagram.cy.on('mousedown', (e: any) => {
+      // Make sure isNode is defined as a function to avoid an error
+      if (e.target !== undefined && typeof e.target.isNode === 'function') {
+        // Since we cannot get the mouse position during dragging
+        // we use the target's position for the relative changes.
+        const pos = e.target.position();
+        this.previousDragPos.x = pos.x;
+        this.previousDragPos.y = pos.y;
+      }
+      if (this.showMenu) {
+        this.showMenu = false;
+        e.preventDefault();
+      }
+    });
+    this.diagram.cy.on('mouseup', (e: any) => {
+      // reset previous drag position
+      this.previousDragPos.x = 0;
+      this.previousDragPos.y = 0;
+    });
+    // Resize the compartment for resizing nodes
+    this.diagram.cy.on('drag', 'node', (e: any) => {
+      let node = e.target;
+      if (node.hasClass('resizing')) {
+        this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);
+      }
     });
   }
 
@@ -150,7 +188,8 @@ export class PathwayDiagramComponent implements AfterViewInit {
       this.diagramUtils.deleteHyperEdge(this.elementUnderMouse);
     }
     else if (action === 'resizeCompartment') {
-      this.diagramUtils.enableResizeCompartment(this.elementUnderMouse,
+      this.diagramUtils.enableResizeCompartment(
+        this.elementUnderMouse,
         this.diagram
       );
     }
@@ -159,6 +198,31 @@ export class PathwayDiagramComponent implements AfterViewInit {
     }
     else if (action === 'toggleDarkMode') {
       this.diagram.dark.isDark = !this.diagram.dark.isDark;
+    }
+    else if (action === 'upload') {
+      const networkJson = this.diagram.cy.json();
+      // const networkString = JSON.stringify(networkJson);
+      // console.debug('Network JSON: \n' + networkString);
+      this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.diagram.diagramId, networkJson).subscribe((success) => {
+        if (success) {
+          // Need to show something here
+          this.dialog.open(InfoDialogComponent, {
+            data: {
+              title: 'Information',
+              message: 'The diagram has been uploaded successfully.'
+            }
+          });
+        }
+        else {
+          // Need to show something here
+          this.dialog.open(InfoDialogComponent, {
+            data: {
+              title: 'Error',
+              message: 'The diagram has not been uploaded successfully.'
+            }
+          });
+        }
+      })
     }
     this.showMenu = false;
   }
@@ -194,7 +258,16 @@ export class PathwayDiagramComponent implements AfterViewInit {
   }
 
   addEvent(event: Instance) {
-    console.debug('Add new event: ' + event);
+    if (this.diagramUtils.isEventAdded(event, this.diagram.cy)) {
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Error',
+          message: 'This reaction is in the diagram already: ',
+          instanceInfo: event.displayName + '[' + event.dbId + ']'
+        }
+      });
+      return;
+    }
     this.diagramUtils.addNewEvent(event, this.diagram.cy);
   }
 

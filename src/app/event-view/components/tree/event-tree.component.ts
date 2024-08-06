@@ -7,6 +7,7 @@ import { EDIT_ACTION } from "../../../instance/components/instance-view/instance
 import {MatSnackBar} from '@angular/material/snack-bar'
 import {DataSubjectService} from "src/app/core/services/data.subject.service";
 import {Subscription} from 'rxjs';
+import { ActivatedRoute, Router } from "@angular/router";
 
 /** Tree node with expandable and level information */
 //TODO: EventNode should wrap an Instance to make the data straucture easier
@@ -73,7 +74,8 @@ export class EventTreeComponent implements OnDestroy {
     private cdr: ChangeDetectorRef,
     private service: DataService,
     private _snackBar: MatSnackBar,
-    private dataSubjectService: DataSubjectService) {
+    private dataSubjectService: DataSubjectService,
+    private router: Router) {
       this.eventTreeParamSubscription = this.dataSubjectService.eventTreeParam$.subscribe(eventTreeParam => {
         if (eventTreeParam) {
           // Update the tree in response to the user clicking a node in the event tree
@@ -140,6 +142,7 @@ export class EventTreeComponent implements OnDestroy {
   }
 
 
+  // NB by GW: For the time being, we will not enable this feature.
   generatePlot(dbId: string, className: string) {
     let plotParam = dbId + ":" + className;
     this.dataSubjectService.setPlotParam(plotParam);
@@ -153,6 +156,10 @@ export class EventTreeComponent implements OnDestroy {
       }
     });
     this.cdr.detectChanges();
+  }
+
+  handleEventClick(event: EventNode) {
+    this.router.navigate(['/event_view/instance/' + event.dbId]);
   }
 
   searchInstances(criteria: AttributeCondition[]) {
