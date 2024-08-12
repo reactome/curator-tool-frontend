@@ -21,6 +21,7 @@ interface EventNode {
   match: boolean;
   expand: boolean;
   inFocus: boolean;
+  hasDiagram: boolean,
   rootNode: boolean;
 }
 
@@ -38,15 +39,16 @@ export class EventTreeComponent implements OnDestroy {
   private _transformer = (node: Instance, level: number) => {
     // TODO: Why does Typescript think that node.attributes is an Object and not a Map (has/get/set methods don't work)
     return {
-      expandable: !!node.attributes && (node.attributes["hasEvent"] ?? []).length > 0,
+      expandable: node.attributes && (node.attributes["hasEvent"] ?? []).length > 0,
       name: node.displayName ?? "",
       level: level,
       dbId: node.dbId,
       className: node.schemaClassName,
-      doRelease: !!node.attributes && node.attributes["_doRelease"],
-      match: !!node.attributes && node.attributes["match"],
-      expand: !!node.attributes && node.attributes["expand"],
+      doRelease: node.attributes && node.attributes["_doRelease"],
+      match: node.attributes && node.attributes["match"],
+      expand: node.attributes && node.attributes["expand"],
       inFocus: false,
+      hasDiagram: node.attributes?.['hasDiagram'] ?? false,
       rootNode: node.displayName === "TopLevelPathway" ? true : false
     };
   };
@@ -63,9 +65,10 @@ export class EventTreeComponent implements OnDestroy {
 
   treeFlattener = new MatTreeFlattener(
     this._transformer,
-    node => node.level,
-    node => node.expandable,
-    node => node.attributes["hasEvent"] ?? []
+    (eventNode: EventNode) => eventNode.level,
+    (eventNode: EventNode) => eventNode.expandable,
+    // This is quite weird: the types are different!
+    (instance: Instance) => instance.attributes["hasEvent"] ?? []
   );
 
   dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
@@ -159,7 +162,19 @@ export class EventTreeComponent implements OnDestroy {
   }
 
   handleEventClick(event: EventNode) {
-    this.router.navigate(['/event_view/instance/' + event.dbId]);
+    const diagramNode = this.findAncestorDiagramNode(event);
+    if (diagramNode) {
+      if (diagramNode === event) {
+        this.router.navigate(['/event_view/instance/' + diagramNode.dbId]);
+      }
+      else {
+        this.router.navigate(['/event_view/instance/' + diagramNode.dbId],
+          {queryParams: {select: event.dbId}, queryParamsHandling: 'merge'});
+      }
+    }
+    else {
+      console.debug('Cannot find a higher level pathway having diagram for ' + event.name);
+    }
   }
 
   searchInstances(criteria: AttributeCondition[]) {
@@ -235,6 +250,36 @@ export class EventTreeComponent implements OnDestroy {
       schemaClassName: node.className
     }
     this.addToDiagram.emit(instance);
+  }
+
+  /**
+   * This method is used to find a tree node that has diagram. 
+   * @param TreeNode 
+   * @param currentNode 
+   */
+  private findAncestorDiagramNode(node: EventNode) {
+    if (node.hasDiagram)
+      return node; // Just itself
+    const dataNodes = this.treeControl.dataNodes;
+    let currentNode = node;
+    while (true) {
+      const currentIndex = dataNodes.indexOf(currentNode);
+      // Reach to the top. Nothing to do
+      if (currentIndex == 0)
+        break;
+      // Find its parent
+      for (let i = currentIndex - 1; i >= 0; i--) {
+        const nextNode = dataNodes[i];
+        if (nextNode.level < currentNode.level) {
+          // nextNode is currentNode's parent
+          if (nextNode.hasDiagram)
+            return nextNode;
+          currentNode = nextNode;
+          break; // Go to next cycle
+        }
+      }
+    }
+    return undefined;
   }
 
 }

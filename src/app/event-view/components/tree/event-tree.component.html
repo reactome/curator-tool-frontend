@@ -58,7 +58,9 @@ cdkDropListSortingDisabled
   </button>
   <release-flag-icon [doRelease]="node.doRelease"></release-flag-icon>
   <class-name-icon [className]="node.className"></class-name-icon>
-  <button mat-button [ngClass]="[node.match === true ? 'event_text_match' : 'event_text_non_match', 'event_text']"
+  <button mat-button 
+  [ngClass]="[node.match === true ? 'event_text_match' : 
+  'event_text_non_match', 'event_text', (node.hasDiagram ? 'event_text_has_diagram' : 'event_text_has_no_diagram')]"
           [hidden]="node.name === 'TopLevelPathway'"
           (click)="handleEventClick(node)" cdkFocusInitial>{{node.name}}</button>
 </ng-template>
