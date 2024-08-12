@@ -27,11 +27,37 @@ export class PathwayDiagramUtilService {
     ];
     private converter = new InstanceConverter();
     
-    constructor(private dataSerice: DataService
-    ) { }
+    constructor(private dataSerice: DataService) { }
 
     getDataService(): DataService {
         return this.dataSerice;
+    }
+
+    select(diagram: DiagramComponent, dbId: any) {
+        let dbIds: any[] = [];
+        if (typeof dbId === 'string' && dbId.includes(',')) {
+            for (let id of dbId.split(','))
+                dbIds.push(Number(id));
+        }
+        else 
+            dbIds = [Number(dbId)];
+        // To avoid doing anything from the diagram selection,
+        // check if these dbids have been selected already.
+        // If true, do nothing. 
+        const selectedElements = diagram.cy.$(':selected');
+        const selectedDbIds = Array.from(new Set(selectedElements.map((element:any) => element.data('reactomeId'))));
+        const areSame = selectedDbIds.length === dbIds.length && selectedDbIds.every(dbId => dbIds.includes(dbId));
+        if (areSame)
+            return; 
+        this.clearSelection(diagram);
+        diagram.select(dbIds, diagram.cy);
+    }
+
+    clearSelection(diagram: DiagramComponent) {
+        if (diagram.cy) {
+            diagram.cy.$(':selected').unselect();
+            diagram.cy.fit(100);
+        }
     }
 
     isEdgeEditable(element: any): boolean {

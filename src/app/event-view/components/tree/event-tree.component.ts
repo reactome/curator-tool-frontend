@@ -6,8 +6,8 @@ import { DataService } from "../../../core/services/data.service";
 import { EDIT_ACTION } from "../../../instance/components/instance-view/instance-table/instance-table.model";
 import {MatSnackBar} from '@angular/material/snack-bar'
 import {DataSubjectService} from "src/app/core/services/data.subject.service";
-import {Subscription} from 'rxjs';
-import { ActivatedRoute, Router } from "@angular/router";
+import {filter, Subscription} from 'rxjs';
+import { ActivatedRoute, NavigationEnd, Router } from "@angular/router";
 
 /** Tree node with expandable and level information */
 //TODO: EventNode should wrap an Instance to make the data straucture easier
@@ -33,6 +33,11 @@ interface EventNode {
 export class EventTreeComponent implements OnDestroy {
   // Listen to add to diagram view event
   @Output() addToDiagram = new EventEmitter<Instance>;
+  @Output() eventClicked = new EventEmitter<number>;
+  // To be selected
+  select: any;
+  diagramPathwayId: any;
+
   showProgressSpinner: boolean = true;
   dbIdSubscription: Subscription;
   eventTreeParamSubscription: Subscription;
@@ -78,31 +83,34 @@ export class EventTreeComponent implements OnDestroy {
     private service: DataService,
     private _snackBar: MatSnackBar,
     private dataSubjectService: DataSubjectService,
+    private route: ActivatedRoute,
     private router: Router) {
-      this.eventTreeParamSubscription = this.dataSubjectService.eventTreeParam$.subscribe(eventTreeParam => {
-        if (eventTreeParam) {
-          // Update the tree in response to the user clicking a node in the event tree
-          let selectedParams: string = eventTreeParam.split(",")[0];
-          let parentParams: string = eventTreeParam.split(",")[1];
-          let selectedDbId = parseInt(selectedParams.split(":")[0]);
-          let parentDbId = parseInt(parentParams.split(":")[0]);
-          this.highlightSelected(selectedDbId, parentDbId);
-          this.cdr.detectChanges();
-        }
-      });
-      this.dbIdSubscription = this.dataSubjectService.dbId$.subscribe(dbId => {
-        if (dbId !== "0") {
-          // Update the tree in response to the user clicking on an instance link in instance view
-          this.filterData([["All"], [""],["dbId"],["primitive"],["Equals"], [dbId]], true);
-        }
-      });
-
-      let url = window.location.href.split("/");
-      let dbId = url.slice(-1)[0];
+    this.eventTreeParamSubscription = this.dataSubjectService.eventTreeParam$.subscribe(eventTreeParam => {
+      if (eventTreeParam) {
+        // Update the tree in response to the user clicking a node in the event tree
+        let selectedParams: string = eventTreeParam.split(",")[0];
+        let parentParams: string = eventTreeParam.split(",")[1];
+        let selectedDbId = parseInt(selectedParams.split(":")[0]);
+        let parentDbId = parseInt(parentParams.split(":")[0]);
+        this.highlightSelected(selectedDbId, parentDbId);
+        this.cdr.detectChanges();
+      }
+    });
+    this.dbIdSubscription = this.dataSubjectService.dbId$.subscribe(dbId => {
       if (dbId !== "0") {
-         // Update the tree based on the dbId provided in the URL
-         this.filterData([["All"], [""],["dbId"],["primitive"],["Equals"], [dbId]], true);
-      } else {
+        // Update the tree in response to the user clicking on an instance link in instance view
+        this.filterData([["All"], [""], ["dbId"], ["primitive"], ["Equals"], [dbId]], true);
+      }
+    });
+    this.route.params.subscribe(params => {
+      const dbId = params['id'];
+      this.select = this.route.snapshot.queryParams['select'];
+      if (dbId) {
+        this.diagramPathwayId = dbId;
+        // Update the tree based on the dbId provided in the URL
+        this.filterData([["All"], [""], ["dbId"], ["primitive"], ["Equals"], [dbId]], true);
+      }
+      else {
         // Otherwise just retrieve the full tree
         service.fetchEventTree(false, "All", "", [], [], [], []).subscribe(data => {
           this.dataSource.data = [data];
@@ -112,6 +120,20 @@ export class EventTreeComponent implements OnDestroy {
           this.treeControl.expand(rootNode);
         });
       }
+    });
+    // To handle the diagram selection via router
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      // Handle query params change here
+      const queryParams = this.route.snapshot.queryParams;
+      const params = this.route.snapshot.params;
+      console.log('Query Params Changed in pathway-diagram: ', queryParams);
+      console.log('Route params in pathway-diagram: ', params);
+      if (this.diagramPathwayId !== params['id'])
+        return;
+      this.highlightSelected(Number(queryParams['select']), Number(this.diagramPathwayId));
+    });
   }
 
   hasChild = (_: number, node: EventNode) => node.expandable;
@@ -132,7 +154,7 @@ export class EventTreeComponent implements OnDestroy {
   // (and remove highlighting from all the other nodes); also - expand the parent node of the selected one -
   // in order to bring the selected one into view.
   highlightSelected(selectedDbId: number, parentDbId: number) {
-    this.treeControl.dataNodes.forEach( (node) => {
+    this.treeControl?.dataNodes?.forEach( (node) => {
       if (node.dbId === selectedDbId) {
         node.match = true;
       } else if (node.dbId === parentDbId) {
@@ -173,8 +195,17 @@ export class EventTreeComponent implements OnDestroy {
       }
     }
     else {
-      console.debug('Cannot find a higher level pathway having diagram for ' + event.name);
+      console.error('Cannot find a higher level pathway having diagram for ' + event.name);
     }
+    // Highlight this event
+    this.treeControl.dataNodes.forEach( (node) => {
+      if (node === event) {
+        node.match = true;
+      } else {
+        node.match = false;
+      }
+    });
+    this.eventClicked.emit(event.dbId);
   }
 
   searchInstances(criteria: AttributeCondition[]) {
@@ -237,6 +268,10 @@ export class EventTreeComponent implements OnDestroy {
         // This is used when dbId is taken from the URL
         let plotParam = searchKeys[0] + ":" + schemaClass;
         this.dataSubjectService.setPlotParam(plotParam);
+      }
+      //TODO: This is just a hack. Need to refactor the code quite a lot!!!
+      if (this.select) {
+        this.highlightSelected(Number(this.select), Number(searchKeys[0]));
       }
     });
   }

@@ -48,7 +48,7 @@ export class InstanceViewComponent implements OnInit {
     // Handle the loading of instance directly here without using ngrx's effect, which is just
     // too complicated and not necessary here.
     this.route.params.subscribe((params) => {
-      console.log("params", params)
+      // console.log("params", params)
       if (params['dbId']) {
         let dbId = params['dbId'];
         // Make sure dbId is a number

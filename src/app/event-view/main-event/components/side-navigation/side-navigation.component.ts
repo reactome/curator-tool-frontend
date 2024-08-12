@@ -13,6 +13,7 @@ export class EventSideNavigationComponent implements OnInit {
   @Output() updateTabIndexEvent = new EventEmitter<boolean>();
   // Passover
   @Output() addEventToDiagram = new EventEmitter<Instance>();
+  @Output() eventClicked = new EventEmitter<number>();
 
   data: Instance[] = [];
   constructor(private store: Store) {
@@ -32,5 +33,9 @@ export class EventSideNavigationComponent implements OnInit {
 
   addEventToDiagramAction(instance: Instance) {
     this.addEventToDiagram.emit(instance);
+  }
+
+  eventClickedAction(dbId: any) {
+    this.eventClicked.emit(dbId);
   }
 }
