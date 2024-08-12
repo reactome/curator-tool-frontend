@@ -1,0 +1,22 @@
+<h3>Total Number of Referrers: {{totalCount}}</h3>
+<ng-container *ngIf="totalCount === 1000">Complete referrer list is too large to display</ng-container>
+<section class="table-container" tabindex="0">
+  <ng-container *ngIf="showProgressSpinner">
+    <mat-spinner class="spinner"></mat-spinner>
+  </ng-container>
+  <ng-container *ngIf="!showProgressSpinner">
+  <ng-container *ngFor="let referrers of instanceList; let i = index">
+    <div>
+      <mat-label>{{referrers.attributeName}} {{referrers.referrers.length}}</mat-label>
+      <button (click)="openTable(referrers.attributeName)" mat-button><mat-icon>arrow_drop_down</mat-icon></button>
+    </div>
+    <app-instance-list-table
+      [id]="referrers.attributeName"
+      [hidden]="showFirstTable(i)"
+      [dataSource]="referrers.referrers"
+      [actionButtons]="actionButtons"
+      (actionEvent)="handleAction($event)">
+    </app-instance-list-table>
+  </ng-container>
+  </ng-container>
+</section>

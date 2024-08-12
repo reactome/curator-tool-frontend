@@ -31,6 +31,8 @@ import { NEW_INSTANCES_STATE_NAME } from "./state/instance.selectors";
 import { newInstancesReducer } from "./state/instance.reducers";
 import { TextCurationComponent } from "../schema-view/main-schema-view/text-curation/components/text-curation.component";
 import {ReferrersDialogComponent} from "./components/referrers-dialog/referrers-dialog.component";
+import {DeletionDialogComponent} from "./components/deletion-dialog/deletion-dialog.component";
+import {ReferrersTableComponent} from "./components/referrers-table/referrers-table.component";
 
 @NgModule({
     declarations: [
@@ -43,7 +45,9 @@ import {ReferrersDialogComponent} from "./components/referrers-dialog/referrers-
         NewInstanceDialogComponent,
         QAReportDialogComponent,
         DisableControlDirective,
-        ReferrersDialogComponent
+        ReferrersDialogComponent,
+        DeletionDialogComponent,
+        ReferrersTableComponent
     ],
   imports: [
     CommonModule,

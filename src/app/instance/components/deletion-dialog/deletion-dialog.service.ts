@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {MatDialog, MatDialogRef} from '@angular/material/dialog';
-import {ReferrersDialogComponent} from './referrers-dialog.component';
+import {DeletionDialogComponent} from './deletion-dialog.component';
 import {Instance} from 'src/app/core/models/reactome-instance.model';
 
 /**
@@ -12,12 +12,12 @@ import {Instance} from 'src/app/core/models/reactome-instance.model';
 @Injectable({
   providedIn: 'root'
 })
-export class ReferrersDialogService {
+export class DeletionDialogService {
 
   constructor(private dialog: MatDialog) { }
 
-  openDialog(instance: Instance): MatDialogRef<ReferrersDialogComponent, Instance> {
-    return this.dialog.open(ReferrersDialogComponent, {
+  openDialog(instance: Instance): MatDialogRef<DeletionDialogComponent, Instance> {
+    return this.dialog.open(DeletionDialogComponent, {
       width: '1000px',
       // height: '900px',
       data: instance,
