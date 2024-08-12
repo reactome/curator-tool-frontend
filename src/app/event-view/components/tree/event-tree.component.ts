@@ -209,7 +209,6 @@ export class EventTreeComponent implements OnDestroy {
   }
 
   searchInstances(criteria: AttributeCondition[]) {
-
   }
 
   filterData(searchFilters: Array<string[]>, generatePlot?: boolean) {
@@ -223,6 +222,14 @@ export class EventTreeComponent implements OnDestroy {
     if (selectedClass !== "") {
       schemaClass = selectedClass;
     }
+    if (this.treeControl.dataNodes) {
+      // If the tree has been loaded, just highlight
+      if (this.select) {
+        this.highlightSelected(Number(this.select), Number(searchKeys[0]));
+      }
+      return;
+    }
+    // load the tree
     this.showProgressSpinner = true;
     this.service.fetchEventTree(
       true,
