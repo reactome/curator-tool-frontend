@@ -27,12 +27,15 @@ import { NewInstanceDialogComponent } from './components/new-instance-dialog/new
 import { QAReportDialogComponent } from './components/qa-report-dialog/qa-report-dialog.component';
 import { InstanceRoutingModule } from './instance-routing.module';
 import { DatabaseObjectEffects } from './state/instance.effects';
-import { NEW_INSTANCES_STATE_NAME } from "./state/instance.selectors";
-import { newInstancesReducer } from "./state/instance.reducers";
+import {DELETE_INSTANCES_STATE_NAME, NEW_INSTANCES_STATE_NAME} from "./state/instance.selectors";
+import {deletedInstancesReducer, newInstancesReducer} from "./state/instance.reducers";
 import { TextCurationComponent } from "../schema-view/main-schema-view/text-curation/components/text-curation.component";
 import {ReferrersDialogComponent} from "./components/referrers-dialog/referrers-dialog.component";
 import {DeletionDialogComponent} from "./components/deletion-dialog/deletion-dialog.component";
 import {ReferrersTableComponent} from "./components/referrers-table/referrers-table.component";
+import {
+  ConfirmDeleteDialogComponent
+} from "./components/deletion-dialog/confirm-delete-dialog/confirm-delete-dialog.component";
 
 @NgModule({
     declarations: [
@@ -47,7 +50,8 @@ import {ReferrersTableComponent} from "./components/referrers-table/referrers-ta
         DisableControlDirective,
         ReferrersDialogComponent,
         DeletionDialogComponent,
-        ReferrersTableComponent
+        ReferrersTableComponent,
+        ConfirmDeleteDialogComponent
     ],
   imports: [
     CommonModule,
@@ -55,6 +59,7 @@ import {ReferrersTableComponent} from "./components/referrers-table/referrers-ta
     EffectsModule.forFeature(DatabaseObjectEffects),
     // EffectsModule.forFeature(NewInstanceEffects),
     StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer),
+    StoreModule.forFeature(DELETE_INSTANCES_STATE_NAME, deletedInstancesReducer),
 
     // Need to register here for update. The registered state can be used out of this module.
     // StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),

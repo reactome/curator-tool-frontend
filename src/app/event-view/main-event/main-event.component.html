@@ -12,6 +12,16 @@
       </div>
     </mat-sidenav>
     <!--TODO: Need to make the height distribution changable via DnD as the horizonal panel. -->
+      <div id="table-boundary">
+        <div cdkDrag cdkDragLockAxis="y" cdkDragBoundary="#bookmark-boundary" id="bookmark-container" [ngClass]="status"
+             [style.height]="container.clientHeight + 'px'" (cdkDragStarted)="onDrag()" (cdkDragEnded)="onDragEnd()">
+          <button id="bookmark-handle" cdkDragHandle (click)="toggleBookmarks()">BOOKMARKS
+          </button>
+          <div id="bookmark" #bookmark>
+            <app-bookmark-list></app-bookmark-list>
+          </div>
+        </div>
+      </div>
     <mat-sidenav-content style="background-color: white;">
       <div style="display: flex; flex-direction: column; height: 100%;">
         <div style="flex: 2; overflow: hidden;">
@@ -24,18 +34,8 @@
         </div>
       </div>
     </mat-sidenav-content>
-  
+
   </mat-sidenav-container>
 
-<!--  <div id="bookmark-boundary">-->
-<!--    <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="#bookmark-boundary" id="bookmark-container" [ngClass]="status"-->
-<!--         [style.height]="container.clientHeight + 'px'" (cdkDragStarted)="onDrag()" (cdkDragEnded)="onDragEnd()">-->
-<!--      <button id="bookmark-handle" cdkDragHandle (click)="toggleBookmarks()">BOOKMARKS-->
-<!--      </button>-->
-<!--      <div id="bookmark" #bookmark>-->
-<!--        <app-bookmark-list></app-bookmark-list>-->
-<!--      </div>-->
-<!--    </div>-->
-<!--  </div>-->
   <app-status [sidePanelState]="showInstanceList" (showUpdatedEvent)="showUpdatedInstances($event)"></app-status>
 </div>

@@ -15,7 +15,7 @@ export class InstanceListTableComponent {
   @Input() actionButtons: string[] = [];
   @Input() isSelection: boolean = false;
   @Input() showHeader: boolean = true;
-  displayedColumns: string[] = ['dbId', 'displayName', 'actionButtons', 'bookmark'];
+  displayedColumns: string[] = ['dbId', 'displayName', 'actionButtons'];
   @Output() selectionEvent = new EventEmitter<Instance>();
   @Output() actionEvent = new EventEmitter<{ instance: Instance, action: string }>();
   selected: number = 0;

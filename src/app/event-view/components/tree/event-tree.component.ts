@@ -305,9 +305,9 @@ export class EventTreeComponent implements OnDestroy {
   }
 
   /**
-   * This method is used to find a tree node that has diagram. 
-   * @param TreeNode 
-   * @param currentNode 
+   * This method is used to find a tree node that has diagram.
+   * @param TreeNode
+   * @param currentNode
    */
   private findAncestorDiagramNode(node: EventNode) {
     if (node.hasDiagram)

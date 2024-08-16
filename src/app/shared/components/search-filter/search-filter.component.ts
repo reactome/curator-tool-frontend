@@ -11,7 +11,7 @@ interface Species {
 
 /**
  * This is a component used to group a set of critieria for instance search. Components using this component
- * should handle the actual search. 
+ * should handle the actual search.
  */
 @Component({
   selector: 'search-filter',
@@ -20,13 +20,18 @@ interface Species {
 })
 export class SearchInstanceComponent implements OnInit {
 
-  @Output() searchInstancesAction: EventEmitter<AttributeCondition[]> = new EventEmitter();
+  @Output() searchInstancesAction: EventEmitter<AttributeCondition> = new EventEmitter();
 
   // For doing search
-  attributeConditions: AttributeCondition[] = [];
+  blankAttributeCondition : AttributeCondition = {
+    attributeName: "displayName",
+    operand: "Contains",
+    searchKey: "",
+    index: 0
+  };
 
   @Input() attributes: string[] = [];
-  
+
   // To control if this component should be shown
   hideShowButtonLabel: string = "...";
   hideSearchPanel: string = "hidden";
@@ -36,36 +41,30 @@ export class SearchInstanceComponent implements OnInit {
 
   ngOnInit(): void {
     // Create a new attribute search criterium when the component is initialized so that the user can see something.
-    setTimeout(() => this.addAttribute()); // Add a delay to avoid NG0100 error.
+    //setTimeout(() => this.addAttribute()); // Add a delay to avoid NG0100 error.
   }
 
-  searchInstances(): void {
-    this.searchInstancesAction.emit(this.attributeConditions);
-  }
+  // searchInstances(): void {
+  //   this.searchInstancesAction.emit(this.attributeCondition!);
+  // }
 
-  hideSearchPane(): void {
-    if (this.hideSearchPanel === "") {
-      this.hideShowButtonLabel = "...";
-      this.hideSearchPanel = "hidden";
-    } 
-    else {
-      this.hideShowButtonLabel = "Hide Panel";
-      this.hideSearchPanel = "";
-    }
-  }
+  // hideSearchPane(): void {
+  //   if (this.hideSearchPanel === "") {
+  //     this.hideShowButtonLabel = "...";
+  //     this.hideSearchPanel = "hidden";
+  //   }
+  //   else {
+  //     this.hideShowButtonLabel = "Hide Panel";
+  //     this.hideSearchPanel = "";
+  //   }
+  // }
 
-  addAttribute() {
-    let blankAttributeCondition : AttributeCondition = {
-      attributeName: "displayName",
-      operand: "Contains",
-      searchKey: "",
-      index: this.attributeConditions.length
-    };
-    this.attributeConditions.push(blankAttributeCondition);
+  addAttribute(attributeCondition: AttributeCondition) {
+    this.searchInstancesAction.emit(attributeCondition);
   }
 
   removeAttribute(attCondition: AttributeCondition) {
-    this.attributeConditions.splice(this.attributeConditions.indexOf(attCondition), 1);
+    //this.attributeConditions.splice(this.attributeConditions.indexOf(attCondition), 1);
   }
 
 }

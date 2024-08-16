@@ -21,3 +21,13 @@ export const NewInstanceActions = createActionGroup({
     get_new_instance: props<Instance>()
   }
 })
+
+export const DeleteInstanceActions = createActionGroup({
+  source: "delete_instance_actions",
+  events: {
+    // Record deleted instances
+    register_deleted_instance: props<Instance>(),
+    remove_deleted_instance: props<Instance>(),
+    get_deleted_instances: emptyProps(),
+  }
+})
