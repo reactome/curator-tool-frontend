@@ -20,7 +20,7 @@ export class AttributeConditionComponent {
   // @Output() updateAttributeCondition: EventEmitter<AttributeCondition> = new EventEmitter();
 
   schemaAttributes: string[] = [];
-  
+
   operands: string[] = [
     'Equal',
     'Not Equal',
@@ -29,13 +29,22 @@ export class AttributeConditionComponent {
     'IS NOT NULL'
   ];
 
+  blankAttributeCondition : AttributeCondition = {
+    attributeName: "displayName",
+    operand: "Contains",
+    searchKey: "",
+    index: 0
+  };
+
   recordSearchKey(event: Event) {
     let text = (event.target as HTMLInputElement).value;
     this.attributeCondition.searchKey = text;
   }
 
   addNewPane(){
-    this.addAttributeCondition.emit(undefined);
+    let copyAttributeCondition = this.attributeCondition;
+    this.attributeCondition = this.blankAttributeCondition;
+    this.addAttributeCondition.emit(copyAttributeCondition);
   }
 
   removePane() {

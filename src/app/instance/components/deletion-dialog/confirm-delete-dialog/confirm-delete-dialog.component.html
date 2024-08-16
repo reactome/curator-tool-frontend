@@ -1,0 +1,8 @@
+<h2 class="dialog_title" mat-dialog-title cdkdraghandle>Confirm Delete</h2>
+<mat-dialog-content style="width: 100%;">
+  <h4>Are you sure you want to delete {{this.instance.displayName}} [{{this.instance.dbId}}]?</h4>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()" cdkFocusInitial>Delete</button>
+  <button mat-button (click)="onCancel()">Close</button>
+</mat-dialog-actions>

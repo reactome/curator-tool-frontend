@@ -33,6 +33,9 @@ import { TextCurationComponent } from "../schema-view/main-schema-view/text-cura
 import {ReferrersDialogComponent} from "./components/referrers-dialog/referrers-dialog.component";
 import {DeletionDialogComponent} from "./components/deletion-dialog/deletion-dialog.component";
 import {ReferrersTableComponent} from "./components/referrers-table/referrers-table.component";
+import {
+  ConfirmDeleteDialogComponent
+} from "./components/deletion-dialog/confirm-delete-dialog/confirm-delete-dialog.component";
 
 @NgModule({
     declarations: [
@@ -47,7 +50,8 @@ import {ReferrersTableComponent} from "./components/referrers-table/referrers-ta
         DisableControlDirective,
         ReferrersDialogComponent,
         DeletionDialogComponent,
-        ReferrersTableComponent
+        ReferrersTableComponent,
+        ConfirmDeleteDialogComponent
     ],
   imports: [
     CommonModule,

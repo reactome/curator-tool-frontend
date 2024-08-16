@@ -162,7 +162,7 @@ export class EventTreeComponent implements OnDestroy {
     this.router.navigate(['/event_view/instance/' + event.dbId]);
   }
 
-  searchInstances(criteria: AttributeCondition[]) {
+  searchInstances(criteria: AttributeCondition) {
 
   }
 

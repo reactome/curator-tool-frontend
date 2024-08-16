@@ -81,6 +81,9 @@ export class InstanceViewComponent implements OnInit {
     // Avoid reloading if it has been loaded already
     if (dbId && this.instance && dbId === this.instance.dbId)
       return;
+    if (dbId < 0 && !this.instance) {
+      this.router.navigate(["/schema_view"])
+    }
     setTimeout(() => {
       // Wrap them together to avoid NG0100 error
       this.showProgressSpinner = true;
