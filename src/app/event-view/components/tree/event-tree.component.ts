@@ -104,7 +104,6 @@ export class EventTreeComponent implements OnDestroy {
     });
     this.route.params.subscribe(params => {
       const dbId = params['id'];
-      this.select = this.route.snapshot.queryParams['select'];
       if (dbId) {
         this.diagramPathwayId = dbId;
         // Update the tree based on the dbId provided in the URL
@@ -112,7 +111,7 @@ export class EventTreeComponent implements OnDestroy {
       }
       else {
         // Otherwise just retrieve the full tree
-        service.fetchEventTree(false, "All", "", [], [], [], []).subscribe(data => {
+        service.fetchEventTree(false, 'Homo sapiens').subscribe(data => {
           this.dataSource.data = [data];
           this.showProgressSpinner = false;
           // Expand the root note and tag it as rootNode - so that it can be hidden in html
@@ -130,9 +129,10 @@ export class EventTreeComponent implements OnDestroy {
       const params = this.route.snapshot.params;
       console.log('Query Params Changed in pathway-diagram: ', queryParams);
       console.log('Route params in pathway-diagram: ', params);
-      if (this.diagramPathwayId !== params['id'])
+      if (this.diagramPathwayId !== params['id'] || this.select === queryParams['select'])
         return;
-      this.highlightSelected(Number(queryParams['select']), Number(this.diagramPathwayId));
+      this.select = queryParams['select']
+      this.highlightSelected(Number(this.select), Number(this.diagramPathwayId));
     });
   }
 
@@ -153,17 +153,35 @@ export class EventTreeComponent implements OnDestroy {
   // Highlight in the event tree the node corresponding to the event selected by the user within the plot
   // (and remove highlighting from all the other nodes); also - expand the parent node of the selected one -
   // in order to bring the selected one into view.
+  // TODO: Need to make sure all parent node is expanded. Also there may be some intermediate
+  // event between selectedDbId and parentDbId 
+  // Note: parentDbId should be changed to diagramId!!!
   highlightSelected(selectedDbId: number, parentDbId: number) {
-    this.treeControl?.dataNodes?.forEach( (node) => {
+    let matchedNodes: EventNode[] = [];
+    this.treeControl?.dataNodes?.forEach((node) => {
       if (node.dbId === selectedDbId) {
         node.match = true;
-      } else if (node.dbId === parentDbId) {
-        this.treeControl.expand(node);
-        node.match = false;
-      } else {
-        node.match = false;
+        matchedNodes.push(node);
       }
-    });
+      else 
+        node.match = false;
+    }
+    );
+    // Open the path to this node
+    if (matchedNodes.length === 0)
+      return;
+    for (let node of matchedNodes) {
+      // There should be only one path for one node
+      const path = this.getTreePath(node);
+      if (path === undefined)
+        continue;
+      const pathIds = path.map(n => n.dbId)
+      if (pathIds.includes(selectedDbId) && pathIds.includes(parentDbId)) {
+        // Expand the path
+        for (let node1 of path)
+          this.treeControl.expand(node1);
+      }
+    }
   }
 
 
@@ -231,14 +249,7 @@ export class EventTreeComponent implements OnDestroy {
     }
     // load the tree
     this.showProgressSpinner = true;
-    this.service.fetchEventTree(
-      true,
-       selectedSpecies,
-       selectedClass,
-       selectedAttributes,
-       selectedAttributeTypes,
-       selectedOperands,
-       searchKeys).subscribe(data => {
+    this.service.fetchEventTree(true, 'Homo sapiens').subscribe(data => {
       this.showProgressSpinner = false;
       this.dataSource.data = [data];
       let rootNode = this.treeControl.dataNodes[0];
@@ -276,7 +287,6 @@ export class EventTreeComponent implements OnDestroy {
         let plotParam = searchKeys[0] + ":" + schemaClass;
         this.dataSubjectService.setPlotParam(plotParam);
       }
-      //TODO: This is just a hack. Need to refactor the code quite a lot!!!
       if (this.select) {
         this.highlightSelected(Number(this.select), Number(searchKeys[0]));
       }
@@ -307,7 +317,7 @@ export class EventTreeComponent implements OnDestroy {
     while (true) {
       const currentIndex = dataNodes.indexOf(currentNode);
       // Reach to the top. Nothing to do
-      if (currentIndex == 0)
+      if (currentIndex === 0)
         break;
       // Find its parent
       for (let i = currentIndex - 1; i >= 0; i--) {
@@ -322,6 +332,35 @@ export class EventTreeComponent implements OnDestroy {
       }
     }
     return undefined;
+  }
+
+  private getTreePath(node: EventNode) {
+    const dataNodes = this.treeControl?.dataNodes;
+    if (dataNodes === undefined)
+      return undefined;
+    const path: EventNode[] = [];
+    this._getTreePath(node, dataNodes, path);
+    return path;
+  }
+
+  private _getTreePath(node: EventNode, dataNodes: EventNode[], path: EventNode[]) {
+    // Add the node itself
+    path.push(node);
+    // stop when reaching to the top level pathway
+    if (node.className === 'TopLevelPathway')
+      return;
+    // Get this node's parent
+    const currentIndex = dataNodes.indexOf(node);
+    if (currentIndex === 0)
+      return; // Reach the top
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      const nextNode = dataNodes[i];
+      if (nextNode.level < node.level) {
+        // nextNode is currentNode's parent
+        this._getTreePath(nextNode, dataNodes, path);
+        break; // Stop this loop.
+      }
+    }
   }
 
 }

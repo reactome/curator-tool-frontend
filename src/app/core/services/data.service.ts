@@ -147,29 +147,14 @@ export class DataService {
    * @param selectedSpecies
    * @param searchKeys
    */
-  fetchEventTree(skipCache: boolean,
-                 selectedSpecies: string,
-                 selectedClass: string,
-                 selectedAttributes: string[],
-                 selectedAttributeTypes: string[],
-                 selectedOperands: string[],
-                 searchKeys: string[]): Observable<Instance> {
+  fetchEventTree(skipCache: boolean, speciesName: string): Observable<Instance> {
 
     //Check cached results first
     if (this.rootEvent && !skipCache) {
       return of(this.rootEvent!);
     }
     // Otherwise call the restful API
-    let url = this.eventsTreeUrl + `${selectedSpecies}`;
-    if (searchKeys.length > 0) {
-      url += '?class=' + selectedClass
-        + '&attributes=' + selectedAttributes.toString()
-        + "&attributeTypes=" + selectedAttributeTypes.toString()
-        + '&operands=' + encodeURI(selectedOperands.toString())
-        + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'"));
-    }
-
-    return this.http.get<Array<Instance>>(url)
+    return this.http.get<Array<Instance>>(this.eventsTreeUrl + speciesName)
       .pipe(
         map((data: Array<Instance>) => {
           let rootEvent: Instance = {
