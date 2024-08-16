@@ -6,8 +6,8 @@ import { DataService } from "../../../core/services/data.service";
 import { EDIT_ACTION } from "../../../instance/components/instance-view/instance-table/instance-table.model";
 import {MatSnackBar} from '@angular/material/snack-bar'
 import {DataSubjectService} from "src/app/core/services/data.subject.service";
-import {Subscription} from 'rxjs';
-import { ActivatedRoute, Router } from "@angular/router";
+import {filter, Subscription} from 'rxjs';
+import { ActivatedRoute, NavigationEnd, Router } from "@angular/router";
 
 /** Tree node with expandable and level information */
 //TODO: EventNode should wrap an Instance to make the data straucture easier
@@ -21,6 +21,7 @@ interface EventNode {
   match: boolean;
   expand: boolean;
   inFocus: boolean;
+  hasDiagram: boolean,
   rootNode: boolean;
 }
 
@@ -32,21 +33,27 @@ interface EventNode {
 export class EventTreeComponent implements OnDestroy {
   // Listen to add to diagram view event
   @Output() addToDiagram = new EventEmitter<Instance>;
+  @Output() eventClicked = new EventEmitter<number>;
+  // To be selected
+  select: any;
+  diagramPathwayId: any;
+
   showProgressSpinner: boolean = true;
   dbIdSubscription: Subscription;
   eventTreeParamSubscription: Subscription;
   private _transformer = (node: Instance, level: number) => {
     // TODO: Why does Typescript think that node.attributes is an Object and not a Map (has/get/set methods don't work)
     return {
-      expandable: !!node.attributes && (node.attributes["hasEvent"] ?? []).length > 0,
+      expandable: node.attributes && (node.attributes["hasEvent"] ?? []).length > 0,
       name: node.displayName ?? "",
       level: level,
       dbId: node.dbId,
       className: node.schemaClassName,
-      doRelease: !!node.attributes && node.attributes["_doRelease"],
-      match: !!node.attributes && node.attributes["match"],
-      expand: !!node.attributes && node.attributes["expand"],
+      doRelease: node.attributes && node.attributes["_doRelease"],
+      match: node.attributes && node.attributes["match"],
+      expand: node.attributes && node.attributes["expand"],
       inFocus: false,
+      hasDiagram: node.attributes?.['hasDiagram'] ?? false,
       rootNode: node.displayName === "TopLevelPathway" ? true : false
     };
   };
@@ -63,9 +70,10 @@ export class EventTreeComponent implements OnDestroy {
 
   treeFlattener = new MatTreeFlattener(
     this._transformer,
-    node => node.level,
-    node => node.expandable,
-    node => node.attributes["hasEvent"] ?? []
+    (eventNode: EventNode) => eventNode.level,
+    (eventNode: EventNode) => eventNode.expandable,
+    // This is quite weird: the types are different!
+    (instance: Instance) => instance.attributes["hasEvent"] ?? []
   );
 
   dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
@@ -75,31 +83,34 @@ export class EventTreeComponent implements OnDestroy {
     private service: DataService,
     private _snackBar: MatSnackBar,
     private dataSubjectService: DataSubjectService,
+    private route: ActivatedRoute,
     private router: Router) {
-      this.eventTreeParamSubscription = this.dataSubjectService.eventTreeParam$.subscribe(eventTreeParam => {
-        if (eventTreeParam) {
-          // Update the tree in response to the user clicking a node in the event tree
-          let selectedParams: string = eventTreeParam.split(",")[0];
-          let parentParams: string = eventTreeParam.split(",")[1];
-          let selectedDbId = parseInt(selectedParams.split(":")[0]);
-          let parentDbId = parseInt(parentParams.split(":")[0]);
-          this.highlightSelected(selectedDbId, parentDbId);
-          this.cdr.detectChanges();
-        }
-      });
-      this.dbIdSubscription = this.dataSubjectService.dbId$.subscribe(dbId => {
-        if (dbId !== "0") {
-          // Update the tree in response to the user clicking on an instance link in instance view
-          this.filterData([["All"], [""],["dbId"],["primitive"],["Equals"], [dbId]], true);
-        }
-      });
-
-      let url = window.location.href.split("/");
-      let dbId = url.slice(-1)[0];
+    this.eventTreeParamSubscription = this.dataSubjectService.eventTreeParam$.subscribe(eventTreeParam => {
+      if (eventTreeParam) {
+        // Update the tree in response to the user clicking a node in the event tree
+        let selectedParams: string = eventTreeParam.split(",")[0];
+        let parentParams: string = eventTreeParam.split(",")[1];
+        let selectedDbId = parseInt(selectedParams.split(":")[0]);
+        let parentDbId = parseInt(parentParams.split(":")[0]);
+        this.highlightSelected(selectedDbId, parentDbId);
+        this.cdr.detectChanges();
+      }
+    });
+    this.dbIdSubscription = this.dataSubjectService.dbId$.subscribe(dbId => {
       if (dbId !== "0") {
-         // Update the tree based on the dbId provided in the URL
-         this.filterData([["All"], [""],["dbId"],["primitive"],["Equals"], [dbId]], true);
-      } else {
+        // Update the tree in response to the user clicking on an instance link in instance view
+        this.filterData([["All"], [""], ["dbId"], ["primitive"], ["Equals"], [dbId]], true);
+      }
+    });
+    this.route.params.subscribe(params => {
+      const dbId = params['id'];
+      this.select = this.route.snapshot.queryParams['select'];
+      if (dbId) {
+        this.diagramPathwayId = dbId;
+        // Update the tree based on the dbId provided in the URL
+        this.filterData([["All"], [""], ["dbId"], ["primitive"], ["Equals"], [dbId]], true);
+      }
+      else {
         // Otherwise just retrieve the full tree
         service.fetchEventTree(false, "All", "", [], [], [], []).subscribe(data => {
           this.dataSource.data = [data];
@@ -109,6 +120,20 @@ export class EventTreeComponent implements OnDestroy {
           this.treeControl.expand(rootNode);
         });
       }
+    });
+    // To handle the diagram selection via router
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      // Handle query params change here
+      const queryParams = this.route.snapshot.queryParams;
+      const params = this.route.snapshot.params;
+      console.log('Query Params Changed in pathway-diagram: ', queryParams);
+      console.log('Route params in pathway-diagram: ', params);
+      if (this.diagramPathwayId !== params['id'])
+        return;
+      this.highlightSelected(Number(queryParams['select']), Number(this.diagramPathwayId));
+    });
   }
 
   hasChild = (_: number, node: EventNode) => node.expandable;
@@ -129,7 +154,7 @@ export class EventTreeComponent implements OnDestroy {
   // (and remove highlighting from all the other nodes); also - expand the parent node of the selected one -
   // in order to bring the selected one into view.
   highlightSelected(selectedDbId: number, parentDbId: number) {
-    this.treeControl.dataNodes.forEach( (node) => {
+    this.treeControl?.dataNodes?.forEach( (node) => {
       if (node.dbId === selectedDbId) {
         node.match = true;
       } else if (node.dbId === parentDbId) {
@@ -159,11 +184,31 @@ export class EventTreeComponent implements OnDestroy {
   }
 
   handleEventClick(event: EventNode) {
-    this.router.navigate(['/event_view/instance/' + event.dbId]);
+    const diagramNode = this.findAncestorDiagramNode(event);
+    if (diagramNode) {
+      if (diagramNode === event) {
+        this.router.navigate(['/event_view/instance/' + diagramNode.dbId]);
+      }
+      else {
+        this.router.navigate(['/event_view/instance/' + diagramNode.dbId],
+          {queryParams: {select: event.dbId}, queryParamsHandling: 'merge'});
+      }
+    }
+    else {
+      console.error('Cannot find a higher level pathway having diagram for ' + event.name);
+    }
+    // Highlight this event
+    this.treeControl.dataNodes.forEach( (node) => {
+      if (node === event) {
+        node.match = true;
+      } else {
+        node.match = false;
+      }
+    });
+    this.eventClicked.emit(event.dbId);
   }
 
-  searchInstances(criteria: AttributeCondition) {
-
+  searchInstances(criteria: AttributeCondition[]) {
   }
 
   filterData(searchFilters: Array<string[]>, generatePlot?: boolean) {
@@ -177,6 +222,14 @@ export class EventTreeComponent implements OnDestroy {
     if (selectedClass !== "") {
       schemaClass = selectedClass;
     }
+    if (this.treeControl.dataNodes) {
+      // If the tree has been loaded, just highlight
+      if (this.select) {
+        this.highlightSelected(Number(this.select), Number(searchKeys[0]));
+      }
+      return;
+    }
+    // load the tree
     this.showProgressSpinner = true;
     this.service.fetchEventTree(
       true,
@@ -223,6 +276,10 @@ export class EventTreeComponent implements OnDestroy {
         let plotParam = searchKeys[0] + ":" + schemaClass;
         this.dataSubjectService.setPlotParam(plotParam);
       }
+      //TODO: This is just a hack. Need to refactor the code quite a lot!!!
+      if (this.select) {
+        this.highlightSelected(Number(this.select), Number(searchKeys[0]));
+      }
     });
   }
   protected readonly EDIT_ACTION = EDIT_ACTION;
@@ -235,6 +292,36 @@ export class EventTreeComponent implements OnDestroy {
       schemaClassName: node.className
     }
     this.addToDiagram.emit(instance);
+  }
+
+  /**
+   * This method is used to find a tree node that has diagram.
+   * @param TreeNode
+   * @param currentNode
+   */
+  private findAncestorDiagramNode(node: EventNode) {
+    if (node.hasDiagram)
+      return node; // Just itself
+    const dataNodes = this.treeControl.dataNodes;
+    let currentNode = node;
+    while (true) {
+      const currentIndex = dataNodes.indexOf(currentNode);
+      // Reach to the top. Nothing to do
+      if (currentIndex == 0)
+        break;
+      // Find its parent
+      for (let i = currentIndex - 1; i >= 0; i--) {
+        const nextNode = dataNodes[i];
+        if (nextNode.level < currentNode.level) {
+          // nextNode is currentNode's parent
+          if (nextNode.hasDiagram)
+            return nextNode;
+          currentNode = nextNode;
+          break; // Go to next cycle
+        }
+      }
+    }
+    return undefined;
   }
 
 }

@@ -90,6 +90,10 @@ export class MainEventComponent {
     this.diagramView?.addEvent(instance);
   }
 
+  handleEventClicked(dbId: any) {
+    this.diagramView?.selectObjectsInDiagram(dbId);
+  }
+
   /**
    * This method is adopted from diagramSelect2state in diagram.component.ts in ngx-reactome-base.
    * @param event

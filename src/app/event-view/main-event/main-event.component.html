@@ -3,7 +3,8 @@
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true" [style.width]="sideWidth + 'px'">
       <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)"
                            [showUpdatedList]="showInstanceList"
-                           (addEventToDiagram)="addEventToDiagram($event)">
+                           (addEventToDiagram)="addEventToDiagram($event)"
+                           (eventClicked)="handleEventClicked($event)">
       </app-side-navigation>
       <div class="resize-container" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
            (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
@@ -25,7 +26,7 @@
       <div style="display: flex; flex-direction: column; height: 100%;">
         <div style="flex: 2; overflow: hidden;">
           <div style="height: 100%; overflow: auto;">
-            <app-pathway-diagram #diagramView (diagramEvent)="handleDiagramSelection($event)"></app-pathway-diagram>
+            <app-pathway-diagram #diagramView></app-pathway-diagram>
           </div>
         </div>
         <div style="flex: 1; min-height: 100px; overflow: auto;" *ngIf="showInstanceView">

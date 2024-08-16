@@ -4,7 +4,7 @@
  */
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, inject, ViewChild } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
 import { filter, map } from 'rxjs';
 import { EditorActionsComponent, ElementType } from './editor-actions/editor-actions.component';
@@ -24,7 +24,6 @@ import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-
   providers: [PathwayDiagramUtilService]
 })
 export class PathwayDiagramComponent implements AfterViewInit {
-
   id$ = this.route.params.pipe(
     map(params => params['id']),
     filter(id => id !== undefined)
@@ -32,6 +31,9 @@ export class PathwayDiagramComponent implements AfterViewInit {
   // pathway id for the displayed diagram
   // Note: This is not the id for the PathwayDiagram instance.
   pathwayId: string = ""; // Use empty string to make the diagram service happy
+  // keep the select id in queryParam
+  select: string = "";
+
   @ViewChild('diagramComponent')
   diagram!: DiagramComponent;
 
@@ -57,6 +59,7 @@ export class PathwayDiagramComponent implements AfterViewInit {
   readonly dialog = inject(MatDialog);
 
   constructor(private route: ActivatedRoute,
+    private router: Router,
     private diagramUtils: PathwayDiagramUtilService
   ){
   }
@@ -64,12 +67,19 @@ export class PathwayDiagramComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this.route.params.subscribe(params => {
-    // this.id$.subscribe(id => {
+      console.debug('Route params before loading in pathway-dagiram: ', params);
+      const queryParams = this.route.snapshot.queryParams;
+      console.debug('Query params before loading in pathway-diagram: ', queryParams);
       const id = params['id'];
       // Do nothing if nothing is loaded
       if (!id) return;
       this.pathwayId = id;
       this.diagram.diagramId = this.pathwayId;
+      this.select = queryParams['select'] ?? '';
+      // Reset the previous state
+      // Technically this is not necessary. However, just need to clean-up
+      // the original state before loading a new diagram.
+      this.diagram.resetState();
       // Check if we have cytoscape network. If yes, load it.
       this.diagramUtils.getDataService().hasCytoscapeNetwork(this.pathwayId).subscribe((exists: boolean) => {
         if (exists) {
@@ -87,7 +97,42 @@ export class PathwayDiagramComponent implements AfterViewInit {
     // Use this method to avoid threading issue and any arbitray delay.
     this.diagram.cytoscapeContainer!.nativeElement.addEventListener('network_displayed', () => {
       this.initDiagram();
+      // Need to do selection here
+      this.selectObjectsInDiagram(this.select);
     })
+    // The following works and may provide some flexibility. However,
+    // this may bring us some headack to handle the two subscriptions
+    // for both pathParams and queryParams. It may not be reliable
+    // to figure out the sequence of these two subscriptions. Therefore,
+    // we will handle the event click directly to synchronize selection.
+    // // Handle the selection when in the same diagram.
+    // // Ideally this should be handled inside the diagram widget.
+    // this.router.events.pipe(
+    //   filter(event => event instanceof NavigationEnd)
+    // ).subscribe(() => {
+    //   // Handle query params change here
+    //   const queryParams = this.route.snapshot.queryParams;
+    //   const params = this.route.snapshot.params;
+    //   console.log('Query Params Changed in pathway-diagram: ', queryParams);
+    //   console.log('Route params in pathway-diagram: ', params);
+    //   if (this.pathwayId !== params['id'])
+    //     return;
+    //   this.selectObjectsInDiagram(queryParams['select']);
+    // });
+  }
+
+  /**
+   * Select objects in cytoscape.js based on the passed dbId. 
+   * Note: dbId may be a list of ids separated by ','.
+   * @param dbId
+   */
+  selectObjectsInDiagram(dbId: any) {
+    if (dbId) {
+      this.diagramUtils.select(this.diagram, dbId);
+    }
+    else {
+      this.diagramUtils.clearSelection(this.diagram);
+    }
   }
 
   private initDiagram() {
@@ -200,6 +245,8 @@ export class PathwayDiagramComponent implements AfterViewInit {
       this.diagram.dark.isDark = !this.diagram.dark.isDark;
     }
     else if (action === 'upload') {
+      // TODO: de-select everything first to avoid keeping the selected color at JSON.
+      // However, we may need to re-select to make the selection consistent.
       const networkJson = this.diagram.cy.json();
       // const networkString = JSON.stringify(networkJson);
       // console.debug('Network JSON: \n' + networkString);
