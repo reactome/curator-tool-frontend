@@ -5,6 +5,7 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-diagram.component';
 import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
 import { ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
+import { EventSideNavigationComponent } from './components/side-navigation/side-navigation.component';
 
 @Component({
   selector: 'app-main-schema-view-event-view',
@@ -19,10 +20,14 @@ export class MainEventComponent {
   status = {closed: true, opened: false, dragging: false};
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
+  @ViewChild('eventSide') eventSide: EventSideNavigationComponent | undefined;
   @ViewChild('diagramView') diagramView: PathwayDiagramComponent | undefined;
   @ViewChild('instanceView') instanceView: InstanceViewComponent | undefined;
   // A flag to avoid show empty instance view
   showInstanceView: boolean = true; // Have to set the default to true. Otherwise, it is not there to load.
+
+  // Track diagram selection ids to avoid unncessary update
+  private selectedIdsInDiagram: number[] = [];
 
   constructor() {
   }
@@ -109,9 +114,16 @@ export class MainEventComponent {
     // Make sure reactomeIds don't contain duplicated element
     const uniqueSet = new Set(reactomeIds);
     reactomeIds = Array.from(uniqueSet).sort();
-    if (reactomeIds.length === 0)
+    if (reactomeIds.length === 0) {
+      this.selectedIdsInDiagram = reactomeIds;
       return;
+    }
+    if (reactomeIds.length === this.selectedIdsInDiagram.length && 
+        reactomeIds.every((value: number, index: number) => value === this.selectedIdsInDiagram[index]))
+      return; // They are the same
+    this.selectedIdsInDiagram = reactomeIds;
     this.instanceView?.loadInstance(reactomeIds[0]);
+    this.eventSide?.eventTree?.selectNodesForDiagram(reactomeIds[0]);
   }
 
   /**
@@ -120,8 +132,10 @@ export class MainEventComponent {
    */
   handleDiagramIdChange(id: number) {
     setTimeout(() => {
-      this.showInstanceView = (id !== undefined);
-      this.instanceView?.loadInstance(id);
+      id = Number(id); // Just in case
+      this.showInstanceView = (id !== undefined && id !== 0);
+      if (id && id !== 0)
+        this.instanceView?.loadInstance(id);
     });
 
   }

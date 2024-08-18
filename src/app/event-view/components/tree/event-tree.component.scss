@@ -88,11 +88,11 @@
   font-family: Roboto, sans-serif !important;
 }
 
-.event_text_non_match {
+.event_text_non_hilite {
   color: var(--surface1) !important;
 }
 
-.event_text_match {
+.event_text_hilite {
   color: dodgerblue !important;
 }
 
@@ -107,3 +107,4 @@
 .spinner {
   margin:0 auto;
 }
+

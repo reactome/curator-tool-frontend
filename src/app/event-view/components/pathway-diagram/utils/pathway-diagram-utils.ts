@@ -34,6 +34,8 @@ export class PathwayDiagramUtilService {
     }
 
     select(diagram: DiagramComponent, dbId: any) {
+        if (diagram === undefined || diagram.cy === undefined)
+            return; // Nothing to do if nothing displayed
         let dbIds: any[] = [];
         if (typeof dbId === 'string' && dbId.includes(',')) {
             for (let id of dbId.split(','))

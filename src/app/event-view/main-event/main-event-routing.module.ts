@@ -10,7 +10,10 @@ const routes: Routes = [
   },
   {
     path: ``,
-    component: MainEventComponent,
+    // Use this for the time being. Most likely we should not use.
+    redirectTo: 'instance/0', // Redirect so that MainEventComponent is not reloaded
+    pathMatch: 'full',
+    // component: MainEventComponent,
   },
 ]
 

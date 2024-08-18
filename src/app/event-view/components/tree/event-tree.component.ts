@@ -1,16 +1,16 @@
 import { FlatTreeControl } from "@angular/cdk/tree";
-import {ChangeDetectorRef, Component, EventEmitter, Output, Input, OnDestroy} from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Output } from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
-import {AttributeCondition, Instance} from "../../../core/models/reactome-instance.model";
+import { AttributeCondition, Instance } from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
-import { EDIT_ACTION } from "../../../instance/components/instance-view/instance-table/instance-table.model";
-import {MatSnackBar} from '@angular/material/snack-bar'
-import {DataSubjectService} from "src/app/core/services/data.subject.service";
-import {filter, Subscription} from 'rxjs';
-import { ActivatedRoute, NavigationEnd, Router } from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
+import { take } from "rxjs";
 
 /** Tree node with expandable and level information */
-//TODO: EventNode should wrap an Instance to make the data straucture easier
+// TODO: 1). After the tree loaded, do a path to set up parent for each navigation; 
+// 2). Record the path that is used to set the router url which is used to load the diagram
+// 3). If the path exists from 2 and it is open. Don't open anything!
+// NOTE: TRIED NestTreeControl. It cannot work! Don't try again until having more ideas!!!
 interface EventNode {
   expandable: boolean;
   name: string;
@@ -18,11 +18,11 @@ interface EventNode {
   dbId: number;
   className: string;
   doRelease: boolean;
-  match: boolean;
-  expand: boolean;
-  inFocus: boolean;
+  hilite: boolean;
   hasDiagram: boolean,
-  rootNode: boolean;
+  rootNode: boolean,
+  parent: EventNode | undefined,
+  children: EventNode[] | undefined
 }
 
 @Component({
@@ -30,19 +30,24 @@ interface EventNode {
   templateUrl: './event-tree.component.html',
   styleUrls: ['./event-tree.component.scss']
 })
-export class EventTreeComponent implements OnDestroy {
+export class EventTreeComponent {
   // Listen to add to diagram view event
   @Output() addToDiagram = new EventEmitter<Instance>;
   @Output() eventClicked = new EventEmitter<number>;
-  // To be selected
-  select: any;
-  diagramPathwayId: any;
+  
+  // To track the diagram path when the diagram is opened by clicking
+  diagramNodePath: EventNode[] | undefined;
+  // tracked highlighted nodes to avoid checking all nodes
+  highlightedNodes: EventNode[] = [];
+  // A flag to avoid selection conflict
+  selectionFromTree: boolean = false;
 
   showProgressSpinner: boolean = true;
-  dbIdSubscription: Subscription;
-  eventTreeParamSubscription: Subscription;
+
   private _transformer = (node: Instance, level: number) => {
     // TODO: Why does Typescript think that node.attributes is an Object and not a Map (has/get/set methods don't work)
+    // The reason is that attributes are converted directly from JSON in the data service!!! Need to think about it!
+    // Consider to wrap instance inside EventNode to make this interface simpler.
     return {
       expandable: node.attributes && (node.attributes["hasEvent"] ?? []).length > 0,
       name: node.displayName ?? "",
@@ -50,18 +55,13 @@ export class EventTreeComponent implements OnDestroy {
       dbId: node.dbId,
       className: node.schemaClassName,
       doRelease: node.attributes && node.attributes["_doRelease"],
-      match: node.attributes && node.attributes["match"],
-      expand: node.attributes && node.attributes["expand"],
-      inFocus: false,
+      hilite: false,
       hasDiagram: node.attributes?.['hasDiagram'] ?? false,
-      rootNode: node.displayName === "TopLevelPathway" ? true : false
+      rootNode: node.displayName === "TopLevelPathway" ? true : false,
+      parent: undefined,
+      children: undefined
     };
   };
-
-  ngOnDestroy() {
-    this.dbIdSubscription.unsubscribe();
-    this.eventTreeParamSubscription.unsubscribe();
-  }
 
   treeControl = new FlatTreeControl<EventNode>(
     node => node.level,
@@ -72,7 +72,7 @@ export class EventTreeComponent implements OnDestroy {
     this._transformer,
     (eventNode: EventNode) => eventNode.level,
     (eventNode: EventNode) => eventNode.expandable,
-    // This is quite weird: the types are different!
+    // Required by API
     (instance: Instance) => instance.attributes["hasEvent"] ?? []
   );
 
@@ -81,129 +81,170 @@ export class EventTreeComponent implements OnDestroy {
   constructor(
     private cdr: ChangeDetectorRef,
     private service: DataService,
-    private _snackBar: MatSnackBar,
-    private dataSubjectService: DataSubjectService,
     private route: ActivatedRoute,
     private router: Router) {
-    this.eventTreeParamSubscription = this.dataSubjectService.eventTreeParam$.subscribe(eventTreeParam => {
-      if (eventTreeParam) {
-        // Update the tree in response to the user clicking a node in the event tree
-        let selectedParams: string = eventTreeParam.split(",")[0];
-        let parentParams: string = eventTreeParam.split(",")[1];
-        let selectedDbId = parseInt(selectedParams.split(":")[0]);
-        let parentDbId = parseInt(parentParams.split(":")[0]);
-        this.highlightSelected(selectedDbId, parentDbId);
-        this.cdr.detectChanges();
-      }
-    });
-    this.dbIdSubscription = this.dataSubjectService.dbId$.subscribe(dbId => {
-      if (dbId !== "0") {
-        // Update the tree in response to the user clicking on an instance link in instance view
-        this.filterData([["All"], [""], ["dbId"], ["primitive"], ["Equals"], [dbId]], true);
-      }
-    });
-    this.route.params.subscribe(params => {
-      const dbId = params['id'];
-      if (dbId) {
-        this.diagramPathwayId = dbId;
-        // Update the tree based on the dbId provided in the URL
-        this.filterData([["All"], [""], ["dbId"], ["primitive"], ["Equals"], [dbId]], true);
-      }
-      else {
-        // Otherwise just retrieve the full tree
-        service.fetchEventTree(false, 'Homo sapiens').subscribe(data => {
-          this.dataSource.data = [data];
-          this.showProgressSpinner = false;
-          // Expand the root note and tag it as rootNode - so that it can be hidden in html
-          let rootNode = this.treeControl.dataNodes[0];
-          this.treeControl.expand(rootNode);
-        });
-      }
-    });
-    // To handle the diagram selection via router
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe(() => {
-      // Handle query params change here
-      const queryParams = this.route.snapshot.queryParams;
-      const params = this.route.snapshot.params;
-      console.log('Query Params Changed in pathway-diagram: ', queryParams);
-      console.log('Route params in pathway-diagram: ', params);
-      if (this.diagramPathwayId !== params['id'] || this.select === queryParams['select'])
-        return;
-      this.select = queryParams['select']
-      this.highlightSelected(Number(this.select), Number(this.diagramPathwayId));
+      // Make sure this is called only once using take(1)
+    this.route.params.pipe(take(1)).subscribe(params => {
+      console.debug('handling route param in event tree: ', params);
+      // We call this only once. Therefore, always need to load the tree
+      service.fetchEventTree(false, 'Homo sapiens').subscribe(data => {
+        this.dataSource.data = [data];
+        this.showProgressSpinner = false;
+        // Expand the root note and tag it as rootNode - so that it can be hidden in html
+        let rootNode = this.treeControl.dataNodes[0];
+        this.treeControl.expand(rootNode);
+        // Cache the tree parent/child relationship for performance
+        this.cacheTreePaths();
+        const diagramPathwayId = Number(params['id']);
+        const select = Number(this.route.snapshot.queryParams['select']);
+        this.selectNodes(select ? select : diagramPathwayId, diagramPathwayId);
+      });
     });
   }
 
   hasChild = (_: number, node: EventNode) => node.expandable;
 
-  inFocus = (_: number, node: EventNode) => node.inFocus;
   isRootNode = (_: number, node: EventNode) => node.rootNode;
 
-  atLeastOneQueryClausePresent(selectedOperands: string[], searchKeys: string[]): boolean {
-    let ret = selectedOperands.includes("IS NULL") || selectedOperands.includes("IS NOT NULL");
-    if (!ret) {
-      let sks = new Set(searchKeys);
-      ret = sks.size > 1 || sks.values().next().value !== "na";
+  private cacheTreePaths() {
+    if (this.treeControl === undefined || this.treeControl.dataNodes === undefined)
+      return; // Just safegurard. Should not happen
+    // Bottom up: the running time should be log(N) * N
+    for (let i = this.treeControl.dataNodes.length - 1; i >= 0; i--) {
+      const node = this.treeControl.dataNodes[i];
+      // Find its parent node
+      for (let j = i - 1; j >= 0; j--) {
+        const other = this.treeControl.dataNodes[j];
+        if (other.level < node.level) {
+          node.parent = other;
+          other.children ? other.children!.push(node): other.children = [node];
+          break;
+        }
+      }
     }
-    return ret;
   }
 
   // Highlight in the event tree the node corresponding to the event selected by the user within the plot
   // (and remove highlighting from all the other nodes); also - expand the parent node of the selected one -
   // in order to bring the selected one into view.
-  // TODO: Need to make sure all parent node is expanded. Also there may be some intermediate
-  // event between selectedDbId and parentDbId 
-  // Note: parentDbId should be changed to diagramId!!!
-  highlightSelected(selectedDbId: number, parentDbId: number) {
-    let matchedNodes: EventNode[] = [];
-    this.treeControl?.dataNodes?.forEach((node) => {
+  private selectNodes(selectedDbId: number, diagramDbId: number) {
+    if (this.treeControl === undefined || this.treeControl.dataNodes === undefined)
+      return;
+    if (selectedDbId === undefined || diagramDbId === undefined)
+      return; // Nothing needs to be done
+    let matchedNodes = [];
+    for (let index = 0; index < this.treeControl.dataNodes.length; index ++) {
+      let node = this.treeControl.dataNodes[index];
       if (node.dbId === selectedDbId) {
-        node.match = true;
         matchedNodes.push(node);
       }
-      else 
-        node.match = false;
     }
-    );
     // Open the path to this node
     if (matchedNodes.length === 0)
       return;
+    let matchedPath = undefined;
     for (let node of matchedNodes) {
       // There should be only one path for one node
       const path = this.getTreePath(node);
       if (path === undefined)
         continue;
       const pathIds = path.map(n => n.dbId)
-      if (pathIds.includes(selectedDbId) && pathIds.includes(parentDbId)) {
+      if (pathIds.includes(selectedDbId) && pathIds.includes(diagramDbId)) {
+        matchedPath = path;
         // Expand the path
         for (let node1 of path)
-          this.treeControl.expand(node1);
+          if (node1 !== node) // No need to open itself
+            this.treeControl.expand(node1);
       }
     }
+    this.highlightNodes(matchedNodes);
+    // Keep the diagram node path for highlight
+    if (matchedPath) {
+      this.diagramNodePath = [];
+      let include = false;
+      for (let i = 0; i < matchedPath.length; i++) {
+        const node = matchedPath[i];
+        if (node.dbId === diagramDbId) {
+          include = true;
+          this.diagramNodePath.push(node);
+        }
+        else if (include)
+          this.diagramNodePath.push(node);
+      }
+    }
+    // There should be no use case for the following code. The selection synchronization between
+    // the diagram selection and the tree selection is handled by selectNodesForDiagram(), which
+    // handle scroll. 
   }
 
-
-  // NB by GW: For the time being, we will not enable this feature.
-  generatePlot(dbId: string, className: string) {
-    let plotParam = dbId + ":" + className;
-    this.dataSubjectService.setPlotParam(plotParam);
-    // Additionally, highlight in the event tree the node corresponding to the plot
-    // about to be generated (and remove highlighting from all the other nodes)
-    this.treeControl.dataNodes.forEach( (node) => {
-      if (node.dbId === parseInt(dbId)) {
-        node.match = true;
-      } else {
-        node.match = false;
+  selectNodesForDiagram(dbId: number) {
+    // console.debug('Select nodes for diagram: ' + dbId);
+    if (this.selectionFromTree) {
+      this.selectionFromTree = false;
+      return;
+    }
+    // Find the tree node under
+    if (this.diagramNodePath === undefined || this.diagramNodePath.length === 0)
+      return;
+    const diagramNode = this.diagramNodePath[0];
+    const current = [diagramNode]
+    const next : EventNode[] = []
+    const found = []
+    while (current.length > 0) {
+      for (let i = 0; i < current.length; i++) {
+        if (current[i].dbId === dbId) {
+          found.push(current[i]);
+        }
+        else {
+          if (current[i].children) 
+            current[i].children?.forEach(c => next.push(c))
+        }
       }
-    });
-    this.cdr.detectChanges();
+      current.length = 0;
+      next.forEach(c => current.push(c));
+      next.length = 0;
+    }
+    this.highlightNodes(found);
+    // Basically we cannot figure out a way to match the native element 
+    // to the first node. Therefore, just let document to handle which node should
+    // be focused
+    // Need to use css
+    const element = document.querySelector('.event_text_hilite') as HTMLElement;
+    if (element && !this.elementsIsInView(element))
+      element.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'nearest'});
+  }
+
+  private elementsIsInView(element: HTMLElement): boolean {
+    const rect = element.getBoundingClientRect();
+    return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+    );
+  }
+
+  private highlightNodes(nodes: EventNode[]) {
+    // Reset the previous hilited nodes
+    for (let node of this.highlightedNodes.slice()) {
+      node.hilite = false;
+      this.highlightedNodes.pop();
+    }
+    for (let node of nodes) {
+      node.hilite = true;
+      this.highlightedNodes.push(node);
+      // Expand its path
+      const path = this.getTreePath(node);
+      if (path)
+        path.slice(1).forEach(node => this.treeControl.expand(node));
+    }
   }
 
   handleEventClick(event: EventNode) {
     const diagramNode = this.findAncestorDiagramNode(event);
     if (diagramNode) {
+      this.diagramNodePath = this.getTreePath(diagramNode);
+      this.selectionFromTree = true;
       if (diagramNode === event) {
         this.router.navigate(['/event_view/instance/' + diagramNode.dbId]);
       }
@@ -215,84 +256,13 @@ export class EventTreeComponent implements OnDestroy {
     else {
       console.error('Cannot find a higher level pathway having diagram for ' + event.name);
     }
-    // Highlight this event
-    this.treeControl.dataNodes.forEach( (node) => {
-      if (node === event) {
-        node.match = true;
-      } else {
-        node.match = false;
-      }
-    });
+    this.highlightNodes([event]);
     this.eventClicked.emit(event.dbId);
   }
 
-  searchInstances(criteria: AttributeCondition[]) {
+  //TODO: Use Deidre's new search interface
+  searchInstances(criteria: AttributeCondition) {
   }
-
-  filterData(searchFilters: Array<string[]>, generatePlot?: boolean) {
-    let schemaClass: string = "";
-    let selectedSpecies = searchFilters[0][0] as string;
-    let selectedClass = searchFilters[1][0] as string;
-    let selectedAttributes = searchFilters[2];
-    let selectedAttributeTypes = searchFilters[3];
-    let selectedOperands = searchFilters[4];
-    let searchKeys = searchFilters[5];
-    if (selectedClass !== "") {
-      schemaClass = selectedClass;
-    }
-    if (this.treeControl.dataNodes) {
-      // If the tree has been loaded, just highlight
-      if (this.select) {
-        this.highlightSelected(Number(this.select), Number(searchKeys[0]));
-      }
-      return;
-    }
-    // load the tree
-    this.showProgressSpinner = true;
-    this.service.fetchEventTree(true, 'Homo sapiens').subscribe(data => {
-      this.showProgressSpinner = false;
-      this.dataSource.data = [data];
-      let rootNode = this.treeControl.dataNodes[0];
-      this.treeControl.expand(rootNode);
-      let focus = false;
-      this.treeControl.dataNodes.forEach( (node) => {
-        if (node.expand) {
-          this.treeControl.expand(node);
-        }
-        if (node.match && schemaClass === "") {
-          // ie. When filterData is run using dbId provided in the URL
-          schemaClass = node.className;
-        }
-        if (node.match && !focus) {
-          node.inFocus = true;
-          focus = true;
-        }
-      });
-      this.cdr.detectChanges();
-      // Scroll to the first matching node of the tree
-      if (focus) {
-        const element = document.querySelector('.inFocus') as HTMLElement;
-        element.scrollIntoView({behavior: 'smooth'});
-      } else if (this.atLeastOneQueryClausePresent(selectedOperands, searchKeys)) {
-        // let snackBarRef = this._snackBar.open(
-        //   'No data matching the query', '',
-        //   {
-        //     horizontalPosition: 'center',
-        //     verticalPosition: 'top',
-        //     duration: 4000
-        //    });
-      }
-      if (generatePlot !== undefined || generatePlot === true) {
-        // This is used when dbId is taken from the URL
-        let plotParam = searchKeys[0] + ":" + schemaClass;
-        this.dataSubjectService.setPlotParam(plotParam);
-      }
-      if (this.select) {
-        this.highlightSelected(Number(this.select), Number(searchKeys[0]));
-      }
-    });
-  }
-  protected readonly EDIT_ACTION = EDIT_ACTION;
 
   addToDiagramAction(node: EventNode) {
     // Wrap the needed informatio into an instance and then fire
@@ -312,24 +282,13 @@ export class EventTreeComponent implements OnDestroy {
   private findAncestorDiagramNode(node: EventNode) {
     if (node.hasDiagram)
       return node; // Just itself
-    const dataNodes = this.treeControl.dataNodes;
-    let currentNode = node;
-    while (true) {
-      const currentIndex = dataNodes.indexOf(currentNode);
-      // Reach to the top. Nothing to do
-      if (currentIndex === 0)
-        break;
-      // Find its parent
-      for (let i = currentIndex - 1; i >= 0; i--) {
-        const nextNode = dataNodes[i];
-        if (nextNode.level < currentNode.level) {
-          // nextNode is currentNode's parent
-          if (nextNode.hasDiagram)
-            return nextNode;
-          currentNode = nextNode;
-          break; // Go to next cycle
-        }
-      }
+    const treePath = this.getTreePath(node);
+    if (treePath === undefined)
+      return undefined;
+    for (let i = 1; i < treePath.length; i++) {
+      const nextNode = treePath[i];
+      if (nextNode.hasDiagram)
+        return nextNode;
     }
     return undefined;
   }
@@ -346,21 +305,8 @@ export class EventTreeComponent implements OnDestroy {
   private _getTreePath(node: EventNode, dataNodes: EventNode[], path: EventNode[]) {
     // Add the node itself
     path.push(node);
-    // stop when reaching to the top level pathway
-    if (node.className === 'TopLevelPathway')
-      return;
-    // Get this node's parent
-    const currentIndex = dataNodes.indexOf(node);
-    if (currentIndex === 0)
-      return; // Reach the top
-    for (let i = currentIndex - 1; i >= 0; i--) {
-      const nextNode = dataNodes[i];
-      if (nextNode.level < node.level) {
-        // nextNode is currentNode's parent
-        this._getTreePath(nextNode, dataNodes, path);
-        break; // Stop this loop.
-      }
-    }
+    if (node.parent)
+      this._getTreePath(node.parent, dataNodes, path);
   }
 
 }

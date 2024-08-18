@@ -4,7 +4,7 @@
       <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)"
                            [showUpdatedList]="showInstanceList"
                            (addEventToDiagram)="addEventToDiagram($event)"
-                           (eventClicked)="handleEventClicked($event)">
+                           (eventClicked)="handleEventClicked($event)" #eventSide>
       </app-side-navigation>
       <div class="resize-container" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
            (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
@@ -12,7 +12,7 @@
       </div>
     </mat-sidenav>
     <!--TODO: Need to make the height distribution changable via DnD as the horizonal panel. -->
-      <div id="table-boundary">
+      <!-- <div id="table-boundary">
         <div cdkDrag cdkDragLockAxis="y" cdkDragBoundary="#bookmark-boundary" id="bookmark-container" [ngClass]="status"
              [style.height]="container.clientHeight + 'px'" (cdkDragStarted)="onDrag()" (cdkDragEnded)="onDragEnd()">
           <button id="bookmark-handle" cdkDragHandle (click)="toggleBookmarks()">BOOKMARKS
@@ -21,7 +21,7 @@
             <app-bookmark-list></app-bookmark-list>
           </div>
         </div>
-      </div>
+      </div> -->
     <mat-sidenav-content style="background-color: white;">
       <div style="display: flex; flex-direction: column; height: 100%;">
         <div style="flex: 2; overflow: hidden;">

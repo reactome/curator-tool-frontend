@@ -1,5 +1,5 @@
 <!--<filter-events (updateEventTree)="filterData($event)"></filter-events>-->
-<search-filter (searchInstancesAction)="searchInstances($event)"></search-filter>
+<!-- <search-filter (searchInstancesAction)="searchInstances($event)"></search-filter> -->
 <div>
   <ng-container *ngIf="showProgressSpinner">
     <mat-spinner class="spinner"></mat-spinner>
@@ -59,8 +59,8 @@ cdkDropListSortingDisabled
   <release-flag-icon [doRelease]="node.doRelease"></release-flag-icon>
   <class-name-icon [className]="node.className"></class-name-icon>
   <button mat-button 
-  [ngClass]="[node.match === true ? 'event_text_match' : 
-  'event_text_non_match', 'event_text', (node.hasDiagram ? 'event_text_has_diagram' : 'event_text_has_no_diagram')]"
+  [ngClass]="[node.hilite === true ? 'event_text_hilite' : 
+  'event_text_non_hilite', 'event_text', (node.hasDiagram ? 'event_text_has_diagram' : 'event_text_has_no_diagram')]"
           [hidden]="node.name === 'TopLevelPathway'"
           (click)="handleEventClick(node)" cdkFocusInitial>{{node.name}}</button>
 </ng-template>

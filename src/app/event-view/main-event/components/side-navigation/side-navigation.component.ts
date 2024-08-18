@@ -1,7 +1,8 @@
-import {Component, EventEmitter, Input, OnInit, Output, OnDestroy} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, OnDestroy, ViewChild} from '@angular/core';
 import {Instance} from "../../../../core/models/reactome-instance.model";
 import {Store} from "@ngrx/store";
 import { updatedInstances } from 'src/app/instance/state/instance.selectors';
+import { EventTreeComponent } from 'src/app/event-view/components/tree/event-tree.component';
 
 @Component({
   selector: 'app-side-navigation',
@@ -14,6 +15,8 @@ export class EventSideNavigationComponent implements OnInit {
   // Passover
   @Output() addEventToDiagram = new EventEmitter<Instance>();
   @Output() eventClicked = new EventEmitter<number>();
+
+  @ViewChild('eventTree') eventTree: EventTreeComponent | undefined;
 
   data: Instance[] = [];
   constructor(private store: Store) {
@@ -38,4 +41,5 @@ export class EventSideNavigationComponent implements OnInit {
   eventClickedAction(dbId: any) {
     this.eventClicked.emit(dbId);
   }
+
 }
