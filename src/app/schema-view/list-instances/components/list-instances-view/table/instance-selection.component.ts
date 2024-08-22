@@ -35,6 +35,9 @@ export class InstanceSelectionComponent implements OnInit {
   // A flag to use route to load: use string so that we can set it directly in html
   @Input() useRoute: boolean = false;
   showFilterComponent: boolean = false;
+  // Outputting the search string to update the header
+  @Output() queryEvent = new EventEmitter<string>();
+
 
   // TODO: There is NG0100 error here: ExpressionChagnedAfterCheckingError. setTimeOut fix cannot work here!!!
   @Input() set setClassName(inputClassName: string) {
@@ -73,6 +76,7 @@ export class InstanceSelectionComponent implements OnInit {
           }
         )
     }
+    //this.queryEvent.emit(this.searchKey);
   }
 
   loadSchemaClasses() {
@@ -92,6 +96,10 @@ export class InstanceSelectionComponent implements OnInit {
   }
 
   searchForName(_: Event | undefined) {
+    if(this.searchKey?.startsWith('(') && this.searchKey?.endsWith(')')){
+      this.advancedSearch(this.searchKey);
+      return;
+    }
     this.skip = 0;
     this.pageIndex = 0;
     if (this.useRoute) {
@@ -152,6 +160,7 @@ export class InstanceSelectionComponent implements OnInit {
         this.data = instanceList.instances;
         this.showProgressSpinner = false;
       })
+    this.queryEvent.emit(this.searchKey);
   }
 
   /**
@@ -159,10 +168,14 @@ export class InstanceSelectionComponent implements OnInit {
    * @param searchFilters
    */
   searchAction(attributeCondition: AttributeCondition) {
-    this.advancedSearchKey += "("
+    if(this.searchKey !== '') {
+      this.searchKey += ","
+    }
+    this.searchKey += "("
       + attributeCondition.attributeName
       + "[" + attributeCondition.operand
       + ": " + attributeCondition.searchKey + "])";
+
   }
 
   /**
@@ -185,39 +198,21 @@ export class InstanceSelectionComponent implements OnInit {
     this.showFilterComponent = !this.showFilterComponent;
   }
 
-  advancedSearch($event: any) {
-    // let attributeNames: string = '';
-    // let operands: string;
-    // let searchKeys: string;
-    // //for(let attributeCondition of searchFilters) {
-    // //   if (!this.isValidSearchCondition(attributeCondition))
-    // //     continue;
-    // attributeNames = attributeCondition.attributeName;
-    // // Do a little bit map
-    // let operand = attributeCondition.operand;
-    // operand = operand.replaceAll(' ', '_').toLocaleLowerCase();
-    // operands = operand;
-    // // Push something to make the server happy
-    // if (operand.includes('null'))
-    //   searchKeys = 'na'; // Just something that is not used at all.
-    // else
-    //   searchKeys = attributeCondition.searchKey;
-    // this.advancedSearchKey += attributeCondition.attributeName + " " + attributeCondition.operand + " " + attributeCondition.searchKey;
-    // // }
-    //
-    // if (attributeNames === '')
-    //   return; // Nothing to do. No valid attribute condition found!
-    // if (this.useRoute) {
-    //   //   let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
-    //   //   let queryParams = {
-    //   //     attributes: attributeNames.join(','),
-    //   //     operands: operands.join(','),
-    //   //     searchKeys: searchKeys.join(',')
-    //   //   }
-    //   //   this.router.navigate([url], {queryParams: queryParams, queryParamsHandling: 'merge'});
-    //   // }
-    //   //else
-    //   //this.searchInstances(attributeNames, operands, searchKeys);
-    // }
+  advancedSearch(searchKey: string) {
+    let fullQuery = searchKey.split(',')
+    let attributes = [];
+    let operands = [];
+    let searchKeys = [];
+    for(let query of fullQuery) {
+      console.log(query);
+      let attributeName = query.split("(")[1].split("[")[0];
+      attributes.push(attributeName);
+      let operand = query.split("[")[1].split(":")[0];
+      operands.push(operand);
+      let searchKey = query.split(" ")[1].split("]")[0];
+      console.log(attributeName, operand, searchKey);
+      searchKeys.push(searchKey);
+    }
+    this.searchInstances(attributes, operands, searchKeys);
   }
 }

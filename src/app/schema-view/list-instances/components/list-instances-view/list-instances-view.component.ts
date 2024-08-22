@@ -14,6 +14,7 @@ export class ListInstancesViewComponent implements AfterViewInit {
   attributeTypes: Array<string> = [];
   regex: Array<string> = [];
   searchKey: Array<string> = [];
+  queryString: string = '';
 
   // Get this so that we can manipulate the search criteria directly
   @ViewChild(InstanceSelectionComponent) instanceList!: InstanceSelectionComponent;
@@ -52,10 +53,13 @@ export class ListInstancesViewComponent implements AfterViewInit {
       let searchKeys = queryParams['searchKeys'].split(',');
       this.instanceList.searchInstances(attributes, operands, searchKeys);
     }
-    else 
+    else
       this.instanceList.loadInstances();
     if (isChangedChanged) // Need to force to reload attributes there.
       this.instanceList.loadSchemaClasses();
   }
 
+  updateHeader($event: string) {
+    this.queryString = ' (filter: ' + $event + ')';
+  }
 }

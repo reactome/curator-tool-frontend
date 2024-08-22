@@ -1,4 +1,4 @@
 <mat-toolbar color="primary" class="toolbar">
-  {{this.schemaClassName}}
+  {{this.schemaClassName }}{{this.queryString}}
 </mat-toolbar>
-<app-instance-selection [useRoute]="true"></app-instance-selection>
+<app-instance-selection [useRoute]="true" (queryEvent)="updateHeader($event)"></app-instance-selection>
