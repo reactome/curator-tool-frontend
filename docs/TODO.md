@@ -1,3 +1,7 @@
+#### Bugs:
+- Open a changed instance in via the changes tab in the schema view. Refresh the browser causes an error: nothing displayed.
+- After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should be stay at the changes tab.
+
 #### TODO:
 - Make sure a simple text slot (e.g. name) can add new value: the added value is not added as a new line.
 - Change the main component into schema view: so that we can add an event view.
@@ -23,7 +27,11 @@ import {newInstances} from "../../../schema-view/instance/state/new-instance/new
 import { updatedInstances } from 'src/app/schema-view/instance/state/instance.selectors';
 - Bug: After filtering to changed only attribute in the comparison table, turn off the comparison. There is no way to show the whole table now.
 - bug: In the updated instances table, when the display name is really long, no action buttons can be seen.
+- todo: how to handle label of the compartment? In the editing mode, make compartment movable. However, we have to disable resizing and then make sure the two layers are posititioned correctly.
+- bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.
+- TODO: Set the color of icons in the event tree for dark mode. Right now, they are all black, which cannot be seen in the dark mode.
 
 #### Notes:
 - the following version or configuration are important for compiling: "@langchain/openai": "^0.0.12" (March 14, 2024) in package.json and "skipLibCheck": true in tsconfig.json, // Based on to fix langchain issue:https://github.com/langchain-ai/langchainjs/issues/3793
-- To build an angular component, follow https://www.telerik.com/blogs/angular-component-library-part-1-how-to-build. The pack is very important. Otherwise, it will not work!
+- To build an angular component, follow https://www.telerik.com/blogs/angular-component-library-part-1-how-to-build. The pack is very important. Otherwise, it will not work! To install the component from reactome's ngx project, use: npm i {path_to_the_component} (e.g. ../ngx-reactome-base/dist/ngx-reactome-diagram/ngx-reactome-diagram-0.0.16.tgz). Note: make sure the version updated. Otherwise, the loaded library will not be updated in the chrome debug!!!
+

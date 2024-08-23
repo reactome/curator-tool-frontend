@@ -39,11 +39,12 @@
         <!--TODO: The tooltip needs to be improved by using a method in the component-->
         <div style="flex: 0 0 auto;">
           <button color="primary" *ngFor="let button of actionButtons" mat-icon-button (click)="click(element, button)"
-                  matTooltip="{{button + ' instance'}}" matTooltipPosition="left">
+          matTooltip="{{ button === 'list_alt' ? 'show referrers' : button + ' instance' }}"
+          matTooltipPosition="left">
             <mat-icon>{{button}}</mat-icon>
           </button>
           <button color="primary"  mat-icon-button (click)="addBookmark(element)"
-                  matTooltip="Add Bookmark" matTooltipPosition="left">
+                  matTooltip="add bookmark" matTooltipPosition="left">
             <mat-icon>bookmark</mat-icon>
           </button>
         </div>
