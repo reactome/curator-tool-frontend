@@ -37,7 +37,7 @@
     <td class="column-right" style="align-items: flex-end; text-align: right" mat-cell *matCellDef="let element">
       <ng-container *ngIf="actionButtons.length > 0">
         <!--TODO: The tooltip needs to be improved by using a method in the component-->
-        <div style="flex: 0 0 auto;">
+        <div style="white-space: nowrap;">
           <button color="primary" *ngFor="let button of actionButtons" mat-icon-button (click)="click(element, button)"
           matTooltip="{{ button === 'list_alt' ? 'show referrers' : button + ' instance' }}"
           matTooltipPosition="left">
@@ -51,18 +51,6 @@
       </ng-container>
     </td>
   </ng-container>
-
-<!--  &lt;!&ndash; Bookmark Column &ndash;&gt;-->
-<!--  <ng-container matColumnDef="bookmark">-->
-<!--    <th mat-header-cell *matHeaderCellDef></th>-->
-<!--    <td class="column-right" mat-cell *matCellDef="let element">-->
-<!--      <button color="primary"  mat-icon-button (click)="addBookmark(element)"-->
-<!--              matTooltip="Add Bookmark" matTooltipPosition="left">-->
-<!--        <mat-icon>bookmark</mat-icon>-->
-<!--      </button>-->
-<!--    </td>-->
-<!--  </ng-container>-->
-
 
   <ng-container *ngIf="showHeader">
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
