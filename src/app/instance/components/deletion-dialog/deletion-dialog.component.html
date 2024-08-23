@@ -2,7 +2,7 @@
 <mat-dialog-content style="width: 100%;">
   <h4>Would you like to view referrers of {{instance.displayName}} before deleting?</h4>
   <div>
-    <button mat-button (click)="showReferrers()" cdkFocusInitial>{{ showReferrersDialog? "Hide Referrrs" : "Show Referrers"}}</button>
+    <button mat-button (click)="showReferrers()" cdkFocusInitial>{{ showReferrersDialog? "Hide Referrers" : "Show Referrers"}}</button>
 <!--    <button mat-button (click)="onCancel()">Close</button>-->
   </div>
   <ng-container *ngIf="showReferrersDialog">
