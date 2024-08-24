@@ -1,7 +1,8 @@
-import {HttpClient} from "@angular/common/http";
-import {Injectable} from '@angular/core';
-import {catchError, concatMap, forkJoin, map, Observable, of, switchMap, throwError} from 'rxjs';
-import {environment} from 'src/environments/environment.dev';
+import { HttpClient } from "@angular/common/http";
+import { Injectable } from '@angular/core';
+import { catchError, concatMap, from, map, Observable, of, Subject, switchMap, throwError, toArray } from 'rxjs';
+import { environment } from 'src/environments/environment.dev';
+import { Instance, InstanceList, Referrer } from "../models/reactome-instance.model";
 import {
   AttributeCategory,
   AttributeDataType,
@@ -9,7 +10,6 @@ import {
   SchemaAttribute,
   SchemaClass
 } from '../models/reactome-schema.model';
-import {Instance, InstanceList, Referrer} from "../models/reactome-instance.model";
 
 
 @Injectable({
@@ -53,6 +53,11 @@ export class DataService {
   private rootClass: SchemaClass | undefined;
   private rootEvent: Instance | undefined;
   private name2class?: Map<string, SchemaClass>;
+
+  // Use this subject to force the waiting for components to fetch instance
+  // since we need to load changed instances from cached storage first
+  private loadInstanceSubject : Subject<void> | undefined = undefined;
+
   public static newDisplayName: string = 'To be generated';
 
   constructor(private http: HttpClient) {
@@ -72,8 +77,7 @@ export class DataService {
     return this.http.get<SchemaClass>(this.schemaClassDataUrl + `${className}`)
       .pipe(
         map((data: any) => {
-          // console.log("fetchSchemaClass:");
-          // console.log(data);
+          console.debug("fetchSchemaClass: " + className);
           // convert data to schemaClass
           let schemaCls = this.convertToSchemaClass(className, data);
           this.name2SchemaClass.set(schemaCls.name, schemaCls);
@@ -285,6 +289,19 @@ export class DataService {
    * @param dbId
    */
   fetchInstance(dbId: number): Observable<Instance> {
+    // During the load changed instance. Have to wait until that loading is finished
+    // so that the changed instance is used instead the DB version.
+    if (this.loadInstanceSubject) {
+      return this.loadInstanceSubject.pipe(concatMap(() => {
+        return this._fetchInstance(dbId);
+      }));
+    }
+    else {
+      return this._fetchInstance(dbId);
+    }
+  }
+
+  _fetchInstance(dbId: number): Observable<Instance> {
     // Check cached results first
     if (this.id2instance.has(dbId)) {
       console.log('instance', this.id2instance.get(dbId)!)
@@ -522,6 +539,18 @@ export class DataService {
         }));
   }
 
+  startLoadInstances() {
+    this.loadInstanceSubject = new Subject<void>();
+  }
+
+  getLoadInstanceSubject() {
+    return this.loadInstanceSubject;
+  }
+
+  stopLoadInstance() {
+    this.loadInstanceSubject = undefined;
+  }
+
   /**
    * Load the persistence instances for a user
    * @param userName
@@ -531,14 +560,15 @@ export class DataService {
     return this.http.get<Instance[]>(this.loadInstancesUrl + userName)
       .pipe(
         switchMap((data: Instance[]) => {
-          return forkJoin(
-            data.map(inst => {
+          return from(data).pipe(
+            concatMap((inst: Instance) => {
               this.handleInstanceAttributes(inst);
               this.id2instance.set(inst.dbId, inst);
-              return this.handleSchemaClassForInstance(inst).pipe(
-                map((inst) => inst)
-              );
-            })
+              return this.handleSchemaClassForInstance(inst);
+            }),
+            // Don't use forkJoin. Use this toArray to aggregate everything together.
+            // forkJoin will create a new thread in memory and cannot use cache correctly.
+            toArray<Instance>()
           );
         }),
         catchError((err: Error) => {

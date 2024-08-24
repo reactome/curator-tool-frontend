@@ -1,8 +1,8 @@
-import {Component, Input} from '@angular/core';
+import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { DataService } from './core/services/data.service';
 import { Store } from '@ngrx/store';
 import { InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
+import { DataService } from './core/services/data.service';
 
 @Component({
   selector: 'app-root',
@@ -29,6 +29,7 @@ export class AppComponent {
     // Before we do anything, load the persisted instances if any
     console.debug('App loading instances from server...');
     // TODO: Make sure this is updated during deployment
+    this.dataService.startLoadInstances();
     this.dataService.loadInstances('test').subscribe((instances) => {
       // console.debug(instances);
       for (let inst of instances) {
@@ -37,6 +38,9 @@ export class AppComponent {
         else
           this.store.dispatch(InstanceActions.register_updated_instance(inst));
       }
+      this.dataService.getLoadInstanceSubject()!.next();
+      this.dataService.getLoadInstanceSubject()!.complete();
+      this.dataService.stopLoadInstance();
     });
   }
 

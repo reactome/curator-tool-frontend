@@ -21,7 +21,6 @@ export class InstanceViewComponent implements OnInit {
   // Used to force the update of table content
   @ViewChild(InstanceTableComponent) instanceTable!: InstanceTableComponent;
   viewHistory: Instance[] = [];
-  dbIds: any = [];
   // instance to be displayed
   instance: Instance | undefined;
   // Control if the instance is loading
@@ -89,13 +88,24 @@ export class InstanceViewComponent implements OnInit {
       this.showProgressSpinner = true;
       this.dataService.fetchInstance(dbId).subscribe((instance) => {
         this.instance = instance;
-        if (this.instance.dbId !== 0 && !this.dbIds.includes(this.instance.dbId))
-          this.viewHistory.push(this.instance);
-        this.dbIds.push(this.instance.dbId)
+        this.addToViewHistory(instance);
         this.showProgressSpinner = false;
         this.updateTitle(instance);
       })
     });
+  }
+
+  addToViewHistory(instance: Instance) {
+    if (instance === undefined || instance.dbId === 0)
+      return;
+    // Check if the passed instances has been added already
+    // Note: The instance may be reloaded. Therefore, we need to check
+    // dbId here
+    for (let tmp of this.viewHistory) {
+      if (tmp.dbId === instance.dbId)
+        return; // Nothing to do
+    }
+    this.viewHistory.push(instance);
   }
 
   updateTitle(instance: Instance) {
@@ -103,6 +113,16 @@ export class InstanceViewComponent implements OnInit {
       this.title = instance.schemaClass?.name + ": " + instance.displayName + "[" + instance.dbId + "]"
     else
       this.title = ""
+  }
+
+  isChanged() {
+    // New instance
+    if ((this.instance?.dbId ?? -1) < 0)
+      return true;
+    // updated instance
+    if ((this.instance?.modifiedAttributes?.length ?? 0) > 0)
+      return true;
+    return false;
   }
 
   changeTable(instance: Instance) {
