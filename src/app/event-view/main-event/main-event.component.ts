@@ -6,6 +6,7 @@ import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-d
 import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
 import { ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 import { EventTreeComponent } from '../components/event-tree/event-tree.component';
+import { EventFilterComponent } from '../components/event-filter/event_filter.component';
 
 @Component({
   selector: 'app-main-schema-view-event-view',
@@ -95,6 +96,14 @@ export class MainEventComponent {
 
   handleEventClicked(dbId: any) {
     this.diagramView?.selectObjectsInDiagram(dbId);
+  }
+
+  handleSpeciesSelection(species: string) {
+    this.eventTree?.selectSpecies(species);
+  }
+
+  handleEventFilterTextChanged(text: string) {
+    this.eventTree?.filterEvents(text);
   }
 
   /**

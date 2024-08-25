@@ -22,7 +22,9 @@ interface EventNode {
   hasDiagram: boolean,
   rootNode: boolean,
   parent: EventNode | undefined,
-  children: EventNode[] | undefined
+  children: EventNode[] | undefined,
+  species: string | undefined,
+  hide: boolean
 }
 
 @Component({
@@ -42,6 +44,10 @@ export class EventTreeComponent {
   // A flag to avoid selection conflict
   selectionFromTree: boolean = false;
 
+  // Track the current selected species
+  private selectedSpecies: string = 'All'; // This is the default
+  private filteredText: string = '';
+
   showProgressSpinner: boolean = true;
 
   private _transformer = (node: Instance, level: number) => {
@@ -59,7 +65,9 @@ export class EventTreeComponent {
       hasDiagram: node.attributes?.['hasDiagram'] ?? false,
       rootNode: node.displayName === "TopLevelPathway" ? true : false,
       parent: undefined,
-      children: undefined
+      children: undefined,
+      species: node.attributes?.['speciesName'] ?? undefined,
+      hide: false
     };
   };
 
@@ -317,6 +325,47 @@ export class EventTreeComponent {
     path.push(node);
     if (node.parent)
       this._getTreePath(node.parent, dataNodes, path);
+  }
+
+  selectSpecies(species: string) {
+    if (this.selectedSpecies === species)
+      return;
+    this.selectedSpecies = species;
+    this.updateTreeView();
+  }
+
+  filterEvents(text: string) {
+    const query = text;
+    if (this.filteredText === query)
+      return; // Do nothing
+    this.filteredText = query;
+    this.updateTreeView();
+  }
+
+  private updateTreeView() {
+    if (this.treeControl === undefined || this.treeControl.dataNodes === undefined)
+      return;
+    for (let node of this.treeControl.dataNodes) {
+      node.hide = this.isNodeHidden(node);
+    }
+    // We want to make sure all parent nodes are displayed
+    for (let node of this.treeControl.dataNodes) {
+      if (!node.hide) {
+        const treePath = this.getTreePath(node);
+        if (treePath === undefined)
+          continue;
+        treePath.forEach(n => n.hide = false);
+      }
+    }
+  }
+
+  private isNodeHidden(node: EventNode) {
+    if (this.selectedSpecies !== 'All' && this.selectedSpecies !== node.species) {
+      return true;
+    }
+    if (this.filteredText !== '' && !node.name.includes(this.filteredText))
+      return true;
+    return false;
   }
 
 }

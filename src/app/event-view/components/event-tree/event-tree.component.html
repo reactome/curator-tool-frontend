@@ -23,7 +23,7 @@ cdkDropListSortingDisabled
   <!-- This is the tree node template for leaf nodes -->
   <mat-tree-node *matTreeNodeDef="let node;" matTreeNodePadding matTreeNodeToggle
     matTreeNodePaddingIndent="15"
-                 [ngClass] = "node.inFocus === true ? 'inFocus' : ''">
+                 [ngClass] = "node.inFocus === true ? 'inFocus' : ''" [ngStyle]="{ 'display': node.hide ? 'none' : 'flex'}">
     <!-- use a disabled button to provide padding for table leaf -->
      <!--Don't enable DnD. -->
     <!-- <div class="event_tree_node" cdkDrag [cdkDragData]="node"> -->
@@ -37,14 +37,14 @@ cdkDropListSortingDisabled
   <!-- This is the tree node template for expandable nodes -->
   <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding
     matTreeNodePaddingIndent="15"
-                 [ngClass] = "node.inFocus === true ? 'inFocus' : ''">
+                 [ngClass] = "node.inFocus === true ? 'inFocus' : ''" [ngStyle]="{ 'display': node.hide ? 'none' : 'flex' }">
     <button mat-icon-button matTreeNodeToggle>
       <mat-icon class="mat-icon-rtl-mirror">
         {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
       </mat-icon>
     </button>
     <div class="event_tree_node">
-      <ng-container *ngTemplateOutlet="leafNodeTemplate; context: {$implicit: node}"></ng-container>
+      <ng-container *ngTemplateOutlet="leafNodeTemplate; context: {$implicit: node}" ></ng-container>
     </div>
   </mat-tree-node>
 </mat-tree>

@@ -15,6 +15,7 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-diagram.component';
 import { InstanceModule } from 'src/app/instance/instance.module';
 import { SharedModule } from 'src/app/shared/shared.module';
+import { EventFilterComponent } from "../components/event-filter/event_filter.component";
 
 @NgModule({
   declarations: [
@@ -39,7 +40,8 @@ import { SharedModule } from 'src/app/shared/shared.module';
     MatGridListModule,
     PathwayDiagramComponent,
     InstanceModule,
-    SharedModule
+    SharedModule,
+    EventFilterComponent
 ]
 })
 export class MainEventModule { }

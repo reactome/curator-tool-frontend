@@ -1,13 +1,11 @@
 <div #container>
   <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh">
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true" [style.width]="sideWidth + 'px'">
-      <!-- <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)"
-                           [showUpdatedList]="showInstanceList"
-                           (addEventToDiagram)="addEventToDiagram($event)"
-                           (eventClicked)="handleEventClicked($event)" #eventSide>
-      </app-side-navigation> -->
       <mat-tab-group>
         <mat-tab label="Event">
+          <!--Technically it would be nicer to create a new component having both filter and tree. Put it here since the main event view
+          is not that complicated now. -->
+          <event-filter (speciesChanged)="handleSpeciesSelection($event)" (filterTextChanged)="handleEventFilterTextChanged($event)"></event-filter>
           <app-event-tree (addToDiagram)="addEventToDiagram($event)" (eventClicked)="handleEventClicked($event)" #eventTree></app-event-tree>
         </mat-tab>
         <mat-tab label="Changes">

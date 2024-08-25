@@ -1,0 +1,14 @@
+<div>
+  <mat-form-field style="float:left; width: 40%" class="event-filter">
+    <mat-label>species</mat-label>
+    <mat-select [(value)]="selected" class="event-filter" (selectionChange)="onSpeciesSelectionChange($event)">
+      <mat-option *ngFor="let s of species" [value]="s" class="filter-option">{{ s }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field style="float:left; width: 60%" class="event-filter">
+    <mat-label>filter</mat-label>
+    <input matInput #input
+    (keydown.enter)="handleFilterEvent(input.value.trim())"
+    matTooltip="Use text to filter for name and number for dbId">
+  </mat-form-field>
+</div>
