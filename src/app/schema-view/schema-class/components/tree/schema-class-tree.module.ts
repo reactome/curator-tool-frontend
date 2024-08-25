@@ -6,8 +6,6 @@ import {CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport} fr
 import {SharedModule} from "../../../../shared/shared.module";
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {RouterLink} from "@angular/router";
-import {FilterEventsComponent} from "../../../../event/components/filter_events/filter_events.component";
-
 
 
 @NgModule({
@@ -21,8 +19,7 @@ import {FilterEventsComponent} from "../../../../event/components/filter_events/
         CdkVirtualForOf,
         SharedModule,
         MatTooltipModule,
-        RouterLink,
-        FilterEventsComponent
+        RouterLink
     ],
   exports: [MaterialModule, SchemaClassTreeComponent]
 })

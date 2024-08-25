@@ -304,7 +304,6 @@ export class DataService {
   _fetchInstance(dbId: number): Observable<Instance> {
     // Check cached results first
     if (this.id2instance.has(dbId)) {
-      console.log('instance', this.id2instance.get(dbId)!)
       return of(this.id2instance.get(dbId)!);
     }
     return this.fetchInstanceFromDatabase(dbId, true);

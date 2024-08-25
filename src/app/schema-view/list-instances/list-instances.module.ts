@@ -9,7 +9,6 @@ import { SelectInstanceDialogComponent } from "./components/select-instance-dial
 import { SelectedInstancesTableComponent } from './components/select-instance-dialog/selected-instances-table/selected-instances-table.component';
 import { MatTooltipModule } from "@angular/material/tooltip";
 import { InstanceListTableComponent } from './components/list-instances-view/table/instance-list-table/instance-list-table.component';
-import { FilterEventsComponent } from "../../event/components/filter_events/filter_events.component";
 import { StoreModule } from '@ngrx/store';
 import { NEW_INSTANCES_STATE_NAME } from 'src/app/instance/state/instance.selectors';
 import { newInstancesReducer } from 'src/app/instance/state/instance.reducers';
@@ -33,7 +32,6 @@ import { newInstancesReducer } from 'src/app/instance/state/instance.reducers';
     ListInstancesRoutingModule,
     MaterialModule,
     MatTooltipModule,
-    FilterEventsComponent,
     SharedModule,
     // Import this to avoid an error when reload schema_view/list_instance.
     StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer)

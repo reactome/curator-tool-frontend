@@ -23,9 +23,7 @@ export class MainEventComponent {
   @ViewChild('eventSide') eventSide: EventSideNavigationComponent | undefined;
   @ViewChild('diagramView') diagramView: PathwayDiagramComponent | undefined;
   @ViewChild('instanceView') instanceView: InstanceViewComponent | undefined;
-  // A flag to avoid show empty instance view
-  showInstanceView: boolean = true; // Have to set the default to true. Otherwise, it is not there to load.
-
+  
   // Track diagram selection ids to avoid unncessary update
   private selectedIdsInDiagram: number[] = [];
 
@@ -133,7 +131,6 @@ export class MainEventComponent {
   handleDiagramIdChange(id: number) {
     setTimeout(() => {
       id = Number(id); // Just in case
-      this.showInstanceView = (id !== undefined && id !== 0);
       if (id && id !== 0)
         this.instanceView?.loadInstance(id);
     });

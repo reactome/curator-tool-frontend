@@ -87,7 +87,7 @@ export class EventTreeComponent {
     this.route.params.pipe(take(1)).subscribe(params => {
       console.debug('handling route param in event tree: ', params);
       // We call this only once. Therefore, always need to load the tree
-      service.fetchEventTree(false, 'Homo sapiens').subscribe(data => {
+      service.fetchEventTree(false, 'all').subscribe(data => {
         this.dataSource.data = [data];
         this.showProgressSpinner = false;
         // Expand the root note and tag it as rootNode - so that it can be hidden in html
@@ -97,7 +97,12 @@ export class EventTreeComponent {
         this.cacheTreePaths();
         const diagramPathwayId = Number(params['id']);
         const select = Number(this.route.snapshot.queryParams['select']);
-        this.selectNodes(select ? select : diagramPathwayId, diagramPathwayId);
+        const matchedNodes = this.selectNodes(select ? select : diagramPathwayId, diagramPathwayId);
+        // If there is no diagram for the dbId, we need to re-route to load the diagram
+        if (matchedNodes && matchedNodes.length > 0) {
+          // Let's just used the first node right now
+          this.navigateToEventNode(matchedNodes[0]);
+        }
       });
     });
   }
@@ -127,11 +132,11 @@ export class EventTreeComponent {
   // Highlight in the event tree the node corresponding to the event selected by the user within the plot
   // (and remove highlighting from all the other nodes); also - expand the parent node of the selected one -
   // in order to bring the selected one into view.
-  private selectNodes(selectedDbId: number, diagramDbId: number) {
+  private selectNodes(selectedDbId: number, diagramDbId: number): EventNode[] | undefined {
     if (this.treeControl === undefined || this.treeControl.dataNodes === undefined)
-      return;
+      return undefined;
     if (selectedDbId === undefined || diagramDbId === undefined)
-      return; // Nothing needs to be done
+      return undefined; // Nothing needs to be done
     let matchedNodes = [];
     for (let index = 0; index < this.treeControl.dataNodes.length; index ++) {
       let node = this.treeControl.dataNodes[index];
@@ -141,7 +146,7 @@ export class EventTreeComponent {
     }
     // Open the path to this node
     if (matchedNodes.length === 0)
-      return;
+      return undefined;
     let matchedPath = undefined;
     for (let node of matchedNodes) {
       // There should be only one path for one node
@@ -172,6 +177,7 @@ export class EventTreeComponent {
           this.diagramNodePath.push(node);
       }
     }
+    return matchedNodes;
     // There should be no use case for the following code. The selection synchronization between
     // the diagram selection and the tree selection is handled by selectNodesForDiagram(), which
     // handle scroll. 
@@ -241,6 +247,12 @@ export class EventTreeComponent {
   }
 
   handleEventClick(event: EventNode) {
+    this.navigateToEventNode(event);
+    this.highlightNodes([event]);
+    this.eventClicked.emit(event.dbId);
+  }
+
+  private navigateToEventNode(event: EventNode) {
     const diagramNode = this.findAncestorDiagramNode(event);
     if (diagramNode) {
       this.diagramNodePath = this.getTreePath(diagramNode);
@@ -256,8 +268,6 @@ export class EventTreeComponent {
     else {
       console.error('Cannot find a higher level pathway having diagram for ' + event.name);
     }
-    this.highlightNodes([event]);
-    this.eventClicked.emit(event.dbId);
   }
 
   //TODO: Use Deidre's new search interface

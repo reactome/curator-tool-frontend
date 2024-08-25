@@ -7,7 +7,7 @@ import {SharedModule} from "../../../shared/shared.module";
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {RouterLink} from "@angular/router";
 import {ReleaseFlagComponent} from "./release-flag-icon/release-flag-icon.component";
-import {FilterEventsComponent} from "../../../event/components/filter_events/filter_events.component";
+import {FilterEventsComponent} from "../filter_events/filter_events.component";
 import { ClassNameIconComponent } from './class-name-icon/class-name-icon.component';
 
 @NgModule({

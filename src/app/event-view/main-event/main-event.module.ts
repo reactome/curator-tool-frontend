@@ -12,7 +12,6 @@ import { StatusComponent } from "../../status/status.component";
 import { CdkAccordionModule } from "@angular/cdk/accordion";
 import { InstanceBookmarkModule } from "../../schema-view/instance-bookmark/instance-bookmark.module";
 import { MainEventRoutingModule } from "./main-event-routing.module";
-import { GraphicDisplayModule } from "../graphic-display/graphic-display.module";
 import { MatGridListModule } from '@angular/material/grid-list';
 import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-diagram.component';
 import { InstanceModule } from 'src/app/instance/instance.module';
@@ -40,7 +39,6 @@ import { SharedModule } from 'src/app/shared/shared.module';
     InstanceBookmarkModule,
     CdkDragHandle,
     MainEventRoutingModule,
-    GraphicDisplayModule,
     MatGridListModule,
     PathwayDiagramComponent,
     InstanceModule,
