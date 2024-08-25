@@ -5,7 +5,7 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-diagram.component';
 import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
 import { ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
-import { EventSideNavigationComponent } from './components/side-navigation/side-navigation.component';
+import { EventTreeComponent } from '../components/event-tree/event-tree.component';
 
 @Component({
   selector: 'app-main-schema-view-event-view',
@@ -20,9 +20,9 @@ export class MainEventComponent {
   status = {closed: true, opened: false, dragging: false};
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
-  @ViewChild('eventSide') eventSide: EventSideNavigationComponent | undefined;
   @ViewChild('diagramView') diagramView: PathwayDiagramComponent | undefined;
   @ViewChild('instanceView') instanceView: InstanceViewComponent | undefined;
+  @ViewChild('eventTree') eventTree: EventTreeComponent | undefined;
   
   // Track diagram selection ids to avoid unncessary update
   private selectedIdsInDiagram: number[] = [];
@@ -121,7 +121,7 @@ export class MainEventComponent {
       return; // They are the same
     this.selectedIdsInDiagram = reactomeIds;
     this.instanceView?.loadInstance(reactomeIds[0]);
-    this.eventSide?.eventTree?.selectNodesForDiagram(reactomeIds[0]);
+    this.eventTree?.selectNodesForDiagram(reactomeIds[0]);
   }
 
   /**

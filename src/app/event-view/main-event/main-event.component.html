@@ -1,11 +1,19 @@
 <div #container>
   <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh">
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true" [style.width]="sideWidth + 'px'">
-      <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)"
+      <!-- <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)"
                            [showUpdatedList]="showInstanceList"
                            (addEventToDiagram)="addEventToDiagram($event)"
                            (eventClicked)="handleEventClicked($event)" #eventSide>
-      </app-side-navigation>
+      </app-side-navigation> -->
+      <mat-tab-group>
+        <mat-tab label="Event">
+          <app-event-tree (addToDiagram)="addEventToDiagram($event)" (eventClicked)="handleEventClicked($event)" #eventTree></app-event-tree>
+        </mat-tab>
+        <mat-tab label="Changes">
+          <app-updated-instance-list></app-updated-instance-list>
+        </mat-tab>
+      </mat-tab-group>
       <div class="resize-container" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
            (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
         <div class="resize-bar"></div>

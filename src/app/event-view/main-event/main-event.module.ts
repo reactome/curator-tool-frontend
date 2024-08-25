@@ -4,9 +4,8 @@ import { MainEventComponent } from './main-event.component';
 import { CdkDrag, CdkDragHandle } from "@angular/cdk/drag-drop";
 import { MatSidenavModule } from "@angular/material/sidenav";
 import { MatToolbarModule } from "@angular/material/toolbar";
-import { EventTreeModule } from "../components/tree/event-tree.module";
+import { EventTreeModule } from "../components/event-tree/event-tree.module";
 import { RouterOutlet } from "@angular/router";
-import { EventSideNavigationComponent } from './components/side-navigation/side-navigation.component';
 import { UpdatedInstanceListComponent } from "../../status/components/updated-instance-list/updated-instance-list.component";
 import { StatusComponent } from "../../status/status.component";
 import { CdkAccordionModule } from "@angular/cdk/accordion";
@@ -20,11 +19,9 @@ import { SharedModule } from 'src/app/shared/shared.module';
 @NgModule({
   declarations: [
     MainEventComponent,
-    EventSideNavigationComponent
   ],
   exports: [
     MainEventComponent,
-    EventSideNavigationComponent
   ],
   imports: [
     CommonModule,
