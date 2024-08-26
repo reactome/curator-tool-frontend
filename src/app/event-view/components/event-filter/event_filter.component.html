@@ -7,8 +7,10 @@
   </mat-form-field>
   <mat-form-field style="float:left; width: 60%" class="event-filter">
     <mat-label>filter</mat-label>
+    <!-- Don't trim the text. We may need to use pre and post space to narrow down filter
+     e.g. for EGFR only, to avoid include VEFGR3 etc. -->
     <input matInput #input
-    (keydown.enter)="handleFilterEvent(input.value.trim())"
+    (keydown.enter)="handleFilterEvent(input.value)"
     matTooltip="Use text to filter for name and number for dbId">
   </mat-form-field>
 </div>

@@ -347,14 +347,23 @@ export class EventTreeComponent {
       return;
     for (let node of this.treeControl.dataNodes) {
       node.hide = this.isNodeHidden(node);
+      // highlight nodes for text
+      if (this.filteredText.length > 0)
+        node.hilite = !node.hide; // Make sure to highlight nodes that are matched.
     }
     // We want to make sure all parent nodes are displayed
+    // Otherwise, intermediate and leaf nodes will not be displayed.
     for (let node of this.treeControl.dataNodes) {
       if (!node.hide) {
         const treePath = this.getTreePath(node);
         if (treePath === undefined)
           continue;
-        treePath.forEach(n => n.hide = false);
+        treePath.forEach(n => {
+          n.hide = false;
+          // Only expand for text
+          if (this.filteredText.length > 0)
+            this.treeControl.expand(n);
+        });
       }
     }
   }
@@ -363,8 +372,17 @@ export class EventTreeComponent {
     if (this.selectedSpecies !== 'All' && this.selectedSpecies !== node.species) {
       return true;
     }
-    if (this.filteredText !== '' && !node.name.includes(this.filteredText))
+    if (this.filteredText !== '') {
+      // Check if the text if an integer
+      if (/^\d+$/.test(this.filteredText.trim())) {
+        if (node.dbId === parseInt(this.filteredText.trim()))
+          return false;
+      }
+      else if (node.name.includes(this.filteredText))
+        return false;
       return true;
+    }
+    // Default should be displayed
     return false;
   }
 
