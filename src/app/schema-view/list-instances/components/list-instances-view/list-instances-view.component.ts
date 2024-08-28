@@ -47,7 +47,7 @@ export class ListInstancesViewComponent implements AfterViewInit {
     let isChangedChanged = this.instanceList.className !== params['className'];
     this.instanceList.className = params['className'];
     if (queryParams['attributes'] && queryParams['operands'] && queryParams['searchKeys']) { // This is for search
-      // Need to get attribuates
+      // Need to get attributes
       let attributes = queryParams['attributes'].split(',');
       let operands = queryParams['operands'].split(',');
       let searchKeys = queryParams['searchKeys'].split(',');

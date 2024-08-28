@@ -13,11 +13,11 @@ const routes: Routes = [
     path: `:className/:skip/:limit`,
     component: ListInstancesViewComponent,
   },
-  // {
-  //   path: `:className/:attributes/:operands/:searchKey`,
-  //   component: ListInstancesViewComponent,
-  //   title: 'FilterSearch',
-  // }
+  {
+    path: `:className/:attributes/:operands/:searchKey`,
+    component: ListInstancesViewComponent,
+    title: 'FilterSearch',
+  }
 ]
 
 @NgModule({

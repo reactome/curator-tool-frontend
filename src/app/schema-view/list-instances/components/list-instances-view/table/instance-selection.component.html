@@ -5,13 +5,6 @@
     #input [(ngModel)]="searchKey">
     <mat-icon class="advanced_search" matTooltip="Advanced Search" (click)="showFilter()" matSuffix>manage_search</mat-icon>
   </mat-form-field>
-
-<!--  <mat-form-field *ngIf="showFilterComponent" style="float:left; width: 100%">-->
-<!--    <mat-label>Search</mat-label>-->
-<!--    <input matInput (keydown.enter)="advancedSearch()"-->
-<!--           #input [(ngModel)]="advancedSearchKey">-->
-<!--    <mat-icon class="advanced_search" matTooltip="Advanced Search" (click)="showFilter()" matSuffix>manage_search</mat-icon>-->
-<!--  </mat-form-field>-->
 </div>
 
 <search-filter *ngIf="showFilterComponent" style="float: right; width: 100%"

@@ -203,6 +203,7 @@ export class InstanceSelectionComponent implements OnInit {
     let attributes = [];
     let operands = [];
     let searchKeys = [];
+    let url = '/schema_view/list_instances/' + this.className;
     for(let query of fullQuery) {
       console.log(query);
       let attributeName = query.split("(")[1].split("[")[0];
@@ -212,7 +213,16 @@ export class InstanceSelectionComponent implements OnInit {
       let searchKey = query.split(" ")[1].split("]")[0];
       console.log(attributeName, operand, searchKey);
       searchKeys.push(searchKey);
+      //url += attributeName + operand + searchKey;
     }
+    if (this.useRoute) {
+      if (this.searchKey && this.searchKey.trim().length > 0) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
+        this.router.navigate([url],
+          {queryParams: {attributes: attributes, operands: operands, searchKeys: searchKeys}, queryParamsHandling: 'merge'});
+      else
+        this.router.navigate([url]);
+    } else
+      this.loadInstances();
     this.searchInstances(attributes, operands, searchKeys);
   }
 }

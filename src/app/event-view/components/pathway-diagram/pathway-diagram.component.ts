@@ -1,6 +1,6 @@
 /**
  * This component is a wrapper of cr-diagram to provide features for editing the pathway diagram that is displayed
- * in cytoscape. 
+ * in cytoscape.
  */
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, inject, ViewChild } from '@angular/core';
@@ -79,7 +79,7 @@ export class PathwayDiagramComponent implements AfterViewInit {
       // Reset the previous state
       // Technically this is not necessary. However, just need to clean-up
       // the original state before loading a new diagram.
-      this.diagram.resetState();
+      //this.diagram.resetState();
       // Check if we have cytoscape network. If yes, load it.
       this.diagramUtils.getDataService().hasCytoscapeNetwork(this.pathwayId).subscribe((exists: boolean) => {
         if (exists) {
@@ -122,7 +122,7 @@ export class PathwayDiagramComponent implements AfterViewInit {
   }
 
   /**
-   * Select objects in cytoscape.js based on the passed dbId. 
+   * Select objects in cytoscape.js based on the passed dbId.
    * Note: dbId may be a list of ids separated by ','.
    * @param dbId
    */
@@ -144,7 +144,7 @@ export class PathwayDiagramComponent implements AfterViewInit {
     // change the coordinates
     this.diagram.cy.nodes().grabify().panify();
 
-    // Have to add the following to zoom using mouse scroll. 
+    // Have to add the following to zoom using mouse scroll.
     this.diagram.cy.zoomingEnabled(true);
     this.diagram.cy.userZoomingEnabled(true);
     this.diagram.cy.panningEnabled(true);
@@ -185,7 +185,7 @@ export class PathwayDiagramComponent implements AfterViewInit {
 
   private showCyPopup(event: any) { // Use any to avoid any compiling error
     this.elementUnderMouse = event.target;
-    if (this.elementUnderMouse === undefined || 
+    if (this.elementUnderMouse === undefined ||
         this.elementUnderMouse === this.diagram!.cy) { // Should check for instanceof. But not sure how!
       this.elementTypeForPopup = ElementType.CYTOSCAPE; // As the default
     }
@@ -282,7 +282,7 @@ export class PathwayDiagramComponent implements AfterViewInit {
     //   return;
     // }
     // Apparently we cannot use isNode or isEdge to check the detail's type.
-    // We have to use this way to check if a reaction or a node is used. 
+    // We have to use this way to check if a reaction or a node is used.
     let reactomeId = event.detail.reactomeId;
     let affectedElms = undefined;
     if (reactomeEvent.detail.type !== 'reaction') { // Check for node attachment only
