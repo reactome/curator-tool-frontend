@@ -37,7 +37,7 @@
 
 .mat-icon-button {
   flex-direction: row-reverse;
-  width: 36px; // This is important to show the icon
+  width: 28px; // This is important to show the icon
   height: 18px; // 2px is added
   display: flex;
   align-items: center;
@@ -102,6 +102,14 @@
 
 .event_text_has_no_diagram {
   font-weight: 400 !important; 
+}
+
+.event_text_focus {
+  background-color: rgb(135, 206, 250);
+}
+
+.event_text_no_focus {
+  background-color: inherit;
 }
 
 .spinner {
