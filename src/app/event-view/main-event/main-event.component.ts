@@ -96,6 +96,7 @@ export class MainEventComponent {
 
   handleEventClicked(dbId: any) {
     this.diagramView?.selectObjectsInDiagram(dbId);
+    this.instanceView?.loadInstance(dbId);
   }
 
   handleSpeciesSelection(species: string) {

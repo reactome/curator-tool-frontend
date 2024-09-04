@@ -24,7 +24,8 @@ interface EventNode {
   parent: EventNode | undefined,
   children: EventNode[] | undefined,
   species: string | undefined,
-  hide: boolean
+  hide: boolean,
+  focus: boolean
 }
 
 @Component({
@@ -67,7 +68,8 @@ export class EventTreeComponent {
       parent: undefined,
       children: undefined,
       species: node.attributes?.['speciesName'] ?? undefined,
-      hide: false
+      hide: false,
+      focus: false
     };
   };
 
@@ -292,6 +294,39 @@ export class EventTreeComponent {
     this.addToDiagram.emit(instance);
   }
 
+  focusOnEvent(node: EventNode) {
+    if (this.treeControl === undefined || this.treeControl.dataNodes === undefined)
+      return;
+    if (node.focus) { // Unfocus
+      for (let node of this.treeControl.dataNodes) {
+        node.hide = false;
+        node.focus = false;
+      }
+    }
+    else { // Doing focus
+      // Get the nodes that should be shown
+      const toBeShown = new Set<EventNode>();
+      const treePath = this.getTreePath(node);
+      treePath?.forEach(n => toBeShown.add(n));
+      // Get the children
+      this.grepDescendenants(node, toBeShown);
+      for (let node of this.treeControl.dataNodes) {
+        node.hide = !toBeShown.has(node);
+        node.focus = false;
+      }
+      node.focus = true;
+    }
+  }
+
+  grepDescendenants(node: EventNode, descendants: Set<EventNode>) {
+    descendants.add(node);
+    if (node.children === undefined)
+      return;
+    for (let child of node.children) {
+      this.grepDescendenants(child, descendants);
+    }
+  }
+
   /**
    * This method is used to find a tree node that has diagram.
    * @param TreeNode
@@ -350,6 +385,8 @@ export class EventTreeComponent {
       // highlight nodes for text
       if (this.filteredText.length > 0)
         node.hilite = !node.hide; // Make sure to highlight nodes that are matched.
+      else if (!node.hide)
+        node.hilite = false; // There should
     }
     // We want to make sure all parent nodes are displayed
     // Otherwise, intermediate and leaf nodes will not be displayed.

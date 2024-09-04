@@ -52,15 +52,21 @@ cdkDropListSortingDisabled
 <ng-template #leafNodeTemplate let-node>
   <!-- This is used as a space filler to push the other controls to the right to have a tree-like structure. -->
   <button mat-icon-button disabled *ngIf="!treeControl.isExpandable(node)"></button>
-  <button color="primary" class="mat-icon-button v-center" style="width: 18;"
+  <button color="primary" class="mat-icon-button v-center" style="width: 10;"
+    matTooltip="Click to focus/unfocus" [matTooltipShowDelay]="1000" (click)="focusOnEvent(node)">
+    <mat-icon>center_focus_strong</mat-icon>
+  </button>
+  <button color="primary" class="mat-icon-button v-center" style="width: 10;"
   matTooltip="Click to add this event to diagram" [matTooltipShowDelay]="1000" (click)="addToDiagramAction(node)">
     <mat-icon>new_label</mat-icon>
   </button>
   <release-flag-icon [doRelease]="node.doRelease"></release-flag-icon>
   <class-name-icon [className]="node.className"></class-name-icon>
   <button mat-button 
-  [ngClass]="[node.hilite === true ? 'event_text_hilite' : 
-  'event_text_non_hilite', 'event_text', (node.hasDiagram ? 'event_text_has_diagram' : 'event_text_has_no_diagram')]"
+  [ngClass]="[(node.hilite === true ? 'event_text_hilite' : 'event_text_non_hilite'), 
+              'event_text', 
+              (node.hasDiagram ? 'event_text_has_diagram' : 'event_text_has_no_diagram'),
+              (node.focus ? 'event_text_focus' : 'event_text_no_focus')]"
           [hidden]="node.name === 'TopLevelPathway'"
           (click)="handleEventClick(node)" cdkFocusInitial>{{node.name}}</button>
 </ng-template>
