@@ -15,8 +15,10 @@ import { EventFilterComponent } from '../components/event-filter/event_filter.co
 })
 export class MainEventComponent {
   sideWidth = 400;
+  tableHeight = 500;
   schemaPanelOpen = false;
-  resizing: boolean = false;
+  resizingVertical: boolean = false;
+  resizingHorizontal: boolean = false;
   showInstanceList: number = 0;
   status = {closed: true, opened: false, dragging: false};
 
@@ -24,7 +26,7 @@ export class MainEventComponent {
   @ViewChild('diagramView') diagramView: PathwayDiagramComponent | undefined;
   @ViewChild('instanceView') instanceView: InstanceViewComponent | undefined;
   @ViewChild('eventTree') eventTree: EventTreeComponent | undefined;
-  
+
   // Track diagram selection ids to avoid unncessary update
   private selectedIdsInDiagram: number[] = [];
 
@@ -41,7 +43,7 @@ export class MainEventComponent {
       this.handleDiagramIdChange(id);
     });
   }
-  
+
   openSidenav() {
     this.sidenav?.open();
   }
@@ -52,6 +54,11 @@ export class MainEventComponent {
 
   resizeLeft(e: CdkDragMove) {
     this.sideWidth = e.pointerPosition.x
+  }
+
+
+  resizeDown(e: CdkDragMove) {
+    this.tableHeight = e.pointerPosition.y
   }
 
   showUpdatedInstances(showList: boolean) {
@@ -110,10 +117,10 @@ export class MainEventComponent {
   /**
    * This method is adopted from diagramSelect2state in diagram.component.ts in ngx-reactome-base.
    * @param event
-   * @returns 
+   * @returns
    */
-  //TODO: If nothing is selected, we need to make sure the pathway for the diagram 
-  // is shown in the instance view. 
+  //TODO: If nothing is selected, we need to make sure the pathway for the diagram
+  // is shown in the instance view.
   handleDiagramSelection(event: any) {
     if (event.type !== ReactomeEventTypes.select)
       return;
@@ -126,7 +133,7 @@ export class MainEventComponent {
       this.selectedIdsInDiagram = reactomeIds;
       return;
     }
-    if (reactomeIds.length === this.selectedIdsInDiagram.length && 
+    if (reactomeIds.length === this.selectedIdsInDiagram.length &&
         reactomeIds.every((value: number, index: number) => value === this.selectedIdsInDiagram[index]))
       return; // They are the same
     this.selectedIdsInDiagram = reactomeIds;
@@ -136,7 +143,7 @@ export class MainEventComponent {
 
   /**
    * Switch the instance view for the new id for the loading pathway diagram.
-   * @param id 
+   * @param id
    */
   handleDiagramIdChange(id: number) {
     setTimeout(() => {
@@ -147,4 +154,5 @@ export class MainEventComponent {
 
   }
 
+  protected readonly window = window;
 }

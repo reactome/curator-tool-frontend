@@ -52,6 +52,8 @@ export class ListInstancesViewComponent implements AfterViewInit {
       let operands = queryParams['operands'].split(',');
       let searchKeys = queryParams['searchKeys'].split(',');
       this.instanceList.searchInstances(attributes, operands, searchKeys);
+      this.updateHeader(attributes);
+
     }
     else
       this.instanceList.loadInstances();

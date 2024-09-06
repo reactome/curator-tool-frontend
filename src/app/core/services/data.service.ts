@@ -45,7 +45,8 @@ export class DataService {
   private uploadCyNetworkUrl = `${environment.ApiRoot}/uploadCyNetwork/`;
   private hasCyNetworkUrl = `${environment.ApiRoot}/hasCyNetwork/`;
   private getCyNetworkUrl = `${environment.ApiRoot}/getCyNetwork/`;
-  
+  private deleteSimpleInstance = `${environment.ApiRoot}/delete/`;
+
 
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
@@ -636,7 +637,7 @@ export class DataService {
       })
     );
   }
-  
+
 
   getCytoscapeNetwork(pathwayId: any): Observable<any> {
     return this.http.get<any>(this.getCyNetworkUrl + pathwayId).pipe(
@@ -805,6 +806,24 @@ export class DataService {
             });
             return throwError(() => err);
           })));
+  }
+
+
+  /**
+   * Delete an instance in the database.
+   * @param instance
+   */
+  delete(instance: Instance): Observable<boolean> {
+    let instanceToBeDeleted = this.cloneInstanceForCommit(instance);
+    return this.http.post<boolean>(this.deleteSimpleInstance, instance).pipe(
+      catchError(error => {
+        console.log("An error is thrown during deleting: \n" + error.message, "Close", {
+          panelClass: ['warning-snackbar'],
+          duration: 10000
+        });
+        return throwError(() => error);
+      })
+    )
   }
 
 }
