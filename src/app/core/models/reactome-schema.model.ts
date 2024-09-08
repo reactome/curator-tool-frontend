@@ -53,3 +53,14 @@ export enum AttributeDataType {
   INSTANCE
 }
 
+// To check reaction: A lazy way to list all reactions so that
+// there is no need to fetch the reaction hierarchical branch.
+export const REACTION_TYPES = [
+      'BlackBoxEvent',
+      'CellDevelopmentStep',
+      'Depolymerisation',
+      'Polymerisation',
+      'FailedReaction',
+      'Reaction'
+];
+

@@ -7,6 +7,7 @@ import { Instance } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { HyperEdge } from "./hyperedge";
 import { InstanceConverter } from "./instance-converter";
+import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 
 @Injectable()
 export class PathwayDiagramUtilService {
@@ -15,16 +16,6 @@ export class PathwayDiagramUtilService {
     private id2hyperEdge : Map<number, HyperEdge> = new Map();
     // For resizing
     private readonly RESIZE_NODE_LOCATIONS: string[] = ['ne', 'nw', 'se', 'sw'];
-    // To check reaction: A lazy way to list all reactions so that
-    // there is no need to fetch the reaction hierarchical branch.
-    private readonly REACTION_TYPES = [
-        'BlackBoxEvent',
-        'CellDevelopmentStep',
-        'Depolymerisation',
-        'Polymerisation',
-        'FailedReaction',
-        'Reaction'
-    ];
     private converter = new InstanceConverter();
     
     constructor(private dataSerice: DataService) { }
@@ -90,11 +81,16 @@ export class PathwayDiagramUtilService {
     addNewEvent(event: Instance, cy: Core) {
         // For the time being, we will use this simple check only.
         // But the actual check should be based on schema class tree in the future
-        if (this.REACTION_TYPES.includes(event.schemaClassName)) {
+        if (REACTION_TYPES.includes(event.schemaClassName)) {
             // For threading issue, we have to do like this way instead of creating an HyperEdge directly by converter.
             const hyperEdge = new HyperEdge(this, cy, event.dbId);
             hyperEdge.createFromEvent(event, this.dataSerice, this.converter);
             this.id2hyperEdge.set(event.dbId, hyperEdge);
+        }
+        // Handle pathway
+        else {
+            // Add as a process node
+            console.debug("Add pathway node: ", event);
         }
     }
 

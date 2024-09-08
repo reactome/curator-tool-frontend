@@ -39,14 +39,15 @@
               <app-pathway-diagram #diagramView></app-pathway-diagram>
           </div>
         </div>
-        <div [style.height]="window.innerHeight - 40 - tableHeight + 'px'">
+        <!-- Need a better way, e.g., percentage, to set the height -->
+        <div [style.height]="window.innerHeight - 40 - diagramHeight + 'px'">
           <div class="resize-container-horizontal" (cdkDragMoved)="resizeDown($event)" cdkDrag cdkDragLockAxis="y"
                (cdkDragStarted)="resizingHorizontal = true" (cdkDragReleased)="resizingHorizontal = false"
                [class.resizing]="resizingHorizontal"
-               [style.bottom]="window.innerHeight - 40 - tableHeight + 1 + 'px'">
+               [style.bottom]="window.innerHeight - 40 - diagramHeight + 1 + 'px'">
             <div class="resize-bar"></div>
           </div>
-          <div class="instance-view-container">
+          <div class="instance-view-container" style="overflow: auto;">
             <app-instance-view #instanceView [needHistory]="false"></app-instance-view>
           </div>
         </div>
@@ -54,5 +55,6 @@
     </mat-sidenav-content>
 
   </mat-sidenav-container>
+  
   <app-status [sidePanelState]="showInstanceList" (showUpdatedEvent)="showUpdatedInstances($event)"></app-status>
 </div>

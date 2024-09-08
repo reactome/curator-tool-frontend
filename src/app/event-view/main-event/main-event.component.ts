@@ -15,7 +15,7 @@ import { EventFilterComponent } from '../components/event-filter/event_filter.co
 })
 export class MainEventComponent {
   sideWidth = 400;
-  tableHeight = 500;
+  diagramHeight = 850;
   schemaPanelOpen = false;
   resizingVertical: boolean = false;
   resizingHorizontal: boolean = false;
@@ -58,7 +58,7 @@ export class MainEventComponent {
 
 
   resizeDown(e: CdkDragMove) {
-    this.tableHeight = e.pointerPosition.y
+    this.diagramHeight = e.pointerPosition.y
   }
 
   showUpdatedInstances(showList: boolean) {

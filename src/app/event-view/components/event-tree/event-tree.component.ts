@@ -1,10 +1,13 @@
 import { FlatTreeControl } from "@angular/cdk/tree";
-import { ChangeDetectorRef, Component, EventEmitter, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, inject, Output } from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
 import { AttributeCondition, Instance } from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
 import { ActivatedRoute, Router } from "@angular/router";
 import { take } from "rxjs";
+import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
+import { MatDialog } from "@angular/material/dialog";
+import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 
 /** Tree node with expandable and level information */
 // TODO: 1). After the tree loaded, do a path to set up parent for each navigation; 
@@ -88,6 +91,9 @@ export class EventTreeComponent {
 
   dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
 
+  // To show information
+  readonly dialog = inject(MatDialog);
+
   constructor(
     private cdr: ChangeDetectorRef,
     private service: DataService,
@@ -108,11 +114,13 @@ export class EventTreeComponent {
         const diagramPathwayId = Number(params['id']);
         const select = Number(this.route.snapshot.queryParams['select']);
         const matchedNodes = this.selectNodes(select ? select : diagramPathwayId, diagramPathwayId);
-        // If there is no diagram for the dbId, we need to re-route to load the diagram
-        if (matchedNodes && matchedNodes.length > 0) {
-          // Let's just used the first node right now
-          this.navigateToEventNode(matchedNodes[0]);
-        }
+        // There is no need to call the following.
+        // The diagram should handle route itself.
+        // // If there is no diagram for the dbId, we need to re-route to load the diagram
+        // if (matchedNodes && matchedNodes.length > 0) {
+        //   // Let's just used the first node right now
+        //   this.navigateToEventNode(matchedNodes[0]);
+        // }
       });
     });
   }
@@ -148,30 +156,21 @@ export class EventTreeComponent {
     if (selectedDbId === undefined || diagramDbId === undefined)
       return undefined; // Nothing needs to be done
     let matchedNodes = [];
+    let matchedPath = undefined;
     for (let index = 0; index < this.treeControl.dataNodes.length; index ++) {
       let node = this.treeControl.dataNodes[index];
       if (node.dbId === selectedDbId) {
-        matchedNodes.push(node);
+        // Also check the diagramdbId
+        const treePath = this.getTreePath(node);
+        if (treePath && treePath.map(n => n.dbId).includes(diagramDbId)) {
+          matchedNodes.push(node);
+          matchedPath = treePath;
+        }
       }
     }
     // Open the path to this node
     if (matchedNodes.length === 0)
       return undefined;
-    let matchedPath = undefined;
-    for (let node of matchedNodes) {
-      // There should be only one path for one node
-      const path = this.getTreePath(node);
-      if (path === undefined)
-        continue;
-      const pathIds = path.map(n => n.dbId)
-      if (pathIds.includes(selectedDbId) && pathIds.includes(diagramDbId)) {
-        matchedPath = path;
-        // Expand the path
-        for (let node1 of path)
-          if (node1 !== node) // No need to open itself
-            this.treeControl.expand(node1);
-      }
-    }
     this.highlightNodes(matchedNodes);
     // Keep the diagram node path for highlight
     if (matchedPath) {
@@ -285,6 +284,21 @@ export class EventTreeComponent {
   }
 
   addToDiagramAction(node: EventNode) {
+    // Need to check if this node can be added to the displayed diagram
+    // This check is applied to reaction only
+    if (REACTION_TYPES.includes(node.className) && this.diagramNodePath) {
+      const diagramNode = this.diagramNodePath[0];
+      if (!this.isContainedBy(node, diagramNode)) {
+          // Need to show something here
+          this.dialog.open(InfoDialogComponent, {
+          data: {
+            title: 'Information',
+            message: 'This event cannot be added into the diagram: it is not contained by the pathway.'
+          }
+        });
+        return;
+      }
+    }
     // Wrap the needed informatio into an instance and then fire
     const instance : Instance = {
       dbId: node.dbId,
@@ -292,6 +306,14 @@ export class EventTreeComponent {
       schemaClassName: node.className
     }
     this.addToDiagram.emit(instance);
+  }
+
+  private isContainedBy(childNode: EventNode, diagramNode: EventNode) {
+    const treePath = this.getTreePath(childNode);
+    if (treePath === undefined)
+      return true;
+    // Since the event may be represented by multiple EventNode, we need to compare dbId
+    return treePath.map(n => n.dbId).includes(diagramNode.dbId);
   }
 
   focusOnEvent(node: EventNode) {
