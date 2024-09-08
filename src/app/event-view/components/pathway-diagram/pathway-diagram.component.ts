@@ -309,7 +309,7 @@ export class PathwayDiagramComponent implements AfterViewInit {
       this.dialog.open(InfoDialogComponent, {
         data: {
           title: 'Error',
-          message: 'This reaction is in the diagram already: ',
+          message: 'This event has been added in the diagram already: ',
           instanceInfo: event.displayName + '[' + event.dbId + ']'
         }
       });

@@ -32,6 +32,34 @@ export class InstanceConverter {
     constructor() { }
 
     /**
+     * Convert the pathway Instance into a node having process type.
+     * @param pathway 
+     * @param utils 
+     * @param cy 
+     */
+    convertPathwayToNode(pathway: Instance,
+        utils: PathwayDiagramUtilService,
+        cy: Core
+    ) {
+        const processNode = this.createNodeForInstance(pathway, cy, utils.diagramService!);
+        // Let put it at the center
+        let extent = cy.extent();
+        let centerX = (extent.x1 + extent.x2) / 2;
+        let centerY = (extent.y1 + extent.y2) / 2;
+        processNode.position({
+            x: centerX,
+            y: centerY
+        });
+        // Need to expand the node width
+        processNode.data('width', processNode.data('width') * 1.5);
+        processNode.data('height', processNode.data('height') * 1.5);
+        const collection = cy.collection([processNode]);
+        // De-select whatever
+        cy.$(':selected').unselect();
+        collection.select();
+    }
+
+    /**
      * Convert the instance, which should be a ReactionLikeEvent, into the passed HyperEdge.
      * @param hyperEdge 
      * @param instance 
@@ -155,8 +183,6 @@ export class InstanceConverter {
         if (outputHubNode !== undefined)
             newNodes.push(outputHubNode);
         const collection = cy.collection(newNodes);
-        // Need to set up the boundingBox to get a better layout
-        collection.layout({ name: 'cose', animate: false, boundingBox: { x1: 100, y1: 100, w: 300, h: 300 } }).run();
         // De-select whatever
         cy.$(':selected').unselect();
         collection.select();
@@ -201,7 +227,6 @@ export class InstanceConverter {
 
     // TODO: How to calculate the size of the node to wrap all text?
     private createPENode(pe: Instance, cy: Core, hyperedge: HyperEdge, service: DiagramService) {
-        const id = pe.dbId + '';
         // Check if this node has been created already
         // In the old pathway diagram, PE nodes have their own ids based on the order
         // To make it backward compatible, we do the search like this
@@ -213,15 +238,22 @@ export class InstanceConverter {
             return exitedNode[0];
         }
         // This is kind of arbitray
-        const node : NodeDefinition = {
+        const newNode = this.createNodeForInstance(pe, cy, service);
+        hyperedge.registerObject(newNode);
+        return newNode;
+    }
+
+    private createNodeForInstance(inst: Instance, cy: Core, service: DiagramService) {
+        const id = inst.dbId + '';
+        const node: NodeDefinition = {
             data: {
                 id: id,
-                reactomeId: pe.dbId,
-                displayName: pe.displayName, // Set the name temporarily
+                reactomeId: inst.dbId,
+                displayName: inst.displayName, // Set the name temporarily
                 width: this.DEFAULT_NODE_WIDTH, // both width and height will be updated.
                 height: 50,
                 graph: {
-                    stId: pe.dbId + '' // Use reactome id for the time being
+                    stId: inst.dbId + '' // Use reactome id for the time being
                 }
             },
             // Have to make a copy
@@ -232,16 +264,15 @@ export class InstanceConverter {
         };
         const newNode = cy.add(node)[0];
         const font = this.getFontStyle(newNode);
-        const {label, width, height} = this.getNodeLabelAndDimensions(pe, 
-                                                                      font, 
-                                                                      this.DEFAULT_NODE_WIDTH);
+        const { label, width, height } = this.getNodeLabelAndDimensions(inst,
+            font,
+            this.DEFAULT_NODE_WIDTH);
         newNode.data('width', width);
         newNode.data('height', height);
         newNode.data('displayName', label);
-        service.nodeTypeMap.get(this.getNodeType(pe)).forEach((cls: string) => newNode.addClass(cls));
-        if (pe.schemaClassName === "RNADrug")
+        service.nodeTypeMap.get(this.getNodeType(inst)).forEach((cls: string) => newNode.addClass(cls));
+        if (inst.schemaClassName === "RNADrug")
             newNode.addClass("drug");
-        hyperedge.registerObject(newNode);
         return newNode;
     }
 
@@ -261,10 +292,10 @@ export class InstanceConverter {
     /**
      * This is based on the Java version: For EWAS, the node type is determined by
      * its refType, which is provided by the server side code.
-     * @param pe 
+     * @param inst 
      */
-    private getNodeType(pe: Instance): string {
-        const schemaClass = pe.schemaClassName;
+    private getNodeType(inst: Instance): string {
+        const schemaClass = inst.schemaClassName;
         if (schemaClass === "SimpleEntity")
             return "Chemical";
         if (schemaClass === "RNADrug")
@@ -273,8 +304,8 @@ export class InstanceConverter {
             // Suppose attributes should be a map. Here we are lazy: have not transferred it 
             // when query the server.
             let refSchemaClass = undefined;
-            if (pe.attributes)
-                refSchemaClass = pe.attributes["refSchemaClass"];
+            if (inst.attributes)
+                refSchemaClass = inst.attributes["refSchemaClass"];
             if (refSchemaClass) {
                 if (refSchemaClass === "ReferenceGeneProduct")
                     return "Protein";
@@ -287,6 +318,8 @@ export class InstanceConverter {
         }
         if (schemaClass === 'DefinedSet' || schemaClass === 'CandidateSet')
             return "EntitySet";
+        if (schemaClass === 'Pathway' || schemaClass === 'CellLineagePath' || schemaClass === 'TopLevelPathway')
+            return 'ProcessNode';
         return schemaClass;
     }
 
@@ -366,7 +399,9 @@ export class InstanceConverter {
         if (width < this.MIN_NODE_WIDTH)
             width = this.MIN_NODE_WIDTH;
         height = height * this.HEIGHT_RATIO_OF_BOUNDS_TO_TEXT + this.NODE_BOUND_PADDING;
-        if (pe.schemaClassName === 'Complex' && height < this.COMPLEX_MIN_HEIGHT)
+        // Need bigger dimensions
+        const extra_dim_classes = ['Complex', 'Pathway', 'CellLineagePath', 'TopLevelPathway'];
+        if (extra_dim_classes.includes(pe.schemaClassName) && height < this.COMPLEX_MIN_HEIGHT)
             height = this.COMPLEX_MIN_HEIGHT;
         const label = lines.join('\n');
         return { label, width, height };

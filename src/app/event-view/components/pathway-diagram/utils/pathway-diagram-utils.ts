@@ -90,7 +90,7 @@ export class PathwayDiagramUtilService {
         // Handle pathway
         else {
             // Add as a process node
-            console.debug("Add pathway node: ", event);
+            this.converter.convertPathwayToNode(event, this, cy);
         }
     }
 
