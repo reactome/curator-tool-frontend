@@ -169,8 +169,12 @@ export class EventTreeComponent {
       }
     }
     // Open the path to this node
-    if (matchedNodes.length === 0)
+    if (matchedNodes.length === 0) {
+      // In case the select is a pathway that is not contained by the diagram pathway
+      if (selectedDbId !== diagramDbId)
+        return this.selectNodes(diagramDbId, diagramDbId);
       return undefined;
+    }
     this.highlightNodes(matchedNodes);
     // Keep the diagram node path for highlight
     if (matchedPath) {

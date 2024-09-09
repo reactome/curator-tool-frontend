@@ -1,5 +1,6 @@
 #### Bugs:
 - After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should be stay at the changes tab.
+- Make sure the diagram is in editing disabled state when uploading to the server or disable editing when loading back.
 
 #### TODO:
 - Make sure a simple text slot (e.g. name) can add new value: the added value is not added as a new line.
