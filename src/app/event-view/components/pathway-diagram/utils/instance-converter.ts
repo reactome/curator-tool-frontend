@@ -344,6 +344,24 @@ export class InstanceConverter {
         return cy.add(edge)[0];
     }
 
+    createFlowLine(source: any,
+                   target: any,
+                   utils: PathwayDiagramUtilService,
+                   cy: Core) {
+        const edge: EdgeDefinition = {
+            data: {
+                // Use OUTPUT for edge type
+                id: source.id() + utils.diagramService?.edgeTypeToStr.get('OUTPUT') + target.id(),
+                source: source.id(),
+                target: target.id(),
+                // add a new attribute to determine the type of this edge
+                edgeType: 'FlowLine',
+            },
+            classes: utils.diagramService?.linkClassMap.get('FlowLine')
+        };
+        return cy.add(edge)[0];         
+    }
+
     private measureTextWidth(text: string, font: string): number {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');

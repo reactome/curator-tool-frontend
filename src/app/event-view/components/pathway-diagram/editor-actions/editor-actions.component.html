@@ -13,6 +13,16 @@
       <button style="margin-bottom: 1px" (click)="onClick('removePoint')">Edit PhysicalEntity</button>
     </ng-container> -->
   </ng-container>
+  <!-- Add a flowline between a PE and a ProcessNode -->
+  <ng-container *ngIf="elmType === elmTypes.NODE && isFlowLineAddable">
+    <button style="margin-bottom: 1px" (click)="onClick('addFlowLine')">Add Flow Line</button>
+  </ng-container>
+  <!-- Remove a flowline between a PE and a ProcessNode -->
+  <ng-container *ngIf="elmType === elmTypes.FLOWLINE">
+    <button style="margin-bottom: 1px" (click)="onClick('addPoint')">Add Edge Point</button>
+    <button style="margin-bottom: 1px" (click)="onClick('removePoint')">Remove Edge Point</button>
+    <button style="margin-bottom: 1px" (click)="onClick('delete')">Remove Flow Line</button>
+  </ng-container>
   <!-- Compartment has its own way -->
   <ng-container *ngIf="elmType === elmTypes.COMPARTMENT">
     <button style="margin-bottom: 1px" (click)="onClick('resizeCompartment')">Resize Compartment</button>

@@ -8,6 +8,7 @@ import { DataService } from "src/app/core/services/data.service";
 import { HyperEdge } from "./hyperedge";
 import { InstanceConverter } from "./instance-converter";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
+import { PathwayDiagramComponent } from "../pathway-diagram.component";
 
 @Injectable()
 export class PathwayDiagramUtilService {
@@ -65,6 +66,43 @@ export class PathwayDiagramUtilService {
         return false; // default
     }
 
+    // Make sure this works for the following case:
+    // 1. Only one element is selected and that element is not this element: one of them is ProcessNode and another is 
+    // any PE node
+    // 2. Two lements are selected, one of them is this element: one of the is ProcessNode and another is any PE node.
+    isFlowLineAddable(element: any, diagramComp: PathwayDiagramComponent): boolean {
+        // Only editing component can support adding a flow line.
+        if (!diagramComp.isEditing || !element)
+            return false;
+        const selectedElements = diagramComp.diagram.cy.$(':selected');
+        if (selectedElements.length == 1) {
+            const selectedElement = selectedElements[0];
+            if (selectedElement === element)
+                return false; // Basically there is only one selected element, itself
+            // Make sure one of them is a ProcessNode
+            if (element.classes().includes('SUB') && selectedElement.classes().includes('PhysicalEntity'))
+                return true;
+            if (selectedElement.classes().includes('SUB') && element.classes().includes('PhysicalEntity'))
+                return true;
+        }
+        else if (selectedElements.length == 2 && selectedElements.includes(element)) {
+            const elm1 = selectedElements[0];
+            const elm2 = selectedElements[1];
+            // Make sure one of them is a ProcessNode
+            if (elm1.classes().includes('SUB') && elm2.classes().includes('PhysicalEntity'))
+                return true;
+            if (elm2.classes().includes('SUB') && elm1.classes().includes('PhysicalEntity'))
+                return true;
+        }
+        return false; // default
+    }
+
+    addFlowLine(elementUnderMouse: any, diagramComp: PathwayDiagramComponent) {
+        // The follow line will be added from another element to this elementUnderMouse
+        // It is supposed all has been checked
+        const selectedElement = diagramComp.diagram.cy.$(':selected')[0];
+        this.converter.createFlowLine(selectedElement, elementUnderMouse, this, diagramComp.diagram.cy);
+    }
 
     deleteHyperEdge(element: any) {
         if (!element) return; 

@@ -13,6 +13,8 @@ export class EditorActionsComponent {
   @Output() action = new EventEmitter<string>();
   // Used to flag the selected edge
   @Input() isEdgeEditable: boolean = false;
+  // Flag for adding a flow line
+  @Input() isFlowLineAddable: boolean = false;
   // Use to flag the whole diagram
   @Input() isDiagramEditing: boolean = false;
   // Default is cytoscape
@@ -32,6 +34,7 @@ export class EditorActionsComponent {
 export enum ElementType {
   CYTOSCAPE = "cytoscape",
   EDGE = "edge",
+  FLOWLINE = 'flowline',
   NODE = "node",
   COMPARTMENT = "compartment"
 }

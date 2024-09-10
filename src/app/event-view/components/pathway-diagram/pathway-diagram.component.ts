@@ -52,6 +52,8 @@ export class PathwayDiagramComponent implements AfterViewInit {
   // Flag is the edge under the mouse is edtiable
   // If the element under the mouse is not an edge, this flag should be false
   isEdgeEditable: boolean = false;
+  // Flag for adding a flowline between a PE node and a ProcessNode (for pathway)
+  isFlowLineAddable: boolean = false;
   // Tracking the previous dragging position: should cytoscape provides this?
   previousDragPos: Position = {x: 0, y: 0};
 
@@ -190,13 +192,18 @@ export class PathwayDiagramComponent implements AfterViewInit {
       this.elementTypeForPopup = ElementType.CYTOSCAPE; // As the default
     }
     else if (this.elementUnderMouse.isEdge()) {
-      this.elementTypeForPopup = ElementType.EDGE;
+      if (this.elementUnderMouse.data('edgeType') === 'FlowLine')
+        this.elementTypeForPopup = ElementType.FLOWLINE;
+      else
+        this.elementTypeForPopup = ElementType.EDGE;
     }
     else if (this.elementUnderMouse.isNode()) {
       if (this.elementUnderMouse.hasClass("Compartment"))
         this.elementTypeForPopup = ElementType.COMPARTMENT;
-      else
+      else {
         this.elementTypeForPopup = ElementType.NODE;
+        this.isFlowLineAddable = this.diagramUtils.isFlowLineAddable(this.elementUnderMouse, this);
+      }
     }
     else
       this.elementTypeForPopup = ElementType.CYTOSCAPE;
@@ -243,6 +250,9 @@ export class PathwayDiagramComponent implements AfterViewInit {
     }
     else if (action === 'toggleDarkMode') {
       this.diagram.dark.isDark = !this.diagram.dark.isDark;
+    }
+    else if (action === 'addFlowLine') {
+      this.diagramUtils.addFlowLine(this.elementUnderMouse, this);
     }
     else if (action === 'upload') {
       // TODO: de-select everything first to avoid keeping the selected color at JSON.
