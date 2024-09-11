@@ -39,7 +39,6 @@
               <app-pathway-diagram #diagramView></app-pathway-diagram>
           </div>
         </div>
-        <!-- Need a better way, e.g., percentage, to set the height -->
         <div [style.height]="window.innerHeight - 40 - diagramHeight + 'px'">
           <div class="resize-container-horizontal" (cdkDragMoved)="resizeDown($event)" cdkDrag cdkDragLockAxis="y"
                (cdkDragStarted)="resizingHorizontal = true" (cdkDragReleased)="resizingHorizontal = false"
@@ -50,11 +49,20 @@
           <div class="instance-view-container" style="overflow: auto;">
             <app-instance-view #instanceView [needHistory]="false"></app-instance-view>
           </div>
+          <div id="bookmark-boundary">
+            <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="#bookmark-boundary" id="bookmark-container" [ngClass]="status"
+                 [style.height]="window.innerHeight - 300 - diagramHeight + 'px'" (cdkDragStarted)="onDrag()" (cdkDragEnded)="onDragEnd()">
+              <button id="bookmark-handle" cdkDragHandle (click)="toggleBookmarks()">BOOKMARKS
+              </button>
+              <div id="bookmark" [style.height]="window.innerHeight - diagramHeight + 'px'">
+                <app-bookmark-list></app-bookmark-list>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </mat-sidenav-content>
 
   </mat-sidenav-container>
-  
   <app-status [sidePanelState]="showInstanceList" (showUpdatedEvent)="showUpdatedInstances($event)"></app-status>
 </div>

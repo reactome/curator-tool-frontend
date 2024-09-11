@@ -40,7 +40,7 @@
     background-color: var(--tertiary);
     cursor: row-resize;
     box-shadow: 0 0 2px var(--tertiary);
-    z-index: 1;
+    z-index: 10;
     flex: auto;
   }
 
@@ -78,18 +78,18 @@ side-nav {
   --border-width: 2px;
   --handle-width: 20px;
 
-  position: fixed;
+  position: absolute;
   pointer-events: none;
   right: calc(-1 *  var(--bookmark-width) - var(--border-width));
-  height: 100%;
+  //height: 100%;
   width: calc(2 * var(--bookmark-width) + var(--handle-width));
-  top: 0;
-  bottom: 0;
-  z-index: 1;
+  //top: 0;
+  bottom: 100px;
+  z-index: 100;
 
   #bookmark {
     width: var(--bookmark-width);
-    height: 100%;
+    //height: 100%;
     border-left: var(--border-width) solid var(--primary);
     background: color-mix(in srgb, var(--surface) 80%, transparent);
     backdrop-filter: blur(5px);
@@ -119,7 +119,7 @@ side-nav {
     width: fit-content;
     left: calc(var(--bookmark-width) - var(--border-width));
     pointer-events: all;
-    height: 100%;
+    //height: 100%;
     transition-duration: 500ms;
 
     &.opened {

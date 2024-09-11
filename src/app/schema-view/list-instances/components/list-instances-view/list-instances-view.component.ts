@@ -43,6 +43,7 @@ export class ListInstancesViewComponent implements AfterViewInit {
     // Give it a little bit delay to avoid ng0100 error.
     setTimeout(() => {
       this.schemaClassName = params['className'];
+      this.queryString = ''
     });
     let isChangedChanged = this.instanceList.className !== params['className'];
     this.instanceList.className = params['className'];

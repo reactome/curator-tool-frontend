@@ -2,6 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import {bookmarkedInstances} from "../../state/bookmark.selectors";
 import {Store} from "@ngrx/store";
 import {Instance} from "../../../../core/models/reactome-instance.model";
+import {updateSharedState} from "../../../../store/app.actions";
 
 @Component({
   selector: 'app-bookmark-status',
@@ -20,5 +21,10 @@ export class BookmarkStatusComponent implements OnInit{
     //     this.bookmarkList = instances;
     //   }
     // })
+    this.updateState();
+  }
+
+  updateState() {
+    this.store.dispatch(updateSharedState({ payload: bookmarkedInstances() }));
   }
 }

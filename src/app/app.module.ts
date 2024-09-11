@@ -26,6 +26,8 @@ import {HeaderInterceptor} from "./core/interceptors/header.interceptor";
 import {JwtModule} from "@auth0/angular-jwt";
 import {MainEventModule} from "./event-view/main-event/main-event.module";
 import { DIAGRAM_CONFIG_TOKEN } from 'ngx-reactome-diagram';
+import {appReducer} from "./store/app.reducer";
+import {AppEffects} from "./store/app.effects";
 
 export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
   return localStorageSync({
@@ -57,6 +59,8 @@ const diagramServiceConfig = {
     ListInstancesModule,
     EffectsModule.forRoot(),
     StoreModule.forRoot({router: routerReducer}, {metaReducers}),
+    StoreModule.forRoot({ app: appReducer }),
+    EffectsModule.forRoot([AppEffects]),
     RouterModule.forRoot([]),
     StoreRouterConnectingModule.forRoot({serializer: CustomSerializer,}),
     StoreDevtoolsModule.instrument({
