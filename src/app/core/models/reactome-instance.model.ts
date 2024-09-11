@@ -39,3 +39,8 @@ export interface Referrer {
   attributeName: string;
   referrers: Instance[];
 }
+
+/**
+ * Use to flag a node that is added as a control point for a rounded curve segment.
+ */
+export const EDGE_POINT_CLASS: string = 'edge_point';

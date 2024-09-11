@@ -1,7 +1,7 @@
 import { EdgeDefinition, NodeDefinition, Core } from "cytoscape";
 import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
-import { Instance } from "src/app/core/models/reactome-instance.model";
+import { EDGE_POINT_CLASS, Instance } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceConverter } from "./instance-converter";
 import { REACTIVE_NODE } from "@angular/core/primitives/signals";
@@ -18,11 +18,11 @@ export class HyperEdge {
     // Note: This map contains both edges and also newly created nodes.
     private id2object: Map<string, any> = new Map<string, any>();
     // Track the reactome id
-    private reactomeId: number;
+    private reactomeId: number|string;
     
     constructor(utils: PathwayDiagramUtilService,
         cy: Core,
-        reactomeId: number
+        reactomeId: number|string,
     ) {
         this.utils = utils;
         this.cy = cy;
@@ -39,11 +39,10 @@ export class HyperEdge {
                 // Only element linked to objects solely belong to
                 // this hyperedge can be removed.
                 const connectedEdges = value.connectedEdges();
-                for (let edge of connectedEdges) {
-                    const edgeDbId = edge.data('reactomeId');
-                    if (edgeDbId && edgeDbId !== this.reactomeId)
-                        return; // This PE is linked to other edge. Don't delete it.
-                }
+                // As long as this node is linked to any other edges, including flowline,
+                // don't delete it (this may be changed in the future)
+                if (connectedEdges && connectedEdges.length > 0)
+                    return;
             }
             // Otherwise can be removed safely
             this.cy.remove(value);
@@ -56,6 +55,11 @@ export class HyperEdge {
      * Some edges and nodes will be removed. 
      */
     enableRoundSegments() {
+        if (this.reactomeId?.toString().includes('-')) {
+            // This should be a FlowLine: no true Reactome id
+            this.enableRoundSegmentsForFlowLine();
+            return;
+        }
         // Find the reaction node first
         // Create round-segment from nodes to reaction node
         let reactionNode = this.getReactionNode();
@@ -78,6 +82,37 @@ export class HyperEdge {
             console.debug(path.path);
             this.createRoundSegmentEdgeForPath(path, toBeRemoved);
         }
+        this.cy.remove(this.cy.collection(Array.from(toBeRemoved)));
+    }
+
+    /**
+     * Basically a simplified version of enableRoundSegments().
+     * @returns 
+     */
+    enableRoundSegmentsForFlowLine() {
+        // Use aStart function to find the paths. dfs and bfs apparently cannot work!
+        const collection = this.cy.collection(Array.from(this.id2object.values()));
+        // Need to figure out the original source and target of this flow line
+        let flSource = undefined;
+        let flTarget = undefined;
+        for (let elm of this.id2object.values()) {
+            if (!elm.isEdge())
+                continue;
+            const source = elm.source();
+            if (source.hasClass('PhysicalEntity') || source.hasClass('SUB')) {
+                flSource = source;
+            }
+            const target = elm.target();
+            if (target.hasClass('PhysicalEntity') || target.hasClass('SUB')) {
+                flTarget = target;
+            }
+        }
+        const toBeRemoved = new Set<any>();
+        const path = collection.aStar({
+                root: '#' + flSource.data('id'),
+                goal: '#' + flTarget.data('id')
+            });
+        this.createRoundSegmentEdgeForPath(path, toBeRemoved);
         this.cy.remove(this.cy.collection(Array.from(toBeRemoved)));
     }
 
@@ -128,19 +163,29 @@ export class HyperEdge {
         let newEdgeId = data.source + edgeTypeText + data.target;
         newEdgeId = this.getNewEdgeId(newEdgeId);
         data.id = newEdgeId;
+        // Need to push the actual point we'd like to use into the points list
+        // so that we can convert it into relative coordinates
+        let targetPos = target.position();
+        if (edgeType === 'OUTPUT') // Need to get the point around the node bounding box
+            targetPos = this.utils.findIntersection(points[points.length - 1], target);
         const relPos = this.utils.absoluteToRelative(source.position(), 
-                                              target.position(),
+                                              targetPos,
                                               points);
         data.weights = relPos.weights.join(" ");
         data.distances = relPos.distances.join(" ");
         data.curveStyle = "round-segments";
         data.sourceEndpoint = '0 0';
-        data.targetEndpoint = '0 0';
+        data.targetEndpoint = this.getEndPoint(targetPos, target);
         const edge: EdgeDefinition = {
             data: data,
             classes: [...edgeClasses],
         };
         this.cy.add(edge);
+    }
+
+    private getEndPoint(intersection: Position, node: any) {
+        // Follow the method endpoint() in diagram.service.ts
+        return (intersection.x - node.position().x) + ' ' + (intersection.y - node.position().y);
     }
 
     private getNewEdgeId(id: string) {
@@ -153,6 +198,8 @@ export class HyperEdge {
     }
 
     private getEdgeType(edge: any): string {
+        if (edge.data('edgeType'))
+            return "OUTPUT"; // e.g. flowline
         // Based on the original definition
         if (edge.hasClass('consumption')) return "INPUT";
         if (edge.hasClass('positive-regulation')) return "ACTIVATOR";
@@ -166,7 +213,7 @@ export class HyperEdge {
     private isReactionNode(element: any): boolean {
         if (!element.isNode())
             return false;
-        if (element.hasClass('reaction') && !element.hasClass('input_output'))
+        if (element.hasClass('reaction') && !element.hasClass(EDGE_POINT_CLASS))
             return true;
         return false;
     }
@@ -224,7 +271,7 @@ export class HyperEdge {
                 data: data,
                 // position: { x: point.x, y: point.y },
                 // TODO: Make sure this is what we need
-                classes: ['reaction', 'input_output']
+                classes: ['reaction', EDGE_POINT_CLASS]
             };
             const newNode = this.cy.add(pointNode)[0];
             if (isRenderedPosition)
@@ -248,8 +295,8 @@ export class HyperEdge {
         })
         // Now we want to add trivial back for whatever is needed
         let isChanged = true;
-        //TODO: This has not done yet. Also need to check input_output nodes and 
-        // edges links between input_output nodes and trivial nodes
+        //TODO: This has not done yet. Also need to check edge point nodes and 
+        // edges links between edge point nodes and trivial nodes
         // Will wait for new classes.
         while (isChanged) {
             isChanged = false;
@@ -264,7 +311,7 @@ export class HyperEdge {
                     }
                 }
                 // TODO: Need to find use cases for this
-                else if (element.isNode() && element.hasClass('input_output') && !element.hasClass('trivial')) {
+                else if (element.isNode() && element.hasClass(EDGE_POINT_CLASS) && !element.hasClass('trivial')) {
                     // Have to check connected edges for a node
                     const connectedEdges = element.connectedEdges();
                     let totalNoTrivialEdge = 0;
@@ -283,12 +330,12 @@ export class HyperEdge {
                         isChanged = true;
                     }
                     else {
-                        // If this edge connected to another input_output
+                        // If this edge connected to another edge point
                         const connectedNodes = noTrivialEdge.connectedNodes();
                         for (let node of connectedNodes) {
                             if (node === element)
                                 continue;
-                            if (node.hasClass('input_output')) {
+                            if (node.hasClass(EDGE_POINT_CLASS)) {
                                 element.addClass('trivial');
                                 isChanged = true;
                             }
@@ -332,19 +379,20 @@ export class HyperEdge {
         const pointNodeId = this.createPointNode(edge.data(), renderedPosition, true);
         const srcId = edge.data('source');
         const targetId = edge.data('target');
-        // Split the original edge as two: Use INPUT so that no arrow will show
+        // Split the original edge as two: Use INPUT so that no arrow will show for the first,
+        // and the second should take whatever the original edge has
         this.createNewEdge(srcId, pointNodeId, edge.data(), this.utils.diagramService!.edgeTypeMap.get("INPUT"))
-        this.createNewEdge(pointNodeId, targetId, edge.data(), this.utils.diagramService!.edgeTypeMap.get("INPUT"))
+        this.createNewEdge(pointNodeId, targetId, edge.data(), edge.classes());
         this.cy.remove(edge);
         this.id2object.delete(edge.data('id'));
     }
 
     /**
-     * Remove a node from this HyperEdge. Only input_output node can be removed.
+     * Remove a node from this HyperEdge. Only edge point node can be removed.
      * @param node 
      */
     removeNode(node: any) {
-        if (!node.hasClass('input_output') || !node.hasClass('reaction'))
+        if (!node.hasClass(EDGE_POINT_CLASS) || !node.hasClass('reaction'))
             return;
         const connectedEdges = node.connectedEdges();
         // Don't remove any node that is connected more than two edges: 
@@ -393,6 +441,31 @@ export class HyperEdge {
             let centerY = (extent.y1 + extent.y2) / 2;
             this.layout({x: centerX, y: centerY});
         });
+    }
+
+    createFlowLine(source: any,
+        target: any,
+        utils: PathwayDiagramUtilService,
+        cy: Core) {
+        const edge: EdgeDefinition = {
+            data: {
+                // Use OUTPUT for edge type
+                id: source.id() + utils.diagramService?.edgeTypeToStr.get('OUTPUT') + target.id(),
+                source: source.id(),
+                target: target.id(),
+                // add a new attribute to determine the type of this edge
+                edgeType: 'FlowLine',
+                // Since we don't have actual Reactome id for this, we will add
+                // a new hyperEdge id
+                hyperEdgeId: source.dbId + '-' + target.dbId
+            },
+            classes: utils.diagramService?.linkClassMap.get('FlowLine')
+        };
+        const flowLine = cy.add(edge)[0];
+        this.registerObject(source);
+        this.registerObject(target);
+        this.registerObject(flowLine);
+        return flowLine;
     }
 
     /**

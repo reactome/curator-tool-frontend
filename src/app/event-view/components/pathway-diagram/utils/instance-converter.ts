@@ -2,7 +2,7 @@
  * This script is used to handle the converting from Instance to data objects needed by cytoscape.js.
  */
 
-import { Instance } from "src/app/core/models/reactome-instance.model";
+import { EDGE_POINT_CLASS, Instance } from "src/app/core/models/reactome-instance.model";
 import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
 import { EdgeDefinition, NodeDefinition, Core } from 'cytoscape';
 import { DiagramService } from "ngx-reactome-diagram";
@@ -220,7 +220,8 @@ export class InstanceConverter {
                     stId: instance.dbId + ''
                 }
             },
-            classes: ['reaction', 'input_output']
+            // Flag this as an edge point node
+            classes: ['reaction', EDGE_POINT_CLASS]
         };
         return cy.add(node)[0];
     }
@@ -342,24 +343,6 @@ export class InstanceConverter {
             classes: utils.diagramService?.edgeTypeMap.get(type)
         };
         return cy.add(edge)[0];
-    }
-
-    createFlowLine(source: any,
-                   target: any,
-                   utils: PathwayDiagramUtilService,
-                   cy: Core) {
-        const edge: EdgeDefinition = {
-            data: {
-                // Use OUTPUT for edge type
-                id: source.id() + utils.diagramService?.edgeTypeToStr.get('OUTPUT') + target.id(),
-                source: source.id(),
-                target: target.id(),
-                // add a new attribute to determine the type of this edge
-                edgeType: 'FlowLine',
-            },
-            classes: utils.diagramService?.linkClassMap.get('FlowLine')
-        };
-        return cy.add(edge)[0];         
     }
 
     private measureTextWidth(text: string, font: string): number {

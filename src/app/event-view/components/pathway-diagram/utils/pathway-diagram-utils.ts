@@ -14,7 +14,7 @@ import { PathwayDiagramComponent } from "../pathway-diagram.component";
 export class PathwayDiagramUtilService {
     diagramService: DiagramService | undefined = undefined;
     // Cache all converted HyperEdges for easy editing
-    private id2hyperEdge : Map<number, HyperEdge> = new Map();
+    private id2hyperEdge : Map<number|string, HyperEdge> = new Map();
     // For resizing
     private readonly RESIZE_NODE_LOCATIONS: string[] = ['ne', 'nw', 'se', 'sw'];
     private converter = new InstanceConverter();
@@ -101,12 +101,17 @@ export class PathwayDiagramUtilService {
         // The follow line will be added from another element to this elementUnderMouse
         // It is supposed all has been checked
         const selectedElement = diagramComp.diagram.cy.$(':selected')[0];
-        this.converter.createFlowLine(selectedElement, elementUnderMouse, this, diagramComp.diagram.cy);
+        // Follow the same logic to add a new reaction
+        // We need HyperEdge to make the code simplier
+        const reactomeId = selectedElement.dbId + '-' + elementUnderMouse.dbId;
+        const hyperEdge = new HyperEdge(this, diagramComp.diagram.cy, reactomeId);
+        hyperEdge.createFlowLine(selectedElement, elementUnderMouse, this, diagramComp.diagram.cy);
+        this.id2hyperEdge.set(reactomeId, hyperEdge);
     }
 
     deleteHyperEdge(element: any) {
         if (!element) return; 
-        const dbId = element.data('reactomeId');
+        const dbId = this.getHyperEdgeId(element);
         if (!dbId || !this.id2hyperEdge.has(dbId))
             return; // Do nothing. No hyper edge associated with this dbId
         const hyperEdge = this.id2hyperEdge.get(dbId);
@@ -414,22 +419,34 @@ export class PathwayDiagramUtilService {
         if (!element.isNode()) // Only a node can be removed
             return;
         // Find the HyperEdge this edge belong to
-        const hyperEdge = this.id2hyperEdge.get(element.data('reactomeId'));
+        const hyperEdge = this.id2hyperEdge.get(this.getHyperEdgeId(element));
         if (hyperEdge === undefined)
             return; // Nothing should be done if no HyperEdge here
         hyperEdge.removeNode(element);
     }
 
     addPoint(renderedPosition: Position,
-             element: any
-    ) {
+             element: any) {
         if (!element.isEdge()) // Work for edge only
             return;
         // Find the HyperEdge this edge belong to
-        const hyperEdge = this.id2hyperEdge.get(element.data('reactomeId'));
+        const hyperEdgeId = this.getHyperEdgeId(element);
+        if (!hyperEdgeId)
+            return; // Do nothing
+        const hyperEdge = this.id2hyperEdge.get(hyperEdgeId);
         if (hyperEdge === undefined)
             return; // Nothing should be done if no HyperEdge here
         hyperEdge.insertNode(renderedPosition, element);
+    }
+
+    private getHyperEdgeId(element: any) {
+        // Try reactomeId first
+        let hyperEdgeId = element.data('reactomeId');
+        if (hyperEdgeId)
+            return hyperEdgeId;
+        // Try hyperEdgeId for flowLine
+        hyperEdgeId = element.data('hyperEdgeId');
+        return hyperEdgeId; // This may be undefined
     }
 
     disableEditing(diagram: DiagramComponent) {
@@ -455,7 +472,7 @@ export class PathwayDiagramUtilService {
         diagram.cy.nodes().forEach((node: any) => id2node.set(node.data('id'), node));
         const id2edges = new Map<number, any[]>();
         diagram.cy.edges().forEach((edge: any) => {
-            const id = edge.data('reactomeId');
+            const id = this.getHyperEdgeId(edge);
             id2edges.set(id, [...(id2edges.get(id) || []), edge]);
         });
         this.id2hyperEdge.clear();
@@ -588,5 +605,80 @@ export class PathwayDiagramUtilService {
         const jsonString = JSON.stringify(filteredData);
         const dataCopy = JSON.parse(jsonString);
         return dataCopy;
+    }
+
+    /**
+     * A utitlity method to find the intersection point between a line that is drawn between externalPoint and
+     * the node's position and the node's bounding rectangle. 
+     * @param externalPoint 
+     * @param node 
+     */
+    findIntersection(externalPoint: Position, node: any) {
+        // The rectangle information of the node
+        const center = node.position();
+        const width = node.width();
+        const height = node.height();
+        const halfWidth = width / 2.0;
+        const halfHeight = height / 2.0;
+        // Direction vector from external point to the rectangle's center
+        const direction = {
+            x: center.x - externalPoint.x,
+            y: center.y - externalPoint.y
+        };
+        // t is the value in the following line between center and externalPoint:
+        // L(t) = P + t(C-P)
+        // Here P is the external point and C is the center and L(t) is a point
+        // in the line that is created between P and C.
+        // To simplify the code, calculate all four potential intersection together
+        // and then determine what is the intersection
+        // Check intersection with the left (x = center.x - halfWidth)
+        if (direction.x !== 0) {
+            const t = (center.x - halfWidth - externalPoint.x) / direction.x;
+            if (t > 0 && t < 1) {
+                return {
+                    x: externalPoint.x + t * direction.x,
+                    y: externalPoint.y + t * direction.y
+                }
+            }
+        }
+        
+        // Check intersection with the right (x = center.x + halfWidth)
+        if (direction.x !== 0) {
+            const t = (center.x + halfWidth - externalPoint.x) / direction.x;
+            if (t > 0 && t < 1) {
+                return {
+                    x: externalPoint.x + t * direction.x,
+                    y: externalPoint.y + t * direction.y
+                }
+            }
+        }
+
+        // Check intersection with the bottom (y = center.y - halfHeight)
+        if (direction.y !== 0) {
+            const t = (center.y - halfHeight - externalPoint.y) / direction.y;
+            if (t > 0 && t < 1) {
+                return {
+                    x: externalPoint.x + t * direction.x,
+                    y: externalPoint.y + t * direction.y
+                }
+            }
+        }
+
+        // Check intersection with the top (y = center.y + halfHeight)
+        if (direction.y !== 0) {
+            const t = (center.y + halfHeight - externalPoint.y) / direction.y;
+            if (t > 0 && t < 1) {
+                return {
+                    x: externalPoint.x + t * direction.x,
+                    y: externalPoint.y + t * direction.y
+                }
+            }
+        }
+
+        // Default to return the position of the node
+        return {
+            x: center.x,
+            y: center.y
+        }
     }
 }
