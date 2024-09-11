@@ -1,10 +1,9 @@
-import { EdgeDefinition, NodeDefinition, Core } from "cytoscape";
-import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
+import { Core, EdgeDefinition, NodeDefinition } from "cytoscape";
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { EDGE_POINT_CLASS, Instance } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceConverter } from "./instance-converter";
-import { REACTIVE_NODE } from "@angular/core/primitives/signals";
+import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
 
 /**
  * Model a list of edges that form a HyperEdge. Here, we model this HyperEdge as a simple graph
@@ -119,9 +118,9 @@ export class HyperEdge {
     private createRoundSegmentEdgeForPath(path: any, toBeRemoved: Set<any>) {
         // If the path distance is 1, the edge is a line. Nothing to work on it.
         if (!path.found || path.distance === 1) return; // Nothing can or need to be done
-        const rxtNode: any = path.path[0];
-        const peNode: any = path.path[path.path.length - 1];
-        if (!peNode.isNode()) 
+        const sourceNode: any = path.path[0];
+        const targetNode: any = path.path[path.path.length - 1];
+        if (!targetNode.isNode()) 
             return; // Work with node only
         let points: Position[] = [];
         let lastEdge = undefined;
@@ -146,14 +145,14 @@ export class HyperEdge {
         let target = undefined;
         if (edgeType === "OUTPUT") {
             data = this.utils.copyData(lastEdge.data());
-            source = rxtNode;
-            target = peNode;
+            source = sourceNode;
+            target = targetNode;
             edgeClasses = lastEdge.classes();
         }
         else {
             data = this.utils.copyData(firstEdge.data());
-            source = peNode;
-            target = rxtNode;
+            source = targetNode;
+            target = sourceNode;
             edgeClasses = firstEdge.classes();
             points = points.reverse();
         }
@@ -163,18 +162,18 @@ export class HyperEdge {
         let newEdgeId = data.source + edgeTypeText + data.target;
         newEdgeId = this.getNewEdgeId(newEdgeId);
         data.id = newEdgeId;
-        // Need to push the actual point we'd like to use into the points list
-        // so that we can convert it into relative coordinates
+        // Get the target position
         let targetPos = target.position();
         if (edgeType === 'OUTPUT') // Need to get the point around the node bounding box
             targetPos = this.utils.findIntersection(points[points.length - 1], target);
-        const relPos = this.utils.absoluteToRelative(source.position(), 
-                                              targetPos,
-                                              points);
+        let sourcePos = source.position();
+        if (source.hasClass('PhysicalEntity') || source.hasClass('SUB')) 
+            sourcePos = this.utils.findIntersection(points[0], source);
+        const relPos = this.utils.absoluteToRelative(sourcePos, targetPos, points);
         data.weights = relPos.weights.join(" ");
         data.distances = relPos.distances.join(" ");
         data.curveStyle = "round-segments";
-        data.sourceEndpoint = '0 0';
+        data.sourceEndpoint = this.getEndPoint(sourcePos, source);
         data.targetEndpoint = this.getEndPoint(targetPos, target);
         const edge: EdgeDefinition = {
             data: data,

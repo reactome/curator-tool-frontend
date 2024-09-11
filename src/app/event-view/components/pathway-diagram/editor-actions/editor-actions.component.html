@@ -17,7 +17,7 @@
     <button style="margin-bottom: 1px" (click)="onClick('addFlowLine')">Add Flow Line</button>
   </ng-container>
   <!-- Remove a flowline between a PE and a ProcessNode -->
-  <ng-container *ngIf="elmType === elmTypes.FLOWLINE">
+  <ng-container *ngIf="elmType === elmTypes.FLOWLINE && isDiagramEditing">
     <button style="margin-bottom: 1px" (click)="onClick('addPoint')">Add Edge Point</button>
     <button style="margin-bottom: 1px" (click)="onClick('delete')">Remove Flow Line</button>
   </ng-container>

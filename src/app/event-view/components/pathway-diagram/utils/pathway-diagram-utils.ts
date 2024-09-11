@@ -3,7 +3,7 @@ import { EdgeDefinition, NodeDefinition, Core } from 'cytoscape';
 import { array } from 'vectorious';
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { Injectable } from "@angular/core";
-import { Instance } from "src/app/core/models/reactome-instance.model";
+import { Instance, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { HyperEdge } from "./hyperedge";
 import { InstanceConverter } from "./instance-converter";
@@ -616,8 +616,10 @@ export class PathwayDiagramUtilService {
     findIntersection(externalPoint: Position, node: any) {
         // The rectangle information of the node
         const center = node.position();
-        const width = node.width();
-        const height = node.height();
+        // Give the bounding rectangle some buffer
+        // by following the Java desktop version
+        const width = node.width() + RENDERING_CONSTS.CONNECT_BUFFER * 2;
+        const height = node.height() + RENDERING_CONSTS.CONNECT_BUFFER * 2;
         const halfWidth = width / 2.0;
         const halfHeight = height / 2.0;
         // Direction vector from external point to the rectangle's center
@@ -632,49 +634,44 @@ export class PathwayDiagramUtilService {
         // To simplify the code, calculate all four potential intersection together
         // and then determine what is the intersection
         // Check intersection with the left (x = center.x - halfWidth)
+        // We need to calculate all four sides in order to find the intersection point
+        // since we use either x or y, not both to calculate t-values
+        const tValues: number[] = [];
         if (direction.x !== 0) {
-            const t = (center.x - halfWidth - externalPoint.x) / direction.x;
-            if (t > 0 && t < 1) {
-                return {
-                    x: externalPoint.x + t * direction.x,
-                    y: externalPoint.y + t * direction.y
-                }
-            }
+            // Left
+            let t = (center.x - halfWidth - externalPoint.x) / direction.x;
+            tValues.push(t);
+            // Right
+            t = (center.x + halfWidth - externalPoint.x) / direction.x;
+            tValues.push(t)
         }
-        
-        // Check intersection with the right (x = center.x + halfWidth)
-        if (direction.x !== 0) {
-            const t = (center.x + halfWidth - externalPoint.x) / direction.x;
-            if (t > 0 && t < 1) {
-                return {
-                    x: externalPoint.x + t * direction.x,
-                    y: externalPoint.y + t * direction.y
-                }
-            }
-        }
-
-        // Check intersection with the bottom (y = center.y - halfHeight)
         if (direction.y !== 0) {
-            const t = (center.y - halfHeight - externalPoint.y) / direction.y;
-            if (t > 0 && t < 1) {
-                return {
-                    x: externalPoint.x + t * direction.x,
-                    y: externalPoint.y + t * direction.y
-                }
-            }
+            // bottom
+            let t = (center.y + halfHeight - externalPoint.y) / direction.y;
+            tValues.push(t);
+            // top
+            t = (center.y - halfHeight - externalPoint.y) / direction.y;
+            tValues.push(t);
         }
-
-        // Check intersection with the top (y = center.y + halfHeight)
-        if (direction.y !== 0) {
-            const t = (center.y + halfHeight - externalPoint.y) / direction.y;
-            if (t > 0 && t < 1) {
-                return {
-                    x: externalPoint.x + t * direction.x,
-                    y: externalPoint.y + t * direction.y
-                }
-            }
+        // Filter valid t avlues and find the closest point to the center
+        // which has the largest t
+        const validIntersections = tValues.filter(t => t >= 0 && t <= 1)
+                                          .map(t => ({
+                                            x: externalPoint.x + t * direction.x,
+                                            y: externalPoint.y + t * direction.y,
+                                            t: t
+                                          }))
+                                          .filter(point => 
+                                            point.x >= center.x - halfWidth && point.x <= center.x + halfWidth && 
+                                            point.y >= center.y - halfHeight && point.y <= center.y + halfHeight
+                                          );
+        if (validIntersections.length > 0) {
+            // Find the closest intersection point (smallest t)
+            const closestIntersection = validIntersections.reduce((closest, current) => 
+                current.t > closest.t ? current : closest
+            );
+            return { x: closestIntersection.x, y: closestIntersection.y };
         }
-
         // Default to return the position of the node
         return {
             x: center.x,

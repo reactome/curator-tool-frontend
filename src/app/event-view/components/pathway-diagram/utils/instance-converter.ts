@@ -8,27 +8,10 @@ import { EdgeDefinition, NodeDefinition, Core } from 'cytoscape';
 import { DiagramService } from "ngx-reactome-diagram";
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { HyperEdge } from "./hyperedge";
+import { RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 
 export class InstanceConverter {
-    // Use to breakdown a long display name
-    private readonly WORD_WRAP_RE = /([\ /,:;-])/;
-    // private readonly WORD_WRAP_RE_G = /([\ /,:;-])/g;
-    // Get from Java desktop version
-    private readonly DEFAULT_NODE_WIDTH: number = 130;
-    private readonly MIN_NODE_WIDTH: number = 10;
-    private readonly WIDTH_RATIO_OF_BOUNDS_TO_TEXT: number = 1.3;
-    private readonly HEIGHT_RATIO_OF_BOUNDS_TO_TEXT: number = 1.5;
-    private readonly NODE_BOUND_PADDING = 10;
-    // Since complex has some decoration, we need to assign a mini height. Otherwise, the decoration
-    // may be off.
-    private readonly COMPLEX_MIN_HEIGHT = 50;
-
-    // This is arbitray
-    private readonly INIT_POSITION : Position = {
-        x: 50,
-        y: 50
-    };
-
+    
     constructor() { }
 
     /**
@@ -251,7 +234,7 @@ export class InstanceConverter {
                 id: id,
                 reactomeId: inst.dbId,
                 displayName: inst.displayName, // Set the name temporarily
-                width: this.DEFAULT_NODE_WIDTH, // both width and height will be updated.
+                width: RENDERING_CONSTS.DEFAULT_NODE_WIDTH, // both width and height will be updated.
                 height: 50,
                 graph: {
                     stId: inst.dbId + '' // Use reactome id for the time being
@@ -259,15 +242,15 @@ export class InstanceConverter {
             },
             // Have to make a copy
             position: {
-                x: this.INIT_POSITION.x,
-                y: this.INIT_POSITION.y
+                x: RENDERING_CONSTS.INIT_POSITION.x,
+                y: RENDERING_CONSTS.INIT_POSITION.y
             }
         };
         const newNode = cy.add(node)[0];
         const font = this.getFontStyle(newNode);
         const { label, width, height } = this.getNodeLabelAndDimensions(inst,
             font,
-            this.DEFAULT_NODE_WIDTH);
+            RENDERING_CONSTS.DEFAULT_NODE_WIDTH);
         newNode.data('width', width);
         newNode.data('height', height);
         newNode.data('displayName', label);
@@ -367,7 +350,7 @@ export class InstanceConverter {
     }
     
     private breakTextIntoLines(text: string, font: string, maxWidth: number): { lines: string[], width: number, height: number } {
-        const words = text.split(this.WORD_WRAP_RE);
+        const words = text.split(RENDERING_CONSTS.WORD_WRAP_RE);
         const lines: string[] = [];
         let currentLine = words[0];
         let maxLineWidth = 0;
@@ -396,14 +379,14 @@ export class InstanceConverter {
         const text = this.generateRenderableName(pe.displayName!);
         let { lines, width, height } = this.breakTextIntoLines(text, font, maxWidth);
         // The following code is modified from Java curator tool codebase: Node.initBounds(Graphics)
-        width = width * this.WIDTH_RATIO_OF_BOUNDS_TO_TEXT + this.NODE_BOUND_PADDING;
-        if (width < this.MIN_NODE_WIDTH)
-            width = this.MIN_NODE_WIDTH;
-        height = height * this.HEIGHT_RATIO_OF_BOUNDS_TO_TEXT + this.NODE_BOUND_PADDING;
+        width = width * RENDERING_CONSTS.WIDTH_RATIO_OF_BOUNDS_TO_TEXT + RENDERING_CONSTS.NODE_BOUND_PADDING;
+        if (width < RENDERING_CONSTS.MIN_NODE_WIDTH)
+            width = RENDERING_CONSTS.MIN_NODE_WIDTH;
+        height = height * RENDERING_CONSTS.HEIGHT_RATIO_OF_BOUNDS_TO_TEXT + RENDERING_CONSTS.NODE_BOUND_PADDING;
         // Need bigger dimensions
         const extra_dim_classes = ['Complex', 'Pathway', 'CellLineagePath', 'TopLevelPathway'];
-        if (extra_dim_classes.includes(pe.schemaClassName) && height < this.COMPLEX_MIN_HEIGHT)
-            height = this.COMPLEX_MIN_HEIGHT;
+        if (extra_dim_classes.includes(pe.schemaClassName) && height < RENDERING_CONSTS.COMPLEX_MIN_HEIGHT)
+            height = RENDERING_CONSTS.COMPLEX_MIN_HEIGHT;
         const label = lines.join('\n');
         return { label, width, height };
     }
