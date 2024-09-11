@@ -3,7 +3,7 @@
  * in cytoscape.
  */
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, inject, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, inject, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
 import { filter, map } from 'rxjs';
@@ -14,6 +14,8 @@ import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
 import { EDGE_POINT_CLASS, Instance } from 'src/app/core/models/reactome-instance.model';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
+import { Store } from '@ngrx/store';
+import { lastUpdatedInstance } from 'src/app/instance/state/instance.selectors';
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -23,7 +25,7 @@ import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-
   styleUrl: './pathway-diagram.component.scss',
   providers: [PathwayDiagramUtilService]
 })
-export class PathwayDiagramComponent implements AfterViewInit {
+export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   id$ = this.route.params.pipe(
     map(params => params['id']),
     filter(id => id !== undefined)
@@ -62,10 +64,16 @@ export class PathwayDiagramComponent implements AfterViewInit {
 
   constructor(private route: ActivatedRoute,
     private router: Router,
-    private diagramUtils: PathwayDiagramUtilService
+    private diagramUtils: PathwayDiagramUtilService,
+    private store: Store
   ){
   }
 
+  ngOnInit() {
+    this.store.select(lastUpdatedInstance()).subscribe(instance => {
+      console.debug('This instance is just updated: ', instance);
+    })
+  }
 
   ngAfterViewInit(): void {
     this.route.params.subscribe(params => {

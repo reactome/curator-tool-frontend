@@ -27,8 +27,8 @@ import { NewInstanceDialogComponent } from './components/new-instance-dialog/new
 import { QAReportDialogComponent } from './components/qa-report-dialog/qa-report-dialog.component';
 import { InstanceRoutingModule } from './instance-routing.module';
 import { DatabaseObjectEffects } from './state/instance.effects';
-import {DELETE_INSTANCES_STATE_NAME, NEW_INSTANCES_STATE_NAME} from "./state/instance.selectors";
-import {deletedInstancesReducer, newInstancesReducer} from "./state/instance.reducers";
+import {DELETE_INSTANCES_STATE_NAME, LAST_UPDATED_INSTANCE_STATE_NAME, lastUpdatedInstanceState, NEW_INSTANCES_STATE_NAME} from "./state/instance.selectors";
+import {deletedInstancesReducer, lastUpdatedInstanceReducer, newInstancesReducer} from "./state/instance.reducers";
 import { TextCurationComponent } from "../schema-view/main-schema-view/text-curation/components/text-curation.component";
 import {ReferrersDialogComponent} from "./components/referrers-dialog/referrers-dialog.component";
 import {DeletionDialogComponent} from "./components/deletion-dialog/deletion-dialog.component";
@@ -60,6 +60,7 @@ import {
     // EffectsModule.forFeature(NewInstanceEffects),
     StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer),
     StoreModule.forFeature(DELETE_INSTANCES_STATE_NAME, deletedInstancesReducer),
+    StoreModule.forFeature(LAST_UPDATED_INSTANCE_STATE_NAME, lastUpdatedInstanceReducer),
 
     // Need to register here for update. The registered state can be used out of this module.
     // StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),

@@ -12,7 +12,6 @@ import { updatedInstancesReducer } from '../instance/state/instance.reducers';
 import { UPDATE_INSTANCES_STATE_NAME } from '../instance/state/instance.selectors';
 import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 import { StatusComponent } from './status.component';
-import { InstanceModule } from '../instance/instance.module';
 
 @NgModule({
   imports: [
@@ -27,8 +26,7 @@ import { InstanceModule } from '../instance/instance.module';
     MatIconModule,
     MatSortModule,
     MatTableModule,
-    MatTooltipModule,
-    // InstanceModule
+    MatTooltipModule
   ],
   exports: [
     StatusComponent // Have to export it!!!

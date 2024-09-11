@@ -13,18 +13,28 @@ export const updatedInstancesAdaptor = createEntityAdapter<Instance>({
   selectId: instance => instance.dbId
 })
 
-export const dbInstanceAdaptor = createEntityAdapter<Instance>({
-  selectId: instance => instance.dbId
-})
-
 export const updatedInstancesReducer = createReducer(
   updatedInstancesAdaptor.getInitialState(),
   on(InstanceActions.register_updated_instance,
-    (state, instance) => updatedInstancesAdaptor.upsertOne(instance, state)
+    (state, instance) => updatedInstancesAdaptor.upsertOne(instance, state),
   ),
   on(InstanceActions.remove_updated_instance,
     (state, instance) => updatedInstancesAdaptor.removeOne(instance.dbId, state)
   ),
+)
+
+// Track the last updated instance
+export interface LastUpdatedInstanceState {
+  lastInst: Instance | undefined
+}
+export const lastUpdatedInstanceInitialState: LastUpdatedInstanceState = {
+  lastInst: undefined
+}
+export const lastUpdatedInstanceReducer = createReducer(
+  lastUpdatedInstanceInitialState,
+  on(InstanceActions.last_updated_instance, 
+    (state, instance) => ({...state, lastInst: instance})
+  )
 )
 
 /**

@@ -15,7 +15,7 @@ import { EventFilterComponent } from '../components/event-filter/event_filter.co
 })
 export class MainEventComponent {
   sideWidth = 400;
-  diagramHeight = 500;
+  diagramHeight = 850;
   schemaPanelOpen = false;
   resizingVertical: boolean = false;
   resizingHorizontal: boolean = false;

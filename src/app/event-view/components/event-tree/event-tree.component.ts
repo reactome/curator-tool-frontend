@@ -114,13 +114,12 @@ export class EventTreeComponent {
         const diagramPathwayId = Number(params['id']);
         const select = Number(this.route.snapshot.queryParams['select']);
         const matchedNodes = this.selectNodes(select ? select : diagramPathwayId, diagramPathwayId);
-        // There is no need to call the following.
-        // The diagram should handle route itself.
-        // // If there is no diagram for the dbId, we need to re-route to load the diagram
-        // if (matchedNodes && matchedNodes.length > 0) {
-        //   // Let's just used the first node right now
-        //   this.navigateToEventNode(matchedNodes[0]);
-        // }
+        // If there is no diagram for the dbId, we need to re-route to load the diagram
+        // This case occurs when a reaction is passed as dbId, e.g. localhost:4200/event_view/instance/9615721
+        if (matchedNodes && matchedNodes.length > 0) {
+          // Let's just used the first node right now
+          this.navigateToEventNode(matchedNodes[0]);
+        }
       });
     });
   }

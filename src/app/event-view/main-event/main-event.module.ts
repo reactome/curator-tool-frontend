@@ -16,6 +16,9 @@ import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-d
 import { InstanceModule } from 'src/app/instance/instance.module';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { EventFilterComponent } from "../components/event-filter/event_filter.component";
+import { StoreModule } from '@ngrx/store';
+import { LAST_UPDATED_INSTANCE_STATE_NAME } from 'src/app/instance/state/instance.selectors';
+import { lastUpdatedInstanceReducer } from 'src/app/instance/state/instance.reducers';
 
 @NgModule({
   declarations: [
@@ -41,7 +44,8 @@ import { EventFilterComponent } from "../components/event-filter/event_filter.co
     PathwayDiagramComponent,
     InstanceModule,
     SharedModule,
-    EventFilterComponent
+    EventFilterComponent,
+    StoreModule.forFeature(LAST_UPDATED_INSTANCE_STATE_NAME, lastUpdatedInstanceReducer),
 ]
 })
 export class MainEventModule { }

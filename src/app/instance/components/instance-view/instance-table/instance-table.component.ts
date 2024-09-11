@@ -7,26 +7,25 @@ import {
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { PostEditListener } from 'src/app/core/post-edit/PostEditOperation';
 import { PostEditService } from 'src/app/core/services/post-edit.service';
-import { InstanceActions } from 'src/app/instance/state/instance.actions';
+import { InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
+import {
+  SelectInstanceDialogService
+} from 'src/app/schema-view/list-instances/components/select-instance-dialog/select-instance-dialog.service';
 import {
   AttributeCategory,
   AttributeDataType,
   SchemaAttribute,
 } from '../../../../core/models/reactome-schema.model';
-import {DragDropService} from '../../../../schema-view/instance-bookmark/drag-drop.service';
-import {
-  SelectInstanceDialogService
-} from 'src/app/schema-view/list-instances/components/select-instance-dialog/select-instance-dialog.service';
-import {NewInstanceDialogService} from '../../new-instance-dialog/new-instance-dialog.service';
+import { DragDropService } from '../../../../schema-view/instance-bookmark/drag-drop.service';
+import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
 import {
   AttributeValue,
   DragDropStatus,
   EDIT_ACTION,
   InstanceDataSource,
 } from './instance-table.model';
-import {PostEditListener} from 'src/app/core/post-edit/PostEditOperation';
-import {NewInstanceActions} from 'src/app/instance/state/instance.actions';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -361,7 +360,6 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   private registerUpdatedInstance(): void {
-    // Only register updates to exisiting instances
     let cloned: Instance = {
       dbId: this._instance!.dbId,
       displayName: this._instance!.displayName,
@@ -375,6 +373,7 @@ export class InstanceTableComponent implements PostEditListener {
       // Force the state to update if needed
       this.store.dispatch(NewInstanceActions.register_new_instance(cloned));
     }
+    this.store.dispatch(InstanceActions.last_updated_instance(cloned));
   }
 
   addModifiedAttribute(attributeName: string, attributeVal: any) {
