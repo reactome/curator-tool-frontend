@@ -11,7 +11,7 @@ import { EditorActionsComponent, ElementType } from './editor-actions/editor-act
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { EDGE_POINT_CLASS, Instance } from 'src/app/core/models/reactome-instance.model';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 
@@ -200,6 +200,8 @@ export class PathwayDiagramComponent implements AfterViewInit {
     else if (this.elementUnderMouse.isNode()) {
       if (this.elementUnderMouse.hasClass("Compartment"))
         this.elementTypeForPopup = ElementType.COMPARTMENT;
+      else if (this.elementUnderMouse.hasClass(EDGE_POINT_CLASS))
+        this.elementTypeForPopup = ElementType.EDGE_POINT;
       else {
         this.elementTypeForPopup = ElementType.NODE;
         this.isFlowLineAddable = this.diagramUtils.isFlowLineAddable(this.elementUnderMouse, this);

@@ -2,6 +2,7 @@
  * This TypeScript file contains TS artfacts which are used to model an instance in the Reactome Schema.
  */
 
+import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { SchemaClass } from "./reactome-schema.model";
 
 export interface Instance {
@@ -39,3 +40,33 @@ export interface Referrer {
   attributeName: string;
   referrers: Instance[];
 }
+
+/**
+ * Use to flag a node that is added as a control point for a rounded curve segment.
+ */
+export const EDGE_POINT_CLASS: string = 'edge_point';
+
+// Some rendering related information copied from the Java desktop version
+export const RENDERING_CONSTS = {
+    // Use to breakdown a long display name
+    WORD_WRAP_RE: /([\ /,:;-])/,
+    // private readonly WORD_WRAP_RE_G = /([\ /,:;-])/g;
+    DEFAULT_NODE_WIDTH: 130,
+    MIN_NODE_WIDTH: 10,
+    WIDTH_RATIO_OF_BOUNDS_TO_TEXT: 1.3,
+    HEIGHT_RATIO_OF_BOUNDS_TO_TEXT: 1.5,
+    NODE_BOUND_PADDING: 10,
+    // As specified org.gk.render.ConnectWidget's BUFFER
+    // Most likely we should create a new class or interface to group all these readonly
+    // configuration together. Put it for the time being.
+    CONNECT_BUFFER: 3,
+    // Since complex has some decoration, we need to assign a mini height. Otherwise, the decoration
+    // may be off.
+    COMPLEX_MIN_HEIGHT: 50,
+  
+    // This is arbitrary
+    INIT_POSITION: {
+        x: 50,
+        y: 50
+    } as Position,
+} as const;

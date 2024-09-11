@@ -35,6 +35,7 @@ export enum ElementType {
   CYTOSCAPE = "cytoscape",
   EDGE = "edge",
   FLOWLINE = 'flowline',
+  EDGE_POINT = 'edgePoint',
   NODE = "node",
   COMPARTMENT = "compartment"
 }
