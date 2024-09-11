@@ -6,7 +6,6 @@
   <!--TODO: We may switch to check all objects related to object specific reaction -->
   <ng-container *ngIf="elmType === elmTypes.EDGE && isEdgeEditable">
     <button style="margin-bottom: 1px" (click)="onClick('addPoint')">Add Edge Point</button>
-    <button style="margin-bottom: 1px" (click)="onClick('removePoint')">Remove Edge Point</button>
     <!-- Only a reaction can be deleted from the diagram -->
     <button style="margin-bottom: 1px" (click)="onClick('delete')">Remove Reaction</button>
     <!-- <ng-container *ngIf="elmType === elmTypes.NODE">
@@ -20,13 +19,15 @@
   <!-- Remove a flowline between a PE and a ProcessNode -->
   <ng-container *ngIf="elmType === elmTypes.FLOWLINE">
     <button style="margin-bottom: 1px" (click)="onClick('addPoint')">Add Edge Point</button>
-    <button style="margin-bottom: 1px" (click)="onClick('removePoint')">Remove Edge Point</button>
     <button style="margin-bottom: 1px" (click)="onClick('delete')">Remove Flow Line</button>
   </ng-container>
   <!-- Compartment has its own way -->
   <ng-container *ngIf="elmType === elmTypes.COMPARTMENT">
     <button style="margin-bottom: 1px" (click)="onClick('resizeCompartment')">Resize Compartment</button>
     <button style="margin-bottom: 1px" (click)="onClick('disableResize')">Disable Resizing</button>
+  </ng-container>
+  <ng-container *ngIf="elmType === elmTypes.EDGE_POINT">
+    <button style="margin-bottom: 1px" (click)="onClick('removePoint')">Remove Edge Point</button>
   </ng-container>
   <button style="margin-bottom: 1px" (click)="onClick('toggleDarkMode')">Toggle Color Theme</button>
   <button style="margin-bottom: 1px" (click)="onClick('upload')">Upload Diagram</button>

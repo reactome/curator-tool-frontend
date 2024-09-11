@@ -413,10 +413,12 @@ export class HyperEdge {
         // Do nothing if either of them cannot be found
         if (inputEdge === undefined || outputEdge === undefined)
             return;
+        //TODO: Check if outputEdge or inputEdge data should be used
+        // For the time being, use outputEdge (e.g. between input and output)
         const newEdge = this.createNewEdge(inputEdge.source().data('id'),
                                            outputEdge.target().data('id'),
-                                           inputEdge.data(),
-                                           inputEdge.classes());
+                                           outputEdge.data(),
+                                           outputEdge.classes());
         this.cy.remove(node);
         for (let edge of connectedEdges) {
             this.cy.remove(edge);
