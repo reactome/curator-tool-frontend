@@ -25,7 +25,13 @@ export const bookmarkReducer = createReducer(
   on(BookmarkActions.add_bookmark,
     (state, instance) =>  bookmarkAdaptor.upsertOne(instance, state)
   ),
+  on(BookmarkActions.bc_add_bookmark,
+    (state, instance) =>  bookmarkAdaptor.upsertOne(instance, state)
+  ),
   on(BookmarkActions.remove_bookmark,
+    (state, instance) => bookmarkAdaptor.removeOne(instance.dbId, state)
+  ),
+  on(BookmarkActions.bc_remove_bookmark,
     (state, instance) => bookmarkAdaptor.removeOne(instance.dbId, state)
   )
 )

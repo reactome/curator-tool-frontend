@@ -19,10 +19,10 @@ export class PathwayDiagramUtilService {
     private readonly RESIZE_NODE_LOCATIONS: string[] = ['ne', 'nw', 'se', 'sw'];
     private converter = new InstanceConverter();
     
-    constructor(private dataSerice: DataService) { }
+    constructor(private dataService: DataService) { }
 
     getDataService(): DataService {
-        return this.dataSerice;
+        return this.dataService;
     }
 
     select(diagram: DiagramComponent, dbId: any) {
@@ -127,7 +127,7 @@ export class PathwayDiagramUtilService {
         if (REACTION_TYPES.includes(event.schemaClassName)) {
             // For threading issue, we have to do like this way instead of creating an HyperEdge directly by converter.
             const hyperEdge = new HyperEdge(this, cy, event.dbId);
-            hyperEdge.createFromEvent(event, this.dataSerice, this.converter);
+            hyperEdge.createFromEvent(event, this.dataService, this.converter);
             this.id2hyperEdge.set(event.dbId, hyperEdge);
         }
         // Handle pathway
