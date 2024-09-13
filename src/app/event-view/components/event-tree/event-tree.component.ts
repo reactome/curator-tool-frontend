@@ -119,6 +119,8 @@ export class EventTreeComponent {
         if (matchedNodes && matchedNodes.length > 0) {
           // Let's just used the first node right now
           this.navigateToEventNode(matchedNodes[0]);
+          // mimic a tree click event 
+          this.eventClicked.emit(matchedNodes[0].dbId);
         }
       });
     });
@@ -280,10 +282,6 @@ export class EventTreeComponent {
     else {
       console.error('Cannot find a higher level pathway having diagram for ' + event.name);
     }
-  }
-
-  //TODO: Use Deidre's new search interface
-  searchInstances(criteria: AttributeCondition) {
   }
 
   addToDiagramAction(node: EventNode) {

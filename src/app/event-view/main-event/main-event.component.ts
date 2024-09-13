@@ -39,9 +39,6 @@ export class MainEventComponent {
     this.diagramView?.diagram.reactomeEvents$.subscribe(event => {
       this.handleDiagramSelection(event);
     });
-    this.diagramView?.id$.subscribe(id => {
-      this.handleDiagramIdChange(id);
-    });
   }
 
   openSidenav() {
@@ -139,19 +136,6 @@ export class MainEventComponent {
     this.selectedIdsInDiagram = reactomeIds;
     this.instanceView?.loadInstance(reactomeIds[0]);
     this.eventTree?.selectNodesForDiagram(reactomeIds[0]);
-  }
-
-  /**
-   * Switch the instance view for the new id for the loading pathway diagram.
-   * @param id
-   */
-  handleDiagramIdChange(id: number) {
-    setTimeout(() => {
-      id = Number(id); // Just in case
-      if (id && id !== 0)
-        this.instanceView?.loadInstance(id);
-    });
-
   }
 
   protected readonly window = window;
