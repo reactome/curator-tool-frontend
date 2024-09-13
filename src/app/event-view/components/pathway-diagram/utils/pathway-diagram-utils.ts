@@ -9,6 +9,7 @@ import { HyperEdge } from "./hyperedge";
 import { InstanceConverter } from "./instance-converter";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import { PathwayDiagramComponent } from "../pathway-diagram.component";
+import { PathwayDiagramValidator } from "./pathway-diagram-validator";
 
 @Injectable()
 export class PathwayDiagramUtilService {
@@ -19,10 +20,16 @@ export class PathwayDiagramUtilService {
     private readonly RESIZE_NODE_LOCATIONS: string[] = ['ne', 'nw', 'se', 'sw'];
     private converter = new InstanceConverter();
     
-    constructor(private dataService: DataService) { }
+    constructor(private dataService: DataService,
+        private validator: PathwayDiagramValidator
+    ) { }
 
     getDataService(): DataService {
         return this.dataService;
+    }
+
+    handleInstanceEdit(instance: Instance | undefined, diagram: PathwayDiagramComponent) {
+        this.validator.handleInstanceEdit(instance, diagram?.diagram?.cy);
     }
 
     select(diagram: DiagramComponent, dbId: any) {
@@ -149,7 +156,6 @@ export class PathwayDiagramUtilService {
         const exitedNodes = cy.nodes().filter(node => node.data('reactomeId') === event.dbId);
         return exitedNodes.length > 0;
     }
-
 
     resizeCompartment(node: any, e: any, previousDragPos: Position) {
         // Used to determine the direction

@@ -71,7 +71,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
   ngOnInit() {
     this.store.select(lastUpdatedInstance()).subscribe(instance => {
-      console.debug('This instance is just updated: ', instance);
+      this.diagramUtils.handleInstanceEdit(instance, this);
     })
   }
 

@@ -106,7 +106,6 @@ export class InstanceTableRowElementComponent implements OnInit {
       value: this.control.value, // Get the new value from control
       index: this.index
     }
-    console.debug("onChange: ", attributeValue);
     this.newValueEvent.emit(attributeValue);
     this.triggerResize();
   }

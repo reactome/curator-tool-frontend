@@ -15,7 +15,6 @@ import {
 @Injectable({
   providedIn: 'root'
 })
-
 /**
  * This class is used to fetch instance and class definition from the RESTful API.
  */
@@ -55,7 +54,7 @@ export class DataService {
   private rootEvent: Instance | undefined;
   private name2class?: Map<string, SchemaClass>;
 
-  // Use this subject to force the waiting for components to fetch instance
+  // Use this subject to force waiting for components to fetch instance
   // since we need to load changed instances from cached storage first
   private loadInstanceSubject : Subject<void> | undefined = undefined;
 
@@ -105,27 +104,13 @@ export class DataService {
    * @param searchKeys
    * @returns
    */
-  fetchSchemaClassTree(skipCache?: boolean,
-                       selectedSpecies?: string,
-                       selectedClass?: string,
-                       selectedAttributes?: string[],
-                       selectedAttributeTypes?: string[],
-                       selectedOperands?: string[],
-                       searchKeys?: string[]): Observable<SchemaClass> {
+  fetchSchemaClassTree(skipCache?: boolean): Observable<SchemaClass> {
     // Check cached results first
     if (this.rootClass && !skipCache) {
       return of(this.rootClass!);
     }
     // Otherwise call the restful API
     let url = this.schemaClassTreeUrl;
-    if (searchKeys && searchKeys.length > 0) {
-      url += '?class=' + selectedClass
-        + '&attributes=' + selectedAttributes?.toString()
-        + "&attributeTypes=" + selectedAttributeTypes?.toString()
-        + '&operands=' + encodeURI(selectedOperands!.toString())
-        + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'"));
-    }
-    console.log('url', url)
     return this.http.get<SchemaClass>(url)
       .pipe(
         map((data: SchemaClass) => {
@@ -134,7 +119,7 @@ export class DataService {
           return this.rootClass;
         }),
         catchError((err: Error) => {
-          console.log("The schema class table could not been loaded: \n" + err.message, "Close", {
+          console.debug("The schema class table could not been loaded: \n" + err.message, "Close", {
             panelClass: ['warning-snackbar'],
             duration: 10000
           });
@@ -145,15 +130,9 @@ export class DataService {
   /**
    * Fetch Event Tree
    * @param skipCache
-   * @param selectedClass
-   * @param selectedAttributes
-   * @param selectedAttributeTypes
-   * @param selectedOperands
    * @param selectedSpecies
-   * @param searchKeys
    */
   fetchEventTree(skipCache: boolean, speciesName: string): Observable<Instance> {
-
     //Check cached results first
     if (this.rootEvent && !skipCache) {
       return of(this.rootEvent!);

@@ -4,7 +4,7 @@ import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree"
 import { AttributeCondition, Instance } from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
 import { ActivatedRoute, Router } from "@angular/router";
-import { take } from "rxjs";
+import { forkJoin, take } from "rxjs";
 import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
 import { MatDialog } from "@angular/material/dialog";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
@@ -89,6 +89,10 @@ export class EventTreeComponent {
     (instance: Instance) => instance.attributes["hasEvent"] ?? []
   );
 
+  hasChild = (_: number, node: EventNode) => node.expandable;
+
+  isRootNode = (_: number, node: EventNode) => node.rootNode;
+
   dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
 
   // To show information
@@ -99,36 +103,49 @@ export class EventTreeComponent {
     private service: DataService,
     private route: ActivatedRoute,
     private router: Router) {
-      // Make sure this is called only once using take(1)
+    // Make sure this is called only once using take(1)
+    // We call this only once. Therefore, always need to load the tree
     this.route.params.pipe(take(1)).subscribe(params => {
       console.debug('handling route param in event tree: ', params);
-      // We call this only once. Therefore, always need to load the tree
-      service.fetchEventTree(false, 'all').subscribe(data => {
-        this.dataSource.data = [data];
-        this.showProgressSpinner = false;
-        // Expand the root note and tag it as rootNode - so that it can be hidden in html
-        let rootNode = this.treeControl.dataNodes[0];
-        this.treeControl.expand(rootNode);
-        // Cache the tree parent/child relationship for performance
-        this.cacheTreePaths();
-        const diagramPathwayId = Number(params['id']);
-        const select = Number(this.route.snapshot.queryParams['select']);
-        const matchedNodes = this.selectNodes(select ? select : diagramPathwayId, diagramPathwayId);
-        // If there is no diagram for the dbId, we need to re-route to load the diagram
-        // This case occurs when a reaction is passed as dbId, e.g. localhost:4200/event_view/instance/9615721
-        if (matchedNodes && matchedNodes.length > 0) {
-          // Let's just used the first node right now
-          this.navigateToEventNode(matchedNodes[0]);
-          // mimic a tree click event 
-          this.eventClicked.emit(matchedNodes[0].dbId);
+      forkJoin({
+        eventTree: service.fetchEventTree(false, 'all'),
+        // Need to load schema class tree so that we can use it
+        // to handle something like isReaction check in display name generator.
+        schemaTree: service.fetchSchemaClassTree(false)
+      }).subscribe({
+        next: ({ eventTree, schemaTree }) => {
+          this.processEventTreeData(eventTree, params['id']);
+          // console.log('Second call response:', schemaTree);
+          // Both server calls are now completed
+        },
+        error: (error) => {
+          console.error('Error occurred:', error);
         }
       });
     });
   }
 
-  hasChild = (_: number, node: EventNode) => node.expandable;
-
-  isRootNode = (_: number, node: EventNode) => node.rootNode;
+  private processEventTreeData(data: any, paramsId: string) {
+    this.dataSource.data = [data];
+    this.showProgressSpinner = false;
+    // Expand the root note and tag it as rootNode - so that it can be hidden in html
+    let rootNode = this.treeControl.dataNodes[0];
+    this.treeControl.expand(rootNode);
+    // Cache the tree parent/child relationship for performance
+    this.cacheTreePaths();
+    const diagramPathwayId = Number(paramsId);
+    const select = Number(this.route.snapshot.queryParams['select']);
+    const matchedNodes = this.selectNodes(select ? select : diagramPathwayId, diagramPathwayId);
+    // If there is no diagram for the dbId, we need to re-route to load the diagram
+    // This case occurs when a reaction is passed as dbId, e.g. localhost:4200/event_view/instance/9615721
+    // The last check to make sure it is for a reaction
+    if (matchedNodes && matchedNodes.length > 0 && matchedNodes[0].dbId !== diagramPathwayId) {
+      // Let's just used the first node right now
+      this.navigateToEventNode(matchedNodes[0]);
+      // mimic a tree click event so that the instance can be shown in the instance view
+      this.eventClicked.emit(matchedNodes[0].dbId);
+    }
+  }
 
   private cacheTreePaths() {
     if (this.treeControl === undefined || this.treeControl.dataNodes === undefined)

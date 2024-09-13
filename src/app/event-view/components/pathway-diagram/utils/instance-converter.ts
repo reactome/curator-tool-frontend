@@ -2,13 +2,11 @@
  * This script is used to handle the converting from Instance to data objects needed by cytoscape.js.
  */
 
-import { EDGE_POINT_CLASS, Instance } from "src/app/core/models/reactome-instance.model";
-import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
-import { EdgeDefinition, NodeDefinition, Core } from 'cytoscape';
+import { Core, EdgeDefinition, NodeDefinition } from 'cytoscape';
 import { DiagramService } from "ngx-reactome-diagram";
-import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
+import { EDGE_POINT_CLASS, Instance, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { HyperEdge } from "./hyperedge";
-import { RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
+import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
 
 export class InstanceConverter {
     

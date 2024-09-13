@@ -45,6 +45,7 @@ export class AppComponent {
         else
           this.store.dispatch(InstanceActions.register_updated_instance(cloned));
       }
+      // The following two statements will force the dataService to finish the loading first
       this.dataService.getLoadInstanceSubject()!.next();
       this.dataService.getLoadInstanceSubject()!.complete();
       this.dataService.stopLoadInstance();
