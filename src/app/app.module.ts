@@ -28,6 +28,7 @@ import {MainEventModule} from "./event-view/main-event/main-event.module";
 import { DIAGRAM_CONFIG_TOKEN } from 'ngx-reactome-diagram';
 import {appReducer} from "./store/app.reducer";
 import {AppEffects} from "./store/app.effects";
+import {BookmarkEffects} from "./schema-view/instance-bookmark/state/bookmark.effects";
 
 export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
   return localStorageSync({
@@ -60,7 +61,7 @@ const diagramServiceConfig = {
     EffectsModule.forRoot(),
     StoreModule.forRoot({router: routerReducer}, {metaReducers}),
     StoreModule.forRoot({ app: appReducer }),
-    EffectsModule.forRoot([AppEffects]),
+    EffectsModule.forRoot([BookmarkEffects]),
     RouterModule.forRoot([]),
     StoreRouterConnectingModule.forRoot({serializer: CustomSerializer,}),
     StoreDevtoolsModule.instrument({

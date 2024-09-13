@@ -15,5 +15,6 @@ export const BookmarkActions = createActionGroup({
     load_bookmarks: emptyProps(),
     save_bookmarks: emptyProps(),
     set_bookmarks: props<{instances: Instance[]}>(),
+    broadcast_bookmarks: props<Instance>(),
   }
 })

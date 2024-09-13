@@ -44,21 +44,6 @@ export class SearchInstanceComponent implements OnInit {
     //setTimeout(() => this.addAttribute()); // Add a delay to avoid NG0100 error.
   }
 
-  // searchInstances(): void {
-  //   this.searchInstancesAction.emit(this.attributeCondition!);
-  // }
-
-  // hideSearchPane(): void {
-  //   if (this.hideSearchPanel === "") {
-  //     this.hideShowButtonLabel = "...";
-  //     this.hideSearchPanel = "hidden";
-  //   }
-  //   else {
-  //     this.hideShowButtonLabel = "Hide Panel";
-  //     this.hideSearchPanel = "";
-  //   }
-  // }
-
   addAttribute(attributeCondition: AttributeCondition) {
     this.searchInstancesAction.emit(attributeCondition);
   }

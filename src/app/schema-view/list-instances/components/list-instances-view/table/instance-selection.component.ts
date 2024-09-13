@@ -218,7 +218,14 @@ export class InstanceSelectionComponent implements OnInit {
     if (this.useRoute) {
       if (this.searchKey && this.searchKey.trim().length > 0) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
         this.router.navigate([url],
-          {queryParams: {attributes: attributes, operands: operands, searchKeys: searchKeys}, queryParamsHandling: 'merge'});
+          {
+            queryParams: {
+              attributes: attributes.toString(),
+              operands: operands.toString(),
+              searchKeys: searchKeys.toString()
+            },
+            queryParamsHandling: 'merge'
+          });
       else
         this.router.navigate([url]);
     } else

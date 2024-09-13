@@ -1,14 +1,10 @@
-  <mat-card style="margin: 20px; background-color:#E5E4E2;">
-    <div>
-<!--      <ng-container *ngFor="let attributeCondition of attributeCondition">-->
-          <app-attribute-condition
-            [schemaClassAttributes]="attributes"
-            [attributeCondition]= blankAttributeCondition
-            (addAttributeCondition)="addAttribute($event)"
-            (removeAttributeCondition)="removeAttribute($event)">
-          </app-attribute-condition>
-<!--      </ng-container>-->
-    </div>
-  </mat-card>
-<!--<button style="margin: 10px;" [hidden]="hideSearchPanel === '' ? 'hidden' : ''" mat-raised-button (click)="hideSearchPane()">{{hideShowButtonLabel}}</button>-->
-
+<mat-card style="margin: 20px; background-color:#E5E4E2;">
+  <div>
+    <app-attribute-condition
+      [schemaClassAttributes]="attributes"
+      [attributeCondition]=blankAttributeCondition
+      (addAttributeCondition)="addAttribute($event)"
+      (removeAttributeCondition)="removeAttribute($event)">
+    </app-attribute-condition>
+  </div>
+</mat-card>
