@@ -29,6 +29,7 @@ import { DIAGRAM_CONFIG_TOKEN } from 'ngx-reactome-diagram';
 import {appReducer} from "./store/app.reducer";
 import {AppEffects} from "./store/app.effects";
 import {BookmarkEffects} from "./schema-view/instance-bookmark/state/bookmark.effects";
+import { MAT_TOOLTIP_DEFAULT_OPTIONS, MatTooltipDefaultOptions } from '@angular/material/tooltip';
 
 export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
   return localStorageSync({
@@ -46,6 +47,13 @@ const diagramServiceConfig = {
   // diagramUrl: 'https://dev.reactome.org/download/current/diagram'
   diagramUrl: environment.ApiRoot + '/diagram'
 }
+
+// Set a longer default delay to avoid showing tooltip to avoid annoying the user
+const customTooltipOptions: MatTooltipDefaultOptions = {
+  showDelay: 500,
+  hideDelay: 500,
+  touchendHideDelay: 500,
+};
 
 @NgModule({
   declarations: [
@@ -85,6 +93,7 @@ const diagramServiceConfig = {
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: HeaderInterceptor, multi: true },
     {provide: DIAGRAM_CONFIG_TOKEN, useValue: diagramServiceConfig},
+    { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: customTooltipOptions }
   ],
   bootstrap: [AppComponent],
 })

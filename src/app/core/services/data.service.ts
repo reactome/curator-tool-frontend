@@ -404,27 +404,6 @@ export class DataService {
   }
 
   /**
-   * Call the server to get the counts.
-   * @param className
-   * @returns
-   */
-  getInstanceCount(className: string, searchKey: string | undefined): Observable<number> {
-    let url = this.countInstancesUrl + className;
-    if (searchKey !== undefined) {
-      url += '?query=' + searchKey;
-    }
-    return this.http.get<number>(url)
-      .pipe(map((count: number) => count), // Nothing needs to be done.
-        catchError((err: Error) => {
-          console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 10000
-          });
-          return throwError(() => err);
-        }));
-  }
-
-  /**
    * Attributes returned from the server are kept as JavaScript object since JavaScript really
    * doesn't care about the type. Therefore, we need to do some converting here.
    * @param instance
