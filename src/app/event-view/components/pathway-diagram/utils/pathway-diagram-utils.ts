@@ -18,10 +18,10 @@ export class PathwayDiagramUtilService {
     private id2hyperEdge : Map<number|string, HyperEdge> = new Map();
     // For resizing
     private readonly RESIZE_NODE_LOCATIONS: string[] = ['ne', 'nw', 'se', 'sw'];
-    private converter = new InstanceConverter();
     
     constructor(private dataService: DataService,
-        private validator: PathwayDiagramValidator
+        private validator: PathwayDiagramValidator,
+        private converter: InstanceConverter
     ) { }
 
     getDataService(): DataService {

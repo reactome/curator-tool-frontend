@@ -6,7 +6,8 @@ import { InstanceConverter } from "./utils/instance-converter";
 @NgModule({
 providers: [
     PathwayDiagramUtilService,
-    PathwayDiagramValidator
+    PathwayDiagramValidator,
+    InstanceConverter
 ]
 })
 export class PathwayDiagramModule{}

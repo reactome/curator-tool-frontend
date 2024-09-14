@@ -1,9 +1,11 @@
 import { Injectable } from "@angular/core";
-import { Instance } from "src/app/core/models/reactome-instance.model";
+import { EDGE_POINT_CLASS, Instance } from "src/app/core/models/reactome-instance.model";
 import { PathwayDiagramComponent } from "../pathway-diagram.component";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import {Core} from 'cytoscape';
 import { DataService } from "src/app/core/services/data.service";
+import { InstanceConverter } from "./instance-converter";
+import { DiagramService } from "ngx-reactome-diagram";
 
 /**
  * This class is used to validate the consistent between the displayed elements in the diagram and the
@@ -15,10 +17,15 @@ import { DataService } from "src/app/core/services/data.service";
 export class PathwayDiagramValidator{
     // A list of attributes in Reactome that should be checked
     private readonly REACTION_ATTRIBUTES = ['input', 'output', 'catalystActivity', 'regulatedBy'];
+    
+    constructor(private dataService: DataService,
+        private converter: InstanceConverter,
+        private diagramService: DiagramService
+    ) {}
 
-    constructor(private dataService: DataService) {}
-
-    handleInstanceEdit(instance: Instance | undefined, attribute: string | undefined, cy: Core | undefined) {
+    handleInstanceEdit(instance: Instance | undefined, 
+                       attribute: string | undefined, 
+                       cy: Core | undefined) {
         if (!instance || !cy || !attribute) return;
         // First check if we have any element having this instance
         const found = cy.elements(`[reactomeId = ${instance.dbId}]`);
@@ -59,11 +66,11 @@ export class PathwayDiagramValidator{
                             pes.push(catalyst);
                     }
                 }
-                this._validateReaction(elms, pes, attribute, cy);
+                this._validateReaction(elms, pes, attribute, cy, instance);
             });
         }
         else {
-            this._validateReaction(elms, attValues, attribute, cy);
+            this._validateReaction(elms, attValues, attribute, cy, instance);
         }
     }
 
@@ -74,8 +81,8 @@ export class PathwayDiagramValidator{
      * @param attribute 
      * @param cy 
      */
-    private _validateReaction(elms: any, attValues: any[], attribute: string, cy: Core) {
-        console.debug('validateReaction: ' + elms);
+    private _validateReaction(elms: any, attValues: any[], attribute: string, cy: Core, reaction: Instance) {
+        // console.debug('validateReaction: ' + elms);
         // A reaction should have multiple elements: need to figure out 
         // elements related to the changed attribute
         // reactomeId -> elmId so that they can be compared with the instance
@@ -94,11 +101,10 @@ export class PathwayDiagramValidator{
         // Now it is time to validate
         // From instance to edges: make sure all are displayed
         if (attValues.length > 0) {
-            // Need to get regulator and catalyst!!!
             for (let attValue of attValues) {
                 // Make sure this attribute is there
                 if (!reactomeId2elm.has(attValue.dbId)) {
-                    console.debug('Add a new ' + attribute + ", " + attValue.displayName);
+                    this.addInstanceToReaction(elms, attValue, attribute, cy, reaction);
                 }
             }
         }
@@ -115,6 +121,44 @@ export class PathwayDiagramValidator{
                     cy.remove(peNode); // Don't leave a node hanging there!
             }
         }
+    }
+
+    private addInstanceToReaction(elms: any[], pe: Instance, attribute: string, cy: Core, reaction: Instance) {
+        // Get the reaction node
+        const reactionNodes = elms.filter(elm => (elm.isNode() && elm.hasClass('reaction') && !elm.hasClass(EDGE_POINT_CLASS)));
+        if (reactionNodes.length === 0)
+            return; // No reaction node
+        const type = this.mapAttributeToType(attribute);
+        if (type == undefined)
+            return;
+        const reactionNode = reactionNodes[0];
+        const peElm = this.converter.createPENode(pe, cy, undefined, this.diagramService);
+        let source = undefined;
+        let target = undefined;
+        if (attribute === 'output') {
+            source = reactionNode;
+            target = peElm;
+        }
+        else {
+            source = peElm;
+            target = reactionNode;
+        }
+        this.converter.createEdge(source, target, reaction, type, this.diagramService, cy);
+    }
+
+    private mapAttributeToType(attribute: string): string | undefined {
+        if (attribute === 'input') return 'INPUT';
+        if (attribute === 'output') return 'OUTPUT';
+        if (attribute === 'catalystActivity') return 'CATALYST';
+        if (attribute === 'regulatedBy') return 'ACTIVATOR'; // to be updated
+        return undefined;
+    }
+
+    private getReactionNode(reactionDbId: number, cy: Core) {
+        const elm = cy.nodes().filter(node => node.data('reactomeId') === reactionDbId)
+                               .filter(node => node.hasClass('reaction') && !node.hasClass(EDGE_POINT_CLASS))
+                               .first();
+        return elm;
     }
 
     // Note: This method is very similar to getEdgeType in HyperEdge.

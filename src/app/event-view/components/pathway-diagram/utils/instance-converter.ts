@@ -7,7 +7,9 @@ import { DiagramService } from "ngx-reactome-diagram";
 import { EDGE_POINT_CLASS, Instance, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { HyperEdge } from "./hyperedge";
 import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
+import { Injectable } from '@angular/core';
 
+@Injectable()
 export class InstanceConverter {
     
     constructor() { }
@@ -108,7 +110,7 @@ export class InstanceConverter {
             inputHubNode = this.createHubNode(instance, cy, 'input');
             hyperEdge.registerObject(inputHubNode);
             // Create an edge from inputHubNode to reactionNode
-            const edge = this.createEdge(inputHubNode, reactionNode, instance, 'INPUT', utils, cy);
+            const edge = this.createEdge(inputHubNode, reactionNode, instance, 'INPUT', utils.diagramService!, cy);
             hyperEdge.registerObject(edge);
             // Update the id
             edge.classes(['reaction', 'input']); // reset it
@@ -117,9 +119,9 @@ export class InstanceConverter {
         inputStoichiometry.forEach((stoichiometry, inputNode) => {
             let edge = undefined;
             if (inputHubNode !== undefined)
-                edge = this.createEdge(inputNode, inputHubNode, instance, 'INPUT', utils, cy);
+                edge = this.createEdge(inputNode, inputHubNode, instance, 'INPUT', utils.diagramService!, cy);
             else 
-                edge = this.createEdge(inputNode, reactionNode, instance, 'INPUT', utils, cy);
+                edge = this.createEdge(inputNode, reactionNode, instance, 'INPUT', utils.diagramService!, cy);
             edge.data('stoichiometry', stoichiometry);
             hyperEdge.registerObject(edge);
         });
@@ -127,7 +129,7 @@ export class InstanceConverter {
         let outputHubNode: any = undefined;
         if (outputStoichiometry.size > 1) {
             outputHubNode = this.createHubNode(instance, cy, 'output');
-            const edge = this.createEdge(reactionNode, outputHubNode, instance, 'OUTPUT', utils, cy);
+            const edge = this.createEdge(reactionNode, outputHubNode, instance, 'OUTPUT', utils.diagramService!, cy);
             edge.classes(['reaction', 'output']);
             hyperEdge.registerObject(outputHubNode);
             hyperEdge.registerObject(edge);
@@ -135,23 +137,23 @@ export class InstanceConverter {
         outputStoichiometry.forEach((stoichiometry, outputNode) => {
             let edge = undefined;
             if (outputHubNode !== undefined)
-                edge = this.createEdge(outputHubNode, outputNode, instance, 'OUTPUT', utils, cy);
+                edge = this.createEdge(outputHubNode, outputNode, instance, 'OUTPUT', utils.diagramService!, cy);
             else
-                edge = this.createEdge(reactionNode, outputNode, instance, 'OUTPUT', utils, cy);
+                edge = this.createEdge(reactionNode, outputNode, instance, 'OUTPUT', utils.diagramService!, cy);
             edge.data('stoichiometry', stoichiometry);
             hyperEdge.registerObject(edge);
         })
         // create edges to catalysts
         for (let catalystNode of catalystNodes) {
-            const edge = this.createEdge(catalystNode, reactionNode, instance, 'CATALYST', utils, cy);
+            const edge = this.createEdge(catalystNode, reactionNode, instance, 'CATALYST', utils.diagramService!, cy);
             hyperEdge.registerObject(edge);
         }
         for (let activatorNode of activatorNodes) {
-            const edge = this.createEdge(activatorNode, reactionNode, instance, 'ACTIVATOR', utils, cy);
+            const edge = this.createEdge(activatorNode, reactionNode, instance, 'ACTIVATOR', utils.diagramService!, cy);
             hyperEdge.registerObject(edge);
         }
         for (let inhibitorNode of inhibitorNodes) {
-            const edge = this.createEdge(inhibitorNode, reactionNode, instance, 'INHIBITOR', utils, cy);
+            const edge = this.createEdge(inhibitorNode, reactionNode, instance, 'INHIBITOR', utils.diagramService!, cy);
             hyperEdge.registerObject(edge);
         }
         const newNodes = [...inputStoichiometry.keys(), ...outputStoichiometry.keys(), 
@@ -208,7 +210,7 @@ export class InstanceConverter {
     }
 
     // TODO: How to calculate the size of the node to wrap all text?
-    private createPENode(pe: Instance, cy: Core, hyperedge: HyperEdge, service: DiagramService) {
+    createPENode(pe: Instance, cy: Core, hyperedge: HyperEdge | undefined, service: DiagramService) {
         // Check if this node has been created already
         // In the old pathway diagram, PE nodes have their own ids based on the order
         // To make it backward compatible, we do the search like this
@@ -216,12 +218,14 @@ export class InstanceConverter {
         if (exitedNode.length > 0) { // Always returns something
             // Just register it regardless it has been registered before.
             // Let hyperedge handle duplication
-            hyperedge.registerObject(exitedNode[0]);
+            if (hyperedge) // During editing
+                hyperedge.registerObject(exitedNode[0]);
             return exitedNode[0];
         }
         // This is kind of arbitray
         const newNode = this.createNodeForInstance(pe, cy, service);
-        hyperedge.registerObject(newNode);
+        if (hyperedge)
+            hyperedge.registerObject(newNode);
         return newNode;
     }
 
@@ -305,15 +309,15 @@ export class InstanceConverter {
         return schemaClass;
     }
 
-    private createEdge(source: any, 
-                       target: any, 
-                       instance: Instance,
-                       type: string,
-                       utils: PathwayDiagramUtilService,
-                       cy: Core) {
+    createEdge(source: any,
+        target: any,
+        instance: Instance,
+        type: string,
+        digramService: DiagramService,
+        cy: Core) {
         const edge: EdgeDefinition = {
             data: {
-                id: source.id() + utils.diagramService?.edgeTypeToStr.get(type) + target.id(),
+                id: source.id() + digramService.edgeTypeToStr.get(type) + target.id(),
                 source: source.id(),
                 target: target.id(),
                 reactomeId: instance.dbId,
@@ -321,7 +325,7 @@ export class InstanceConverter {
                     stId: instance.dbId + '',
                 }
             },
-            classes: utils.diagramService?.edgeTypeMap.get(type)
+            classes: digramService.edgeTypeMap.get(type)
         };
         return cy.add(edge)[0];
     }
