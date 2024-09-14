@@ -1,6 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
-import { catchError, concatMap, from, map, Observable, of, Subject, switchMap, throwError, toArray } from 'rxjs';
+import { catchError, concatMap, forkJoin, from, map, Observable, of, Subject, switchMap, throwError, toArray } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { Instance, InstanceList, Referrer } from "../models/reactome-instance.model";
 import {
@@ -287,6 +287,16 @@ export class DataService {
       return of(this.id2instance.get(dbId)!);
     }
     return this.fetchInstanceFromDatabase(dbId, true);
+  }
+
+  /**
+   * Fetch a list of intances for the provided dbIds list.
+   * @param dbIds 
+   */
+  fetchInstances(dbIds: number[]): Observable<Instance[]> {
+    const observables: Observable<Instance>[] = dbIds.map((dbId: number) => this.fetchInstance(dbId));
+
+    return forkJoin(observables);
   }
 
   /**

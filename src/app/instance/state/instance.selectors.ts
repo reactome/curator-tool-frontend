@@ -22,7 +22,7 @@ export const LAST_UPDATED_INSTANCE_STATE_NAME = "last_updated_instance"
 export const lastUpdatedInstanceState = createFeatureSelector<LastUpdatedInstanceState>(LAST_UPDATED_INSTANCE_STATE_NAME);
 export const lastUpdatedInstance = () => createSelector(
   lastUpdatedInstanceState,
-  (state: LastUpdatedInstanceState) => state.lastInst
+  (state: LastUpdatedInstanceState) => ({attribute: state.attribute, instance: state.instance})
 )
 
 // new instance state

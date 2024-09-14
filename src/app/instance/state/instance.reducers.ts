@@ -25,15 +25,17 @@ export const updatedInstancesReducer = createReducer(
 
 // Track the last updated instance
 export interface LastUpdatedInstanceState {
-  lastInst: Instance | undefined
+  attribute: string|undefined,
+  instance: Instance|undefined,
 }
 export const lastUpdatedInstanceInitialState: LastUpdatedInstanceState = {
-  lastInst: undefined
+  attribute: undefined,
+  instance: undefined
 }
 export const lastUpdatedInstanceReducer = createReducer(
   lastUpdatedInstanceInitialState,
   on(InstanceActions.last_updated_instance, 
-    (state, instance) => ({...state, lastInst: instance})
+    (state, {attribute, instance}) => ({...state, attribute: attribute, instance: instance})
   )
 )
 

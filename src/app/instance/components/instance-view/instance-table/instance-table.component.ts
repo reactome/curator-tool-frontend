@@ -303,9 +303,11 @@ export class InstanceTableComponent implements PostEditListener {
     this.postEdit(attName);
     //TODO: Add a new value may reset the scroll position. This needs to be changed!
     this.updateTableContent();
-    // Register the updated instances
-    this.registerUpdatedInstance();
+    // Need to call this before registerUpdatedInstance
+    // in case the instance is used somewhere via the ngrx statement management system
     this.addModifiedAttribute(attName, value);
+    // Register the updated instances
+    this.registerUpdatedInstance(attName);
     // Fire an event for other components to update their display (e.g. display name)
     this.editedInstance.emit(this._instance);
   }
@@ -359,7 +361,7 @@ export class InstanceTableComponent implements PostEditListener {
     this.instanceDataSource.connect();
   }
 
-  private registerUpdatedInstance(): void {
+  private registerUpdatedInstance(attName: string): void {
     let cloned: Instance = {
       dbId: this._instance!.dbId,
       displayName: this._instance!.displayName,
@@ -373,7 +375,7 @@ export class InstanceTableComponent implements PostEditListener {
       // Force the state to update if needed
       this.store.dispatch(NewInstanceActions.register_new_instance(cloned));
     }
-    this.store.dispatch(InstanceActions.last_updated_instance(cloned));
+    this.store.dispatch(InstanceActions.last_updated_instance({attribute: attName, instance: cloned}));
   }
 
   addModifiedAttribute(attributeName: string, attributeVal: any) {

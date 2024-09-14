@@ -32,6 +32,8 @@ import { updatedInstances } from 'src/app/schema-view/instance/state/instance.se
 - TODO: Set the color of icons in the event tree for dark mode. Right now, they are all black, which cannot be seen in the dark mode.
 - Make sure the disease pathway diagram is correct. Right not it is not!
 - Need some big refactoring for classes in the pathway diagram module: Right now they are all cross-linked together, espect to diagram service utils.
+- When fetch the data for a reaction to be drawn in a diagram via add to diagram, make sure the local, edited content is checked.
+
 
 #### Notes:
 - the following version or configuration are important for compiling: "@langchain/openai": "^0.0.12" (March 14, 2024) in package.json and "skipLibCheck": true in tsconfig.json, // Based on to fix langchain issue:https://github.com/langchain-ai/langchainjs/issues/3793

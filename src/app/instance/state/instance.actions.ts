@@ -6,7 +6,7 @@ export const InstanceActions = createActionGroup({
   events: {
     // Record updated instances
     register_updated_instance: props<Instance>(),
-    last_updated_instance: props<Instance>(),
+    last_updated_instance: props<{attribute: string, instance: Instance}>(),
     remove_updated_instance: props<Instance>(),
     get_updated_instances: emptyProps(),
   }

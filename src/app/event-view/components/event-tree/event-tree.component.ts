@@ -145,6 +145,11 @@ export class EventTreeComponent {
       // mimic a tree click event so that the instance can be shown in the instance view
       this.eventClicked.emit(matchedNodes[0].dbId);
     }
+    else if (!select) {
+      // Handle a case like this: http://localhost:4200/event_view/instance/9615710 for a pathway having diagram
+      // Therefore, the pathway instance can be loaded in the instance view.
+      this.eventClicked.emit(diagramPathwayId); 
+    }
   }
 
   private cacheTreePaths() {

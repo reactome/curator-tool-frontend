@@ -70,8 +70,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   }
 
   ngOnInit() {
-    this.store.select(lastUpdatedInstance()).subscribe(instance => {
-      this.diagramUtils.handleInstanceEdit(instance, this);
+    this.store.select(lastUpdatedInstance()).subscribe(lastUpdated => {
+      this.diagramUtils.handleInstanceEdit(lastUpdated.attribute, lastUpdated.instance, this);
     })
   }
 
@@ -89,7 +89,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       // Reset the previous state
       // Technically this is not necessary. However, just need to clean-up
       // the original state before loading a new diagram.
-      //this.diagram.resetState();
+      this.diagram.resetState();
+      // resetState cannot clean the selection
+      this.diagramUtils.clearSelection(this.diagram);
       // Check if we have cytoscape network. If yes, load it.
       this.diagramUtils.getDataService().hasCytoscapeNetwork(this.pathwayId).subscribe((exists: boolean) => {
         if (exists) {

@@ -28,8 +28,13 @@ export class PathwayDiagramUtilService {
         return this.dataService;
     }
 
-    handleInstanceEdit(instance: Instance | undefined, diagram: PathwayDiagramComponent) {
-        this.validator.handleInstanceEdit(instance, diagram?.diagram?.cy);
+    handleInstanceEdit(attribute: string|undefined, instance: Instance | undefined, diagram: PathwayDiagramComponent) {
+        if (instance === undefined || attribute === undefined)
+            return;
+        // Need to get the actual instance. The passed instance is just a shell retried from ngrx store
+        this.dataService.fetchInstance(instance.dbId).subscribe((instance: Instance) => {
+            this.validator.handleInstanceEdit(instance, attribute, diagram?.diagram?.cy);
+        });
     }
 
     select(diagram: DiagramComponent, dbId: any) {
@@ -48,7 +53,7 @@ export class PathwayDiagramUtilService {
         const selectedElements = diagram.cy.$(':selected');
         const selectedDbIds = Array.from(new Set(selectedElements.map((element:any) => element.data('reactomeId'))));
         const areSame = selectedDbIds.length === dbIds.length && selectedDbIds.every(dbId => dbIds.includes(dbId));
-        if (areSame)
+        if (areSame || selectedDbIds.length === 0) // Or nothing to be selected
             return; 
         this.clearSelection(diagram);
         diagram.select(dbIds, diagram.cy);
