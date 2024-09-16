@@ -52,8 +52,8 @@ export class PathwayDiagramUtilService {
         // If true, do nothing. 
         const selectedElements = diagram.cy.$(':selected');
         const selectedDbIds = Array.from(new Set(selectedElements.map((element:any) => element.data('reactomeId'))));
-        const areSame = selectedDbIds.length === dbIds.length && selectedDbIds.every(dbId => dbIds.includes(dbId));
-        if (areSame || selectedDbIds.length === 0) // Or nothing to be selected
+        const areSame = (selectedDbIds.length === dbIds.length && selectedDbIds.every(dbId => dbIds.includes(dbId)));
+        if (areSame) // Or nothing to be selected
             return; 
         this.clearSelection(diagram);
         diagram.select(dbIds, diagram.cy);

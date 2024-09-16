@@ -139,7 +139,7 @@ export class EventTreeComponent {
     // If there is no diagram for the dbId, we need to re-route to load the diagram
     // This case occurs when a reaction is passed as dbId, e.g. localhost:4200/event_view/instance/9615721
     // The last check to make sure it is for a reaction
-    if (matchedNodes && matchedNodes.length > 0 && matchedNodes[0].dbId !== diagramPathwayId) {
+    if (matchedNodes && matchedNodes.length > 0 && REACTION_TYPES.includes(matchedNodes[0].className)) {
       // Let's just used the first node right now
       this.navigateToEventNode(matchedNodes[0]);
       // mimic a tree click event so that the instance can be shown in the instance view
@@ -198,21 +198,7 @@ export class EventTreeComponent {
         return this.selectNodes(diagramDbId, diagramDbId);
       return undefined;
     }
-    this.highlightNodes(matchedNodes);
-    // Keep the diagram node path for highlight
-    if (matchedPath) {
-      this.diagramNodePath = [];
-      let include = false;
-      for (let i = 0; i < matchedPath.length; i++) {
-        const node = matchedPath[i];
-        if (node.dbId === diagramDbId) {
-          include = true;
-          this.diagramNodePath.push(node);
-        }
-        else if (include)
-          this.diagramNodePath.push(node);
-      }
-    }
+    this.highlightNodes(matchedNodes); 
     return matchedNodes;
     // There should be no use case for the following code. The selection synchronization between
     // the diagram selection and the tree selection is handled by selectNodesForDiagram(), which
