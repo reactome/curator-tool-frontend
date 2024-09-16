@@ -1,6 +1,7 @@
 import { Instance } from '../models/reactome-instance.model';
 import { SchemaClass } from '../models/reactome-schema.model';
 import { DataService } from '../services/data.service';
+import { InstanceUtilities } from '../services/instance.service';
 import { PostEditOperation } from './PostEditOperation';
 
 export class InstanceNameGenerator implements PostEditOperation {
@@ -8,7 +9,9 @@ export class InstanceNameGenerator implements PostEditOperation {
   private unknown: string = 'unknown';
   
   //TODO: May need to make sure this is a singleton!!!
-  constructor(private dataService: DataService) { 
+  constructor(private dataService: DataService,
+    private instanceUtilities: InstanceUtilities
+  ) { 
   }
 
   postEdit(instance: Instance, 
@@ -176,30 +179,7 @@ export class InstanceNameGenerator implements PostEditOperation {
   }
 
   private isSchemaClass(instance: Instance, className: string): boolean {
-    let schemaClass = this.dataService.getSchemaClass(className);
-    if (schemaClass === undefined)
-      return false;
-    // Get all children
-    let allClsNames = new Set<string>();
-    let current = new Set<SchemaClass>();
-    let next = new Set<SchemaClass>()
-    current.add(schemaClass);
-    while (current.size > 0) {
-      for (let cls of current) {
-        allClsNames.add(cls.name);
-        if (cls.children) {
-          for (let child of cls.children) {
-            if (allClsNames.has(child.name))
-              continue;
-            next.add(child);
-          }
-        }
-      }
-      // Let's just do a switch
-      current = new Set(next);
-      next.clear();
-    }
-    return allClsNames.has(instance.schemaClassName);
+    return this.instanceUtilities.isSchemaClass(instance, className, this.dataService);
   }
 
   private generateGroupModifiedResidueName(instance: Instance): string {

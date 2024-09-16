@@ -21,7 +21,7 @@ export class HyperEdge {
     
     constructor(utils: PathwayDiagramUtilService,
         cy: Core,
-        reactomeId: number|string,
+        reactomeId: number|string
     ) {
         this.utils = utils;
         this.cy = cy;

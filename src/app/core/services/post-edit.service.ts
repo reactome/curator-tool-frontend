@@ -9,6 +9,7 @@ import { Instance } from '../models/reactome-instance.model';
 import { LiteratureReferenceFiller } from '../post-edit/LiteratureReferenceFiller';
 import { TestQACheck } from '../post-edit/TestQACheck';
 import { Store } from '@ngrx/store';
+import { InstanceUtilities } from './instance.service';
 
 @Injectable({
   providedIn: 'root',
@@ -16,15 +17,16 @@ import { Store } from '@ngrx/store';
 export class PostEditService {
   private postEditOperations: PostEditOperation[] = [];
 
-  constructor(private dataService: DataService, private store: Store) {
+  constructor(private dataService: DataService, private store: Store, private utilities: InstanceUtilities) {
     // auto filling for reference
     const lrFiller: LiteratureReferenceFiller = new LiteratureReferenceFiller(
       this.dataService,
-      this.store
+      this.store,
+      this.utilities
     );
     this.postEditOperations.push(lrFiller);
     // Make sure display name generation service is at the bottom
-    const nameOperation = new InstanceNameGenerator(this.dataService);
+    const nameOperation = new InstanceNameGenerator(this.dataService, this.utilities);
     this.postEditOperations.push(nameOperation);
     const testQACheck1 = new TestQACheck(this.dataService, "NonNullCheck");
     this.postEditOperations.push(testQACheck1);

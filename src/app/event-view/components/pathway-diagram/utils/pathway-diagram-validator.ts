@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { EDGE_POINT_CLASS, Instance, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { PathwayDiagramComponent } from "../pathway-diagram.component";
-import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
+import { REACTION_DIAGRAM_ATTRIBUTES, REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import {Core} from 'cytoscape';
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceConverter } from "./instance-converter";
@@ -16,8 +16,6 @@ import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
  */
 @Injectable()
 export class PathwayDiagramValidator{
-    // A list of attributes in Reactome that should be checked
-    private readonly REACTION_ATTRIBUTES = ['input', 'output', 'catalystActivity', 'regulatedBy'];
     
     constructor(private dataService: DataService,
         private converter: InstanceConverter,
@@ -34,7 +32,7 @@ export class PathwayDiagramValidator{
             return; // The edited instance is not here
         // Make sure the changes we can handle
         // For Reaction, we should make sure input, output, catalyst and regulators are correct
-        if (REACTION_TYPES.includes(instance.schemaClassName) && this.REACTION_ATTRIBUTES.includes(attribute)) {
+        if (REACTION_TYPES.includes(instance.schemaClassName) && REACTION_DIAGRAM_ATTRIBUTES.includes(attribute)) {
             // Since this is a reaction, we expected to see multiple elements, including edges and
             // a ReactionNode 
             this.validateReaction(found, instance, attribute, cy);

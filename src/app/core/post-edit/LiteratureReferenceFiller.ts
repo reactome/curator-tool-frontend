@@ -6,6 +6,7 @@ import { PostEditListener, PostEditOperation } from "./PostEditOperation";
 import { SchemaClass } from "../models/reactome-schema.model";
 import { Store } from "@ngrx/store";
 import { NewInstanceActions } from "src/app/instance/state/instance.actions";
+import { InstanceUtilities } from "../services/instance.service";
 
 export class LiteratureReferenceFiller implements PostEditOperation {
 
@@ -13,8 +14,9 @@ export class LiteratureReferenceFiller implements PostEditOperation {
     private nameGenerator?: InstanceNameGenerator;
 
     constructor(private dataService: DataService,
-                private store: Store) {
-        this.nameGenerator = new InstanceNameGenerator(this.dataService);
+                private store: Store,
+            private utilities: InstanceUtilities) {
+        this.nameGenerator = new InstanceNameGenerator(this.dataService, this.utilities);
     }
 
     //TODO: This is a slow process and needs to add a waiting spin.

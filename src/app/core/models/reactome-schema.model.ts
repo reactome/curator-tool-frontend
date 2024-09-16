@@ -1,5 +1,5 @@
 /**
- * This type script file contains the interfaces and some utility functions related to Reactome data schema.
+ * This type script file contains the interfaces related to Reactome data schema.
  */
 
 export interface SchemaAttribute {
@@ -64,3 +64,11 @@ export const REACTION_TYPES = [
       'Reaction'
 ];
 
+
+// Editing of the following attributes may change the reaction's display in a pathway diagram
+export const REACTION_DIAGRAM_ATTRIBUTES = [
+  'input', 
+  'output', 
+  'catalystActivity', 
+  'regulatedBy'
+];

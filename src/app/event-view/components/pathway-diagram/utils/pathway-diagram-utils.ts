@@ -10,6 +10,7 @@ import { InstanceConverter } from "./instance-converter";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import { PathwayDiagramComponent } from "../pathway-diagram.component";
 import { PathwayDiagramValidator } from "./pathway-diagram-validator";
+import { InstanceUtilities } from "src/app/core/services/instance.service";
 
 @Injectable()
 export class PathwayDiagramUtilService {
@@ -21,7 +22,8 @@ export class PathwayDiagramUtilService {
     
     constructor(private dataService: DataService,
         private validator: PathwayDiagramValidator,
-        private converter: InstanceConverter
+        private converter: InstanceConverter,
+        private instanceUtils: InstanceUtilities
     ) { }
 
     getDataService(): DataService {
@@ -610,12 +612,7 @@ export class PathwayDiagramUtilService {
     }
 
     copyData(data: any): any {
-        // Filter out undefined values from the edge data
-        const filteredData = Object.fromEntries(Object.entries(data).filter(([key, value]) => value !== undefined));
-        // Stringify the filtered data
-        const jsonString = JSON.stringify(filteredData);
-        const dataCopy = JSON.parse(jsonString);
-        return dataCopy;
+        return this.instanceUtils.copyData(data);
     }
 
     /**
