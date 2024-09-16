@@ -48,6 +48,8 @@ export const EDGE_POINT_CLASS: string = 'edge_point';
 
 // Some rendering related information copied from the Java desktop version
 export const RENDERING_CONSTS = {
+    // distance from the reaction node to a PE node, used in reaction layout
+    DEFAULT_DISTANCE_FROM_REACTION_PE_NODE: 150, 
     // Use to breakdown a long display name
     WORD_WRAP_RE: /([\ /,:;-])/,
     // private readonly WORD_WRAP_RE_G = /([\ /,:;-])/g;

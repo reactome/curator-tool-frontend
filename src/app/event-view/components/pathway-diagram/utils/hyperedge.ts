@@ -1,6 +1,6 @@
 import { Core, EdgeDefinition, NodeDefinition } from "cytoscape";
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
-import { EDGE_POINT_CLASS, Instance } from "src/app/core/models/reactome-instance.model";
+import { EDGE_POINT_CLASS, Instance, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceConverter } from "./instance-converter";
 import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
@@ -502,9 +502,9 @@ export class HyperEdge {
             });
         }
         
-        const w = 75 * 2; // Copied from Java
+        const w = RENDERING_CONSTS.DEFAULT_DISTANCE_FROM_REACTION_PE_NODE; // Copied from Java
         if (inputNodes.length > 0) {
-            // Half circle so that the inputs can be arranges at the same side
+            // Half circle so that the inputs can be arranged at the same side
             const div = Math.PI / inputNodes.length;
             const shift = div / 2;
             let x, y;
@@ -528,7 +528,7 @@ export class HyperEdge {
             });
         }
         if (outputNodes.length > 0) {
-            // Half circle so that the inputs can be arranges at the same side
+            // Half circle so that the inputs can be arranged at the same side
             const div = Math.PI / outputNodes.length;
             const shift = div / 2;
             let x, y;

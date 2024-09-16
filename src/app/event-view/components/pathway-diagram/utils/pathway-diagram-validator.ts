@@ -1,11 +1,12 @@
 import { Injectable } from "@angular/core";
-import { EDGE_POINT_CLASS, Instance } from "src/app/core/models/reactome-instance.model";
+import { EDGE_POINT_CLASS, Instance, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { PathwayDiagramComponent } from "../pathway-diagram.component";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import {Core} from 'cytoscape';
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceConverter } from "./instance-converter";
 import { DiagramService } from "ngx-reactome-diagram";
+import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 
 /**
  * This class is used to validate the consistent between the displayed elements in the diagram and the
@@ -133,6 +134,10 @@ export class PathwayDiagramValidator{
             return;
         const reactionNode = reactionNodes[0];
         const peElm = this.converter.createPENode(pe, cy, undefined, this.diagramService);
+        if (peElm.position().x === RENDERING_CONSTS.INIT_POSITION.x && peElm.position().y === RENDERING_CONSTS.INIT_POSITION.y) {
+            const newPos = this.getPositionForNewNode(peElm, reactionNode, elms, attribute);
+            peElm.position(newPos);
+        }
         let source = undefined;
         let target = undefined;
         if (attribute === 'output') {
@@ -144,6 +149,54 @@ export class PathwayDiagramValidator{
             target = reactionNode;
         }
         this.converter.createEdge(source, target, reaction, type, this.diagramService, cy);
+    }
+
+    /**
+     * Note: This is a tempoary implementation to get a position for a new node close the reaction node or exisiting
+     * nodes. A better way is needed by adopting the layout algorithm in HyperEdge to get a better default position.
+     * or some simplied approaches:
+     * 1). Extrapolate the line from input to reaction node for output so that the new output is in the same line if
+     * output existing.
+     * 2). If there are other outputs existing, use the center of these outputs with some shift
+     * 3). Same for input.
+     * 4). Follow the layout algorithm for new accesssary nodes.
+     * @param peNode 
+     * @param reactionNode 
+     * @param elms 
+     * @param attribute 
+     * @returns 
+     */
+    private getPositionForNewNode(peNode: any, reactionNode: any, elms: any[], attribute: string) {
+        if (attribute === 'input' || attribute === 'output') {
+            // If there is other input/output, put this new node around existing one
+            const existingNodes = elms.filter(elm => (elm.isEdge() && this.getRole(elm) === attribute) && elm.target().hasClass('PhysicalEntity'));
+            const position = this.calculateCenter(existingNodes, reactionNode);
+            return {
+                x: position.x + 20 * Math.random(), // 20 is used for the time being
+                y: position.y + 20 * Math.random()
+            }
+        }
+        // Default is around the reaction node
+        return {
+            x: reactionNode.position().x + 20 * Math.random() + RENDERING_CONSTS.DEFAULT_DISTANCE_FROM_REACTION_PE_NODE,
+            y: reactionNode.position().y + 20 * Math.random() + RENDERING_CONSTS.DEFAULT_DISTANCE_FROM_REACTION_PE_NODE
+        }
+    }
+
+    private calculateCenter(nodes: any, reactionNode: any): Position {
+        if (!nodes || nodes.length == 0) {
+            return {
+                x: reactionNode.position().x + RENDERING_CONSTS.DEFAULT_DISTANCE_FROM_REACTION_PE_NODE,
+                y: reactionNode.position().y + RENDERING_CONSTS.DEFAULT_DISTANCE_FROM_REACTION_PE_NODE
+            };
+        }
+        let sum_x = 0;
+        let sum_y = 0;
+        for (let node of nodes) {
+            sum_x += node.position().x;
+            sum_y += node.position().y;
+        }
+        return {x: sum_x / nodes.length(), y: sum_y / nodes.length};
     }
 
     private mapAttributeToType(attribute: string): string | undefined {
