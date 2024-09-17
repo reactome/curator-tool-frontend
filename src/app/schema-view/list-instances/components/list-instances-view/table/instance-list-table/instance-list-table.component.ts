@@ -20,6 +20,7 @@ export class InstanceListTableComponent {
   @Output() actionEvent = new EventEmitter<{ instance: Instance, action: string }>();
   selected: number = 0;
   displayName: string | undefined = '';
+  @Input() showEmptyMessage: boolean = true;
 
   constructor(private store: Store, private route: ActivatedRoute) {
   }

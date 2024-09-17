@@ -1,8 +1,8 @@
 <div #container>
   <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh">
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true" [style.width]="sideWidth + 'px'">
-      <app-side-navigation class="side-nav" (updateTabIndexEvent)="showUpdatedInstances($event)"
-                           [showUpdatedList]="showInstanceList"></app-side-navigation>
+      <app-schema-class-tree *ngIf="!showChanged"></app-schema-class-tree>
+      <app-updated-instance-list *ngIf="showChanged" (closeAction)="showUpdatedInstances(false)"></app-updated-instance-list>
       <div class="resize-container" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
            (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
         <div class="resize-bar"></div>
@@ -24,5 +24,5 @@
       </div>
     </div>
   </div>
-  <app-status [sidePanelState]="showInstanceList" (showUpdatedEvent)="showUpdatedInstances($event)"></app-status>
+  <app-status (showUpdatedEvent)="showUpdatedInstances($event)"></app-status>
 </div>

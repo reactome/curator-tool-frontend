@@ -12,7 +12,7 @@ export class MainSchemaViewComponent {
   sideWidth = 400;
   schemaPanelOpen= false;
   resizing: boolean = false;
-  showInstanceList: number = 0;
+  showChanged: boolean = false;
   status = {closed: true, opened: false, dragging: false};
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
@@ -30,9 +30,7 @@ export class MainSchemaViewComponent {
   }
 
   showUpdatedInstances(showList: boolean) {
-    console.log(showList);
-    if(showList) {this.showInstanceList = 1}
-    else {this.showInstanceList = 0;}
+    this.showChanged = !this.showChanged;
   }
 
   onDrag() {

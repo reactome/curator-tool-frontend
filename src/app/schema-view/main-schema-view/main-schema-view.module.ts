@@ -9,19 +9,16 @@ import { UpdatedInstanceListComponent } from "../../status/components/updated-in
 import { StatusComponent } from "../../status/status.component";
 import { InstanceBookmarkModule } from "../instance-bookmark/instance-bookmark.module";
 import { SchemaClassTreeModule } from "../schema-class/components/tree/schema-class-tree.module";
-import { SideNavigationComponent } from './components/side-navigation/side-navigation.component';
 import { MainSchemaViewRoutingModule } from "./main-schema-view-routing.module";
 import { MainSchemaViewComponent } from './main-schema-view.component';
 
 
 @NgModule({
   declarations: [
-    MainSchemaViewComponent,
-    SideNavigationComponent
+    MainSchemaViewComponent
   ],
   exports: [
-    MainSchemaViewComponent,
-    SideNavigationComponent
+    MainSchemaViewComponent
   ],
   imports: [
     CommonModule,
@@ -36,6 +33,7 @@ import { MainSchemaViewComponent } from './main-schema-view.component';
     InstanceBookmarkModule,
     CdkDragHandle,
     MainSchemaViewRoutingModule,
+    MatSidenavModule
   ]
 })
 export class MainSchemaViewModule { }

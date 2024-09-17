@@ -1,6 +1,7 @@
 #### Bugs:
 - After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should be stay at the changes tab.
 - Make sure the diagram is in editing disabled state when uploading to the server or disable editing when loading back.
+- The autoscroll for the instance view in the event view scroll the whole instance view. But we need to scroll the table content only just like in the schemw view.
 
 #### TODO:
 - Make sure a simple text slot (e.g. name) can add new value: the added value is not added as a new line.
@@ -33,6 +34,8 @@ import { updatedInstances } from 'src/app/schema-view/instance/state/instance.se
 - Make sure the disease pathway diagram is correct. Right not it is not!
 - Need some big refactoring for classes in the pathway diagram module: Right now they are all cross-linked together, espect to diagram service utils.
 - When fetch the data for a reaction to be drawn in a diagram via add to diagram, make sure the local, edited content is checked.
+- Update the tooltips for buttons in the instance list to make more sense: e.g. undo instance to Discard Changes.
+- Need to have a choice to set the value in the instance table.
 
 
 #### Notes:

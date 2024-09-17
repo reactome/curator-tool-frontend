@@ -1,5 +1,5 @@
 import { CdkAccordionModule } from "@angular/cdk/accordion";
-import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnInit, Output } from '@angular/core';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from "@angular/material/icon";
@@ -9,13 +9,11 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { Router } from "@angular/router";
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { updatedInstances } from 'src/app/instance/state/instance.selectors';
+import { newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { AuthenticateService } from "../core/services/authenticate.service";
-import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instance-bookmark.module";
-import { newInstances } from "src/app/instance/state/instance.selectors";
-import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 import { DataService } from "../core/services/data.service";
-import { InstanceActions, NewInstanceActions } from "src/app/instance/state/instance.actions";
+import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instance-bookmark.module";
+import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 
 @Component({
   selector: 'app-status',
@@ -25,7 +23,6 @@ import { InstanceActions, NewInstanceActions } from "src/app/instance/state/inst
     imports: [MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule, CdkAccordionModule, UpdatedInstanceListComponent, InstanceBookmarkModule, MatIconModule, MatTooltipModule]
 })
 export class StatusComponent implements OnInit {
-  @Input() sidePanelState: number = 0;
   @Output() showUpdatedEvent = new EventEmitter<boolean>();
   updatedInstances: Instance[] = [];
   newInstances: Instance[] = [];
@@ -67,10 +64,7 @@ export class StatusComponent implements OnInit {
   }
 
   showUpdated(): void {
-    console.debug("Show updated instances: " + this.updatedInstances.length)
-    if(this.sidePanelState === 0){
-      this.showUpdatedEvent.emit(true);
-    }
+    this.showUpdatedEvent.emit(true);
   }
 
   logout() {

@@ -1,27 +1,35 @@
-<!-- Lists both updated and new instances for easy navigation -->
-<!-- List new instances first -->
-<h4>New Instances: </h4>
+<mat-toolbar>
+    <div class="toolbar">
+        <button mat-icon-button color="primary" matTooltip="Close" (click)="close()">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+</mat-toolbar>
+<h4>New Instances: {{newInstances.length}}</h4>
 <app-instance-list-table [dataSource]="newInstances"
                          [isSelection]="isSelection"
                          [showHeader]="showHeader"
                          [actionButtons]="newInstancesActionButtons"
+                         [showEmptyMessage]="false"
                          (actionEvent)="handleAction($event)">
 </app-instance-list-table>
 <br>
 <hr>
-<h4>Updated Instances: </h4>
+<h4>Updated Instances: {{updatedInstances.length}}</h4>
 <app-instance-list-table [dataSource]="updatedInstances"
                          [isSelection]="isSelection"
                          [showHeader]="showHeader"
                          [actionButtons]="actionButtons"
+                         [showEmptyMessage]="false"
                          (actionEvent)="handleAction($event)">
 </app-instance-list-table>
 <br>
 <hr>
-<h4>Deleted Instances: </h4>
+<h4>Deleted Instances: {{deletedInstances.length}}</h4>
 <app-instance-list-table [dataSource]="deletedInstances"
                          [isSelection]="isSelection"
                          [showHeader]="showHeader"
                          [actionButtons]="actionButtons"
+                         [showEmptyMessage]="false"
                          (actionEvent)="handleAction($event)">
 </app-instance-list-table>

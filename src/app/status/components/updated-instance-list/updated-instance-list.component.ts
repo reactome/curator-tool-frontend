@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
 import {MatCheckboxChange, MatCheckboxModule} from '@angular/material/checkbox';
 import {MatIconModule} from '@angular/material/icon';
@@ -12,6 +12,7 @@ import {deleteInstances, updatedInstances} from 'src/app/instance/state/instance
 import { newInstances } from 'src/app/instance/state/instance.selectors';
 import { InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { DataService } from 'src/app/core/services/data.service';
+import { MatToolbar } from '@angular/material/toolbar';
 
 
 @Component({
@@ -19,7 +20,7 @@ import { DataService } from 'src/app/core/services/data.service';
   templateUrl: './updated-instance-list.component.html',
   styleUrls: ['./updated-instance-list.component.scss'],
   standalone: true,
-  imports: [MatListModule, MatButtonModule, MatTableModule, MatIconModule, MatCheckboxModule, ListInstancesModule],
+  imports: [MatListModule, MatButtonModule, MatTableModule, MatIconModule, MatCheckboxModule, ListInstancesModule, MatToolbar],
 })
 export class UpdatedInstanceListComponent implements OnInit{
   // instances to be committed
@@ -31,6 +32,7 @@ export class UpdatedInstanceListComponent implements OnInit{
   deletedInstances: Instance[] = [];
   showHeader: boolean = false;
   newInstancesActionButtons: string[] = ["launch", "delete"];
+  @Output() closeAction = new EventEmitter<undefined>();
 
   constructor(private router: Router,
               private route: ActivatedRoute,
@@ -121,4 +123,9 @@ export class UpdatedInstanceListComponent implements OnInit{
 
     this.router.navigate([newUrl]);
   }
+
+  close() {
+    this.closeAction.emit();
+  }
+
 }

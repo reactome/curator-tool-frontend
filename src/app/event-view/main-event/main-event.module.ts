@@ -1,6 +1,6 @@
 import { CdkAccordionModule } from "@angular/cdk/accordion";
 import { CdkDrag, CdkDragHandle } from "@angular/cdk/drag-drop";
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatSidenavModule } from "@angular/material/sidenav";

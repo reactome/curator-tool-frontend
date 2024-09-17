@@ -1,14 +1,12 @@
-import { Component, ViewChild } from '@angular/core';
 import { CdkDragMove } from "@angular/cdk/drag-drop";
+import { Component, ViewChild } from '@angular/core';
 import { MatSidenav } from "@angular/material/sidenav";
-import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-diagram.component';
-import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
 import { ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
-import { EventTreeComponent } from '../components/event-tree/event-tree.component';
-import { EventFilterComponent } from '../components/event-filter/event_filter.component';
-import { DataSubjectService } from 'src/app/core/services/data.subject.service';
+import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
+import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
+import { EventTreeComponent } from '../components/event-tree/event-tree.component';
+import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-diagram.component';
 
 @Component({
   selector: 'app-main-schema-view-event-view',
@@ -21,7 +19,7 @@ export class MainEventComponent {
   schemaPanelOpen = false;
   resizingVertical: boolean = false;
   resizingHorizontal: boolean = false;
-  showInstanceList: number = 0;
+  showChanged: boolean = false;
   status = {closed: true, opened: false, dragging: false};
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
@@ -65,39 +63,27 @@ export class MainEventComponent {
   }
 
   showUpdatedInstances(showList: boolean) {
-    console.log(showList);
-    if (showList) {
-      this.showInstanceList = 1
-    } else {
-      this.showInstanceList = 0;
-    }
+    this.showChanged = !this.showChanged; 
   }
 
   onDrag() {
     this.status.opened = false;
     this.status.closed = false;
     this.status.dragging = true;
-    console.log('start')
   }
 
   onDragEnd() {
     setTimeout(() => {
-      console.log('end')
       this.status.dragging = false;
     }, 5)
   }
 
   toggleBookmarks() {
     setTimeout(() => {
-      console.log('toggle')
       if (this.status.dragging) return;
       this.status.opened = !this.status.opened;
       this.status.closed = !this.status.opened;
     })
-  }
-
-  handleContextMenu(event: any) {
-    console.log('context menu');
   }
 
   addEventToDiagram(instance: Instance) {

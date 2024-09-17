@@ -2,36 +2,21 @@
   <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh;">
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true"
                  [style.width]="sideWidth + 'px'">
-      <mat-tab-group>
-        <mat-tab label="Event">
-          <!--Technically it would be nicer to create a new component having both filter and tree. Put it here since the main event view
-          is not that complicated now. -->
-          <event-filter (speciesChanged)="handleSpeciesSelection($event)"
-                        (filterTextChanged)="handleEventFilterTextChanged($event)"></event-filter>
-          <app-event-tree (addToDiagram)="addEventToDiagram($event)" (eventClicked)="handleEventClicked($event)"
-                          #eventTree></app-event-tree>
-        </mat-tab>
-        <mat-tab label="Changes">
-          <app-updated-instance-list></app-updated-instance-list>
-        </mat-tab>
-      </mat-tab-group>
+      <!--Technically it would be nicer to create a new component having both filter and tree. Put it here since the main event view
+      is not that complicated now. -->
+      <event-filter (speciesChanged)="handleSpeciesSelection($event)"
+                    (filterTextChanged)="handleEventFilterTextChanged($event)" *ngIf="!showChanged"></event-filter>
+      <app-event-tree (addToDiagram)="addEventToDiagram($event)" (eventClicked)="handleEventClicked($event)"
+                      #eventTree *ngIf="!showChanged"></app-event-tree>
+      <!-- calling classAction will close this list since it should be true. -->
+      <app-updated-instance-list *ngIf="showChanged" (closeAction)="showUpdatedInstances(false)"></app-updated-instance-list>
+        
       <div class="resize-container-vertical" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
            (cdkDragStarted)="resizingVertical = true" (cdkDragReleased)="resizingVertical = false"
            [class.resizing]="resizingVertical">
         <div class="resize-bar"></div>
       </div>
     </mat-sidenav>
-    <!--TODO: Need to make the height distribution changable via DnD as the horizonal panel. -->
-    <!--      <div id="table-boundary">-->
-    <!--        <div cdkDrag cdkDragLockAxis="y" cdkDragBoundary="#bookmark-boundary" id="bookmark-container" [ngClass]="status"-->
-    <!--             [style.height]="container.clientHeight + 'px'" (cdkDragStarted)="onDrag()" (cdkDragEnded)="onDragEnd()">-->
-    <!--          <button id="bookmark-handle" cdkDragHandle (click)="toggleBookmarks()">BOOKMARKS-->
-    <!--          </button>-->
-    <!--          <div id="bookmark" #bookmark>-->
-    <!--            <app-bookmark-list></app-bookmark-list>-->
-    <!--          </div>-->
-    <!--        </div>-->
-    <!--      </div> -->
     <mat-sidenav-content style="background-color: white; overflow: hidden;">
       <div style="display: flex; flex-direction: column; height: 100%;;">
         <div style="flex: 2; overflow: hidden;">
@@ -64,5 +49,5 @@
     </mat-sidenav-content>
 
   </mat-sidenav-container>
-  <app-status [sidePanelState]="showInstanceList" (showUpdatedEvent)="showUpdatedInstances($event)"></app-status>
+  <app-status (showUpdatedEvent)="showUpdatedInstances($event)"></app-status>
 </div>
