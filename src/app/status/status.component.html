@@ -5,10 +5,15 @@
                 </button>
         </span>
 
-
         <span>Updated instances:
                 <button mat-button style="border: 0px;" (click)="showUpdated()"
                         [disabled]="updatedInstances.length === 0">{{updatedInstances.length}}
+                </button>
+        </span>
+
+        <span>Deleted instances:
+                <button mat-button style="border: 0px;" (click)="showUpdated()"
+                        [disabled]="deletedInstances.length === 0">{{deletedInstances.length}}
                 </button>
         </span>
 

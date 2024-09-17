@@ -9,7 +9,7 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { Router } from "@angular/router";
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
+import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { AuthenticateService } from "../core/services/authenticate.service";
 import { DataService } from "../core/services/data.service";
 import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instance-bookmark.module";
@@ -26,6 +26,7 @@ export class StatusComponent implements OnInit {
   @Output() showUpdatedEvent = new EventEmitter<boolean>();
   updatedInstances: Instance[] = [];
   newInstances: Instance[] = [];
+  deletedInstances: Instance[] = [];
   bookmarkList: Instance[] = [];
 
   constructor(private store: Store,
@@ -38,13 +39,19 @@ export class StatusComponent implements OnInit {
     this.store.select(updatedInstances()).subscribe((instances) => {
       if (instances !== undefined)
         this.updatedInstances = instances;
-    })
+    });
 
     this.store.select(newInstances()).subscribe((instances) => {
       if (instances !== undefined) {
         this.newInstances = instances;
       }
-    })
+    });
+
+    this.store.select(deleteInstances()).subscribe((instances) => {
+      if (instances !== undefined) {
+        this.deletedInstances = instances;
+      }
+    });
   }
 
   // Calling ngOnDestroy is not reliable: https://blog.devgenius.io/where-ngondestroy-fails-you-54a8c2eca0e0.
