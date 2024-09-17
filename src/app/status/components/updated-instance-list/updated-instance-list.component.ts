@@ -33,6 +33,7 @@ export class UpdatedInstanceListComponent implements OnInit{
   showHeader: boolean = false;
   newInstancesActionButtons: string[] = ["launch", "delete"];
   @Output() closeAction = new EventEmitter<undefined>();
+  @Input() blockRoute: boolean = false;
 
   constructor(private router: Router,
               private route: ActivatedRoute,

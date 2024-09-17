@@ -2,7 +2,7 @@ import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { catchError, concatMap, forkJoin, from, map, Observable, of, Subject, switchMap, throwError, toArray } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
-import { Instance, InstanceList, Referrer } from "../models/reactome-instance.model";
+import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer } from "../models/reactome-instance.model";
 import {
   AttributeCategory,
   AttributeDataType,
@@ -58,8 +58,6 @@ export class DataService {
   // Use this subject to force waiting for components to fetch instance
   // since we need to load changed instances from cached storage first
   private loadInstanceSubject : Subject<void> | undefined = undefined;
-
-  public static newDisplayName: string = 'To be generated';
 
   constructor(private http: HttpClient,
     private utils: InstanceUtilities
@@ -302,7 +300,7 @@ export class DataService {
     return this.fetchSchemaClass(schemaClassName).pipe(map((schemaClass: SchemaClass) => {
         const attributes = new Map();
         attributes.set('dbId', this.getNextNewDbId());
-        attributes.set('displayName', DataService.newDisplayName);
+        attributes.set('displayName', NEW_DISPLAY_NAME);
         let instance: Instance = {
           dbId: attributes.get('dbId'),
           displayName: attributes.get('displayName'),

@@ -9,7 +9,7 @@
       <app-event-tree (addToDiagram)="addEventToDiagram($event)" (eventClicked)="handleEventClicked($event)"
                       #eventTree *ngIf="!showChanged"></app-event-tree>
       <!-- calling classAction will close this list since it should be true. -->
-      <app-updated-instance-list *ngIf="showChanged" (closeAction)="showUpdatedInstances(false)"></app-updated-instance-list>
+      <app-updated-instance-list *ngIf="showChanged" (closeAction)="showUpdatedInstances(false)" [blockRoute]="true"></app-updated-instance-list>
         
       <div class="resize-container-vertical" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
            (cdkDragStarted)="resizingVertical = true" (cdkDragReleased)="resizingVertical = false"

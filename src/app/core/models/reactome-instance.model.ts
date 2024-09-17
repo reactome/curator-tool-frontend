@@ -46,6 +46,8 @@ export interface Referrer {
  */
 export const EDGE_POINT_CLASS: string = 'edge_point';
 
+export const NEW_DISPLAY_NAME: string = 'To be generated';
+
 // Some rendering related information copied from the Java desktop version
 export const RENDERING_CONSTS = {
     // distance from the reaction node to a PE node, used in reaction layout

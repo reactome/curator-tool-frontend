@@ -1,17 +1,4 @@
 <ng-container *ngIf="showField">
-  <!--  <ng-container *ngIf="control.disabled; else editView">-->
-  <!--    <ng-container *ngIf="attribute?.type === DATA_TYPES.INSTANCE && value; else simple">-->
-  <!--      <a [routerLink]="getInstanceUrlRoot(value)" [queryParamsHandling]="'preserve'"-->
-  <!--        class="padding span-menu-trigger">-->
-  <!--        {{value.displayName}}-->
-  <!--        [{{value.dbId}}]</a><br>-->
-  <!--    </ng-container>-->
-  <!--    <ng-template #simple>-->
-  <!--      <span class="padding">{{value}}</span>-->
-  <!--    </ng-template>-->
-  <!--  </ng-container>-->
-  <!--  <ng-template #editView>-->
-
   <ng-container [ngSwitch]="attribute?.type">
     <ng-template [ngSwitchCase]="DATA_TYPES.BOOLEAN">
       <mat-slide-toggle [formControl]="control" color="primary" class="padding" (change)="onChange()">

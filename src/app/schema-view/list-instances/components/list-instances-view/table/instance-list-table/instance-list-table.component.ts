@@ -1,14 +1,14 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Instance} from "../../../../../../core/models/reactome-instance.model";
-import {DataService} from "../../../../../../core/services/data.service";
-import {Store} from "@ngrx/store";
-import {BookmarkActions} from "../../../../../instance-bookmark/state/bookmark.actions";
-import {ActivatedRoute} from "@angular/router";
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ActivatedRoute } from "@angular/router";
+import { Store } from "@ngrx/store";
+import { InstanceUtilities } from 'src/app/core/services/instance.service';
+import { Instance, NEW_DISPLAY_NAME } from "../../../../../../core/models/reactome-instance.model";
+import { BookmarkActions } from "../../../../../instance-bookmark/state/bookmark.actions";
 
 @Component({
   selector: 'app-instance-list-table',
   templateUrl: './instance-list-table.component.html',
-  styleUrls: ['./instance-list-table.component.scss']
+  styleUrls: ['./instance-list-table.component.scss'],
 })
 export class InstanceListTableComponent {
   @Input() dataSource: Instance[] = [];
@@ -21,8 +21,12 @@ export class InstanceListTableComponent {
   selected: number = 0;
   displayName: string | undefined = '';
   @Input() showEmptyMessage: boolean = true;
+  @Input() blockRoute: boolean = false;
+  readonly newDisplayName: string = NEW_DISPLAY_NAME;
 
-  constructor(private store: Store, private route: ActivatedRoute) {
+  constructor(private store: Store, 
+              private route: ActivatedRoute,
+              private instanceUtilities: InstanceUtilities) {
   }
 
   click(instance: Instance, action: string) {
@@ -39,12 +43,16 @@ export class InstanceListTableComponent {
     this.store.dispatch(BookmarkActions.add_bookmark(instance));
   }
 
-  getInstanceUrlRoot(instance: Instance) {
-      let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
-                                                     .reduce((acc, val) => acc.concat(val), [])
-                                                     .map(urlSegment => urlSegment.path);
-      return "/" + currentPathRoot[0] + "/instance/" + instance.dbId.toString();
+  getInstanceUrl(instance: Instance) {
+    if (this.blockRoute)
+      return undefined;
+    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+      .reduce((acc, val) => acc.concat(val), [])
+      .map(urlSegment => urlSegment.path);
+    return "/" + currentPathRoot[0] + "/instance/" + instance.dbId.toString();
   }
 
-  protected readonly DataService = DataService;
+  onInstanceLinkClicked(instance: Instance) {
+    this.instanceUtilities.setLastClickedDbId(instance.dbId);
+  }
 }
