@@ -86,12 +86,6 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       this.pathwayId = id;
       this.diagram.diagramId = this.pathwayId;
       this.select = queryParams['select'] ?? '';
-      // Reset the previous state
-      // Technically this is not necessary. However, just need to clean-up
-      // the original state before loading a new diagram.
-      // this.diagram.resetState();
-      // // resetState cannot clean the selection
-      // this.diagramUtils.clearSelection(this.diagram);
       // Check if we have cytoscape network. If yes, load it.
       this.diagramUtils.getDataService().hasCytoscapeNetwork(this.pathwayId).subscribe((exists: boolean) => {
         this.diagram.resetState(); // Have to call this to avoid any residue selection. This is more like a bug in ngx-diagram.

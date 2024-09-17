@@ -7,6 +7,8 @@ import { InstanceViewComponent } from 'src/app/instance/components/instance-view
 import { ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 import { EventTreeComponent } from '../components/event-tree/event-tree.component';
 import { EventFilterComponent } from '../components/event-filter/event_filter.component';
+import { DataSubjectService } from 'src/app/core/services/data.subject.service';
+import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 @Component({
   selector: 'app-main-schema-view-event-view',
@@ -30,7 +32,11 @@ export class MainEventComponent {
   // Track diagram selection ids to avoid unncessary update
   private selectedIdsInDiagram: number[] = [];
 
-  constructor() {
+  constructor(private instanceUtilities: InstanceUtilities) {
+    this.instanceUtilities.lastClickedDbId$.subscribe(dbId => {
+      // Avoid using ngrx to avoid the complicated implementation
+      this.instanceView?.loadInstance(parseInt(dbId + ''));
+    });
   }
 
   ngAfterViewInit(): void {
@@ -101,6 +107,7 @@ export class MainEventComponent {
   handleEventClicked(dbId: any) {
     this.diagramView?.selectObjectsInDiagram(dbId);
     this.instanceView?.loadInstance(dbId);
+    this.instanceView?.resetViewHistory();
   }
 
   handleSpeciesSelection(species: string) {
@@ -135,6 +142,7 @@ export class MainEventComponent {
       return; // They are the same
     this.selectedIdsInDiagram = reactomeIds;
     this.instanceView?.loadInstance(reactomeIds[0]);
+    this.instanceView?.resetViewHistory();
     this.eventTree?.selectNodesForDiagram(reactomeIds[0]);
   }
 

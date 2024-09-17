@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { Instance } from "../models/reactome-instance.model";
 import { DataService } from "./data.service";
 import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttribute, SchemaClass } from "../models/reactome-schema.model";
+import { Subject } from "rxjs";
 
 /**
  * Group a set of utility methods here for easy access to all other classes.
@@ -10,8 +11,16 @@ import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttr
     providedIn: 'root'
 })
 export class InstanceUtilities {
+    // Track any instance click such as in table, list, etc.
+    // The type if either string or number
+    private lastClickedDbId = new Subject<string|number>();
+    lastClickedDbId$ = this.lastClickedDbId.asObservable();
 
     constructor() { }
+
+    setLastClickedDbId(dbId: string|number) {
+        this.lastClickedDbId.next(dbId);
+    }
 
     isSchemaClass(instance: Instance, className: string, dataService: DataService): boolean {
         let schemaClass = dataService.getSchemaClass(className);

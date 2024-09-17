@@ -44,6 +44,7 @@ export class InstanceTableComponent implements PostEditListener {
   sortAttNames: boolean = true;
   sortAttDefined: boolean = false;
   filterEdited: boolean = false;
+  @Input() blockRouter: boolean = false;
 
   categoryNames = Object.keys(AttributeCategory).filter((v) =>
     isNaN(Number(v))

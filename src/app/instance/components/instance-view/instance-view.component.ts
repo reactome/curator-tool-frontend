@@ -29,8 +29,9 @@ export class InstanceViewComponent implements OnInit {
   dbInstance: Instance | undefined;
   title: string = '';
   // Control if we need to track the loading history
-  @Input()
-  needHistory: boolean = true;
+  @Input() needHistory: boolean = true;
+  // Control if the route should be used for the links in the table, bookmarks, etc
+  @Input() blockRoute: boolean = false;
 
   constructor(private router: Router,
     private route: ActivatedRoute,
@@ -108,6 +109,10 @@ export class InstanceViewComponent implements OnInit {
     this.viewHistory.push(instance);
   }
 
+  resetViewHistory() {
+    this.viewHistory.length = 0;
+  }
+
   updateTitle(instance: Instance) {
     if (instance)
       this.title = instance.schemaClass?.name + ": " + instance.displayName + "[" + instance.dbId + "]"
@@ -127,11 +132,16 @@ export class InstanceViewComponent implements OnInit {
 
   changeTable(instance: Instance) {
     this.dragDropService.resetList();
-    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
-                                                   .reduce((acc, val) => acc.concat(val), [])
-                                                   .map(urlSegment => urlSegment.path);
-    let newUrl =  currentPathRoot[0] + "/instance/" + instance.dbId.toString();
-    this.router.navigate([newUrl], { queryParamsHandling: 'preserve' });
+    if (this.blockRoute) {
+      this.loadInstance(instance.dbId);
+    }
+    else {
+      let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+        .reduce((acc, val) => acc.concat(val), [])
+        .map(urlSegment => urlSegment.path);
+      let newUrl = currentPathRoot[0] + "/instance/" + instance.dbId.toString();
+      this.router.navigate([newUrl], { queryParamsHandling: 'preserve' });
+    }
   }
 
   addBookmark() {

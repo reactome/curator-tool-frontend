@@ -20,6 +20,7 @@ import { DragDropService } from "../../../../../schema-view/instance-bookmark/dr
 import { Instance } from "../../../../../core/models/reactome-instance.model";
 import {ActivatedRoute} from "@angular/router";
 import {DataSubjectService} from "src/app/core/services/data.subject.service";
+import { InstanceUtilities } from 'src/app/core/services/instance.service';
 /**
  * Used to display a single value of an Instance object.
  */
@@ -33,6 +34,7 @@ export class InstanceTableRowElementComponent implements OnInit {
   @Input() attribute: SchemaAttribute | undefined = undefined;
   @Input() value: any;
   @Input() index: number = -1; // The position for a value in multi-slot
+  @Input() blockRoute: boolean = false;
 
   // The following properties and attributes are used for DnD from bookmarks
   private isMouseIn: boolean = false;
@@ -78,8 +80,7 @@ export class InstanceTableRowElementComponent implements OnInit {
               private route: ActivatedRoute,
               public viewOnly: ViewOnlyService,
               public dragDropService: DragDropService,
-              private dataSubjectService: DataSubjectService,
-              private elementRef: ElementRef<HTMLElement>) {
+            private instanceUtilities: InstanceUtilities) {
     if (viewOnly.enabled)
       this.control.disable();
   }
@@ -175,10 +176,11 @@ export class InstanceTableRowElementComponent implements OnInit {
   }
 
   onInstanceLinkClicked(instance: Instance) {
-    this.dataSubjectService.setDbId(instance.dbId.toString());
+    this.instanceUtilities.setLastClickedDbId(instance.dbId);
   }
 
   getInstanceUrlRoot(instance: Instance) {
+    if (this.blockRoute) return undefined;
     // Always use schema_view for the links of instances in the table
     const url = "/schema_view/instance/" + instance.dbId;
     let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)

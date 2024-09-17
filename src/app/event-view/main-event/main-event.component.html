@@ -47,7 +47,7 @@
             <div class="resize-bar"></div>
           </div>
           <div class="instance-view-container" style="overflow: auto;">
-            <app-instance-view #instanceView [needHistory]="false"></app-instance-view>
+            <app-instance-view #instanceView [needHistory]="true" [blockRoute]="true"></app-instance-view>
           </div>
           <div id="bookmark-boundary">
             <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="#bookmark-boundary" id="bookmark-container" [ngClass]="status"

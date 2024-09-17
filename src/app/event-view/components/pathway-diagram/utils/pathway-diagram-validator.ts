@@ -7,6 +7,7 @@ import { DataService } from "src/app/core/services/data.service";
 import { InstanceConverter } from "./instance-converter";
 import { DiagramService } from "ngx-reactome-diagram";
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
+import { InstanceUtilities } from "src/app/core/services/instance.service";
 
 /**
  * This class is used to validate the consistent between the displayed elements in the diagram and the
@@ -18,6 +19,7 @@ import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 export class PathwayDiagramValidator{
     
     constructor(private dataService: DataService,
+        private instanceUtilities: InstanceUtilities,
         private converter: InstanceConverter,
         private diagramService: DiagramService
     ) {}
@@ -25,7 +27,16 @@ export class PathwayDiagramValidator{
     handleInstanceEdit(instance: Instance | undefined, 
                        attribute: string | undefined, 
                        cy: Core | undefined) {
-        if (!instance || !cy || !attribute) return;
+        if (!instance || !cy || !attribute) 
+            return;
+        if (instance.schemaClassName === 'CatalystActivity') {
+            this.validateHelperNode(instance, attribute, 'physicalEdit', 'catalystActivity', cy);
+            return;
+        }
+        if (this.instanceUtilities.isSchemaClass(instance, 'Regulation', this.dataService)) {
+            this.validateHelperNode(instance, attribute, 'regulator', 'regulatedBy', cy);
+            return;
+        }
         // First check if we have any element having this instance
         const found = cy.elements(`[reactomeId = ${instance.dbId}]`);
         if (!found || found.length === 0)
@@ -37,10 +48,36 @@ export class PathwayDiagramValidator{
             // a ReactionNode 
             this.validateReaction(found, instance, attribute, cy);
         }
-        // Regardless, check display name 
-        for (let elm of found) {
-            this.validateDisplayName(elm, instance);
+        else {
+            for (let elm of found) {
+                this.validateDisplayName(elm, instance);
+            }
         }
+    }
+
+    private validateHelperNode(instance: Instance, 
+                               editAtt: string, 
+                               targetAtt: string,
+                               rxtAtt: string,
+                               cy: Core) {
+        if (editAtt !== targetAtt)
+            return; // Don't care
+        this.dataService.getReferrers(instance.dbId).subscribe((referrers: any) => {
+            if (referrers === undefined || referrers.length === 0)
+                return;
+            const regulatedEvents = referrers.filter((r: any) => r.attributeName === rxtAtt);
+            if (regulatedEvents.length === 0)
+                return;
+            for (let regulatedEvent of regulatedEvents[0].referrers) {
+                // Just switch to validate reaction 
+                if (REACTION_TYPES.includes(regulatedEvent.schemaClassName)) {
+                    // In case the reaction has not been loaded, load it first 
+                    this.dataService.fetchInstance(regulatedEvent.dbId).subscribe((reaction: any) => {
+                        this.handleInstanceEdit(reaction, rxtAtt, cy);
+                    });
+                }
+            }
+        });
     }
 
     validateReaction(elms: any, instance: Instance, attribute: string, cy: Core) {
@@ -51,21 +88,7 @@ export class PathwayDiagramValidator{
             this.dataService.fetchInstances(attIds).subscribe((instances: Instance[]) => {
                 if (instances === undefined)
                     instances = [];
-                // Map to PE
-                const pes = [];
-                for (let inst of instances) {
-                    if (attribute === 'regulatedBy') {
-                        const regulator = inst.attributes?.get('regulator');
-                        if (regulator !== undefined)
-                            pes.push(regulator);
-                    }
-                    else if (attribute === 'catalystActivity') {
-                        const catalyst = inst.attributes.get('physicalEntity');
-                        if (catalyst !== undefined)
-                            pes.push(catalyst);
-                    }
-                }
-                this._validateReaction(elms, pes, attribute, cy, instance);
+                this._validateReaction(elms, instances, attribute, cy, instance);
             });
         }
         else {
@@ -85,7 +108,7 @@ export class PathwayDiagramValidator{
         // A reaction should have multiple elements: need to figure out 
         // elements related to the changed attribute
         // reactomeId -> elmId so that they can be compared with the instance
-        // TODO: In the editing mode, an attribute may be mapped tomore than one element
+        // TODO: In the editing mode, an attribute may be mapped to more than one element
         // Need to remove all of them if the assoicated PE is edited away.
         const reactomeId2elm = new Map();
         for (let elm of elms) {
@@ -99,19 +122,23 @@ export class PathwayDiagramValidator{
         }
         // Now it is time to validate
         // From instance to edges: make sure all are displayed
+        const attDbIds = new Set();
         if (attValues.length > 0) {
             for (let attValue of attValues) {
+                // Need to get the dbId of a PE
+                const pe = this.getPEFromInstance(attValue, attribute);
+                if (!pe)
+                    continue;
+                attDbIds.add(pe.dbId);
                 // Make sure this attribute is there
-                if (!reactomeId2elm.has(attValue.dbId)) {
+                if (!reactomeId2elm.has(pe.dbId)) {
                     this.addInstanceToReaction(elms, attValue, attribute, cy, reaction);
                 }
             }
         }
         // From edges to instance: make sure nothing extra are displayed 
-        // For quick search
-        const attDbIds = attValues.map((inst: Instance) => inst.dbId);
         for (let reactomeId of reactomeId2elm.keys()) {
-            if (!attDbIds.includes(reactomeId)) {
+            if (!attDbIds.has(reactomeId)) {
                 // Need to delete it
                 const edge = reactomeId2elm.get(reactomeId);
                 const peNode = this.getConnectedPENode(edge, attribute);
@@ -122,16 +149,24 @@ export class PathwayDiagramValidator{
         }
     }
 
-    private addInstanceToReaction(elms: any[], pe: Instance, attribute: string, cy: Core, reaction: Instance) {
+    private getPEFromInstance(inst: Instance, attName: string) {
+        if (attName === 'catalystActivity')
+            return inst.attributes.get('physicalEntity');
+        if (attName === 'regulatedBy')
+            return inst.attributes.get('regulator');
+        return inst; // input or output
+    }
+
+    private addInstanceToReaction(elms: any[], attValue: Instance, attribute: string, cy: Core, reaction: Instance) {
         // Get the reaction node
         const reactionNodes = elms.filter(elm => (elm.isNode() && elm.hasClass('reaction') && !elm.hasClass(EDGE_POINT_CLASS)));
         if (reactionNodes.length === 0)
             return; // No reaction node
-        const type = this.mapAttributeToType(attribute);
+        const type = this.mapAttributeToType(attValue, attribute);
         if (type == undefined)
             return;
         const reactionNode = reactionNodes[0];
-        const peElm = this.converter.createPENode(pe, cy, undefined, this.diagramService);
+        const peElm = this.converter.createPENode(this.getPEFromInstance(attValue, attribute), cy, undefined, this.diagramService);
         if (peElm.position().x === RENDERING_CONSTS.INIT_POSITION.x && peElm.position().y === RENDERING_CONSTS.INIT_POSITION.y) {
             const newPos = this.getPositionForNewNode(peElm, reactionNode, elms, attribute);
             peElm.position(newPos);
@@ -197,11 +232,18 @@ export class PathwayDiagramValidator{
         return {x: sum_x / nodes.length(), y: sum_y / nodes.length};
     }
 
-    private mapAttributeToType(attribute: string): string | undefined {
+    private mapAttributeToType(attValue: Instance, attribute: string): string | undefined {
         if (attribute === 'input') return 'INPUT';
         if (attribute === 'output') return 'OUTPUT';
         if (attribute === 'catalystActivity') return 'CATALYST';
-        if (attribute === 'regulatedBy') return 'ACTIVATOR'; // to be updated
+        if (attribute === 'regulatedBy') {
+            if (this.instanceUtilities.isSchemaClass(attValue, 'Requirement', this.dataService))
+                return 'REQUIRED'; 
+            if (this.instanceUtilities.isSchemaClass(attValue, 'PositiveRegulation', this.dataService))
+                return 'ACTIVATOR'; 
+            if (this.instanceUtilities.isSchemaClass(attValue, 'NegativeRegulation', this.dataService))
+                return 'INHIBITOR';
+        }
         return undefined;
     }
 

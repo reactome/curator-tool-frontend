@@ -3,7 +3,8 @@
     <app-instance-table-row-element [attribute]="element.attribute" [value]="element.value"
                                     [dragDropStatus]="dragDropStatus"
                                     (newValueEvent)="onNoInstanceAttributeEdit($event)"
-                                    (editAction)="onInstanceAttributeEdit($event)"/>
+                                    (editAction)="onInstanceAttributeEdit($event)"
+                                    [blockRoute]="blockRouter" />
   </ng-container>
   <ng-container *ngIf="element.attribute.cardinality === '+'">
     <ng-container *ngIf="element.value !== undefined; else noValue">
@@ -17,6 +18,7 @@
           [dragDropStatus]="dragDropStatus"
           (newValueEvent)="onNoInstanceAttributeEdit($event)"
           (editAction)="onInstanceAttributeEdit($event)"
+          [blockRoute]="blockRouter" 
           [index]="i"/>
       </div>
       <!-- Add an empty row for non-instance type slot-->
