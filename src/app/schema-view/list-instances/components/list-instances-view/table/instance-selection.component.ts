@@ -105,7 +105,7 @@ export class InstanceSelectionComponent implements OnInit {
     if (this.useRoute) {
       let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
       if (this.searchKey && this.searchKey.trim().length > 0) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
-        this.router.navigate([url], {queryParams: {query: this.searchKey.trim()}, queryParamsHandling: 'merge'});
+        this.router.navigate([url], {queryParams: {query: this.searchKey.trim()}});
       else
         this.router.navigate([url]);
     } else

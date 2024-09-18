@@ -21,10 +21,5 @@ export class BookmarkStatusComponent implements OnInit{
     //     this.bookmarkList = instances;
     //   }
     // })
-    this.updateState();
-  }
-
-  updateState() {
-    this.store.dispatch(updateSharedState({ payload: bookmarkedInstances() }));
   }
 }
