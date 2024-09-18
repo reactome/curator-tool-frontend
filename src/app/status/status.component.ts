@@ -1,5 +1,5 @@
 import { CdkAccordionModule } from "@angular/cdk/accordion";
-import { Component, EventEmitter, HostListener, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, OnInit, Output } from '@angular/core';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from "@angular/material/icon";
@@ -13,6 +13,7 @@ import { deleteInstances, newInstances, updatedInstances } from 'src/app/instanc
 import { AuthenticateService } from "../core/services/authenticate.service";
 import { DataService } from "../core/services/data.service";
 import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instance-bookmark.module";
+import { bookmarkedInstances } from "../schema-view/instance-bookmark/state/bookmark.selectors";
 import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 
 @Component({
@@ -27,7 +28,6 @@ export class StatusComponent implements OnInit {
   updatedInstances: Instance[] = [];
   newInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
-  bookmarkList: Instance[] = [];
 
   constructor(private store: Store,
               private authenticateService: AuthenticateService,
@@ -65,8 +65,20 @@ export class StatusComponent implements OnInit {
       });
       return; // Do nothing
     }
-    this.dataService.persistInstances(instances, 'test').subscribe(() => {
-      console.debug('New and updated instances have been persisted at the server.');
+    // Technically it would be nicer to have a cnetral place to do this.
+    // Put them here for the time being for convenience since we have most of 
+    // objects here already.
+    this.store.select(bookmarkedInstances()).subscribe(bookmarks => {
+      // To be persist
+      const userInstances = {
+        newInstances: this.newInstances,
+        updatedInstances: this.updatedInstances,
+        deletedInstances: this.deletedInstances,
+        bookmarks: bookmarks
+      };
+      this.dataService.persitUserInstances(userInstances, 'test').subscribe(() => {
+        console.debug('New and updated instances have been persisted at the server.');
+      });
     });
   }
 

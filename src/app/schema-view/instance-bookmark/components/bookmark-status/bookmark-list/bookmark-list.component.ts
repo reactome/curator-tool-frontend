@@ -29,7 +29,7 @@ export class BookmarkListComponent implements OnInit {
         this.bookmarks = instances;
       }
     })
-    console.log(this.dragDropService.dropLists)
+    // console.log(this.dragDropService.dropLists)
   }
 
   drop(event: CdkDragDrop<Instance[]>) {

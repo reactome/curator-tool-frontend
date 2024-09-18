@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
-import { Instance } from './core/models/reactome-instance.model';
+import { DeleteInstanceActions, InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
+import { Instance, UserInstances } from './core/models/reactome-instance.model';
 import { DataService } from './core/services/data.service';
+import { BookmarkActions } from './schema-view/instance-bookmark/state/bookmark.actions';
 
 @Component({
   selector: 'app-root',
@@ -31,20 +32,13 @@ export class AppComponent {
     console.debug('App loading instances from server...');
     // TODO: Make sure this is updated during deployment
     this.dataService.startLoadInstances();
-    this.dataService.loadInstances('test').subscribe((instances) => {
-      // console.debug(instances);
-      for (let inst of instances) {
-        // Need to make a clone to avoid locking the change
-        let cloned: Instance = {
-          dbId: inst.dbId,
-          displayName: inst.displayName,
-          schemaClassName: inst.schemaClassName,
-        };
-        if (inst.dbId < 0)
-          this.store.dispatch(NewInstanceActions.register_new_instance(cloned));
-        else
-          this.store.dispatch(InstanceActions.register_updated_instance(cloned));
-      }
+    this.dataService.loadUserInstances('test').subscribe((userInstances: UserInstances) => {
+      // console.debug(userInstance);
+      // Instances have been cloned at dataService
+      userInstances.newInstances?.forEach(inst => this.store.dispatch(NewInstanceActions.register_new_instance(inst)));
+      userInstances.updatedInstances?.forEach(inst => this.store.dispatch(InstanceActions.register_updated_instance(inst)));
+      userInstances.deletedInstances?.forEach(inst => this.store.dispatch(DeleteInstanceActions.register_deleted_instance(inst)));
+      userInstances.bookmarks?.forEach(inst => this.store.dispatch(BookmarkActions.add_bookmark(inst)));
       // The following two statements will force the dataService to finish the loading first
       this.dataService.getLoadInstanceSubject()!.next();
       this.dataService.getLoadInstanceSubject()!.complete();

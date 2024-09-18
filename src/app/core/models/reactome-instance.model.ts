@@ -42,6 +42,19 @@ export interface Referrer {
 }
 
 /**
+ * This interface is to model a set of objects that are persisted before committed into
+ * the database, such as new instances, changed instances, and deleted instances. These
+ * objects also include bookmarks and some other user specific ones.
+ */
+export interface UserInstances {
+  newInstances: Instance[],
+  updatedInstances: Instance[],
+  deletedInstances: Instance[],
+  bookmarks: Instance[]
+}
+
+
+/**
  * Use to flag a node that is added as a control point for a rounded curve segment.
  */
 export const EDGE_POINT_CLASS: string = 'edge_point';

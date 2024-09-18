@@ -2,7 +2,7 @@ import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { catchError, concatMap, forkJoin, from, map, Observable, of, Subject, switchMap, throwError, toArray } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
-import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer } from "../models/reactome-instance.model";
+import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
 import {
   AttributeCategory,
   AttributeDataType,
@@ -21,7 +21,11 @@ import { InstanceUtilities } from "./instance.service";
  */
 export class DataService {
   // Cache fetched SchemaClass objects
+  // This map caches loaded schema class that has attributes defined
   private name2SchemaClass: Map<string, SchemaClass> = new Map<string, SchemaClass>();
+  // This map is used to make schema class traveral easy. The SchemaClass in this map
+  // is not loaded, i.e., without attributes
+  private name2SimpleClass: Map<string, SchemaClass> = new Map<string, SchemaClass>();
   // Cache fetched instances
   // List of URLs
   private id2instance: Map<number, Instance> = new Map<number, Instance>();
@@ -32,7 +36,6 @@ export class DataService {
   private listInstancesUrl = `${environment.ApiRoot}/listInstances/`;
   private searchInstancesUrl = `${environment.ApiRoot}/searchInstances/`;
   private findInstanceByDisplayNameUrl = `${environment.ApiRoot}/findByDisplayName`;
-  private countInstancesUrl = `${environment.ApiRoot}/countInstances/`;
   private commitInstanceUrl = `${environment.ApiRoot}/commit/`;
   private fillReferenceUrl = `${environment.ApiRoot}/fillReference/`;
   private eventPlotDataUrl = `${environment.ApiRoot}/getEventPlotData/`;
@@ -53,7 +56,6 @@ export class DataService {
   // The root class is cached for performance
   private rootClass: SchemaClass | undefined;
   private rootEvent: Instance | undefined;
-  private name2class?: Map<string, SchemaClass>;
 
   // Use this subject to force waiting for components to fetch instance
   // since we need to load changed instances from cached storage first
@@ -94,15 +96,17 @@ export class DataService {
   }
 
   /**
+   * Fetch a list of schema classes for the provided name list.
+   * @param dbIds 
+   */
+  fetchSchemaClasses(names: string[]): Observable<SchemaClass[]> {
+    const observables: Observable<SchemaClass>[] = names.map((name: string) => this.fetchSchemaClass(name));
+    return forkJoin(observables);
+  }
+
+  /**
    * Fetch the schema class table.
-   * @param className
    * @param skipCache
-   * @param selectedClass
-   * @param selectedAttributes
-   * @param selectedAttributeTypes
-   * @param selectedOperands
-   * @param selectedSpecies
-   * @param searchKeys
    * @returns
    */
   fetchSchemaClassTree(skipCache?: boolean): Observable<SchemaClass> {
@@ -117,6 +121,8 @@ export class DataService {
         map((data: SchemaClass) => {
           // console.debug("fetchSchemaClassTree:", data);
           this.rootClass = data;
+          // Let's just cache everything here
+          this.buildSchemaClassMap(this.rootClass, this.name2SimpleClass);
           return this.rootClass;
         }),
         catchError((err: Error) => {
@@ -160,23 +166,28 @@ export class DataService {
         }));
   }
 
+  /**
+   * The class returned from this method call has no attributes loaded. These classes are
+   * used to figure out the hierarchical relationships!!!
+   * @param clsName 
+   * @returns 
+   */
   getSchemaClass(clsName: string): SchemaClass | undefined {
-    if (this.name2class && this.name2class.size > 0) {
-      return this.name2class.get(clsName);
+    if (this.name2SimpleClass && this.name2SimpleClass.size > 0) {
+      return this.name2SimpleClass.get(clsName);
     }
-    this.name2class = new Map<string, SchemaClass>();
     if (this.rootClass)
-      this.buildSchemaClassMap(this.rootClass, this.name2class);
+      this.buildSchemaClassMap(this.rootClass, this.name2SimpleClass);
     else
       console.error("The class table has not been loaded. No map can be returned!");
-    return this.name2class.get(clsName);
+    return this.name2SimpleClass.get(clsName);
   }
 
-  private buildSchemaClassMap(schemaClass: SchemaClass, name2class: Map<string, SchemaClass>) {
-    name2class.set(schemaClass.name, schemaClass);
+  private buildSchemaClassMap(schemaClass: SchemaClass, name2schemaclass: Map<string, SchemaClass>) {
+    name2schemaclass.set(schemaClass.name, schemaClass);
     if (schemaClass.children) {
       for (let child of schemaClass.children) {
-        this.buildSchemaClassMap(child, name2class);
+        this.buildSchemaClassMap(child, name2schemaclass);
       }
     }
   }
@@ -453,29 +464,53 @@ export class DataService {
    * @param userName
    * @returns
    */
-  loadInstances(userName: string): Observable<Instance[]> {
-    return this.http.get<Instance[]>(this.loadInstancesUrl + userName)
+  loadUserInstances(userName: string): Observable<UserInstances> {
+    return this.http.get<UserInstances>(this.loadInstancesUrl + userName)
       .pipe(
-        switchMap((data: Instance[]) => {
-          return from(data).pipe(
-            concatMap((inst: Instance) => {
-              this.handleInstanceAttributes(inst);
-              this.id2instance.set(inst.dbId, inst);
-              return this.handleSchemaClassForInstance(inst);
-            }),
-            // Don't use forkJoin. Use this toArray to aggregate everything together.
-            // forkJoin will create a new thread in memory and cannot use cache correctly.
-            toArray<Instance>()
-          );
+        concatMap(userInstance => {
+          // Collect all schema classes to load so that we haveefined attributes
+          const classes = new Set<string>();
+          userInstance.deletedInstances?.forEach(inst => classes.add(inst.schemaClassName));
+          userInstance.newInstances?.forEach(inst => classes.add(inst.schemaClassName));
+          userInstance.updatedInstances?.forEach(inst => classes.add(inst.schemaClassName));
+          return this.fetchSchemaClasses([...classes]).pipe(map(data => {
+            // Don't do anything for bookmark. We need a simple, shell instance only
+            // userInstance.bookmarks?.map(inst => this.handleUserInstance(inst));
+            userInstance.deletedInstances?.map(inst => this.handleUserInstance(inst));
+            userInstance.newInstances?.map(inst => this.handleUserInstance(inst));
+            userInstance.updatedInstances?.map(inst => this.handleUserInstance(inst));
+            return userInstance;
+          }));
         }),
         catchError((err: Error) => {
-          console.log("Error in loadInstances: \n" + err.message, "Close", {
+          console.log("Error in loadUserInstances: \n" + err.message, "Close", {
             panelClass: ['warning-snackbar'],
             duration: 100
           });
           return throwError(() => err);
         }),
       );
+  }
+
+  private handleUserInstance(inst: Instance) {
+    this.handleInstanceAttributes(inst);
+    this.id2instance.set(inst.dbId, inst);
+    // In this context, the following should return immediately even though it is
+    // wrapped in an observable since we have loaded the whole schema tree already.
+    // However, this may be a bug prone. Keep an eye on it!
+    // Indeed, the updated instance may not be handled before it is shown.
+    // Therefore, need to handle it directly without using subject
+    inst.schemaClass = this.name2SchemaClass.get(inst.schemaClassName);
+    // this.fetchSchemaClass(inst.schemaClassName).subscribe(schemaClass => inst.schemaClass = schemaClass);
+    // Since we are using store, the actual instance used should be a clone of this one
+    // to avoid be locked since instance in the store is not mutable
+    // Need to make a clone to avoid locking the change
+    let cloned: Instance = {
+      dbId: inst.dbId,
+      displayName: inst.displayName,
+      schemaClassName: inst.schemaClassName,
+    };
+    return cloned;
   }
 
   /**
@@ -486,17 +521,9 @@ export class DataService {
    */
   //TODO: See if it is possible to persist only changed attributes for updated instances to increase the
   // performance.
-  persistInstances(instances: Instance[], userName: string): Observable<any> {
-    let clonedInstances = [];
-    for (let inst of instances) {
-      let full_inst = this.id2instance.get(inst.dbId);
-      if (full_inst === undefined) {
-        console.error('Cannot find the cached instance for ', inst);
-      } else {
-        clonedInstances.push(this.cloneInstanceForCommit(full_inst));
-      }
-    }
-    return this.http.post<any>(this.persistInstancesUrl + userName, clonedInstances).pipe(
+  persitUserInstances(userInstances: UserInstances, userName: string): Observable<any> {
+    const cloned = this.cloneUserInstances(userInstances);
+    return this.http.post<any>(this.persistInstancesUrl + userName, cloned).pipe(
       catchError(error => {
         console.log("An error is thrown during persistInstances: \n" + error.message, "Close", {
           panelClass: ['warning-snackbar'],
@@ -506,7 +533,21 @@ export class DataService {
       })
     );
   }
+  
 
+  private cloneUserInstances(userInstances: UserInstances): UserInstances {
+    const newInstances = userInstances.newInstances.map(i => this.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
+    const updatedInstances = userInstances.updatedInstances.map(i => this.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
+    const deletedInstances = userInstances.deletedInstances.map(i => this.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
+    // There is no need to get the full instance for a bookmark
+    const bookmarks = userInstances.bookmarks.map(i => this.cloneInstanceForCommit(i));
+    return {
+      newInstances: newInstances,
+      updatedInstances: updatedInstances,
+      deletedInstances: deletedInstances,
+      bookmarks: bookmarks
+    };
+  }
 
   uploadCytoscapeNetwork(pathwayId: any, network: any): Observable<boolean> {
     // console.debug('Uploading cytoscape network for ' + pathwayId + "...");
