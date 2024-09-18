@@ -38,11 +38,11 @@ const routes: Routes = [
     redirectTo: "login",
     pathMatch: "full",
   },
-  { path: '**',
-    loadChildren: () =>
-      import("./schema-view/schema-class/components/table/schema-class-table.module").then((m) =>
-        m.SchemaClassTableModule),
-  },
+  // { path: '**',
+  //   loadChildren: () =>
+  //     import("./schema-view/schema-class/components/table/schema-class-table.module").then((m) =>
+  //       m.SchemaClassTableModule),
+  // },
 ];
 
 @NgModule({

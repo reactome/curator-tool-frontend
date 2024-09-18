@@ -13,6 +13,7 @@ import { newInstances } from 'src/app/instance/state/instance.selectors';
 import { InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { DataService } from 'src/app/core/services/data.service';
 import { MatToolbar } from '@angular/material/toolbar';
+import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 
 @Component({
@@ -38,7 +39,8 @@ export class UpdatedInstanceListComponent implements OnInit{
   constructor(private router: Router,
               private route: ActivatedRoute,
               private store: Store,
-              private dataService: DataService) {
+              private dataService: DataService,
+            private instanceUtilities: InstanceUtilities) {
   }
 
   ngOnInit(): void {
@@ -57,11 +59,17 @@ export class UpdatedInstanceListComponent implements OnInit{
   }
 
   compareWithDB(instance: Instance) {
+    if (this.blockRoute) {
+      this.instanceUtilities.setLastClickedDbIdForComparison(instance.dbId);
+      return;
+    }
     let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
                                                    .reduce((acc, val) => acc.concat(val), [])
                                                    .map(urlSegment => urlSegment.path);
     let newUrl =  currentPathRoot[0] + "/instance/" + instance.dbId.toString();
-    this.router.navigate([newUrl, "comparison"]);
+    // Apparently there is a bug in Angular that confuses the configured router for list_instances
+    // and instance view. Therefore, give it something more here.
+    this.router.navigate([newUrl, "comparison", instance.dbId.toString()]);
   }
 
   onSelectionChange(instance: Instance, event: MatCheckboxChange) {
@@ -117,6 +125,10 @@ export class UpdatedInstanceListComponent implements OnInit{
   }
 
   launchNewInstance(instance: Instance) {
+    if (this.blockRoute) {
+      this.instanceUtilities.setLastClickedDbId(instance.dbId);
+      return;
+    }
     let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
                                                      .reduce((acc, val) => acc.concat(val), [])
                                                      .map(urlSegment => urlSegment.path);

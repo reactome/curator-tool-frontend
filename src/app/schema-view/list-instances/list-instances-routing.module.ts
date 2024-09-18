@@ -1,8 +1,7 @@
-import {NgModule} from '@angular/core';
-import {RouterModule, Routes} from '@angular/router';
-import {CommonModule, ɵnormalizeQueryParams} from '@angular/common';
-import {ListInstancesViewComponent} from "./components/list-instances-view/list-instances-view.component";
-import { RouterTestingHarness } from '@angular/router/testing';
+import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { ListInstancesViewComponent } from "./components/list-instances-view/list-instances-view.component";
 
 const routes: Routes = [
   {

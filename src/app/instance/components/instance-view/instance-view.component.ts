@@ -48,7 +48,6 @@ export class InstanceViewComponent implements OnInit {
     // Handle the loading of instance directly here without using ngrx's effect, which is just
     // too complicated and not necessary here.
     this.route.params.subscribe((params) => {
-      // console.log("params", params)
       if (params['dbId']) {
         let dbId = params['dbId'];
         // Make sure dbId is a number
@@ -75,7 +74,7 @@ export class InstanceViewComponent implements OnInit {
     });
   }
 
-  loadInstance(dbId: number) {
+  loadInstance(dbId: number, needComparsion: boolean = false) {
     // avoid to do anything if nothing there
     if (!dbId) return;
     // Avoid reloading if it has been loaded already
@@ -88,10 +87,17 @@ export class InstanceViewComponent implements OnInit {
       // Wrap them together to avoid NG0100 error
       this.showProgressSpinner = true;
       this.dataService.fetchInstance(dbId).subscribe((instance) => {
+        // Turn off the comparison first
+        this.dbInstance = undefined; 
         this.instance = instance;
         this.addToViewHistory(instance);
         this.showProgressSpinner = false;
         this.updateTitle(instance);
+        if (needComparsion) {
+          this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(instance => {
+            this.dbInstance = instance;
+          })
+        }
       })
     });
   }

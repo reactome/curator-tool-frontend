@@ -15,11 +15,18 @@ export class InstanceUtilities {
     // The type if either string or number
     private lastClickedDbId = new Subject<string|number>();
     lastClickedDbId$ = this.lastClickedDbId.asObservable();
+    // Bypass for comparison
+    private lastClickedDbIdForComparison = new Subject<number>();
+    lastClickedDbIdForComparison$ = this.lastClickedDbIdForComparison.asObservable();
 
     constructor() { }
 
     setLastClickedDbId(dbId: string|number) {
         this.lastClickedDbId.next(dbId);
+    }
+
+    setLastClickedDbIdForComparison(dbId: number) {
+        this.lastClickedDbIdForComparison.next(dbId);
     }
 
     isSchemaClass(instance: Instance, className: string, dataService: DataService): boolean {

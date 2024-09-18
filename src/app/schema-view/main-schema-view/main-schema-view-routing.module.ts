@@ -5,25 +5,25 @@ import { MainSchemaViewComponent } from "./main-schema-view.component";
 
 const routes: Routes = [
   {
-    path: `instance`,
-    component: MainSchemaViewComponent,
-    loadChildren: () =>
-      import("src/app/instance/instance.module").then((m) =>
-        m.InstanceModule),
-  },
-  {
     path: `list_instances`,
     component: MainSchemaViewComponent,
     loadChildren: () =>
       import("../list-instances/list-instances.module").then((m) =>
-        m.ListInstancesModule),
+        m.ListInstancesModule), // paths: :className and :className/:skip/:limit
+  },
+  {
+    path: `instance`,
+    component: MainSchemaViewComponent,
+    loadChildren: () =>
+      import("src/app/instance/instance.module").then((m) =>
+        m.InstanceModule), // paths: :dbId, :dbId/:mode, and :dbId/:mode/:dbId2
   },
   {
     path: `class`,
     component: MainSchemaViewComponent,
     loadChildren: () =>
       import("../schema-class/components/table/schema-class-table.module").then((m) =>
-        m.SchemaClassTableModule),
+        m.SchemaClassTableModule),   //path: `:className`,
   },
   {
     path: '',

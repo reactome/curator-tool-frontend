@@ -35,6 +35,10 @@ export class MainEventComponent {
       // Avoid using ngrx to avoid the complicated implementation
       this.instanceView?.loadInstance(parseInt(dbId + ''));
     });
+    this.instanceUtilities.lastClickedDbIdForComparison$.subscribe((dbId: number) => {
+      // Avoid using ngrx to avoid the complicated implementation
+      this.instanceView?.loadInstance(dbId, true);
+    });
   }
 
   ngAfterViewInit(): void {

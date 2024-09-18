@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, ViewChild } from '@angular/core';
-import { ActivatedRoute, Params } from "@angular/router";
+import { ActivatedRoute, Params, Route, Router } from "@angular/router";
 import { InstanceSelectionComponent } from './table/instance-selection.component';
 import { combineLatest } from 'rxjs';
 
@@ -19,7 +19,8 @@ export class ListInstancesViewComponent implements AfterViewInit {
   // Get this so that we can manipulate the search criteria directly
   @ViewChild(InstanceSelectionComponent) instanceList!: InstanceSelectionComponent;
 
-  constructor(private route: ActivatedRoute) {
+  constructor(private route: ActivatedRoute
+  ) {
   }
 
   // Need to use this hooker to ensure instanceList is there always!

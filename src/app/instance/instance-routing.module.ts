@@ -5,20 +5,17 @@ import {InstanceViewComponent} from "./components/instance-view/instance-view.co
 
 const routes: Routes = [
   {
+    path: ':dbId/:mode/:dbId2',
+    component: InstanceViewComponent
+  },
+  // Somehow this conflicts with list_instance/classname/skip/limit
+  // {
+  //   path: `:dbId/:mode`,
+  //   component: InstanceViewComponent,
+  // },
+  {
     path: `:dbId`,
     component: InstanceViewComponent,
-  },
-  {
-    path:`:dbId/:mode`,
-    component: InstanceViewComponent
-  },
-  {
-    path:`:dbId/:mode/:dbId2`,
-    component: InstanceViewComponent
-  },
-  {
-    path: `schemaClass/:className`,
-    component: InstanceViewComponent
   },
 ]
 

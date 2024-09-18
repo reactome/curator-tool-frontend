@@ -1,16 +1,16 @@
 import { NgFor, NgIf, TitleCasePipe } from '@angular/common';
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { MatSort, MatSortHeader, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { ActivatedRoute } from "@angular/router";
 import { Store } from '@ngrx/store';
+import { DataService } from 'src/app/core/services/data.service';
 import {
   AttributeCategory,
   AttributeDataType,
-  AttributeDefiningType
+  AttributeDefiningType,
+  SchemaClass
 } from "../../../../core/models/reactome-schema.model";
-import { SchemaClassTableActions } from './state/schema-class-table.actions';
-import { getSchemaClass } from './state/schema-class-table.selectors';
-import { MatSort, MatSortHeader, MatSortModule } from '@angular/material/sort';
 
 @Component({
   selector: 'app-table',
@@ -26,7 +26,7 @@ export class SchemaClassTableComponent implements OnInit {
   displayedColumns: string[] = ['name', 'type', 'category', 'allowedClases', 'origin', 'cardinality', 'definingType'];
   dataSource: any;
 
-  constructor(private store: Store, private route: ActivatedRoute) {
+  constructor(private store: Store, private route: ActivatedRoute, private dataService: DataService) {
   }
 
   @ViewChild(MatSort) sort: MatSort | undefined;
@@ -35,15 +35,15 @@ export class SchemaClassTableComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.params.subscribe((clsNameParams) => {
-      this.store.dispatch(SchemaClassTableActions.get({ className: clsNameParams['className'] }));
-    });
-
-    this.store.select(getSchemaClass()).subscribe((schemaClass) => {
-      // Do a sort first
-      let sorted_attributes = [...schemaClass.attributes!];
-      sorted_attributes.sort((a, b) => a.name.localeCompare(b.name));
-      this.dataSource = new MatTableDataSource(sorted_attributes);
-      this.dataSource.sort = this.sort;
+      const className = clsNameParams['className'];
+      this.dataService.fetchSchemaClass(className).subscribe((schemaClass: SchemaClass) => {
+        // Do a sort first
+        let sorted_attributes = [...schemaClass.attributes!];
+        sorted_attributes.sort((a, b) => a.name.localeCompare(b.name));
+        this.dataSource = new MatTableDataSource(sorted_attributes);
+        this.dataSource.sort = this.sort;
+      }
+      );
     }
     );
   }
