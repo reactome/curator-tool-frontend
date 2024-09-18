@@ -4,6 +4,7 @@ import { Store } from "@ngrx/store";
 import { tap } from "rxjs/operators";
 import { BookmarkActions } from './bookmark.actions';
 import { Instance } from "src/app/core/models/reactome-instance.model";
+import { bookmarkedInstances } from "./bookmark.selectors";
 
 // We will use localstorage to synchronize states among opened tabs or windows.
 // the broadcast API is great to synchronize changes after windows are opened.
@@ -30,7 +31,6 @@ export class BookmarkEffects {
     })
   }
 
-
   bookmarkChanges$ = createEffect(
     () =>
       this.actions$.pipe(
@@ -38,6 +38,10 @@ export class BookmarkEffects {
         tap((action) => {
           // The browser tab (window) that setItem should not receive this event.
           localStorage.setItem(action.type, JSON.stringify(action.valueOf()));
+          // Update the list of bookmarks for new tabs or windows
+          this.store.select(bookmarkedInstances()).subscribe(bookmarks => {
+            localStorage.setItem(BookmarkActions.set_bookmarks.type, JSON.stringify(bookmarks));
+          });
         })
       ),
     { dispatch: false }
