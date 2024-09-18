@@ -21,6 +21,7 @@ export class BroadcastService implements OnDestroy {
     };
 
   }
+  
   // Broadcast message to other tabs
   broadcast(data: any): void {
     this.broadcastChannel.postMessage(data);
