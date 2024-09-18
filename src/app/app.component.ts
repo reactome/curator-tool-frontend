@@ -38,7 +38,8 @@ export class AppComponent {
       userInstances.newInstances?.forEach(inst => this.store.dispatch(NewInstanceActions.register_new_instance(inst)));
       userInstances.updatedInstances?.forEach(inst => this.store.dispatch(InstanceActions.register_updated_instance(inst)));
       userInstances.deletedInstances?.forEach(inst => this.store.dispatch(DeleteInstanceActions.register_deleted_instance(inst)));
-      userInstances.bookmarks?.forEach(inst => this.store.dispatch(BookmarkActions.add_bookmark(inst)));
+      if (userInstances.bookmarks && userInstances.bookmarks.length > 0)
+        this.store.dispatch(BookmarkActions.set_bookmarks({instances: userInstances.bookmarks}));
       // The following two statements will force the dataService to finish the loading first
       this.dataService.getLoadInstanceSubject()!.next();
       this.dataService.getLoadInstanceSubject()!.complete();

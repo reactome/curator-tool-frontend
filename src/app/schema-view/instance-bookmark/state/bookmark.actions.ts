@@ -7,14 +7,10 @@ export const BookmarkActions = createActionGroup({
     // Bookmarks are selected instances
     add_bookmark: props<Instance>(),
     remove_bookmark: props<Instance>(),
-    // Used to handle action recevied from broadcast so that
-    // we don't need to send another action to avoid an infinity loop
-    bc_add_bookmark: props<Instance>(),
-    bc_remove_bookmark: props<Instance>(),
-
+    
     load_bookmarks: emptyProps(),
     save_bookmarks: emptyProps(),
+    // Need a single object only
     set_bookmarks: props<{instances: Instance[]}>(),
-    broadcast_bookmarks: props<Instance>(),
   }
 })

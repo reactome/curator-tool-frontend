@@ -37,20 +37,16 @@ export class MainSchemaViewComponent {
     this.status.opened = false;
     this.status.closed = false;
     this.status.dragging = true;
-    console.log('start')
   }
 
   onDragEnd() {
     setTimeout(() => {
-      console.log('end')
       this.status.dragging = false;
     }, 5)
   }
 
   toggleBookmarks() {
     setTimeout(() => {
-
-      console.log('toggle')
       if (this.status.dragging) return;
       this.status.opened = !this.status.opened;
       this.status.closed = !this.status.opened;
