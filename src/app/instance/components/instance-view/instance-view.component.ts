@@ -74,7 +74,9 @@ export class InstanceViewComponent implements OnInit {
     });
   }
 
-  loadInstance(dbId: number, needComparsion: boolean = false) {
+  loadInstance(dbId: number, 
+               needComparsion: boolean = false, 
+               resetHistory: boolean = false) {
     // avoid to do anything if nothing there
     if (!dbId) return;
     // Avoid reloading if it has been loaded already
@@ -90,6 +92,8 @@ export class InstanceViewComponent implements OnInit {
         // Turn off the comparison first
         this.dbInstance = undefined; 
         this.instance = instance;
+        if (resetHistory)
+          this.viewHistory.length = 0;
         this.addToViewHistory(instance);
         this.showProgressSpinner = false;
         this.updateTitle(instance);
@@ -113,10 +117,6 @@ export class InstanceViewComponent implements OnInit {
         return; // Nothing to do
     }
     this.viewHistory.push(instance);
-  }
-
-  resetViewHistory() {
-    this.viewHistory.length = 0;
   }
 
   updateTitle(instance: Instance) {

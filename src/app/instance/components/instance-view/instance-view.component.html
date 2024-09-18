@@ -1,4 +1,4 @@
-<app-bread-crumb [newMenuItem]="viewHistory" (clickEvent)="changeTable($event)" *ngIf="needHistory">
+<app-bread-crumb [viewHistory]="viewHistory" (clickEvent)="changeTable($event)" *ngIf="needHistory">
 </app-bread-crumb>
 <ng-container *ngIf="showProgressSpinner">
   <mat-spinner class="spinner"></mat-spinner>

@@ -96,8 +96,7 @@ export class MainEventComponent {
 
   handleEventClicked(dbId: any) {
     this.diagramView?.selectObjectsInDiagram(dbId);
-    this.instanceView?.loadInstance(dbId);
-    this.instanceView?.resetViewHistory();
+    this.instanceView?.loadInstance(dbId, false, true);
   }
 
   handleSpeciesSelection(species: string) {
@@ -131,8 +130,7 @@ export class MainEventComponent {
         reactomeIds.every((value: number, index: number) => value === this.selectedIdsInDiagram[index]))
       return; // They are the same
     this.selectedIdsInDiagram = reactomeIds;
-    this.instanceView?.loadInstance(reactomeIds[0]);
-    this.instanceView?.resetViewHistory();
+    this.instanceView?.loadInstance(reactomeIds[0], false, true);
     this.eventTree?.selectNodesForDiagram(reactomeIds[0]);
   }
 

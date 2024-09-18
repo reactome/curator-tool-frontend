@@ -5,7 +5,6 @@
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Instance } from "../../../../core/models/reactome-instance.model";
-import {DataSubjectService} from "src/app/core/services/data.subject.service";
 
 @Component({
   selector: 'app-bread-crumb',
@@ -13,20 +12,13 @@ import {DataSubjectService} from "src/app/core/services/data.subject.service";
   styleUrls: ['./bread-crumb.component.scss']
 })
 export class BreadCrumbComponent {
-  @Input() newMenuItem: Instance[] = new Array<Instance>;
-  @Input() dbIds: Instance[] = new Array<Instance>;
+  @Input() viewHistory: Instance[] = new Array<Instance>;
   @Output() clickEvent = new EventEmitter<Instance>();
 
-  dbIdsRemove: Instance[] = new Array<Instance>;
-  constructor(private dataSubjectService: DataSubjectService) {
-  }
+  constructor() {}
 
   breadCrumb(menu: any, index: any) {
-    this.clickEvent.emit(this.newMenuItem[index]);
-    this.dbIdsRemove = this.newMenuItem.slice(index + 1);
-    this.newMenuItem.splice(index + 1, this.newMenuItem.length);
-    if (menu[index] && menu[index].items && menu[index].items.length) {
-    }
-    this.dataSubjectService.setDbId(this.newMenuItem[index].dbId.toString());
+    this.clickEvent.emit(this.viewHistory[index]);
+    this.viewHistory.splice(index + 1, this.viewHistory.length);
   }
 }

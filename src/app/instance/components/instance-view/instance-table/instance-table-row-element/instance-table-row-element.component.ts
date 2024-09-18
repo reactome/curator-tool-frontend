@@ -1,6 +1,6 @@
+import { CdkTextareaAutosize } from "@angular/cdk/text-field";
 import {
   Component,
-  ElementRef,
   EventEmitter,
   Input,
   NgZone,
@@ -8,19 +8,17 @@ import {
   Output,
   ViewChild
 } from '@angular/core';
-import { Store } from "@ngrx/store";
-import { AttributeCategory, AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
-import { AttributeValue, DragDropStatus, EDIT_ACTION } from '../instance-table.model';
-import { CdkTextareaAutosize } from "@angular/cdk/text-field";
-import { take } from "rxjs";
 import { FormControl, Validators } from "@angular/forms";
-import { ViewOnlyService } from "../../../../../core/services/view-only.service";
-import { DataService } from "../../../../../core/services/data.service";
-import { DragDropService } from "../../../../../schema-view/instance-bookmark/drag-drop.service";
-import { Instance } from "../../../../../core/models/reactome-instance.model";
-import {ActivatedRoute} from "@angular/router";
-import {DataSubjectService} from "src/app/core/services/data.subject.service";
+import { ActivatedRoute } from "@angular/router";
+import { Store } from "@ngrx/store";
+import { take } from "rxjs";
+import { AttributeCategory, AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
+import { Instance } from "../../../../../core/models/reactome-instance.model";
+import { DataService } from "../../../../../core/services/data.service";
+import { ViewOnlyService } from "../../../../../core/services/view-only.service";
+import { DragDropService } from "../../../../../schema-view/instance-bookmark/drag-drop.service";
+import { AttributeValue, DragDropStatus, EDIT_ACTION } from '../instance-table.model';
 /**
  * Used to display a single value of an Instance object.
  */
