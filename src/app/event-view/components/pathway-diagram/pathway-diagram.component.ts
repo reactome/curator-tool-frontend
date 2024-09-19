@@ -88,7 +88,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       this.select = queryParams['select'] ?? '';
       // Check if we have cytoscape network. If yes, load it.
       this.diagramUtils.getDataService().hasCytoscapeNetwork(this.pathwayId).subscribe((exists: boolean) => {
-        this.diagram.resetState(); // Have to call this to avoid any residue selection. This is more like a bug in ngx-diagram.
+        //this.diagram.resetState(); // Have to call this to avoid any residue selection. This is more like a bug in ngx-diagram.
         this.diagramUtils.clearSelection(this.diagram); 
         if (exists) {
           this.diagramUtils.getDataService().getCytoscapeNetwork(this.pathwayId).subscribe((cytoscapeJson: any) => {

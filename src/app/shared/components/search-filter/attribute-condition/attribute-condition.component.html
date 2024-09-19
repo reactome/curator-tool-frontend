@@ -18,12 +18,13 @@
   </mat-form-field>
   <mat-form-field id="searchKeyField" class="fc-margin inline wrap" style="width: 50%">
     <mat-label>Enter search token</mat-label>
-    <input [(ngModel)]="attributeCondition.searchKey" id="searchKey" (keyup)="recordSearchKey($event)" class="text-sm" matInput #input>
+    <input [(ngModel)]="attributeCondition.searchKey" id="searchKey" (keydown.enter)="addNewPane()" (keyup)="recordSearchKey($event)" class="text-sm" matInput #input>
   </mat-form-field>
   <!-- In total we allow 8 search criteria for now. -->
   <ng-container *ngIf="attributeCondition.index <= 8">
-    <button matTooltip="Add attribute" (click)="addNewPane()" style="margin-left: 5px; margin-bottom: 20px;">Add to search</button>
+    <button matTooltip="Add attribute" (click)="addNewPane()" style="margin-left: 5px; margin-bottom: 20px;">Build Search Query</button>
   </ng-container>
+  <button matTooltip="Clear all" (click)="removePane()" style="margin-left: 5px; margin-bottom: 20px;">Clear</button>
 <!--  <ng-container *ngIf="attributeCondition.index > 0">-->
 <!--    <button matTooltip="Remove this attribute" (click)="removePane()" mat-icon-button style="margin-left: 5px; margin-bottom: 20px;">-</button>-->
 <!--  </ng-container>-->

@@ -96,10 +96,10 @@ export class InstanceSelectionComponent implements OnInit {
   }
 
   searchForName(_: Event | undefined) {
-    if(this.searchKey?.startsWith('(') && this.searchKey?.endsWith(')')){
-      this.advancedSearch(this.searchKey);
-      return;
-    }
+    // if(this.searchKey?.startsWith('(') && this.searchKey?.endsWith(')')){
+    //   this.advancedSearch(this.searchKey);
+    //   return;
+    // }
     this.skip = 0;
     this.pageIndex = 0;
     if (this.useRoute) {
@@ -168,10 +168,10 @@ export class InstanceSelectionComponent implements OnInit {
    * @param searchFilters
    */
   searchAction(attributeCondition: AttributeCondition) {
-    if(this.searchKey !== '') {
-      this.searchKey += ","
+    if(this.advancedSearchKey !== '') {
+      this.advancedSearchKey += ","
     }
-    this.searchKey += "("
+    this.advancedSearchKey += "("
       + attributeCondition.attributeName
       + "[" + attributeCondition.operand
       + ": " + attributeCondition.searchKey + "])";
