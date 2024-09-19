@@ -165,6 +165,7 @@ export class InstanceUtilities {
     stringifyInstance(instance: Instance): string {
         return JSON.stringify({
             ...instance,
+            schemaClass: undefined, // No need to push the schemaClass around
             attributes: instance.attributes ? Object.fromEntries(instance.attributes) : undefined
         });
     }
@@ -172,8 +173,17 @@ export class InstanceUtilities {
     stringifyInstances(instances: Instance[]): string {
         return JSON.stringify(instances.map(inst => ({
             ...inst,
+            schemaClass: undefined,
             attributes: inst.attributes ? Object.fromEntries(inst.attributes) : undefined
         })));
+    }
+
+    makeShell(inst: Instance) {
+        return {
+            dbId: inst.dbId,
+            schemaClassName: inst.schemaClassName,
+            displayName: inst.displayName
+        };
     }
 
 }

@@ -5,7 +5,7 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 import { DragDropService } from "../../../schema-view/instance-bookmark/drag-drop.service";
-import { InstanceActions, NewInstanceActions } from '../../state/instance.actions';
+import { UpdateInstanceActions, NewInstanceActions } from '../../state/instance.actions';
 import { DeletionDialogService } from "../deletion-dialog/deletion-dialog.service";
 import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
 import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.service";
@@ -230,7 +230,7 @@ export class InstanceViewComponent implements OnInit {
         this.store.dispatch(NewInstanceActions.remove_new_instance(oldInst));
       }
       else
-        this.store.dispatch(InstanceActions.remove_updated_instance(this.instance!));
+        this.store.dispatch(UpdateInstanceActions.remove_updated_instance(this.instance!));
       // Also update the breakcrunch!
     })
   }

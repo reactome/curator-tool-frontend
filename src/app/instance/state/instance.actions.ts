@@ -1,14 +1,20 @@
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 
-export const InstanceActions = createActionGroup({
-  source: "instance_actions",
+export const UpdateInstanceActions = createActionGroup({
+  source: "update_instance_actions",
   events: {
     // Record updated instances
     register_updated_instance: props<Instance>(),
     last_updated_instance: props<{attribute: string, instance: Instance}>(),
     remove_updated_instance: props<Instance>(),
+
     get_updated_instances: emptyProps(),
+    set_updated_instances: props<{instances: Instance[]}>(),
+
+    // For local storage
+    ls_register_updated_instance: props<Instance>(),
+    ls_remove_updated_instance: props<Instance>(),
   }
 })
 

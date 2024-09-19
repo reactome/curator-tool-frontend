@@ -1,7 +1,7 @@
 import { EntityState, createEntityAdapter } from "@ngrx/entity";
 import { createReducer, on } from "@ngrx/store";
 import { Instance } from "src/app/core/models/reactome-instance.model";
-import {DeleteInstanceActions, InstanceActions, NewInstanceActions} from "./instance.actions";
+import {DeleteInstanceActions, UpdateInstanceActions, NewInstanceActions} from "./instance.actions";
 
 /**
  * Reducer to handle registration of updated instance
@@ -15,11 +15,20 @@ export const updatedInstancesAdaptor = createEntityAdapter<Instance>({
 
 export const updatedInstancesReducer = createReducer(
   updatedInstancesAdaptor.getInitialState(),
-  on(InstanceActions.register_updated_instance,
+  on(UpdateInstanceActions.register_updated_instance,
     (state, instance) => updatedInstancesAdaptor.upsertOne(instance, state),
   ),
-  on(InstanceActions.remove_updated_instance,
+  on(UpdateInstanceActions.remove_updated_instance,
     (state, instance) => updatedInstancesAdaptor.removeOne(instance.dbId, state)
+  ),
+  on(UpdateInstanceActions.ls_register_updated_instance,
+    (state, instance) => updatedInstancesAdaptor.upsertOne(instance, state),
+  ),
+  on(UpdateInstanceActions.ls_remove_updated_instance,
+    (state, instance) => updatedInstancesAdaptor.removeOne(instance.dbId, state)
+  ),
+  on(UpdateInstanceActions.set_updated_instances,
+    (state, {instances}) => updatedInstancesAdaptor.setMany(instances, state)
   ),
 )
 
@@ -34,7 +43,7 @@ export const lastUpdatedInstanceInitialState: LastUpdatedInstanceState = {
 }
 export const lastUpdatedInstanceReducer = createReducer(
   lastUpdatedInstanceInitialState,
-  on(InstanceActions.last_updated_instance, 
+  on(UpdateInstanceActions.last_updated_instance, 
     (state, {attribute, instance}) => ({...state, attribute: attribute, instance: instance})
   )
 )

@@ -9,7 +9,7 @@ import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { PostEditListener } from 'src/app/core/post-edit/PostEditOperation';
 import { PostEditService } from 'src/app/core/services/post-edit.service';
-import { InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
+import { UpdateInstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import {
   SelectInstanceDialogService
 } from 'src/app/schema-view/list-instances/components/select-instance-dialog/select-instance-dialog.service';
@@ -371,12 +371,12 @@ export class InstanceTableComponent implements PostEditListener {
     };
     if (this._instance!.dbId > 0) {
       // Have to make a clone to avoid any change to the current _instance!
-      this.store.dispatch(InstanceActions.register_updated_instance(cloned));
+      this.store.dispatch(UpdateInstanceActions.register_updated_instance(cloned));
     } else {
       // Force the state to update if needed
       this.store.dispatch(NewInstanceActions.register_new_instance(cloned));
     }
-    this.store.dispatch(InstanceActions.last_updated_instance({attribute: attName, instance: cloned}));
+    this.store.dispatch(UpdateInstanceActions.last_updated_instance({attribute: attName, instance: cloned}));
   }
 
   addModifiedAttribute(attributeName: string, attributeVal: any) {
@@ -401,7 +401,7 @@ export class InstanceTableComponent implements PostEditListener {
     // If nothing is in the modifiedAttributes, remove this instance from the changed list
     if (this._instance.modifiedAttributes.length === 0) {
       this.store.dispatch(
-        InstanceActions.remove_updated_instance(this._instance)
+        UpdateInstanceActions.remove_updated_instance(this._instance)
       );
     }
   }

@@ -10,7 +10,7 @@ import {ListInstancesModule} from "../../../schema-view/list-instances/list-inst
 import {Store} from "@ngrx/store";
 import {deleteInstances, updatedInstances} from 'src/app/instance/state/instance.selectors';
 import { newInstances } from 'src/app/instance/state/instance.selectors';
-import { InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
+import { UpdateInstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { DataService } from 'src/app/core/services/data.service';
 import { MatToolbar } from '@angular/material/toolbar';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
@@ -113,7 +113,7 @@ export class UpdatedInstanceListComponent implements OnInit{
   private resetUpdatedInstance(instance: Instance) {
     console.debug('Reset updated instance: ', instance);
     this.dataService.removeInstanceInCache(instance);
-    this.store.dispatch(InstanceActions.remove_updated_instance(instance));
+    this.store.dispatch(UpdateInstanceActions.remove_updated_instance(instance));
   }
 
   private deleteNewInstance(instance: Instance) {

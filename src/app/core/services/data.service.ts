@@ -267,12 +267,12 @@ export class DataService {
     // Fetch from the server
     return this.http.get<Instance>(this.entityDataUrl + `${dbId}`)
       .pipe(
-        concatMap((data: Instance) => {
+        map((data: Instance) => {
           let instance: Instance = data; // Converted into the Instance object already
           this.handleInstanceAttributes(instance);
           if (cache)
             this.id2instance.set(dbId, instance); // Cache this instance
-          return this.handleSchemaClassForInstance(instance);
+          return instance;
         }),
 
         catchError((err: Error) => {

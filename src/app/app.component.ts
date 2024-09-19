@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { DeleteInstanceActions, InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
-import { UserInstances } from './core/models/reactome-instance.model';
+import { DeleteInstanceActions, UpdateInstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
+import { Instance, UserInstances } from './core/models/reactome-instance.model';
 import { DataService } from './core/services/data.service';
 import { BookmarkActions } from './schema-view/instance-bookmark/state/bookmark.actions';
 import { finalize } from 'rxjs';
+import { InstanceUtilities } from './core/services/instance.service';
 
 @Component({
   selector: 'app-root',
@@ -21,6 +22,7 @@ export class AppComponent {
 
   constructor(private router: Router,
     private dataService: DataService,
+    private instUtils: InstanceUtilities,
     private store: Store
   ) {}
 
@@ -50,12 +52,17 @@ export class AppComponent {
       // in the localStorage.
       this.checkLocalStorage(userInstances);
       if (userInstances.newInstances && userInstances.newInstances.length > 0)
-        this.store.dispatch(NewInstanceActions.set_new_instances({instances: userInstances.newInstances}));
-      userInstances.updatedInstances?.forEach(inst => this.store.dispatch(InstanceActions.register_updated_instance(inst)));
+        this.store.dispatch(NewInstanceActions.set_new_instances({instances: this.makeShell(userInstances.newInstances)}));
+      if (userInstances.updatedInstances && userInstances.updatedInstances.length > 0)
+        this.store.dispatch(UpdateInstanceActions.set_updated_instances({instances: this.makeShell(userInstances.updatedInstances)}));
       userInstances.deletedInstances?.forEach(inst => this.store.dispatch(DeleteInstanceActions.register_deleted_instance(inst)));
       if (userInstances.bookmarks && userInstances.bookmarks.length > 0)
         this.store.dispatch(BookmarkActions.set_bookmarks({instances: userInstances.bookmarks}));
     });
+  }
+
+  private makeShell(insts: Instance[]) {
+    return insts.map(inst => this.instUtils.makeShell(inst));
   }
 
   private checkLocalStorage(userInstances: UserInstances) {
@@ -67,7 +74,7 @@ export class AppComponent {
     // Instances have been persisted in localstorage fully. Therefore, we need to register
     // them only without actually loading from the database. 
     // schemaClass will be handled whenever it is needed. 
-    const updated = localStorage.getItem(InstanceActions.get_updated_instances.type);
+    const updated = localStorage.getItem(UpdateInstanceActions.get_updated_instances.type);
     if (updated) {
       const updatedInsts = JSON.parse(updated);
       userInstances.updatedInstances = updatedInsts;
