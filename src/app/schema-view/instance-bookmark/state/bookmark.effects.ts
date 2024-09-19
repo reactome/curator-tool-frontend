@@ -22,11 +22,11 @@ export class BookmarkEffects {
     window.addEventListener('storage', (event) => {
       if (event.key === BookmarkActions.add_bookmark.type) {
         const bookmark = JSON.parse(event.newValue || '{}');
-        this.store.dispatch(BookmarkActions.add_bookmark(bookmark as Instance));
+        this.store.dispatch(BookmarkActions.ls_add_bookmark(bookmark as Instance));
       }
       else if (event.key === BookmarkActions.remove_bookmark.type) {
         const bookmark = JSON.parse(event.newValue || '{}');
-        this.store.dispatch(BookmarkActions.remove_bookmark(bookmark as Instance));
+        this.store.dispatch(BookmarkActions.ls_remove_bookmark(bookmark as Instance));
       }
     })
   }

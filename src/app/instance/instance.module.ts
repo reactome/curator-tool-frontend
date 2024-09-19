@@ -4,7 +4,6 @@ import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { MatSidenavModule } from "@angular/material/sidenav";
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
 import { ListInstancesModule } from "../schema-view/list-instances/list-instances.module";
 import { SharedModule } from '../shared/shared.module';
@@ -26,8 +25,7 @@ import { InstanceViewComponent } from './components/instance-view/instance-view.
 import { NewInstanceDialogComponent } from './components/new-instance-dialog/new-instance-dialog.component';
 import { QAReportDialogComponent } from './components/qa-report-dialog/qa-report-dialog.component';
 import { InstanceRoutingModule } from './instance-routing.module';
-import { DatabaseObjectEffects } from './state/instance.effects';
-import {DELETE_INSTANCES_STATE_NAME, LAST_UPDATED_INSTANCE_STATE_NAME, lastUpdatedInstanceState, NEW_INSTANCES_STATE_NAME} from "./state/instance.selectors";
+import {DELETE_INSTANCES_STATE_NAME, LAST_UPDATED_INSTANCE_STATE_NAME, NEW_INSTANCES_STATE_NAME} from "./state/instance.selectors";
 import {deletedInstancesReducer, lastUpdatedInstanceReducer, newInstancesReducer} from "./state/instance.reducers";
 import { TextCurationComponent } from "../schema-view/main-schema-view/text-curation/components/text-curation.component";
 import {ReferrersDialogComponent} from "./components/referrers-dialog/referrers-dialog.component";
@@ -56,7 +54,7 @@ import {
   imports: [
     CommonModule,
     InstanceRoutingModule,
-    EffectsModule.forFeature(DatabaseObjectEffects),
+    // EffectsModule.forFeature(InstanceEffects),
     // EffectsModule.forFeature(NewInstanceEffects),
     StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer),
     StoreModule.forFeature(DELETE_INSTANCES_STATE_NAME, deletedInstancesReducer),

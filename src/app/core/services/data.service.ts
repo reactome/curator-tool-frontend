@@ -304,6 +304,19 @@ export class DataService {
     return rtn;
   }
 
+  resetNextNewDbId() {
+    if (!this.id2instance || this.id2instance.size == 0) {
+      return; // Need to do nothing
+    }
+    let min = 0;
+    for (let id of this.id2instance.keys()) {
+      if (id < min)
+        min = id;
+    }
+    // Need to reduce 0 to avoid using the used one
+    this.nextNewDbId = min - 1;
+  }
+
   /**
    * Create a new instance for the specified class.
    */
@@ -334,7 +347,11 @@ export class DataService {
   /**
    * Register a new instance to the cache.
    */
-  registerNewInstance(instance: Instance): void {
+  registerInstance(instance: Instance): void {
+    // Make sure map is used
+    if (instance.attributes && !(instance.attributes instanceof Map)) {
+      this.handleInstanceAttributes(instance);
+    }
     this.id2instance.set(instance.dbId, instance);
   }
 
@@ -349,15 +366,7 @@ export class DataService {
    * @param instance
    */
   handleInstanceAttributes(instance: Instance): void {
-    if (instance.attributes === undefined)
-      return;
-    let attributeMap = new Map<string, any>();
-    let attributes: any = instance.attributes;
-    Object.keys(attributes).map((key: string) => {
-      const value = attributes[key];
-      attributeMap.set(key, value);
-    })
-    instance.attributes = attributeMap;
+    this.utils.handleInstanceAttributes(instance);
   }
 
   /**
@@ -366,7 +375,7 @@ export class DataService {
    * @param className
    * @returns
    */
-  private handleSchemaClassForInstance(instance: Instance): Observable<Instance> {
+  handleSchemaClassForInstance(instance: Instance): Observable<Instance> {
     let className: string = instance.schemaClassName!;
     let schemaClass$: Observable<SchemaClass> = this.fetchSchemaClass(className);
     return schemaClass$.pipe(

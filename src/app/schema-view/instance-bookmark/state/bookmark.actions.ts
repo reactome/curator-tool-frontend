@@ -12,5 +12,9 @@ export const BookmarkActions = createActionGroup({
     save_bookmarks: emptyProps(),
     // Need a single object only
     set_bookmarks: props<{instances: Instance[]}>(),
+
+    // To handle event from local storage to avoid infinity loop
+    ls_add_bookmark: props<Instance>(),
+    ls_remove_bookmark: props<Instance>(),
   }
 })

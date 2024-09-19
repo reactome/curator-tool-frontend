@@ -145,4 +145,35 @@ export class InstanceUtilities {
         return dataCopy;
     }
 
+    /**
+       * Attributes returned from the server are kept as JavaScript object since JavaScript really
+       * doesn't care about the type. Therefore, we need to do some converting here.
+       * @param instance
+       */
+    handleInstanceAttributes(instance: Instance): void {
+        if (instance.attributes === undefined)
+            return;
+        let attributeMap = new Map<string, any>();
+        let attributes: any = instance.attributes;
+        Object.keys(attributes).map((key: string) => {
+            const value = attributes[key];
+            attributeMap.set(key, value);
+        })
+        instance.attributes = attributeMap;
+    }
+
+    stringifyInstance(instance: Instance): string {
+        return JSON.stringify({
+            ...instance,
+            attributes: instance.attributes ? Object.fromEntries(instance.attributes) : undefined
+        });
+    }
+
+    stringifyInstances(instances: Instance[]): string {
+        return JSON.stringify(instances.map(inst => ({
+            ...inst,
+            attributes: inst.attributes ? Object.fromEntries(inst.attributes) : undefined
+        })));
+    }
+
 }

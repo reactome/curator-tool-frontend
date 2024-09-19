@@ -48,10 +48,14 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
 
   override connect(): Observable<AttributeValue[]> {
     const attributeValues: AttributeValue[] = [];
+    // Just in case
+    let instAtts = this.instance?.attributes;
+    if (!instAtts)
+      instAtts = new Map();
     // This is weird. Not sure why. Just manually check here
-    if (this.instance?.attributes && this.instance?.schemaClass?.attributes) {
+    if (this.instance?.schemaClass?.attributes) {
       for (let attribute of this.instance.schemaClass.attributes) {
-        let value = this.instance!.attributes!.get(attribute.name);
+        let value = instAtts.get(attribute.name);
         if (this.categories.get(attribute.category)) {
           const attributeValue: AttributeValue = {
             attribute: attribute,

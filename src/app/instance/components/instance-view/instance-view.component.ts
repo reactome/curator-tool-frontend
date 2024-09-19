@@ -89,21 +89,31 @@ export class InstanceViewComponent implements OnInit {
       // Wrap them together to avoid NG0100 error
       this.showProgressSpinner = true;
       this.dataService.fetchInstance(dbId).subscribe((instance) => {
-        // Turn off the comparison first
-        this.dbInstance = undefined; 
-        this.instance = instance;
-        if (resetHistory)
-          this.viewHistory.length = 0;
-        this.addToViewHistory(instance);
-        this.showProgressSpinner = false;
-        this.updateTitle(instance);
-        if (needComparsion) {
-          this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(instance => {
-            this.dbInstance = instance;
+        if (instance.schemaClass)
+          // Turn off the comparison first
+          this._loadIntance(instance, resetHistory, needComparsion, dbId);
+        else {
+          this.dataService.handleSchemaClassForInstance(instance).subscribe(inst => {
+            this._loadIntance(inst, resetHistory, needComparsion, dbId);
           })
         }
       })
     });
+  }
+
+  private _loadIntance(instance: Instance, resetHistory: boolean, needComparsion: boolean, dbId: number) {
+    this.dbInstance = undefined;
+    this.instance = instance;
+    if (resetHistory)
+      this.viewHistory.length = 0;
+    this.addToViewHistory(instance);
+    this.showProgressSpinner = false;
+    this.updateTitle(instance);
+    if (needComparsion) {
+      this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(instance => {
+        this.dbInstance = instance;
+      });
+    }
   }
 
   addToViewHistory(instance: Instance) {

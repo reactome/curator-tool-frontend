@@ -19,7 +19,13 @@ export const NewInstanceActions = createActionGroup({
     register_new_instance: props<Instance>(),
     // Remove a new instance
     remove_new_instance: props<Instance>(),
-    get_new_instance: props<Instance>()
+
+    // To handle local storage event to avoid infinity loop
+    ls_register_new_instance: props<Instance>(),
+    ls_remove_new_instance: props<Instance>(),
+
+    get_new_instances: props<Instance>(),
+    set_new_instances: props<{instances: Instance[]}>()
   }
 })
 

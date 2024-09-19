@@ -26,6 +26,7 @@ import { MainSchemaViewModule } from "./schema-view/main-schema-view/main-schema
 import { SchemaClassTableModule } from './schema-view/schema-class/components/table/schema-class-table.module';
 import { SharedModule } from "./shared/shared.module";
 import { StatusModule } from './status/status.module';
+import { InstanceEffects } from './instance/state/instance.effects';
 // import { CustomSerializer } from "./store/custom-serializer";
 
 export function tokenGetter() {
@@ -58,7 +59,7 @@ const customTooltipOptions: MatTooltipDefaultOptions = {
     ListInstancesModule,
     EffectsModule.forRoot(),
     StoreModule.forRoot({router: routerReducer}),
-    EffectsModule.forRoot([BookmarkEffects]),
+    EffectsModule.forRoot([BookmarkEffects, InstanceEffects]),
     RouterModule.forRoot([]),
     StoreDevtoolsModule.instrument({
       maxAge: 25,

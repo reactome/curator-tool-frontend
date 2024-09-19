@@ -57,6 +57,15 @@ export const newInstancesReducer = createReducer(
   on(NewInstanceActions.remove_new_instance,
     (state, instance) => newInstancesAdaptor.removeOne(instance.dbId, state)
   ),
+  on(NewInstanceActions.ls_register_new_instance,
+    (state, instance) => newInstancesAdaptor.upsertOne(instance, state)
+  ),
+  on(NewInstanceActions.ls_remove_new_instance,
+    (state, instance) => newInstancesAdaptor.removeOne(instance.dbId, state)
+  ),
+  on(NewInstanceActions.set_new_instances,
+    (state, {instances}) => newInstancesAdaptor.setMany(instances, state)
+  )
 )
 
 /**
