@@ -22,6 +22,7 @@ export class InstanceEffects {
     private instUtils: InstanceUtilities
   ) {
     window.addEventListener('storage', (event) => {
+      // console.debug('storage event: ' + event.key);
       const inst = JSON.parse(event.newValue || '{}');
       switch (event.key) {
         // When a new instance is edited, this case is also
@@ -29,32 +30,40 @@ export class InstanceEffects {
         case NewInstanceActions.register_new_instance.type:
           this.dataService.registerInstance(inst);
           this.store.dispatch(NewInstanceActions.ls_register_new_instance(this.instUtils.makeShell(inst)));
-          this.instUtils.setRefreshViewDbId(inst.dbId);
+          // Don't send the signal to update. Will do via last_updated if any
+          // this.instUtils.setRefreshViewDbId(inst.dbId);
           break;
         case NewInstanceActions.remove_new_instance.type:
           this.store.dispatch(NewInstanceActions.ls_remove_new_instance(inst));
           break;
         case UpdateInstanceActions.register_updated_instance.type:
-          this.dataService.registerInstance(inst);
+          // this.dataService.registerInstance(inst);
           this.store.dispatch(UpdateInstanceActions.ls_register_updated_instance(this.instUtils.makeShell(inst)));
           // Force to refresh instance view if any
-          this.instUtils.setRefreshViewDbId(inst.dbId);
+          // this.instUtils.setRefreshViewDbId(inst.dbId);
           break;
         case UpdateInstanceActions.remove_updated_instance.type:
           this.store.dispatch(UpdateInstanceActions.ls_remove_updated_instance(inst));
           this.dataService.removeInstanceInCache(inst.dbId); // Flag to reload
+          // This will not conflict with last_updated_instance
           this.instUtils.setRefreshViewDbId(inst.dbId);
           break;
         case UpdateInstanceActions.last_updated_instance.type:
-          // The instance wrapped here most likely or to be registered
-          // by register_updated_instance case. Since the two instances are the same
-          // it should be fine to register twice.
+          // We will use last_updated_instance to catch the change
+          // for any update. Not the other. Actually don't use any other
+          // to avoid threading race, causing the identity change of the 
+          // displayed instance with unexpected effect.
           this.dataService.registerInstance(inst.instance);
           // Need a shell to avoid locking the instance
           this.store.dispatch(UpdateInstanceActions.ls_last_updated_instance({
             attribute: inst.attribuate,
             instance: this.instUtils.makeShell(inst.instance)
           }));
+          // By registering instance, the identify if the instance obejct is changed.
+          // Therefore, we have to call this again to make sure the same instance is used
+          // for both display and cache. This call is duplicated for registering (for updated)
+          // But so far, there is no better way to solve this issue
+          this.instUtils.setRefreshViewDbId(inst.instance.dbId);
           break;
         case DeleteInstanceActions.register_deleted_instance.type:
           this.dataService.registerInstance(inst);
