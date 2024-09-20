@@ -3,6 +3,8 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import {Instance} from 'src/app/core/models/reactome-instance.model';
 import {DataService} from "../../../../core/services/data.service";
 import {Router} from "@angular/router";
+import { Store } from '@ngrx/store';
+import { DeleteInstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
 
 /**
  * A dialog component to show referrers of an instance.
@@ -18,7 +20,7 @@ export class ConfirmDeleteDialogComponent {
   constructor(@Inject(MAT_DIALOG_DATA) public instance: Instance,
               public dialogRef: MatDialogRef<ConfirmDeleteDialogComponent>,
               public dataService: DataService,
-              private router: Router,) {
+              private store: Store) {
   }
 
 
@@ -27,11 +29,10 @@ export class ConfirmDeleteDialogComponent {
   }
 
   onDelete() {
-    this.dataService.delete(this.instance!).subscribe(storedInst => {
-      console.debug('Returned dbId: ' + storedInst);
-    });
+    this.store.dispatch(DeleteInstanceActions.register_deleted_instance(this.instance));
+    // In case this is a new instance
+    this.store.dispatch(NewInstanceActions.remove_new_instance(this.instance));
     this.dialogRef.close(this.instance);
-    this.router.navigate(["/schema_view"])
-
+    // this.router.navigate(["/schema_view"])
   }
 }

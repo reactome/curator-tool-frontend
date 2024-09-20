@@ -10,7 +10,7 @@ import {ListInstancesModule} from "../../../schema-view/list-instances/list-inst
 import {Store} from "@ngrx/store";
 import {deleteInstances, updatedInstances} from 'src/app/instance/state/instance.selectors';
 import { newInstances } from 'src/app/instance/state/instance.selectors';
-import { UpdateInstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
+import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from 'src/app/instance/state/instance.actions';
 import { DataService } from 'src/app/core/services/data.service';
 import { MatToolbar } from '@angular/material/toolbar';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
@@ -102,16 +102,23 @@ export class UpdatedInstanceListComponent implements OnInit{
       }
 
       case "undo": {
-        this.resetUpdatedInstance(actionButton.instance);
+        if (this.deletedInstances.includes(actionButton.instance))
+          this.resetDeletedInstance(actionButton.instance);
+        else
+          this.resetUpdatedInstance(actionButton.instance);
       }
     }
+  }
+
+  private resetDeletedInstance(instance: Instance) {
+    this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
   }
 
   //TODO: Should try to use effects to handle this to avoid
   // referring DataService, which has been referred too many
   // places now!
   private resetUpdatedInstance(instance: Instance) {
-    console.debug('Reset updated instance: ', instance);
+    // console.debug('Reset updated instance: ', instance);
     this.dataService.removeInstanceInCache(instance);
     this.store.dispatch(UpdateInstanceActions.remove_updated_instance(instance));
   }

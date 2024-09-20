@@ -31,8 +31,6 @@ export class DeletionDialogComponent {
 
   onOK() {
     this.confirmDeleteDialogService.openDialog(this.instance);
-    this.store.dispatch(DeleteInstanceActions.register_deleted_instance(this.instance));
-    this.store.dispatch(NewInstanceActions.remove_new_instance(this.instance));
     this.dialogRef.close(this.instance);
   }
 

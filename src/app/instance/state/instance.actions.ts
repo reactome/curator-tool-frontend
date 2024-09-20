@@ -41,6 +41,11 @@ export const DeleteInstanceActions = createActionGroup({
     // Record deleted instances
     register_deleted_instance: props<Instance>(),
     remove_deleted_instance: props<Instance>(),
+
     get_deleted_instances: emptyProps(),
+    set_deleted_instances: props<{instances: Instance[]}>(),
+
+    ls_register_deleted_instance: props<Instance>(),
+    ls_remove_deleted_instance: props<Instance>(),
   }
 })

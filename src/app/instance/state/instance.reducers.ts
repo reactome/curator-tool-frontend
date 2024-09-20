@@ -16,15 +16,11 @@ export const updatedInstancesAdaptor = createEntityAdapter<Instance>({
 export const updatedInstancesReducer = createReducer(
   updatedInstancesAdaptor.getInitialState(),
   on(UpdateInstanceActions.register_updated_instance,
+    UpdateInstanceActions.ls_register_updated_instance,
     (state, instance) => updatedInstancesAdaptor.upsertOne(instance, state),
   ),
   on(UpdateInstanceActions.remove_updated_instance,
-    (state, instance) => updatedInstancesAdaptor.removeOne(instance.dbId, state)
-  ),
-  on(UpdateInstanceActions.ls_register_updated_instance,
-    (state, instance) => updatedInstancesAdaptor.upsertOne(instance, state),
-  ),
-  on(UpdateInstanceActions.ls_remove_updated_instance,
+    UpdateInstanceActions.ls_register_updated_instance,
     (state, instance) => updatedInstancesAdaptor.removeOne(instance.dbId, state)
   ),
   on(UpdateInstanceActions.set_updated_instances,
@@ -61,15 +57,11 @@ export const newInstancesAdaptor = createEntityAdapter<Instance>({
 export const newInstancesReducer = createReducer(
   newInstancesAdaptor.getInitialState(),
   on(NewInstanceActions.register_new_instance,
+    NewInstanceActions.ls_register_new_instance,
     (state, instance) => newInstancesAdaptor.upsertOne(instance, state)
   ),
   on(NewInstanceActions.remove_new_instance,
-    (state, instance) => newInstancesAdaptor.removeOne(instance.dbId, state)
-  ),
-  on(NewInstanceActions.ls_register_new_instance,
-    (state, instance) => newInstancesAdaptor.upsertOne(instance, state)
-  ),
-  on(NewInstanceActions.ls_remove_new_instance,
+    NewInstanceActions.ls_remove_new_instance,
     (state, instance) => newInstancesAdaptor.removeOne(instance.dbId, state)
   ),
   on(NewInstanceActions.set_new_instances,
@@ -90,10 +82,15 @@ export const deletedInstancesAdaptor = createEntityAdapter<Instance>({
 export const deletedInstancesReducer = createReducer(
   deletedInstancesAdaptor.getInitialState(),
   on(DeleteInstanceActions.register_deleted_instance,
+    DeleteInstanceActions.ls_register_deleted_instance,
     (state, instance) => deletedInstancesAdaptor.upsertOne(instance, state)
   ),
   on(DeleteInstanceActions.remove_deleted_instance,
+    DeleteInstanceActions.ls_remove_deleted_instance,
     (state, instance) => deletedInstancesAdaptor.removeOne(instance.dbId, state)
   ),
+  on(DeleteInstanceActions.set_deleted_instances,
+    (state, {instances}) => deletedInstancesAdaptor.setMany(instances, state)
+  )
 )
 

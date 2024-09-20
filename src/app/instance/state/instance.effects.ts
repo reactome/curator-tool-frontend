@@ -1,10 +1,10 @@
 import { Injectable } from "@angular/core";
 import { Actions, createEffect, ofType } from "@ngrx/effects";
 import { DataService } from "src/app/core/services/data.service";
-import { UpdateInstanceActions, NewInstanceActions } from "./instance.actions";
+import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from "./instance.actions";
 import { Store } from "@ngrx/store";
 import { tap } from "rxjs";
-import { newInstances, updatedInstances } from "./instance.selectors";
+import { deleteInstances, newInstances, updatedInstances } from "./instance.selectors";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { Instance } from "src/app/core/models/reactome-instance.model";
 
@@ -39,6 +39,14 @@ export class InstanceEffects {
           break;
         case UpdateInstanceActions.remove_updated_instance.type:
           this.store.dispatch(UpdateInstanceActions.ls_remove_updated_instance(inst));
+          break;
+        case DeleteInstanceActions.register_deleted_instance.type:
+            this.dataService.registerInstance(inst);
+            this.store.dispatch(DeleteInstanceActions.ls_register_deleted_instance(inst));
+            break;
+        case DeleteInstanceActions.remove_deleted_instance.type:
+            this.store.dispatch(DeleteInstanceActions.ls_remove_deleted_instance(inst));
+            break;
       }
     })
   }
@@ -82,6 +90,28 @@ export class InstanceEffects {
             const dbIds = instances.map(i => i.dbId);
             this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
               localStorage.setItem(UpdateInstanceActions.get_updated_instances.type, this.instUtils.stringifyInstances(fullInsts));
+            });
+          });
+        })
+      ),
+    { dispatch: false }
+  );
+
+
+  deleteInstanceChanges$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(DeleteInstanceActions.register_deleted_instance, 
+               DeleteInstanceActions.remove_deleted_instance),
+        tap((action) => {
+          this.dataService.fetchInstance(action.dbId).subscribe(fullInst => {
+            localStorage.setItem(action.type, this.instUtils.stringifyInstance(fullInst));
+          });
+          this.store.select(deleteInstances()).subscribe(instances => {
+            // We need the whole instance
+            const dbIds = instances.map(i => i.dbId);
+            this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
+              localStorage.setItem(DeleteInstanceActions.get_deleted_instances.type, this.instUtils.stringifyInstances(fullInsts));
             });
           });
         })

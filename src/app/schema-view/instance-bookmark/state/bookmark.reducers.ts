@@ -20,15 +20,11 @@ export const bookmarkReducer = createReducer(
     (state, {instances}) => bookmarkAdaptor.setMany(instances, state)
   ),
   on(BookmarkActions.add_bookmark,
+    BookmarkActions.ls_add_bookmark,
     (state, instance) =>  bookmarkAdaptor.upsertOne(instance, state)
   ),
   on(BookmarkActions.remove_bookmark,
+    BookmarkActions.ls_remove_bookmark,
     (state, instance) => bookmarkAdaptor.removeOne(instance.dbId, state)
   ),
-  on(BookmarkActions.ls_add_bookmark,
-    (state, instance) =>  bookmarkAdaptor.upsertOne(instance, state)
-  ),
-  on(BookmarkActions.ls_remove_bookmark,
-    (state, instance) => bookmarkAdaptor.removeOne(instance.dbId, state)
-  )
 )

@@ -55,7 +55,8 @@ export class AppComponent {
         this.store.dispatch(NewInstanceActions.set_new_instances({instances: this.makeShell(userInstances.newInstances)}));
       if (userInstances.updatedInstances && userInstances.updatedInstances.length > 0)
         this.store.dispatch(UpdateInstanceActions.set_updated_instances({instances: this.makeShell(userInstances.updatedInstances)}));
-      userInstances.deletedInstances?.forEach(inst => this.store.dispatch(DeleteInstanceActions.register_deleted_instance(inst)));
+      if (userInstances.deletedInstances && userInstances.deletedInstances.length > 0)
+        this.store.dispatch(DeleteInstanceActions.set_deleted_instances({instances: this.makeShell(userInstances.deletedInstances)}));
       if (userInstances.bookmarks && userInstances.bookmarks.length > 0)
         this.store.dispatch(BookmarkActions.set_bookmarks({instances: userInstances.bookmarks}));
     });
