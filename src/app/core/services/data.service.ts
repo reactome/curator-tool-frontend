@@ -355,9 +355,9 @@ export class DataService {
     this.id2instance.set(instance.dbId, instance);
   }
 
-  removeInstanceInCache(instance: Instance): void {
-    if (this.id2instance.has(instance.dbId))
-      this.id2instance.delete(instance.dbId);
+  removeInstanceInCache(dbId: number): void {
+    if (this.id2instance.has(dbId))
+      this.id2instance.delete(dbId);
   }
 
   /**

@@ -15,11 +15,21 @@ export class InstanceUtilities {
     // The type if either string or number
     private lastClickedDbId = new Subject<string|number>();
     lastClickedDbId$ = this.lastClickedDbId.asObservable();
+
+    // A shortcut to notify an instance view refresh
+    // We use this method to make the code much, much simpler!
+    private refreshViewDbId = new Subject<number>();
+    refreshViewDbId$ = this.refreshViewDbId.asObservable();
+
     // Bypass for comparison
     private lastClickedDbIdForComparison = new Subject<number>();
     lastClickedDbIdForComparison$ = this.lastClickedDbIdForComparison.asObservable();
 
     constructor() { }
+
+    setRefreshViewDbId(dbId: number) {
+        this.refreshViewDbId.next(dbId);
+    }
 
     setLastClickedDbId(dbId: string|number) {
         this.lastClickedDbId.next(dbId);

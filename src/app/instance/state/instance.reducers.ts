@@ -20,7 +20,7 @@ export const updatedInstancesReducer = createReducer(
     (state, instance) => updatedInstancesAdaptor.upsertOne(instance, state),
   ),
   on(UpdateInstanceActions.remove_updated_instance,
-    UpdateInstanceActions.ls_register_updated_instance,
+    UpdateInstanceActions.ls_remove_updated_instance,
     (state, instance) => updatedInstancesAdaptor.removeOne(instance.dbId, state)
   ),
   on(UpdateInstanceActions.set_updated_instances,
@@ -40,6 +40,7 @@ export const lastUpdatedInstanceInitialState: LastUpdatedInstanceState = {
 export const lastUpdatedInstanceReducer = createReducer(
   lastUpdatedInstanceInitialState,
   on(UpdateInstanceActions.last_updated_instance, 
+     UpdateInstanceActions.ls_last_updated_instance,
     (state, {attribute, instance}) => ({...state, attribute: attribute, instance: instance})
   )
 )

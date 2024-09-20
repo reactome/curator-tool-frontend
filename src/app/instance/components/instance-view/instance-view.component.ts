@@ -10,6 +10,7 @@ import { DeletionDialogService } from "../deletion-dialog/deletion-dialog.servic
 import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
 import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
+import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 @Component({
   selector: 'app-instance-view',
@@ -40,6 +41,7 @@ export class InstanceViewComponent implements OnInit {
     private store: Store,
     private qaReportDialogService: QAReportDialogService,
     private referrersDialogService: ReferrersDialogService,
+    private instUtils: InstanceUtilities,
     private deletionDialogService: DeletionDialogService) {
   }
 
@@ -72,15 +74,21 @@ export class InstanceViewComponent implements OnInit {
         }
       }
     });
+    this.instUtils.refreshViewDbId$.subscribe(dbId => {
+      if (this.instance && this.instance.dbId === dbId) {
+        this.loadInstance(dbId, false, false, true);
+      }
+    });
   }
 
-  loadInstance(dbId: number, 
-               needComparsion: boolean = false, 
-               resetHistory: boolean = false) {
+  loadInstance(dbId: number,
+    needComparsion: boolean = false,
+    resetHistory: boolean = false,
+    forceReload: boolean = false) {
     // avoid to do anything if nothing there
     if (!dbId) return;
     // Avoid reloading if it has been loaded already
-    if (dbId && this.instance && dbId === this.instance.dbId)
+    if (dbId && this.instance && !forceReload && dbId === this.instance.dbId)
       return;
     // if (!this.instance) {
     //   this.router.navigate(["/schema_view"])
@@ -173,6 +181,7 @@ export class InstanceViewComponent implements OnInit {
       this.dbInstance = undefined;
   }
 
+  //TODO: Consider showing the different attributes as the default.
   private loadReferenceInstance(dbId: number) {
     this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
       dbInstance => this.dbInstance = dbInstance);
@@ -221,7 +230,7 @@ export class InstanceViewComponent implements OnInit {
         this.instanceTable.updateTableContent();
       if (oldDbId) {
         // Just need a simple clone
-        let oldInst : Instance = {
+        let oldInst: Instance = {
           dbId: oldDbId,
           displayName: this.instance?.displayName,
           schemaClassName: this.instance!.schemaClassName
@@ -231,19 +240,19 @@ export class InstanceViewComponent implements OnInit {
       else
         this.store.dispatch(UpdateInstanceActions.remove_updated_instance(this.instance!));
       // Also update the breakcrunch!
-    })
+    });
   }
 
-    onQAReportAction(reportName: string) {
-      // console.debug(" ** onQAReportAction: ", reportName, this.instance!.qaIssues);
-      let qaReportData = this.instance!.qaIssues!.get(reportName)!;
-      const matDialogRef = this.qaReportDialogService.openDialog(reportName, qaReportData);
-//       matDialogRef.afterClosed().subscribe(result => {
-//         if (result !== undefined) {
-//           console.debug("QA report dialog closed", result);
-//         }
-//       });
-    }
+  onQAReportAction(reportName: string) {
+    // console.debug(" ** onQAReportAction: ", reportName, this.instance!.qaIssues);
+    let qaReportData = this.instance!.qaIssues!.get(reportName)!;
+    const matDialogRef = this.qaReportDialogService.openDialog(reportName, qaReportData);
+    //       matDialogRef.afterClosed().subscribe(result => {
+    //         if (result !== undefined) {
+    //           console.debug("QA report dialog closed", result);
+    //         }
+    //       });
+  }
 
   delete() {
     this.deletionDialogService.openDialog(this.instance!);

@@ -127,19 +127,15 @@ export class UpdatedInstanceListComponent implements OnInit{
 
   private resetDeletedInstance(instance: Instance) {
     this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
-    // Check if this is an updated instance or new instance
+    // Check if this is an updated instance or new instance: need to add them back.
     if (instance.dbId < 0)
       this.store.dispatch(NewInstanceActions.register_new_instance(instance));
     else if (instance.modifiedAttributes && instance.modifiedAttributes.length > 0)
       this.store.dispatch(UpdateInstanceActions.register_updated_instance(instance));
   }
 
-  //TODO: Should try to use effects to handle this to avoid
-  // referring DataService, which has been referred too many
-  // places now!
   private resetUpdatedInstance(instance: Instance) {
     // console.debug('Reset updated instance: ', instance);
-    this.dataService.removeInstanceInCache(instance);
     this.store.dispatch(UpdateInstanceActions.remove_updated_instance(instance));
   }
 

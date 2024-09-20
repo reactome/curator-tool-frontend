@@ -28,27 +28,53 @@ export class InstanceEffects {
         // applied. Not sure why?
         case NewInstanceActions.register_new_instance.type:
           this.dataService.registerInstance(inst);
-          this.store.dispatch(NewInstanceActions.ls_register_new_instance(inst));
+          this.store.dispatch(NewInstanceActions.ls_register_new_instance(this.instUtils.makeShell(inst)));
           break;
         case NewInstanceActions.remove_new_instance.type:
           this.store.dispatch(NewInstanceActions.ls_remove_new_instance(inst));
           break;
         case UpdateInstanceActions.register_updated_instance.type:
           this.dataService.registerInstance(inst);
-          this.store.dispatch(UpdateInstanceActions.ls_register_updated_instance(inst));
+          this.store.dispatch(UpdateInstanceActions.ls_register_updated_instance(this.instUtils.makeShell(inst)));
+          // Force to refresh instance view if any
+          this.instUtils.setRefreshViewDbId(inst.dbId);
           break;
         case UpdateInstanceActions.remove_updated_instance.type:
           this.store.dispatch(UpdateInstanceActions.ls_remove_updated_instance(inst));
+          this.dataService.removeInstanceInCache(inst.dbId); // Flag to reload
+          this.instUtils.setRefreshViewDbId(inst.dbId);
+          break;
+        case UpdateInstanceActions.last_updated_instance.type:
+          // The instance wrapped here most likely or to be registered
+          // by register_updated_instance case. Since the two instances are the same
+          // it should be fine to register twice.
+          this.dataService.registerInstance(inst.instance);
+          // Need a shell to avoid locking the instance
+          this.store.dispatch(UpdateInstanceActions.ls_last_updated_instance({
+            attribute: inst.attribuate,
+            instance: this.instUtils.makeShell(inst.instance)
+          }));
           break;
         case DeleteInstanceActions.register_deleted_instance.type:
-            this.dataService.registerInstance(inst);
-            this.store.dispatch(DeleteInstanceActions.ls_register_deleted_instance(inst));
-            break;
+          this.dataService.registerInstance(inst);
+          this.store.dispatch(DeleteInstanceActions.ls_register_deleted_instance(this.instUtils.makeShell(inst)));
+          break;
         case DeleteInstanceActions.remove_deleted_instance.type:
-            this.store.dispatch(DeleteInstanceActions.ls_remove_deleted_instance(inst));
-            break;
+          this.store.dispatch(DeleteInstanceActions.ls_remove_deleted_instance(inst));
+          break;
       }
-    })
+    });
+
+    // call select is to add a listener to the change of the list
+    // therefore, we should add it once only, not in the following effects
+    // which will be called multiple times.
+    // this.store.select(updatedInstances()).subscribe(instances => {
+    //   // We need the whole instance
+    //   const dbIds = instances.map(i => i.dbId);
+    //   this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
+    //     localStorage.setItem(UpdateInstanceActions.get_updated_instances.type, this.instUtils.stringifyInstances(fullInsts));
+    //   });
+    // });
   }
 
   newInstanceChanges$ = createEffect(
@@ -60,15 +86,6 @@ export class InstanceEffects {
           // The browser tab (window) that setItem should not receive this event.
           this.dataService.fetchInstance(action.dbId).subscribe(fullInst => {
             localStorage.setItem(action.type, this.instUtils.stringifyInstance(fullInst));
-          });
-          // Update the list of instances for new tabs or windows
-          // This probably should be fast since all instances have been loaded
-          this.store.select(newInstances()).subscribe(instances => {
-            // We need the whole instance
-            const dbIds = instances.map(i => i.dbId);
-            this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
-              localStorage.setItem(NewInstanceActions.get_new_instances.type, this.instUtils.stringifyInstances(fullInsts));
-            });
           });
         })
       ),
@@ -85,13 +102,34 @@ export class InstanceEffects {
           this.dataService.fetchInstance(action.dbId).subscribe(fullInst => {
             localStorage.setItem(action.type, this.instUtils.stringifyInstance(fullInst));
           });
-          this.store.select(updatedInstances()).subscribe(instances => {
-            // We need the whole instance
-            const dbIds = instances.map(i => i.dbId);
-            this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
-              localStorage.setItem(UpdateInstanceActions.get_updated_instances.type, this.instUtils.stringifyInstances(fullInsts));
-            });
+          // Some extra for remove
+          if (action.type === UpdateInstanceActions.remove_updated_instance.type) {
+            this.dataService.removeInstanceInCache(action.dbId); // So that it can be re-loaded from database
+            this.instUtils.setRefreshViewDbId(action.dbId);
+          }
+        })
+      ),
+    { dispatch: false }
+  );
+
+  lastUpdateInstanceChanges$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(UpdateInstanceActions.last_updated_instance),
+        tap((action) => {
+          this.dataService.fetchInstance(action.instance.dbId).subscribe(fullInst => {
+            const clone = {
+              attribuate: action.attribute,
+              instance: {
+                ...fullInst,
+                schemaClass: undefined, // No need to push the schemaClass around
+                attributes: fullInst.attributes ? Object.fromEntries(fullInst.attributes) : undefined
+              }
+            }
+            localStorage.setItem(action.type, JSON.stringify(clone));
           });
+          // There is no need to put the whole list into the local storage.
+          // This should be handled by the above effect
         })
       ),
     { dispatch: false }
@@ -106,13 +144,6 @@ export class InstanceEffects {
         tap((action) => {
           this.dataService.fetchInstance(action.dbId).subscribe(fullInst => {
             localStorage.setItem(action.type, this.instUtils.stringifyInstance(fullInst));
-          });
-          this.store.select(deleteInstances()).subscribe(instances => {
-            // We need the whole instance
-            const dbIds = instances.map(i => i.dbId);
-            this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
-              localStorage.setItem(DeleteInstanceActions.get_deleted_instances.type, this.instUtils.stringifyInstances(fullInsts));
-            });
           });
         })
       ),

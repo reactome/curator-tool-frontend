@@ -15,6 +15,7 @@ export const UpdateInstanceActions = createActionGroup({
     // For local storage
     ls_register_updated_instance: props<Instance>(),
     ls_remove_updated_instance: props<Instance>(),
+    ls_last_updated_instance: props<{attribute: string, instance: Instance}>(),
   }
 })
 
