@@ -29,6 +29,7 @@ export class InstanceEffects {
         case NewInstanceActions.register_new_instance.type:
           this.dataService.registerInstance(inst);
           this.store.dispatch(NewInstanceActions.ls_register_new_instance(this.instUtils.makeShell(inst)));
+          this.instUtils.setRefreshViewDbId(inst.dbId);
           break;
         case NewInstanceActions.remove_new_instance.type:
           this.store.dispatch(NewInstanceActions.ls_remove_new_instance(inst));
@@ -68,13 +69,27 @@ export class InstanceEffects {
     // call select is to add a listener to the change of the list
     // therefore, we should add it once only, not in the following effects
     // which will be called multiple times.
-    // this.store.select(updatedInstances()).subscribe(instances => {
-    //   // We need the whole instance
-    //   const dbIds = instances.map(i => i.dbId);
-    //   this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
-    //     localStorage.setItem(UpdateInstanceActions.get_updated_instances.type, this.instUtils.stringifyInstances(fullInsts));
-    //   });
-    // });
+    this.store.select(updatedInstances()).subscribe(instances => {
+      // We need the whole instance
+      const dbIds = instances.map(i => i.dbId);
+      this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
+        localStorage.setItem(UpdateInstanceActions.get_updated_instances.type, this.instUtils.stringifyInstances(fullInsts));
+      });
+    });
+    this.store.select(newInstances()).subscribe(instances => {
+      // We need the whole instance
+      const dbIds = instances.map(i => i.dbId);
+      this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
+        localStorage.setItem(NewInstanceActions.get_new_instances.type, this.instUtils.stringifyInstances(fullInsts));
+      });
+    });
+    this.store.select(deleteInstances()).subscribe(instances => {
+      // We need the whole instance
+      const dbIds = instances.map(i => i.dbId);
+      this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
+        localStorage.setItem(DeleteInstanceActions.get_deleted_instances.type, this.instUtils.stringifyInstances(fullInsts));
+      });
+    });
   }
 
   newInstanceChanges$ = createEffect(
