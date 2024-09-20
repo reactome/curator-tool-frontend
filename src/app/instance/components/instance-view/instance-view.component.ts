@@ -195,7 +195,6 @@ export class InstanceViewComponent implements OnInit {
   }
 
   upload(): void {
-    console.debug('Upload the instance!');
     // TODO: Need to present a confirmation dialog after it is done!
     this.dataService.commit(this.instance!).subscribe(storedInst => {
       console.debug('Returned dbId: ' + storedInst.dbId);

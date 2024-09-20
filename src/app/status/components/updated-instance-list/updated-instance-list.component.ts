@@ -25,14 +25,17 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 })
 export class UpdatedInstanceListComponent implements OnInit{
   // instances to be committed
-  toBeUploaded: Instance[] = [];
-  actionButtons: string[] = ["compare", "undo"];
+  // There will be a checkbox to manage toBeUploade
+  // toBeUploaded: Instance[] = [];
+  updatedInstanceActions: string[] = ['compare', "undo", "upload"];
+  deletedInstanceActions: string[] = ['undo', 'upload']
+  newInstanceActionButtons: string[] = ["delete", 'upload'];
+
   isSelection: boolean = false;
   newInstances: Instance[] = [];
   updatedInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
   showHeader: boolean = false;
-  newInstancesActionButtons: string[] = ["launch", "delete"];
   @Output() closeAction = new EventEmitter<undefined>();
   @Input() blockRoute: boolean = false;
 
@@ -72,27 +75,10 @@ export class UpdatedInstanceListComponent implements OnInit{
     this.router.navigate([newUrl, "comparison", instance.dbId.toString()]);
   }
 
-  onSelectionChange(instance: Instance, event: MatCheckboxChange) {
-    let index = this.toBeUploaded.indexOf(instance);
-    if (event.checked) {
-      if (index < 0)
-        this.toBeUploaded.push(instance);
-    } else {
-      if (index > -1)
-        this.toBeUploaded.splice(index, 1);
-    }
-    console.debug('Instances to be uploaded: ' + this.toBeUploaded.length);
-  }
-
   handleAction(actionButton: { instance: Instance, action: string }) {
     switch (actionButton.action) {
       case "compare": {
         this.compareWithDB(actionButton.instance)
-        break;
-      }
-
-      case "launch": {
-        this.launchNewInstance(actionButton.instance)
         break;
       }
 
@@ -106,12 +92,46 @@ export class UpdatedInstanceListComponent implements OnInit{
           this.resetDeletedInstance(actionButton.instance);
         else
           this.resetUpdatedInstance(actionButton.instance);
+        break;
       }
+
+      case "upload": {
+        this.commitInstance(actionButton.instance);
+        break;
+      }
+    }
+  }
+
+  private commitInstance(instance: Instance) {
+    // instances in different list should have different call
+    if (this.deletedInstances.includes(instance)) {
+      this.dataService.delete(instance).subscribe(rtn => {
+        // Have to subscript it. Otherwise, the http call will not be fired
+        console.log('Deleted instance: ' + instance.dbId);
+        this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
+      });
+    }
+    else if (this.updatedInstances.includes(instance)) {
+      this.dataService.commit(instance).subscribe(rtn => {
+        console.log('Updated instances: ' + rtn.dbId);
+        this.store.dispatch(UpdateInstanceActions.remove_updated_instance(instance));
+      });
+    }
+    else if (this.newInstances.includes(instance)) {
+      this.dataService.commit(instance).subscribe(rtn => {
+        console.log('Created instance: ' + rtn.dbId);
+        this.store.dispatch(NewInstanceActions.remove_new_instance(instance));
+      })
     }
   }
 
   private resetDeletedInstance(instance: Instance) {
     this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
+    // Check if this is an updated instance or new instance
+    if (instance.dbId < 0)
+      this.store.dispatch(NewInstanceActions.register_new_instance(instance));
+    else if (instance.modifiedAttributes && instance.modifiedAttributes.length > 0)
+      this.store.dispatch(UpdateInstanceActions.register_updated_instance(instance));
   }
 
   //TODO: Should try to use effects to handle this to avoid
@@ -129,19 +149,6 @@ export class UpdatedInstanceListComponent implements OnInit{
     // 1). Remove the reference to this instance in any local changed instances
     // 2). Remove it from the bookmarks in case it is registered there.
     // To implement the above, consider to use ngrx's effects and add a new action.
-  }
-
-  launchNewInstance(instance: Instance) {
-    if (this.blockRoute) {
-      this.instanceUtilities.setLastClickedDbId(instance.dbId);
-      return;
-    }
-    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
-                                                     .reduce((acc, val) => acc.concat(val), [])
-                                                     .map(urlSegment => urlSegment.path);
-      let newUrl =  currentPathRoot[0] + "/instance/" + instance.dbId.toString();
-
-    this.router.navigate([newUrl]);
   }
 
   close() {
