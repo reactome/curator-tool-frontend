@@ -24,11 +24,19 @@ export class InstanceUtilities {
     private deletedDbId = new Subject<number>();
     deletedDbId$ = this.deletedDbId.asObservable();
 
+    // The first is the old dbId and second newDbId
+    private committedNewInstDbId = new Subject<[number, number]>();
+    committedNewInstDbId$ = this.committedNewInstDbId.asObservable();
+
     // Bypass for comparison
     private lastClickedDbIdForComparison = new Subject<number>();
     lastClickedDbIdForComparison$ = this.lastClickedDbIdForComparison.asObservable();
 
     constructor() { }
+
+    setCommittedNewInstDbId(oldDbId: number, newDbId: number) {
+        this.committedNewInstDbId.next([oldDbId, newDbId]);
+    }
 
     setDeletedDbId(dbId: number) {
         this.deletedDbId.next(dbId);

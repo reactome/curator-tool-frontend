@@ -32,7 +32,10 @@ export const NewInstanceActions = createActionGroup({
     ls_remove_new_instance: props<Instance>(),
 
     get_new_instances: props<Instance>(),
-    set_new_instances: props<{instances: Instance[]}>()
+    set_new_instances: props<{instances: Instance[]}>(),
+
+    // Commit a new instance changes its dbId
+    commit_new_instance: props<{oldDbId: number, newDbId: number}>()
   }
 })
 

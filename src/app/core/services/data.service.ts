@@ -645,7 +645,15 @@ export class DataService {
   commit(instance: Instance): Observable<Instance> {
     let instanceToBeCommitted = this.cloneInstanceForCommit(instance);
     return this.http.post<Instance>(this.commitInstanceUrl, instanceToBeCommitted).pipe(
-      map((inst: Instance) => inst),
+      map((inst: Instance) => {
+        // Replace whatever or register new
+        // this.registerInstance(inst);
+        // The instance returned is a shell and should not be used for display
+        // Therefore, we will remove the original from the cache to force the view
+        // to use the updated, database version
+        this.removeInstanceInCache(inst.dbId);
+        return inst;
+      }),
       catchError(error => {
         console.log("An error is thrown during committing: \n" + error.message, "Close", {
           panelClass: ['warning-snackbar'],
@@ -653,7 +661,7 @@ export class DataService {
         });
         return throwError(() => error);
       })
-    )
+    );
   }
 
   /**

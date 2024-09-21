@@ -36,6 +36,10 @@ export class InstanceEffects {
         case NewInstanceActions.remove_new_instance.type:
           this.store.dispatch(NewInstanceActions.ls_remove_new_instance(inst));
           break;
+        case NewInstanceActions.commit_new_instance.type:
+          // Need to refresh the view if an instance is committed other place
+          this.instUtils.setCommittedNewInstDbId(inst.oldDbId, inst.newDbId);
+          break;
         case UpdateInstanceActions.register_updated_instance.type:
           // this.dataService.registerInstance(inst);
           this.store.dispatch(UpdateInstanceActions.ls_register_updated_instance(this.instUtils.makeShell(inst)));
@@ -113,6 +117,21 @@ export class InstanceEffects {
           this.dataService.fetchInstance(action.dbId).subscribe(fullInst => {
             localStorage.setItem(action.type, this.instUtils.stringifyInstance(fullInst));
           });
+          // Remove a new instance will remove it from the cached value
+          if (action.type === NewInstanceActions.remove_new_instance.type)
+            this.dataService.removeInstanceInCache(action.dbId);
+        })
+      ),
+    { dispatch: false }
+  );
+
+  newInstanceCommit$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(NewInstanceActions.commit_new_instance),
+        tap((action) => {
+          const obj: any = action.valueOf();
+          localStorage.setItem(action.type, JSON.stringify(obj));
         })
       ),
     { dispatch: false }

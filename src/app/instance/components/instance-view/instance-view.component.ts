@@ -92,6 +92,12 @@ export class InstanceViewComponent implements OnInit {
         }
       }
     });
+    this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
+      if (!this.instance || this.instance.dbId !== oldDbId)
+        return;
+      this.instUtils.removeInstInArray(this.instance, this.viewHistory);
+      this.dataService.fetchInstance(newDbId).subscribe(inst => this.changeTable(inst));
+    });
   }
 
   loadInstance(dbId: number,
@@ -231,42 +237,18 @@ export class InstanceViewComponent implements OnInit {
   }
 
   upload(): void {
+    if (!this.instance) return;
     // TODO: Need to present a confirmation dialog after it is done!
-    this.dataService.commit(this.instance!).subscribe(storedInst => {
+    this.dataService.commit(this.instance).subscribe(storedInst => {
       console.debug('Returned dbId: ' + storedInst.dbId);
-      this.instance!.modifiedAttributes = undefined;
-      // Check if the table content needs to be updated
-      let updatedTable: boolean = false;
-      let oldDbId = undefined;
-      if (storedInst.dbId !== this.instance?.dbId) {
-        oldDbId = this.instance!.dbId; // keep it for remove in the registration
-        this.instance!.dbId = storedInst.dbId;
-        if (this.instance!.attributes)
-          this.instance!.attributes.set('dbId', storedInst.dbId);
-        updatedTable = true;
-      }
-      if (storedInst.displayName !== this.instance?.displayName) {
-        this.instance!.displayName = storedInst.displayName;
-        if (this.instance!.attributes)
-          this.instance!.attributes.set('displayName', storedInst.displayName);
-        updatedTable = true;
-      }
-      // Most likely this is not a good idea. However, since this view is tied to the table,
-      // probably it is OK for now!
-      if (updatedTable)
-        this.instanceTable.updateTableContent();
-      if (oldDbId) {
-        // Just need a simple clone
-        let oldInst: Instance = {
-          dbId: oldDbId,
-          displayName: this.instance?.displayName,
-          schemaClassName: this.instance!.schemaClassName
-        }
-        this.store.dispatch(NewInstanceActions.remove_new_instance(oldInst));
-      }
-      else
+      if (this.instance!.dbId >= 0)
         this.store.dispatch(UpdateInstanceActions.remove_updated_instance(this.instance!));
-      // Also update the breakcrunch!
+      else {
+        this.store.dispatch(NewInstanceActions.remove_new_instance(this.instance!));
+        this.store.dispatch(NewInstanceActions.commit_new_instance({oldDbId: this.instance!.dbId, newDbId: storedInst.dbId}));
+        this.instUtils.removeInstInArray(this.instance!, this.viewHistory);
+      }
+      this.changeTable(storedInst);
     });
   }
 
