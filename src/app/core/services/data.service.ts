@@ -761,7 +761,6 @@ export class DataService {
    * @param instance
    */
   delete(instance: Instance): Observable<boolean> {
-    let instanceToBeDeleted = this.cloneInstanceForCommit(instance);
     return this.http.post<boolean>(this.deleteSimpleInstance, instance).pipe(
       catchError(error => {
         console.log("An error is thrown during deleting: \n" + error.message, "Close", {

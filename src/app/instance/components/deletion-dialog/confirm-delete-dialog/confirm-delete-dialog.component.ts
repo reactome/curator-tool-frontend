@@ -5,6 +5,7 @@ import {DataService} from "../../../../core/services/data.service";
 import {Router} from "@angular/router";
 import { Store } from '@ngrx/store';
 import { DeleteInstanceActions, NewInstanceActions, UpdateInstanceActions } from 'src/app/instance/state/instance.actions';
+import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 /**
  * A dialog component to show referrers of an instance.
@@ -20,6 +21,7 @@ export class ConfirmDeleteDialogComponent {
   constructor(@Inject(MAT_DIALOG_DATA) public instance: Instance,
               public dialogRef: MatDialogRef<ConfirmDeleteDialogComponent>,
               public dataService: DataService,
+              private instUtil: InstanceUtilities,
               private store: Store) {
   }
 
@@ -28,10 +30,15 @@ export class ConfirmDeleteDialogComponent {
   }
 
   onDelete() {
-    this.store.dispatch(DeleteInstanceActions.register_deleted_instance(this.instance)); 
-    // In case this is a new instance or in the updated list
-    this.store.dispatch(NewInstanceActions.remove_new_instance(this.instance));
-    this.store.dispatch(UpdateInstanceActions.remove_updated_instance(this.instance));
+    if (this.instance.dbId >= 0) {
+      this.store.dispatch(DeleteInstanceActions.register_deleted_instance(this.instance)); 
+      // In case it it there
+      this.store.dispatch(UpdateInstanceActions.remove_updated_instance(this.instance));
+    }
+    else {
+      this.store.dispatch(NewInstanceActions.remove_new_instance(this.instance));
+      this.instUtil.setDeletedDbId(this.instance.dbId); // Commit right away
+    }
     this.dialogRef.close(this.instance);
     // this.router.navigate(["/schema_view"])
   }

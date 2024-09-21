@@ -61,6 +61,8 @@ export class InstanceListTableComponent {
       return 'show referrers';
     if (button === 'undo')
       return 'reset instance';
+    if (button === 'upload')
+      return 'commit';
     return button + ' instance';
   }
 }

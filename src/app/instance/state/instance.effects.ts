@@ -66,7 +66,9 @@ export class InstanceEffects {
           this.instUtils.setRefreshViewDbId(inst.instance.dbId);
           break;
         case DeleteInstanceActions.register_deleted_instance.type:
-          this.dataService.registerInstance(inst);
+          // Don't register any change for the deleted instance.
+          // Any update should be handled already by last_updated_instance or add_updated_instance
+          // this.dataService.registerInstance(inst);
           this.store.dispatch(DeleteInstanceActions.ls_register_deleted_instance(this.instUtils.makeShell(inst)));
           break;
         case DeleteInstanceActions.remove_deleted_instance.type:
@@ -166,9 +168,8 @@ export class InstanceEffects {
         ofType(DeleteInstanceActions.register_deleted_instance, 
                DeleteInstanceActions.remove_deleted_instance),
         tap((action) => {
-          this.dataService.fetchInstance(action.dbId).subscribe(fullInst => {
-            localStorage.setItem(action.type, this.instUtils.stringifyInstance(fullInst));
-          });
+          // There is no need to query. Actually nothing to query.
+          localStorage.setItem(action.type, this.instUtils.stringifyInstance(action.valueOf() as Instance));
         })
       ),
     { dispatch: false }

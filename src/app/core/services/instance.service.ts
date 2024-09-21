@@ -21,11 +21,18 @@ export class InstanceUtilities {
     private refreshViewDbId = new Subject<number>();
     refreshViewDbId$ = this.refreshViewDbId.asObservable();
 
+    private deletedDbId = new Subject<number>();
+    deletedDbId$ = this.deletedDbId.asObservable();
+
     // Bypass for comparison
     private lastClickedDbIdForComparison = new Subject<number>();
     lastClickedDbIdForComparison$ = this.lastClickedDbIdForComparison.asObservable();
 
     constructor() { }
+
+    setDeletedDbId(dbId: number) {
+        this.deletedDbId.next(dbId);
+    }
 
     setRefreshViewDbId(dbId: number) {
         this.refreshViewDbId.next(dbId);
@@ -194,6 +201,13 @@ export class InstanceUtilities {
             schemaClassName: inst.schemaClassName,
             displayName: inst.displayName
         };
+    }
+
+    removeInstInArray(target: Instance, array: Instance[]) {
+        if (!array) return;
+        const index = array.findIndex(obj => obj.dbId === target.dbId);
+        if (index >= 0)
+            array.splice(index, 1);
     }
 
 }

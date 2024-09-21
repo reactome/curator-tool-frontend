@@ -79,6 +79,19 @@ export class InstanceViewComponent implements OnInit {
         this.loadInstance(dbId, false, false, true);
       }
     });
+    this.instUtils.deletedDbId$.subscribe(dbId => {
+      if (this.instance && this.instance.dbId === dbId) {
+        this.instUtils.removeInstInArray(this.instance, this.viewHistory);
+        if (this.viewHistory.length > 0) {
+          // Just show the first instance
+          const firstInst = this.viewHistory[0];
+          this.changeTable(firstInst);
+        }
+        else {
+          this.showEmpty();
+        }
+      }
+    });
   }
 
   loadInstance(dbId: number,
@@ -160,12 +173,26 @@ export class InstanceViewComponent implements OnInit {
       this.loadInstance(instance.dbId);
     }
     else {
-      let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
-        .reduce((acc, val) => acc.concat(val), [])
-        .map(urlSegment => urlSegment.path);
-      let newUrl = currentPathRoot[0] + "/instance/" + instance.dbId.toString();
+      let newUrl = this.getCurrentPathRoot() + "/instance/" + instance.dbId.toString();
       this.router.navigate([newUrl], { queryParamsHandling: 'preserve' });
     }
+  }
+
+  private showEmpty() {
+    if (this.blockRoute) {
+      this.instance = undefined;
+    }
+    else {
+      let newUrl = this.getCurrentPathRoot();
+      this.router.navigate([newUrl]);
+    }
+  }
+
+  private getCurrentPathRoot() {
+    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+    .reduce((acc, val) => acc.concat(val), [])
+    .map(urlSegment => urlSegment.path);
+    return currentPathRoot[0];
   }
 
   addBookmark() {

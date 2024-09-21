@@ -109,6 +109,7 @@ export class UpdatedInstanceListComponent implements OnInit{
         // Have to subscript it. Otherwise, the http call will not be fired
         console.log('Deleted instance: ' + instance.dbId);
         this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
+        this.instanceUtilities.setDeletedDbId(instance.dbId);
       });
     }
     else if (this.updatedInstances.includes(instance)) {
@@ -141,6 +142,7 @@ export class UpdatedInstanceListComponent implements OnInit{
 
   private deleteNewInstance(instance: Instance) {
     this.store.dispatch(NewInstanceActions.remove_new_instance(instance));
+    this.dataService.removeInstanceInCache(instance.dbId);
     // TODO: The following cleaning up needs to be done:
     // 1). Remove the reference to this instance in any local changed instances
     // 2). Remove it from the bookmarks in case it is registered there.
