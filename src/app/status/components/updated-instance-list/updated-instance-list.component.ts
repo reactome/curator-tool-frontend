@@ -124,8 +124,6 @@ export class UpdatedInstanceListComponent implements OnInit{
         // Use old instance since it is the old dbId
         this.store.dispatch(NewInstanceActions.remove_new_instance(instance));
         this.store.dispatch(NewInstanceActions.commit_new_instance({oldDbId: instance.dbId, newDbId: rtn.dbId}))
-        // call here so that we don't have any side effect in this tab
-        this.instanceUtilities.setCommittedNewInstDbId(instance.dbId, rtn.dbId);
       });
     }
   }

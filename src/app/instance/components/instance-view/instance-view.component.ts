@@ -34,6 +34,9 @@ export class InstanceViewComponent implements OnInit {
   // Control if the route should be used for the links in the table, bookmarks, etc
   @Input() blockRoute: boolean = false;
 
+  // Flag to avoid update itself
+  private commitNewHere: boolean = false;
+
   constructor(private router: Router,
     private route: ActivatedRoute,
     private dataService: DataService,
@@ -95,6 +98,10 @@ export class InstanceViewComponent implements OnInit {
     this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
       if (!this.instance || this.instance.dbId !== oldDbId)
         return;
+      if (this.commitNewHere) {
+        this.commitNewHere = false;
+        return;
+      }
       this.instUtils.removeInstInArray(this.instance, this.viewHistory);
       this.dataService.fetchInstance(newDbId).subscribe(inst => this.changeTable(inst));
     });
@@ -245,6 +252,7 @@ export class InstanceViewComponent implements OnInit {
         this.store.dispatch(UpdateInstanceActions.remove_updated_instance(this.instance!));
       else {
         this.store.dispatch(NewInstanceActions.remove_new_instance(this.instance!));
+        this.commitNewHere = true;
         this.store.dispatch(NewInstanceActions.commit_new_instance({oldDbId: this.instance!.dbId, newDbId: storedInst.dbId}));
         this.instUtils.removeInstInArray(this.instance!, this.viewHistory);
       }

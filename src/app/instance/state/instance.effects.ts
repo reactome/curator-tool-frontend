@@ -132,6 +132,8 @@ export class InstanceEffects {
         tap((action) => {
           const obj: any = action.valueOf();
           localStorage.setItem(action.type, JSON.stringify(obj));
+          // call here so that we don't have any side effect in this tab
+          this.instUtils.setCommittedNewInstDbId(action.oldDbId, action.newDbId);
         })
       ),
     { dispatch: false }

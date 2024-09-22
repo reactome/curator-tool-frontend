@@ -1,4 +1,3 @@
-<script src="schema-class-tree.component.ts"></script>
 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
   <!-- This is the table node template for leaf nodes -->
   <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding class="schema_class_text" matTreeNodeToggle
@@ -6,7 +5,7 @@
     <!-- use a disabled button to provide padding for table leaf -->
     <button mat-icon-button disabled></button>
     <a class="schema_class_text" routerLink="/schema_view/class/{{node.name}}">{{node.name}}</a>&nbsp;
-    <a routerLink="/schema_view/list_instances/{{node.name}}">[{{[node.count]}}]</a>
+    <a routerLink="/schema_view/list_instances/{{node.name}}">[{{node.count}}]</a>
     <!-- Not use mat-icon-button to avoid the minimum tougch-target size requirment from material design: 40px x 48px. This is just
     too big and hide some clicks in other places. -->
     <button (click)="createNewInstance(node.name)" class="mat-icon-button"
@@ -23,7 +22,7 @@
       </mat-icon>
     </button>
     <a class="schema_class_text" routerLink="/schema_view/class/{{node.name}}">{{node.name}}</a>&nbsp;
-    <a routerLink="/schema_view/list_instances/{{node.name}}"> [{{[node.count]}}]</a>
+    <a routerLink="/schema_view/list_instances/{{node.name}}"> [{{node.count}}]</a>
     <button *ngIf="!node.abstract" (click)="createNewInstance(node.name)" class="mat-icon-button"
       matTooltip="Click to create new {{node.name}}" matTooltipPosition="right" [matTooltipShowDelay]="500">
       <mat-icon color="primary">add_box</mat-icon>
