@@ -67,6 +67,15 @@ export class DataService {
   }
 
   /**
+   * Call this method will reset the cached schema tree so that the schema tree will be reloaded
+   * when needed. This is useful when a new instance or a deletion is committed so that the counts
+   * of classes can be updated. Call this method will not call the http method to the server.
+   */
+  flagSchemaTreeForReload() {
+    this.rootClass = undefined;
+  }
+
+  /**
    * Fetch the instance data.
    * @param className
    * @returns
