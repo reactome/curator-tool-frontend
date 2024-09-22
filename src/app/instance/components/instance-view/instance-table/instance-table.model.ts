@@ -27,6 +27,8 @@ export interface DragDropStatus {
 export enum EDIT_ACTION {
   ADD_NEW,
   ADD_VIA_SELECT,
+  REPLACE_NEW,
+  REPLACE_VIA_SELECT,
   DELETE,
   EDIT,
   BOOKMARK

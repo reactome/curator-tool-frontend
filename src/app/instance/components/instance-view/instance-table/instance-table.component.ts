@@ -204,6 +204,12 @@ export class InstanceTableComponent implements PostEditListener {
       case EDIT_ACTION.ADD_VIA_SELECT:
         this.addInstanceViaSelect(attributeValue);
         break;
+      case EDIT_ACTION.REPLACE_NEW:
+        this.addNewInstanceAttribute(attributeValue, true);
+        break;
+      case EDIT_ACTION.REPLACE_VIA_SELECT:
+        this.addInstanceViaSelect(attributeValue, true);
+        break;
       case EDIT_ACTION.BOOKMARK:
         this.addBookmarkedInstance(attributeValue);
         break;
@@ -246,18 +252,19 @@ export class InstanceTableComponent implements PostEditListener {
     this.finishEdit(attributeValue.attribute.name, value);
   }
 
-  private addNewInstanceAttribute(attributeValue: AttributeValue): void {
+  private addNewInstanceAttribute(attributeValue: AttributeValue, replace: boolean = false
+  ): void {
     const matDialogRef = this.dialogService.openDialog(attributeValue);
     matDialogRef.afterClosed().subscribe((result) => {
       // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
       // Add the new value
       if (result === undefined) return; // Do nothing
       // Check if there is any value
-      this.addValueToAttribute(attributeValue, result);
+      this.addValueToAttribute(attributeValue, result, replace);
     });
   }
 
-  private addInstanceViaSelect(attributeValue: AttributeValue) {
+  private addInstanceViaSelect(attributeValue: AttributeValue, replace: boolean = false) {
     const matDialogRef =
       this.selectInstanceDialogService.openDialog(attributeValue);
     matDialogRef.afterClosed().subscribe((result) => {
@@ -291,7 +298,8 @@ export class InstanceTableComponent implements PostEditListener {
             result.length > 0 ? result[0] : undefined
           );
         } else {
-          value.splice(attributeValue.index, 0, ...result);
+          const deleteCount = replace ? 1 : 0;
+          value.splice(attributeValue.index, deleteCount, ...result);
         }
       }
       this.finishEdit(attributeValue.attribute.name, value);
@@ -318,7 +326,7 @@ export class InstanceTableComponent implements PostEditListener {
     this.cdr.detectChanges();
   }
 
-  private addValueToAttribute(attributeValue: AttributeValue, result: any) {
+  private addValueToAttribute(attributeValue: AttributeValue, result: any, replace: boolean = false) {
     let value = this._instance?.attributes?.get(attributeValue.attribute.name);
     if (value === undefined) {
       // It should be the first
@@ -334,8 +342,10 @@ export class InstanceTableComponent implements PostEditListener {
       if (attributeValue.attribute.cardinality === '1') {
         // Make sure only one value used
         this._instance?.attributes?.set(attributeValue.attribute.name, result);
-      } else {
-        value.splice(attributeValue.index, 0, result);
+      } 
+      else {
+        const deleteCount = replace ? 1 : 0;
+        value.splice(attributeValue.index, deleteCount, result);
       }
     }
     this.finishEdit(attributeValue.attribute.name, value);

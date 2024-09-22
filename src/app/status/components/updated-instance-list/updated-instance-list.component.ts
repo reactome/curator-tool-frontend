@@ -110,6 +110,7 @@ export class UpdatedInstanceListComponent implements OnInit{
         console.log('Deleted instance: ' + instance.dbId);
         this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
         this.instanceUtilities.setDeletedDbId(instance.dbId);
+        this.dataService.flagSchemaTreeForReload();
       });
     }
     else if (this.updatedInstances.includes(instance)) {
