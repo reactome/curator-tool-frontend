@@ -477,9 +477,9 @@ export class PathwayDiagramUtilService {
     enableEditing(diagram: DiagramComponent) {
         // Enable node dragging first
         diagram.cy.nodes().grabify().unpanify();
-        // But not compartment
-        //TODO: In the editing mode, the user can move compartment too
-        // diagram.cy.nodes('.Compartment').panify();
+        // But not compartment: In the editing mode, the user can move compartment too
+        // apparently moving compartments is not good. Disable for now.
+        diagram.cy.nodes('.Compartment').panify();
         // Get the position of nodes to be used for edges
         const id2node = new Map<string, any>();
         diagram.cy.nodes().forEach((node: any) => id2node.set(node.data('id'), node));
