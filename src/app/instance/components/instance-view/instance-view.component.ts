@@ -165,7 +165,7 @@ export class InstanceViewComponent implements OnInit {
 
   updateTitle(instance: Instance) {
     if (instance)
-      this.title = instance.schemaClass?.name + ": " + instance.displayName + "[" + instance.dbId + "]"
+      this.title = instance.schemaClass?.name + ": " + instance.displayName + " [" + instance.dbId + "]"
     else
       this.title = ""
   }
