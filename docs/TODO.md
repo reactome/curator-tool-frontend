@@ -2,30 +2,30 @@
 - After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should be stay at the changes tab.
 - Make sure the diagram is in editing disabled state when uploading to the server or disable editing when loading back.
 - The autoscroll for the instance view in the event view scroll the whole instance view. But we need to scroll the table content only just like in the schemw view.
+- skip and limit are not udpated even for simple search
+- go to pathway in the diagram sometimes has weird selection: the pathway selected is stuck in the URL!
+
+#### Deidre
+- deletion needs to refresh the list if it is done in the list (maybe not if it has not committed. Probably only for new instance?)
+- new instance is not in the list for selection: so it cannot be used for reference. Basically it is not in the list at all.
+- For some list: new instances will not be included for consistence. However, for edit via selection, they need to be listed so that the user can choose them as new values.
+- referer check has not considered the updated and new instances
+- the height distribution is not working in safari!
+- how to avoid reload the schema tree when a new instance to create or listing instances: this is annoying when the mouse is around the end of the tree since the mouse position is shifted: this occurs when the view switched between list and instance.
+- the deletion action in the changes list for new instances don't show any warning: the behavior should be consistent between the instance view and the changes list.
+- a new instance is in the bookmarks, deleting this new instance doesn't remove this instance from the bookmark list.
+- edit via creation: cancel new instance creation causes the browser hanging. The new instance is not removed from the changes if cancelled.
+- Bug: After filtering to changed only attribute in the comparison table, turn off the comparison. There is no way to show the whole table now.
 
 #### TODO:
-- Make sure a simple text slot (e.g. name) can add new value: the added value is not added as a new line.
-- Change the main component into schema view: so that we can add an event view.
 - Need to style the detailed table view for schema class.
-- refactoring the routes by following https://angular.io/guide/router#getting-route-information: Make sure we have different layers of routers: schema view, event view, llms, and others, each of which should mamange its own routes.
-- The height of the instance view is not quite right: The scrollbar is there even with a very small instance (instance has a short list of attributes).
-- Make sure the layout doesn't change for some instances: e.g. 141426
 - isCanonocal in Pathway cannot be edited
-- the allowed type for the modification slot in ModifiedNucleotide is DatabaseObject. However, only four classes are defined.
 - bug: regulation is not defined in RegulationReference. It is regulatedBy in the Java class model.
 - bug: If the user does a refresh, any edit will get lost!
-- bug: list all DatabaseIdentifier instances: cannot nagivate to the last page directly!
 - Scroll the schema tree to the bottom, select a class to list instances. The tree scroll back to the top automatically. This is not good. This applies to display the instance table too. 
 - bug: the layout is broken when compare EGFR (ReferenceGeneProduct) vs db after making a little bit edit: too much text in the comment slot.
 - Make sure to use undefined, not null, to make the coed consistent. Check with the table editing results. Right now: text returns "" and non-text returns null!
-- Check why InstanceEdit doesn't have author, dateTime or other slots. Also check its _displayName works!
 - bug: PathwayDiagram is not listed in the schema tree! Also check its display name generation.
-- bug: The registed new instances' in changes display names don't get updated!
-- bug: There are multiple places to create a new instance and then regist it. However, the new instances table in the changes tab doesn't get updated!
-- Deletion of instances (existing or new) is not supported yet.
-- Merge the following two states together, new-instance to instance:
-import {newInstances} from "../../../schema-view/instance/state/new-instance/new-instance.selectors";
-import { updatedInstances } from 'src/app/schema-view/instance/state/instance.selectors';
 - Bug: After filtering to changed only attribute in the comparison table, turn off the comparison. There is no way to show the whole table now.
 - bug: In the updated instances table, when the display name is really long, no action buttons can be seen.
 - todo: how to handle label of the compartment? In the editing mode, make compartment movable. However, we have to disable resizing and then make sure the two layers are posititioned correctly.
@@ -34,8 +34,13 @@ import { updatedInstances } from 'src/app/schema-view/instance/state/instance.se
 - Make sure the disease pathway diagram is correct. Right not it is not!
 - Need some big refactoring for classes in the pathway diagram module: Right now they are all cross-linked together, espect to diagram service utils.
 - When fetch the data for a reaction to be drawn in a diagram via add to diagram, make sure the local, edited content is checked.
-- Update the tooltips for buttons in the instance list to make more sense: e.g. undo instance to Discard Changes.
-- Need to have a choice to set the value in the instance table.
+- For Figure instance: add a customized view to display the figure
+- list instance: the URL should have skip and limit there. These two values should be updated just as in simple search.
+- commit a new or update instance needs to commit all other referred instances too
+- add instance edit at the server-side to the created (for new instance) or the modified slot (for updated instance)
+- instance comparison: between two instances in the list view
+- for no-instance edit, press return should commit the change. Control-return should add a new line.
+- for deletion, if no referrers existing for an instance, don't show the referrers dialog.
 
 
 #### Notes:
