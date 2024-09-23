@@ -181,7 +181,7 @@ export class TextCurationComponent {
   // used here can be shared across the whole application.
   createNewInstance(schemaClassName: string) {
     this.dataService.createNewInstance(schemaClassName).subscribe(instance => {
-      this.dataService.registerNewInstance(instance);
+      this.dataService.registerInstance(instance);
       this.objectStore.dispatch(NewInstanceActions.register_new_instance(instance));
       let dbId = instance.dbId.toString();
       this.router.navigate(["/schema_view/instance/" + dbId]);

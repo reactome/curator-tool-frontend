@@ -58,7 +58,7 @@
     </ng-template>
 
     <ng-template #row_menu>
-      <app-action-menu (actionItem)="onEditAction($event)"></app-action-menu>
+      <app-action-menu (actionItem)="onEditAction($event)" [isSingledValued]="attribute!.cardinality === '1'"></app-action-menu>
     </ng-template>
   </ng-container>
 

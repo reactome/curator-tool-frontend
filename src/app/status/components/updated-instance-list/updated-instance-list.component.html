@@ -9,7 +9,7 @@
 <app-instance-list-table [dataSource]="newInstances"
                          [isSelection]="isSelection"
                          [showHeader]="showHeader"
-                         [actionButtons]="newInstancesActionButtons"
+                         [actionButtons]="newInstanceActionButtons"
                          [showEmptyMessage]="false"
                          [blockRoute]="blockRoute"
                          (actionEvent)="handleAction($event)">
@@ -20,7 +20,7 @@
 <app-instance-list-table [dataSource]="updatedInstances"
                          [isSelection]="isSelection"
                          [showHeader]="showHeader"
-                         [actionButtons]="actionButtons"
+                         [actionButtons]="updatedInstanceActions"
                          [showEmptyMessage]="false"
                          [blockRoute]="blockRoute"
                          (actionEvent)="handleAction($event)">
@@ -31,7 +31,7 @@
 <app-instance-list-table [dataSource]="deletedInstances"
                          [isSelection]="isSelection"
                          [showHeader]="showHeader"
-                         [actionButtons]="actionButtons"
+                         [actionButtons]="deletedInstanceActions"
                          [showEmptyMessage]="false"
                          [blockRoute]="blockRoute"
                          (actionEvent)="handleAction($event)">

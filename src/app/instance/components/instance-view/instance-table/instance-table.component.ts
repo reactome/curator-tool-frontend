@@ -9,7 +9,7 @@ import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { PostEditListener } from 'src/app/core/post-edit/PostEditOperation';
 import { PostEditService } from 'src/app/core/services/post-edit.service';
-import { InstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
+import { UpdateInstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import {
   SelectInstanceDialogService
 } from 'src/app/schema-view/list-instances/components/select-instance-dialog/select-instance-dialog.service';
@@ -139,7 +139,6 @@ export class InstanceTableComponent implements PostEditListener {
 
   onNoInstanceAttributeEdit(data: AttributeValue) {
     let value = this._instance?.attributes?.get(data.attribute.name);
-    this.addModifiedAttribute(data.attribute.name, value);
     if (data.attribute.cardinality === '1') {
       this._instance?.attributes?.set(data.attribute.name, data.value);
     } else {
@@ -205,6 +204,12 @@ export class InstanceTableComponent implements PostEditListener {
       case EDIT_ACTION.ADD_VIA_SELECT:
         this.addInstanceViaSelect(attributeValue);
         break;
+      case EDIT_ACTION.REPLACE_NEW:
+        this.addNewInstanceAttribute(attributeValue, true);
+        break;
+      case EDIT_ACTION.REPLACE_VIA_SELECT:
+        this.addInstanceViaSelect(attributeValue, true);
+        break;
       case EDIT_ACTION.BOOKMARK:
         this.addBookmarkedInstance(attributeValue);
         break;
@@ -247,18 +252,19 @@ export class InstanceTableComponent implements PostEditListener {
     this.finishEdit(attributeValue.attribute.name, value);
   }
 
-  private addNewInstanceAttribute(attributeValue: AttributeValue): void {
+  private addNewInstanceAttribute(attributeValue: AttributeValue, replace: boolean = false
+  ): void {
     const matDialogRef = this.dialogService.openDialog(attributeValue);
     matDialogRef.afterClosed().subscribe((result) => {
       // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
       // Add the new value
       if (result === undefined) return; // Do nothing
       // Check if there is any value
-      this.addValueToAttribute(attributeValue, result);
+      this.addValueToAttribute(attributeValue, result, replace);
     });
   }
 
-  private addInstanceViaSelect(attributeValue: AttributeValue) {
+  private addInstanceViaSelect(attributeValue: AttributeValue, replace: boolean = false) {
     const matDialogRef =
       this.selectInstanceDialogService.openDialog(attributeValue);
     matDialogRef.afterClosed().subscribe((result) => {
@@ -292,7 +298,8 @@ export class InstanceTableComponent implements PostEditListener {
             result.length > 0 ? result[0] : undefined
           );
         } else {
-          value.splice(attributeValue.index, 0, ...result);
+          const deleteCount = replace ? 1 : 0;
+          value.splice(attributeValue.index, deleteCount, ...result);
         }
       }
       this.finishEdit(attributeValue.attribute.name, value);
@@ -319,7 +326,7 @@ export class InstanceTableComponent implements PostEditListener {
     this.cdr.detectChanges();
   }
 
-  private addValueToAttribute(attributeValue: AttributeValue, result: any) {
+  private addValueToAttribute(attributeValue: AttributeValue, result: any, replace: boolean = false) {
     let value = this._instance?.attributes?.get(attributeValue.attribute.name);
     if (value === undefined) {
       // It should be the first
@@ -335,8 +342,10 @@ export class InstanceTableComponent implements PostEditListener {
       if (attributeValue.attribute.cardinality === '1') {
         // Make sure only one value used
         this._instance?.attributes?.set(attributeValue.attribute.name, result);
-      } else {
-        value.splice(attributeValue.index, 0, result);
+      } 
+      else {
+        const deleteCount = replace ? 1 : 0;
+        value.splice(attributeValue.index, deleteCount, result);
       }
     }
     this.finishEdit(attributeValue.attribute.name, value);
@@ -371,12 +380,12 @@ export class InstanceTableComponent implements PostEditListener {
     };
     if (this._instance!.dbId > 0) {
       // Have to make a clone to avoid any change to the current _instance!
-      this.store.dispatch(InstanceActions.register_updated_instance(cloned));
+      this.store.dispatch(UpdateInstanceActions.register_updated_instance(cloned));
     } else {
       // Force the state to update if needed
       this.store.dispatch(NewInstanceActions.register_new_instance(cloned));
     }
-    this.store.dispatch(InstanceActions.last_updated_instance({attribute: attName, instance: cloned}));
+    this.store.dispatch(UpdateInstanceActions.last_updated_instance({attribute: attName, instance: cloned}));
   }
 
   addModifiedAttribute(attributeName: string, attributeVal: any) {
@@ -401,7 +410,7 @@ export class InstanceTableComponent implements PostEditListener {
     // If nothing is in the modifiedAttributes, remove this instance from the changed list
     if (this._instance.modifiedAttributes.length === 0) {
       this.store.dispatch(
-        InstanceActions.remove_updated_instance(this._instance)
+        UpdateInstanceActions.remove_updated_instance(this._instance)
       );
     }
   }

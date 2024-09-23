@@ -39,7 +39,7 @@
         <!--TODO: The tooltip needs to be improved by using a method in the component-->
         <div style="white-space: nowrap;">
           <button color="primary" *ngFor="let button of actionButtons" mat-icon-button (click)="click(element, button)"
-          matTooltip="{{ button === 'list_alt' ? 'show referrers' : button + ' instance' }}"
+          matTooltip="{{getToolTip(button)}}"
           matTooltipPosition="left">
             <mat-icon>{{button}}</mat-icon>
           </button>

@@ -11,7 +11,6 @@ export class SelectedInstancesTableComponent {
   @Input() set dataSource(instances: Instance[]) {
     this.instances = instances;
     this.setTable();
-    console.log("instances " + instances)
   }
 
   @Output() removeEvent = new EventEmitter<Instance>();
@@ -22,7 +21,6 @@ export class SelectedInstancesTableComponent {
 
   setTable() {
     this.matDataSource.data = this.instances;
-    console.log("matDataSource " + this.matDataSource.data);
   }
 
   removeInstance(instance: Instance) {

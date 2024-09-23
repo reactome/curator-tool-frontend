@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { EDIT_ACTION } from '../../instance-table.model';
 
 export interface User {
@@ -16,6 +16,7 @@ export interface User {
   styleUrls: ['./action-menu.component.scss'],
 })
 export class ActionMenuComponent {
+  @Input() isSingledValued: boolean = false;
   @Output() actionItem = new EventEmitter<EDIT_ACTION>();
   EDIT_ACTION = EDIT_ACTION;
   hidePanel: boolean = false;

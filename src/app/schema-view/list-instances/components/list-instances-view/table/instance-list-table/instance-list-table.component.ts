@@ -55,4 +55,14 @@ export class InstanceListTableComponent {
   onInstanceLinkClicked(instance: Instance) {
     this.instanceUtilities.setLastClickedDbId(instance.dbId);
   }
+
+  getToolTip(button: string) {
+    if (button === 'list_alt')
+      return 'show referrers';
+    if (button === 'undo')
+      return 'reset instance';
+    if (button === 'upload')
+      return 'commit';
+    return button + ' instance';
+  }
 }

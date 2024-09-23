@@ -69,6 +69,7 @@ export class StatusComponent implements OnInit {
     // Put them here for the time being for convenience since we have most of 
     // objects here already.
     this.store.select(bookmarkedInstances()).subscribe(bookmarks => {
+      localStorage.clear(); 
       // To be persist
       const userInstances = {
         newInstances: this.newInstances,

@@ -67,6 +67,15 @@ export class DataService {
   }
 
   /**
+   * Call this method will reset the cached schema tree so that the schema tree will be reloaded
+   * when needed. This is useful when a new instance or a deletion is committed so that the counts
+   * of classes can be updated. Call this method will not call the http method to the server.
+   */
+  flagSchemaTreeForReload() {
+    this.rootClass = undefined;
+  }
+
+  /**
    * Fetch the instance data.
    * @param className
    * @returns
@@ -267,12 +276,12 @@ export class DataService {
     // Fetch from the server
     return this.http.get<Instance>(this.entityDataUrl + `${dbId}`)
       .pipe(
-        concatMap((data: Instance) => {
+        map((data: Instance) => {
           let instance: Instance = data; // Converted into the Instance object already
           this.handleInstanceAttributes(instance);
           if (cache)
             this.id2instance.set(dbId, instance); // Cache this instance
-          return this.handleSchemaClassForInstance(instance);
+          return instance;
         }),
 
         catchError((err: Error) => {
@@ -302,6 +311,19 @@ export class DataService {
     let rtn = this.nextNewDbId;
     this.nextNewDbId -= 1;
     return rtn;
+  }
+
+  resetNextNewDbId() {
+    if (!this.id2instance || this.id2instance.size == 0) {
+      return; // Need to do nothing
+    }
+    let min = 0;
+    for (let id of this.id2instance.keys()) {
+      if (id < min)
+        min = id;
+    }
+    // Need to reduce 0 to avoid using the used one
+    this.nextNewDbId = min - 1;
   }
 
   /**
@@ -334,13 +356,17 @@ export class DataService {
   /**
    * Register a new instance to the cache.
    */
-  registerNewInstance(instance: Instance): void {
+  registerInstance(instance: Instance): void {
+    // Make sure map is used
+    if (instance.attributes && !(instance.attributes instanceof Map)) {
+      this.handleInstanceAttributes(instance);
+    }
     this.id2instance.set(instance.dbId, instance);
   }
 
-  removeInstanceInCache(instance: Instance): void {
-    if (this.id2instance.has(instance.dbId))
-      this.id2instance.delete(instance.dbId);
+  removeInstanceInCache(dbId: number): void {
+    if (this.id2instance.has(dbId))
+      this.id2instance.delete(dbId);
   }
 
   /**
@@ -349,15 +375,7 @@ export class DataService {
    * @param instance
    */
   handleInstanceAttributes(instance: Instance): void {
-    if (instance.attributes === undefined)
-      return;
-    let attributeMap = new Map<string, any>();
-    let attributes: any = instance.attributes;
-    Object.keys(attributes).map((key: string) => {
-      const value = attributes[key];
-      attributeMap.set(key, value);
-    })
-    instance.attributes = attributeMap;
+    this.utils.handleInstanceAttributes(instance);
   }
 
   /**
@@ -366,7 +384,7 @@ export class DataService {
    * @param className
    * @returns
    */
-  private handleSchemaClassForInstance(instance: Instance): Observable<Instance> {
+  handleSchemaClassForInstance(instance: Instance): Observable<Instance> {
     let className: string = instance.schemaClassName!;
     let schemaClass$: Observable<SchemaClass> = this.fetchSchemaClass(className);
     return schemaClass$.pipe(
@@ -636,7 +654,15 @@ export class DataService {
   commit(instance: Instance): Observable<Instance> {
     let instanceToBeCommitted = this.cloneInstanceForCommit(instance);
     return this.http.post<Instance>(this.commitInstanceUrl, instanceToBeCommitted).pipe(
-      map((inst: Instance) => inst),
+      map((inst: Instance) => {
+        // Replace whatever or register new
+        // this.registerInstance(inst);
+        // The instance returned is a shell and should not be used for display
+        // Therefore, we will remove the original from the cache to force the view
+        // to use the updated, database version
+        this.removeInstanceInCache(inst.dbId);
+        return inst;
+      }),
       catchError(error => {
         console.log("An error is thrown during committing: \n" + error.message, "Close", {
           panelClass: ['warning-snackbar'],
@@ -644,7 +670,7 @@ export class DataService {
         });
         return throwError(() => error);
       })
-    )
+    );
   }
 
   /**
@@ -752,7 +778,6 @@ export class DataService {
    * @param instance
    */
   delete(instance: Instance): Observable<boolean> {
-    let instanceToBeDeleted = this.cloneInstanceForCommit(instance);
     return this.http.post<boolean>(this.deleteSimpleInstance, instance).pipe(
       catchError(error => {
         console.log("An error is thrown during deleting: \n" + error.message, "Close", {

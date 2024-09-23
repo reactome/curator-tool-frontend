@@ -48,7 +48,7 @@ export class NewInstanceDialogComponent {
     // Just return the instance newly created. Don't close it. The template
     // will handle close.
     if (this.instance) {
-      this.dataService.registerNewInstance(this.instance);
+      this.dataService.registerInstance(this.instance);
       this.store.dispatch(NewInstanceActions.register_new_instance(this.instance));
     }
     this.dialogRef.close(this.instance);

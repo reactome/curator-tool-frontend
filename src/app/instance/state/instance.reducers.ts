@@ -1,7 +1,7 @@
 import { EntityState, createEntityAdapter } from "@ngrx/entity";
 import { createReducer, on } from "@ngrx/store";
 import { Instance } from "src/app/core/models/reactome-instance.model";
-import {DeleteInstanceActions, InstanceActions, NewInstanceActions} from "./instance.actions";
+import {DeleteInstanceActions, UpdateInstanceActions, NewInstanceActions} from "./instance.actions";
 
 /**
  * Reducer to handle registration of updated instance
@@ -15,11 +15,16 @@ export const updatedInstancesAdaptor = createEntityAdapter<Instance>({
 
 export const updatedInstancesReducer = createReducer(
   updatedInstancesAdaptor.getInitialState(),
-  on(InstanceActions.register_updated_instance,
+  on(UpdateInstanceActions.register_updated_instance,
+    UpdateInstanceActions.ls_register_updated_instance,
     (state, instance) => updatedInstancesAdaptor.upsertOne(instance, state),
   ),
-  on(InstanceActions.remove_updated_instance,
+  on(UpdateInstanceActions.remove_updated_instance,
+    UpdateInstanceActions.ls_remove_updated_instance,
     (state, instance) => updatedInstancesAdaptor.removeOne(instance.dbId, state)
+  ),
+  on(UpdateInstanceActions.set_updated_instances,
+    (state, {instances}) => updatedInstancesAdaptor.setMany(instances, state)
   ),
 )
 
@@ -34,7 +39,8 @@ export const lastUpdatedInstanceInitialState: LastUpdatedInstanceState = {
 }
 export const lastUpdatedInstanceReducer = createReducer(
   lastUpdatedInstanceInitialState,
-  on(InstanceActions.last_updated_instance, 
+  on(UpdateInstanceActions.last_updated_instance, 
+     UpdateInstanceActions.ls_last_updated_instance,
     (state, {attribute, instance}) => ({...state, attribute: attribute, instance: instance})
   )
 )
@@ -52,11 +58,16 @@ export const newInstancesAdaptor = createEntityAdapter<Instance>({
 export const newInstancesReducer = createReducer(
   newInstancesAdaptor.getInitialState(),
   on(NewInstanceActions.register_new_instance,
+    NewInstanceActions.ls_register_new_instance,
     (state, instance) => newInstancesAdaptor.upsertOne(instance, state)
   ),
   on(NewInstanceActions.remove_new_instance,
+    NewInstanceActions.ls_remove_new_instance,
     (state, instance) => newInstancesAdaptor.removeOne(instance.dbId, state)
   ),
+  on(NewInstanceActions.set_new_instances,
+    (state, {instances}) => newInstancesAdaptor.setMany(instances, state)
+  )
 )
 
 /**
@@ -72,10 +83,15 @@ export const deletedInstancesAdaptor = createEntityAdapter<Instance>({
 export const deletedInstancesReducer = createReducer(
   deletedInstancesAdaptor.getInitialState(),
   on(DeleteInstanceActions.register_deleted_instance,
+    DeleteInstanceActions.ls_register_deleted_instance,
     (state, instance) => deletedInstancesAdaptor.upsertOne(instance, state)
   ),
   on(DeleteInstanceActions.remove_deleted_instance,
+    DeleteInstanceActions.ls_remove_deleted_instance,
     (state, instance) => deletedInstancesAdaptor.removeOne(instance.dbId, state)
   ),
+  on(DeleteInstanceActions.set_deleted_instances,
+    (state, {instances}) => deletedInstancesAdaptor.setMany(instances, state)
+  )
 )
 

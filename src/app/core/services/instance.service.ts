@@ -15,11 +15,36 @@ export class InstanceUtilities {
     // The type if either string or number
     private lastClickedDbId = new Subject<string|number>();
     lastClickedDbId$ = this.lastClickedDbId.asObservable();
+
+    // A shortcut to notify an instance view refresh
+    // We use this method to make the code much, much simpler!
+    private refreshViewDbId = new Subject<number>();
+    refreshViewDbId$ = this.refreshViewDbId.asObservable();
+
+    private deletedDbId = new Subject<number>();
+    deletedDbId$ = this.deletedDbId.asObservable();
+
+    // The first is the old dbId and second newDbId
+    private committedNewInstDbId = new Subject<[number, number]>();
+    committedNewInstDbId$ = this.committedNewInstDbId.asObservable();
+
     // Bypass for comparison
     private lastClickedDbIdForComparison = new Subject<number>();
     lastClickedDbIdForComparison$ = this.lastClickedDbIdForComparison.asObservable();
 
     constructor() { }
+
+    setCommittedNewInstDbId(oldDbId: number, newDbId: number) {
+        this.committedNewInstDbId.next([oldDbId, newDbId]);
+    }
+
+    setDeletedDbId(dbId: number) {
+        this.deletedDbId.next(dbId);
+    }
+
+    setRefreshViewDbId(dbId: number) {
+        this.refreshViewDbId.next(dbId);
+    }
 
     setLastClickedDbId(dbId: string|number) {
         this.lastClickedDbId.next(dbId);
@@ -143,6 +168,54 @@ export class InstanceUtilities {
         const jsonString = JSON.stringify(filteredData);
         const dataCopy = JSON.parse(jsonString);
         return dataCopy;
+    }
+
+    /**
+       * Attributes returned from the server are kept as JavaScript object since JavaScript really
+       * doesn't care about the type. Therefore, we need to do some converting here.
+       * @param instance
+       */
+    handleInstanceAttributes(instance: Instance): void {
+        if (instance.attributes === undefined)
+            return;
+        let attributeMap = new Map<string, any>();
+        let attributes: any = instance.attributes;
+        Object.keys(attributes).map((key: string) => {
+            const value = attributes[key];
+            attributeMap.set(key, value);
+        })
+        instance.attributes = attributeMap;
+    }
+
+    stringifyInstance(instance: Instance): string {
+        return JSON.stringify({
+            ...instance,
+            schemaClass: undefined, // No need to push the schemaClass around
+            attributes: instance.attributes ? Object.fromEntries(instance.attributes) : undefined
+        });
+    }
+
+    stringifyInstances(instances: Instance[]): string {
+        return JSON.stringify(instances.map(inst => ({
+            ...inst,
+            schemaClass: undefined,
+            attributes: inst.attributes ? Object.fromEntries(inst.attributes) : undefined
+        })));
+    }
+
+    makeShell(inst: Instance) {
+        return {
+            dbId: inst.dbId,
+            schemaClassName: inst.schemaClassName,
+            displayName: inst.displayName
+        };
+    }
+
+    removeInstInArray(target: Instance, array: Instance[]) {
+        if (!array) return;
+        const index = array.findIndex(obj => obj.dbId === target.dbId);
+        if (index >= 0)
+            array.splice(index, 1);
     }
 
 }

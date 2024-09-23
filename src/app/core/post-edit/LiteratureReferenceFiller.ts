@@ -62,7 +62,7 @@ export class LiteratureReferenceFiller implements PostEditOperation {
                 this.nameGenerator.updateDisplayName(author);
             // May need to bound these two calls together somewhere
             // Make sure to call these two at the end.
-            this.dataService.registerNewInstance(author);
+            this.dataService.registerInstance(author);
             this.store.dispatch(NewInstanceActions.register_new_instance(author));
         }
     }

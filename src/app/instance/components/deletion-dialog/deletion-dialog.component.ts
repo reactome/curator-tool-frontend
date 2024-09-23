@@ -1,7 +1,7 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import {Instance} from 'src/app/core/models/reactome-instance.model';
-import {DeleteInstanceActions, InstanceActions, NewInstanceActions} from "../../state/instance.actions";
+import {DeleteInstanceActions, UpdateInstanceActions, NewInstanceActions} from "../../state/instance.actions";
 import {Store} from "@ngrx/store";
 import {ConfirmDeleteDialogComponent} from "./confirm-delete-dialog/confirm-delete-dialog.component";
 import {ConfirmDeleteDialogService} from "./confirm-delete-dialog/confirm-delete-dialog.service";
@@ -31,8 +31,6 @@ export class DeletionDialogComponent {
 
   onOK() {
     this.confirmDeleteDialogService.openDialog(this.instance);
-    this.store.dispatch(DeleteInstanceActions.register_deleted_instance(this.instance));
-    this.store.dispatch(NewInstanceActions.remove_new_instance(this.instance));
     this.dialogRef.close(this.instance);
   }
 
