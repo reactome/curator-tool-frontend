@@ -37,5 +37,6 @@ export enum ElementType {
   FLOWLINE = 'flowline',
   EDGE_POINT = 'edgePoint',
   NODE = "node",
-  COMPARTMENT = "compartment"
+  COMPARTMENT = "compartment",
+  PATHWAY_NODE = 'pathway_node'
 }

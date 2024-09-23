@@ -148,6 +148,8 @@ export class EventTreeComponent {
     else if (!select) {
       // Handle a case like this: http://localhost:4200/event_view/instance/9615710 for a pathway having diagram
       // Therefore, the pathway instance can be loaded in the instance view.
+      if (matchedNodes && matchedNodes.length > 0)
+        this.setDiagramNodePath(matchedNodes[0]);
       this.eventClicked.emit(diagramPathwayId); 
     }
   }
@@ -168,6 +170,13 @@ export class EventTreeComponent {
         }
       }
     }
+  }
+
+  goToPathway(dbId: number) {
+    const matchedNodes = this.selectNodes(dbId, dbId);
+    if (matchedNodes && matchedNodes.length > 0)
+      this.setDiagramNodePath(matchedNodes[0]);
+    this.eventClicked.emit(dbId);
   }
 
   // Highlight in the event tree the node corresponding to the event selected by the user within the plot
@@ -275,14 +284,13 @@ export class EventTreeComponent {
   }
 
   private navigateToEventNode(event: EventNode) {
-    const diagramNode = this.findAncestorDiagramNode(event);
+    const diagramNode = this.setDiagramNodePath(event);
     if (diagramNode) {
-      this.diagramNodePath = this.getTreePath(diagramNode);
-      this.selectionFromTree = true;
       if (diagramNode === event) {
         this.router.navigate(['/event_view/instance/' + diagramNode.dbId]);
       }
       else {
+        this.selectionFromTree = true;
         this.router.navigate(['/event_view/instance/' + diagramNode.dbId],
           {queryParams: {select: event.dbId}, queryParamsHandling: 'merge'});
       }
@@ -290,6 +298,13 @@ export class EventTreeComponent {
     else {
       console.error('Cannot find a higher level pathway having diagram for ' + event.name);
     }
+  }
+
+  private setDiagramNodePath(event: EventNode) {
+    const diagramNode = this.findAncestorDiagramNode(event);
+    if (diagramNode) 
+      this.diagramNodePath = this.getTreePath(diagramNode);
+    return diagramNode;
   }
 
   addToDiagramAction(node: EventNode) {

@@ -134,5 +134,10 @@ export class MainEventComponent {
     this.eventTree?.selectNodesForDiagram(reactomeIds[0]);
   }
 
+  handleGoToPathEvent(dbId: number) {
+    // this.instanceView?.loadInstance(dbId, false, true);
+    this.eventTree?.goToPathway(dbId);
+  }
+
   protected readonly window = window;
 }

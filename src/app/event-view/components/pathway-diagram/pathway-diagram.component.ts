@@ -3,7 +3,7 @@
  * in cytoscape.
  */
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, inject, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, inject, OnInit, Output, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
 import { filter, map } from 'rxjs';
@@ -26,6 +26,8 @@ import { lastUpdatedInstance } from 'src/app/instance/state/instance.selectors';
   providers: [PathwayDiagramUtilService]
 })
 export class PathwayDiagramComponent implements AfterViewInit, OnInit {
+  // Special case to navigate away from the current event
+  @Output() goToPathwayEvent = new EventEmitter<number>();
   id$ = this.route.params.pipe(
     map(params => params['id']),
     filter(id => id !== undefined)
@@ -206,6 +208,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     else if (this.elementUnderMouse.isNode()) {
       if (this.elementUnderMouse.hasClass("Compartment"))
         this.elementTypeForPopup = ElementType.COMPARTMENT;
+      else if (this.elementUnderMouse.hasClass("Pathway"))
+        this.elementTypeForPopup = ElementType.PATHWAY_NODE;
       else if (this.elementUnderMouse.hasClass(EDGE_POINT_CLASS))
         this.elementTypeForPopup = ElementType.EDGE_POINT;
       else {
@@ -223,72 +227,78 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   }
 
   onAction(action: string) {
-    console.debug('action is fired: ' + action);
-    //TODO: Make sure enable and disable works for individual reaction too.
-    if (action === 'enableEditing') {
-      this.diagramUtils.enableEditing(this.diagram);
-      this.isEditing = true;
-    }
-    else if (action === 'disableEditing') {
-      this.diagramUtils.disableEditing(this.diagram);
-      this.isEditing = false;
-    }
-    else if (action === 'addPoint') {
-      // Get the current mouse position when the popup menu appears
-      const mousePosition : Position = {
-        x: parseInt(this.menuPositionX) - this.MENU_POSITION_BUFFER,
-        y: parseInt(this.menuPositionY) - this.MENU_POSITION_BUFFER
-      }
-      this.diagramUtils.addPoint(mousePosition, this.elementUnderMouse);
-    }
-    else if (action === 'removePoint') {
-      this.diagramUtils.removePoint(this.elementUnderMouse);
-    }
-    else if (action === 'delete') {
-      this.diagramUtils.deleteHyperEdge(this.elementUnderMouse);
-    }
-    else if (action === 'resizeCompartment') {
-      this.diagramUtils.enableResizeCompartment(
-        this.elementUnderMouse,
-        this.diagram
-      );
-    }
-    else if (action === 'disableResize') {
-      this.diagramUtils.disableResizeCompartment(this.elementUnderMouse, this.diagram);
-    }
-    else if (action === 'toggleDarkMode') {
-      this.diagram.dark.isDark = !this.diagram.dark.isDark;
-    }
-    else if (action === 'addFlowLine') {
-      this.diagramUtils.addFlowLine(this.elementUnderMouse, this);
-    }
-    else if (action === 'upload') {
-      // TODO: de-select everything first to avoid keeping the selected color at JSON.
-      // However, we may need to re-select to make the selection consistent.
-      const networkJson = this.diagram.cy.json();
-      // const networkString = JSON.stringify(networkJson);
-      // console.debug('Network JSON: \n' + networkString);
-      this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.diagram.diagramId, networkJson).subscribe((success) => {
-        if (success) {
-          // Need to show something here
-          this.dialog.open(InfoDialogComponent, {
-            data: {
-              title: 'Information',
-              message: 'The diagram has been uploaded successfully.'
-            }
-          });
+    console.debug('Action fired: ' + action);
+    
+    switch (action) {
+      case 'enableEditing':
+        this.diagramUtils.enableEditing(this.diagram);
+        this.isEditing = true;
+        break;
+  
+      case 'disableEditing':
+        this.diagramUtils.disableEditing(this.diagram);
+        this.isEditing = false;
+        break;
+  
+      case 'addPoint':
+        const mousePosition: Position = {
+          x: parseInt(this.menuPositionX) - this.MENU_POSITION_BUFFER,
+          y: parseInt(this.menuPositionY) - this.MENU_POSITION_BUFFER
+        };
+        this.diagramUtils.addPoint(mousePosition, this.elementUnderMouse);
+        break;
+  
+      case 'removePoint':
+        this.diagramUtils.removePoint(this.elementUnderMouse);
+        break;
+  
+      case 'delete':
+        this.diagramUtils.deleteHyperEdge(this.elementUnderMouse);
+        break;
+  
+      case 'resizeCompartment':
+        this.diagramUtils.enableResizeCompartment(this.elementUnderMouse, this.diagram);
+        break;
+  
+      case 'disableResize':
+        this.diagramUtils.disableResizeCompartment(this.elementUnderMouse, this.diagram);
+        break;
+  
+      case 'toggleDarkMode':
+        this.diagram.dark.isDark = !this.diagram.dark.isDark;
+        break;
+  
+      case 'addFlowLine':
+        this.diagramUtils.addFlowLine(this.elementUnderMouse, this);
+        break;
+
+      case 'goToPathway':
+        const reactomeId = this.elementUnderMouse?.data('reactomeId');
+        if (reactomeId) {
+          this.router.navigate(['/event_view/instance/' + reactomeId]);
+          this.goToPathwayEvent.emit(reactomeId);
         }
-        else {
-          // Need to show something here
-          this.dialog.open(InfoDialogComponent, {
+        break;
+  
+      case 'upload':
+        const networkJson = this.diagram.cy.json();
+        this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.diagram.diagramId, networkJson).subscribe((success) => {
+          const dialogConfig = {
             data: {
-              title: 'Error',
-              message: 'The diagram has not been uploaded successfully.'
+              title: success ? 'Information' : 'Error',
+              message: success ? 'The diagram has been uploaded successfully.' : 'The diagram has not been uploaded successfully.'
             }
-          });
-        }
-      })
+          };
+          this.dialog.open(InfoDialogComponent, dialogConfig);
+        });
+        break;
+  
+      default:
+        console.debug('Unknown action: ' + action);
+        break;
     }
+  
+    // Hide the menu after the action is processed
     this.showMenu = false;
   }
 
