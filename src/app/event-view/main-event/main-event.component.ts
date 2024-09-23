@@ -136,7 +136,7 @@ export class MainEventComponent {
 
   handleGoToPathEvent(dbId: number) {
     // this.instanceView?.loadInstance(dbId, false, true);
-    this.eventTree?.goToPathway(dbId);
+    this.eventTree?.goToPathway(undefined, dbId);
   }
 
   protected readonly window = window;

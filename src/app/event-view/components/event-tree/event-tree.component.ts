@@ -135,6 +135,10 @@ export class EventTreeComponent {
     this.cacheTreePaths();
     const diagramPathwayId = Number(paramsId);
     const select = Number(this.route.snapshot.queryParams['select']);
+    this.goToPathway(select, diagramPathwayId);
+  }
+
+  goToPathway(select: number|undefined, diagramPathwayId: number) {
     const matchedNodes = this.selectNodes(select ? select : diagramPathwayId, diagramPathwayId);
     // If there is no diagram for the dbId, we need to re-route to load the diagram
     // This case occurs when a reaction is passed as dbId, e.g. localhost:4200/event_view/instance/9615721
@@ -150,7 +154,7 @@ export class EventTreeComponent {
       // Therefore, the pathway instance can be loaded in the instance view.
       if (matchedNodes && matchedNodes.length > 0)
         this.setDiagramNodePath(matchedNodes[0]);
-      this.eventClicked.emit(diagramPathwayId); 
+      this.eventClicked.emit(diagramPathwayId);
     }
   }
 
@@ -170,13 +174,6 @@ export class EventTreeComponent {
         }
       }
     }
-  }
-
-  goToPathway(dbId: number) {
-    const matchedNodes = this.selectNodes(dbId, dbId);
-    if (matchedNodes && matchedNodes.length > 0)
-      this.setDiagramNodePath(matchedNodes[0]);
-    this.eventClicked.emit(dbId);
   }
 
   // Highlight in the event tree the node corresponding to the event selected by the user within the plot
