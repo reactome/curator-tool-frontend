@@ -58,6 +58,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   isEdgeEditable: boolean = false;
   // Flag for adding a flowline between a PE node and a ProcessNode (for pathway)
   isFlowLineAddable: boolean = false;
+  // flag is the clicked pathway is deletable
+  isPathwayDeletable: boolean = false;
   // Tracking the previous dragging position: should cytoscape provides this?
   previousDragPos: Position = { x: 0, y: 0 };
 
@@ -128,7 +130,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       console.log('Route params in pathway-diagram: ', params);
       if (this.pathwayId !== params['id'])
         return;
-      this.selectObjectsInDiagram(queryParams['select']);
+      const currentSelected = queryParams['select'];
+      this.select = currentSelected;
+      this.selectObjectsInDiagram(currentSelected);
     });
   }
 
@@ -139,6 +143,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
    */
   selectObjectsInDiagram(dbId: any) {
     if (dbId) {
+      const id = parseInt(dbId);
+      if (this.diagramUtils.isDbIdSelected(this.diagram, id))
+        return;
       this.diagramUtils.select(this.diagram, dbId);
     }
     else {
@@ -224,8 +231,11 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     else if (this.elementUnderMouse.isNode()) {
       if (this.elementUnderMouse.hasClass("Compartment"))
         this.elementTypeForPopup = ElementType.COMPARTMENT;
-      else if (this.elementUnderMouse.hasClass("Pathway"))
+      else if (this.elementUnderMouse.hasClass("SUB")) { // This is for pathway
         this.elementTypeForPopup = ElementType.PATHWAY_NODE;
+        this.isFlowLineAddable = this.diagramUtils.isFlowLineAddable(this.elementUnderMouse, this);
+        this.isPathwayDeletable = this.diagramUtils.isPathwayDeletable(this.elementUnderMouse);
+      }
       else if (this.elementUnderMouse.hasClass(EDGE_POINT_CLASS))
         this.elementTypeForPopup = ElementType.EDGE_POINT;
       else {
@@ -295,6 +305,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           // We will let the event tree to handle the router etc to show the diagram
           this.goToPathwayEvent.emit(reactomeId);
         }
+        break;
+
+      case 'deletePathway':
+        this.diagramUtils.deletePathwayNode(this.elementUnderMouse, this.diagram);
         break;
 
       case 'upload':

@@ -19,6 +19,8 @@ export class EditorActionsComponent {
   @Input() isDiagramEditing: boolean = false;
   // Default is cytoscape
   @Input() elmType: ElementType = ElementType.CYTOSCAPE; 
+  // Check if a clicked pathway is deletable
+  @Input() isPathwayDeletable: boolean = false;
   // Include this so that we can compare in the html template
   elmTypes = ElementType;
   
