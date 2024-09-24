@@ -61,6 +61,12 @@ export class PathwayDiagramUtilService {
         diagram.select(dbIds, diagram.cy);
     }
 
+    isDbIdSelected(diagram: DiagramComponent, dbId: number) {
+        const selectedElements = diagram.cy.$(':selected');
+        const selectedDbIds = Array.from(new Set(selectedElements.map((element:any) => element.data('reactomeId'))));
+        return selectedDbIds.includes(dbId);
+    }    
+
     clearSelection(diagram: DiagramComponent) {
         if (diagram.cy) {
             diagram.cy.$(':selected').unselect();
@@ -78,6 +84,17 @@ export class PathwayDiagramUtilService {
         if (dbId && this.id2hyperEdge.has(dbId))
             return true;
         return false; // default
+    }
+
+    isPathwayDeletable(pathwayElm: any) {
+        const connectedEdges = pathwayElm.connectedEdges();
+        if (connectedEdges && connectedEdges.length > 0)
+            return false;
+        return true;
+    }
+
+    deletePathwayNode(pathwayElm: any, diagram: DiagramComponent) {
+        diagram.cy.remove(pathwayElm);
     }
 
     // Make sure this works for the following case:

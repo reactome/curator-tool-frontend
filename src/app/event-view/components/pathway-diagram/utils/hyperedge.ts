@@ -33,6 +33,9 @@ export class HyperEdge {
      */
     delete() {
         this.id2object.forEach((value, key) => {
+            // Keep the pathway node which may be used for other purpose
+            if (value.hasClass('SUB'))
+                return;
             if (value.hasClass('PhysicalEntity')) {
                 // We cannot just remove an element.
                 // Only element linked to objects solely belong to
