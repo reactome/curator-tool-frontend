@@ -33,7 +33,7 @@ export interface AttributeCondition {
   attributeName: string;
   operand: string;
   searchKey: string;
-  index: number;
+  //index: number;
 }
 
 export interface Referrer {
@@ -64,7 +64,7 @@ export const NEW_DISPLAY_NAME: string = 'To be generated';
 // Some rendering related information copied from the Java desktop version
 export const RENDERING_CONSTS = {
     // distance from the reaction node to a PE node, used in reaction layout
-    DEFAULT_DISTANCE_FROM_REACTION_PE_NODE: 150, 
+    DEFAULT_DISTANCE_FROM_REACTION_PE_NODE: 150,
     // Use to breakdown a long display name
     WORD_WRAP_RE: /([\ /,:;-])/,
     // private readonly WORD_WRAP_RE_G = /([\ /,:;-])/g;
@@ -80,7 +80,7 @@ export const RENDERING_CONSTS = {
     // Since complex has some decoration, we need to assign a mini height. Otherwise, the decoration
     // may be off.
     COMPLEX_MIN_HEIGHT: 50,
-  
+
     // This is arbitrary
     INIT_POSITION: {
         x: 50,

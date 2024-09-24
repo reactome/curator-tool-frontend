@@ -33,7 +33,6 @@ export class AttributeConditionComponent {
     attributeName: "displayName",
     operand: "Contains",
     searchKey: "",
-    index: 0
   };
 
   recordSearchKey(event: Event) {

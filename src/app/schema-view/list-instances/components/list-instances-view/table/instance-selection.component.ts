@@ -1,11 +1,9 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {PageEvent} from "@angular/material/paginator";
-import {MatTableDataSource} from "@angular/material/table";
-import {Instance} from "../../../../../core/models/reactome-instance.model";
+import {AttributeCondition, Instance} from "../../../../../core/models/reactome-instance.model";
 import {DataService} from "../../../../../core/services/data.service";
 import {ViewOnlyService} from "../../../../../core/services/view-only.service";
 import {ActivatedRoute, Router} from "@angular/router";
-import {AttributeCondition} from '../../../../../core/models/reactome-instance.model';
 import {ReferrersDialogService} from "../../../../../instance/components/referrers-dialog/referrers-dialog.service";
 import {DeletionDialogService} from "../../../../../instance/components/deletion-dialog/deletion-dialog.service";
 
@@ -198,22 +196,42 @@ export class InstanceSelectionComponent implements OnInit {
     this.showFilterComponent = !this.showFilterComponent;
   }
 
-  advancedSearch(searchKey: string) {
+  parseAdvancedSearch(searchKey: string) {
     let fullQuery = searchKey.split(',')
+    let attributeConditions: AttributeCondition[] = [];
+    // let attributes = [];
+    // let operands = [];
+    // let searchKeys = [];
+    let url = '/schema_view/list_instances/' + this.className;
+    for (let query of fullQuery) {
+      let attributeName = query.split("(")[1].split("[")[0];
+      //attributes.push(attributeName);
+      let operand = query.split("[")[1].split(":")[0];
+      //operands.push(operand);
+      let searchKey = query.split(" ")[1].split("]")[0];
+      //searchKeys.push(searchKey);
+      let attribuateCondition: AttributeCondition = new class implements AttributeCondition {
+        attributeName: string = attributeName;
+        operand: string = operand;
+        searchKey: string = searchKey;
+      }
+      attributeConditions.push(attribuateCondition);
+    }
+
+    return attributeConditions;
+  }
+
+  advancedSearch(searchKey: string) {
     let attributes = [];
     let operands = [];
     let searchKeys = [];
     let url = '/schema_view/list_instances/' + this.className;
-    for(let query of fullQuery) {
-      console.log(query);
-      let attributeName = query.split("(")[1].split("[")[0];
-      attributes.push(attributeName);
-      let operand = query.split("[")[1].split(":")[0];
-      operands.push(operand);
-      let searchKey = query.split(" ")[1].split("]")[0];
-      console.log(attributeName, operand, searchKey);
-      searchKeys.push(searchKey);
-      //url += attributeName + operand + searchKey;
+    let attributeConditions: AttributeCondition[] = this.parseAdvancedSearch(searchKey);
+
+    for(let attributeCondition of attributeConditions) {
+      attributes.push(attributeCondition.attributeName);
+      operands.push(attributeCondition.operand);
+      searchKeys.push(attributeCondition.searchKey);
     }
     if (this.useRoute) {
       if (this.searchKey && this.searchKey.trim().length > 0) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
@@ -231,5 +249,14 @@ export class InstanceSelectionComponent implements OnInit {
     } else
       this.loadInstances();
     this.searchInstances(attributes, operands, searchKeys);
+  }
+
+  removeParameter() {
+    let attributeConditions: AttributeCondition[] = this.parseAdvancedSearch(this.advancedSearchKey!)
+    attributeConditions.pop();
+    this.advancedSearchKey = '';
+    for(let attributeCondition of attributeConditions) {
+      this.searchAction(attributeCondition);
+    }
   }
 }
