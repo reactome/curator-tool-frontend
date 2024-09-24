@@ -60,6 +60,10 @@ cdkDropListSortingDisabled
   matTooltip="Click to add this event to diagram" [matTooltipShowDelay]="1000" (click)="addToDiagramAction(node)">
     <mat-icon>new_label</mat-icon>
   </button>
+  <button *ngIf="needCreateEmptyDiagramBtn(node)" color="primary" class="mat-icon-button v-center" style="width: 10;"
+  matTooltip="Click to create an empty diagram" [matTooltipShowDelay]="1000" (click)="createEmptyDiagram(node)">
+    <mat-icon>schema</mat-icon>
+  </button>
   <release-flag-icon [doRelease]="node.doRelease"></release-flag-icon>
   <class-name-icon [className]="node.className"></class-name-icon>
   <button mat-button 

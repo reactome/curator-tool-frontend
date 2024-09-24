@@ -59,7 +59,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   // Flag for adding a flowline between a PE node and a ProcessNode (for pathway)
   isFlowLineAddable: boolean = false;
   // Tracking the previous dragging position: should cytoscape provides this?
-  previousDragPos: Position = {x: 0, y: 0};
+  previousDragPos: Position = { x: 0, y: 0 };
 
   // To show information
   readonly dialog = inject(MatDialog);
@@ -68,7 +68,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     private router: Router,
     private diagramUtils: PathwayDiagramUtilService,
     private store: Store
-  ){
+  ) {
   }
 
   ngOnInit() {
@@ -90,8 +90,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       this.select = queryParams['select'] ?? '';
       // Check if we have cytoscape network. If yes, load it.
       this.diagramUtils.getDataService().hasCytoscapeNetwork(this.pathwayId).subscribe((exists: boolean) => {
-        this.diagram.resetState(); // Have to call this to avoid any residue selection. This is more like a bug in ngx-diagram.
-        this.diagramUtils.clearSelection(this.diagram); 
+        // this.diagram.resetState(); 
+        this.diagramUtils.clearSelection(this.diagram);
         if (exists) {
           this.diagramUtils.getDataService().getCytoscapeNetwork(this.pathwayId).subscribe((cytoscapeJson: any) => {
             this.diagram.displayNetwork(cytoscapeJson.elements);
@@ -145,6 +145,21 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     }
   }
 
+  /**
+   * Create an empty diagram for editing.
+   * @param pathwayId
+   */
+  createEmptyDiagram(pathwayId: number) {
+    this.pathwayId = pathwayId.toString();
+    this.diagram.diagramId = this.pathwayId;
+    this.select = '';
+
+    // this.diagram.resetState(); 
+    this.diagramUtils.clearSelection(this.diagram);
+    // Show nothing for this diagram
+    this.diagram.displayNetwork([]);
+  }
+
   private initDiagram() {
     // Do nothing if nothing is loaded
     if (!this.pathwayId || this.pathwayId.length == 0)
@@ -162,7 +177,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
     // Add the popup trigger to the whole cytoscape and let
     // showCyPopup to figure out what menus should be shown.
-    this.diagram.cy.on('cxttapstart', (e:any) => {
+    this.diagram.cy.on('cxttapstart', (e: any) => {
       this.showCyPopup(e);
     });
     this.diagram.cy.on('mousedown', (e: any) => {
@@ -196,7 +211,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   private showCyPopup(event: any) { // Use any to avoid any compiling error
     this.elementUnderMouse = event.target;
     if (this.elementUnderMouse === undefined ||
-        this.elementUnderMouse === this.diagram!.cy) { // Should check for instanceof. But not sure how!
+      this.elementUnderMouse === this.diagram!.cy) { // Should check for instanceof. But not sure how!
       this.elementTypeForPopup = ElementType.CYTOSCAPE; // As the default
     }
     else if (this.elementUnderMouse.isEdge()) {
@@ -228,18 +243,18 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
   onAction(action: string) {
     console.debug('Action fired: ' + action);
-    
+
     switch (action) {
       case 'enableEditing':
         this.diagramUtils.enableEditing(this.diagram);
         this.isEditing = true;
         break;
-  
+
       case 'disableEditing':
         this.diagramUtils.disableEditing(this.diagram);
         this.isEditing = false;
         break;
-  
+
       case 'addPoint':
         const mousePosition: Position = {
           x: parseInt(this.menuPositionX) - this.MENU_POSITION_BUFFER,
@@ -247,27 +262,27 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         };
         this.diagramUtils.addPoint(mousePosition, this.elementUnderMouse);
         break;
-  
+
       case 'removePoint':
         this.diagramUtils.removePoint(this.elementUnderMouse);
         break;
-  
+
       case 'delete':
         this.diagramUtils.deleteHyperEdge(this.elementUnderMouse);
         break;
-  
+
       case 'resizeCompartment':
         this.diagramUtils.enableResizeCompartment(this.elementUnderMouse, this.diagram);
         break;
-  
+
       case 'disableResize':
         this.diagramUtils.disableResizeCompartment(this.elementUnderMouse, this.diagram);
         break;
-  
+
       case 'toggleDarkMode':
         this.diagram.dark.isDark = !this.diagram.dark.isDark;
         break;
-  
+
       case 'addFlowLine':
         this.diagramUtils.addFlowLine(this.elementUnderMouse, this);
         break;
@@ -275,11 +290,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       case 'goToPathway':
         const reactomeId = this.elementUnderMouse?.data('reactomeId');
         if (reactomeId) {
-          this.router.navigate(['/event_view/instance/' + reactomeId]);
+          // this.router.navigate(['/event_view/instance/' + reactomeId]);
+          // We will let the event tree to handle the router etc to show the diagram
           this.goToPathwayEvent.emit(reactomeId);
         }
         break;
-  
+
       case 'upload':
         const networkJson = this.diagram.cy.json();
         this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.diagram.diagramId, networkJson).subscribe((success) => {
@@ -292,12 +308,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           this.dialog.open(InfoDialogComponent, dialogConfig);
         });
         break;
-  
+
       default:
         console.debug('Unknown action: ' + action);
         break;
     }
-  
+
     // Hide the menu after the action is processed
     this.showMenu = false;
   }
@@ -323,8 +339,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     else {
       // We'd like to get the reaction node too. Therefore, scan all elements.
       affectedElms = this.diagram.cy.elements().filter((elm: any) => {
-        return  (elm.data('reactomeId') && (elm.data('reactomeId') === reactomeId)) ||
-                (elm.data('nodeReactomeId') && (elm.data('nodeReactomeId') === reactomeId));
+        return (elm.data('reactomeId') && (elm.data('reactomeId') === reactomeId)) ||
+          (elm.data('nodeReactomeId') && (elm.data('nodeReactomeId') === reactomeId));
       });
     }
     if (affectedElms === undefined || affectedElms.length === 0)

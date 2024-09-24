@@ -107,6 +107,10 @@ export class MainEventComponent {
     this.eventTree?.filterEvents(text);
   }
 
+  createEmptyDiagram(pathwayId: number) {
+    this.diagramView?.createEmptyDiagram(pathwayId);
+  }
+
   /**
    * This method is adopted from diagramSelect2state in diagram.component.ts in ngx-reactome-base.
    * @param event

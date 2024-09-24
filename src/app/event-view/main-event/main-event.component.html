@@ -7,6 +7,7 @@
       <event-filter (speciesChanged)="handleSpeciesSelection($event)"
                     (filterTextChanged)="handleEventFilterTextChanged($event)" *ngIf="!showChanged"></event-filter>
       <app-event-tree (addToDiagram)="addEventToDiagram($event)" (eventClicked)="handleEventClicked($event)"
+                       (createEmptyDiagramEvent)="createEmptyDiagram($event)"
                       #eventTree *ngIf="!showChanged"></app-event-tree>
       <!-- calling classAction will close this list since it should be true. -->
       <app-updated-instance-list *ngIf="showChanged" (closeAction)="showUpdatedInstances(false)" [blockRoute]="true"></app-updated-instance-list>
