@@ -140,8 +140,12 @@ export class UpdatedInstanceListComponent implements OnInit{
   }
 
   private resetUpdatedInstance(instance: Instance) {
-    // console.debug('Reset updated instance: ', instance);
-    this.store.dispatch(UpdateInstanceActions.remove_updated_instance(instance));
+    this.dataService.fetchInstance(instance.dbId).subscribe(inst => {
+      this.store.dispatch(UpdateInstanceActions.reset_updated_instance({
+        modifiedAttributes: inst.modifiedAttributes,
+        instance: inst
+      }));
+    });
   }
 
   private deleteNewInstance(instance: Instance) {

@@ -16,6 +16,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { Store } from '@ngrx/store';
 import { lastUpdatedInstance } from 'src/app/instance/state/instance.selectors';
+import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -69,14 +70,18 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   constructor(private route: ActivatedRoute,
     private router: Router,
     private diagramUtils: PathwayDiagramUtilService,
-    private store: Store
+    private store: Store,
+    private instUtil: InstanceUtilities
   ) {
   }
 
   ngOnInit() {
     this.store.select(lastUpdatedInstance()).subscribe(lastUpdated => {
       this.diagramUtils.handleInstanceEdit(lastUpdated.attribute, lastUpdated.instance, this);
-    })
+    });
+    this.instUtil.resetInst$.subscribe((data)=> {
+      this.diagramUtils.handleInstanceReset(data, this);
+    });
   }
 
   ngAfterViewInit(): void {

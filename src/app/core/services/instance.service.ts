@@ -32,6 +32,10 @@ export class InstanceUtilities {
     private lastClickedDbIdForComparison = new Subject<number>();
     lastClickedDbIdForComparison$ = this.lastClickedDbIdForComparison.asObservable();
 
+    // reset instance 
+    private resetInst = new Subject<{modifiedAttributes: string[]|undefined, dbId: number}>();
+    resetInst$ = this.resetInst.asObservable();
+
     constructor() { }
 
     setCommittedNewInstDbId(oldDbId: number, newDbId: number) {
@@ -40,6 +44,10 @@ export class InstanceUtilities {
 
     setDeletedDbId(dbId: number) {
         this.deletedDbId.next(dbId);
+    }
+
+    setResetInstance(modifiedAtts: string[]|undefined, dbId: number) {
+        this.resetInst.next({modifiedAttributes: modifiedAtts, dbId: dbId});
     }
 
     setRefreshViewDbId(dbId: number) {

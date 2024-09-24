@@ -39,6 +39,16 @@ export class PathwayDiagramUtilService {
         });
     }
 
+    handleInstanceReset(resetData: any, diagram: PathwayDiagramComponent) {
+        if (!resetData.modifiedAttributes || !resetData.dbId)
+            return;
+        // Need to get the actual instance. The passed instance is just a shell retried from ngrx store
+        this.dataService.fetchInstance(resetData.dbId).subscribe((instance: Instance) => {
+            for (let att of resetData.modifiedAttributes)
+                this.validator.handleInstanceEdit(instance, att, diagram?.diagram?.cy);
+        });
+    }
+
     select(diagram: DiagramComponent, dbId: any) {
         if (diagram === undefined || diagram.cy === undefined)
             return; // Nothing to do if nothing displayed

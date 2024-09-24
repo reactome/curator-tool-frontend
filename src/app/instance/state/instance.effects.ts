@@ -22,8 +22,8 @@ export class InstanceEffects {
     private instUtils: InstanceUtilities
   ) {
     window.addEventListener('storage', (event) => {
-      // console.debug('storage event: ' + event.key);
-      const inst = JSON.parse(event.newValue || '{}');
+      console.debug('storage event: ' + event.key);
+      const inst = this.parseLocalStorageObject(event.newValue);
       switch (event.key) {
         // When a new instance is edited, this case is also
         // applied. Not sure why?
@@ -50,7 +50,14 @@ export class InstanceEffects {
           this.store.dispatch(UpdateInstanceActions.ls_remove_updated_instance(inst));
           this.dataService.removeInstanceInCache(inst.dbId); // Flag to reload
           // This will not conflict with last_updated_instance
+          // Refresh multiple times doesn't hurt so far.
           this.instUtils.setRefreshViewDbId(inst.dbId);
+          break;
+        case UpdateInstanceActions.reset_updated_instance.type:
+          this.store.dispatch(UpdateInstanceActions.ls_reset_updated_instance(inst));
+          this.dataService.removeInstanceInCache(inst.instance.dbId); // Flag to reload
+          // This will not conflict with last_updated_instance
+          this.instUtils.setResetInstance(inst.modifiedAttributes, inst.instance.dbId);
           break;
         case UpdateInstanceActions.last_updated_instance.type:
           // We will use last_updated_instance to catch the change
@@ -88,21 +95,21 @@ export class InstanceEffects {
       // We need the whole instance
       const dbIds = instances.map(i => i.dbId);
       this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
-        localStorage.setItem(UpdateInstanceActions.get_updated_instances.type, this.instUtils.stringifyInstances(fullInsts));
+        this.setLocalStorageItem(UpdateInstanceActions.get_updated_instances.type, this.instUtils.stringifyInstances(fullInsts));
       });
     });
     this.store.select(newInstances()).subscribe(instances => {
       // We need the whole instance
       const dbIds = instances.map(i => i.dbId);
       this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
-        localStorage.setItem(NewInstanceActions.get_new_instances.type, this.instUtils.stringifyInstances(fullInsts));
+        this.setLocalStorageItem(NewInstanceActions.get_new_instances.type, this.instUtils.stringifyInstances(fullInsts));
       });
     });
     this.store.select(deleteInstances()).subscribe(instances => {
       // We need the whole instance
       const dbIds = instances.map(i => i.dbId);
       this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
-        localStorage.setItem(DeleteInstanceActions.get_deleted_instances.type, this.instUtils.stringifyInstances(fullInsts));
+        this.setLocalStorageItem(DeleteInstanceActions.get_deleted_instances.type, this.instUtils.stringifyInstances(fullInsts));
       });
     });
   }
@@ -115,7 +122,7 @@ export class InstanceEffects {
         tap((action) => {
           // The browser tab (window) that setItem should not receive this event.
           this.dataService.fetchInstance(action.dbId).subscribe(fullInst => {
-            localStorage.setItem(action.type, this.instUtils.stringifyInstance(fullInst));
+            this.setLocalStorageItem(action.type, this.instUtils.stringifyInstance(fullInst));
           });
           // Remove a new instance will remove it from the cached value
           if (action.type === NewInstanceActions.remove_new_instance.type)
@@ -131,7 +138,7 @@ export class InstanceEffects {
         ofType(NewInstanceActions.commit_new_instance),
         tap((action) => {
           const obj: any = action.valueOf();
-          localStorage.setItem(action.type, JSON.stringify(obj));
+          this.setLocalStorageItem(action.type, JSON.stringify(obj));
           // call here so that we don't have any side effect in this tab
           this.instUtils.setCommittedNewInstDbId(action.oldDbId, action.newDbId);
         })
@@ -144,15 +151,19 @@ export class InstanceEffects {
     () =>
       this.actions$.pipe(
         ofType(UpdateInstanceActions.register_updated_instance, 
-               UpdateInstanceActions.remove_updated_instance),
+               UpdateInstanceActions.remove_updated_instance,
+               UpdateInstanceActions.reset_updated_instance),
         tap((action) => {
-          this.dataService.fetchInstance(action.dbId).subscribe(fullInst => {
-            localStorage.setItem(action.type, this.instUtils.stringifyInstance(fullInst));
-          });
+          this.setLocalStorageItem(action.type, JSON.stringify(action.valueOf()));
           // Some extra for remove
           if (action.type === UpdateInstanceActions.remove_updated_instance.type) {
             this.dataService.removeInstanceInCache(action.dbId); // So that it can be re-loaded from database
-            this.instUtils.setRefreshViewDbId(action.dbId);
+            // No need to refresh view dbId here. Let lastInstanceEdit handle this.
+            // this.instUtils.setRefreshViewDbId(action.dbId);
+          }
+          else if (action.type === UpdateInstanceActions.reset_updated_instance.type) {
+            this.dataService.removeInstanceInCache(action.instance.dbId);
+            this.instUtils.setResetInstance(action.modifiedAttributes, action.instance.dbId);
           }
         })
       ),
@@ -173,7 +184,7 @@ export class InstanceEffects {
                 attributes: fullInst.attributes ? Object.fromEntries(fullInst.attributes) : undefined
               }
             }
-            localStorage.setItem(action.type, JSON.stringify(clone));
+            this.setLocalStorageItem(action.type, JSON.stringify(clone));
           });
           // There is no need to put the whole list into the local storage.
           // This should be handled by the above effect
@@ -190,10 +201,20 @@ export class InstanceEffects {
                DeleteInstanceActions.remove_deleted_instance),
         tap((action) => {
           // There is no need to query. Actually nothing to query.
-          localStorage.setItem(action.type, this.instUtils.stringifyInstance(action.valueOf() as Instance));
+          this.setLocalStorageItem(action.type, this.instUtils.stringifyInstance(action.valueOf() as Instance));
         })
       ),
     { dispatch: false }
   );
+
+  private setLocalStorageItem(key: string, object: string) {
+    localStorage.setItem(key, 
+      JSON.stringify({object: object, timestamp: Date.now()})); // Use timestamp to force firing the window event.
+  }
+
+  private parseLocalStorageObject(content: string | undefined | null) {
+    const value = JSON.parse(content || '{}');
+    return JSON.parse(value.object || '{}');
+  }
 
 }

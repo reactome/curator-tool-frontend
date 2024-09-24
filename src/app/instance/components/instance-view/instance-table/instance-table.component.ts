@@ -26,6 +26,7 @@ import {
   EDIT_ACTION,
   InstanceDataSource,
 } from './instance-table.model';
+import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -103,6 +104,7 @@ export class InstanceTableComponent implements PostEditListener {
     private dragDropService: DragDropService,
     private selectInstanceDialogService: SelectInstanceDialogService,
     private store: Store,
+    private instUtil: InstanceUtilities,
     private postEditService: PostEditService
   ) {
     for (let category of this.categoryNames) {
@@ -372,12 +374,7 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   private registerUpdatedInstance(attName: string): void {
-    let cloned: Instance = {
-      dbId: this._instance!.dbId,
-      displayName: this._instance!.displayName,
-      schemaClassName: this._instance!.schemaClassName,
-      //modifiedAttributes: this.modifiedAtts
-    };
+    let cloned: Instance = this.instUtil.makeShell(this._instance!);
     if (this._instance!.dbId > 0) {
       // Have to make a clone to avoid any change to the current _instance!
       this.store.dispatch(UpdateInstanceActions.register_updated_instance(cloned));
@@ -388,7 +385,7 @@ export class InstanceTableComponent implements PostEditListener {
     this.store.dispatch(UpdateInstanceActions.last_updated_instance({attribute: attName, instance: cloned}));
   }
 
-  addModifiedAttribute(attributeName: string, attributeVal: any) {
+  private addModifiedAttribute(attributeName: string, attributeVal: any) {
     // Do nothing if there is no instance
     if (this._instance === undefined) return;
     if (this._instance.modifiedAttributes === undefined) {
@@ -398,7 +395,7 @@ export class InstanceTableComponent implements PostEditListener {
       this._instance.modifiedAttributes.push(attributeName);
   }
 
-  removeModifiedAttribute(attributeName: string) {
+  private removeModifiedAttribute(attributeName: string) {
     if (
       this._instance === undefined ||
       this._instance.modifiedAttributes === undefined
@@ -539,6 +536,12 @@ export class InstanceTableComponent implements PostEditListener {
     this.updateTableContent();
     // Call this as the last step to update the list of changed instances.
     this.removeModifiedAttribute(attributeValue.attribute.name);
+    // something more needed to be done
+    this.store.dispatch(UpdateInstanceActions.last_updated_instance({
+      attribute: attributeValue.attribute.name, 
+      instance: this.instUtil.makeShell(this._instance!)
+    }));
+    this.editedInstance.emit(this._instance)
   }
 
   filterEditedValues() {

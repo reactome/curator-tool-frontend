@@ -20,9 +20,13 @@ export const updatedInstancesReducer = createReducer(
     (state, instance) => updatedInstancesAdaptor.upsertOne(instance, state),
   ),
   on(UpdateInstanceActions.remove_updated_instance,
-    UpdateInstanceActions.ls_remove_updated_instance,
-    (state, instance) => updatedInstancesAdaptor.removeOne(instance.dbId, state)
+     UpdateInstanceActions.ls_remove_updated_instance,
+     (state, instance) => updatedInstancesAdaptor.removeOne(instance.dbId, state)
   ),
+  on(UpdateInstanceActions.reset_updated_instance,
+     UpdateInstanceActions.ls_reset_updated_instance,
+    (state, instance) => updatedInstancesAdaptor.removeOne(instance.instance.dbId, state)
+ ),
   on(UpdateInstanceActions.set_updated_instances,
     (state, {instances}) => updatedInstancesAdaptor.setMany(instances, state)
   ),

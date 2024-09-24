@@ -82,6 +82,11 @@ export class InstanceViewComponent implements OnInit {
         this.loadInstance(dbId, false, false, true);
       }
     });
+    this.instUtils.resetInst$.subscribe(data => {
+      if (this.instance && this.instance.dbId === data.dbId) {
+        this.loadInstance(data.dbId, false, false, true);
+      }
+    });
     this.instUtils.deletedDbId$.subscribe(dbId => {
       if (this.instance && this.instance.dbId === dbId) {
         this.instUtils.removeInstInArray(this.instance, this.viewHistory);
