@@ -21,13 +21,13 @@ interface Species {
 export class SearchInstanceComponent implements OnInit {
 
   @Output() searchInstancesAction: EventEmitter<AttributeCondition> = new EventEmitter();
+  @Output() removeInstancesAction: EventEmitter<AttributeCondition> = new EventEmitter();
 
   // For doing search
   blankAttributeCondition : AttributeCondition = {
     attributeName: "displayName",
     operand: "Contains",
     searchKey: "",
-    index: 0
   };
 
   @Input() attributes: string[] = [];
@@ -48,8 +48,8 @@ export class SearchInstanceComponent implements OnInit {
     this.searchInstancesAction.emit(attributeCondition);
   }
 
-  removeAttribute(attCondition: AttributeCondition) {
-    //this.attributeConditions.splice(this.attributeConditions.indexOf(attCondition), 1);
+  removeAttribute(attributeCondition: AttributeCondition) {
+    this.removeInstancesAction.emit(attributeCondition);
   }
 
 }
