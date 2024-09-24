@@ -8,7 +8,8 @@
     <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <textarea matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize" cdkAutosizeMinRows="1"
-                  cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()" (keydown)="onkeypress($event)">
+        matTooltip="control+enter to commit the change"
+                  cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()" (keydown)="onKeyDown($event)">
         </textarea>
       </mat-form-field>
     </ng-template>

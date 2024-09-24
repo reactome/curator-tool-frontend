@@ -107,6 +107,10 @@ export class MainEventComponent {
     this.eventTree?.filterEvents(text);
   }
 
+  createEmptyDiagram(pathwayId: number) {
+    this.diagramView?.createEmptyDiagram(pathwayId);
+  }
+
   /**
    * This method is adopted from diagramSelect2state in diagram.component.ts in ngx-reactome-base.
    * @param event
@@ -132,6 +136,11 @@ export class MainEventComponent {
     this.selectedIdsInDiagram = reactomeIds;
     this.instanceView?.loadInstance(reactomeIds[0], false, true);
     this.eventTree?.selectNodesForDiagram(reactomeIds[0]);
+  }
+
+  handleGoToPathEvent(dbId: number) {
+    // this.instanceView?.loadInstance(dbId, false, true);
+    this.eventTree?.goToPathway(undefined, dbId);
   }
 
   protected readonly window = window;

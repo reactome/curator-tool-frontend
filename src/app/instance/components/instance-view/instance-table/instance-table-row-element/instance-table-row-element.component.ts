@@ -166,9 +166,11 @@ export class InstanceTableRowElementComponent implements OnInit {
     this.editAction.emit(attributeValue);
   }
 
-  onkeypress(e: any){
+  onKeyDown(e: any){
     //ctrl and enter key
-    if(e.ctrlKey && e.keyCode == 13){
+    // TODO: need to implement the following behavior
+    // enter without control to commit and enter with control to enter a new line
+    if(e.ctrlKey && e.key === 'Enter'){
       this.onChange();
    }
   }

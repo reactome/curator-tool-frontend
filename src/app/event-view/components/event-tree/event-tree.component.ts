@@ -1,13 +1,14 @@
 import { FlatTreeControl } from "@angular/cdk/tree";
 import { ChangeDetectorRef, Component, EventEmitter, inject, Output } from '@angular/core';
+import { MatDialog } from "@angular/material/dialog";
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
-import { AttributeCondition, Instance } from "../../../core/models/reactome-instance.model";
-import { DataService } from "../../../core/services/data.service";
 import { ActivatedRoute, Router } from "@angular/router";
 import { forkJoin, take } from "rxjs";
-import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
-import { MatDialog } from "@angular/material/dialog";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
+import { InstanceUtilities } from "src/app/core/services/instance.service";
+import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
+import { Instance } from "../../../core/models/reactome-instance.model";
+import { DataService } from "../../../core/services/data.service";
 
 /** Tree node with expandable and level information */
 // TODO: 1). After the tree loaded, do a path to set up parent for each navigation; 
@@ -40,6 +41,7 @@ export class EventTreeComponent {
   // Listen to add to diagram view event
   @Output() addToDiagram = new EventEmitter<Instance>;
   @Output() eventClicked = new EventEmitter<number>;
+  @Output() createEmptyDiagramEvent = new EventEmitter<number>;
   
   // To track the diagram path when the diagram is opened by clicking
   diagramNodePath: EventNode[] | undefined;
@@ -102,6 +104,7 @@ export class EventTreeComponent {
     private cdr: ChangeDetectorRef,
     private service: DataService,
     private route: ActivatedRoute,
+    private instUtils: InstanceUtilities,
     private router: Router) {
     // Make sure this is called only once using take(1)
     // We call this only once. Therefore, always need to load the tree
@@ -135,21 +138,35 @@ export class EventTreeComponent {
     this.cacheTreePaths();
     const diagramPathwayId = Number(paramsId);
     const select = Number(this.route.snapshot.queryParams['select']);
+    this.goToPathway(select, diagramPathwayId);
+  }
+
+  goToPathway(select: number|undefined, diagramPathwayId: number) {
     const matchedNodes = this.selectNodes(select ? select : diagramPathwayId, diagramPathwayId);
+    // If no math, do nothing
+    if (!matchedNodes || matchedNodes.length === 0)
+      return;
     // If there is no diagram for the dbId, we need to re-route to load the diagram
     // This case occurs when a reaction is passed as dbId, e.g. localhost:4200/event_view/instance/9615721
-    // The last check to make sure it is for a reaction
-    if (matchedNodes && matchedNodes.length > 0 && REACTION_TYPES.includes(matchedNodes[0].className)) {
+    // or a pathway having no diagram is passed, http://localhost:4200/event_view/instance/69615
+    // Check if the diagram node is this diagramPathwaId
+    const diagramNode = this.findAncestorDiagramNode(matchedNodes[0]);
+    if (!diagramNode)
+      return; // Nothing to display
+
+    // if (diagramNode.dbId !== diagramPathwayId) {
       // Let's just used the first node right now
       this.navigateToEventNode(matchedNodes[0]);
       // mimic a tree click event so that the instance can be shown in the instance view
       this.eventClicked.emit(matchedNodes[0].dbId);
-    }
-    else if (!select) {
-      // Handle a case like this: http://localhost:4200/event_view/instance/9615710 for a pathway having diagram
-      // Therefore, the pathway instance can be loaded in the instance view.
-      this.eventClicked.emit(diagramPathwayId); 
-    }
+    // }
+    // else if (!select) {
+    //   // Handle a case like this: http://localhost:4200/event_view/instance/9615710 for a pathway having diagram
+    //   // Therefore, the pathway instance can be loaded in the instance view.
+    //   // this.setDiagramNodePath(matchedNodes[0]);
+    //   this.handleEventClick(matchedNodes[0]);
+    //   // this.eventClicked.emit(diagramPathwayId);
+    // }
   }
 
   private cacheTreePaths() {
@@ -240,6 +257,9 @@ export class EventTreeComponent {
     const element = document.querySelector('.event_text_hilite') as HTMLElement;
     if (element && !this.elementsIsInView(element))
       element.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'nearest'});
+    // Set the URL
+    this.router.navigate(['/event_view/instance/' + diagramNode.dbId],
+      {queryParams: {select: dbId}, queryParamsHandling: 'merge'});
   }
 
   private elementsIsInView(element: HTMLElement): boolean {
@@ -275,14 +295,13 @@ export class EventTreeComponent {
   }
 
   private navigateToEventNode(event: EventNode) {
-    const diagramNode = this.findAncestorDiagramNode(event);
+    const diagramNode = this.setDiagramNodePath(event);
     if (diagramNode) {
-      this.diagramNodePath = this.getTreePath(diagramNode);
-      this.selectionFromTree = true;
       if (diagramNode === event) {
         this.router.navigate(['/event_view/instance/' + diagramNode.dbId]);
       }
       else {
+        this.selectionFromTree = true;
         this.router.navigate(['/event_view/instance/' + diagramNode.dbId],
           {queryParams: {select: event.dbId}, queryParamsHandling: 'merge'});
       }
@@ -290,6 +309,34 @@ export class EventTreeComponent {
     else {
       console.error('Cannot find a higher level pathway having diagram for ' + event.name);
     }
+  }
+
+  private setDiagramNodePath(event: EventNode) {
+    const diagramNode = this.findAncestorDiagramNode(event);
+    if (diagramNode) 
+      this.diagramNodePath = this.getTreePath(diagramNode);
+    return diagramNode;
+  }
+
+  createEmptyDiagram(node: EventNode) {
+    this.createEmptyDiagramEvent.emit(node.dbId);
+    // Wait a little bit
+    setTimeout(() => {
+      this.handleEventClick(node);
+      // Make sure the node get updated since it has diagram now
+      for (let node1 of this.treeControl.dataNodes) {
+        if (node1.dbId === node.dbId)
+          node1.hasDiagram = true;
+      }
+    }, 500);
+  }
+
+  needCreateEmptyDiagramBtn(node: EventNode) {
+    if (REACTION_TYPES.includes(node.className))
+      return false;
+    if (node.hasDiagram)
+      return false;
+    return true;
   }
 
   addToDiagramAction(node: EventNode) {

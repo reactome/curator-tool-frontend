@@ -7,6 +7,7 @@
       <event-filter (speciesChanged)="handleSpeciesSelection($event)"
                     (filterTextChanged)="handleEventFilterTextChanged($event)" *ngIf="!showChanged"></event-filter>
       <app-event-tree (addToDiagram)="addEventToDiagram($event)" (eventClicked)="handleEventClicked($event)"
+                       (createEmptyDiagramEvent)="createEmptyDiagram($event)"
                       #eventTree *ngIf="!showChanged"></app-event-tree>
       <!-- calling classAction will close this list since it should be true. -->
       <app-updated-instance-list *ngIf="showChanged" (closeAction)="showUpdatedInstances(false)" [blockRoute]="true"></app-updated-instance-list>
@@ -21,7 +22,7 @@
       <div style="display: flex; flex-direction: column; height: 100%;;">
         <div style="flex: 2; overflow: hidden;">
           <div style="height: 100%; overflow-x: auto;">
-              <app-pathway-diagram #diagramView></app-pathway-diagram>
+              <app-pathway-diagram #diagramView (goToPathwayEvent)="handleGoToPathEvent($event)"></app-pathway-diagram>
           </div>
         </div>
         <div [style.height]="window.innerHeight - 40 - diagramHeight + 'px'">
