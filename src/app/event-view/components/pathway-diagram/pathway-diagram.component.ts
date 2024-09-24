@@ -4,7 +4,7 @@
  */
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, EventEmitter, inject, OnInit, Output, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
 import { filter, map } from 'rxjs';
 import { EditorActionsComponent, ElementType } from './editor-actions/editor-actions.component';
@@ -111,24 +111,25 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       this.selectObjectsInDiagram(this.select);
     })
     // The following works and may provide some flexibility. However,
-    // this may bring us some headack to handle the two subscriptions
+    // this may bring us some headace to handle the two subscriptions
     // for both pathParams and queryParams. It may not be reliable
     // to figure out the sequence of these two subscriptions. Therefore,
     // we will handle the event click directly to synchronize selection.
-    // // Handle the selection when in the same diagram.
-    // // Ideally this should be handled inside the diagram widget.
-    // this.router.events.pipe(
-    //   filter(event => event instanceof NavigationEnd)
-    // ).subscribe(() => {
-    //   // Handle query params change here
-    //   const queryParams = this.route.snapshot.queryParams;
-    //   const params = this.route.snapshot.params;
-    //   console.log('Query Params Changed in pathway-diagram: ', queryParams);
-    //   console.log('Route params in pathway-diagram: ', params);
-    //   if (this.pathwayId !== params['id'])
-    //     return;
-    //   this.selectObjectsInDiagram(queryParams['select']);
-    // });
+    // Handle the selection when in the same diagram.
+    // Ideally this should be handled inside the diagram widget.
+    // Turn both on and pay attention to any side effects
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      // Handle query params change here
+      const queryParams = this.route.snapshot.queryParams;
+      const params = this.route.snapshot.params;
+      console.log('Query Params Changed in pathway-diagram: ', queryParams);
+      console.log('Route params in pathway-diagram: ', params);
+      if (this.pathwayId !== params['id'])
+        return;
+      this.selectObjectsInDiagram(queryParams['select']);
+    });
   }
 
   /**

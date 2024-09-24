@@ -257,6 +257,9 @@ export class EventTreeComponent {
     const element = document.querySelector('.event_text_hilite') as HTMLElement;
     if (element && !this.elementsIsInView(element))
       element.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'nearest'});
+    // Set the URL
+    this.router.navigate(['/event_view/instance/' + diagramNode.dbId],
+      {queryParams: {select: dbId}, queryParamsHandling: 'merge'});
   }
 
   private elementsIsInView(element: HTMLElement): boolean {
