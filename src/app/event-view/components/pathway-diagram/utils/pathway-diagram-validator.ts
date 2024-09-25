@@ -229,7 +229,7 @@ export class PathwayDiagramValidator{
             sum_x += node.position().x;
             sum_y += node.position().y;
         }
-        return {x: sum_x / nodes.length(), y: sum_y / nodes.length};
+        return {x: sum_x / nodes.length, y: sum_y / nodes.length};
     }
 
     private mapAttributeToType(attValue: Instance, attribute: string): string | undefined {

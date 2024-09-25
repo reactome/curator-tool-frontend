@@ -1,7 +1,6 @@
 import { createFeatureSelector, createSelector } from "@ngrx/store";
 import {
   DeletedInstanceState,
-  LastUpdatedInstanceState,
   NewInstanceState,
   UpdatedInstanceState,
   deletedInstancesAdaptor,
@@ -15,14 +14,6 @@ export const updatedInstanceState = createFeatureSelector<UpdatedInstanceState>(
 export const updatedInstances = () => createSelector(
   updatedInstanceState,
   (state: UpdatedInstanceState) => updatedInstancesAdaptor.getSelectors().selectAll(state)
-)
-
-// Last updated instance
-export const LAST_UPDATED_INSTANCE_STATE_NAME = "last_updated_instance"
-export const lastUpdatedInstanceState = createFeatureSelector<LastUpdatedInstanceState>(LAST_UPDATED_INSTANCE_STATE_NAME);
-export const lastUpdatedInstance = () => createSelector(
-  lastUpdatedInstanceState,
-  (state: LastUpdatedInstanceState) => ({attribute: state.attribute, instance: state.instance})
 )
 
 // new instance state

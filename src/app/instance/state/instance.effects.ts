@@ -67,7 +67,7 @@ export class InstanceEffects {
           this.dataService.registerInstance(inst.instance);
           // Need a shell to avoid locking the instance
           this.store.dispatch(UpdateInstanceActions.ls_last_updated_instance({
-            attribute: inst.attribuate,
+            attribute: inst.attribute,
             instance: this.instUtils.makeShell(inst.instance)
           }));
           // By registering instance, the identify if the instance obejct is changed.
@@ -75,6 +75,7 @@ export class InstanceEffects {
           // for both display and cache. This call is duplicated for registering (for updated)
           // But so far, there is no better way to solve this issue
           this.instUtils.setRefreshViewDbId(inst.instance.dbId);
+          this.instUtils.setLastUpdatedInstance(inst.attribute, inst.instance);
           break;
         case DeleteInstanceActions.register_deleted_instance.type:
           // Don't register any change for the deleted instance.
@@ -177,7 +178,7 @@ export class InstanceEffects {
         tap((action) => {
           this.dataService.fetchInstance(action.instance.dbId).subscribe(fullInst => {
             const clone = {
-              attribuate: action.attribute,
+              attribute: action.attribute,
               instance: {
                 ...fullInst,
                 schemaClass: undefined, // No need to push the schemaClass around
@@ -188,6 +189,7 @@ export class InstanceEffects {
           });
           // There is no need to put the whole list into the local storage.
           // This should be handled by the above effect
+          this.instUtils.setLastUpdatedInstance(action.attribute, action.instance);
         })
       ),
     { dispatch: false }

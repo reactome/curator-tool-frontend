@@ -36,7 +36,17 @@ export class InstanceUtilities {
     private resetInst = new Subject<{modifiedAttributes: string[]|undefined, dbId: number}>();
     resetInst$ = this.resetInst.asObservable();
 
+    private lastUpdatedInstance = new Subject<{attribute: string, instance: Instance}>();
+    lastUpdatedInstance$ = this.lastUpdatedInstance.asObservable();
+
     constructor() { }
+
+    setLastUpdatedInstance(attribute: string, instance: Instance) {
+        this.lastUpdatedInstance.next({
+            attribute: attribute, 
+            instance: instance
+        });
+    }
 
     setCommittedNewInstDbId(oldDbId: number, newDbId: number) {
         this.committedNewInstDbId.next([oldDbId, newDbId]);

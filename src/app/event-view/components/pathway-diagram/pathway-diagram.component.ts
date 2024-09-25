@@ -15,7 +15,6 @@ import { EDGE_POINT_CLASS, Instance } from 'src/app/core/models/reactome-instanc
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { Store } from '@ngrx/store';
-import { lastUpdatedInstance } from 'src/app/instance/state/instance.selectors';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 @Component({
@@ -76,11 +75,11 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   }
 
   ngOnInit() {
-    this.store.select(lastUpdatedInstance()).subscribe(lastUpdated => {
-      this.diagramUtils.handleInstanceEdit(lastUpdated.attribute, lastUpdated.instance, this);
-    });
     this.instUtil.resetInst$.subscribe((data)=> {
       this.diagramUtils.handleInstanceReset(data, this);
+    });
+    this.instUtil.lastUpdatedInstance$.subscribe(data => {
+      this.diagramUtils.handleInstanceEdit(data.attribute, data.instance, this);
     });
   }
 
