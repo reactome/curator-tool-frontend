@@ -58,7 +58,7 @@ export class StatusComponent implements OnInit {
   @HostListener('window:beforeunload', ['$event'])
   persistInstances(): void {
     console.debug('Calling persist instance before window closing...');
-    const instances = [...this.newInstances, ...this.updatedInstances];
+    const instances = [...this.newInstances, ...this.updatedInstances, ...this.deletedInstances];
     if (instances.length == 0) {
       this.dataService.deletePersistedInstances('test').subscribe(() => {
         console.debug('Delete any persisted instance at the server.');

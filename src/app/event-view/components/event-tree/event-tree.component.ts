@@ -29,7 +29,8 @@ interface EventNode {
   children: EventNode[] | undefined,
   species: string | undefined,
   hide: boolean,
-  focus: boolean
+  focus: boolean,
+  instance: Instance, // data object
 }
 
 @Component({
@@ -56,6 +57,9 @@ export class EventTreeComponent {
 
   showProgressSpinner: boolean = true;
 
+  // Cache tree nodes for editing
+  private dbId2node = new Map<number, EventNode[]>();
+
   private _transformer = (node: Instance, level: number) => {
     // TODO: Why does Typescript think that node.attributes is an Object and not a Map (has/get/set methods don't work)
     // The reason is that attributes are converted directly from JSON in the data service!!! Need to think about it!
@@ -74,7 +78,8 @@ export class EventTreeComponent {
       children: undefined,
       species: node.attributes?.['speciesName'] ?? undefined,
       hide: false,
-      focus: false
+      focus: false,
+      instance: node,
     };
   };
 
@@ -126,6 +131,50 @@ export class EventTreeComponent {
         }
       });
     });
+
+    this.instUtils.lastUpdatedInstance$.subscribe(data => {
+      this.handleEventEdit(data.attribute, data.instance);
+    });
+
+    this.instUtils.markDeletionDbId$.subscribe(dbId => {
+      this.handleInstanceDeletion(dbId);
+    })
+  }
+
+  private handleInstanceDeletion(dbId: number) {
+    console.debug('Handle instance deletion in event tree: ' + dbId);
+    const treeNodes = this.dbId2node.get(dbId);
+    if (!treeNodes)
+      return;
+    let needUpdate = false;
+    for (let treeNode of treeNodes) {
+      const parentInst = treeNode.parent?.instance;
+      if (!parentInst)
+        continue;
+      const index = parentInst.attributes['hasEvent'].indexOf(treeNode.instance);
+      if (index >= 0) {
+        parentInst.attributes['hasEvent'].splice(index, 1);
+        needUpdate = true;
+      }
+    }
+    if (needUpdate) {
+      const root = this.dbId2node.get(0)![0].instance;
+      this.processEventTreeData(root, '');
+    }
+  }
+
+  private handleEventEdit(attribute: string, event: Instance) {
+    // if (attribute !== 'hasEvent')
+    //   return; // We need to handle hasEvent editing only
+    for (let node of this.treeControl.dataNodes) {
+      if (node.dbId !== event.dbId) 
+        continue;
+      if (node.name !== event.displayName) {
+        node.name = event.displayName ?? '';
+        node.children?.splice(0, 1);
+        console.debug(node.children);
+      }
+    }
   }
 
   private processEventTreeData(data: any, paramsId: string) {
@@ -173,8 +222,13 @@ export class EventTreeComponent {
     if (this.treeControl === undefined || this.treeControl.dataNodes === undefined)
       return; // Just safegurard. Should not happen
     // Bottom up: the running time should be log(N) * N
+    this.dbId2node.clear();
     for (let i = this.treeControl.dataNodes.length - 1; i >= 0; i--) {
       const node = this.treeControl.dataNodes[i];
+      if (this.dbId2node.has(node.dbId))
+        this.dbId2node.get(node.dbId)?.push(node);
+      else
+        this.dbId2node.set(node.dbId, [node]);
       // Find its parent node
       for (let j = i - 1; j >= 0; j--) {
         const other = this.treeControl.dataNodes[j];

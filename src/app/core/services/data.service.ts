@@ -556,7 +556,7 @@ export class DataService {
   private cloneUserInstances(userInstances: UserInstances): UserInstances {
     const newInstances = userInstances.newInstances.map(i => this.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
     const updatedInstances = userInstances.updatedInstances.map(i => this.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
-    const deletedInstances = userInstances.deletedInstances.map(i => this.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
+    const deletedInstances = userInstances.deletedInstances.map(i => this.utils.makeShell(i));
     // There is no need to get the full instance for a bookmark
     const bookmarks = userInstances.bookmarks.map(i => this.cloneInstanceForCommit(i));
     return {

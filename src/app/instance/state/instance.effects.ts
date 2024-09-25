@@ -204,6 +204,8 @@ export class InstanceEffects {
         tap((action) => {
           // There is no need to query. Actually nothing to query.
           this.setLocalStorageItem(action.type, this.instUtils.stringifyInstance(action.valueOf() as Instance));
+          if (action.type === DeleteInstanceActions.register_deleted_instance.type)
+            this.instUtils.setMarkDeletionDbId(action.dbId);
         })
       ),
     { dispatch: false }

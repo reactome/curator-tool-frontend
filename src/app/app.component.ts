@@ -77,19 +77,19 @@ export class AppComponent {
     // schemaClass will be handled whenever it is needed. 
     const updated = localStorage.getItem(UpdateInstanceActions.get_updated_instances.type);
     if (updated) {
-      const updatedInsts = JSON.parse(updated);
+      const updatedInsts = JSON.parse(JSON.parse(updated).object);
       userInstances.updatedInstances = updatedInsts;
       updatedInsts.forEach((inst: any) => this.dataService.registerInstance(inst));
     }
     const newInstText = localStorage.getItem(NewInstanceActions.get_new_instances.type);
     if (newInstText) {
-      const newInstances = JSON.parse(newInstText);
+      const newInstances = JSON.parse(JSON.parse(newInstText).object);
       userInstances.newInstances = newInstances;
       newInstances.forEach((inst: any) => this.dataService.registerInstance(inst));
     }
     const deleted = localStorage.getItem(DeleteInstanceActions.get_deleted_instances.type);
     if (deleted) {
-      const deletedInsts = JSON.parse(deleted);
+      const deletedInsts = JSON.parse(JSON.parse(deleted).object);
       userInstances.deletedInstances = deletedInsts;
       deletedInsts.forEach((inst: any) => this.dataService.registerInstance(inst));
     }

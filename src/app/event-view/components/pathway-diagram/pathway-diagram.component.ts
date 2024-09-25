@@ -130,8 +130,6 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       // Handle query params change here
       const queryParams = this.route.snapshot.queryParams;
       const params = this.route.snapshot.params;
-      console.log('Query Params Changed in pathway-diagram: ', queryParams);
-      console.log('Route params in pathway-diagram: ', params);
       if (this.pathwayId !== params['id'])
         return;
       const currentSelected = queryParams['select'];

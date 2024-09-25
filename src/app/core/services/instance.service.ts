@@ -21,6 +21,12 @@ export class InstanceUtilities {
     private refreshViewDbId = new Subject<number>();
     refreshViewDbId$ = this.refreshViewDbId.asObservable();
 
+    // Call this when an database is marked as deletion but not yet committed to
+    // the database
+    private markDeletionDbId = new Subject<number>();
+    markDeletionDbId$ = this.markDeletionDbId.asObservable();
+
+    // Call this when an instance deletion is committed to the database
     private deletedDbId = new Subject<number>();
     deletedDbId$ = this.deletedDbId.asObservable();
 
@@ -54,6 +60,10 @@ export class InstanceUtilities {
 
     setDeletedDbId(dbId: number) {
         this.deletedDbId.next(dbId);
+    }
+
+    setMarkDeletionDbId(dbId: number) {
+        this.markDeletionDbId.next(dbId);
     }
 
     setResetInstance(modifiedAtts: string[]|undefined, dbId: number) {
