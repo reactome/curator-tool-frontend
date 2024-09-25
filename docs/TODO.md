@@ -4,6 +4,7 @@
 - The autoscroll for the instance view in the event view scroll the whole instance view. But we need to scroll the table content only just like in the schemw view.
 - skip and limit are not udpated even for simple search
 - go to pathway in the diagram sometimes has weird selection: the pathway selected is stuck in the URL!
+- the reset in the comparison table cannot fire event across the browser tabs.
 
 #### Deidre
 - deletion needs to refresh the list if it is done in the list (maybe not if it has not committed. Probably only for new instance?)
@@ -41,6 +42,8 @@
 - instance comparison: between two instances in the list view
 - for no-instance edit, press return should commit the change. Control-return should add a new line.
 - for deletion, if no referrers existing for an instance, don't show the referrers dialog.
+- pathway diagram: deletion of a reaction in the diagram should delete that reaction. This applies to other object (e.g. a PE that is linked to a reaction).
+- stoichioemtry update has not done yet for diagram update after instance editing.
 
 
 #### Notes:

@@ -11,9 +11,6 @@ import { Instance } from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
 
 /** Tree node with expandable and level information */
-// TODO: 1). After the tree loaded, do a path to set up parent for each navigation; 
-// 2). Record the path that is used to set the router url which is used to load the diagram
-// 3). If the path exists from 2 and it is open. Don't open anything!
 // NOTE: TRIED NestTreeControl. It cannot work! Don't try again until having more ideas!!!
 interface EventNode {
   expandable: boolean;
@@ -138,11 +135,12 @@ export class EventTreeComponent {
 
     this.instUtils.markDeletionDbId$.subscribe(dbId => {
       this.handleInstanceDeletion(dbId);
-    })
+    });
   }
 
   private handleInstanceDeletion(dbId: number) {
-    console.debug('Handle instance deletion in event tree: ' + dbId);
+    if (!this.treeControl || !this.treeControl.dataNodes)
+      return;
     const treeNodes = this.dbId2node.get(dbId);
     if (!treeNodes)
       return;
@@ -164,15 +162,73 @@ export class EventTreeComponent {
   }
 
   private handleEventEdit(attribute: string, event: Instance) {
-    // if (attribute !== 'hasEvent')
-    //   return; // We need to handle hasEvent editing only
+    if (!this.treeControl || !this.treeControl.dataNodes)
+      return; // Do nothing if there is nothing to do.
+    if (attribute === 'name') {
+      // Name can be updated automatically without making data update
+      const treeNodes = this.dbId2node.get(event.dbId);
+      if (!treeNodes)
+        return;
+      for (let treeNode of treeNodes) {
+        if (treeNode.name !== event.displayName)
+          treeNode.name = event.displayName ?? '';
+      }
+      return;
+    }
+    else if (attribute == 'hasEvent') {
+      this.handleHasEventEdit(event);
+    }
+  }
+
+  private handleHasEventEdit(event: Instance) {
+    const treeNodes = this.dbId2node.get(event.dbId);
+    if (!treeNodes || treeNodes.length === 0)
+      return; // Nothing to do. This event is not in the current tree
+    for (let treeNode of treeNodes) {
+      // What we are really doing is to update the event instances
+      // referred in the tree so that we can update the data source 
+      // of the tree
+      // For simplicity, just reset its hasEvent
+      const treeInstHasEvent = [];
+      if (event.attributes.get('hasEvent')) {
+        for (let tmpInst of event.attributes.get('hasEvent')) {
+          let tmpTreeInst = undefined;
+          // See if there is any instance existing in the tree
+          const tmpNodes = this.dbId2node.get(tmpInst.dbId);
+          if (tmpNodes && tmpNodes.length > 0) {
+            tmpTreeInst = tmpNodes[0].instance;
+          }
+          else {
+            // Just use itself
+            tmpTreeInst = tmpInst;
+          }
+          treeInstHasEvent.push(tmpTreeInst);
+        }
+      }
+      treeNode.instance.attributes['hasEvent'] = treeInstHasEvent;
+    }
+    const root = this.dbId2node.get(0)![0].instance;
+    this.processEventTreeData(root, '');
+  }
+
+  private copyNodesInfo() {
+    if (this.dbId2node.size == 0)
+      return; // Nothing to copy
     for (let node of this.treeControl.dataNodes) {
-      if (node.dbId !== event.dbId) 
+      const oldNodes = this.dbId2node.get(node.dbId);
+      if (!oldNodes)
         continue;
-      if (node.name !== event.displayName) {
-        node.name = event.displayName ?? '';
-        node.children?.splice(0, 1);
-        console.debug(node.children);
+      // Make sure the same level is used
+      for (let oldNode of oldNodes) {
+        if (oldNode.level === node.level) {
+          // This is the node whose rendering information should be copied.
+          node.hide = oldNode.hide;
+          node.focus = oldNode.focus;
+          node.hilite = oldNode.hilite;
+          if (this.treeControl.isExpanded(oldNode))
+            this.treeControl.expand(node);
+          break;
+        }
       }
     }
   }
@@ -183,6 +239,7 @@ export class EventTreeComponent {
     // Expand the root note and tag it as rootNode - so that it can be hidden in html
     let rootNode = this.treeControl.dataNodes[0];
     this.treeControl.expand(rootNode);
+    this.copyNodesInfo();
     // Cache the tree parent/child relationship for performance
     this.cacheTreePaths();
     const diagramPathwayId = Number(paramsId);

@@ -186,10 +186,11 @@ export class InstanceEffects {
               }
             }
             this.setLocalStorageItem(action.type, JSON.stringify(clone));
+            // Need the full inst for other
+            this.instUtils.setLastUpdatedInstance(action.attribute, fullInst);
           });
           // There is no need to put the whole list into the local storage.
           // This should be handled by the above effect
-          this.instUtils.setLastUpdatedInstance(action.attribute, action.instance);
         })
       ),
     { dispatch: false }
