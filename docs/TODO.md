@@ -44,6 +44,7 @@
 - for deletion, if no referrers existing for an instance, don't show the referrers dialog.
 - pathway diagram: deletion of a reaction in the diagram should delete that reaction. This applies to other object (e.g. a PE that is linked to a reaction).
 - stoichioemtry update has not done yet for diagram update after instance editing.
+- Add a check for event tree to see if there is any circular reference
 
 
 #### Notes:
