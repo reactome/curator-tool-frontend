@@ -11,7 +11,8 @@
   </mat-select>
 <!--  TODO: change to case statement-->
   <ng-container *ngIf="attributeValue.editAction === 0">
-    <app-instance-table [instance]="instance"></app-instance-table>
+    <!-- Don't fire any editing event to the ngrx store during creating and before committing -->
+    <app-instance-table [instance]="instance" [preventEvent]="true"></app-instance-table>
   </ng-container>
   <ng-container *ngIf="attributeValue.editAction === 1">
     <app-instance-selection [setClassName]="candidateClasses[0]" [isSelection]="true"

@@ -46,6 +46,8 @@ export class InstanceTableComponent implements PostEditListener {
   sortAttDefined: boolean = false;
   filterEdited: boolean = false;
   @Input() blockRouter: boolean = false;
+  // During new instance creating in a diagram, don't fire any event
+  @Input() preventEvent: boolean = false;
 
   categoryNames = Object.keys(AttributeCategory).filter((v) =>
     isNaN(Number(v))
@@ -319,6 +321,7 @@ export class InstanceTableComponent implements PostEditListener {
     // Register the updated instances
     this.registerUpdatedInstance(attName);
     // Fire an event for other components to update their display (e.g. display name)
+    // Usually this should be fired without issue
     this.editedInstance.emit(this._instance);
   }
 
@@ -374,6 +377,8 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   private registerUpdatedInstance(attName: string): void {
+    if (this.preventEvent)
+      return;
     let cloned: Instance = this.instUtil.makeShell(this._instance!);
     if (this._instance!.dbId > 0) {
       // Have to make a clone to avoid any change to the current _instance!
