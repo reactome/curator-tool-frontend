@@ -1,7 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
-import { Store } from "@ngrx/store";
-import { catchError, concatMap, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
+import { catchError, concatMap, forkJoin, map, Observable, of, Subject, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
 import {
@@ -9,7 +8,6 @@ import {
   SchemaClass
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
-import { deleteInstances } from "src/app/instance/state/instance.selectors";
 
 
 @Injectable({
@@ -22,7 +20,7 @@ export class DataService {
   // Cache fetched SchemaClass objects
   // This map caches loaded schema class that has attributes defined
   private name2SchemaClass: Map<string, SchemaClass> = new Map<string, SchemaClass>();
-  // This map is used to make schema class traveral easy. The SchemaClass in this map
+  // This map is used to make schema class traversal easy. The SchemaClass in this map
   // is not loaded, i.e., without attributes
   private name2SimpleClass: Map<string, SchemaClass> = new Map<string, SchemaClass>();
   // Cache fetched instances
@@ -47,7 +45,7 @@ export class DataService {
   private uploadCyNetworkUrl = `${environment.ApiRoot}/uploadCyNetwork/`;
   private hasCyNetworkUrl = `${environment.ApiRoot}/hasCyNetwork/`;
   private getCyNetworkUrl = `${environment.ApiRoot}/getCyNetwork/`;
-  private deleteSimpleInstance = `${environment.ApiRoot}/delete/`;
+  private deleteInstaneUrl = `${environment.ApiRoot}/delete/`;
 
 
   // Track the negative dbId to be used
@@ -61,8 +59,7 @@ export class DataService {
   private loadInstanceSubject : Subject<void> | undefined = undefined;
 
   constructor(private http: HttpClient,
-    private utils: InstanceUtilities,
-    private store: Store
+    private utils: InstanceUtilities
   ) {
   }
 
@@ -163,7 +160,7 @@ export class DataService {
             schemaClassName: "TopLevelPathway",
             attributes: {"hasEvent": data}
           };
-          this.mergeLocalChangesToEventTree(rootEvent);
+          this.utils.mergeLocalChangesToEventTree(rootEvent, this.id2instance);
           this.rootEvent = rootEvent;
           return rootEvent;
         }),
@@ -174,90 +171,6 @@ export class DataService {
           });
           return throwError(() => err);
         }));
-  }
-
-  private mergeLocalChangesToEventTree(rootEvent: Instance) {
-    // For quick search 
-    const id2event = new Map<number, Instance>();
-    this.grepId2Event(rootEvent, id2event);
-    // Event deletion may impact the tree structure
-    // therefore, we need to check it too
-    this.store.select(deleteInstances()).pipe(take(1)).subscribe(insts => {
-      const deletedDbIds = insts ? insts.map(i => i.dbId) : [];
-      this._mergeLocalChangesToEventTree(rootEvent, id2event, deletedDbIds);
-    });
-  }
-
-  private _mergeLocalChangesToEventTree(event: Instance, id2event: Map<number, Instance>, deletedDbIds: number[]) {
-    const local = this.id2instance.get(event.dbId);
-    if (local) {
-      if (local.dbId < 0) {
-        // This is a new instance
-        this.replaceHasEvent(local, event, id2event);
-      }
-      else if (local.modifiedAttributes && local.modifiedAttributes.length > 0) {
-        for (let modifiedAtt of local.modifiedAttributes) {
-          // These attributes are related to the event tree
-          if (modifiedAtt === 'name')
-            event.displayName = local.displayName; // Display name may change
-          else if (modifiedAtt === 'hasDiagram' || modifiedAtt === '_doRelease' || modifiedAtt === 'speciesName')
-            event.attributes[modifiedAtt] = local.attributes.get(modifiedAtt);
-          else if (modifiedAtt === 'hasEvent') {
-            // This is much more complicated. Here, we just replace the whole hasEvent list
-            // This is similar to handleHasEventEdit in EventTreeComponent
-            this.replaceHasEvent(local, event, id2event);
-          }
-        }
-      }
-    }
-    // Recursive calling
-    if (event.attributes?.hasEvent) {
-      for (let i = 0; i < event.attributes.hasEvent.length; i++) {
-        let child = event.attributes.hasEvent[i];
-        if (deletedDbIds.includes(child.dbId)) {
-          event.attributes.hasEvent.splice(i, 1);
-          i--; // This is important: need to adjust the index after removal to check the next one 
-        }
-        else {
-          // Recursively process the child
-          this._mergeLocalChangesToEventTree(child, id2event, deletedDbIds);
-        }
-      }
-    }
-  }
-
-  private replaceHasEvent(localEvent: Instance, dbEvent: Instance, id2event: Map<number, Instance>) {
-    const newHasEvent = [];
-    if (localEvent.attributes.get('hasEvent')) {
-      for (let tmpInst of localEvent.attributes.get('hasEvent')) {
-        let childEvent = id2event.get(tmpInst.dbId);
-        if (childEvent)
-          newHasEvent.push(childEvent);
-        else {
-          // This is a new instance
-          // Make a copy
-          // The new instance's hasEvent points to shell instances
-          // that are not in the event tree. However, calling this function
-          // _mergeLocalChanesToEventTree recursively will fix this issue.
-          // since hasEvent will
-          const newEvent = {
-            ...tmpInst,
-            attributes: { 'hasEvent': tmpInst.attributes?.get('hasEvent') }
-          };
-          newHasEvent.push(newEvent);
-        }
-      }
-    }
-    dbEvent.attributes['hasEvent'] = newHasEvent;
-  }
-
-  private grepId2Event(event: Instance, id2event: Map<number, Instance>) {
-    id2event.set(event.dbId, event);
-    if (event.attributes?.hasEvent) {
-      for (let child of event.attributes.hasEvent) {
-        this.grepId2Event(child, id2event);
-      }
-    }
   }
 
   /**
@@ -320,7 +233,13 @@ export class DataService {
     if (this.id2instance.has(dbId)) {
       return of(this.id2instance.get(dbId)!);
     }
-    return this.fetchInstanceFromDatabase(dbId, true);
+    // Need to apply deletion after loading from the database. But not
+    // in the loading. Otherwise, we will never get the original datbase copy.
+    return this.fetchInstanceFromDatabase(dbId, true).pipe(map(instance => {
+      this.utils.applyLocalDeletions(instance);
+      return instance;
+    }));
+    // return this.fetchInstanceFromDatabase(dbId, true);
   }
 
   /**
@@ -863,7 +782,7 @@ export class DataService {
    * @param instance
    */
   delete(instance: Instance): Observable<boolean> {
-    return this.http.post<boolean>(this.deleteSimpleInstance, instance).pipe(
+    return this.http.post<boolean>(this.deleteInstaneUrl, instance).pipe(
       catchError(error => {
         console.log("An error is thrown during deleting: \n" + error.message, "Close", {
           panelClass: ['warning-snackbar'],
