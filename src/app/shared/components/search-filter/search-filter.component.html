@@ -4,6 +4,7 @@
       [schemaClassAttributes]="attributes"
       [attributeCondition]=blankAttributeCondition
       (addAttributeCondition)="addAttribute($event)"
+      (submitAction)="completeQuery($event)"
       (removeAttributeCondition)="removeAttribute($event)">
     </app-attribute-condition>
   </div>

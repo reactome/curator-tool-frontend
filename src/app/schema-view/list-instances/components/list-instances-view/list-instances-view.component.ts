@@ -25,9 +25,12 @@ export class ListInstancesViewComponent implements AfterViewInit {
 
   // Need to use this hooker to ensure instanceList is there always!
   ngAfterViewInit(): void {
+    // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
+    setTimeout(() => {
     combineLatest([this.route.params, this.route.queryParams]).subscribe(
       ([params, queryParams]) => this.handleRoute(params, queryParams)
     );
+    })
   }
 
   private handleRoute(params: Params, queryParams: Params) {

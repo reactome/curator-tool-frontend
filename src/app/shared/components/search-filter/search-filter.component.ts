@@ -22,6 +22,8 @@ export class SearchInstanceComponent implements OnInit {
 
   @Output() searchInstancesAction: EventEmitter<AttributeCondition> = new EventEmitter();
   @Output() removeInstancesAction: EventEmitter<AttributeCondition> = new EventEmitter();
+  @Output() searchAction: EventEmitter<AttributeCondition> = new EventEmitter();
+
 
   // For doing search
   blankAttributeCondition : AttributeCondition = {
@@ -46,6 +48,10 @@ export class SearchInstanceComponent implements OnInit {
 
   addAttribute(attributeCondition: AttributeCondition) {
     this.searchInstancesAction.emit(attributeCondition);
+  }
+
+  completeQuery(attributeCondition: AttributeCondition) {
+    this.searchAction.emit(attributeCondition);
   }
 
   removeAttribute(attributeCondition: AttributeCondition) {

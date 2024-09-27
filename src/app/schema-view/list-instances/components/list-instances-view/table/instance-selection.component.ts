@@ -1,11 +1,11 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {PageEvent} from "@angular/material/paginator";
-import {AttributeCondition, Instance} from "../../../../../core/models/reactome-instance.model";
-import {DataService} from "../../../../../core/services/data.service";
-import {ViewOnlyService} from "../../../../../core/services/view-only.service";
-import {ActivatedRoute, Router} from "@angular/router";
-import {ReferrersDialogService} from "../../../../../instance/components/referrers-dialog/referrers-dialog.service";
-import {DeletionDialogService} from "../../../../../instance/components/deletion-dialog/deletion-dialog.service";
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { PageEvent } from "@angular/material/paginator";
+import { AttributeCondition, Instance } from "../../../../../core/models/reactome-instance.model";
+import { DataService } from "../../../../../core/services/data.service";
+import { ViewOnlyService } from "../../../../../core/services/view-only.service";
+import { ActivatedRoute, Router } from "@angular/router";
+import { ReferrersDialogService } from "../../../../../instance/components/referrers-dialog/referrers-dialog.service";
+import { DeletionDialogService } from "../../../../../instance/components/deletion-dialog/deletion-dialog.service";
 
 @Component({
   selector: 'app-instance-selection',
@@ -13,6 +13,7 @@ import {DeletionDialogService} from "../../../../../instance/components/deletion
   styleUrls: ['./instance-selection.component.scss'],
 })
 export class InstanceSelectionComponent implements OnInit {
+
   skip: number = 0;
   // For doing search
   searchKey: string | undefined = '';
@@ -37,21 +38,24 @@ export class InstanceSelectionComponent implements OnInit {
   @Output() queryEvent = new EventEmitter<string>();
 
 
-  // TODO: There is NG0100 error here: ExpressionChagnedAfterCheckingError. setTimeOut fix cannot work here!!!
   @Input() set setClassName(inputClassName: string) {
-    this.className = inputClassName;
-    this.skip = 0;
-    this.pageIndex = 0;
-    this.showProgressSpinner = true;
-    this.loadInstances();
-    this.loadSchemaClasses();
+    setTimeout(() => {
+      this.className = inputClassName;
+      this.skip = 0;
+      this.pageIndex = 0;
+      this.showProgressSpinner = true;
+      this.loadInstances();
+      this.loadSchemaClasses();
+    }); // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
+
+
   }
 
   constructor(private dataService: DataService,
-              private router: Router,
-              private route: ActivatedRoute,
-              private referrersDialogService: ReferrersDialogService,
-              private deletionDialogService: DeletionDialogService) {
+    private router: Router,
+    private route: ActivatedRoute,
+    private referrersDialogService: ReferrersDialogService,
+    private deletionDialogService: DeletionDialogService) {
   }
 
   ngOnInit(): void {
@@ -68,10 +72,10 @@ export class InstanceSelectionComponent implements OnInit {
     if (this.className && this.className.length > 0) {
       this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
         .subscribe((instancesList) => {
-            this.instanceCount = instancesList.totalCount;
-            this.showProgressSpinner = false;
-            this.data = instancesList.instances;
-          }
+          this.instanceCount = instancesList.totalCount;
+          this.showProgressSpinner = false;
+          this.data = instancesList.instances;
+        }
         )
     }
     //this.queryEvent.emit(this.searchKey);
@@ -103,7 +107,7 @@ export class InstanceSelectionComponent implements OnInit {
     if (this.useRoute) {
       let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
       if (this.searchKey && this.searchKey.trim().length > 0) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
-        this.router.navigate([url], {queryParams: {query: this.searchKey.trim()}});
+        this.router.navigate([url], { queryParams: { query: this.searchKey.trim() } });
       else
         this.router.navigate([url]);
     } else
@@ -148,8 +152,8 @@ export class InstanceSelectionComponent implements OnInit {
    * @param searchKeys
    */
   searchInstances(attributeNames: string[],
-                  operands: string[],
-                  searchKeys: string[]
+    operands: string[],
+    searchKeys: string[]
   ) {
     this.showProgressSpinner = true;
     this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributeNames, operands, searchKeys)
@@ -166,7 +170,7 @@ export class InstanceSelectionComponent implements OnInit {
    * @param searchFilters
    */
   searchAction(attributeCondition: AttributeCondition) {
-    if(this.advancedSearchKey !== '') {
+    if (this.advancedSearchKey !== '') {
       this.advancedSearchKey += ","
     }
     this.advancedSearchKey += "("
@@ -197,66 +201,73 @@ export class InstanceSelectionComponent implements OnInit {
   }
 
   parseAdvancedSearch(searchKey: string) {
-    let fullQuery = searchKey.split(',')
     let attributeConditions: AttributeCondition[] = [];
-    // let attributes = [];
-    // let operands = [];
-    // let searchKeys = [];
-    let url = '/schema_view/list_instances/' + this.className;
-    for (let query of fullQuery) {
-      let attributeName = query.split("(")[1].split("[")[0];
-      //attributes.push(attributeName);
-      let operand = query.split("[")[1].split(":")[0];
-      //operands.push(operand);
-      let searchKey = query.split(" ")[1].split("]")[0];
-      //searchKeys.push(searchKey);
-      let attribuateCondition: AttributeCondition = new class implements AttributeCondition {
-        attributeName: string = attributeName;
-        operand: string = operand;
-        searchKey: string = searchKey;
+    if (searchKey !== '') {
+      let fullQuery = searchKey.split(',')
+      for (let query of fullQuery) {
+        let attributeName = query.split("(")[1].split("[")[0];
+        let operand = query.split("[")[1].split(":")[0];
+        let searchKey = query.split(" ")[1].split("]")[0];
+        let attribuateCondition: AttributeCondition = new class implements AttributeCondition {
+          attributeName: string = attributeName;
+          operand: string = operand;
+          searchKey: string = searchKey;
+        }
+        attributeConditions.push(attribuateCondition);
       }
-      attributeConditions.push(attribuateCondition);
     }
-
     return attributeConditions;
   }
 
   advancedSearch(searchKey: string) {
-    let attributes = [];
-    let operands = [];
-    let searchKeys = [];
-    let url = '/schema_view/list_instances/' + this.className;
-    let attributeConditions: AttributeCondition[] = this.parseAdvancedSearch(searchKey);
+    if (searchKey !== '' || searchKey !== null) {
+      let attributes = [];
+      let operands = [];
+      let searchKeys = [];
+      let url = '/schema_view/list_instances/' + this.className;
+      let attributeConditions: AttributeCondition[] = this.parseAdvancedSearch(searchKey);
 
-    for(let attributeCondition of attributeConditions) {
-      attributes.push(attributeCondition.attributeName);
-      operands.push(attributeCondition.operand);
-      searchKeys.push(attributeCondition.searchKey);
+      for (let attributeCondition of attributeConditions) {
+        attributes.push(attributeCondition.attributeName);
+        operands.push(attributeCondition.operand);
+        searchKeys.push(attributeCondition.searchKey);
+      }
+      if (this.useRoute) {
+        if (searchKey && searchKey.trim().length > 0) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
+          this.router.navigate([url],
+            {
+              queryParams: {
+                attributes: attributes.toString(),
+                operands: operands.toString(),
+                searchKeys: searchKeys.toString()
+              },
+              // Merge will keep the simple search query in the header
+              //queryParamsHandling: 'merge' 
+            });
+        else
+          this.router.navigate([url]);
+      } else
+        this.loadInstances();
+      this.searchInstances(attributes, operands, searchKeys);
     }
-    if (this.useRoute) {
-      if (this.searchKey && this.searchKey.trim().length > 0) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
-        this.router.navigate([url],
-          {
-            queryParams: {
-              attributes: attributes.toString(),
-              operands: operands.toString(),
-              searchKeys: searchKeys.toString()
-            },
-            queryParamsHandling: 'merge'
-          });
-      else
-        this.router.navigate([url]);
-    } else
-      this.loadInstances();
-    this.searchInstances(attributes, operands, searchKeys);
   }
 
   removeParameter() {
     let attributeConditions: AttributeCondition[] = this.parseAdvancedSearch(this.advancedSearchKey!)
+    // Removing the last query 
     attributeConditions.pop();
     this.advancedSearchKey = '';
-    for(let attributeCondition of attributeConditions) {
+    for (let attributeCondition of attributeConditions) {
       this.searchAction(attributeCondition);
     }
+  }
+
+    /**
+   * Handle the search button action.
+   * @param searchFilters
+   */
+  completeSearch(attributeCondition: AttributeCondition) {
+    this.searchAction(attributeCondition);
+    this.advancedSearch(this.advancedSearchKey!)
   }
 }
