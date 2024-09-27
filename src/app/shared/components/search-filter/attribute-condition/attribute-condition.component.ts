@@ -16,8 +16,7 @@ export class AttributeConditionComponent {
 
   @Output() addAttributeCondition: EventEmitter<AttributeCondition> = new EventEmitter();
   @Output() removeAttributeCondition: EventEmitter<AttributeCondition> = new EventEmitter();
-  // Since AttributeCondition is passed, there is no need to track the changes for outside component.
-  // @Output() updateAttributeCondition: EventEmitter<AttributeCondition> = new EventEmitter();
+  @Output() submitAction: EventEmitter<AttributeCondition> = new EventEmitter();
 
   schemaAttributes: string[] = [];
 
@@ -38,6 +37,12 @@ export class AttributeConditionComponent {
   recordSearchKey(event: Event) {
     let text = (event.target as HTMLInputElement).value;
     this.attributeCondition.searchKey = text;
+  }
+
+  completeQuery(){
+    let copyAttributeCondition = this.attributeCondition;
+    this.attributeCondition = this.blankAttributeCondition;
+    this.submitAction.emit(copyAttributeCondition);
   }
 
   addNewPane(){
