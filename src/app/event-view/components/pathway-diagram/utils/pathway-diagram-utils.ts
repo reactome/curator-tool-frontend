@@ -214,6 +214,11 @@ export class PathwayDiagramUtilService {
             }
             compartment.data('width', compartment.data('width') - deltaX);
             compartment.data('height', compartment.data('height') - deltaY);
+            
+            // TODO: Somehow the background of the selected image y location cannot be updated
+            // Need to fix this bug.
+            // compartment.style('background-position-y', compartment.style('height'));
+
             this.updateResizeNodesPosition(compartment, nodeId, e.cy);
             this.ensureTwoLayerCompartment(compartment, nodeId, e.cy);
         }

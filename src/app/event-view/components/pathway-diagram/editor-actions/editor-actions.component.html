@@ -22,8 +22,8 @@
     <button style="margin-bottom: 1px" (click)="onClick('delete')">Remove Flow Line</button>
   </ng-container>
   <!-- Compartment has its own way -->
-  <ng-container *ngIf="elmType === elmTypes.COMPARTMENT">
-    <button style="margin-bottom: 1px" (click)="onClick('resizeCompartment')">Resize Compartment</button>
+  <ng-container *ngIf="elmType === elmTypes.COMPARTMENT || elmTypes.NODE">
+    <button style="margin-bottom: 1px" (click)="onClick('resizeCompartment')">Resize</button>
     <button style="margin-bottom: 1px" (click)="onClick('disableResize')">Disable Resizing</button>
   </ng-container>
   <ng-container *ngIf="elmType === elmTypes.EDGE_POINT">

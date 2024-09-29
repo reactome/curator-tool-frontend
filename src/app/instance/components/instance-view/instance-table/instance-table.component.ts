@@ -412,7 +412,8 @@ export class InstanceTableComponent implements PostEditListener {
     // If nothing is in the modifiedAttributes, remove this instance from the changed list
     if (this._instance.modifiedAttributes.length === 0) {
       this.store.dispatch(
-        UpdateInstanceActions.remove_updated_instance(this._instance)
+        // Always make a shell when dispatch to avoid lock the instance by ngrx store!!!
+        UpdateInstanceActions.remove_updated_instance(this.instUtil.makeShell(this._instance))
       );
     }
   }
