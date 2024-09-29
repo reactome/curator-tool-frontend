@@ -52,11 +52,17 @@ mat-vertical-stepper, mat-horizontal-stepper {
     display: flex !important;
   }
 
+
   //// To disable form field line underneath. PLease add something to distinguish editable fields
   //// before removing activating it
   //.mdc-line-ripple {
   //  display: none!important;
   //}
+}
+
+.mat-mdc-form-field-icon-prefix>.mat-icon, .mat-mdc-form-field-icon-suffix>.mat-icon {
+  padding: 0 !important;
+  box-sizing: content-box;
 }
 
 .mat-mdc-progress-spinner {
