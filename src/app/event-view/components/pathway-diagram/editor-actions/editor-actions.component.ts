@@ -21,6 +21,8 @@ export class EditorActionsComponent {
   @Input() elmType: ElementType = ElementType.CYTOSCAPE; 
   // Check if a clicked pathway is deletable
   @Input() isPathwayDeletable: boolean = false;
+  // Flag if a selected node is resizing
+  @Input() isNodeResizing: boolean = false;
   // Include this so that we can compare in the html template
   elmTypes = ElementType;
   
@@ -39,6 +41,7 @@ export enum ElementType {
   FLOWLINE = 'flowline',
   EDGE_POINT = 'edgePoint',
   NODE = "node",
+  PE_Node = 'physicalentity_node',
   COMPARTMENT = "compartment",
   PATHWAY_NODE = 'pathway_node'
 }

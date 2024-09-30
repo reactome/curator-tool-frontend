@@ -62,6 +62,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   isPathwayDeletable: boolean = false;
   // Tracking the previous dragging position: should cytoscape provides this?
   previousDragPos: Position = { x: 0, y: 0 };
+  // Track a list of nodes that are under resizing
+  resizingNodes: any[] = [];
 
   // To show information
   readonly dialog = inject(MatDialog);
@@ -231,8 +233,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         this.elementTypeForPopup = ElementType.EDGE;
     }
     else if (this.elementUnderMouse.isNode()) {
-      if (this.elementUnderMouse.hasClass("Compartment"))
+      if (this.elementUnderMouse.hasClass("Compartment")) 
         this.elementTypeForPopup = ElementType.COMPARTMENT;
+      else if (this.elementUnderMouse.hasClass('PhysicalEntity')) {
+        this.elementTypeForPopup = ElementType.PE_Node;
+        this.isFlowLineAddable = this.diagramUtils.isFlowLineAddable(this.elementUnderMouse, this);
+      }
       else if (this.elementUnderMouse.hasClass("SUB")) { // This is for pathway
         this.elementTypeForPopup = ElementType.PATHWAY_NODE;
         this.isFlowLineAddable = this.diagramUtils.isFlowLineAddable(this.elementUnderMouse, this);
@@ -252,6 +258,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     this.menuPositionX = (event.renderedPosition.x + this.MENU_POSITION_BUFFER) + "px";
     this.menuPositionY = (event.renderedPosition.y + this.MENU_POSITION_BUFFER) + "px";
     this.showMenu = true;
+  }
+
+  isNodeResizing() {
+    if (!this.elementUnderMouse)
+      return false;
+    return this.resizingNodes.includes(this.elementUnderMouse);
   }
 
   onAction(action: string) {
@@ -286,10 +298,14 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
       case 'resizeCompartment':
         this.diagramUtils.enableResizeCompartment(this.elementUnderMouse, this.diagram);
+        this.resizingNodes.push(this.elementUnderMouse);
         break;
 
       case 'disableResize':
         this.diagramUtils.disableResizeCompartment(this.elementUnderMouse, this.diagram);
+        const index = this.resizingNodes.indexOf(this.elementUnderMouse);
+        if (index >= 0)
+          this.resizingNodes.splice(index, 1);
         break;
 
       case 'toggleDarkMode':
