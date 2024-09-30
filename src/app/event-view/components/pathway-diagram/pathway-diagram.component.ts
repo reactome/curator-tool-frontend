@@ -217,6 +217,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       if (node.hasClass('resizing')) {
         this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);
       }
+      else if (node.hasClass('Protein') || node.hasClass('RNA') || node.hasClass('Gene')) {
+        // Handle Modification move only for the above three types of nodes.
+        this.diagramUtils.moveModifications(node, e, this.previousDragPos);
+      }
     });
   }
 
