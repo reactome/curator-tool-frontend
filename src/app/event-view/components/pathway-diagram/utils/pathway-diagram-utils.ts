@@ -191,6 +191,31 @@ export class PathwayDiagramUtilService {
         return exitedNodes.length > 0;
     }
 
+    moveModifications(node: any, event: any, previousDragPos: Position) {
+        // Find if there is any Modification nodes for the passed node
+        const reactomeId = node.data('reactomeId');
+        const modificationNodes = event.cy.nodes().filter((node: any) => {
+            return node.data('nodeReactomeId') === reactomeId && node.hasClass('Modification');
+        });
+        if (!modificationNodes || modificationNodes.length === 0)
+            return;
+        const pos = node.position();
+        let deltaX = pos.x - previousDragPos.x;
+        let deltaY = pos.y - previousDragPos.y;
+        for (let modificationNode of modificationNodes) {
+            const pos = modificationNode.position();
+            const newPos = {
+                x: pos.x + deltaX,
+                y: pos.y + deltaY
+            };
+            // Have to give it a new position object so that the label 
+            // can be updated. Don't modify the position directly!!!
+            modificationNode.position(newPos);
+        }
+        previousDragPos.x = node.position().x;
+        previousDragPos.y = node.position().y;
+    }
+
     resizeCompartment(node: any, e: any, previousDragPos: Position) {
         // Used to determine the direction
         const nodeId = node.data('id') as string;
@@ -214,6 +239,11 @@ export class PathwayDiagramUtilService {
             }
             compartment.data('width', compartment.data('width') - deltaX);
             compartment.data('height', compartment.data('height') - deltaY);
+            
+            // TODO: Somehow the background of the selected image y location cannot be updated
+            // Need to fix this bug.
+            // compartment.style('background-position-y', compartment.style('height'));
+
             this.updateResizeNodesPosition(compartment, nodeId, e.cy);
             this.ensureTwoLayerCompartment(compartment, nodeId, e.cy);
         }
