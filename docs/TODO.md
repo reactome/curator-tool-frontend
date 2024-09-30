@@ -5,6 +5,7 @@
 - skip and limit are not udpated even for simple search
 - go to pathway in the diagram sometimes has weird selection: the pathway selected is stuck in the URL!
 - the reset in the comparison table cannot fire event across the browser tabs.
+- resizing the nodes cannot change the height of the background for selection. However, sometimes it does work!
 
 #### Deidre
 - deletion needs to refresh the list if it is done in the list (maybe not if it has not committed. Probably only for new instance?)
@@ -46,6 +47,8 @@
 - stoichioemtry update has not done yet for diagram update after instance editing.
 - Add a check for event tree to see if there is any circular reference
 - Imagine this scenario: A db instance is loaded. However, one of its attribute is deleted. Therefore, the view for the curator should see the instance without this deleted instance at browser. Should this instance be flagged as updated instance? Probably not since committing the deletion will handle this automatically. Also marking as updating will bring about some side effects (e.g. push the the local storage). But after the loading, the curator start to editing it. Now this instance is updated. Should the modified attributes include the attribute impacted by deletion, assuming the manul edited attribute is not that attribute. Probably we just need to introduce a new field in Instance, deletionImpactedAttribute? For the time being, just add the impacted attribute into the modified attribute list, but not mark it as updated. Need to revisit this later on.
+- Need an action to add a new compartment into the diagram
+- resize: need to make sure all associate attachments (e.g. modification, resizing widgets can be moved around).
 
 
 #### Notes:
