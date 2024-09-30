@@ -156,7 +156,11 @@ export class InstanceSelectionComponent implements OnInit {
     searchKeys: string[]
   ) {
     this.showProgressSpinner = true;
-    this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributeNames, operands, searchKeys)
+    let parseSearchKeys: string [] = [];
+    for (let searchKey of searchKeys) {
+      parseSearchKeys.push(searchKey);
+    }
+    this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributeNames, operands, parseSearchKeys)
       .subscribe(instanceList => {
         this.instanceCount = instanceList.totalCount;
         this.data = instanceList.instances;
@@ -207,7 +211,7 @@ export class InstanceSelectionComponent implements OnInit {
       for (let query of fullQuery) {
         let attributeName = query.split("(")[1].split("[")[0];
         let operand = query.split("[")[1].split(":")[0];
-        let searchKey = query.split(" ")[1].split("]")[0];
+        let searchKey = query.split(": ")[1].split("]")[0];
         let attribuateCondition: AttributeCondition = new class implements AttributeCondition {
           attributeName: string = attributeName;
           operand: string = operand;
@@ -234,6 +238,7 @@ export class InstanceSelectionComponent implements OnInit {
       }
       if (this.useRoute) {
         if (searchKey && searchKey.trim().length > 0) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
+        {
           this.router.navigate([url],
             {
               queryParams: {
@@ -244,6 +249,7 @@ export class InstanceSelectionComponent implements OnInit {
               // Merge will keep the simple search query in the header
               //queryParamsHandling: 'merge' 
             });
+          }
         else
           this.router.navigate([url]);
       } else
@@ -262,12 +268,15 @@ export class InstanceSelectionComponent implements OnInit {
     }
   }
 
-    /**
-   * Handle the search button action.
-   * @param searchFilters
-   */
+  /**
+ * Handle the search button action.
+ * @param searchFilters
+ */
   completeSearch(attributeCondition: AttributeCondition) {
-    this.searchAction(attributeCondition);
+    // Don't search if there is no query
+    if(attributeCondition.searchKey !== ''){
+      this.searchAction(attributeCondition);
+    }
     this.advancedSearch(this.advancedSearchKey!)
   }
 }
