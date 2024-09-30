@@ -11,6 +11,8 @@ import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import { PathwayDiagramComponent } from "../pathway-diagram.component";
 import { PathwayDiagramValidator } from "./pathway-diagram-validator";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
+import { SelectInstanceDialogService } from "src/app/schema-view/list-instances/components/select-instance-dialog/select-instance-dialog.service";
+import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
 
 @Injectable()
 export class PathwayDiagramUtilService {
@@ -23,7 +25,8 @@ export class PathwayDiagramUtilService {
     constructor(private dataService: DataService,
         private validator: PathwayDiagramValidator,
         private converter: InstanceConverter,
-        private instanceUtils: InstanceUtilities
+        private instanceUtils: InstanceUtilities,
+        private compartmentDialogService: SelectInstanceDialogService // Used to insert a compartment
     ) { }
 
     getDataService(): DataService {
@@ -105,6 +108,50 @@ export class PathwayDiagramUtilService {
 
     deletePathwayNode(pathwayElm: any, diagram: DiagramComponent) {
         diagram.cy.remove(pathwayElm);
+    }
+
+    /**
+     * Compartments may have two nodes for double layers. Both of them should be deleted.
+     * @param compartment 
+     * @param diagram 
+     */
+    deleteCompartment(compartment: any, diagram: DiagramComponent) {
+        let { isInner, other } = this.getSiblingCompartment(compartment, diagram.cy);
+        diagram.cy.remove(compartment);
+        if (other)
+            diagram.cy.remove(other);
+    }
+
+    /**
+     * Insert a new compartment into the diagram.
+     * @param diagram 
+     */
+    insertCompartment(diagram: DiagramComponent) {
+        // We will get the needed attribute from the pathway class, which should be loaded
+        this.dataService.fetchSchemaClass('Pathway').subscribe(pathway => {
+            let compartmentAtt = pathway.attributes?.filter(att => att.name === 'compartment')[0] || undefined;
+            if (!compartmentAtt) {
+                console.log('Cannot find the compartment attribute in Paathway for insertCompartment')
+                return;
+            }
+            // Make a copy so that we can limit it to a single value selection
+            compartmentAtt = {
+                ...compartmentAtt,
+                cardinality: '1'
+            };
+            const attributeValue: AttributeValue = {
+                attribute: compartmentAtt,
+                value: undefined
+            };
+            const matDialogRef = this.compartmentDialogService.openDialog(attributeValue);
+            matDialogRef.afterClosed().subscribe(compartment => {
+                if (!compartment || (Array.isArray(compartment) && compartment.length === 0)) // Most likely the dialog is cancelled
+                    return;
+                // Use the first compartment only
+                // TODO: Make sure there is only one compartment is selected
+                this.converter.convertCompartmentToNodes(compartment[0], this, diagram.cy);
+            });
+        });
     }
 
     // Make sure this works for the following case:
@@ -261,12 +308,7 @@ export class PathwayDiagramUtilService {
         resizeNodeId: string,                             
         cy: Core) 
     {
-        let compartmentId = compartment.id();
-        // The id has two parts: graph id and inner or outer
-        let tokens = compartmentId.split('-');
-        let isInner = tokens[1] === 'inner';
-        let otherId = tokens[0] + '-' + (isInner ? 'outer' : 'inner');
-        let other = cy.$('#' + otherId);
+        let { isInner, other } = this.getSiblingCompartment(compartment, cy);
 
         // Figure out which is inner and which is outer
         let inner = undefined;
@@ -374,6 +416,21 @@ export class PathwayDiagramUtilService {
         }
     }
 
+   /**
+     * Compartment may have two layers, both of which are displayed as nodes.
+     * Use this method to find the other one.
+     * @param compartment 
+     */
+    private getSiblingCompartment(compartment: any, cy: Core) {
+        let compartmentId = compartment.id();
+        // The id has two parts: graph id and inner or outer
+        let tokens = compartmentId.split('-');
+        let isInner = tokens[1] === 'inner';
+        let otherId = tokens[0] + '-' + (isInner ? 'outer' : 'inner');
+        let other = cy.$('#' + otherId);
+        return { isInner, other };
+    }
+
     private updateResizeNodesPosition(compartment: any,
         nodeId: string,
         cy: Core
@@ -415,6 +472,9 @@ export class PathwayDiagramUtilService {
             const nodeData = {
                 id: this.createResizeNodeId(compartment.data('id'), location),
                 compartment: compartment.data('id'),
+                // Mimic the same data structure of Modification
+                // so that we can have the same code to handle its behavior.
+                nodeReactomeId: compartment.data('reactomeId'),
                 //TODO: To be determined the best size of these nodes
                 width: '16px',
                 height: '16px',

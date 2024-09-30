@@ -221,6 +221,11 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         // Handle Modification move only for the above three types of nodes.
         this.diagramUtils.moveModifications(node, e, this.previousDragPos);
       }
+      else if (this.resizingNodes.includes(node)) {
+        // For protein, RNA and Gene, the same code that is used to move modification
+        // should handle moving resizing widgets
+        this.diagramUtils.moveModifications(node, e, this.previousDragPos);
+      }
     });
   }
 
@@ -281,6 +286,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
       case 'disableEditing':
         this.diagramUtils.disableEditing(this.diagram);
+        this.resizingNodes.forEach(node => this.diagramUtils.disableResizeCompartment(node, this.diagram));
+        this.resizingNodes.length = 0; // reset to empty
         this.isEditing = false;
         break;
 
@@ -306,10 +313,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         break;
 
       case 'disableResize':
-        this.diagramUtils.disableResizeCompartment(this.elementUnderMouse, this.diagram);
-        const index = this.resizingNodes.indexOf(this.elementUnderMouse);
-        if (index >= 0)
-          this.resizingNodes.splice(index, 1);
+        this.disableResize();
         break;
 
       case 'toggleDarkMode':
@@ -330,7 +334,21 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         break;
 
       case 'deletePathway':
+        if (this.resizingNodes.includes(this.elementUnderMouse)) {
+          this.disableResize();
+        }
         this.diagramUtils.deletePathwayNode(this.elementUnderMouse, this.diagram);
+        break;
+
+      case 'deleteCompartment':
+        if (this.resizingNodes.includes(this.elementUnderMouse)) {
+          this.disableResize();
+        }
+        this.diagramUtils.deleteCompartment(this.elementUnderMouse, this.diagram);
+        break;
+
+      case 'insertCompartment':
+        this.diagramUtils.insertCompartment(this.diagram);
         break;
 
       case 'upload':
@@ -353,6 +371,13 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
     // Hide the menu after the action is processed
     this.showMenu = false;
+  }
+
+  private disableResize() {
+    this.diagramUtils.disableResizeCompartment(this.elementUnderMouse, this.diagram);
+    const index = this.resizingNodes.indexOf(this.elementUnderMouse);
+    if (index >= 0)
+      this.resizingNodes.splice(index, 1);
   }
 
   handleReactomeEvent(event: any) {

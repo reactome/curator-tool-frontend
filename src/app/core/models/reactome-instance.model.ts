@@ -80,6 +80,8 @@ export const RENDERING_CONSTS = {
     // Since complex has some decoration, we need to assign a mini height. Otherwise, the decoration
     // may be off.
     COMPLEX_MIN_HEIGHT: 50,
+    // Distance between two layers of compartment
+    RECTANGLE_DIST: 10, 
 
     // This is arbitrary
     INIT_POSITION: {

@@ -262,9 +262,12 @@ export class EventTreeComponent {
 
     // if (diagramNode.dbId !== diagramPathwayId) {
       // Let's just used the first node right now
-      this.navigateToEventNode(matchedNodes[0]);
+      this.navigateToEventNode(matchedNodes[0], select);
       // mimic a tree click event so that the instance can be shown in the instance view
-      this.eventClicked.emit(matchedNodes[0].dbId);
+      if (select)
+        this.eventClicked.emit(select);
+      else
+        this.eventClicked.emit(matchedNodes[0].dbId);
     // }
     // else if (!select) {
     //   // Handle a case like this: http://localhost:4200/event_view/instance/9615710 for a pathway having diagram
@@ -405,11 +408,16 @@ export class EventTreeComponent {
     this.eventClicked.emit(event.dbId);
   }
 
-  private navigateToEventNode(event: EventNode) {
+  private navigateToEventNode(event: EventNode, select: number|undefined = undefined) {
     const diagramNode = this.setDiagramNodePath(event);
     if (diagramNode) {
       if (diagramNode === event) {
-        this.router.navigate(['/event_view/instance/' + diagramNode.dbId]);
+        if (select) {
+          this.router.navigate(['/event_view/instance/' + diagramNode.dbId],
+          {queryParams: {select: select}});
+        }
+        else
+          this.router.navigate(['/event_view/instance/' + diagramNode.dbId]);
       }
       else {
         this.selectionFromTree = true;
