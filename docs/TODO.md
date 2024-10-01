@@ -16,8 +16,6 @@
 - the height distribution is not working in safari!
 - how to avoid reload the schema tree when a new instance to create or listing instances: this is annoying when the mouse is around the end of the tree since the mouse position is shifted: this occurs when the view switched between list and instance.
 - the deletion action in the changes list for new instances don't show any warning: the behavior should be consistent between the instance view and the changes list.
-- a new instance is in the bookmarks, deleting this new instance doesn't remove this instance from the bookmark list.
-- edit via creation: cancel new instance creation causes the browser hanging. The new instance is not removed from the changes if cancelled.
 - Bug: After filtering to changed only attribute in the comparison table, turn off the comparison. There is no way to show the whole table now.
 - Bug: When an attribute is a single-valued attribute, make sure there is only one instance can be selected in the instance list.
 
