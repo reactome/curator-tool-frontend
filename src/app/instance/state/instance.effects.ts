@@ -3,7 +3,7 @@ import { Actions, createEffect, ofType } from "@ngrx/effects";
 import { DataService } from "src/app/core/services/data.service";
 import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from "./instance.actions";
 import { Store } from "@ngrx/store";
-import { tap } from "rxjs";
+import { defaultIfEmpty, take, tap } from "rxjs";
 import { deleteInstances, newInstances, updatedInstances } from "./instance.selectors";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { Instance } from "src/app/core/models/reactome-instance.model";
@@ -88,31 +88,6 @@ export class InstanceEffects {
           break;
       }
     });
-
-    // call select is to add a listener to the change of the list
-    // therefore, we should add it once only, not in the following effects
-    // which will be called multiple times.
-    this.store.select(updatedInstances()).subscribe(instances => {
-      // We need the whole instance
-      const dbIds = instances.map(i => i.dbId);
-      this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
-        this.setLocalStorageItem(UpdateInstanceActions.get_updated_instances.type, this.instUtils.stringifyInstances(fullInsts));
-      });
-    });
-    this.store.select(newInstances()).subscribe(instances => {
-      // We need the whole instance
-      const dbIds = instances.map(i => i.dbId);
-      this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
-        this.setLocalStorageItem(NewInstanceActions.get_new_instances.type, this.instUtils.stringifyInstances(fullInsts));
-      });
-    });
-    this.store.select(deleteInstances()).subscribe(instances => {
-      // We need the whole instance
-      const dbIds = instances.map(i => i.dbId);
-      this.dataService.fetchInstances(dbIds).subscribe(fullInsts => {
-        this.setLocalStorageItem(DeleteInstanceActions.get_deleted_instances.type, this.instUtils.stringifyInstances(fullInsts));
-      });
-    });
   }
 
   newInstanceChanges$ = createEffect(
@@ -125,6 +100,7 @@ export class InstanceEffects {
           this.dataService.fetchInstance(action.dbId).subscribe(fullInst => {
             this.setLocalStorageItem(action.type, this.instUtils.stringifyInstance(fullInst));
           });
+          this.storeNewInstances();
           // Remove a new instance will remove it from the cached value
           if (action.type === NewInstanceActions.remove_new_instance.type)
             this.dataService.removeInstanceInCache(action.dbId);
@@ -156,6 +132,7 @@ export class InstanceEffects {
                UpdateInstanceActions.reset_updated_instance),
         tap((action) => {
           this.setLocalStorageItem(action.type, JSON.stringify(action.valueOf()));
+          this.storeUpdatedInstances();
           // Some extra for remove
           if (action.type === UpdateInstanceActions.remove_updated_instance.type) {
             this.dataService.removeInstanceInCache(action.dbId); // So that it can be re-loaded from database
@@ -205,12 +182,41 @@ export class InstanceEffects {
         tap((action) => {
           // There is no need to query. Actually nothing to query.
           this.setLocalStorageItem(action.type, this.instUtils.stringifyInstance(action.valueOf() as Instance));
+          this.storeDeletedInstances();
           if (action.type === DeleteInstanceActions.register_deleted_instance.type)
             this.instUtils.setMarkDeletionDbId(action.dbId);
         })
       ),
     { dispatch: false }
   );
+
+  private storeDeletedInstances() {
+    this.store.select(deleteInstances()).pipe(take(1)).subscribe(instances => {
+      this.setLocalStorageItem(DeleteInstanceActions.get_deleted_instances.type, this.instUtils.stringifyInstances(instances));
+    });
+  }
+
+  private storeNewInstances() {
+    this.store.select(newInstances()).pipe(take(1)).subscribe(instances => {
+      // We need the whole instance
+      const dbIds = instances.map(i => i.dbId);
+      this.dataService.fetchInstances(dbIds).pipe(defaultIfEmpty([])).subscribe(fullInsts => {
+        this.setLocalStorageItem(NewInstanceActions.get_new_instances.type, this.instUtils.stringifyInstances(fullInsts));
+      });
+    });
+  }
+
+  private storeUpdatedInstances() {
+    this.store.select(updatedInstances()).pipe(take(1)).subscribe(instances => {
+      // We need the whole instance
+      const dbIds = instances.map(i => i.dbId);
+      this.dataService.fetchInstances(dbIds).pipe(defaultIfEmpty([])).subscribe(fullInsts => {
+        // Don't remove the item if it is empty. We need to use an empty array as a change
+        // evidence. Otherwise, we cannot see the difference between the saved state and the changed state
+        this.setLocalStorageItem(UpdateInstanceActions.get_updated_instances.type, this.instUtils.stringifyInstances(fullInsts));
+      });
+    });
+  }
 
   private setLocalStorageItem(key: string, object: string) {
     localStorage.setItem(key, 

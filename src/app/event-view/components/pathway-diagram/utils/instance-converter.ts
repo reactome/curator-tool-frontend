@@ -30,7 +30,7 @@ export class InstanceConverter {
         }
         else {
             // Make sure adding outerNode first so that we can select inner node
-            const outerNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId + '_outer');
+            const outerNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId + '-outer');
             outerNode.addClass('outer');
             // Need to expand the node width
             outerNode.data('width', outerNode.data('width') * 10 + 2 * RENDERING_CONSTS.RECTANGLE_DIST);
@@ -40,13 +40,16 @@ export class InstanceConverter {
             outerNode.data('textX', -outerNode.data('width') / 2);
             outerNode.data('textY', -outerNode.data('height') / 2);
 
+            outerNode.style('z-index', 0); // Give it a smaller z-index so that we can select the inner one first
+
             newNodes.push(outerNode);
 
-            const innerNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId + '_inner');
+            const innerNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId + '-inner');
             innerNode.addClass('inner');
             // Need to expand the node width
             innerNode.data('width', innerNode.data('width') * 10);
             innerNode.data('height', innerNode.data('height') * 10);
+            innerNode.style('z-index', 10); // To be selected first
             newNodes.push(innerNode);
         }
         newNodes.forEach(node => this.centerNode(node, cy))

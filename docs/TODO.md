@@ -6,6 +6,7 @@
 - go to pathway in the diagram sometimes has weird selection: the pathway selected is stuck in the URL!
 - the reset in the comparison table cannot fire event across the browser tabs.
 - resizing the nodes cannot change the height of the background for selection. However, sometimes it does work!
+- the order inner and outer layers of a compartment needs to be controlled. It is quite random right now.
 
 #### Deidre
 - deletion needs to refresh the list if it is done in the list (maybe not if it has not committed. Probably only for new instance?)

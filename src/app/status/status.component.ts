@@ -63,6 +63,8 @@ export class StatusComponent implements OnInit {
       this.dataService.deletePersistedInstances('test').subscribe(() => {
         console.debug('Delete any persisted instance at the server.');
       });
+      // Clean up localStorage before returning
+      localStorage.clear();
       return; // Do nothing
     }
     // Technically it would be nicer to have a cnetral place to do this.
