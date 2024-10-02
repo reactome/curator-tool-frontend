@@ -5,7 +5,7 @@ import { DeleteInstanceActions, UpdateInstanceActions, NewInstanceActions } from
 import { Instance, UserInstances } from './core/models/reactome-instance.model';
 import { DataService } from './core/services/data.service';
 import { BookmarkActions } from './schema-view/instance-bookmark/state/bookmark.actions';
-import { finalize } from 'rxjs';
+import { defaultIfEmpty, finalize } from 'rxjs';
 import { InstanceUtilities } from './core/services/instance.service';
 
 @Component({
@@ -36,6 +36,8 @@ export class AppComponent {
     // TODO: Make sure this is updated during deployment
     this.dataService.startLoadInstances();
     this.dataService.loadUserInstances('test').pipe(
+      // Use this so that checkLocalStorage will be called always even though userInstances is empty
+      defaultIfEmpty({ newInstances: [], updatedInstances: [], deletedInstances: [], bookmarks: [] }), // Emit default if nothing is returned
       finalize(() => {
         // These statements will always run regardless of what happens inside
         // The following two statements will force the dataService to finish the loading first

@@ -14,6 +14,77 @@ export class InstanceConverter {
     
     constructor() { }
 
+    convertCompartmentToNodes(compartment: Instance, 
+        utils: PathwayDiagramUtilService,
+        cy: Core
+    ) {
+        // Follow the logic in the Java tool to see if two layers are needed
+        const newNodes = [];
+        const nodeId = this.getCompartmentNodeId(compartment.dbId, cy);
+        if (compartment.displayName?.endsWith('membrane')) {
+            const compartmentNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId);
+            // Need to expand the node width
+            compartmentNode.data('width', compartmentNode.data('width') * 10);
+            compartmentNode.data('height', compartmentNode.data('height') * 10);
+            newNodes.push(compartmentNode);
+        }
+        else {
+            // Make sure adding outerNode first so that we can select inner node
+            const outerNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId + '-outer');
+            outerNode.addClass('outer');
+            // Need to expand the node width
+            outerNode.data('width', outerNode.data('width') * 10 + 2 * RENDERING_CONSTS.RECTANGLE_DIST);
+            outerNode.data('height', outerNode.data('height') * 10 + 2 * RENDERING_CONSTS.RECTANGLE_DIST);
+
+            // Put the text at the center for the time being
+            outerNode.data('textX', -outerNode.data('width') / 2);
+            outerNode.data('textY', -outerNode.data('height') / 2);
+
+            outerNode.style('z-index', 0); // Give it a smaller z-index so that we can select the inner one first
+
+            newNodes.push(outerNode);
+
+            const innerNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId + '-inner');
+            innerNode.addClass('inner');
+            // Need to expand the node width
+            innerNode.data('width', innerNode.data('width') * 10);
+            innerNode.data('height', innerNode.data('height') * 10);
+            innerNode.style('z-index', 10); // To be selected first
+            newNodes.push(innerNode);
+        }
+        newNodes.forEach(node => this.centerNode(node, cy))
+        const collection = cy.collection(newNodes);
+        // De-select whatever
+        cy.$(':selected').unselect();
+        collection.select();
+    }
+
+    private getCompartmentNodeId(reactomeId: number, cy: Core) {
+        let id = reactomeId + '';
+        let node = cy.getElementById(id);
+        if (!node || node.length === 0)
+            return id;
+        let count = 1;
+        while (true) {
+            id = reactomeId + '_' + count;
+            node = cy.getElementById(id);
+            if (!node || node.length === 0)
+                return id;
+            count ++;
+        }
+    }
+
+    private centerNode(node: any, cy: Core) {
+        // Let put it at the center
+        let extent = cy.extent();
+        let centerX = (extent.x1 + extent.x2) / 2;
+        let centerY = (extent.y1 + extent.y2) / 2;
+        node.position({
+            x: centerX,
+            y: centerY
+        });
+    }
+
     /**
      * Convert the pathway Instance into a node having process type.
      * @param pathway 
@@ -25,14 +96,7 @@ export class InstanceConverter {
         cy: Core
     ) {
         const processNode = this.createNodeForInstance(pathway, cy, utils.diagramService!);
-        // Let put it at the center
-        let extent = cy.extent();
-        let centerX = (extent.x1 + extent.x2) / 2;
-        let centerY = (extent.y1 + extent.y2) / 2;
-        processNode.position({
-            x: centerX,
-            y: centerY
-        });
+        this.centerNode(processNode, cy);
         // Need to expand the node width
         processNode.data('width', processNode.data('width') * 1.5);
         processNode.data('height', processNode.data('height') * 1.5);
@@ -229,8 +293,9 @@ export class InstanceConverter {
         return newNode;
     }
 
-    private createNodeForInstance(inst: Instance, cy: Core, service: DiagramService) {
-        const id = inst.dbId + '';
+    private createNodeForInstance(inst: Instance, cy: Core, service: DiagramService, id: string|undefined = undefined) {
+        if (!id)
+            id = inst.dbId + '';
         const node: NodeDefinition = {
             data: {
                 id: id,
@@ -256,7 +321,11 @@ export class InstanceConverter {
         newNode.data('width', width);
         newNode.data('height', height);
         newNode.data('displayName', label);
-        service.nodeTypeMap.get(this.getNodeType(inst)).forEach((cls: string) => newNode.addClass(cls));
+        // Apparent there is no compartment mapping
+        if (inst.schemaClassName === 'Compartment')
+            newNode.addClass('Compartment');
+        else
+            service.nodeTypeMap.get(this.getNodeType(inst)).forEach((cls: string) => newNode.addClass(cls));
         if (inst.schemaClassName === "RNADrug")
             newNode.addClass("drug");
         return newNode;
@@ -306,6 +375,8 @@ export class InstanceConverter {
             return "EntitySet";
         if (schemaClass === 'Pathway' || schemaClass === 'CellLineagePath' || schemaClass === 'TopLevelPathway')
             return 'ProcessNode';
+        if (schemaClass === 'Compartment')
+            return 'Compartment';
         return schemaClass;
     }
 

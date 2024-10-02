@@ -6,6 +6,7 @@
 - go to pathway in the diagram sometimes has weird selection: the pathway selected is stuck in the URL!
 - the reset in the comparison table cannot fire event across the browser tabs.
 - resizing the nodes cannot change the height of the background for selection. However, sometimes it does work!
+- the order inner and outer layers of a compartment needs to be controlled. It is quite random right now.
 
 #### Deidre
 - deletion needs to refresh the list if it is done in the list (maybe not if it has not committed. Probably only for new instance?)
@@ -18,6 +19,7 @@
 - a new instance is in the bookmarks, deleting this new instance doesn't remove this instance from the bookmark list.
 - edit via creation: cancel new instance creation causes the browser hanging. The new instance is not removed from the changes if cancelled.
 - Bug: After filtering to changed only attribute in the comparison table, turn off the comparison. There is no way to show the whole table now.
+- Bug: When an attribute is a single-valued attribute, make sure there is only one instance can be selected in the instance list.
 
 #### TODO:
 - Need to style the detailed table view for schema class.
@@ -49,6 +51,7 @@
 - Imagine this scenario: A db instance is loaded. However, one of its attribute is deleted. Therefore, the view for the curator should see the instance without this deleted instance at browser. Should this instance be flagged as updated instance? Probably not since committing the deletion will handle this automatically. Also marking as updating will bring about some side effects (e.g. push the the local storage). But after the loading, the curator start to editing it. Now this instance is updated. Should the modified attributes include the attribute impacted by deletion, assuming the manul edited attribute is not that attribute. Probably we just need to introduce a new field in Instance, deletionImpactedAttribute? For the time being, just add the impacted attribute into the modified attribute list, but not mark it as updated. Need to revisit this later on.
 - Need an action to add a new compartment into the diagram
 - resize: need to make sure all associate attachments (e.g. modification, resizing widgets can be moved around).
+- compartment id: since the same compartment can be added multiple times, therefore, we need a central way to manage id
 
 
 #### Notes:

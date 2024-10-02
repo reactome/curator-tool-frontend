@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Actions, createEffect, ofType } from "@ngrx/effects";
 import { Store } from "@ngrx/store";
-import { tap } from "rxjs/operators";
+import { take, tap } from "rxjs/operators";
 import { BookmarkActions } from './bookmark.actions';
 import { Instance } from "src/app/core/models/reactome-instance.model";
 import { bookmarkedInstances } from "./bookmark.selectors";
@@ -39,7 +39,7 @@ export class BookmarkEffects {
           // The browser tab (window) that setItem should not receive this event.
           localStorage.setItem(action.type, JSON.stringify(action.valueOf()));
           // Update the list of bookmarks for new tabs or windows
-          this.store.select(bookmarkedInstances()).subscribe(bookmarks => {
+          this.store.select(bookmarkedInstances()).pipe(take(1)).subscribe(bookmarks => {
             localStorage.setItem(BookmarkActions.set_bookmarks.type, JSON.stringify(bookmarks));
           });
         })
