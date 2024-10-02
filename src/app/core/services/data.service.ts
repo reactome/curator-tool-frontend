@@ -59,6 +59,7 @@ export class DataService {
   // Use this subject to force waiting for components to fetch instance
   // since we need to load changed instances from cached storage first
   private loadInstanceSubject: Subject<void> | undefined = undefined;
+  newInstances: unknown;
 
   constructor(private http: HttpClient,
     private utils: InstanceUtilities,
@@ -418,10 +419,20 @@ export class DataService {
     if (searchKey && searchKey.trim().length > 0) {
       url += '?query=' + searchKey.trim();
     }
-    console.log('list instances url: ' + url);
     return this.http.get<InstanceList>(url)
       .pipe(
         map((data: InstanceList) => {
+          // Checking the store for new instances to add
+          let newInsts: Instance[];
+          this.store.select(newInstances()).pipe(take(1)).subscribe(insts => {
+            for(let inst of insts) {
+              // Only take new instances that have the correct className
+              if(inst.schemaClassName === className)
+                // Update the data being returned.
+                data.instances.push(inst);
+                data.totalCount++;
+            }
+          })
           return data;
         }, // Nothing needs to be done.
           catchError((err: Error) => {
@@ -811,7 +822,7 @@ export class DataService {
             for (let attribute of inst.modifiedAttributes!) {
               let attributeData = inst.attributes.get(attribute)
               for (let attData of attributeData) {
-                if (attData.dbId == dbId) {
+                if (attData.dbId && attData.dbId == dbId) {
                   let ref: Referrer = { attributeName: "Newly curated", referrers: [inst] }
                   referrers.push(ref);
                 }

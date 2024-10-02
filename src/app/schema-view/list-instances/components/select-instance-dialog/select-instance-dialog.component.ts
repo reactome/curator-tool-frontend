@@ -4,6 +4,9 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { SchemaClass } from "../../../../core/models/reactome-schema.model";
 import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
+import { newInstances } from 'src/app/instance/state/instance.selectors';
+import { Store } from '@ngrx/store';
+import { take } from 'rxjs';
 
 /**
  * A dialog component that is used to create a new Instance object.

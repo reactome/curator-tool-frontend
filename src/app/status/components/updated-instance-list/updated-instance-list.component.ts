@@ -14,6 +14,7 @@ import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from
 import { DataService } from 'src/app/core/services/data.service';
 import { MatToolbar } from '@angular/material/toolbar';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
+import { DeletionDialogService } from 'src/app/instance/components/deletion-dialog/deletion-dialog.service';
 
 
 @Component({
@@ -43,7 +44,8 @@ export class UpdatedInstanceListComponent implements OnInit{
               private route: ActivatedRoute,
               private store: Store,
               private dataService: DataService,
-            private instanceUtilities: InstanceUtilities) {
+            private instanceUtilities: InstanceUtilities,
+            private deletionDialogService: DeletionDialogService) {
   }
 
   ngOnInit(): void {
@@ -83,7 +85,7 @@ export class UpdatedInstanceListComponent implements OnInit{
       }
 
       case "delete": {
-        this.deleteNewInstance(actionButton.instance);
+        this.deletionDialogService.openDialog(actionButton.instance);
         break;
       }
 
