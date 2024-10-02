@@ -4,7 +4,8 @@ import { DataService } from "./data.service";
 import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttribute, SchemaClass } from "../models/reactome-schema.model";
 import { Subject, take } from "rxjs";
 import { Store } from "@ngrx/store";
-import { deleteInstances } from "src/app/instance/state/instance.selectors";
+import { deleteInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
+import { NewInstanceActions } from "src/app/instance/state/instance.actions";
 
 /**
  * Group a set of utility methods here for easy access to all other classes.
@@ -15,7 +16,7 @@ import { deleteInstances } from "src/app/instance/state/instance.selectors";
 export class InstanceUtilities {
     // Track any instance click such as in table, list, etc.
     // The type if either string or number
-    private lastClickedDbId = new Subject<string|number>();
+    private lastClickedDbId = new Subject<string | number>();
     lastClickedDbId$ = this.lastClickedDbId.asObservable();
 
     // A shortcut to notify an instance view refresh
@@ -41,17 +42,17 @@ export class InstanceUtilities {
     lastClickedDbIdForComparison$ = this.lastClickedDbIdForComparison.asObservable();
 
     // reset instance 
-    private resetInst = new Subject<{modifiedAttributes: string[]|undefined, dbId: number}>();
+    private resetInst = new Subject<{ modifiedAttributes: string[] | undefined, dbId: number }>();
     resetInst$ = this.resetInst.asObservable();
 
-    private lastUpdatedInstance = new Subject<{attribute: string, instance: Instance}>();
+    private lastUpdatedInstance = new Subject<{ attribute: string, instance: Instance }>();
     lastUpdatedInstance$ = this.lastUpdatedInstance.asObservable();
 
     constructor(private store: Store) { }
 
     setLastUpdatedInstance(attribute: string, instance: Instance) {
         this.lastUpdatedInstance.next({
-            attribute: attribute, 
+            attribute: attribute,
             instance: instance
         });
     }
@@ -68,15 +69,15 @@ export class InstanceUtilities {
         this.markDeletionDbId.next(dbId);
     }
 
-    setResetInstance(modifiedAtts: string[]|undefined, dbId: number) {
-        this.resetInst.next({modifiedAttributes: modifiedAtts, dbId: dbId});
+    setResetInstance(modifiedAtts: string[] | undefined, dbId: number) {
+        this.resetInst.next({ modifiedAttributes: modifiedAtts, dbId: dbId });
     }
 
     setRefreshViewDbId(dbId: number) {
         this.refreshViewDbId.next(dbId);
     }
 
-    setLastClickedDbId(dbId: string|number) {
+    setLastClickedDbId(dbId: string | number) {
         this.lastClickedDbId.next(dbId);
     }
 
@@ -293,84 +294,84 @@ export class InstanceUtilities {
         // Event deletion may impact the tree structure
         // therefore, we need to check it too
         this.store.select(deleteInstances()).pipe(take(1)).subscribe(insts => {
-          const deletedDbIds = insts ? insts.map(i => i.dbId) : [];
-          this._mergeLocalChangesToEventTree(rootEvent, id2event, deletedDbIds, id2instance);
+            const deletedDbIds = insts ? insts.map(i => i.dbId) : [];
+            this._mergeLocalChangesToEventTree(rootEvent, id2event, deletedDbIds, id2instance);
         });
-      }
-    
-      private _mergeLocalChangesToEventTree(event: Instance, 
-        id2event: Map<number, Instance>, 
-        deletedDbIds: number[], 
+    }
+
+    private _mergeLocalChangesToEventTree(event: Instance,
+        id2event: Map<number, Instance>,
+        deletedDbIds: number[],
         id2instance: Map<number, Instance>) {
         const local = id2instance.get(event.dbId);
         if (local) {
-          if (local.dbId < 0) {
-            // This is a new instance
-            this.replaceHasEvent(local, event, id2event);
-          }
-          else if (local.modifiedAttributes && local.modifiedAttributes.length > 0) {
-            for (let modifiedAtt of local.modifiedAttributes) {
-              // These attributes are related to the event tree
-              if (modifiedAtt === 'name')
-                event.displayName = local.displayName; // Display name may change
-              else if (modifiedAtt === 'hasDiagram' || modifiedAtt === '_doRelease' || modifiedAtt === 'speciesName')
-                event.attributes[modifiedAtt] = local.attributes.get(modifiedAtt);
-              else if (modifiedAtt === 'hasEvent') {
-                // This is much more complicated. Here, we just replace the whole hasEvent list
-                // This is similar to handleHasEventEdit in EventTreeComponent
+            if (local.dbId < 0) {
+                // This is a new instance
                 this.replaceHasEvent(local, event, id2event);
-              }
             }
-          }
+            else if (local.modifiedAttributes && local.modifiedAttributes.length > 0) {
+                for (let modifiedAtt of local.modifiedAttributes) {
+                    // These attributes are related to the event tree
+                    if (modifiedAtt === 'name')
+                        event.displayName = local.displayName; // Display name may change
+                    else if (modifiedAtt === 'hasDiagram' || modifiedAtt === '_doRelease' || modifiedAtt === 'speciesName')
+                        event.attributes[modifiedAtt] = local.attributes.get(modifiedAtt);
+                    else if (modifiedAtt === 'hasEvent') {
+                        // This is much more complicated. Here, we just replace the whole hasEvent list
+                        // This is similar to handleHasEventEdit in EventTreeComponent
+                        this.replaceHasEvent(local, event, id2event);
+                    }
+                }
+            }
         }
         // Recursive calling
         if (event.attributes?.hasEvent) {
-          for (let i = 0; i < event.attributes.hasEvent.length; i++) {
-            let child = event.attributes.hasEvent[i];
-            if (deletedDbIds.includes(child.dbId)) {
-              event.attributes.hasEvent.splice(i, 1);
-              i--; // This is important: need to adjust the index after removal to check the next one 
+            for (let i = 0; i < event.attributes.hasEvent.length; i++) {
+                let child = event.attributes.hasEvent[i];
+                if (deletedDbIds.includes(child.dbId)) {
+                    event.attributes.hasEvent.splice(i, 1);
+                    i--; // This is important: need to adjust the index after removal to check the next one 
+                }
+                else {
+                    // Recursively process the child
+                    this._mergeLocalChangesToEventTree(child, id2event, deletedDbIds, id2instance);
+                }
             }
-            else {
-              // Recursively process the child
-              this._mergeLocalChangesToEventTree(child, id2event, deletedDbIds, id2instance);
-            }
-          }
         }
-      }
-    
-      private replaceHasEvent(localEvent: Instance, dbEvent: Instance, id2event: Map<number, Instance>) {
+    }
+
+    private replaceHasEvent(localEvent: Instance, dbEvent: Instance, id2event: Map<number, Instance>) {
         const newHasEvent = [];
         if (localEvent.attributes.get('hasEvent')) {
-          for (let tmpInst of localEvent.attributes.get('hasEvent')) {
-            let childEvent = id2event.get(tmpInst.dbId);
-            if (childEvent)
-              newHasEvent.push(childEvent);
-            else {
-              // This is a new instance
-              // Make a copy
-              // The new instance's hasEvent points to shell instances
-              // that are not in the event tree. However, calling this function
-              // _mergeLocalChanesToEventTree recursively will fix this issue.
-              // since hasEvent will
-              const newEvent = {
-                ...tmpInst,
-                attributes: { 'hasEvent': tmpInst.attributes?.get('hasEvent') }
-              };
-              newHasEvent.push(newEvent);
+            for (let tmpInst of localEvent.attributes.get('hasEvent')) {
+                let childEvent = id2event.get(tmpInst.dbId);
+                if (childEvent)
+                    newHasEvent.push(childEvent);
+                else {
+                    // This is a new instance
+                    // Make a copy
+                    // The new instance's hasEvent points to shell instances
+                    // that are not in the event tree. However, calling this function
+                    // _mergeLocalChanesToEventTree recursively will fix this issue.
+                    // since hasEvent will
+                    const newEvent = {
+                        ...tmpInst,
+                        attributes: { 'hasEvent': tmpInst.attributes?.get('hasEvent') }
+                    };
+                    newHasEvent.push(newEvent);
+                }
             }
-          }
         }
         dbEvent.attributes['hasEvent'] = newHasEvent;
-      }
-    
-      private grepId2Event(event: Instance, id2event: Map<number, Instance>) {
+    }
+
+    private grepId2Event(event: Instance, id2event: Map<number, Instance>) {
         id2event.set(event.dbId, event);
         if (event.attributes?.hasEvent) {
-          for (let child of event.attributes.hasEvent) {
-            this.grepId2Event(child, id2event);
-          }
+            for (let child of event.attributes.hasEvent) {
+                this.grepId2Event(child, id2event);
+            }
         }
-      }
+    }
 
 }

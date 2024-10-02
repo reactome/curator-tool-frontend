@@ -1,4 +1,4 @@
-import { createFeatureSelector, createSelector } from "@ngrx/store";
+import { createFeatureSelector, createSelector, State } from "@ngrx/store";
 import {
   DeletedInstanceState,
   NewInstanceState,
@@ -7,6 +7,7 @@ import {
   newInstancesAdaptor,
   updatedInstancesAdaptor
 } from "./instance.reducers";
+import { combineLatest } from "rxjs";
 
 // Updated instance state
 export const UPDATE_INSTANCES_STATE_NAME = 'updated_instances'

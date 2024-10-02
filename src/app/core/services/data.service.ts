@@ -1,6 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
-import { catchError, concatMap, forkJoin, map, Observable, of, Subject, throwError } from 'rxjs';
+import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
 import {
@@ -8,6 +8,8 @@ import {
   SchemaClass
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
+import { Store } from "@ngrx/store";
+import { newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 
 
 @Injectable({
@@ -56,10 +58,11 @@ export class DataService {
 
   // Use this subject to force waiting for components to fetch instance
   // since we need to load changed instances from cached storage first
-  private loadInstanceSubject : Subject<void> | undefined = undefined;
+  private loadInstanceSubject: Subject<void> | undefined = undefined;
 
   constructor(private http: HttpClient,
-    private utils: InstanceUtilities
+    private utils: InstanceUtilities,
+    private store: Store
   ) {
   }
 
@@ -158,7 +161,7 @@ export class DataService {
             dbId: 0,
             displayName: "TopLevelPathway",
             schemaClassName: "TopLevelPathway",
-            attributes: {"hasEvent": data}
+            attributes: { "hasEvent": data }
           };
           this.utils.mergeLocalChangesToEventTree(rootEvent, this.id2instance);
           this.rootEvent = rootEvent;
@@ -335,18 +338,18 @@ export class DataService {
    */
   createNewInstance(schemaClassName: string): Observable<Instance> {
     return this.fetchSchemaClass(schemaClassName).pipe(map((schemaClass: SchemaClass) => {
-        const attributes = new Map();
-        attributes.set('dbId', this.getNextNewDbId());
-        attributes.set('displayName', NEW_DISPLAY_NAME);
-        let instance: Instance = {
-          dbId: attributes.get('dbId'),
-          displayName: attributes.get('displayName'),
-          schemaClassName: schemaClassName,
-          attributes: attributes
-        };
-        instance.schemaClass = schemaClass;
-        return instance;
-      }),
+      const attributes = new Map();
+      attributes.set('dbId', this.getNextNewDbId());
+      attributes.set('displayName', NEW_DISPLAY_NAME);
+      let instance: Instance = {
+        dbId: attributes.get('dbId'),
+        displayName: attributes.get('displayName'),
+        schemaClassName: schemaClassName,
+        attributes: attributes
+      };
+      instance.schemaClass = schemaClass;
+      return instance;
+    }),
       catchError((err: Error) => {
         console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
           panelClass: ['warning-snackbar'],
@@ -408,9 +411,9 @@ export class DataService {
    * @returns
    */
   listInstances(className: string,
-                skip: number,
-                limit: number,
-                searchKey: string | undefined) {
+    skip: number,
+    limit: number,
+    searchKey: string | undefined) {
     let url = this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
     if (searchKey && searchKey.trim().length > 0) {
       url += '?query=' + searchKey.trim();
@@ -419,15 +422,15 @@ export class DataService {
     return this.http.get<InstanceList>(url)
       .pipe(
         map((data: InstanceList) => {
-        return data;
-    }, // Nothing needs to be done.
-        catchError((err: Error) => {
-          console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 10000
-          });
-          return throwError(() => err);
-        })));
+          return data;
+        }, // Nothing needs to be done.
+          catchError((err: Error) => {
+            console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
+              panelClass: ['warning-snackbar'],
+              duration: 10000
+            });
+            return throwError(() => err);
+          })));
   }
 
   /**
@@ -443,23 +446,23 @@ export class DataService {
    * @returns
    */
   searchInstances(className: string,
-                skip: number,
-                limit: number,
-                selectedAttributes?: string[] | undefined,
-                selectedOperands?: string[] | undefined,
-                searchKeys?: string[] | undefined): Observable<InstanceList> {
+    skip: number,
+    limit: number,
+    selectedAttributes?: string[] | undefined,
+    selectedOperands?: string[] | undefined,
+    searchKeys?: string[] | undefined): Observable<InstanceList> {
     let url = this.searchInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
 
-    if (selectedAttributes !== undefined && selectedOperands !== undefined && searchKeys !== undefined){
+    if (selectedAttributes !== undefined && selectedOperands !== undefined && searchKeys !== undefined) {
       url += '?attributes=' + encodeURI(selectedAttributes.toString())
-      + '&operands=' + encodeURI(selectedOperands.toString())
-      + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'"));
+        + '&operands=' + encodeURI(selectedOperands.toString())
+        + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'"));
     }
     console.log('search instances url: ' + url);
     return this.http.get<InstanceList>(url)
       .pipe(map((data: InstanceList) => {
         return data;
-    }), // Nothing needs to be done.
+      }), // Nothing needs to be done.
         catchError((err: Error) => {
           console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
             panelClass: ['warning-snackbar'],
@@ -555,7 +558,7 @@ export class DataService {
       })
     );
   }
-  
+
 
   private cloneUserInstances(userInstances: UserInstances): UserInstances {
     const newInstances = userInstances.newInstances.map(i => this.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
@@ -635,7 +638,7 @@ export class DataService {
    * @param className
    */
   findInstanceByDisplayName(displayName: string,
-                            className: string[]): Observable<Instance> {
+    className: string[]): Observable<Instance> {
     let clsNameText = className.join(',');
     // The URL should encode itself
     let url = this.findInstanceByDisplayNameUrl + '?displayName=' + displayName + "&classNames=" + clsNameText;
@@ -741,9 +744,9 @@ export class DataService {
   }
 
   testQACheckReport(dbId: number,
-                    checkType: string,
-                    editedAttributeName: string | undefined,
-                    editedAttributeValue: string | undefined): Observable<string[][]> {
+    checkType: string,
+    editedAttributeName: string | undefined,
+    editedAttributeValue: string | undefined): Observable<string[][]> {
     return this.http.get<string[][]>(this.testQACheckReportUrl + `${dbId}`
       + "?checkType=" + checkType
       + "&editedAttributeNames=" + editedAttributeName
@@ -761,12 +764,14 @@ export class DataService {
   }
 
   getReferrers(dbId: number): Observable<Referrer[]> {
-    return this.http.get<Referrer[]>(this.getReferrersUrl  + `${dbId}`)
+    return this.http.get<Referrer[]>(this.getReferrersUrl + `${dbId}`)
       .pipe(
         map((data: Referrer[]) => {
-          console.log(data);
-            return data;
-          }, // Nothing needs to be done.
+          for (let ref of this.getReferrersOfNewInstance(dbId)) {
+            data.push(ref);
+          }
+          return data;
+        }, // Nothing needs to be done.
           catchError((err: Error) => {
             console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
               panelClass: ['warning-snackbar'],
@@ -791,6 +796,33 @@ export class DataService {
         return throwError(() => error);
       })
     )
+  }
+
+  getReferrersOfNewInstance(dbId: number) {
+    let referrers: Referrer[] = [];
+    combineLatest([this.store.select(updatedInstances()).pipe(take(1)), this.store.select(newInstances()).pipe(take(1))])
+      .subscribe(([updatedInstances, newInstances]) => {
+        const dbIds = updatedInstances.map(inst => inst.dbId);
+        newInstances.map(inst => dbIds.push(inst.dbId));
+        this.fetchInstances(dbIds).subscribe(insts => {
+          for (let inst of insts) {
+            if (!inst.modifiedAttributes)
+              continue;
+            for (let attribute of inst.modifiedAttributes!) {
+              let attributeData = inst.attributes.get(attribute)
+              for (let attData of attributeData) {
+                if (attData.dbId == dbId) {
+                  let ref: Referrer = { attributeName: "Newly curated", referrers: [inst] }
+                  referrers.push(ref);
+                }
+              }
+
+            }
+
+          }
+        });
+      })
+    return referrers;
   }
 
 }
