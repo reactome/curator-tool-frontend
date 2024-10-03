@@ -9,7 +9,7 @@ import {
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
 import { Store } from "@ngrx/store";
-import { newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
+import { deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 
 
 @Injectable({
@@ -423,15 +423,29 @@ export class DataService {
       .pipe(
         map((data: InstanceList) => {
           // Checking the store for new instances to add
-          let newInsts: Instance[];
           this.store.select(newInstances()).pipe(take(1)).subscribe(insts => {
-            for(let inst of insts) {
-              // Only take new instances that have the correct className
-              if(inst.schemaClassName === className)
-                // Update the data being returned.
-                data.instances.push(inst);
-                data.totalCount++;
-            }
+            if (insts !== undefined)
+              for (let inst of insts) {
+                // Only take new instances that have the correct className
+                if (inst.schemaClassName === className) {
+                  // Update the data being returned.
+                  data.instances.push(inst);
+                  data.totalCount++;
+                }
+              }
+          })
+          this.store.select(deleteInstances()).subscribe((instances) => {
+            if (instances !== undefined)
+              for (let inst of instances) {
+                // Only consider instances that have the correct className
+                if (inst.schemaClassName === className) {
+                  // Find and remove deleted instance.
+                  const dbIds: number[] = data.instances.map(dataEntry => dataEntry.dbId);
+                  let indexOfInstance = dbIds.indexOf(inst.dbId);
+                  data.instances.splice(indexOfInstance, 1);
+                  data.totalCount--;
+                }
+              } 
           })
           return data;
         }, // Nothing needs to be done.
