@@ -6,6 +6,9 @@ import { ViewOnlyService } from "../../../../../core/services/view-only.service"
 import { ActivatedRoute, Router } from "@angular/router";
 import { ReferrersDialogService } from "../../../../../instance/components/referrers-dialog/referrers-dialog.service";
 import { DeletionDialogService } from "../../../../../instance/components/deletion-dialog/deletion-dialog.service";
+import { take } from 'rxjs';
+import { newInstances } from 'src/app/instance/state/instance.selectors';
+import { Store } from '@ngrx/store';
 
 @Component({
   selector: 'app-instance-selection',
@@ -36,6 +39,7 @@ export class InstanceSelectionComponent implements OnInit {
   showFilterComponent: boolean = false;
   // Outputting the search string to update the header
   @Output() queryEvent = new EventEmitter<string>();
+  newInstances: Instance[] = [];
 
 
   @Input() set setClassName(inputClassName: string) {
@@ -55,7 +59,8 @@ export class InstanceSelectionComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private referrersDialogService: ReferrersDialogService,
-    private deletionDialogService: DeletionDialogService) {
+    private deletionDialogService: DeletionDialogService,
+    private store: Store) {
   }
 
   ngOnInit(): void {
@@ -78,7 +83,6 @@ export class InstanceSelectionComponent implements OnInit {
         }
         )
     }
-    //this.queryEvent.emit(this.searchKey);
   }
 
   loadSchemaClasses() {

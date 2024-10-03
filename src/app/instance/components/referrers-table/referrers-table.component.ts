@@ -2,6 +2,7 @@ import {Component, Input} from '@angular/core';
 import {Instance, Referrer} from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import {ViewOnlyService} from "../../../core/services/view-only.service";
+import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 /**
  * A dialog component to show referrers of an instance.
@@ -20,7 +21,7 @@ export class ReferrersTableComponent {
   @Input() instance: Instance | undefined;
 
   // Using constructor to correctly initialize values
-  constructor(private dataService: DataService) {
+  constructor(private dataService: DataService, private instanceService: InstanceUtilities) {
     setTimeout(() => {
       // Wrap them together to avoid NG0100 error
       this.showProgressSpinner = true;
@@ -29,6 +30,7 @@ export class ReferrersTableComponent {
         this.instanceList = referrers.sort((a, b) => a.attributeName.localeCompare(b.attributeName));
         this.showProgressSpinner = false;
       })
+      // TODO: Remove instances from referral list that are marked to be deleted.
     });
   }
 

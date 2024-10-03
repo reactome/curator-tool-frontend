@@ -8,6 +8,10 @@
       </mat-option>
     </ng-container>
   </mat-select>
+  <!-- <section class="table-container" tabindex="0">
+    <app-instance-list-table
+      [dataSource]="newInstances"></app-instance-list-table>
+  </section> -->
   <section class="scroll_panel">
     <!-- For this list, we use a pagesize = 20 as the default for easy check: users are expected to do searching here. -->
     <app-instance-selection class="scroll_panel" [setClassName]="this.selected" [isSelection]="true" [pageSize]="20"

@@ -1,6 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
-import { catchError, concatMap, forkJoin, map, Observable, of, Subject, throwError } from 'rxjs';
+import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
 import {
@@ -8,6 +8,8 @@ import {
   SchemaClass
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
+import { Store } from "@ngrx/store";
+import { deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 
 
 @Injectable({
@@ -56,10 +58,12 @@ export class DataService {
 
   // Use this subject to force waiting for components to fetch instance
   // since we need to load changed instances from cached storage first
-  private loadInstanceSubject : Subject<void> | undefined = undefined;
+  private loadInstanceSubject: Subject<void> | undefined = undefined;
+  newInstances: unknown;
 
   constructor(private http: HttpClient,
-    private utils: InstanceUtilities
+    private utils: InstanceUtilities,
+    private store: Store
   ) {
   }
 
@@ -158,7 +162,7 @@ export class DataService {
             dbId: 0,
             displayName: "TopLevelPathway",
             schemaClassName: "TopLevelPathway",
-            attributes: {"hasEvent": data}
+            attributes: { "hasEvent": data }
           };
           this.utils.mergeLocalChangesToEventTree(rootEvent, this.id2instance);
           this.rootEvent = rootEvent;
@@ -335,18 +339,18 @@ export class DataService {
    */
   createNewInstance(schemaClassName: string): Observable<Instance> {
     return this.fetchSchemaClass(schemaClassName).pipe(map((schemaClass: SchemaClass) => {
-        const attributes = new Map();
-        attributes.set('dbId', this.getNextNewDbId());
-        attributes.set('displayName', NEW_DISPLAY_NAME);
-        let instance: Instance = {
-          dbId: attributes.get('dbId'),
-          displayName: attributes.get('displayName'),
-          schemaClassName: schemaClassName,
-          attributes: attributes
-        };
-        instance.schemaClass = schemaClass;
-        return instance;
-      }),
+      const attributes = new Map();
+      attributes.set('dbId', this.getNextNewDbId());
+      attributes.set('displayName', NEW_DISPLAY_NAME);
+      let instance: Instance = {
+        dbId: attributes.get('dbId'),
+        displayName: attributes.get('displayName'),
+        schemaClassName: schemaClassName,
+        attributes: attributes
+      };
+      instance.schemaClass = schemaClass;
+      return instance;
+    }),
       catchError((err: Error) => {
         console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
           panelClass: ['warning-snackbar'],
@@ -408,26 +412,50 @@ export class DataService {
    * @returns
    */
   listInstances(className: string,
-                skip: number,
-                limit: number,
-                searchKey: string | undefined) {
+    skip: number,
+    limit: number,
+    searchKey: string | undefined) {
     let url = this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
     if (searchKey && searchKey.trim().length > 0) {
       url += '?query=' + searchKey.trim();
     }
-    console.log('list instances url: ' + url);
     return this.http.get<InstanceList>(url)
       .pipe(
         map((data: InstanceList) => {
-        return data;
-    }, // Nothing needs to be done.
-        catchError((err: Error) => {
-          console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 10000
-          });
-          return throwError(() => err);
-        })));
+          // Checking the store for new instances to add
+          this.store.select(newInstances()).pipe(take(1)).subscribe(insts => {
+            if (insts !== undefined)
+              for (let inst of insts) {
+                // Only take new instances that have the correct className
+                if (inst.schemaClassName === className) {
+                  // Update the data being returned.
+                  data.instances.push(inst);
+                  data.totalCount++;
+                }
+              }
+          })
+          this.store.select(deleteInstances()).subscribe((instances) => {
+            if (instances !== undefined)
+              for (let inst of instances) {
+                // Only consider instances that have the correct className
+                if (inst.schemaClassName === className) {
+                  // Find and remove deleted instance.
+                  const dbIds: number[] = data.instances.map(dataEntry => dataEntry.dbId);
+                  let indexOfInstance = dbIds.indexOf(inst.dbId);
+                  data.instances.splice(indexOfInstance, 1);
+                  data.totalCount--;
+                }
+              }
+          })
+          return data;
+        }, // Nothing needs to be done.
+          catchError((err: Error) => {
+            console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
+              panelClass: ['warning-snackbar'],
+              duration: 10000
+            });
+            return throwError(() => err);
+          })));
   }
 
   /**
@@ -443,23 +471,23 @@ export class DataService {
    * @returns
    */
   searchInstances(className: string,
-                skip: number,
-                limit: number,
-                selectedAttributes?: string[] | undefined,
-                selectedOperands?: string[] | undefined,
-                searchKeys?: string[] | undefined): Observable<InstanceList> {
+    skip: number,
+    limit: number,
+    selectedAttributes?: string[] | undefined,
+    selectedOperands?: string[] | undefined,
+    searchKeys?: string[] | undefined): Observable<InstanceList> {
     let url = this.searchInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
 
-    if (selectedAttributes !== undefined && selectedOperands !== undefined && searchKeys !== undefined){
+    if (selectedAttributes !== undefined && selectedOperands !== undefined && searchKeys !== undefined) {
       url += '?attributes=' + encodeURI(selectedAttributes.toString())
-      + '&operands=' + encodeURI(selectedOperands.toString())
-      + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'"));
+        + '&operands=' + encodeURI(selectedOperands.toString())
+        + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'"));
     }
     console.log('search instances url: ' + url);
     return this.http.get<InstanceList>(url)
       .pipe(map((data: InstanceList) => {
         return data;
-    }), // Nothing needs to be done.
+      }), // Nothing needs to be done.
         catchError((err: Error) => {
           console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
             panelClass: ['warning-snackbar'],
@@ -555,7 +583,7 @@ export class DataService {
       })
     );
   }
-  
+
 
   private cloneUserInstances(userInstances: UserInstances): UserInstances {
     const newInstances = userInstances.newInstances.map(i => this.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
@@ -635,7 +663,7 @@ export class DataService {
    * @param className
    */
   findInstanceByDisplayName(displayName: string,
-                            className: string[]): Observable<Instance> {
+    className: string[]): Observable<Instance> {
     let clsNameText = className.join(',');
     // The URL should encode itself
     let url = this.findInstanceByDisplayNameUrl + '?displayName=' + displayName + "&classNames=" + clsNameText;
@@ -741,9 +769,9 @@ export class DataService {
   }
 
   testQACheckReport(dbId: number,
-                    checkType: string,
-                    editedAttributeName: string | undefined,
-                    editedAttributeValue: string | undefined): Observable<string[][]> {
+    checkType: string,
+    editedAttributeName: string | undefined,
+    editedAttributeValue: string | undefined): Observable<string[][]> {
     return this.http.get<string[][]>(this.testQACheckReportUrl + `${dbId}`
       + "?checkType=" + checkType
       + "&editedAttributeNames=" + editedAttributeName
@@ -761,12 +789,24 @@ export class DataService {
   }
 
   getReferrers(dbId: number): Observable<Referrer[]> {
-    return this.http.get<Referrer[]>(this.getReferrersUrl  + `${dbId}`)
+    return this.http.get<Referrer[]>(this.getReferrersUrl + `${dbId}`)
       .pipe(
         map((data: Referrer[]) => {
-          console.log(data);
-            return data;
-          }, // Nothing needs to be done.
+          // Checking for instances that have not yet been committed
+          for (let ref of this.getReferrersOfNewInstance(dbId)) {
+            let attributeNames: string[] = data.map((ref) => ref.attributeName);
+            // If the Reference List contains this attribute, add the instance to the array
+            if (attributeNames.includes(ref.attributeName)) {
+              let index = attributeNames.indexOf(ref.attributeName);
+              data.at(index)?.referrers.push(ref.referrers.at(0)!);
+            }
+            // Otherwise create new reference type
+            else {
+              data.push(ref);
+            }
+          }
+          return data;
+        }, // Nothing needs to be done.
           catchError((err: Error) => {
             console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
               panelClass: ['warning-snackbar'],
@@ -791,6 +831,38 @@ export class DataService {
         return throwError(() => error);
       })
     )
+  }
+
+  getReferrersOfNewInstance(dbId: number) {
+    let referrers: Referrer[] = [];
+    // Checking the store for new and updated instances
+    combineLatest([this.store.select(updatedInstances()).pipe(take(1)), this.store.select(newInstances()).pipe(take(1))])
+      .subscribe(([updatedInstances, newInstances]) => {
+        const dbIds = updatedInstances.map(inst => inst.dbId);
+        newInstances.map(inst => dbIds.push(inst.dbId));
+        this.fetchInstances(dbIds).subscribe(insts => {
+          for (let inst of insts) {
+            if (!inst.modifiedAttributes)
+              continue;
+            // Only need to check the modified attributes for edits
+            for (let attribute of inst.modifiedAttributes!) {
+              let attributeData = inst.attributes.get(attribute)
+              for (let attData of attributeData) {
+                // Check that the attribute is an Object with the correct dbId
+                if (attData.dbId && attData.dbId == dbId) {
+                  // The Reference type is used to hold the attribute name and instance,
+                  // the getReferrers method will map to the correct array. 
+                  let ref: Referrer = { attributeName: attribute, referrers: [inst] }
+                  referrers.push(ref);
+                }
+              }
+
+            }
+
+          }
+        });
+      })
+    return referrers;
   }
 
 }

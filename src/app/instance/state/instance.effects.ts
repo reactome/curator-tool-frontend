@@ -7,6 +7,7 @@ import { defaultIfEmpty, take, tap } from "rxjs";
 import { deleteInstances, newInstances, updatedInstances } from "./instance.selectors";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { Instance } from "src/app/core/models/reactome-instance.model";
+import { BookmarkActions } from "src/app/schema-view/instance-bookmark/state/bookmark.actions";
 
 // Keep it for the time being as a placeholder. May not use it in the future.
 @Injectable()
@@ -82,9 +83,11 @@ export class InstanceEffects {
           // Any update should be handled already by last_updated_instance or add_updated_instance
           // this.dataService.registerInstance(inst);
           this.store.dispatch(DeleteInstanceActions.ls_register_deleted_instance(this.instUtils.makeShell(inst)));
+          this.store.dispatch(BookmarkActions.remove_bookmark(this.instUtils.makeShell(inst)));
           break;
         case DeleteInstanceActions.remove_deleted_instance.type:
           this.store.dispatch(DeleteInstanceActions.ls_remove_deleted_instance(inst));
+          this.store.dispatch(BookmarkActions.ls_remove_bookmark(this.instUtils.makeShell(inst)));
           break;
       }
     });
