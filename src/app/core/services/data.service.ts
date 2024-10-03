@@ -445,7 +445,7 @@ export class DataService {
                   data.instances.splice(indexOfInstance, 1);
                   data.totalCount--;
                 }
-              } 
+              }
           })
           return data;
         }, // Nothing needs to be done.
@@ -792,8 +792,18 @@ export class DataService {
     return this.http.get<Referrer[]>(this.getReferrersUrl + `${dbId}`)
       .pipe(
         map((data: Referrer[]) => {
+          // Checking for instances that have not yet been committed
           for (let ref of this.getReferrersOfNewInstance(dbId)) {
-            data.push(ref);
+            let attributeNames: string[] = data.map((ref) => ref.attributeName);
+            // If the Reference List contains this attribute, add the instance to the array
+            if (attributeNames.includes(ref.attributeName)) {
+              let index = attributeNames.indexOf(ref.attributeName);
+              data.at(index)?.referrers.push(ref.referrers.at(0)!);
+            }
+            // Otherwise create new reference type
+            else {
+              data.push(ref);
+            }
           }
           return data;
         }, // Nothing needs to be done.
@@ -825,6 +835,7 @@ export class DataService {
 
   getReferrersOfNewInstance(dbId: number) {
     let referrers: Referrer[] = [];
+    // Checking the store for new and updated instances
     combineLatest([this.store.select(updatedInstances()).pipe(take(1)), this.store.select(newInstances()).pipe(take(1))])
       .subscribe(([updatedInstances, newInstances]) => {
         const dbIds = updatedInstances.map(inst => inst.dbId);
@@ -833,11 +844,15 @@ export class DataService {
           for (let inst of insts) {
             if (!inst.modifiedAttributes)
               continue;
+            // Only need to check the modified attributes for edits
             for (let attribute of inst.modifiedAttributes!) {
               let attributeData = inst.attributes.get(attribute)
               for (let attData of attributeData) {
+                // Check that the attribute is an Object with the correct dbId
                 if (attData.dbId && attData.dbId == dbId) {
-                  let ref: Referrer = { attributeName: "Newly curated", referrers: [inst] }
+                  // The Reference type is used to hold the attribute name and instance,
+                  // the getReferrers method will map to the correct array. 
+                  let ref: Referrer = { attributeName: attribute, referrers: [inst] }
                   referrers.push(ref);
                 }
               }
