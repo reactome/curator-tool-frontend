@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {Instance, Referrer} from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import {ViewOnlyService} from "../../../core/services/view-only.service";
@@ -19,6 +19,7 @@ export class ReferrersTableComponent {
   showProgressSpinner: boolean = false;
   totalCount: number = 0;
   @Input() instance: Instance | undefined;
+  @Output() numberOfRefs = new EventEmitter<number>();
 
   // Using constructor to correctly initialize values
   constructor(private dataService: DataService, private instanceService: InstanceUtilities) {
@@ -29,6 +30,7 @@ export class ReferrersTableComponent {
         referrers.forEach(ref => {this.totalCount += ref.referrers.length})
         this.instanceList = referrers.sort((a, b) => a.attributeName.localeCompare(b.attributeName));
         this.showProgressSpinner = false;
+        this.numberOfRefs.emit(this.totalCount);
       })
       // TODO: Remove instances from referral list that are marked to be deleted.
     });

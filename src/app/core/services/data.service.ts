@@ -63,7 +63,7 @@ export class DataService {
 
   constructor(private http: HttpClient,
     private utils: InstanceUtilities,
-    private store: Store
+    private store: Store,
   ) {
   }
 
@@ -427,9 +427,9 @@ export class DataService {
             if (insts !== undefined)
               for (let inst of insts) {
                 // Only take new instances that have the correct className
-                if (inst.schemaClassName === className) {
-                  // Update the data being returned.
-                  data.instances.push(inst);
+                if (this.isSchemaClass(inst, className)) {
+                  // Update the data being returned. New instance is placed at index 0.
+                  data.instances.splice(0, 0, inst);
                   data.totalCount++;
                 }
               }
@@ -438,7 +438,7 @@ export class DataService {
             if (instances !== undefined)
               for (let inst of instances) {
                 // Only consider instances that have the correct className
-                if (inst.schemaClassName === className) {
+                if (this.isSchemaClass(inst, className)) {
                   // Find and remove deleted instance.
                   const dbIds: number[] = data.instances.map(dataEntry => dataEntry.dbId);
                   let indexOfInstance = dbIds.indexOf(inst.dbId);
@@ -864,5 +864,32 @@ export class DataService {
       })
     return referrers;
   }
+
+  isSchemaClass(instance: Instance, className: string): boolean {
+    let schemaClass = this.getSchemaClass(className);
+    if (schemaClass === undefined)
+        return false;
+    // Get all children
+    let allClsNames = new Set<string>();
+    let current = new Set<SchemaClass>();
+    let next = new Set<SchemaClass>()
+    current.add(schemaClass);
+    while (current.size > 0) {
+        for (let cls of current) {
+            allClsNames.add(cls.name);
+            if (cls.children) {
+                for (let child of cls.children) {
+                    if (allClsNames.has(child.name))
+                        continue;
+                    next.add(child);
+                }
+            }
+        }
+        // Let's just do a switch
+        current = new Set(next);
+        next.clear();
+    }
+    return allClsNames.has(instance.schemaClassName);
+}
 
 }

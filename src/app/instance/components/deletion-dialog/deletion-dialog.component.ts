@@ -17,10 +17,10 @@ import {ConfirmDeleteDialogService} from "./confirm-delete-dialog/confirm-delete
 export class DeletionDialogComponent {
   selected: string = '';
   showReferrersDialog: boolean = false;
+  numberOfRefs: number = 0;
 
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public instance: Instance,
-              private store: Store,
               public dialogRef: MatDialogRef<DeletionDialogComponent>,
               private confirmDeleteDialogService: ConfirmDeleteDialogService) {
   }
@@ -36,5 +36,9 @@ export class DeletionDialogComponent {
 
   showReferrers() {
     this.showReferrersDialog = !this.showReferrersDialog;
+  }
+
+  setNumberOfRefs(refs: number){
+    this.numberOfRefs = refs;
   }
 }
