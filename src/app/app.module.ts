@@ -4,7 +4,7 @@ import { BrowserModule } from '@angular/platform-browser';
 
 import { MAT_TOOLTIP_DEFAULT_OPTIONS, MatTooltipDefaultOptions } from '@angular/material/tooltip';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { RouterModule } from "@angular/router";
+import { RouteReuseStrategy, RouterModule } from "@angular/router";
 import { JwtModule } from "@auth0/angular-jwt";
 import { EffectsModule } from '@ngrx/effects';
 import { routerReducer } from '@ngrx/router-store';
@@ -12,7 +12,7 @@ import { StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { DIAGRAM_CONFIG_TOKEN } from 'ngx-reactome-diagram';
 import { environment } from 'src/environments/environment.dev';
-import { AppRoutingModule } from './app-routing.module';
+import { AppRoutingModule, routes } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { AuthModule } from "./auth/auth.module";
 import { HeaderInterceptor } from "./core/interceptors/header.interceptor";
@@ -26,6 +26,7 @@ import { MainSchemaViewModule } from "./schema-view/main-schema-view/main-schema
 import { SchemaClassTableModule } from './schema-view/schema-class/components/table/schema-class-table.module';
 import { SharedModule } from "./shared/shared.module";
 import { StatusModule } from './status/status.module';
+import { CustomReuseStrategy } from './custom-reuse-strategy';
 // import { CustomSerializer } from "./store/custom-serializer";
 
 export function tokenGetter() {
@@ -76,12 +77,14 @@ const customTooltipOptions: MatTooltipDefaultOptions = {
       config: {
         tokenGetter
       }
-    })
+    }),
+    RouterModule.forRoot(routes)
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: HeaderInterceptor, multi: true },
     {provide: DIAGRAM_CONFIG_TOKEN, useValue: diagramServiceConfig},
-    { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: customTooltipOptions }
+    { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: customTooltipOptions },
+    { provide: RouteReuseStrategy, useClass: CustomReuseStrategy }
   ],
   bootstrap: [AppComponent],
 })

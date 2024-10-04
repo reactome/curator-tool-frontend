@@ -85,8 +85,8 @@ export class InstanceUtilities {
         this.lastClickedDbIdForComparison.next(dbId);
     }
 
-    isSchemaClass(instance: Instance, className: string, dataService: DataService): boolean {
-        let schemaClass = dataService.getSchemaClass(className);
+    isSchemaClass(instance: Instance, schemaClass?: SchemaClass): boolean {
+        //let schemaClass = dataService.getSchemaClass(className);
         if (schemaClass === undefined)
             return false;
         // Get all children

@@ -9,14 +9,14 @@
 - the order inner and outer layers of a compartment needs to be controlled. It is quite random right now.
 
 #### Deidre
-- deletion needs to refresh the list if it is done in the list (maybe not if it has not committed. Probably only for new instance?)
-- new instance is not in the list for selection: so it cannot be used for reference. Basically it is not in the list at all.
-- For some list: new instances will not be included for consistence. However, for edit via selection, they need to be listed so that the user can choose them as new values.
-- referer check has not considered the updated and new instances
+- deletion needs to refresh the list if it is done in the list (maybe not if it has not committed. Probably only for new instance?) // Done
+- new instance is not in the list for selection: so it cannot be used for reference. Basically it is not in the list at all. //Done
+- For some list: new instances will not be included for consistence. However, for edit via selection, they need to be listed so that the user can choose them as new values. //Done
+- referer check has not considered the updated and new instances //Done
 - the height distribution is not working in safari!
 - how to avoid reload the schema tree when a new instance to create or listing instances: this is annoying when the mouse is around the end of the tree since the mouse position is shifted: this occurs when the view switched between list and instance.
-- the deletion action in the changes list for new instances don't show any warning: the behavior should be consistent between the instance view and the changes list.
-- Bug: After filtering to changed only attribute in the comparison table, turn off the comparison. There is no way to show the whole table now.
+- the deletion action in the changes list for new instances don't show any warning: the behavior should be consistent between the instance view and the changes list. //Done
+- Bug: After filtering to changed only attribute in the comparison table, turn off the comparison. There is no way to show the whole table now. // Done ~added button to value col
 - Bug: When an attribute is a single-valued attribute, make sure there is only one instance can be selected in the instance list.
 
 #### TODO:

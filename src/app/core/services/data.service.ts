@@ -867,29 +867,7 @@ export class DataService {
 
   isSchemaClass(instance: Instance, className: string): boolean {
     let schemaClass = this.getSchemaClass(className);
-    if (schemaClass === undefined)
-        return false;
-    // Get all children
-    let allClsNames = new Set<string>();
-    let current = new Set<SchemaClass>();
-    let next = new Set<SchemaClass>()
-    current.add(schemaClass);
-    while (current.size > 0) {
-        for (let cls of current) {
-            allClsNames.add(cls.name);
-            if (cls.children) {
-                for (let child of cls.children) {
-                    if (allClsNames.has(child.name))
-                        continue;
-                    next.add(child);
-                }
-            }
-        }
-        // Let's just do a switch
-        current = new Set(next);
-        next.clear();
-    }
-    return allClsNames.has(instance.schemaClassName);
-}
+    return this.utils.isSchemaClass(instance, schemaClass!);
+  }
 
 }
