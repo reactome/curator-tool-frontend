@@ -14,8 +14,9 @@ import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-d
   styleUrls: ['./main-event.component.scss'],
 })
 export class MainEventComponent {
-  sideWidth = 400;
-  diagramHeight = 850;
+  treeWidth = 400;
+  // Assign 2/3 height to diagram
+  diagramHeight = window.innerHeight * 0.67;
   schemaPanelOpen = false;
   resizingVertical: boolean = false;
   resizingHorizontal: boolean = false;
@@ -58,7 +59,7 @@ export class MainEventComponent {
   }
 
   resizeLeft(e: CdkDragMove) {
-    this.sideWidth = e.pointerPosition.x
+    this.treeWidth = e.pointerPosition.x
   }
 
 

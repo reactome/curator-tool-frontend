@@ -1,7 +1,6 @@
 import {Component, ViewChild} from '@angular/core';
 import {CdkDragMove} from "@angular/cdk/drag-drop";
 import {MatSidenav} from "@angular/material/sidenav";
-import {ActivatedRoute, Router} from "@angular/router";
 
 @Component({
   selector: 'app-main-schema-view',
@@ -16,7 +15,7 @@ export class MainSchemaViewComponent {
   status = {closed: true, opened: false, dragging: false};
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
-
+  
   openSidenav() {
     this.sidenav?.open();
   }
