@@ -416,46 +416,75 @@ export class DataService {
     limit: number,
     searchKey: string | undefined) {
     let url = this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
-    if (searchKey && searchKey.trim().length > 0) {
-      url += '?query=' + searchKey.trim();
+    if (searchKey)
+      searchKey = searchKey.trim(); // Just to make sure no space there
+    if (searchKey && searchKey.length > 0) {
+      url += '?query=' + searchKey;
     }
-    return this.http.get<InstanceList>(url)
-      .pipe(
-        map((data: InstanceList) => {
-          // Checking the store for new instances to add
-          this.store.select(newInstances()).pipe(take(1)).subscribe(insts => {
-            if (insts !== undefined)
-              for (let inst of insts) {
-                // Only take new instances that have the correct className
-                if (this.isSchemaClass(inst, className)) {
-                  // Update the data being returned. New instance is placed at index 0.
-                  data.instances.splice(0, 0, inst);
-                  data.totalCount++;
-                }
-              }
+    return this.http.get<InstanceList>(url).pipe(
+      // First concatMap: Fetch schema class hierarchy
+      concatMap((data: InstanceList) => {
+        // Make sure schema class hierarchy is loaded so that we can use isSchemaClass
+        return this.fetchSchemaClassTree(false).pipe(
+          map(rootClass => {
+            // Return original data so that it can be used in the next steps
+            return data;
           })
-          this.store.select(deleteInstances()).subscribe((instances) => {
-            if (instances !== undefined)
-              for (let inst of instances) {
-                // Only consider instances that have the correct className
-                if (this.isSchemaClass(inst, className)) {
-                  // Find and remove deleted instance.
-                  const dbIds: number[] = data.instances.map(dataEntry => dataEntry.dbId);
-                  let indexOfInstance = dbIds.indexOf(inst.dbId);
-                  data.instances.splice(indexOfInstance, 1);
-                  data.totalCount--;
+        );
+      }),
+      // Second concatMap: First select subscription (newInstances)
+      concatMap((data: InstanceList) => {
+        return this.store.select(newInstances()).pipe(
+          take(1),
+          map((insts) => {
+            for (let inst of insts) {
+              // This should be faster therefore check it first
+              if (searchKey && searchKey.length > 0) {
+                // If searchKey is integer, check for dbId
+                if (/^\d+$/.test(searchKey)) {
+                  if (inst.dbId.toString() !== searchKey)
+                    continue;
                 }
+                // Otherwise, check for text
+                else if (!inst.displayName?.toLocaleLowerCase().includes(searchKey.toLocaleLowerCase()))
+                  continue;
               }
+              if (this.isSchemaClass(inst, className)) {
+                // Update the data being returned. New instance is placed at index 0.
+                data.instances.splice(0, 0, inst);
+                data.totalCount++;
+              }
+            }
+            return data; // Pass modified data to the next step
           })
-          return data;
-        }, // Nothing needs to be done.
-          catchError((err: Error) => {
-            console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
-              panelClass: ['warning-snackbar'],
-              duration: 10000
-            });
-            return throwError(() => err);
-          })));
+        );
+      }),
+      // Third concatMap: Second select subscription (deleteInstances)
+      concatMap((data: InstanceList) => {
+        return this.store.select(deleteInstances()).pipe(
+          take(1),
+          map((instances) => {
+            const deletedDBIds = instances.map(inst => inst.dbId);
+            for (let i = 0; i < data.instances.length; i++) {
+              if (deletedDBIds.includes(data.instances[i].dbId)) {
+                data.instances.splice(i, 1);
+                i--; // Adjust index after removal
+                data.totalCount--;
+              }
+            }
+            return data; // Pass the final modified data
+          })
+        );
+      }),
+      // Error handling
+      catchError((err: Error) => {
+        console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
+          panelClass: ['warning-snackbar'],
+          duration: 10000
+        });
+        return throwError(() => err);
+      })
+    );
   }
 
   /**

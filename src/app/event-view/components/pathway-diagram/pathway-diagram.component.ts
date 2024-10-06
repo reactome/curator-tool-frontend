@@ -14,7 +14,6 @@ import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
 import { EDGE_POINT_CLASS, Instance } from 'src/app/core/models/reactome-instance.model';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
-import { Store } from '@ngrx/store';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 @Component({
@@ -71,7 +70,6 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   constructor(private route: ActivatedRoute,
     private router: Router,
     private diagramUtils: PathwayDiagramUtilService,
-    private store: Store,
     private instUtil: InstanceUtilities
   ) {
   }

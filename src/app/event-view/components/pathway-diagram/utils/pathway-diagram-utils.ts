@@ -75,6 +75,8 @@ export class PathwayDiagramUtilService {
     }
 
     isDbIdSelected(diagram: DiagramComponent, dbId: number) {
+        if (!diagram.cy)
+            return; // Make sure cy exists
         const selectedElements = diagram.cy.$(':selected');
         const selectedDbIds = Array.from(new Set(selectedElements.map((element:any) => element.data('reactomeId'))));
         return selectedDbIds.includes(dbId);

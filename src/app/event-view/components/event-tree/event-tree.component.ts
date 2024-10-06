@@ -426,6 +426,13 @@ export class EventTreeComponent {
       }
     }
     else {
+      // Need to show something here
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Information',
+          message: 'Cannot find a diagram for the clicked event. Create an empty diagram first in the branch.'
+        }
+      });
       console.error('Cannot find a higher level pathway having diagram for ' + event.name);
     }
   }

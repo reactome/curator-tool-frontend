@@ -18,6 +18,8 @@
 - the deletion action in the changes list for new instances don't show any warning: the behavior should be consistent between the instance view and the changes list.
 - Bug: After filtering to changed only attribute in the comparison table, turn off the comparison. There is no way to show the whole table now.
 - Bug: When an attribute is a single-valued attribute, make sure there is only one instance can be selected in the instance list.
+- Bug: the layour of instance list in the dialog is not right: the search bar has extra height.
+- TODO: List appliable schema name instead of concrete. It should be much easier for selection.
 
 #### TODO:
 - Need to style the detailed table view for schema class.
@@ -55,4 +57,8 @@
 #### Notes:
 - the following version or configuration are important for compiling: "@langchain/openai": "^0.0.12" (March 14, 2024) in package.json and "skipLibCheck": true in tsconfig.json, // Based on to fix langchain issue:https://github.com/langchain-ai/langchainjs/issues/3793
 - To build an angular component, follow https://www.telerik.com/blogs/angular-component-library-part-1-how-to-build. The pack is very important. Otherwise, it will not work! To install the component from reactome's ngx project, use: npm i {path_to_the_component} (e.g. ../ngx-reactome-base/dist/ngx-reactome-diagram/ngx-reactome-diagram-0.0.16.tgz). Note: make sure the version updated. Otherwise, the loaded library will not be updated in the chrome debug!!!
+
+# Diagram view and edit
+- Merge reaction participants together with the local changes
+- When update the reactions, need to consider stoichiometry. 
 
