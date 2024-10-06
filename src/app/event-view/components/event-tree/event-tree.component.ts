@@ -77,7 +77,7 @@ export class EventTreeComponent {
       hide: false,
       focus: false,
       instance: node,
-    };
+    } as EventNode; // Add as EventNode to avoid the compiling complaining 
   };
 
   treeControl = new FlatTreeControl<EventNode>(
