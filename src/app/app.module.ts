@@ -78,14 +78,11 @@ const customTooltipOptions: MatTooltipDefaultOptions = {
         tokenGetter
       }
     }),
-    RouterModule.forRoot(routes)
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: HeaderInterceptor, multi: true },
     {provide: DIAGRAM_CONFIG_TOKEN, useValue: diagramServiceConfig},
-    { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: customTooltipOptions },
-    { provide: RouteReuseStrategy, useClass: CustomReuseStrategy }
-  ],
+    { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: customTooltipOptions }  ],
   bootstrap: [AppComponent],
 })
 export class AppModule {

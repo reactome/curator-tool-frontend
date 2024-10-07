@@ -867,7 +867,7 @@ export class DataService {
 
   isSchemaClass(instance: Instance, className: string): boolean {
     let schemaClass = this.getSchemaClass(className);
-    return this.utils.isSchemaClass(instance, schemaClass!);
+    return this.utils._isSchemaClass(instance, schemaClass!);
   }
 
 }
