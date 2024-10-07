@@ -225,6 +225,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         this.diagramUtils.moveModifications(node, e, this.previousDragPos);
       }
     });
+    // Default should not in editing mode
+    this.isEditing = false;
+    this.diagramUtils.id2hyperEdge.clear();
   }
 
   private showCyPopup(event: any) { // Use any to avoid any compiling error

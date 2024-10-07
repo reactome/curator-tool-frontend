@@ -18,7 +18,7 @@ import { AttributeValue } from "src/app/instance/components/instance-view/instan
 export class PathwayDiagramUtilService {
     diagramService: DiagramService | undefined = undefined;
     // Cache all converted HyperEdges for easy editing
-    private id2hyperEdge : Map<number|string, HyperEdge> = new Map();
+    id2hyperEdge : Map<number|string, HyperEdge> = new Map();
     // For resizing
     private readonly RESIZE_NODE_LOCATIONS: string[] = ['ne', 'nw', 'se', 'sw'];
     
@@ -38,6 +38,8 @@ export class PathwayDiagramUtilService {
             return;
         // Need to get the actual instance. The passed instance is just a shell retried from ngrx store
         this.dataService.fetchInstance(instance.dbId).subscribe((instance: Instance) => {
+            const hyperEdge = this.id2hyperEdge.get(instance.dbId);
+            this.validator.hyperEdge = hyperEdge;
             this.validator.handleInstanceEdit(instance, attribute, diagram?.diagram?.cy);
         });
     }
@@ -47,8 +49,10 @@ export class PathwayDiagramUtilService {
             return;
         // Need to get the actual instance. The passed instance is just a shell retried from ngrx store
         this.dataService.fetchInstance(resetData.dbId).subscribe((instance: Instance) => {
-            for (let att of resetData.modifiedAttributes)
+            for (let att of resetData.modifiedAttributes) {
+                this.validator.hyperEdge = this.id2hyperEdge.get(resetData.dbId);
                 this.validator.handleInstanceEdit(instance, att, diagram?.diagram?.cy);
+            }
         });
     }
 

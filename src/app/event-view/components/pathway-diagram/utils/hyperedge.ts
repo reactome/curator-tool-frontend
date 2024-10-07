@@ -1,6 +1,6 @@
 import { Core, EdgeDefinition, NodeDefinition } from "cytoscape";
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
-import { EDGE_POINT_CLASS, Instance, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
+import { EDGE_POINT_CLASS, INPUT_HUB_CLASS, Instance, OUTPUT_HUB_CLASS, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceConverter } from "./instance-converter";
 import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
@@ -244,8 +244,9 @@ export class HyperEdge {
             let source = sourceNode;
             let target = targetNode;
             let firstEdge = undefined;
+            const role = this.getPointRole(edge);
             for (let point of points) {
-                let nodeId = this.createPointNode(edgeData, point);
+                let nodeId = this.createPointNode(edgeData, point, role);
                 target = nodeId;
                 // Use input for any internal edges to avoid showing arrows.
                 let newEdge = this.createNewEdge(source, target, edgeData, this.utils.diagramService!.edgeTypeMap.get("INPUT"));
@@ -263,10 +264,27 @@ export class HyperEdge {
                 newEdge.data.stoichiometry = edgeData.stoichiometry;
             this.cy.remove(edge);
         }
+        this.identifyHubNodes();
         this.resetTrivial();
     }
 
-    private createPointNode(edgeData: any, point: Position, isRenderedPosition: boolean = false) {
+    private identifyHubNodes() {
+        // edge point that is linked to more than one edge should be hub. 
+        for (let elm of this.id2object.values()) {
+            if (elm.isNode() && elm.hasClass(EDGE_POINT_CLASS)) {
+                const connectedEdges = elm.connectedEdges();
+                if (connectedEdges.length < 3)
+                    continue;
+                // Need to deterime if it is input or output
+                if (elm.hasClass('input'))
+                    elm.addClass(INPUT_HUB_CLASS);
+                else if (elm.hasClass('output'))
+                    elm.addClass(OUTPUT_HUB_CLASS);
+            }
+        }
+    }
+
+    private createPointNode(edgeData: any, point: Position, role: string, isRenderedPosition: boolean = false) {
         let nodeId = edgeData.reactomeId + ":" + point.x + "_" + point.y;
         let pointNode: NodeDefinition = this.id2object.get(nodeId);
         if (pointNode === undefined) {
@@ -276,8 +294,8 @@ export class HyperEdge {
                 group: 'nodes', // Make sure this is defined
                 data: data,
                 // position: { x: point.x, y: point.y },
-                // TODO: Make sure this is what we need
-                classes: ['reaction', EDGE_POINT_CLASS]
+                // Need reaction below for rendering
+                classes: [role, EDGE_POINT_CLASS, 'reaction']
             };
             const newNode = this.cy.add(pointNode)[0];
             if (isRenderedPosition)
@@ -382,7 +400,7 @@ export class HyperEdge {
      * @param edge 
      */
     insertNode(renderedPosition: Position, edge: any) {
-        const pointNodeId = this.createPointNode(edge.data(), renderedPosition, true);
+        const pointNodeId = this.createPointNode(edge.data(), renderedPosition, this.getPointRole(edge), true);
         const srcId = edge.data('source');
         const targetId = edge.data('target');
         // Split the original edge as two: Use INPUT so that no arrow will show for the first,
@@ -391,6 +409,13 @@ export class HyperEdge {
         this.createNewEdge(pointNodeId, targetId, edge.data(), edge.classes());
         this.cy.remove(edge);
         this.id2object.delete(edge.data('id'));
+    }
+
+    private getPointRole(edge: any): string {
+        // Based on the original definition
+        if (edge.hasClass('consumption')) return "input";
+        if (edge.hasClass('production')) return "output";
+        return 'helper'; // The default
     }
 
     /**
@@ -482,6 +507,10 @@ export class HyperEdge {
      */
     registerObject(object: any) {
         this.id2object.set(object.id(), object);
+    }
+
+    deRegisterObject(object: any) {
+        this.id2object.delete(object.id());
     }
 
     getRegisteredObject(id: string) {

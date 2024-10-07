@@ -8,6 +8,7 @@ import { InstanceConverter } from "./instance-converter";
 import { DiagramService } from "ngx-reactome-diagram";
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
+import { HyperEdge } from "./hyperedge";
 
 /**
  * This class is used to validate the consistent between the displayed elements in the diagram and the
@@ -17,6 +18,9 @@ import { InstanceUtilities } from "src/app/core/services/instance.service";
  */
 @Injectable()
 export class PathwayDiagramValidator{
+    // For reaction-based editing, we need to make sure the data structure is correct
+    // when in editing
+    hyperEdge: HyperEdge|undefined = undefined;
     
     constructor(private dataService: DataService,
         private instanceUtilities: InstanceUtilities,
@@ -162,8 +166,13 @@ export class PathwayDiagramValidator{
                 const edge = reactomeId2elm.get(reactomeId);
                 const peNode = this.getConnectedPENode(edge, attribute);
                 cy.remove(edge);
-                if (!peNode.connectedEdges() || peNode.connectedEdges().length === 0)
+                if (this.hyperEdge)
+                    this.hyperEdge.deRegisterObject(edge);
+                if (!peNode.connectedEdges() || peNode.connectedEdges().length === 0) {
                     cy.remove(peNode); // Don't leave a node hanging there!
+                    if (this.hyperEdge)
+                        this.hyperEdge.deRegisterObject(peNode);
+                }
             }
         }
     }
@@ -197,6 +206,8 @@ export class PathwayDiagramValidator{
                 reactionNode = hubNodes[0];
         }
         const peElm = this.converter.createPENode(this.getPEFromInstance(attValue, attribute), cy, undefined, this.diagramService);
+        if (this.hyperEdge)
+            this.hyperEdge.registerObject(peElm);
         if (peElm.position().x === RENDERING_CONSTS.INIT_POSITION.x && peElm.position().y === RENDERING_CONSTS.INIT_POSITION.y) {
             const newPos = this.getPositionForNewNode(peElm, reactionNode, elms, attribute);
             peElm.position(newPos);
@@ -211,7 +222,10 @@ export class PathwayDiagramValidator{
             source = peElm;
             target = reactionNode;
         }
-        return this.converter.createEdge(source, target, reaction, type, this.diagramService, cy);
+        const newEdge = this.converter.createEdge(source, target, reaction, type, this.diagramService, cy);
+        if (this.hyperEdge)
+            this.hyperEdge.registerObject(newEdge);
+        return newEdge;
     }
 
     /**
