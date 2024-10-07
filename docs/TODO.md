@@ -12,11 +12,11 @@
 - referer check has not considered the updated and new instances
 - the deletion action in the changes list for new instances don't show any warning: the behavior should be consistent between the instance view and the changes list.
 - Bug: When an attribute is a single-valued attribute, make sure there is only one instance can be selected in the instance list.
-- Bug: the layour of instance list in the dialog is not right: the search bar has extra height.
+- Bug: the layout of instance list in the dialog is not right: the search bar has extra height.
 - Bug: Make sure the URL is updated for paging in the instance list component.
-- TODO: List appliable schema name instead of concrete. It should be much easier for selection.
+- TODO: List use allowed schema classes instead of concrete. It should be much easier for selection.
 - TODO: In deletion, if there is no referrer for the instance to be deleted, don't show the first dialog asking the user to view referrer.
-- bug: the link in the refererr dialog is not right.
+- Bug: the link in the refererr dialog is not right.
 
 
 #### TODO:
