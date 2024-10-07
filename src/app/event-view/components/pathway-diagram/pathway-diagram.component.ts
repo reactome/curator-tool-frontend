@@ -350,6 +350,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         break;
 
       case 'upload':
+        // Make sure disable diagram first
+        if (this.isEditing)
+          this.diagramUtils.disableEditing(this.diagram);
         const networkJson = this.diagram.cy.json();
         this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.diagram.diagramId, networkJson).subscribe((success) => {
           const dialogConfig = {
@@ -359,6 +362,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
             }
           };
           this.dialog.open(InfoDialogComponent, dialogConfig);
+          if (this.isEditing)
+            this.diagramUtils.enableEditing(this.diagram); // Put it back into the editable model
         });
         break;
 

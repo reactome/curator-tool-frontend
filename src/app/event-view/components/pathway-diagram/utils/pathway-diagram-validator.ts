@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { EDGE_POINT_CLASS, Instance, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
+import { EDGE_POINT_CLASS, INPUT_HUB_CLASS, Instance, OUTPUT_HUB_CLASS, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { PathwayDiagramComponent } from "../pathway-diagram.component";
 import { REACTION_DIAGRAM_ATTRIBUTES, REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import {Core} from 'cytoscape';
@@ -127,13 +127,9 @@ export class PathwayDiagramValidator{
         // Now it is time to validate
         // Need to validate stoichiemtry too
         const newReactomeId2Stoi = new Map<number, number>();
-        for (let attValue of attValues) {
-            let stoi = newReactomeId2Stoi.get(attValue.dbId);
-            if (!stoi)
-                newReactomeId2Stoi.set(attValue.dbId, 1);
-            else
-                newReactomeId2Stoi.set(attValue.dbId, newReactomeId2Stoi.get(attValue.dbId)! + 1);
-        }
+        attValues.forEach(attValue => {
+            newReactomeId2Stoi.set(attValue.dbId, (newReactomeId2Stoi.get(attValue.dbId) ?? 0) + 1);
+        });
         // From instance to edges: make sure all are displayed
         const attDbIds = new Set();
         if (attValues.length > 0) {
@@ -181,14 +177,25 @@ export class PathwayDiagramValidator{
     }
 
     private addInstanceToReaction(elms: any[], attValue: Instance, attribute: string, cy: Core, reaction: Instance) {
-        // Get the reaction node
+        // Check if there is a reaction node
         const reactionNodes = elms.filter(elm => (elm.isNode() && elm.hasClass('reaction') && !elm.hasClass(EDGE_POINT_CLASS)));
         if (reactionNodes.length === 0)
-            return; // No reaction node
+            return; // No reaction node. Do nothing. The reaction is not shown.
         const type = this.mapAttributeToType(attValue, attribute);
         if (type == undefined)
             return;
-        const reactionNode = reactionNodes[0];
+        let reactionNode = reactionNodes[0];
+        // See if it is possible to find the input or output hub node
+        let hubClass : string|undefined = undefined;
+        if (attribute === 'input')
+            hubClass = INPUT_HUB_CLASS;
+        else if (attribute === 'output')
+            hubClass = OUTPUT_HUB_CLASS;
+        if (hubClass) {
+            const hubNodes = elms.filter(elm => (elm.isNode() && elm.hasClass('reaction') && elm.hasClass(hubClass)));
+            if (hubNodes.length > 0)
+                reactionNode = hubNodes[0];
+        }
         const peElm = this.converter.createPENode(this.getPEFromInstance(attValue, attribute), cy, undefined, this.diagramService);
         if (peElm.position().x === RENDERING_CONSTS.INIT_POSITION.x && peElm.position().y === RENDERING_CONSTS.INIT_POSITION.y) {
             const newPos = this.getPositionForNewNode(peElm, reactionNode, elms, attribute);

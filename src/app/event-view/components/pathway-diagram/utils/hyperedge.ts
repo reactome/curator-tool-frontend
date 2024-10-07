@@ -137,7 +137,8 @@ export class HyperEdge {
             else if (element.isEdge()) {
                 if (firstEdge === undefined)
                     firstEdge = element;
-                lastEdge = element;
+                else
+                    lastEdge = element;
             }
         }
         // Use the lastEdge's data for the new edge
@@ -153,10 +154,13 @@ export class HyperEdge {
             edgeClasses = lastEdge.classes();
         }
         else {
-            data = this.utils.copyData(firstEdge.data());
+            // For the input, the direction of the path
+            // is from reaction node to input, therefore
+            // we still need to use lastEdge's data
+            data = this.utils.copyData(lastEdge.data());
             source = targetNode;
             target = sourceNode;
-            edgeClasses = firstEdge.classes();
+            edgeClasses = lastEdge.classes();
             points = points.reverse();
         }
         data.source = source.data('id');
@@ -513,6 +517,10 @@ export class HyperEdge {
             let x, y;
             let inputHubPos = inputHubNode.position();
             for (let i = 0; i < inputNodes.length; i++) {
+                // If a node is linked to more than on edge,
+                // this node is shared. Don't move it
+                if (inputNodes[i].connectedEdges().length > 1)
+                    continue;
                 x = w * Math.sin((i + 1) * div - shift);
                 y = w * Math.cos((i + 1) * div - shift);
                 inputNodes[i].position({
@@ -537,6 +545,8 @@ export class HyperEdge {
             let x, y;
             let outputHubPos = outputHubNode.position();
             for (let i = 0; i < outputNodes.length; i++) {
+                if (outputNodes[i].connectedEdges().length > 1)
+                    continue;
                 x = w * Math.sin((i + 1) * div - shift);
                 y = w * Math.cos((i + 1) * div - shift);
                 outputNodes[i].position({
@@ -551,6 +561,8 @@ export class HyperEdge {
             const div = 2 * Math.PI / accessoryNodes.length;
             let x, y;
             for (let i = 0; i < accessoryNodes.length; i++) {
+                if (accessoryNodes[i].connectedEdges().length > 1)
+                    continue;
                 x = w * Math.sin(i * div);
                 y = w * Math.cos(i * div);
                 accessoryNodes[i].position({

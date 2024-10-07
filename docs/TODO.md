@@ -13,7 +13,10 @@
 - the deletion action in the changes list for new instances don't show any warning: the behavior should be consistent between the instance view and the changes list.
 - Bug: When an attribute is a single-valued attribute, make sure there is only one instance can be selected in the instance list.
 - Bug: the layour of instance list in the dialog is not right: the search bar has extra height.
+- Bug: Make sure the URL is updated for paging in the instance list component.
 - TODO: List appliable schema name instead of concrete. It should be much easier for selection.
+- TODO: In deletion, if there is no referrer for the instance to be deleted, don't show the first dialog asking the user to view referrer.
+- bug: the link in the refererr dialog is not right.
 
 
 #### TODO:
@@ -48,12 +51,11 @@
 - resize: need to make sure all associate attachments (e.g. modification, resizing widgets can be moved around).
 - compartment id: since the same compartment can be added multiple times, therefore, we need a central way to manage id
 
-
-#### Notes:
-- the following version or configuration are important for compiling: "@langchain/openai": "^0.0.12" (March 14, 2024) in package.json and "skipLibCheck": true in tsconfig.json, // Based on to fix langchain issue:https://github.com/langchain-ai/langchainjs/issues/3793
-- To build an angular component, follow https://www.telerik.com/blogs/angular-component-library-part-1-how-to-build. The pack is very important. Otherwise, it will not work! To install the component from reactome's ngx project, use: npm i {path_to_the_component} (e.g. ../ngx-reactome-base/dist/ngx-reactome-diagram/ngx-reactome-diagram-0.0.16.tgz). Note: make sure the version updated. Otherwise, the loaded library will not be updated in the chrome debug!!!
-
 # Diagram view and edit
 - Merge reaction participants together with the local changes
-- When update the reactions, need to consider stoichiometry. 
+- bug: the newly added reaction in the diagram cannot be validated!
+- make sure input/output hub uses hub_class after converting to editing mode
+- hub is not used during add new input/output to reaction. This needs to be changed.
+
+
 

@@ -4,7 +4,7 @@
 
 import { Core, EdgeDefinition, NodeDefinition } from 'cytoscape';
 import { DiagramService } from "ngx-reactome-diagram";
-import { EDGE_POINT_CLASS, Instance, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
+import { EDGE_POINT_CLASS, INPUT_HUB_CLASS, Instance, OUTPUT_HUB_CLASS, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { HyperEdge } from "./hyperedge";
 import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
 import { Injectable } from '@angular/core';
@@ -176,7 +176,7 @@ export class InstanceConverter {
             // Create an edge from inputHubNode to reactionNode
             const edge = this.createEdge(inputHubNode, reactionNode, instance, 'INPUT', utils.diagramService!, cy);
             hyperEdge.registerObject(edge);
-            // Update the id
+            // Update the classes
             edge.classes(['reaction', 'input']); // reset it
         }
         // Create edges
@@ -206,7 +206,7 @@ export class InstanceConverter {
                 edge = this.createEdge(reactionNode, outputNode, instance, 'OUTPUT', utils.diagramService!, cy);
             edge.data('stoichiometry', stoichiometry);
             hyperEdge.registerObject(edge);
-        })
+        });
         // create edges to catalysts
         for (let catalystNode of catalystNodes) {
             const edge = this.createEdge(catalystNode, reactionNode, instance, 'CATALYST', utils.diagramService!, cy);
@@ -268,7 +268,7 @@ export class InstanceConverter {
                 }
             },
             // Flag this as an edge point node
-            classes: ['reaction', EDGE_POINT_CLASS]
+            classes: ['reaction', type === 'input' ? INPUT_HUB_CLASS : OUTPUT_HUB_CLASS, EDGE_POINT_CLASS]
         };
         return cy.add(node)[0];
     }
