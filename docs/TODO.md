@@ -17,6 +17,7 @@
 - TODO: List use allowed schema classes instead of concrete. It should be much easier for selection.
 - TODO: In deletion, if there is no referrer for the instance to be deleted, don't show the first dialog asking the user to view referrer.
 - Bug: the link in the refererr dialog is not right.
+- Bug: avoid duplication in instance selection for attribute editing except for input, output, and hasComponent.
 
 
 #### TODO:
