@@ -292,6 +292,17 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         this.isEditing = false;
         break;
 
+      case 'disableEdgeEditing':
+        const hyperEdgeId = this.diagramUtils.getHyperEdgeId(this.elementUnderMouse);
+        this.diagramUtils.disableReactionEditing(hyperEdgeId, this.diagram);
+        break;
+
+      case 'enableEdgeEditing':
+        // Cannot name it as hyperEdgeId since it is in the same block as the previous one
+        const hyperEdgeId1 = this.diagramUtils.getHyperEdgeId(this.elementUnderMouse);
+        this.diagramUtils.enableReactionEditing(hyperEdgeId1, this.diagram);
+        break;
+
       case 'addPoint':
         const mousePosition: Position = {
           x: parseInt(this.menuPositionX) - this.MENU_POSITION_BUFFER,

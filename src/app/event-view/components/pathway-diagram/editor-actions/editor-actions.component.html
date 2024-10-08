@@ -3,13 +3,17 @@
   <button style="margin-bottom: 1px" (click)="onClick('disableEditing')" *ngIf="isDiagramEditing">Disable Editing</button>
   <button style="margin-bottom: 1px" (click)="onClick('enableEditing')" *ngIf="!isDiagramEditing">Enable Editing</button>
   <!--TODO: We may switch to check all objects related to object specific reaction -->
-  <ng-container *ngIf="elmType === elmTypes.EDGE && isEdgeEditable">
-    <button style="margin-bottom: 1px" (click)="onClick('addPoint')">Add Edge Point</button>
-    <!-- Only a reaction can be deleted from the diagram -->
-    <button style="margin-bottom: 1px" (click)="onClick('delete')">Remove Reaction</button>
-    <!-- <ng-container *ngIf="elmType === elmTypes.NODE">
-      <button style="margin-bottom: 1px" (click)="onClick('removePoint')">Edit PhysicalEntity</button>
-    </ng-container> -->
+  <ng-container *ngIf="elmType === elmTypes.EDGE">
+    <ng-container *ngIf="isEdgeEditable">
+      <button style="margin-bottom: 1px" (click)="onClick('addPoint')">Add Edge Point</button>
+      <!-- Only a reaction can be deleted from the diagram -->
+      <button style="margin-bottom: 1px" (click)="onClick('delete')">Remove Reaction</button>
+      <!-- Turn off editing -->
+      <button style="margin-bottom: 1px" (click)="onClick('disableEdgeEditing')">Disable Edge Editing</button> 
+    </ng-container>
+    <ng-container *ngIf="!isEdgeEditable">
+      <button style="margin-bottom: 1px" (click)="onClick('enableEdgeEditing')">Enable Edge Editing</button> 
+    </ng-container>
   </ng-container>
   <!-- Add a flowline between a PE and a ProcessNode -->
   <ng-container *ngIf="(elmType === elmTypes.NODE || elmType === elmTypes.PATHWAY_NODE) && isFlowLineAddable">
