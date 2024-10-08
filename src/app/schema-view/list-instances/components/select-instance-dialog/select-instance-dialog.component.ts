@@ -24,18 +24,24 @@ export class SelectInstanceDialogComponent {
   candidateClasses: string[] = [];
   instance: Instance | undefined;
   selectedInstances: Instance[] = [];
+  isSingleValued: boolean = false;
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public attributeValue: AttributeValue,
               public dialogRef: MatDialogRef<SelectInstanceDialogComponent>,
               private dataService: DataService) {
+    this.isSingleValued = this.attributeValue.attribute.cardinality === '1'
     this.setCandidateClasses(attributeValue);
     this.selected = this.candidateClasses![0];
   }
 
   onSelectRow(row: Instance){
-    // this.instance = row;
-    this.selectedInstances = [...this.selectedInstances, row];
-    console.log("selected Instances:  " + this.selectedInstances)
+    if(this.isSingleValued){
+      // Only take one value if the cardinality is 1
+      this.selectedInstances = [row];
+    }
+    else{
+      this.selectedInstances = [...this.selectedInstances, row];
+    }
   }
 
   onSelectionChange(): void {

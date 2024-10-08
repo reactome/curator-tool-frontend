@@ -1,6 +1,7 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {MatTableDataSource} from "@angular/material/table";
 import {Instance} from "../../../../../core/models/reactome-instance.model";
+import { ViewOnlyService } from 'src/app/core/services/view-only.service';
 
 @Component({
   selector: 'app-selected-instances-table',
@@ -29,8 +30,10 @@ export class SelectedInstancesTableComponent {
 
   handleAction(actionButton: { instance: Instance, action: string }) {
     switch (actionButton.action) {
+
       case "launch": {
-        this.navigate(actionButton.instance);
+        const dbId = actionButton.instance.dbId;
+        window.open(`schema_view/instance/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
         break;
       }
 
