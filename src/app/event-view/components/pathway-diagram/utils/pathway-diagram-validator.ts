@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { EDGE_POINT_CLASS, Instance, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
+import { EDGE_POINT_CLASS, INPUT_HUB_CLASS, Instance, OUTPUT_HUB_CLASS, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { PathwayDiagramComponent } from "../pathway-diagram.component";
 import { REACTION_DIAGRAM_ATTRIBUTES, REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import {Core} from 'cytoscape';
@@ -8,6 +8,7 @@ import { InstanceConverter } from "./instance-converter";
 import { DiagramService } from "ngx-reactome-diagram";
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
+import { HyperEdge } from "./hyperedge";
 
 /**
  * This class is used to validate the consistent between the displayed elements in the diagram and the
@@ -17,6 +18,9 @@ import { InstanceUtilities } from "src/app/core/services/instance.service";
  */
 @Injectable()
 export class PathwayDiagramValidator{
+    // For reaction-based editing, we need to make sure the data structure is correct
+    // when in editing
+    hyperEdge: HyperEdge|undefined = undefined;
     
     constructor(private dataService: DataService,
         private instanceUtilities: InstanceUtilities,
@@ -80,7 +84,7 @@ export class PathwayDiagramValidator{
         });
     }
 
-    validateReaction(elms: any, instance: Instance, attribute: string, cy: Core) {
+    private validateReaction(elms: any, instance: Instance, attribute: string, cy: Core) {
         // Get the current values
         const attValues = instance.attributes.get(attribute) ?? [];
         if (attribute === 'regulatedBy' || attribute === 'catalystActivity') {
@@ -110,17 +114,26 @@ export class PathwayDiagramValidator{
         // reactomeId -> elmId so that they can be compared with the instance
         // TODO: In the editing mode, an attribute may be mapped to more than one element
         // Need to remove all of them if the assoicated PE is edited away.
-        const reactomeId2elm = new Map();
+        const reactomeId2elm = new Map<number, any>();
+        // Need to validate stoichiometry too
+        const reactomeId2Stoi = new Map<number, number>();
         for (let elm of elms) {
             // Use class to figure out roles
             if (!elm.isEdge()) continue; // This may be a reaction node
             const role = this.getRole(elm);
             if (!attribute || role !== attribute) continue;
-            const reactomeId = this.getReactomeId(elm, attribute);
+            const reactomeId = this.getConnectedPEId(elm, attribute);
             if (!reactomeId) continue;
             reactomeId2elm.set(reactomeId, elm);
+            const stoi = elm.data('stoichiometry');
+            reactomeId2Stoi.set(reactomeId, stoi);
         }
         // Now it is time to validate
+        // Need to validate stoichiemtry too
+        const newReactomeId2Stoi = new Map<number, number>();
+        attValues.forEach(attValue => {
+            newReactomeId2Stoi.set(attValue.dbId, (newReactomeId2Stoi.get(attValue.dbId) ?? 0) + 1);
+        });
         // From instance to edges: make sure all are displayed
         const attDbIds = new Set();
         if (attValues.length > 0) {
@@ -132,7 +145,17 @@ export class PathwayDiagramValidator{
                 attDbIds.add(pe.dbId);
                 // Make sure this attribute is there
                 if (!reactomeId2elm.has(pe.dbId)) {
-                    this.addInstanceToReaction(elms, attValue, attribute, cy, reaction);
+                    const newEdge = this.addInstanceToReaction(elms, attValue, attribute, cy, reaction);
+                    if (newReactomeId2Stoi.get(pe.dbId)! > 1) {
+                        newEdge?.data('stoichiometry', newReactomeId2Stoi.get(pe.dbId));
+                    }
+                }
+                else { // Just check the stoichiometry. We only need to check from instance to edge 
+                       // for stoichiometry. No need from edge to instance
+                    const oldStoi = reactomeId2Stoi.get(pe.dbId) ?? 1;
+                    if (oldStoi !== newReactomeId2Stoi.get(pe.dbId))
+                        // the map is from pe's dbId to the connected edge
+                        reactomeId2elm.get(pe.dbId).data('stoichiometry', newReactomeId2Stoi.get(pe.dbId));
                 }
             }
         }
@@ -143,8 +166,13 @@ export class PathwayDiagramValidator{
                 const edge = reactomeId2elm.get(reactomeId);
                 const peNode = this.getConnectedPENode(edge, attribute);
                 cy.remove(edge);
-                if (!peNode.connectedEdges() || peNode.connectedEdges().length === 0)
+                if (this.hyperEdge)
+                    this.hyperEdge.deRegisterObject(edge);
+                if (!peNode.connectedEdges() || peNode.connectedEdges().length === 0) {
                     cy.remove(peNode); // Don't leave a node hanging there!
+                    if (this.hyperEdge)
+                        this.hyperEdge.deRegisterObject(peNode);
+                }
             }
         }
     }
@@ -158,15 +186,28 @@ export class PathwayDiagramValidator{
     }
 
     private addInstanceToReaction(elms: any[], attValue: Instance, attribute: string, cy: Core, reaction: Instance) {
-        // Get the reaction node
+        // Check if there is a reaction node
         const reactionNodes = elms.filter(elm => (elm.isNode() && elm.hasClass('reaction') && !elm.hasClass(EDGE_POINT_CLASS)));
         if (reactionNodes.length === 0)
-            return; // No reaction node
+            return; // No reaction node. Do nothing. The reaction is not shown.
         const type = this.mapAttributeToType(attValue, attribute);
         if (type == undefined)
             return;
-        const reactionNode = reactionNodes[0];
+        let reactionNode = reactionNodes[0];
+        // See if it is possible to find the input or output hub node
+        let hubClass : string|undefined = undefined;
+        if (attribute === 'input')
+            hubClass = INPUT_HUB_CLASS;
+        else if (attribute === 'output')
+            hubClass = OUTPUT_HUB_CLASS;
+        if (hubClass) {
+            const hubNodes = elms.filter(elm => (elm.isNode() && elm.hasClass('reaction') && elm.hasClass(hubClass)));
+            if (hubNodes.length > 0)
+                reactionNode = hubNodes[0];
+        }
         const peElm = this.converter.createPENode(this.getPEFromInstance(attValue, attribute), cy, undefined, this.diagramService);
+        if (this.hyperEdge)
+            this.hyperEdge.registerObject(peElm);
         if (peElm.position().x === RENDERING_CONSTS.INIT_POSITION.x && peElm.position().y === RENDERING_CONSTS.INIT_POSITION.y) {
             const newPos = this.getPositionForNewNode(peElm, reactionNode, elms, attribute);
             peElm.position(newPos);
@@ -181,7 +222,10 @@ export class PathwayDiagramValidator{
             source = peElm;
             target = reactionNode;
         }
-        this.converter.createEdge(source, target, reaction, type, this.diagramService, cy);
+        const newEdge = this.converter.createEdge(source, target, reaction, type, this.diagramService, cy);
+        if (this.hyperEdge)
+            this.hyperEdge.registerObject(newEdge);
+        return newEdge;
     }
 
     /**
@@ -266,7 +310,7 @@ export class PathwayDiagramValidator{
         return undefined; // The default
     }
 
-    private getReactomeId(edge: any, attribute: string): number | undefined {
+    private getConnectedPEId(edge: any, attribute: string): number | undefined {
         const peElm = this.getConnectedPENode(edge, attribute);
         if (peElm)
             return peElm.data('reactomeId');

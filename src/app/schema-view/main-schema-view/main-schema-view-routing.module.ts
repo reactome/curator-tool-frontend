@@ -3,38 +3,39 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from "@angular/router";
 import { MainSchemaViewComponent } from "./main-schema-view.component";
 
+/**
+ * Use the child routes so that we can use the same instanceof of MainSchemaViewComponent and avoid refresh
+ * the schema tree therefore to keep the scroll location (e.g. the user scrolls to the bottom, choose list instance,
+ * or create instance, or view schema, the scroll position will stay.)
+ */
 const routes: Routes = [
-  {
-    path: `list_instances`,
-    component: MainSchemaViewComponent,
-    loadChildren: () =>
-      import("../list-instances/list-instances.module").then((m) =>
-        m.ListInstancesModule), // paths: :className and :className/:skip/:limit
-  },
-  {
-    path: `instance`,
-    component: MainSchemaViewComponent,
-    loadChildren: () =>
-      import("src/app/instance/instance.module").then((m) =>
-        m.InstanceModule), // paths: :dbId, :dbId/:mode, and :dbId/:mode/:dbId2
-  },
-  {
-    path: `class`,
-    component: MainSchemaViewComponent,
-    loadChildren: () =>
-      import("../schema-class/components/table/schema-class-table.module").then((m) =>
-        m.SchemaClassTableModule),   //path: `:className`,
-  },
   {
     path: '',
     component: MainSchemaViewComponent,
-    loadChildren: () =>
-      import('./text-curation/text-curation.module').then(m =>
-        m.TextCurationModule),
-    // redirectTo: 'llm/*',
-    // pathMatch: 'full',
-  },
-]
+    children: [
+      {
+        path: 'list_instances',
+        loadChildren: () =>
+          import('../list-instances/list-instances.module').then(m => m.ListInstancesModule),
+      },
+      {
+        path: 'instance',
+        loadChildren: () =>
+          import('src/app/instance/instance.module').then(m => m.InstanceModule),
+      },
+      {
+        path: 'class',
+        loadChildren: () =>
+          import('../schema-class/components/table/schema-class-table.module').then(m => m.SchemaClassTableModule),
+      },
+      {
+        path: '',
+        loadChildren: () =>
+          import('./text-curation/text-curation.module').then(m => m.TextCurationModule),
+      },
+    ]
+  }
+];
 
 @NgModule({
   declarations: [],

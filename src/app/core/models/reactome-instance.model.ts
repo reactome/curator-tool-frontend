@@ -58,6 +58,9 @@ export interface UserInstances {
  * Use to flag a node that is added as a control point for a rounded curve segment.
  */
 export const EDGE_POINT_CLASS: string = 'edge_point';
+// Used to flag input or ourput hubs
+export const INPUT_HUB_CLASS: string = 'input_hub';
+export const OUTPUT_HUB_CLASS: string = 'output_hub';
 
 export const NEW_DISPLAY_NAME: string = 'To be generated';
 

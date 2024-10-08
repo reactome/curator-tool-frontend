@@ -14,7 +14,6 @@ import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
 import { EDGE_POINT_CLASS, Instance } from 'src/app/core/models/reactome-instance.model';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
-import { Store } from '@ngrx/store';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 @Component({
@@ -71,7 +70,6 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   constructor(private route: ActivatedRoute,
     private router: Router,
     private diagramUtils: PathwayDiagramUtilService,
-    private store: Store,
     private instUtil: InstanceUtilities
   ) {
   }
@@ -227,6 +225,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         this.diagramUtils.moveModifications(node, e, this.previousDragPos);
       }
     });
+    // Default should not in editing mode
+    this.isEditing = false;
+    this.diagramUtils.id2hyperEdge.clear();
   }
 
   private showCyPopup(event: any) { // Use any to avoid any compiling error
@@ -352,6 +353,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         break;
 
       case 'upload':
+        // Make sure disable diagram first
+        if (this.isEditing)
+          this.diagramUtils.disableEditing(this.diagram);
         const networkJson = this.diagram.cy.json();
         this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.diagram.diagramId, networkJson).subscribe((success) => {
           const dialogConfig = {
@@ -361,6 +365,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
             }
           };
           this.dialog.open(InfoDialogComponent, dialogConfig);
+          if (this.isEditing)
+            this.diagramUtils.enableEditing(this.diagram); // Put it back into the editable model
         });
         break;
 

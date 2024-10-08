@@ -1,6 +1,6 @@
 import { Core, EdgeDefinition, NodeDefinition } from "cytoscape";
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
-import { EDGE_POINT_CLASS, Instance, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
+import { EDGE_POINT_CLASS, INPUT_HUB_CLASS, Instance, OUTPUT_HUB_CLASS, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceConverter } from "./instance-converter";
 import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
@@ -137,7 +137,8 @@ export class HyperEdge {
             else if (element.isEdge()) {
                 if (firstEdge === undefined)
                     firstEdge = element;
-                lastEdge = element;
+                else
+                    lastEdge = element;
             }
         }
         // Use the lastEdge's data for the new edge
@@ -153,10 +154,13 @@ export class HyperEdge {
             edgeClasses = lastEdge.classes();
         }
         else {
-            data = this.utils.copyData(firstEdge.data());
+            // For the input, the direction of the path
+            // is from reaction node to input, therefore
+            // we still need to use lastEdge's data
+            data = this.utils.copyData(lastEdge.data());
             source = targetNode;
             target = sourceNode;
-            edgeClasses = firstEdge.classes();
+            edgeClasses = lastEdge.classes();
             points = points.reverse();
         }
         data.source = source.data('id');
@@ -240,8 +244,9 @@ export class HyperEdge {
             let source = sourceNode;
             let target = targetNode;
             let firstEdge = undefined;
+            const role = this.getPointRole(edge);
             for (let point of points) {
-                let nodeId = this.createPointNode(edgeData, point);
+                let nodeId = this.createPointNode(edgeData, point, role);
                 target = nodeId;
                 // Use input for any internal edges to avoid showing arrows.
                 let newEdge = this.createNewEdge(source, target, edgeData, this.utils.diagramService!.edgeTypeMap.get("INPUT"));
@@ -259,10 +264,27 @@ export class HyperEdge {
                 newEdge.data.stoichiometry = edgeData.stoichiometry;
             this.cy.remove(edge);
         }
+        this.identifyHubNodes();
         this.resetTrivial();
     }
 
-    private createPointNode(edgeData: any, point: Position, isRenderedPosition: boolean = false) {
+    private identifyHubNodes() {
+        // edge point that is linked to more than one edge should be hub. 
+        for (let elm of this.id2object.values()) {
+            if (elm.isNode() && elm.hasClass(EDGE_POINT_CLASS)) {
+                const connectedEdges = elm.connectedEdges();
+                if (connectedEdges.length < 3)
+                    continue;
+                // Need to deterime if it is input or output
+                if (elm.hasClass('input'))
+                    elm.addClass(INPUT_HUB_CLASS);
+                else if (elm.hasClass('output'))
+                    elm.addClass(OUTPUT_HUB_CLASS);
+            }
+        }
+    }
+
+    private createPointNode(edgeData: any, point: Position, role: string, isRenderedPosition: boolean = false) {
         let nodeId = edgeData.reactomeId + ":" + point.x + "_" + point.y;
         let pointNode: NodeDefinition = this.id2object.get(nodeId);
         if (pointNode === undefined) {
@@ -272,8 +294,8 @@ export class HyperEdge {
                 group: 'nodes', // Make sure this is defined
                 data: data,
                 // position: { x: point.x, y: point.y },
-                // TODO: Make sure this is what we need
-                classes: ['reaction', EDGE_POINT_CLASS]
+                // Need reaction below for rendering
+                classes: [role, EDGE_POINT_CLASS, 'reaction']
             };
             const newNode = this.cy.add(pointNode)[0];
             if (isRenderedPosition)
@@ -378,7 +400,7 @@ export class HyperEdge {
      * @param edge 
      */
     insertNode(renderedPosition: Position, edge: any) {
-        const pointNodeId = this.createPointNode(edge.data(), renderedPosition, true);
+        const pointNodeId = this.createPointNode(edge.data(), renderedPosition, this.getPointRole(edge), true);
         const srcId = edge.data('source');
         const targetId = edge.data('target');
         // Split the original edge as two: Use INPUT so that no arrow will show for the first,
@@ -387,6 +409,13 @@ export class HyperEdge {
         this.createNewEdge(pointNodeId, targetId, edge.data(), edge.classes());
         this.cy.remove(edge);
         this.id2object.delete(edge.data('id'));
+    }
+
+    private getPointRole(edge: any): string {
+        // Based on the original definition
+        if (edge.hasClass('consumption')) return "input";
+        if (edge.hasClass('production')) return "output";
+        return 'helper'; // The default
     }
 
     /**
@@ -480,6 +509,10 @@ export class HyperEdge {
         this.id2object.set(object.id(), object);
     }
 
+    deRegisterObject(object: any) {
+        this.id2object.delete(object.id());
+    }
+
     getRegisteredObject(id: string) {
         return this.id2object.get(id);
     }
@@ -513,6 +546,10 @@ export class HyperEdge {
             let x, y;
             let inputHubPos = inputHubNode.position();
             for (let i = 0; i < inputNodes.length; i++) {
+                // If a node is linked to more than on edge,
+                // this node is shared. Don't move it
+                if (inputNodes[i].connectedEdges().length > 1)
+                    continue;
                 x = w * Math.sin((i + 1) * div - shift);
                 y = w * Math.cos((i + 1) * div - shift);
                 inputNodes[i].position({
@@ -537,6 +574,8 @@ export class HyperEdge {
             let x, y;
             let outputHubPos = outputHubNode.position();
             for (let i = 0; i < outputNodes.length; i++) {
+                if (outputNodes[i].connectedEdges().length > 1)
+                    continue;
                 x = w * Math.sin((i + 1) * div - shift);
                 y = w * Math.cos((i + 1) * div - shift);
                 outputNodes[i].position({
@@ -551,6 +590,8 @@ export class HyperEdge {
             const div = 2 * Math.PI / accessoryNodes.length;
             let x, y;
             for (let i = 0; i < accessoryNodes.length; i++) {
+                if (accessoryNodes[i].connectedEdges().length > 1)
+                    continue;
                 x = w * Math.sin(i * div);
                 y = w * Math.cos(i * div);
                 accessoryNodes[i].position({

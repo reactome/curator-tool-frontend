@@ -60,6 +60,7 @@ export class MainEventComponent {
 
   resizeLeft(e: CdkDragMove) {
     this.treeWidth = e.pointerPosition.x
+    this.treeWidth = e.pointerPosition.x
   }
 
 
@@ -123,7 +124,8 @@ export class MainEventComponent {
     if (event.type !== ReactomeEventTypes.select)
       return;
     // Get the dbId from the selected elements
-    let reactomeIds = event.detail.element.map((el: any) => el.data('reactomeId'));
+    let reactomeIds = event.detail.element.map((el: any) => el.data('reactomeId')).filter((id : any) => (id !== undefined && id !== null))
+
     // Make sure reactomeIds don't contain duplicated element
     const uniqueSet = new Set(reactomeIds);
     reactomeIds = Array.from(uniqueSet).sort();
