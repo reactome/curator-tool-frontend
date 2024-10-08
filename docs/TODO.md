@@ -51,12 +51,9 @@
 - Need an action to add a new compartment into the diagram
 - resize: need to make sure all associate attachments (e.g. modification, resizing widgets can be moved around).
 - compartment id: since the same compartment can be added multiple times, therefore, we need a central way to manage id
+- refactoring the menus for diagram editing: make them more streamlined.
 
 # Diagram view and edit
 - Merge reaction participants together with the local changes
-- bug: the newly added reaction in the diagram cannot be validated!
-- make sure input/output hub uses hub_class after converting to editing mode
-- hub is not used during add new input/output to reaction. This needs to be changed.
-
-
-
+- Add a popup menu to enable/disable individual reaction editing
+- Add a new PE to a reaction as input or output needs to check if a hub node is needed

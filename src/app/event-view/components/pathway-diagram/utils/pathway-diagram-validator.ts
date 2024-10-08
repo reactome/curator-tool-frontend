@@ -1,6 +1,5 @@
 import { Injectable } from "@angular/core";
 import { EDGE_POINT_CLASS, INPUT_HUB_CLASS, Instance, OUTPUT_HUB_CLASS, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
-import { PathwayDiagramComponent } from "../pathway-diagram.component";
 import { REACTION_DIAGRAM_ATTRIBUTES, REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import {Core} from 'cytoscape';
 import { DataService } from "src/app/core/services/data.service";
@@ -57,6 +56,12 @@ export class PathwayDiagramValidator{
                 this.validateDisplayName(elm, instance);
             }
         }
+    }
+
+    needReactionValidation(instance: Instance, attribute: string) {
+        if (REACTION_TYPES.includes(instance.schemaClassName) && REACTION_DIAGRAM_ATTRIBUTES.includes(attribute))
+            return true;
+        return false;
     }
 
     private validateHelperNode(instance: Instance, 

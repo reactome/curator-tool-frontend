@@ -38,10 +38,19 @@ export class PathwayDiagramUtilService {
             return;
         // Need to get the actual instance. The passed instance is just a shell retried from ngrx store
         this.dataService.fetchInstance(instance.dbId).subscribe((instance: Instance) => {
-            const hyperEdge = this.id2hyperEdge.get(instance.dbId);
-            this.validator.hyperEdge = hyperEdge;
+            this.setHyperEdgeForValidator(instance, attribute, diagram);
             this.validator.handleInstanceEdit(instance, attribute, diagram?.diagram?.cy);
         });
+    }
+
+    private setHyperEdgeForValidator(instance: Instance, attribute: string, diagram: PathwayDiagramComponent) {
+        if (!instance || !attribute)
+            return;
+        let hyperEdge = this.id2hyperEdge.get(instance.dbId);
+        if (this.validator.needReactionValidation(instance, attribute) && !hyperEdge) {
+            hyperEdge = this.enableReactionEditing(instance.dbId, diagram?.diagram);
+        }
+        this.validator.hyperEdge = hyperEdge;
     }
 
     handleInstanceReset(resetData: any, diagram: PathwayDiagramComponent) {
@@ -50,7 +59,7 @@ export class PathwayDiagramUtilService {
         // Need to get the actual instance. The passed instance is just a shell retried from ngrx store
         this.dataService.fetchInstance(resetData.dbId).subscribe((instance: Instance) => {
             for (let att of resetData.modifiedAttributes) {
-                this.validator.hyperEdge = this.id2hyperEdge.get(resetData.dbId);
+                this.setHyperEdgeForValidator(instance, att, diagram);
                 this.validator.handleInstanceEdit(instance, att, diagram?.diagram?.cy);
             }
         });
@@ -575,7 +584,7 @@ export class PathwayDiagramUtilService {
         hyperEdge.insertNode(renderedPosition, element);
     }
 
-    private getHyperEdgeId(element: any) {
+    getHyperEdgeId(element: any) {
         // Try reactomeId first
         let hyperEdgeId = element.data('reactomeId');
         if (hyperEdgeId)
@@ -595,6 +604,14 @@ export class PathwayDiagramUtilService {
             hyperEdge.enableRoundSegments();
         });
         this.id2hyperEdge.clear(); // Reset it
+    }
+
+    disableReactionEditing(id: number|string, diagram: DiagramComponent) {
+        if (!this.id2hyperEdge.has(id))
+            return; // Not in the editing mode
+        const hyperEdge = this.id2hyperEdge.get(id);
+        hyperEdge?.enableRoundSegments();
+        this.id2hyperEdge.delete(id);
     }
 
     enableEditing(diagram: DiagramComponent) {
@@ -634,6 +651,28 @@ export class PathwayDiagramUtilService {
         });
         // Call this to make sure all new edges can be flagged for sub-pathways if any
         diagram.flag([], diagram.cy);
+    }
+
+    /**
+     * This method is used to enable layout editing for one specific reaction.
+     * It is a simiplifed version of enableEditing().
+     * @param id this usually should be reactomeId for the requested reaction.
+     * @param diagram 
+     */
+    enableReactionEditing(id: string|number, diagram: DiagramComponent) {
+        // Get the position of nodes to be used for edges
+        const id2node = new Map<string, any>();
+        diagram.cy.nodes().forEach((node: any) => id2node.set(node.data('id'), node));
+        const id2edges = new Map<number, any[]>();
+        const edges = diagram.cy.edges().filter((edge: any) => this.getHyperEdgeId(edge) === id);
+        // convert all edges for a reaction into an HyperEdge object for easy editing
+        const hyperEdge: HyperEdge = new HyperEdge(this, diagram.cy, id);
+        hyperEdge.expandEdges(edges, id2node);
+        this.id2hyperEdge.set(id, hyperEdge);
+        // For single reaction, there is not need to make sure all round-segments have been converted for editing
+        // Call this to make sure all new edges can be flagged for sub-pathways if any
+        diagram.flag([], diagram.cy);
+        return hyperEdge;
     }
 
     positionsFromRelativeToAbsolute(edge: any,
