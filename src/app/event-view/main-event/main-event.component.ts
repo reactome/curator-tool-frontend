@@ -60,7 +60,6 @@ export class MainEventComponent {
 
   resizeLeft(e: CdkDragMove) {
     this.treeWidth = e.pointerPosition.x
-    this.treeWidth = e.pointerPosition.x
   }
 
 
