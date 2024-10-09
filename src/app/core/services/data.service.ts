@@ -1,6 +1,8 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
+import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
+import { deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
 import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
 import {
@@ -8,8 +10,6 @@ import {
   SchemaClass
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
-import { Store } from "@ngrx/store";
-import { deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 
 
 @Injectable({
@@ -264,20 +264,33 @@ export class DataService {
    * @returns
    */
   fetchReactionParticipants(dbId: number): Observable<Instance> {
-    return this.http.get<Instance>(this.fetchReactionParticipantsUrl + `${dbId}`)
-      .pipe(map((data: Instance) => {
-        let instance: Instance = data; // Converted into the Instance object already
-        this.handleInstanceAttributes(instance);
-        return instance;
-      }),
-        catchError((err: Error) => {
-          console.log("Cannot fetch participants for `${dbId}`: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 100
-          });
-          return throwError(() => err);
-        }),
-      );
+    return this.fetchInstance(dbId).pipe(
+      concatMap((inst: Instance) => {
+        const helperDbIds = new Set<number>();
+        if (inst.attributes) {
+          const atts = [
+            'catalystActivity',
+            'regulatedBy'
+          ];
+          for (let att of atts) {
+            if (!inst.attributes.get(att))
+              continue;
+            for (let attValue of inst.attributes.get(att)) {
+              // Just in case
+              if (attValue.dbId)
+                helperDbIds.add(attValue.dbId);
+            }
+          }
+        }
+        if (helperDbIds.size === 0)
+          return of(inst);
+        // Need to do another around to fetch helper nodes
+        return this.fetchInstances([...helperDbIds]).pipe(map((helpers: Instance[]) => {
+          this.utils.addHelpersToReaction(inst, helpers);
+          return inst;
+        }));
+      })
+    );
   }
 
   fetchInstanceFromDatabase(dbId: number, cache: boolean): Observable<Instance> {
@@ -876,16 +889,25 @@ export class DataService {
             // Only need to check the modified attributes for edits
             for (let attribute of inst.modifiedAttributes!) {
               let attributeData = inst.attributes.get(attribute)
-              for (let attData of attributeData) {
-                // Check that the attribute is an Object with the correct dbId
-                if (attData.dbId && attData.dbId == dbId) {
-                  // The Reference type is used to hold the attribute name and instance,
-                  // the getReferrers method will map to the correct array. 
+              if (!attributeData)
+                continue;
+              if (Array.isArray(attributeData)) {
+                for (let attData of attributeData) {
+                  // Check that the attribute is an Object with the correct dbId
+                  if (attData.dbId && attData.dbId === dbId) {
+                    // The Reference type is used to hold the attribute name and instance,
+                    // the getReferrers method will map to the correct array. 
+                    let ref: Referrer = { attributeName: attribute, referrers: [inst] }
+                    referrers.push(ref);
+                  }
+                }
+              }
+              else {
+                if (attributeData.dbId && attributeData.dbId === dbId) {
                   let ref: Referrer = { attributeName: attribute, referrers: [inst] }
                   referrers.push(ref);
                 }
               }
-
             }
 
           }

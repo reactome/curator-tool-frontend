@@ -7,6 +7,7 @@
 - the reset in the comparison table cannot fire event across the browser tabs.
 - resizing the nodes cannot change the height of the background for selection. However, sometimes it does work!
 - the order inner and outer layers of a compartment needs to be controlled. It is quite random right now.
+- bug: display name (e.g. change a regulator for a Regulation) cannot trigger the change to the display instance. This needs to be handled as in other instance edit action.
 
 #### Deidre
 - referer check has not considered the updated and new instances
@@ -55,5 +56,3 @@
 
 # Diagram view and edit
 - Merge reaction participants together with the local changes
-- Add a popup menu to enable/disable individual reaction editing
-- Add a new PE to a reaction as input or output needs to check if a hub node is needed

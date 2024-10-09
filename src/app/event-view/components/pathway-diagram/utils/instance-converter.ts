@@ -124,6 +124,8 @@ export class InstanceConverter {
         const inputStoichiometry = new Map<any, number>();
         if (inputs) {
             for (let input of inputs) {
+                // createPENode gurantees not duplicated PE node if input has the same dbId.
+                // Therefore, we can set inputStoichiometry here.
                 const inputNode = this.createPENode(input, cy, hyperEdge, utils.diagramService!);
                 inputStoichiometry.set(inputNode, (inputStoichiometry.get(inputNode) || 0) + 1);
             }

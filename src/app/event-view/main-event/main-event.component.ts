@@ -62,7 +62,6 @@ export class MainEventComponent {
     this.treeWidth = e.pointerPosition.x
   }
 
-
   resizeDown(e: CdkDragMove) {
     this.diagramHeight = e.pointerPosition.y
   }

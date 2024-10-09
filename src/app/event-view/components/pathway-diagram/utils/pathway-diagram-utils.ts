@@ -230,8 +230,10 @@ export class PathwayDiagramUtilService {
         if (REACTION_TYPES.includes(event.schemaClassName)) {
             // For threading issue, we have to do like this way instead of creating an HyperEdge directly by converter.
             const hyperEdge = new HyperEdge(this, cy, event.dbId);
-            hyperEdge.createFromEvent(event, this.dataService, this.converter);
             this.id2hyperEdge.set(event.dbId, hyperEdge);
+            // The following call is carried out in a promise. Therefore, don't do
+            // anything that relies the finish of this function call!
+            hyperEdge.createFromEvent(event, this.dataService, this.converter);
         }
         // Handle pathway
         else {
@@ -239,7 +241,6 @@ export class PathwayDiagramUtilService {
             this.converter.convertPathwayToNode(event, this, cy);
         }
     }
-
     
     /**
      * Check if the passed event instance has been added in the diagram already.
