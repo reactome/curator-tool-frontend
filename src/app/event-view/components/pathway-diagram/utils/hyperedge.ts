@@ -53,6 +53,16 @@ export class HyperEdge {
     }
 
     /**
+     * Disable panning of nodes belong to this HyperEdge object.
+     */
+    disablePan() {
+        this.id2object.forEach((elm, id) => {
+            if (elm.isNode())
+                elm.grabify().panify();
+        });
+    }
+
+    /**
      * Enable round-segment style for this HyperEdge. 
      * Some edges and nodes will be removed. 
      */
@@ -399,7 +409,7 @@ export class HyperEdge {
      * @param position
      * @param edge 
      */
-    insertNode(renderedPosition: Position, edge: any) {
+    insertNode(renderedPosition: Position, edge: any): string {
         const pointNodeId = this.createPointNode(edge.data(), renderedPosition, this.getPointRole(edge), true);
         const srcId = edge.data('source');
         const targetId = edge.data('target');
@@ -409,6 +419,7 @@ export class HyperEdge {
         this.createNewEdge(pointNodeId, targetId, edge.data(), edge.classes());
         this.cy.remove(edge);
         this.id2object.delete(edge.data('id'));
+        return pointNodeId;
     }
 
     private getPointRole(edge: any): string {

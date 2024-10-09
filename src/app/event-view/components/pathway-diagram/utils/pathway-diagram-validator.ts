@@ -190,6 +190,43 @@ export class PathwayDiagramValidator{
         return inst; // input or output
     }
 
+    /**
+     * In case we need to add a new node as input or output to a reaction has only one input or output,
+     * we need to create a hub node if we cannot find one.
+     */
+    private ensureHubNode(reactionNode: any, hubClass: string, cy: Core) {
+        if (!this.hyperEdge)
+            return; // Do nothing if there is no hyperedge associated 
+        // Need to figure out the location of the hub node
+        const connectedEdges = reactionNode.connectedEdges();
+        let targetEdge = undefined;
+        for (let edge of connectedEdges) {
+            if (hubClass === INPUT_HUB_CLASS && edge.hasClass('consumption')) {
+                targetEdge = edge;
+                break;
+            }
+            else if (hubClass === OUTPUT_HUB_CLASS && edge.hasClass('production')) {
+                targetEdge = edge;
+                break;
+            }
+        }
+        // Just pick one in case nothing there
+        if (!targetEdge && connectedEdges.length > 0)
+            targetEdge = connectedEdges[0];
+        const source = targetEdge.source().position();
+        const target = targetEdge.target().position();
+        const zoom = cy.zoom();
+        const pan = cy.pan();
+        const insertPos = {
+            x: ((source.x + target.x) / 2) * zoom + pan.x,
+            y: ((source.y + target.y) / 2) * zoom + pan.y
+        }
+        const nodeId = this.hyperEdge.insertNode(insertPos, targetEdge);
+        const node = this.hyperEdge.getRegisteredObject(nodeId);
+        node.addClass(hubClass);
+        return node;
+    }
+
     private addInstanceToReaction(elms: any[], attValue: Instance, attribute: string, cy: Core, reaction: Instance) {
         // Check if there is a reaction node
         const reactionNodes = elms.filter(elm => (elm.isNode() && elm.hasClass('reaction') && !elm.hasClass(EDGE_POINT_CLASS)));
@@ -209,6 +246,9 @@ export class PathwayDiagramValidator{
             const hubNodes = elms.filter(elm => (elm.isNode() && elm.hasClass('reaction') && elm.hasClass(hubClass)));
             if (hubNodes.length > 0)
                 reactionNode = hubNodes[0];
+            else if (reaction.attributes.get(attribute).length > 1) {
+                reactionNode = this.ensureHubNode(reactionNode, hubClass, cy);
+            }
         }
         const peElm = this.converter.createPENode(this.getPEFromInstance(attValue, attribute), cy, undefined, this.diagramService);
         if (this.hyperEdge)
@@ -228,7 +268,7 @@ export class PathwayDiagramValidator{
             target = reactionNode;
         }
         const newEdge = this.converter.createEdge(source, target, reaction, type, this.diagramService, cy);
-        if (this.hyperEdge)
+        if (this.hyperEdge) 
             this.hyperEdge.registerObject(newEdge);
         return newEdge;
     }
@@ -251,7 +291,16 @@ export class PathwayDiagramValidator{
     private getPositionForNewNode(peNode: any, reactionNode: any, elms: any[], attribute: string) {
         if (attribute === 'input' || attribute === 'output') {
             // If there is other input/output, put this new node around existing one
-            const existingNodes = elms.filter(elm => (elm.isEdge() && this.getRole(elm) === attribute) && elm.target().hasClass('PhysicalEntity'));
+            // Got edges first
+            const validEdges = elms.filter(elm => (elm.isEdge() && this.getRole(elm) === attribute) && 
+                                                     (elm.target().hasClass('PhysicalEntity') || elm.source().hasClass('PhysicalEntity')));
+            const existingNodes = [];
+            for (let edge of validEdges) {
+                if (edge.target().hasClass('PhysicalEntity'))
+                    existingNodes.push(edge.target());
+                else if (edge.source().hasClass('PhysicalEntity'))
+                    existingNodes.push(edge.source());
+            }
             const position = this.calculateCenter(existingNodes, reactionNode);
             return {
                 x: position.x + 20 * Math.random(), // 20 is used for the time being

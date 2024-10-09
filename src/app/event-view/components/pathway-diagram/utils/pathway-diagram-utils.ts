@@ -611,6 +611,7 @@ export class PathwayDiagramUtilService {
             return; // Not in the editing mode
         const hyperEdge = this.id2hyperEdge.get(id);
         hyperEdge?.enableRoundSegments();
+        hyperEdge?.disablePan();
         this.id2hyperEdge.delete(id);
     }
 
