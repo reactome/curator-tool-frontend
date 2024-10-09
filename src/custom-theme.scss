@@ -80,17 +80,17 @@ $color-config: mat.get-color-config($light-theme);
 
 
 
-// Apply the dark theme only when the user prefers dark themes.
-@media (prefers-color-scheme: dark) {
-  // Use the `-color` mixins to only apply color styles without reapplying the same
-  // typography and density styles.
-  $bg-color: map.get(p.$primary-colors, 950);
+// // Apply the dark theme only when the user prefers dark themes.
+// @media (prefers-color-scheme: dark) {
+//   // Use the `-color` mixins to only apply color styles without reapplying the same
+//   // typography and density styles.
+//   $bg-color: map.get(p.$primary-colors, 950);
 
-  $dark-theme: theme-helper.modify-background($dark-theme, p.$dark-theme-background-palette);
-  $dark-theme: theme-helper.modify-foreground($dark-theme, p.$dark-theme-foreground-palette);
+//   $dark-theme: theme-helper.modify-background($dark-theme, p.$dark-theme-background-palette);
+//   $dark-theme: theme-helper.modify-foreground($dark-theme, p.$dark-theme-foreground-palette);
 
-  $color-config: mat.get-color-config($dark-theme);
-  @include mat.all-component-colors($dark-theme);
-}
+//   $color-config: mat.get-color-config($dark-theme);
+//   @include mat.all-component-colors($dark-theme);
+// }
 
 @include variables.theme($palettes);
