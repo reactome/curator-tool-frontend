@@ -14,8 +14,8 @@ import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-d
   styleUrls: ['./main-event.component.scss'],
 })
 export class MainEventComponent {
+  // TODO: calculate window/screden size and make the table a ratio. 
   treeWidth = 400;
-  // Assign 2/3 height to diagram
   diagramHeight = window.innerHeight * 0.67;
   schemaPanelOpen = false;
   resizingVertical: boolean = false;
@@ -59,6 +59,7 @@ export class MainEventComponent {
   }
 
   resizeLeft(e: CdkDragMove) {
+    this.treeWidth = e.pointerPosition.x
     this.treeWidth = e.pointerPosition.x
   }
 

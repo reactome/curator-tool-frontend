@@ -85,8 +85,7 @@ export class InstanceUtilities {
         this.lastClickedDbIdForComparison.next(dbId);
     }
 
-    isSchemaClass(instance: Instance, className: string, dataService: DataService): boolean {
-        let schemaClass = dataService.getSchemaClass(className);
+    _isSchemaClass(instance: Instance, schemaClass: SchemaClass|undefined): boolean {
         if (schemaClass === undefined)
             return false;
         // Get all children
@@ -110,6 +109,11 @@ export class InstanceUtilities {
             next.clear();
         }
         return allClsNames.has(instance.schemaClassName);
+    }
+
+    isSchemaClass(instance: Instance, className: string, dataService: DataService): boolean {
+        let schemaClass = dataService.getSchemaClass(className);
+        return this._isSchemaClass(instance, schemaClass);
     }
 
     /**

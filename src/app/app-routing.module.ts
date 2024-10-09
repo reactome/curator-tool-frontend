@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { GeneLlmComponentComponent } from './gene-llm/gene-llm-component/gene-llm-component.component';
 
-const routes: Routes = [
+export const routes: Routes = [
   {
     path: "login",
     loadChildren: () =>
