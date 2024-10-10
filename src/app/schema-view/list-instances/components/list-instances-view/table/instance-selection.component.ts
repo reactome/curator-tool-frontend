@@ -3,12 +3,9 @@ import { PageEvent } from "@angular/material/paginator";
 import { AttributeCondition, Instance } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
 import { ViewOnlyService } from "../../../../../core/services/view-only.service";
-import { ActivatedRoute, Router } from "@angular/router";
+import { Router } from "@angular/router";
 import { ReferrersDialogService } from "../../../../../instance/components/referrers-dialog/referrers-dialog.service";
 import { DeletionDialogService } from "../../../../../instance/components/deletion-dialog/deletion-dialog.service";
-import { take } from 'rxjs';
-import { newInstances } from 'src/app/instance/state/instance.selectors';
-import { Store } from '@ngrx/store';
 
 @Component({
   selector: 'app-instance-selection',
@@ -22,24 +19,27 @@ export class InstanceSelectionComponent implements OnInit {
   searchKey: string | undefined = '';
   advancedSearchKey: string | undefined = '';
   pageSizeOptions = [20, 50, 100];
-  @Input() pageSize: number = 50;
   pageIndex: number = 0;
   className: string = "";
   instanceCount: number = 0;
   selected: number = 0; //move
   showProgressSpinner: boolean = true;
-  @Output() clickEvent = new EventEmitter<Instance>();
-  @Input() isSelection: boolean = false;
   data: Instance[] = [];
   actionButtons: string[] = ["launch", "delete", "list_alt"];
-  // schemaClasses: SchemaClass[] = [];
   schemaClassAttributes: string[] = [];
+  newInstances: Instance[] = [];
+  showFilterComponent: boolean = false;
+
+
   // A flag to use route to load: use string so that we can set it directly in html
   @Input() useRoute: boolean = false;
-  showFilterComponent: boolean = false;
+  @Input() pageSize: number = 50;
+  @Input() isSelection: boolean = false;
+
   // Outputting the search string to update the header
   @Output() queryEvent = new EventEmitter<string>();
-  newInstances: Instance[] = [];
+  @Output() clickEvent = new EventEmitter<Instance>();
+
 
 
   @Input() set setClassName(inputClassName: string) {
@@ -57,10 +57,8 @@ export class InstanceSelectionComponent implements OnInit {
 
   constructor(private dataService: DataService,
     private router: Router,
-    private route: ActivatedRoute,
     private referrersDialogService: ReferrersDialogService,
-    private deletionDialogService: DeletionDialogService,
-    private store: Store) {
+    private deletionDialogService: DeletionDialogService) {
   }
 
   ngOnInit(): void {
@@ -80,6 +78,7 @@ export class InstanceSelectionComponent implements OnInit {
           this.instanceCount = instancesList.totalCount;
           this.showProgressSpinner = false;
           this.data = instancesList.instances;
+          this.pageIndex = 5;
         }
         )
     }
@@ -122,7 +121,9 @@ export class InstanceSelectionComponent implements OnInit {
     this.skip = pageObject.pageIndex * pageObject.pageSize;
     this.pageSize = pageObject.pageSize;
     this.pageIndex = pageObject.pageIndex;
-    this.loadInstances();
+    let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
+    this.router.navigate([url]);
+    //this.loadInstances();
   }
 
   onRowClick(row: Instance) {

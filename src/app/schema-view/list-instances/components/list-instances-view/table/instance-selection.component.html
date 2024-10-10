@@ -37,6 +37,7 @@
   <mat-paginator (page)="onPageChange($event)" [length]="instanceCount"
                  [pageSizeOptions]=pageSizeOptions
                  [pageSize]="pageSize"
+                 [pageIndex]="pageIndex"
                  showFirstLastButtons aria-label="Select page of users"></mat-paginator>
 </ng-container>
 </section>

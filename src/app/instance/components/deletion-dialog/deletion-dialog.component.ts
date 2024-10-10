@@ -17,7 +17,7 @@ import {ConfirmDeleteDialogService} from "./confirm-delete-dialog/confirm-delete
 export class DeletionDialogComponent {
   selected: string = '';
   showReferrersDialog: boolean = false;
-  numberOfRefs: number = 0;
+  numberOfRefs: number = 1;
 
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public instance: Instance,
