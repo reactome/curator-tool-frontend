@@ -276,35 +276,33 @@ export class InstanceUtilities {
             array.splice(index, 1);
     }
 
-    applyLocalDeletions(inst: Instance) {
-        this.store.select(deleteInstances()).pipe(take(1)).subscribe(insts => {
-            if (!insts || insts.length === 0 || !inst.attributes)
-                return;
-            const dbIds = insts.map(inst => inst.dbId);
-            for (let att of inst.attributes.keys()) {
-                const attValue = inst.attributes.get(att);
-                if (!attValue)
-                    continue;
-                if (Array.isArray(attValue)) {
-                    for (let i = 0; i < attValue.length; i++) {
-                        const attValue1 = attValue[i];
-                        if (!attValue1.dbId)
-                            break; // This is not a instance type attribute
-                        if (dbIds.includes(attValue1.dbId)) {
-                            attValue.splice(i, 1);
-                            i--;
-                            this.addToModifiedAttribute(att, inst);
-                        }
+    applyLocalDeletions(inst: Instance, deletedInsts: Instance[]) {
+        if (!deletedInsts || deletedInsts.length === 0 || !inst.attributes)
+            return;
+        const dbIds = deletedInsts.map(inst => inst.dbId);
+        for (let att of inst.attributes.keys()) {
+            const attValue = inst.attributes.get(att);
+            if (!attValue)
+                continue;
+            if (Array.isArray(attValue)) {
+                for (let i = 0; i < attValue.length; i++) {
+                    const attValue1 = attValue[i];
+                    if (!attValue1.dbId)
+                        break; // This is not a instance type attribute
+                    if (dbIds.includes(attValue1.dbId)) {
+                        attValue.splice(i, 1);
+                        i--;
+                        this.addToModifiedAttribute(att, inst);
                     }
                 }
-                // We cannot use instanceof to check if attValue is an Instance
-                // But we can check if it has dbId
-                else if (attValue.dbId && dbIds.includes(attValue.dbId)) {
-                    inst.attributes.set(att, undefined);
-                    this.addToModifiedAttribute(att, inst);
-                }
             }
-        });
+            // We cannot use instanceof to check if attValue is an Instance
+            // But we can check if it has dbId
+            else if (attValue.dbId && dbIds.includes(attValue.dbId)) {
+                inst.attributes.set(att, undefined);
+                this.addToModifiedAttribute(att, inst);
+            }
+        }
     }
 
     private addToModifiedAttribute(att: string, inst: Instance) {

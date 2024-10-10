@@ -239,10 +239,17 @@ export class DataService {
     }
     // Need to apply deletion after loading from the database. But not
     // in the loading. Otherwise, we will never get the original datbase copy.
-    return this.fetchInstanceFromDatabase(dbId, true).pipe(map(instance => {
-      this.utils.applyLocalDeletions(instance);
-      return instance;
-    }));
+    return this.fetchInstanceFromDatabase(dbId, true).pipe(
+      concatMap(instance => 
+        this.store.select(deleteInstances()).pipe(
+          take(1),
+          map(deletedInsts => {
+            this.utils.applyLocalDeletions(instance, deletedInsts);
+            return instance;
+          })
+        )
+      )
+    );
     // return this.fetchInstanceFromDatabase(dbId, true);
   }
 
