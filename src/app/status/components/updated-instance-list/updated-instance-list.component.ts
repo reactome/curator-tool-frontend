@@ -150,15 +150,6 @@ export class UpdatedInstanceListComponent implements OnInit{
     });
   }
 
-  private deleteNewInstance(instance: Instance) {
-    this.store.dispatch(NewInstanceActions.remove_new_instance(instance));
-    this.dataService.removeInstanceInCache(instance.dbId);
-    // TODO: The following cleaning up needs to be done:
-    // 1). Remove the reference to this instance in any local changed instances
-    // 2). Remove it from the bookmarks in case it is registered there.
-    // To implement the above, consider to use ngrx's effects and add a new action.
-  }
-
   close() {
     this.closeAction.emit();
   }

@@ -233,13 +233,17 @@ export class DataService {
   }
 
   _fetchInstance(dbId: number): Observable<Instance> {
+    let rtn: Observable<Instance>;
     // Check cached results first
     if (this.id2instance.has(dbId)) {
-      return of(this.id2instance.get(dbId)!);
+      rtn = of(this.id2instance.get(dbId)!);
+    }
+    else {
+      rtn = this.fetchInstanceFromDatabase(dbId, true);
     }
     // Need to apply deletion after loading from the database. But not
     // in the loading. Otherwise, we will never get the original datbase copy.
-    return this.fetchInstanceFromDatabase(dbId, true).pipe(
+    return rtn.pipe(
       concatMap(instance => 
         this.store.select(deleteInstances()).pipe(
           take(1),
@@ -248,9 +252,17 @@ export class DataService {
             return instance;
           })
         )
+      ),
+      concatMap(instance => 
+        this.store.select(updatedInstances()).pipe(
+          take(1),
+          map(updatedInsts => {
+            this.utils.validateReferDisplayName(instance, updatedInsts);
+            return instance;
+          })
+        )
       )
     );
-    // return this.fetchInstanceFromDatabase(dbId, true);
   }
 
   /**

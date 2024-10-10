@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from "@angular/router";
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
@@ -11,6 +11,7 @@ import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.serv
 import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-instance-view',
@@ -18,7 +19,7 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
   styleUrls: ['./instance-view.component.scss'],
 })
 
-export class InstanceViewComponent implements OnInit {
+export class InstanceViewComponent implements OnInit, OnDestroy {
   // Used to force the update of table content
   @ViewChild(InstanceTableComponent) instanceTable!: InstanceTableComponent;
   viewHistory: Instance[] = [];
@@ -37,6 +38,9 @@ export class InstanceViewComponent implements OnInit {
   // Flag to avoid update itself
   private commitNewHere: boolean = false;
 
+  // Track subscriptions added so that we can remove them
+  private subscriptions: Subscription[] = [];
+
   constructor(private router: Router,
     private route: ActivatedRoute,
     private dataService: DataService,
@@ -52,7 +56,7 @@ export class InstanceViewComponent implements OnInit {
     // Use the route to get the dbId for the instance to be displayed
     // Handle the loading of instance directly here without using ngrx's effect, which is just
     // too complicated and not necessary here.
-    this.route.params.subscribe((params) => {
+    let subscription = this.route.params.subscribe((params) => {
       if (params['dbId']) {
         let dbId = params['dbId'];
         // Make sure dbId is a number
@@ -77,17 +81,22 @@ export class InstanceViewComponent implements OnInit {
         }
       }
     });
-    this.instUtils.refreshViewDbId$.subscribe(dbId => {
+    this.subscriptions.push(subscription);
+    subscription = this.instUtils.refreshViewDbId$.subscribe(dbId => {
       if (this.instance && this.instance.dbId === dbId) {
         this.loadInstance(dbId, false, false, true);
       }
     });
-    this.instUtils.resetInst$.subscribe(data => {
+    this.subscriptions.push(subscription);
+    subscription = this.instUtils.resetInst$.subscribe(data => {
       if (this.instance && this.instance.dbId === data.dbId) {
         this.loadInstance(data.dbId, false, false, true);
       }
+      else if (this.instUtils.isReferrer(data.dbId, this.instance!))
+        this.loadInstance(this.instance!.dbId, false, false, true);
     });
-    this.instUtils.deletedDbId$.subscribe(dbId => {
+    this.subscriptions.push(subscription);
+    subscription = this.instUtils.deletedDbId$.subscribe(dbId => {
       if (this.instance && this.instance.dbId === dbId) {
         this.instUtils.removeInstInArray(this.instance, this.viewHistory);
         if (this.viewHistory.length > 0) {
@@ -100,7 +109,8 @@ export class InstanceViewComponent implements OnInit {
         }
       }
     });
-    this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
+    this.subscriptions.push(subscription);
+    subscription = this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
       if (!this.instance || this.instance.dbId !== oldDbId)
         return;
       if (this.commitNewHere) {
@@ -110,6 +120,12 @@ export class InstanceViewComponent implements OnInit {
       this.instUtils.removeInstInArray(this.instance, this.viewHistory);
       this.dataService.fetchInstance(newDbId).subscribe(inst => this.changeTable(inst));
     });
+    this.subscriptions.push(subscription);
+  }
+
+  ngOnDestroy(): void {
+    for (let subscription of this.subscriptions) 
+      subscription.unsubscribe();
   }
 
   loadInstance(dbId: number,

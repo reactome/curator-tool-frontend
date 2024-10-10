@@ -22,14 +22,17 @@ export class InstanceNameGenerator implements PostEditOperation {
 
   updateDisplayName(instance: Instance) {
     let displayName = this.generateDisplayName(instance);
+    if (displayName === instance.displayName)
+      return;
     instance.displayName = displayName;
     if (instance.attributes === undefined)
       instance.attributes = new Map();
     instance.attributes.set('displayName', instance.displayName);
+    this.instanceUtilities.registerDisplayNameChange(instance);
   }
 
-  // For if vlaue check, use if(value), not if (value === undefined || value == null) since the value may be null or undefined
-  generateDisplayName(instance: Instance) {
+  // For if value check, use if(value), not if (value === undefined || value == null) since the value may be null or undefined
+  private generateDisplayName(instance: Instance) {
     let clsName = instance.schemaClassName;
     if (clsName === 'ModifiedResidue')
       return this.generateModifiedResidueName(instance);
@@ -522,10 +525,10 @@ export class InstanceNameGenerator implements PostEditOperation {
     builder.push(" by ");
     let regulator = regulation.attributes?.get('regulator');
     if (regulator) {
-      builder.push("'" + regulator.displayName ?? '' + "'");
+      builder.push(regulator.displayName ?? '');
     }
     else
-      builder.push("'unknown'")
+      builder.push(this.unknown);
     return builder.join("");
   }
 

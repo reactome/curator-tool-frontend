@@ -58,7 +58,7 @@ export class InstanceEffects {
           this.store.dispatch(UpdateInstanceActions.ls_reset_updated_instance(inst));
           this.dataService.removeInstanceInCache(inst.instance.dbId); // Flag to reload
           // This will not conflict with last_updated_instance
-          this.instUtils.setResetInstance(inst.modifiedAttributes, inst.instance.dbId);
+          this.resetInstance(inst.modifiedAttributes, inst.instance.dbId);
           break;
         case UpdateInstanceActions.last_updated_instance.type:
           // We will use last_updated_instance to catch the change
@@ -144,12 +144,21 @@ export class InstanceEffects {
           }
           else if (action.type === UpdateInstanceActions.reset_updated_instance.type) {
             this.dataService.removeInstanceInCache(action.instance.dbId);
-            this.instUtils.setResetInstance(action.modifiedAttributes, action.instance.dbId);
+            this.resetInstance(action.modifiedAttributes, action.instance.dbId);
           }
         })
       ),
     { dispatch: false }
   );
+
+  private resetInstance(modifiedAttributes: string[]| undefined, dbId: number) {
+    // Need to reload the instance in case it is used in the local loaded instance
+    // By loading them, we can make sure the display names in these local instances
+    // are correctly for this reset instance in their attributes
+    this.dataService.fetchInstance(dbId).subscribe(inst => {
+      this.instUtils.setResetInstance(modifiedAttributes, inst);
+    });
+  }
 
   lastUpdateInstanceChanges$ = createEffect(
     () =>

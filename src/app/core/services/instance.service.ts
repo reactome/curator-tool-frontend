@@ -48,7 +48,18 @@ export class InstanceUtilities {
     private lastUpdatedInstance = new Subject<{ attribute: string, instance: Instance }>();
     lastUpdatedInstance$ = this.lastUpdatedInstance.asObservable();
 
+    // Track the changed display names
+    private dbId2displayName = new Map<number, string|undefined>();
+
     constructor(private store: Store) { }
+
+    /**
+     * Track display name change for instance so that we can update display name in view.
+     * @param instance 
+     */
+    registerDisplayNameChange(instance: Instance) {
+        this.dbId2displayName.set(instance.dbId, instance.displayName);
+    }
 
     setLastUpdatedInstance(attribute: string, instance: Instance) {
         this.lastUpdatedInstance.next({
@@ -69,8 +80,10 @@ export class InstanceUtilities {
         this.markDeletionDbId.next(dbId);
     }
 
-    setResetInstance(modifiedAtts: string[] | undefined, dbId: number) {
-        this.resetInst.next({ modifiedAttributes: modifiedAtts, dbId: dbId });
+    setResetInstance(modifiedAtts: string[] | undefined, inst: Instance) {
+        // Call this first in case the name is needed
+        this.dbId2displayName.set(inst.dbId, inst.displayName);
+        this.resetInst.next({ modifiedAttributes: modifiedAtts, dbId: inst.dbId });
     }
 
     setRefreshViewDbId(dbId: number) {
@@ -298,11 +311,83 @@ export class InstanceUtilities {
             }
             // We cannot use instanceof to check if attValue is an Instance
             // But we can check if it has dbId
-            else if (attValue.dbId && dbIds.includes(attValue.dbId)) {
-                inst.attributes.set(att, undefined);
-                this.addToModifiedAttribute(att, inst);
+            else if (attValue.dbId) {
+                if (dbIds.includes(attValue.dbId)) {
+                    // Remove this attribute since nothing is there
+                    inst.attributes.delete(att);
+                    this.addToModifiedAttribute(att, inst);
+                }
             }
         }
+    }
+
+    validateReferDisplayName(inst: Instance, updatedInsts: Instance[]) {
+        if (!inst.attributes)
+            return;
+        const dbId2updatedInst = new Map(updatedInsts.map(inst => [inst.dbId, inst]));
+        for (let att of inst.attributes.keys()) {
+            const attValue = inst.attributes.get(att);
+            if (!attValue)
+                continue;
+            if (Array.isArray(attValue)) {
+                for (let i = 0; i < attValue.length; i++) {
+                    const attValue1 = attValue[i];
+                    if (!attValue1.dbId)
+                        break; // This is not a instance type attribute
+                    // check update first
+                    if (dbId2updatedInst.has(attValue1.dbId)) {
+                        const currentName = dbId2updatedInst.get(attValue1.dbId)?.displayName;
+                        if (currentName !== attValue1.displayName)
+                            attValue1.displayName = currentName;
+                    }
+                    else if (this.dbId2displayName.has(attValue1.dbId)) { 
+                        // updated instance may be reset or committed, so it is not in the updatedInst
+                        // any more
+                        // Its display name has been changed
+                        // Since this is a shell instance, no need to set attribute here
+                        attValue1.displayName = this.dbId2displayName.get(attValue1.dbId);
+                    }
+                }
+            }
+            // We cannot use instanceof to check if attValue is an Instance
+            // But we can check if it has dbId
+            else if (attValue.dbId) {
+                if (dbId2updatedInst.has(attValue.dbId)) {
+                    const currentName = dbId2updatedInst.get(attValue.dbId)?.displayName;
+                    if (currentName !== attValue.displayName)
+                        attValue.displayName = currentName;
+                }
+                else if (this.dbId2displayName.has(attValue.dbId)) {
+                    attValue.displayName = this.dbId2displayName.get(attValue.dbId);
+                }
+            }
+        }
+    }
+
+    /**
+     * Check if the first instance, of which dbId is passed, is a referer of the second instnace
+     * @param referrer 
+     * @param inst 
+     */
+    isReferrer(referrerDbId: number, inst: Instance) {
+        if (!inst.attributes)
+            return false;
+        for (let att of inst.attributes.keys()) {
+            const attValue = inst.attributes.get(att);
+            if (!attValue)
+                continue;
+            if (Array.isArray(attValue)) {
+                for (let i = 0; i < attValue.length; i++) {
+                    const attValue1 = attValue[i];
+                    if (referrerDbId === attValue1.dbId)
+                        return true;
+                }
+            }
+            else if (referrerDbId === attValue.dbId) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private addToModifiedAttribute(att: string, inst: Instance) {
