@@ -8,15 +8,16 @@
 - resizing the nodes cannot change the height of the background for selection. However, sometimes it does work!
 - the order inner and outer layers of a compartment needs to be controlled. It is quite random right now.
 - bug: display name (e.g. change a regulator for a Regulation) cannot trigger the change to the display instance. This needs to be handled as in other instance edit action.
+- bug: deleting or updating display name cannot update the loaded instances.
 
 #### Deidre
 - referer check has not considered the updated and new instances: bug in the code
 - Bug: Make sure the URL is updated for paging in the instance list component.
 - TODO: List use allowed schema classes instead of concrete. It should be much easier for selection.
 - TODO: In deletion, if there is no referrer for the instance to be deleted, don't show the first dialog asking the user to view referrer.
+- TODO: the comparison table should list the difference attribute only as the default.
 - Bug: the link in the refererr dialog is not right.
 - Bug: avoid duplication in instance selection for attribute editing except for input, output, and hasComponent.
-- Bug: update URL after paging
 
 
 #### TODO:
