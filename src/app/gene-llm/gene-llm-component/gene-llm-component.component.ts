@@ -7,6 +7,7 @@ import { catchError, concatMap, of, throwError } from 'rxjs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { environment } from 'src/environments/environment.dev';
 
 @Component({
   selector: 'app-gene-llm-component',
@@ -17,9 +18,10 @@ import { MatExpansionModule } from '@angular/material/expansion';
 })
 export class GeneLlmComponentComponent {
 
-  private LLM_HOST = "http://127.0.0.1:5000/"
-  private LLM_QUERY_GENE_URL = this.LLM_HOST + "query/"
-  private LLM_FULLTEXT_ANALYSIS_URL = this.LLM_HOST + 'fulltext/'
+  // private LLM_HOST = "http://127.0.0.1:5000/"
+  private LLM_HOST = environment.llmURL;
+  private LLM_QUERY_GENE_URL = this.LLM_HOST + "/query/"
+  private LLM_FULLTEXT_ANALYSIS_URL = this.LLM_HOST + '/fulltext/'
 
   content: string | undefined;
   details: Interacting_Pathway_Detail[] | undefined;

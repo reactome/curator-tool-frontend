@@ -64,16 +64,16 @@
         [ngClass]="{highlight: compareToDbInstance(element.attribute.name)}">
         <div class="attColumn">
           <ng-container *ngIf="element.attribute.category === AttributeCategory.MANDATORY">
-            <img ngSrc="../../../../../../assets/images/Mandatory.gif" alt="Mandatory" width="16" height="16" priority>
+            <img ngSrc="assets/images/Mandatory.gif" alt="Mandatory" width="16" height="16" priority>
           </ng-container>
           <ng-container *ngIf="element.attribute.category === AttributeCategory.REQUIRED">
-            <img ngSrc="../../../../../../assets/images/Required.gif" alt="Required" width="16" height="16" priority>
+            <img ngSrc="assets/images/Required.gif" alt="Required" width="16" height="16" priority>
           </ng-container>
           <ng-container *ngIf="element.attribute.category === AttributeCategory.OPTIONAL">
-            <img ngSrc="../../../../../../assets/images/Optional.gif" alt="Optional" width="16" height="16" priority>
+            <img ngSrc="assets/images/Optional.gif" alt="Optional" width="16" height="16" priority>
           </ng-container>
           <ng-container *ngIf="element.attribute.category === AttributeCategory.NOMANUALEDIT">
-            <img ngSrc="../../../../../../assets/images/NoManualEdit.gif" alt="NoManualEdit" width="16" height="16"
+            <img ngSrc="assets/images/NoManualEdit.gif" alt="NoManualEdit" width="16" height="16"
               priority>
           </ng-container>
           {{element.attribute.name}}

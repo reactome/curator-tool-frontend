@@ -19,6 +19,7 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
 import {MatMenu, MatMenuTrigger} from "@angular/material/menu";
+import { environment } from 'src/environments/environment.dev';
 
 @Component({
   selector: 'app-text-curation',
@@ -62,7 +63,8 @@ export class TextCurationComponent {
     private router: Router,
     private http: HttpClient) {
     // Fetch OpenAI API key
-    const llm_url_openai_key = 'http://127.0.0.1:5000/openai_key';
+    // const llm_url_openai_key = 'http://127.0.0.1:5000/openai_key';
+    const llm_url_openai_key = environment.llmURL + '/openai_key';
     this.http.get(llm_url_openai_key, {responseType: 'text'}).subscribe(result => {
       this.chatModel = new ChatOpenAI(
         {
