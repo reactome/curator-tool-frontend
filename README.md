@@ -40,7 +40,8 @@ Run `ng build` to build the project. The build artifacts will be stored in the `
 Also add a .htaccess into the newly created curatortool folder with the following content:
 
 ```
-Header set Content-Security-Policy "script-src 'self';"
+#Note: may need to refactor the following configure to avoid unsafe-inline in the future
+Header set Content-Security-Policy "script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
 Header set Access-Control-Allow-Origin "*"
 Header set Referer-Policy "unsafe-url"
 AddType application/javascript .js
