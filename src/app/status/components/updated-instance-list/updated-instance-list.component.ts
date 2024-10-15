@@ -154,4 +154,9 @@ export class UpdatedInstanceListComponent implements OnInit{
     this.closeAction.emit();
   }
 
+  navigateUrl(instance: Instance) {
+  if(!this.isSelection)
+      this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()]);
+  }
+
 }

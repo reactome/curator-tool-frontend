@@ -54,4 +54,8 @@ export class ReferrersTableComponent {
       let isHidden = document.getElementById(attributeName)!.hidden;
       document.getElementById(attributeName)!.hidden = !isHidden;
   }
+
+  navigateUrl(instance: Instance) {
+    return window.open("/schema_view/instance/" + instance.dbId.toString())
+  }
 }

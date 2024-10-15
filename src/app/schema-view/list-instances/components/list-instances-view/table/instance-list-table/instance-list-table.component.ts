@@ -22,6 +22,8 @@ export class InstanceListTableComponent {
   displayName: string | undefined = '';
   @Input() showEmptyMessage: boolean = true;
   @Input() blockRoute: boolean = false;
+  // @Input() instanceURL: string | undefined; 
+  @Output() urlClickEvent = new EventEmitter<Instance>();
   readonly newDisplayName: string = NEW_DISPLAY_NAME;
 
   constructor(private store: Store, 
@@ -43,16 +45,19 @@ export class InstanceListTableComponent {
     this.store.dispatch(BookmarkActions.add_bookmark(instance));
   }
 
-  getInstanceUrl(instance: Instance) {
-    if (this.blockRoute)
-      return undefined;
-    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
-      .reduce((acc, val) => acc.concat(val), [])
-      .map(urlSegment => urlSegment.path);
-    return "/" + currentPathRoot[0] + "/instance/" + instance.dbId.toString();
-  }
+  // getInstanceUrl(instance: Instance) {
+  //   if (this.blockRoute)
+  //     return undefined;
+    
+  //   if (this.instanceURL)
+  //     return this.instanceURL + instance.dbId.toString();
+  //   else
+  //     return window.open("/schema_view/instance/" + instance.dbId.toString());
+  // }
 
   onInstanceLinkClicked(instance: Instance) {
+    //this.getInstanceUrl(instance);
+    this.urlClickEvent.emit(instance);
     this.instanceUtilities.setLastClickedDbId(instance.dbId);
   }
 

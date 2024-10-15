@@ -12,7 +12,8 @@
                          [actionButtons]="newInstanceActionButtons"
                          [showEmptyMessage]="false"
                          [blockRoute]="blockRoute"
-                         (actionEvent)="handleAction($event)">
+                         (actionEvent)="handleAction($event)"
+                         (urlClickEvent)="navigateUrl($event)">
 </app-instance-list-table>
 <!-- TODO: Add padding here instead-->
 <!-- <br>
@@ -24,7 +25,8 @@
                          [actionButtons]="updatedInstanceActions"
                          [showEmptyMessage]="false"
                          [blockRoute]="blockRoute"
-                         (actionEvent)="handleAction($event)">
+                         (actionEvent)="handleAction($event)"
+                         (urlClickEvent)="navigateUrl($event)">
 </app-instance-list-table>
 <!-- <br>
 <hr> -->
@@ -35,5 +37,6 @@
                          [actionButtons]="deletedInstanceActions"
                          [showEmptyMessage]="false"
                          [blockRoute]="blockRoute"
-                         (actionEvent)="handleAction($event)">
+                         (actionEvent)="handleAction($event)"
+                         (urlClickEvent)="navigateUrl($event)">
 </app-instance-list-table>

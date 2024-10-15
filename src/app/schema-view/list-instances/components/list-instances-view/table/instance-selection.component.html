@@ -33,7 +33,8 @@
     [isSelection]="isSelection"
     [actionButtons]="actionButtons"
     (actionEvent)="handleAction($event)"
-    (selectionEvent)="onRowClick($event)"></app-instance-list-table>
+    (selectionEvent)="onRowClick($event)"
+    (urlClickEvent)="navigateUrl($event)"></app-instance-list-table>
   <mat-paginator (page)="onPageChange($event)" [length]="instanceCount"
                  [pageSizeOptions]=pageSizeOptions
                  [pageSize]="pageSize"

@@ -46,7 +46,6 @@ export class InstanceSelectionComponent implements OnInit {
     setTimeout(() => {
       this.className = inputClassName;
       this.skip = 0;
-      this.pageIndex = 0;
       this.showProgressSpinner = true;
       this.loadInstances();
       this.loadSchemaClasses();
@@ -78,7 +77,8 @@ export class InstanceSelectionComponent implements OnInit {
           this.instanceCount = instancesList.totalCount;
           this.showProgressSpinner = false;
           this.data = instancesList.instances;
-          this.pageIndex = 5;
+          this.pageIndex = this.skip / this.pageSize;
+
         }
         )
     }
@@ -283,5 +283,10 @@ export class InstanceSelectionComponent implements OnInit {
       this.searchAction(attributeCondition);
     }
     this.advancedSearch(this.advancedSearchKey!)
+  }
+
+  navigateUrl(instance: Instance){
+    if(!this.isSelection)
+       this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()])
   }
 }
