@@ -77,7 +77,7 @@ export class InstanceSelectionComponent implements OnInit {
           this.instanceCount = instancesList.totalCount;
           this.showProgressSpinner = false;
           this.data = instancesList.instances;
-          this.pageIndex = this.skip / this.pageSize;
+          this.pageIndex = Math.floor(this.skip / this.pageSize) - 1;
 
         }
         )

@@ -481,7 +481,8 @@ export class DataService {
                 else if (!inst.displayName?.toLocaleLowerCase().includes(searchKey.toLocaleLowerCase()))
                   continue;
               }
-              if (this.isSchemaClass(inst, className)) {
+              // The skip should be less than the limit to ensure new instances are only added to the first page.
+              if (this.isSchemaClass(inst, className) && (skip < limit)) {
                 // Update the data being returned. New instance is placed at index 0.
                 data.instances.splice(0, 0, inst);
                 data.totalCount++;
