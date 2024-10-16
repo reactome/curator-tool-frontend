@@ -1,7 +1,7 @@
 <div *ngIf="!needAdvancedSearch">
   <mat-form-field style="float:left; width: 100%">
     <mat-label>Search</mat-label>
-    <input matInput (keydown.enter)="doBasicSearch()"
+    <input matInput (keydown.enter)="doBasicSearch(0)"
     #input [(ngModel)]="searchKey">
     <mat-icon class="custom-search-icon" matTooltip="Advanced Search" (click)="toggleSearchMode()" matSuffix>manage_search</mat-icon>
   </mat-form-field>
@@ -10,7 +10,7 @@
 <div *ngIf="needAdvancedSearch">
   <mat-form-field style="float:left; width: 100%">
     <mat-label>Search</mat-label>
-    <input matInput (keydown.enter)="doAdvancedSearch()"
+    <input matInput (keydown.enter)="doAdvancedSearch(0)"
     #input readonly="true" [(ngModel)]="advancedSearchKey">
     <mat-icon class="undo-idon" matTooltip="Undo last" (click)="removeSearchCriterium()" matSuffix>undo</mat-icon>
     <mat-icon class="custom-search-icon" matTooltip="Simple Search" (click)="toggleSearchMode()" matSuffix>manage_search</mat-icon>
@@ -20,7 +20,7 @@
 <search-filter *ngIf="needAdvancedSearch" style="float: right; width: 100%"
                  [attributes]="schemaClassAttributes"
                  (addSearchCriterium)="addSearchCriterium($event)"
-                 (search)="doAdvancedSearch()"
+                 (search)="doAdvancedSearch(0)"
                  (removeSearchCriterium)="removeSearchCriterium()"></search-filter>
 
 <section class="table-container">

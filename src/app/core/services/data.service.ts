@@ -545,7 +545,7 @@ export class DataService {
         + '&operands=' + encodeURI(selectedOperands.toString())
         + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'"));
     }
-    console.log('search instances url: ' + url);
+    console.debug('search instances url: ' + url);
     return this.http.get<InstanceList>(url)
       .pipe(map((data: InstanceList) => {
         return data;

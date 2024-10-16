@@ -28,22 +28,34 @@ export class AttributeConditionComponent {
     'IS NOT NULL'
   ];
 
-  blankAttributeCondition : SearchCriterium = {
-    attributeName: "displayName",
-    operand: "Contains",
-    searchKey: "",
-  };
-
   completeQuery() {
-    let copyAttributeCondition = this.attributeCondition;
-    this.attributeCondition = this.blankAttributeCondition;
+    let copyAttributeCondition = this.cloneCriterium();
     this.addAttributeCondition.emit(copyAttributeCondition);
     this.submitAction.emit(copyAttributeCondition);
   }
 
+  onKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      if (event.ctrlKey) {
+        // Handle Ctrl + Enter
+        this.completeQuery();
+      }
+      else 
+        this.addNewCriterium();
+      event.preventDefault(); // Optionally prevent default behavior like form submission
+    }
+  }
+
+  private cloneCriterium(): SearchCriterium {
+    return {
+      attributeName: this.attributeCondition.attributeName,
+      operand: this.attributeCondition.operand,
+      searchKey: this.attributeCondition.operand.includes('NULL') ? 'null' : this.attributeCondition.searchKey
+    }
+  }
+
   addNewCriterium(){
-    let copyAttributeCondition = this.attributeCondition;
-    this.attributeCondition = this.blankAttributeCondition;
+    let copyAttributeCondition = this.cloneCriterium();
     this.addAttributeCondition.emit(copyAttributeCondition);
   }
 

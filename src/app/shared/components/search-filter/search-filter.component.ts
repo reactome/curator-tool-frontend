@@ -18,7 +18,7 @@ interface Species {
   templateUrl: './search-filter.component.html',
   styleUrls: ['./search-filter.component.scss'],
 })
-export class SearchInstanceComponent implements OnInit {
+export class SearchInstanceComponent {
 
   @Output() addSearchCriterium: EventEmitter<SearchCriterium> = new EventEmitter();
   @Output() removeSearchCriterium: EventEmitter<SearchCriterium> = new EventEmitter();
@@ -39,11 +39,6 @@ export class SearchInstanceComponent implements OnInit {
   hideSearchPanel: string = "hidden";
 
   constructor() {
-  }
-
-  ngOnInit(): void {
-    // Create a new attribute search criterium when the component is initialized so that the user can see something.
-    //setTimeout(() => this.addAttribute()); // Add a delay to avoid NG0100 error.
   }
 
   addAttribute(attributeCondition: SearchCriterium) {

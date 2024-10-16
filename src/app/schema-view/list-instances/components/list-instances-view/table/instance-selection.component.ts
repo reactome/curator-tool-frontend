@@ -108,7 +108,8 @@ export class InstanceSelectionComponent {
     }
   }
 
-  doBasicSearch(skip: number = 0) {
+  doBasicSearch(skip: number) {
+    this.skip = skip;
     if (this.useRoute) {
       let url = this.getListInstancesURL();
       if (this.searchKey && this.searchKey.trim().length > 0)
@@ -120,15 +121,15 @@ export class InstanceSelectionComponent {
   }
 
   onPageChange(pageObject: PageEvent) {
-    this.skip = pageObject.pageIndex * pageObject.pageSize;
+    let skip = pageObject.pageIndex * pageObject.pageSize;
     // Page size may be changed. However, page index will be calculated
     // later on. 
     this.pageSize = pageObject.pageSize;
     // In these two cases, the basic (simple) search is used
     if (!this.needAdvancedSearch || this.searchCriteria.length === 0)
-      this.doBasicSearch();
+      this.doBasicSearch(skip);
     else // Otherwise, advanced search
-      this.doAdvancedSearch();
+      this.doAdvancedSearch(skip);
   }
 
   onRowClick(row: Instance) {
@@ -186,7 +187,7 @@ export class InstanceSelectionComponent {
   private convertCriterumToText(criterium: SearchCriterium) {
     let text = '';
     text += "(" + criterium.attributeName + "[" + criterium.operand;
-    if (criterium.searchKey && criterium.searchKey.length > 0)
+    if (!criterium.operand.includes('NULL') && criterium.searchKey && criterium.searchKey.length > 0)
       text += ": " + criterium.searchKey;
     text += "])";
     return text;
@@ -207,8 +208,9 @@ export class InstanceSelectionComponent {
         return false;
     }
     else {
-      // Make sure key is empty
-      criterium.searchKey = '';
+      // Use 'null' to make the Java backend happy. Basically
+      // we don't care what it is as long as there is something.
+      criterium.searchKey = 'null';
     }
     // Check if the passed critierium is listed already. There is no need
     // to list twice
@@ -226,9 +228,9 @@ export class InstanceSelectionComponent {
     // so that we can keep the consistent results (e.g. don't show advanced search results
     // in basic search or vice versa)
     if (this.needAdvancedSearch)
-      this.doAdvancedSearch();
+      this.doAdvancedSearch(0);
     else
-      this.doBasicSearch(); 
+      this.doBasicSearch(0); // Start from 0 in case not many
   }
 
   removeSearchCriterium() {
@@ -241,9 +243,10 @@ export class InstanceSelectionComponent {
   /**
    * Perform advance search.
    */
-  doAdvancedSearch() {
+  doAdvancedSearch(skip: number) {
     if (this.searchCriteria.length === 0)
       return; // Just in case
+    this.skip = skip;
     // Need attributes, operands and keys separate
     let attributes: string[] = [];
     let operands: string[] = [];
@@ -251,7 +254,8 @@ export class InstanceSelectionComponent {
     this.searchCriteria.forEach(criterium => {
       attributes.push(criterium.attributeName);
       operands.push(criterium.operand);
-      searchKeys.push(criterium.searchKey.trim());
+      if (criterium.searchKey)
+        searchKeys.push(criterium.searchKey.trim());
     });
 
     if (this.useRoute) {

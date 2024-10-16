@@ -12,10 +12,7 @@
 
 #### Deidre
 - referer check has not considered the updated and new instances: bug in the code, function getReferrersOfNewInstance, need to wrap the code inside subscription.
-- Bug: Make sure the URL is updated for paging in the instance list component.WORKING
-- TODO: List use allowed schema classes instead of concrete. It should be much easier for selection.
 - Bug: avoid duplication in instance selection for attribute editing except for input, output, and hasComponent.
-- Bug: advanced search, reaction, regulatedBy, is not null cannot work.
 - TODO: See if router_link can be used for instance list in the main schema view. Originally it is. Not it is changed to link handling, losing the status update to show the links.
 - TODO: In the instance list, make sure scrolling limits to the instance list, not the top panels. Right now, paging controls are fine, staying at the bottom without scrolling.
 

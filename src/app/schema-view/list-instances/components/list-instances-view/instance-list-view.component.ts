@@ -56,7 +56,7 @@ export class InstanceListViewComponent implements AfterViewInit {
         const criterium: SearchCriterium = {
           attributeName: attributes[i],
           operand: operands[i],
-          searchKey: searchKeys[i]
+          searchKey: searchKeys[i] == 'null' ? '' : searchKeys[i]
         };
         this.instanceList.addSearchCriterium(criterium);
       }
@@ -64,7 +64,7 @@ export class InstanceListViewComponent implements AfterViewInit {
       // disable use route for the time being
       const useRoute = this.instanceList.useRoute;
       this.instanceList.useRoute = false; // Regardless the original value, we need to turn it off
-      this.instanceList.doAdvancedSearch();
+      this.instanceList.doAdvancedSearch(this.instanceList.skip);
       this.instanceList.useRoute = useRoute; // set it back
     }
     else

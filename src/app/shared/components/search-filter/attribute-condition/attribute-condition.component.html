@@ -20,7 +20,7 @@
   <ng-container>
     <mat-form-field id="searchKeyField" class="fc-margin inline wrap" style="width: 55%">
       <mat-label>Enter search term</mat-label>
-      <input [(ngModel)]="attributeCondition.searchKey" id="searchKey" (keydown.enter)="addNewCriterium()"
+      <input [(ngModel)]="attributeCondition.searchKey" id="searchKey" (keydown)="onKeyDown($event)"
         class="text-sm" matInput #input>
         <mat-icon class="custom-search-icon" matTooltip="Search the query above" (click)="completeQuery()" matSuffix>query_stats</mat-icon>
     </mat-form-field>
