@@ -1,16 +1,16 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { ListInstancesViewComponent } from "./components/list-instances-view/list-instances-view.component";
+import { InstanceListViewComponent } from "./components/list-instances-view/instance-list-view.component";
 
 const routes: Routes = [
   {
     path: `:className`,
-    component: ListInstancesViewComponent,
+    component: InstanceListViewComponent,
   },
   {
     path: `:className/:skip/:limit`,
-    component: ListInstancesViewComponent,
+    component: InstanceListViewComponent,
   },
   // The following route should not be used! It confuses with the above, second route!
   // {

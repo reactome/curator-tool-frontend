@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { PageEvent } from "@angular/material/paginator";
-import { AttributeCondition, Instance } from "../../../../../core/models/reactome-instance.model";
+import { SearchCriterium, Instance } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
 import { ViewOnlyService } from "../../../../../core/services/view-only.service";
 import { Router } from "@angular/router";
@@ -12,35 +12,41 @@ import { DeletionDialogService } from "../../../../../instance/components/deleti
   templateUrl: './instance-selection.component.html',
   styleUrls: ['./instance-selection.component.scss'],
 })
-export class InstanceSelectionComponent implements OnInit {
+export class InstanceSelectionComponent {
 
   skip: number = 0;
-  // For doing search
+  // This is for doing simple text or dbId based search
   searchKey: string | undefined = '';
+  // For doing attribute-based search (i.e. advanced search)
+  // Empty array as a flag for not doing it.
+  searchCriteria: SearchCriterium[] = [];
   advancedSearchKey: string | undefined = '';
   pageSizeOptions = [20, 50, 100];
   pageIndex: number = 0;
   className: string = "";
+  // Total count returned from the server
   instanceCount: number = 0;
   selected: number = 0; //move
   showProgressSpinner: boolean = true;
+  // To be displayed in instance list table
   data: Instance[] = [];
   actionButtons: string[] = ["launch", "delete", "list_alt"];
+  // Used to popup attributes for advanced search (i.e. SearchFilterComponent)
   schemaClassAttributes: string[] = [];
+  // New instances to be listed at the top of the first page
   newInstances: Instance[] = [];
+  // Flag to indicate if the advanced search component should be displayed
   showFilterComponent: boolean = false;
 
-
-  // A flag to use route to load: use string so that we can set it directly in html
+  // A flag to use route to load
   @Input() useRoute: boolean = false;
   @Input() pageSize: number = 50;
+  // A flag to indicate this selection is used for editing
   @Input() isSelection: boolean = false;
 
   // Outputting the search string to update the header
   @Output() queryEvent = new EventEmitter<string>();
   @Output() clickEvent = new EventEmitter<Instance>();
-
-
 
   @Input() set setClassName(inputClassName: string) {
     setTimeout(() => {
@@ -50,8 +56,6 @@ export class InstanceSelectionComponent implements OnInit {
       this.loadInstances();
       this.loadSchemaClasses();
     }); // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
-
-
   }
 
   constructor(private dataService: DataService,
@@ -60,30 +64,29 @@ export class InstanceSelectionComponent implements OnInit {
     private deletionDialogService: DeletionDialogService) {
   }
 
-  ngOnInit(): void {
-    this.skip = 0;
-    this.pageIndex = 0;
-    this.showProgressSpinner = true;
-    this.loadInstances();
-    this.loadSchemaClasses();
-    console.log('data', this.data)
-  }
-
+  /**
+   * Load the instances directly by calling the data service. Before call this method,
+   * make sure className has been specified.
+   */
   loadInstances() {
     // Make sure className is set!
     if (this.className && this.className.length > 0) {
       this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
         .subscribe((instancesList) => {
           this.instanceCount = instancesList.totalCount;
-          this.showProgressSpinner = false;
           this.data = instancesList.instances;
-          this.pageIndex = Math.floor(this.skip / this.pageSize) - 1;
-
+          // The first page should be 0
+          this.pageIndex = Math.floor(this.skip / this.pageSize);
+          this.showProgressSpinner = false;
         }
         )
     }
   }
 
+  /**
+   * Load the schema class for this instance list so that we can do attribute-based
+   * search.
+   */
   loadSchemaClasses() {
     if (this.className && this.className.length > 0) {
       this.dataService.fetchSchemaClass(this.className).subscribe(cls => {
@@ -100,16 +103,12 @@ export class InstanceSelectionComponent implements OnInit {
     }
   }
 
-  searchForName(_: Event | undefined) {
-    // if(this.searchKey?.startsWith('(') && this.searchKey?.endsWith(')')){
-    //   this.advancedSearch(this.searchKey);
-    //   return;
-    // }
-    this.skip = 0;
-    this.pageIndex = 0;
+  searchForName(skip: number = 0) {
+    // Start with the first instance
+    this.skip = skip;
     if (this.useRoute) {
       let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
-      if (this.searchKey && this.searchKey.trim().length > 0) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
+      if (this.searchKey && this.searchKey.trim().length > 0)
         this.router.navigate([url], { queryParams: { query: this.searchKey.trim() } });
       else
         this.router.navigate([url]);
@@ -118,12 +117,15 @@ export class InstanceSelectionComponent implements OnInit {
   }
 
   onPageChange(pageObject: PageEvent) {
-    this.skip = pageObject.pageIndex * pageObject.pageSize;
+    const skip = pageObject.pageIndex * pageObject.pageSize;
+    // Page size may be changed. However, page index will be calculated
+    // later on. 
     this.pageSize = pageObject.pageSize;
-    this.pageIndex = pageObject.pageIndex;
-    let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
-    this.router.navigate([url]);
-    //this.loadInstances();
+    if (this.searchCriteria.length === 0)
+      this.searchForName(skip)
+    else {
+      // For advanced search
+    }
   }
 
   onRowClick(row: Instance) {
@@ -178,7 +180,7 @@ export class InstanceSelectionComponent implements OnInit {
    * Handle the search button action.
    * @param searchFilters
    */
-  searchAction(attributeCondition: AttributeCondition) {
+  searchAction(attributeCondition: SearchCriterium) {
     if (this.advancedSearchKey !== '') {
       this.advancedSearchKey += ","
     }
@@ -193,7 +195,7 @@ export class InstanceSelectionComponent implements OnInit {
    * Check if the provided search condition is valid.
    * @param attribuateCondition
    */
-  private isValidSearchCondition(attribuateCondition: AttributeCondition) {
+  private isValidSearchCondition(attribuateCondition: SearchCriterium) {
     if (attribuateCondition.attributeName === undefined || attribuateCondition.attributeName === null)
       return false;
     // For operands that are not related to null, the search key must be provided
@@ -210,14 +212,14 @@ export class InstanceSelectionComponent implements OnInit {
   }
 
   parseAdvancedSearch(searchKey: string) {
-    let attributeConditions: AttributeCondition[] = [];
+    let attributeConditions: SearchCriterium[] = [];
     if (searchKey !== '') {
       let fullQuery = searchKey.split(',')
       for (let query of fullQuery) {
         let attributeName = query.split("(")[1].split("[")[0];
         let operand = query.split("[")[1].split(":")[0];
         let searchKey = query.split(": ")[1].split("]")[0];
-        let attribuateCondition: AttributeCondition = new class implements AttributeCondition {
+        let attribuateCondition: SearchCriterium = new class implements SearchCriterium {
           attributeName: string = attributeName;
           operand: string = operand;
           searchKey: string = searchKey;
@@ -234,7 +236,7 @@ export class InstanceSelectionComponent implements OnInit {
       let operands = [];
       let searchKeys = [];
       let url = '/schema_view/list_instances/' + this.className;
-      let attributeConditions: AttributeCondition[] = this.parseAdvancedSearch(searchKey);
+      let attributeConditions: SearchCriterium[] = this.parseAdvancedSearch(searchKey);
 
       for (let attributeCondition of attributeConditions) {
         attributes.push(attributeCondition.attributeName);
@@ -264,7 +266,7 @@ export class InstanceSelectionComponent implements OnInit {
   }
 
   removeParameter() {
-    let attributeConditions: AttributeCondition[] = this.parseAdvancedSearch(this.advancedSearchKey!)
+    let attributeConditions: SearchCriterium[] = this.parseAdvancedSearch(this.advancedSearchKey!)
     // Removing the last query 
     attributeConditions.pop();
     this.advancedSearchKey = '';
@@ -277,11 +279,11 @@ export class InstanceSelectionComponent implements OnInit {
  * Handle the search button action.
  * @param searchFilters
  */
-  completeSearch(attributeCondition: AttributeCondition) {
-    // Don't search if there is no query
-    if(attributeCondition.searchKey !== ''){
-      this.searchAction(attributeCondition);
-    }
+  completeSearch() {
+    // // Don't search if there is no query
+    // if(attributeCondition.searchKey !== ''){
+    //   this.searchAction(attributeCondition);
+    // }
     this.advancedSearch(this.advancedSearchKey!)
   }
 

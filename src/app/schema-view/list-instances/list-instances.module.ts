@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { InstanceSelectionComponent } from "./components/list-instances-view/table/instance-selection.component";
 import { ListInstancesRoutingModule } from "./list-instances-routing.module";
-import { ListInstancesViewComponent } from "./components/list-instances-view/list-instances-view.component";
+import { InstanceListViewComponent } from "./components/list-instances-view/instance-list-view.component";
 import { SharedModule } from "../../shared/shared.module";
 import { MaterialModule } from "../../shared/material/material.module";
 import { SelectInstanceDialogComponent } from "./components/select-instance-dialog/select-instance-dialog.component";
@@ -17,7 +17,7 @@ import { newInstancesReducer } from 'src/app/instance/state/instance.reducers';
 @NgModule({
   declarations: [
     InstanceSelectionComponent,
-    ListInstancesViewComponent,
+    InstanceListViewComponent,
     SelectInstanceDialogComponent,
     SelectedInstancesTableComponent,
     InstanceListTableComponent

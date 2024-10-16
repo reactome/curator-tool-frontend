@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { AttributeCondition } from 'src/app/core/models/reactome-instance.model';
+import { SearchCriterium } from 'src/app/core/models/reactome-instance.model';
 
 
 @Component({
@@ -12,11 +12,11 @@ export class AttributeConditionComponent {
     this.schemaAttributes = schemaClassAttributes;
   }
 
-  @Input() attributeCondition! : AttributeCondition;
+  @Input() attributeCondition! : SearchCriterium;
 
-  @Output() addAttributeCondition: EventEmitter<AttributeCondition> = new EventEmitter();
-  @Output() removeAttributeCondition: EventEmitter<AttributeCondition> = new EventEmitter();
-  @Output() submitAction: EventEmitter<AttributeCondition> = new EventEmitter();
+  @Output() addAttributeCondition: EventEmitter<SearchCriterium> = new EventEmitter();
+  @Output() removeAttributeCondition: EventEmitter<SearchCriterium> = new EventEmitter();
+  @Output() submitAction: EventEmitter<SearchCriterium> = new EventEmitter();
 
   schemaAttributes: string[] = [];
 
@@ -28,7 +28,7 @@ export class AttributeConditionComponent {
     'IS NOT NULL'
   ];
 
-  blankAttributeCondition : AttributeCondition = {
+  blankAttributeCondition : SearchCriterium = {
     attributeName: "displayName",
     operand: "Contains",
     searchKey: "",

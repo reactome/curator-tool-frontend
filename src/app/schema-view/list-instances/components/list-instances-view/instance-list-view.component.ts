@@ -5,17 +5,16 @@ import { combineLatest } from 'rxjs';
 
 @Component({
   selector: 'app-list-instances-view',
-  templateUrl: './list-instances-view.component.html',
-  styleUrls: ['./list-instances-view.component.scss'],
+  templateUrl: './instance-list-view.component.html',
+  styleUrls: ['./instance-list-view.component.scss'],
 })
-export class ListInstancesViewComponent implements AfterViewInit {
+export class InstanceListViewComponent implements AfterViewInit {
   schemaClassName: any = "";
   attributes: Array<string> = [];
   attributeTypes: Array<string> = [];
   regex: Array<string> = [];
   searchKey: Array<string> = [];
-  queryString: string = '';
-
+  
   // Get this so that we can manipulate the search criteria directly
   @ViewChild(InstanceSelectionComponent) instanceList!: InstanceSelectionComponent;
 
@@ -47,7 +46,6 @@ export class ListInstancesViewComponent implements AfterViewInit {
     // Give it a little bit delay to avoid ng0100 error.
     setTimeout(() => {
       this.schemaClassName = params['className'];
-      this.queryString = ''
     });
     let isChangedChanged = this.instanceList.className !== params['className'];
     this.instanceList.className = params['className'];
@@ -57,8 +55,6 @@ export class ListInstancesViewComponent implements AfterViewInit {
       let operands = queryParams['operands'].split(',');
       let searchKeys = queryParams['searchKeys'].split(',');
       this.instanceList.searchInstances(attributes, operands, searchKeys);
-      this.updateHeader(attributes);
-
     }
     else
       this.instanceList.loadInstances();
@@ -66,7 +62,4 @@ export class ListInstancesViewComponent implements AfterViewInit {
       this.instanceList.loadSchemaClasses();
   }
 
-  updateHeader($event: string) {
-    this.queryString = ' (filter: ' + $event + ')';
-  }
 }

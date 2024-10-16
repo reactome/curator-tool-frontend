@@ -27,9 +27,9 @@ export interface InstanceList {
 }
 
 /**
- * Data structre defined for search instance
+ * Data structure defined for advanced search based on attribute values
  */
-export interface AttributeCondition {
+export interface SearchCriterium {
   attributeName: string;
   operand: string;
   searchKey: string;

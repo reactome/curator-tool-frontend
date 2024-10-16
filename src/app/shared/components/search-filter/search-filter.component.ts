@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { DataService } from "../../../core/services/data.service";
 import { SchemaClass } from "../../../core/models/reactome-schema.model";
-import { AttributeCondition } from 'src/app/core/models/reactome-instance.model';
+import { SearchCriterium } from 'src/app/core/models/reactome-instance.model';
 import { Router } from "@angular/router";
 
 interface Species {
@@ -20,13 +20,13 @@ interface Species {
 })
 export class SearchInstanceComponent implements OnInit {
 
-  @Output() searchInstancesAction: EventEmitter<AttributeCondition> = new EventEmitter();
-  @Output() removeInstancesAction: EventEmitter<AttributeCondition> = new EventEmitter();
-  @Output() searchAction: EventEmitter<AttributeCondition> = new EventEmitter();
+  @Output() addSearchCriterium: EventEmitter<SearchCriterium> = new EventEmitter();
+  @Output() removeSearchCriterium: EventEmitter<SearchCriterium> = new EventEmitter();
+  @Output() search: EventEmitter<void> = new EventEmitter();
 
 
   // For doing search
-  blankAttributeCondition : AttributeCondition = {
+  blankAttributeCondition : SearchCriterium = {
     attributeName: "displayName",
     operand: "Contains",
     searchKey: "",
@@ -46,16 +46,19 @@ export class SearchInstanceComponent implements OnInit {
     //setTimeout(() => this.addAttribute()); // Add a delay to avoid NG0100 error.
   }
 
-  addAttribute(attributeCondition: AttributeCondition) {
-    this.searchInstancesAction.emit(attributeCondition);
+  addAttribute(attributeCondition: SearchCriterium) {
+    this.addSearchCriterium.emit(attributeCondition);
   }
 
-  completeQuery(attributeCondition: AttributeCondition) {
-    this.searchAction.emit(attributeCondition);
+  performSearch(attributeCondition: SearchCriterium) {
+    // Fire the add search criterium event first and then ask to do search
+    // to avoid overloading
+    this.addSearchCriterium.emit(attributeCondition);
+    this.search.emit();
   }
 
-  removeAttribute(attributeCondition: AttributeCondition) {
-    this.removeInstancesAction.emit(attributeCondition);
+  removeAttribute(attributeCondition: SearchCriterium) {
+    this.removeSearchCriterium.emit(attributeCondition);
   }
 
 }
