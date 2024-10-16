@@ -51,9 +51,7 @@ export class SearchInstanceComponent implements OnInit {
   }
 
   performSearch(attributeCondition: SearchCriterium) {
-    // Fire the add search criterium event first and then ask to do search
-    // to avoid overloading
-    this.addSearchCriterium.emit(attributeCondition);
+    // Don't overload it
     this.search.emit();
   }
 

@@ -37,11 +37,13 @@ export class InstanceSelectionComponent {
   // New instances to be listed at the top of the first page
   newInstances: Instance[] = [];
   // Flag to indicate if the advanced search component should be displayed
-  showFilterComponent: boolean = false;
+  needAdvancedSearch: boolean = false;
 
   // A flag to use route to load
   @Input() useRoute: boolean = false;
-  @Input() pageSize: number = 50;
+  // Use 20 so that the whole list can be seen without scrolling in a 4K monitor
+  // 50 always needs scrolling.
+  @Input() pageSize: number = 20;
   // A flag to indicate this selection is used for editing
   @Input() isSelection: boolean = false;
 
@@ -107,8 +109,6 @@ export class InstanceSelectionComponent {
   }
 
   doBasicSearch(skip: number = 0) {
-    // Start with the first instance
-    this.skip = skip;
     if (this.useRoute) {
       let url = this.getListInstancesURL();
       if (this.searchKey && this.searchKey.trim().length > 0)
@@ -120,13 +120,14 @@ export class InstanceSelectionComponent {
   }
 
   onPageChange(pageObject: PageEvent) {
-    const skip = pageObject.pageIndex * pageObject.pageSize;
+    this.skip = pageObject.pageIndex * pageObject.pageSize;
     // Page size may be changed. However, page index will be calculated
     // later on. 
     this.pageSize = pageObject.pageSize;
-    if (this.searchCriteria.length === 0)
-      this.doBasicSearch(skip);
-    else 
+    // In these two cases, the basic (simple) search is used
+    if (!this.needAdvancedSearch || this.searchCriteria.length === 0)
+      this.doBasicSearch();
+    else // Otherwise, advanced search
       this.doAdvancedSearch();
   }
 
@@ -167,18 +168,28 @@ export class InstanceSelectionComponent {
     this.updateAdvancedSearchKey();
   }
 
+  resetSearchCriteria() {
+    this.searchCriteria.length = 0; // reset it
+  }
+
   private updateAdvancedSearchKey() {
     // Reset from the scratch
     let text = '';
     for (let criterium of this.searchCriteria) {
       if (text.length > 0)
         text += ' '; // give it an extra space
-      text += "(" + criterium.attributeName + "[" + criterium.operand;
-      if (criterium.searchKey && criterium.searchKey.length > 0)
-        text += ": " + criterium.searchKey;
-      text += "])";
+      text += this.convertCriterumToText(criterium);
     }
     this.advancedSearchKey = text;
+  }
+
+  private convertCriterumToText(criterium: SearchCriterium) {
+    let text = '';
+    text += "(" + criterium.attributeName + "[" + criterium.operand;
+    if (criterium.searchKey && criterium.searchKey.length > 0)
+      text += ": " + criterium.searchKey;
+    text += "])";
+    return text;
   }
 
   /**
@@ -199,11 +210,25 @@ export class InstanceSelectionComponent {
       // Make sure key is empty
       criterium.searchKey = '';
     }
+    // Check if the passed critierium is listed already. There is no need
+    // to list twice
+    const newText = this.convertCriterumToText(criterium);
+    for (let exited of this.searchCriteria) {
+      if (this.convertCriterumToText(exited) === newText)
+        return false; // This one has existed already. Don't add it any more.
+    }
     return true;
   }
 
-  toggleSearchPane() {
-    this.showFilterComponent = !this.showFilterComponent;
+  toggleSearchMode() {
+    this.needAdvancedSearch = !this.needAdvancedSearch;
+    // Automatically perform a search based on the current condition
+    // so that we can keep the consistent results (e.g. don't show advanced search results
+    // in basic search or vice versa)
+    if (this.needAdvancedSearch)
+      this.doAdvancedSearch();
+    else
+      this.doBasicSearch(); 
   }
 
   removeSearchCriterium() {
@@ -220,7 +245,6 @@ export class InstanceSelectionComponent {
     if (this.searchCriteria.length === 0)
       return; // Just in case
     // Need attributes, operands and keys separate
-
     let attributes: string[] = [];
     let operands: string[] = [];
     let searchKeys: string[] = [];
@@ -256,16 +280,12 @@ export class InstanceSelectionComponent {
    * @param operands
    * @param searchKeys
    */
-  searchInstances(attributeNames: string[],
+  private searchInstances(attributeNames: string[],
     operands: string[],
     searchKeys: string[]
   ) {
     this.showProgressSpinner = true;
-    let parseSearchKeys: string[] = [];
-    for (let searchKey of searchKeys) {
-      parseSearchKeys.push(searchKey);
-    }
-    this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributeNames, operands, parseSearchKeys)
+    this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributeNames, operands, searchKeys)
       .subscribe(instanceList => {
         this.displayInstances(instanceList);
         this.showProgressSpinner = false;

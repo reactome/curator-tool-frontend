@@ -40,7 +40,7 @@
     </ng-template>
   </ng-container>
 </ng-template>
-<section class="table-container" tabindex="0">
+<section class="table-container">
   <table mat-table [dataSource]="instanceDataSource" matSort class="instance-table" [cdkDropListData]="_instance"
     (cdkDropListEntered)="dragEntering($event)" (cdkDropListExited)="stopDragging()"
     (cdkDropListDropped)="bookmarkDrop($event)" cdkDropList cdkDropListConnectedTo="bookmark-list"

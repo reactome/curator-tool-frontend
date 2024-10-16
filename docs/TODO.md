@@ -17,6 +17,7 @@
 - Bug: avoid duplication in instance selection for attribute editing except for input, output, and hasComponent.
 - Bug: advanced search, reaction, regulatedBy, is not null cannot work.
 - TODO: See if router_link can be used for instance list in the main schema view. Originally it is. Not it is changed to link handling, losing the status update to show the links.
+- TODO: In the instance list, make sure scrolling limits to the instance list, not the top panels. Right now, paging controls are fine, staying at the bottom without scrolling.
 
 
 #### TODO:

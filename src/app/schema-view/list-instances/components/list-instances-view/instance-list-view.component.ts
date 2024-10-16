@@ -2,6 +2,7 @@ import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { ActivatedRoute, Params, Route, Router } from "@angular/router";
 import { InstanceSelectionComponent } from './table/instance-selection.component';
 import { combineLatest } from 'rxjs';
+import { SearchCriterium } from 'src/app/core/models/reactome-instance.model';
 
 @Component({
   selector: 'app-list-instances-view',
@@ -33,8 +34,6 @@ export class InstanceListViewComponent implements AfterViewInit {
   }
 
   private handleRoute(params: Params, queryParams: Params) {
-    console.debug('params: ' + params);
-    console.debug('queryParms: ' + queryParams);
     if (params['skip'])
       this.instanceList.skip = params['skip']; // Use whatever is default
     if (params['limit'])
@@ -44,9 +43,7 @@ export class InstanceListViewComponent implements AfterViewInit {
       this.instanceList.searchKey = queryParams['query'];
     }
     // Give it a little bit delay to avoid ng0100 error.
-    setTimeout(() => {
-      this.schemaClassName = params['className'];
-    });
+    this.schemaClassName = params['className'];
     let isChangedChanged = this.instanceList.className !== params['className'];
     this.instanceList.className = params['className'];
     if (queryParams['attributes'] && queryParams['operands'] && queryParams['searchKeys']) { // This is for search
@@ -54,7 +51,21 @@ export class InstanceListViewComponent implements AfterViewInit {
       let attributes = queryParams['attributes'].split(',');
       let operands = queryParams['operands'].split(',');
       let searchKeys = queryParams['searchKeys'].split(',');
-      this.instanceList.searchInstances(attributes, operands, searchKeys);
+      this.instanceList.resetSearchCriteria();
+      for (let i = 0; i < attributes.length; i++) {
+        const criterium: SearchCriterium = {
+          attributeName: attributes[i],
+          operand: operands[i],
+          searchKey: searchKeys[i]
+        };
+        this.instanceList.addSearchCriterium(criterium);
+      }
+      this.instanceList.needAdvancedSearch = true;
+      // disable use route for the time being
+      const useRoute = this.instanceList.useRoute;
+      this.instanceList.useRoute = false; // Regardless the original value, we need to turn it off
+      this.instanceList.doAdvancedSearch();
+      this.instanceList.useRoute = useRoute; // set it back
     }
     else
       this.instanceList.loadInstances();

@@ -34,24 +34,17 @@ export class AttributeConditionComponent {
     searchKey: "",
   };
 
-  recordSearchKey(event: Event) {
-    let text = (event.target as HTMLInputElement).value;
-    this.attributeCondition.searchKey = text;
-  }
-
-  completeQuery(){
+  completeQuery() {
     let copyAttributeCondition = this.attributeCondition;
     this.attributeCondition = this.blankAttributeCondition;
+    this.addAttributeCondition.emit(copyAttributeCondition);
     this.submitAction.emit(copyAttributeCondition);
   }
 
-  addNewPane(){
+  addNewCriterium(){
     let copyAttributeCondition = this.attributeCondition;
     this.attributeCondition = this.blankAttributeCondition;
     this.addAttributeCondition.emit(copyAttributeCondition);
   }
 
-  removePane() {
-    this.removeAttributeCondition.emit(this.attributeCondition);
-  }
 }
