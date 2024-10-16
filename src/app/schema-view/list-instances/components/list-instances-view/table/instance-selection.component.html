@@ -1,27 +1,27 @@
 <div *ngIf="!showFilterComponent">
   <mat-form-field style="float:left; width: 100%">
     <mat-label>Search</mat-label>
-    <input matInput (keydown.enter)="searchForName()"
+    <input matInput (keydown.enter)="doBasicSearch()"
     #input [(ngModel)]="searchKey">
-    <mat-icon class="custom-search-icon" matTooltip="Advanced Search" (click)="showFilter()" matSuffix>manage_search</mat-icon>
+    <mat-icon class="custom-search-icon" matTooltip="Advanced Search" (click)="toggleSearchPane()" matSuffix>manage_search</mat-icon>
   </mat-form-field>
 </div>
 
 <div *ngIf="showFilterComponent">
   <mat-form-field style="float:left; width: 100%">
     <mat-label>Search</mat-label>
-    <input matInput (keydown.enter)="advancedSearch(advancedSearchKey!)"
+    <input matInput (keydown.enter)="doAdvancedSearch()"
     #input readonly="true" [(ngModel)]="advancedSearchKey">
-    <mat-icon class="undo-idon" matTooltip="Undo last" (click)="removeParameter()" matSuffix>undo</mat-icon>
-    <mat-icon class="custom-search-icon" matTooltip="Advanced Search" (click)="showFilter()" matSuffix>manage_search</mat-icon>
+    <mat-icon class="undo-idon" matTooltip="Undo last" (click)="removeSearchCriterium()" matSuffix>undo</mat-icon>
+    <mat-icon class="custom-search-icon" matTooltip="Advanced Search" (click)="toggleSearchPane()" matSuffix>manage_search</mat-icon>
   </mat-form-field>
 </div>
 
 <search-filter *ngIf="showFilterComponent" style="float: right; width: 100%"
                  [attributes]="schemaClassAttributes"
-                 (addSearchCriterium)="searchAction($event)"
-                 (search)="completeSearch()"
-                 (removeSearchCriterium)="removeParameter()"></search-filter>
+                 (addSearchCriterium)="addSearchCriterium($event)"
+                 (search)="doAdvancedSearch()"
+                 (removeSearchCriterium)="removeSearchCriterium()"></search-filter>
 
 <section class="table-container" tabindex="0">
   <ng-container *ngIf="showProgressSpinner">

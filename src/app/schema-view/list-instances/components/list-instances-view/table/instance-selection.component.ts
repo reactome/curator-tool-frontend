@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { PageEvent } from "@angular/material/paginator";
-import { SearchCriterium, Instance } from "../../../../../core/models/reactome-instance.model";
+import { SearchCriterium, Instance, InstanceList } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
 import { ViewOnlyService } from "../../../../../core/services/view-only.service";
 import { Router } from "@angular/router";
@@ -20,7 +20,8 @@ export class InstanceSelectionComponent {
   // For doing attribute-based search (i.e. advanced search)
   // Empty array as a flag for not doing it.
   searchCriteria: SearchCriterium[] = [];
-  advancedSearchKey: string | undefined = '';
+  // Used to display the text to the user for advanced search
+  advancedSearchKey: string = '';
   pageSizeOptions = [20, 50, 100];
   pageIndex: number = 0;
   className: string = "";
@@ -44,8 +45,6 @@ export class InstanceSelectionComponent {
   // A flag to indicate this selection is used for editing
   @Input() isSelection: boolean = false;
 
-  // Outputting the search string to update the header
-  @Output() queryEvent = new EventEmitter<string>();
   @Output() clickEvent = new EventEmitter<Instance>();
 
   @Input() set setClassName(inputClassName: string) {
@@ -73,14 +72,18 @@ export class InstanceSelectionComponent {
     if (this.className && this.className.length > 0) {
       this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
         .subscribe((instancesList) => {
-          this.instanceCount = instancesList.totalCount;
-          this.data = instancesList.instances;
-          // The first page should be 0
-          this.pageIndex = Math.floor(this.skip / this.pageSize);
+          this.displayInstances(instancesList);
           this.showProgressSpinner = false;
         }
         )
     }
+  }
+
+  private displayInstances(instancesList: InstanceList) {
+    this.instanceCount = instancesList.totalCount;
+    this.data = instancesList.instances;
+    // The first page should be 0
+    this.pageIndex = Math.floor(this.skip / this.pageSize);
   }
 
   /**
@@ -103,11 +106,11 @@ export class InstanceSelectionComponent {
     }
   }
 
-  searchForName(skip: number = 0) {
+  doBasicSearch(skip: number = 0) {
     // Start with the first instance
     this.skip = skip;
     if (this.useRoute) {
-      let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
+      let url = this.getListInstancesURL();
       if (this.searchKey && this.searchKey.trim().length > 0)
         this.router.navigate([url], { queryParams: { query: this.searchKey.trim() } });
       else
@@ -122,10 +125,9 @@ export class InstanceSelectionComponent {
     // later on. 
     this.pageSize = pageObject.pageSize;
     if (this.searchCriteria.length === 0)
-      this.searchForName(skip)
-    else {
-      // For advanced search
-    }
+      this.doBasicSearch(skip);
+    else 
+      this.doAdvancedSearch();
   }
 
   onRowClick(row: Instance) {
@@ -137,7 +139,9 @@ export class InstanceSelectionComponent {
     switch (actionEvent.action) {
       case "launch": {
         const dbId = actionEvent.instance.dbId;
-        window.open(`schema_view/instance/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
+        // As of October 15, don't use view only
+        window.open(`schema_view/instance/${dbId}`, '_blank');
+        // window.open(`schema_view/instance/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
         break;
       }
       case "delete": {
@@ -153,6 +157,100 @@ export class InstanceSelectionComponent {
   }
 
   /**
+   * Handle the search button action.
+   * @param searchFilters
+   */
+  addSearchCriterium(attributeCondition: SearchCriterium) {
+    if (!this.validateSearchCriterium(attributeCondition))
+      return; // Make sure only valid criterium can be added
+    this.searchCriteria.push(attributeCondition);
+    this.updateAdvancedSearchKey();
+  }
+
+  private updateAdvancedSearchKey() {
+    // Reset from the scratch
+    let text = '';
+    for (let criterium of this.searchCriteria) {
+      if (text.length > 0)
+        text += ' '; // give it an extra space
+      text += "(" + criterium.attributeName + "[" + criterium.operand;
+      if (criterium.searchKey && criterium.searchKey.length > 0)
+        text += ": " + criterium.searchKey;
+      text += "])";
+    }
+    this.advancedSearchKey = text;
+  }
+
+  /**
+   * Check if the provided search condition is valid.
+   * @param criterium
+   */
+  private validateSearchCriterium(criterium: SearchCriterium) {
+    // Since search criterium doesn't have undefined, must check for length
+    if (!criterium.attributeName || criterium.attributeName.trim().length === 0)
+      return false;
+    // For operands that are not related to null, the search key must be provided
+    if (!criterium.operand.toLocaleLowerCase().includes('null')) {
+      const key = criterium.searchKey;
+      if (!key || key.trim().length === 0)
+        return false;
+    }
+    else {
+      // Make sure key is empty
+      criterium.searchKey = '';
+    }
+    return true;
+  }
+
+  toggleSearchPane() {
+    this.showFilterComponent = !this.showFilterComponent;
+  }
+
+  removeSearchCriterium() {
+    if (this.searchCriteria.length > 0) {
+      this.searchCriteria.pop();
+      this.updateAdvancedSearchKey();
+    }
+  }
+
+  /**
+   * Perform advance search.
+   */
+  doAdvancedSearch() {
+    if (this.searchCriteria.length === 0)
+      return; // Just in case
+    // Need attributes, operands and keys separate
+
+    let attributes: string[] = [];
+    let operands: string[] = [];
+    let searchKeys: string[] = [];
+    this.searchCriteria.forEach(criterium => {
+      attributes.push(criterium.attributeName);
+      operands.push(criterium.operand);
+      searchKeys.push(criterium.searchKey.trim());
+    });
+
+    if (this.useRoute) {
+      let url = this.getListInstancesURL();
+      this.router.navigate([url],
+        {
+          queryParams: {
+            attributes: attributes.toString(),
+            operands: operands.toString(),
+            searchKeys: searchKeys.toString()
+          },
+        });
+    }
+    else
+      this.searchInstances(attributes, operands, searchKeys);
+  }
+
+  private getListInstancesURL() {
+    let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
+    return url;
+  }
+
+  /**
    * Search instances based on a set of search criteria.
    * @param attributeNames
    * @param operands
@@ -163,128 +261,15 @@ export class InstanceSelectionComponent {
     searchKeys: string[]
   ) {
     this.showProgressSpinner = true;
-    let parseSearchKeys: string [] = [];
+    let parseSearchKeys: string[] = [];
     for (let searchKey of searchKeys) {
       parseSearchKeys.push(searchKey);
     }
     this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributeNames, operands, parseSearchKeys)
       .subscribe(instanceList => {
-        this.instanceCount = instanceList.totalCount;
-        this.data = instanceList.instances;
+        this.displayInstances(instanceList);
         this.showProgressSpinner = false;
       })
-    this.queryEvent.emit(this.searchKey);
-  }
-
-  /**
-   * Handle the search button action.
-   * @param searchFilters
-   */
-  searchAction(attributeCondition: SearchCriterium) {
-    if (this.advancedSearchKey !== '') {
-      this.advancedSearchKey += ","
-    }
-    this.advancedSearchKey += "("
-      + attributeCondition.attributeName
-      + "[" + attributeCondition.operand
-      + ": " + attributeCondition.searchKey + "])";
-
-  }
-
-  /**
-   * Check if the provided search condition is valid.
-   * @param attribuateCondition
-   */
-  private isValidSearchCondition(attribuateCondition: SearchCriterium) {
-    if (attribuateCondition.attributeName === undefined || attribuateCondition.attributeName === null)
-      return false;
-    // For operands that are not related to null, the search key must be provided
-    if (!attribuateCondition.operand.toLocaleLowerCase().includes('null')) {
-      const key = attribuateCondition.searchKey;
-      if (key === undefined || key === null || key.trim().length === 0)
-        return false;
-    }
-    return true;
-  }
-
-  showFilter() {
-    this.showFilterComponent = !this.showFilterComponent;
-  }
-
-  parseAdvancedSearch(searchKey: string) {
-    let attributeConditions: SearchCriterium[] = [];
-    if (searchKey !== '') {
-      let fullQuery = searchKey.split(',')
-      for (let query of fullQuery) {
-        let attributeName = query.split("(")[1].split("[")[0];
-        let operand = query.split("[")[1].split(":")[0];
-        let searchKey = query.split(": ")[1].split("]")[0];
-        let attribuateCondition: SearchCriterium = new class implements SearchCriterium {
-          attributeName: string = attributeName;
-          operand: string = operand;
-          searchKey: string = searchKey;
-        }
-        attributeConditions.push(attribuateCondition);
-      }
-    }
-    return attributeConditions;
-  }
-
-  advancedSearch(searchKey: string) {
-    if (searchKey !== '' || searchKey !== null) {
-      let attributes = [];
-      let operands = [];
-      let searchKeys = [];
-      let url = '/schema_view/list_instances/' + this.className;
-      let attributeConditions: SearchCriterium[] = this.parseAdvancedSearch(searchKey);
-
-      for (let attributeCondition of attributeConditions) {
-        attributes.push(attributeCondition.attributeName);
-        operands.push(attributeCondition.operand);
-        searchKeys.push(attributeCondition.searchKey);
-      }
-      if (this.useRoute) {
-        if (searchKey && searchKey.trim().length > 0) // Here we have to use merge to keep all parameters there. This looks like a bug in Angular!!!
-        {
-          this.router.navigate([url],
-            {
-              queryParams: {
-                attributes: attributes.toString(),
-                operands: operands.toString(),
-                searchKeys: searchKeys.toString()
-              },
-              // Merge will keep the simple search query in the header
-              //queryParamsHandling: 'merge' 
-            });
-          }
-        else
-          this.router.navigate([url]);
-      } else
-        this.loadInstances();
-      this.searchInstances(attributes, operands, searchKeys);
-    }
-  }
-
-  removeParameter() {
-    let attributeConditions: SearchCriterium[] = this.parseAdvancedSearch(this.advancedSearchKey!)
-    // Removing the last query 
-    attributeConditions.pop();
-    this.advancedSearchKey = '';
-    for (let attributeCondition of attributeConditions) {
-      this.searchAction(attributeCondition);
-    }
-  }
-
-  /**
- * Handle the search button action.
- * @param searchFilters
- */
-  completeSearch() {
-    // // Don't search if there is no query
-    // if(attributeCondition.searchKey !== ''){
-    //   this.searchAction(attributeCondition);
-    // }
-    this.advancedSearch(this.advancedSearchKey!)
   }
 
   navigateUrl(instance: Instance){
