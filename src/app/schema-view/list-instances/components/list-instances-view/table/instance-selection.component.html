@@ -1,4 +1,4 @@
-<div *ngIf="!needAdvancedSearch">
+<div *ngIf="!needAdvancedSearch" style="position: sticky !important">
   <mat-form-field style="float:left; width: 100%">
     <mat-label>Search</mat-label>
     <input matInput (keydown.enter)="doBasicSearch(0)"
@@ -7,7 +7,7 @@
   </mat-form-field>
 </div>
 
-<div *ngIf="needAdvancedSearch">
+<div *ngIf="needAdvancedSearch" style="position: sticky !important">
   <mat-form-field style="float:left; width: 100%">
     <mat-label>Search</mat-label>
     <input matInput (keydown.enter)="doAdvancedSearch(0)"

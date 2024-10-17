@@ -277,6 +277,10 @@ mat-icon {
 
 }
 
+.mat-toolbar.mat-primary  {
+  position: sticky !important;
+}
+
 .spinner {
   margin:0 auto;
   height: 100%;

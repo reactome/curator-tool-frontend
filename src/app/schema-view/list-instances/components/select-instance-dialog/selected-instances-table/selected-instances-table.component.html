@@ -1,6 +1,6 @@
 <section class="table-container" tabindex="0">
   <app-instance-list-table
-    [dataSource]="instances"
+    [dataSource]="matDataSource.data"
     [isSelection]="isSelection"
     [actionButtons]="actionButtons"
     (actionEvent)="handleAction($event)"></app-instance-list-table>

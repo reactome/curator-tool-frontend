@@ -10,6 +10,11 @@ import { ViewOnlyService } from 'src/app/core/services/view-only.service';
 })
 export class SelectedInstancesTableComponent {
   @Input() set dataSource(instances: Instance[]) {
+    // instances.forEach(element => {
+    //     if (!this.instances.includes(element)) {
+    //       this.instances.push(element);
+    //     }
+    // });
     this.instances = instances;
     this.setTable();
   }
