@@ -8,11 +8,11 @@
 - resizing the nodes cannot change the height of the background for selection. However, sometimes it does work!
 - the order inner and outer layers of a compartment needs to be controlled. It is quite random right now.
 - bug: display name (e.g. change a regulator for a Regulation) cannot trigger the change to the display instance. This needs to be handled as in other instance edit action.
-- bug: deleting or updating display name cannot update the loaded instances.
+- BUG: deleting or updating display name cannot update the loaded instances.
+- BUG: deletion should remove the instance in the instance list even though it is not committed for existing instances
 
 #### Deidre
 - referer check has not considered the updated and new instances: bug in the code, function getReferrersOfNewInstance, need to wrap the code inside subscription.
-- Bug: avoid duplication in instance selection for attribute editing except for input, output, and hasComponent.
 - TODO: See if router_link can be used for instance list in the main schema view. Originally it is. Not it is changed to link handling, losing the status update to show the links.
 - TODO: In the instance list, make sure scrolling limits to the instance list, not the top panels. Right now, paging controls are fine, staying at the bottom without scrolling.
 

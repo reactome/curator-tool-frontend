@@ -38,7 +38,7 @@ export class SelectedInstancesTableComponent {
 
       case "launch": {
         const dbId = actionButton.instance.dbId;
-        window.open(`schema_view/instance/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
+        window.open(`schema_view/instance/${dbId}`, '_blank');
         break;
       }
 

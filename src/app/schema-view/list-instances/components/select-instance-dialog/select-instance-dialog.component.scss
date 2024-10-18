@@ -19,7 +19,17 @@
 
 .scroll_panel {
   height: auto;
-  max-height: 40vh;
+  max-height: 50vh;
   overflow: scroll;
   border: solid;
+}
+
+/* dialog.component.css */
+mat-dialog-content {
+  overflow: auto; /* Makes content scrollable if it exceeds dialog height */
+  max-height: calc(100vh - 150px); /* Adjusts the height of content dynamically */
+}
+
+mat-dialog-actions {
+  padding: 8px 24px; /* Optional: Add spacing for the actions */
 }

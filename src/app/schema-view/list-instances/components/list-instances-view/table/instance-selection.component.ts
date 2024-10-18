@@ -1,8 +1,7 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { PageEvent } from "@angular/material/paginator";
 import { SearchCriterium, Instance, InstanceList } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
-import { ViewOnlyService } from "../../../../../core/services/view-only.service";
 import { Router } from "@angular/router";
 import { ReferrersDialogService } from "../../../../../instance/components/referrers-dialog/referrers-dialog.service";
 import { DeletionDialogService } from "../../../../../instance/components/deletion-dialog/deletion-dialog.service";
