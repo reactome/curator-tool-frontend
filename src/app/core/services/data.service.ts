@@ -244,7 +244,7 @@ export class DataService {
     // Need to apply deletion after loading from the database. But not
     // in the loading. Otherwise, we will never get the original datbase copy.
     return rtn.pipe(
-      concatMap(instance => 
+      concatMap(instance =>
         this.store.select(deleteInstances()).pipe(
           take(1),
           map(deletedInsts => {
@@ -253,7 +253,7 @@ export class DataService {
           })
         )
       ),
-      concatMap(instance => 
+      concatMap(instance =>
         this.store.select(updatedInstances()).pipe(
           take(1),
           map(updatedInsts => {
@@ -850,39 +850,10 @@ export class DataService {
       );
   }
 
-  getReferrers(dbId: number): Observable<Referrer[]> {
-    return this.http.get<Referrer[]>(this.getReferrersUrl + `${dbId}`)
-      .pipe(
-        map((data: Referrer[]) => {
-          // Checking for instances that have not yet been committed
-          for (let ref of this.getReferrersOfNewInstance(dbId)) {
-            let attributeNames: string[] = data.map((ref) => ref.attributeName);
-            // If the Reference List contains this attribute, add the instance to the array
-            if (attributeNames.includes(ref.attributeName)) {
-              let index = attributeNames.indexOf(ref.attributeName);
-              data.at(index)?.referrers.push(ref.referrers.at(0)!);
-            }
-            // Otherwise create new reference type
-            else {
-              data.push(ref);
-            }
-          }
-          return data;
-        }, // Nothing needs to be done.
-          catchError((err: Error) => {
-            console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
-              panelClass: ['warning-snackbar'],
-              duration: 10000
-            });
-            return throwError(() => err);
-          })));
-  }
-
-
   /**
-   * Delete an instance in the database.
-   * @param instance
-   */
+ * Delete an instance in the database.
+ * @param instance
+ */
   delete(instance: Instance): Observable<boolean> {
     return this.http.post<boolean>(this.deleteInstaneUrl, instance).pipe(
       catchError(error => {
@@ -895,7 +866,80 @@ export class DataService {
     )
   }
 
-  getReferrersOfNewInstance(dbId: number) {
+  getReferrers(dbId: number): Observable<Referrer[]> {
+    return this.http.get<Referrer[]>(this.getReferrersUrl + `${dbId}`)
+      .pipe(
+        map((data: Referrer[]) => {
+          // If instance is in database, get the orginal attribute names of the refs
+          let attributeNames: string[] = data.map((ref) => ref.attributeName);
+          // Checking the store for new and updated instances
+          combineLatest([this.store.select(updatedInstances()).pipe(take(1)), this.store.select(newInstances()).pipe(take(1))])
+            .subscribe(([updatedInstances, newInstances]) => {
+              const dbIds = updatedInstances.map(inst => inst.dbId);
+              newInstances.map(inst => dbIds.push(inst.dbId));
+              this.fetchInstances(dbIds).subscribe(insts => {
+                for (let inst of insts) {
+                  if (!inst.modifiedAttributes)
+                    continue;
+                  // Only need to check the modified attributes for edits
+                  for (let attribute of inst.modifiedAttributes!) {
+                    let attributeData = inst.attributes.get(attribute)
+                    if (!attributeData)
+                      continue;
+                    if (Array.isArray(attributeData)) {
+                      for (let attData of attributeData) {
+                        // Check that the attribute is an Object with the correct dbId
+                        if (attData.dbId && attData.dbId === dbId) {
+                          // The Reference type is used to hold the attribute name and instance,
+                          // the getReferrers method will map to the correct array. 
+                          let ref: Referrer = { attributeName: attribute, referrers: [inst] }
+                          // If the Reference List contains this attribute, add the instance to the array
+                          if (attributeNames.includes(ref.attributeName)) {
+                            let index = attributeNames.indexOf(ref.attributeName);
+                            attributeNames.push(ref.attributeName);
+                            data.at(index)?.referrers.push(ref.referrers.at(0)!);
+                          }
+                          // Otherwise create new reference type
+                          else {
+                            attributeNames.push(ref.attributeName);
+                            data.push(ref);
+                          }
+                        }
+                      }
+                    }
+                    else {
+                      if (attributeData.dbId && attributeData.dbId === dbId) {
+                        let ref: Referrer = { attributeName: attribute, referrers: [inst] }
+                        // If the Reference List contains this attribute, add the instance to the array
+                        if (attributeNames.includes(ref.attributeName)) {
+                          let index = attributeNames.indexOf(ref.attributeName);
+                          attributeNames.push(ref.attributeName);
+                          data.at(index)?.referrers.push(ref.referrers.at(0)!);
+                        }
+                        // Otherwise create new reference type
+                        else {
+                          attributeNames.push(ref.attributeName);
+                          data.push(ref);
+                        }
+                      }
+                    }
+                  }
+
+                }
+              });
+            })
+          return data;
+        }, // Nothing needs to be done.
+          catchError((err: Error) => {
+            console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
+              panelClass: ['warning-snackbar'],
+              duration: 10000
+            });
+            return throwError(() => err);
+          })));
+  }
+
+  private getReferrersOfNewInstance(dbId: number) {
     let referrers: Referrer[] = [];
     // Checking the store for new and updated instances
     combineLatest([this.store.select(updatedInstances()).pipe(take(1)), this.store.select(newInstances()).pipe(take(1))])
