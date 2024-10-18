@@ -1,5 +1,5 @@
 import { CdkAccordionModule } from "@angular/cdk/accordion";
-import { Component, EventEmitter, HostListener, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnInit, Output } from '@angular/core';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from "@angular/material/icon";
@@ -15,15 +15,17 @@ import { DataService } from "../core/services/data.service";
 import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instance-bookmark.module";
 import { bookmarkedInstances } from "../schema-view/instance-bookmark/state/bookmark.selectors";
 import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
+import { NgIf } from "@angular/common";
 
 @Component({
   selector: 'app-status',
   templateUrl: './status.component.html',
   styleUrls: ['./status.component.scss'],
   standalone: true,
-    imports: [MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule, CdkAccordionModule, UpdatedInstanceListComponent, InstanceBookmarkModule, MatIconModule, MatTooltipModule]
+    imports: [NgIf, MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule, CdkAccordionModule, UpdatedInstanceListComponent, InstanceBookmarkModule, MatIconModule, MatTooltipModule]
 })
 export class StatusComponent implements OnInit {
+  @Input() hideInstanceStatus: boolean = false;
   @Output() showUpdatedEvent = new EventEmitter<boolean>();
   updatedInstances: Instance[] = [];
   newInstances: Instance[] = [];

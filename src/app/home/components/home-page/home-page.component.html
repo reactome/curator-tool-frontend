@@ -1,5 +1,5 @@
 <!--<section class="home-page-container" tabindex="0">-->
-  <form>
+  <!-- <form>
     <mat-form-field class="form-field">
       <mat-label>Search</mat-label>
       <input type="text"
@@ -12,7 +12,7 @@
         <mat-option *ngFor="let option of options" [value]="option">{{option}}</mat-option>
       </mat-autocomplete>
     </mat-form-field>
-  </form>
+  </form> -->
   <div class="center-content">
     <mat-card class="card">
       <mat-card-content>
@@ -36,7 +36,7 @@
       </mat-card-content>
     </mat-card>
   </div>
-  <div >
+  <!-- <div >
     <mat-card style="margin-bottom: 1rem;">
       <mat-card-content>View History (20 instances)</mat-card-content>
     </mat-card>
@@ -53,8 +53,8 @@
     <mat-card style="margin-bottom: 1rem;">
       <mat-card-content>Logged-in Curators (3 curators)</mat-card-content>
     </mat-card>
-  </div>
-<app-status></app-status>
+  </div> -->
+<app-status [hideInstanceStatus]="true"></app-status>
 
 <!--</section>-->
 

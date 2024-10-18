@@ -1,4 +1,5 @@
 <mat-toolbar class="status" color="secondary">
+        <section *ngIf="!hideInstanceStatus">
         <span>New instances:
                 <button mat-button style="border: 0px;" (click)="showUpdated()"
                         [disabled]="newInstances.length === 0">{{newInstances.length}}
@@ -16,7 +17,7 @@
                         [disabled]="deletedInstances.length === 0">{{deletedInstances.length}}
                 </button>
         </span>
-
+        </section>
         <!--TODO: To be implemented soon.-->
         <!-- <span>Curators Online:
                 <button mat-button style="border: 0px;" (click)="showUpdated()"
