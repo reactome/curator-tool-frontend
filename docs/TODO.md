@@ -8,8 +8,7 @@
 - resizing the nodes cannot change the height of the background for selection. However, sometimes it does work!
 - the order inner and outer layers of a compartment needs to be controlled. It is quite random right now.
 - bug: display name (e.g. change a regulator for a Regulation) cannot trigger the change to the display instance. This needs to be handled as in other instance edit action.
-- BUG: deleting or updating display name cannot update the loaded instances.
-- BUG: deletion should remove the instance in the instance list even though it is not committed for existing instances
+- bug: deleting or updating display name cannot update the loaded instances.
 
 #### Deidre
 - referer check has not considered the updated and new instances: bug in the code, function getReferrersOfNewInstance, need to wrap the code inside subscription.

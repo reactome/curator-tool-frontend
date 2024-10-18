@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
-import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
+import { catchError, combineLatest, concatMap, defaultIfEmpty, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
 import { deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
 import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
@@ -470,6 +470,7 @@ export class DataService {
           take(1),
           map((insts) => {
             for (let inst of insts) {
+              inst = this.utils.makeShell(inst);
               // This should be faster therefore check it first
               if (searchKey && searchKey.length > 0) {
                 // If searchKey is integer, check for dbId
@@ -869,6 +870,7 @@ export class DataService {
   getReferrers(dbId: number): Observable<Referrer[]> {
     return this.http.get<Referrer[]>(this.getReferrersUrl + `${dbId}`)
       .pipe(
+        // defaultIfEmpty({}),
         map((data: Referrer[]) => {
           // If instance is in database, get the orginal attribute names of the refs
           let attributeNames: string[] = data.map((ref) => ref.attributeName);
@@ -937,47 +939,6 @@ export class DataService {
             });
             return throwError(() => err);
           })));
-  }
-
-  private getReferrersOfNewInstance(dbId: number) {
-    let referrers: Referrer[] = [];
-    // Checking the store for new and updated instances
-    combineLatest([this.store.select(updatedInstances()).pipe(take(1)), this.store.select(newInstances()).pipe(take(1))])
-      .subscribe(([updatedInstances, newInstances]) => {
-        const dbIds = updatedInstances.map(inst => inst.dbId);
-        newInstances.map(inst => dbIds.push(inst.dbId));
-        this.fetchInstances(dbIds).subscribe(insts => {
-          for (let inst of insts) {
-            if (!inst.modifiedAttributes)
-              continue;
-            // Only need to check the modified attributes for edits
-            for (let attribute of inst.modifiedAttributes!) {
-              let attributeData = inst.attributes.get(attribute)
-              if (!attributeData)
-                continue;
-              if (Array.isArray(attributeData)) {
-                for (let attData of attributeData) {
-                  // Check that the attribute is an Object with the correct dbId
-                  if (attData.dbId && attData.dbId === dbId) {
-                    // The Reference type is used to hold the attribute name and instance,
-                    // the getReferrers method will map to the correct array. 
-                    let ref: Referrer = { attributeName: attribute, referrers: [inst] }
-                    referrers.push(ref);
-                  }
-                }
-              }
-              else {
-                if (attributeData.dbId && attributeData.dbId === dbId) {
-                  let ref: Referrer = { attributeName: attribute, referrers: [inst] }
-                  referrers.push(ref);
-                }
-              }
-            }
-
-          }
-        });
-      })
-    return referrers;
   }
 
   isSchemaClass(instance: Instance, className: string): boolean {

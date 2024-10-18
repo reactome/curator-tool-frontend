@@ -345,7 +345,9 @@ export class InstanceUtilities {
                         // any more
                         // Its display name has been changed
                         // Since this is a shell instance, no need to set attribute here
-                        attValue1.displayName = this.dbId2displayName.get(attValue1.dbId);
+                        const currentName = this.dbId2displayName.get(attValue1.dbId);
+                        if (currentName !== attValue1.displayName)
+                            attValue1.displayName = currentName;
                     }
                 }
             }

@@ -89,7 +89,7 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
   createNewInstance(schemaClassName: string) {
     this.service.createNewInstance(schemaClassName).subscribe(instance => {
       this.service.registerInstance(instance);
-      this.store.dispatch(NewInstanceActions.register_new_instance(instance));
+      this.store.dispatch(NewInstanceActions.register_new_instance(this.instUtils.makeShell(instance)));
       let dbId = instance.dbId.toString();
       this.router.navigate(["/schema_view/instance/" + dbId]);
     });

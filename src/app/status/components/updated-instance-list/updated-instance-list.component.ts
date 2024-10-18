@@ -136,9 +136,9 @@ export class UpdatedInstanceListComponent implements OnInit{
     this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
     // Check if this is an updated instance or new instance: need to add them back.
     if (instance.dbId < 0)
-      this.store.dispatch(NewInstanceActions.register_new_instance(instance));
+      this.store.dispatch(NewInstanceActions.register_new_instance(this.instanceUtilities.makeShell(instance)));
     else if (instance.modifiedAttributes && instance.modifiedAttributes.length > 0)
-      this.store.dispatch(UpdateInstanceActions.register_updated_instance(instance));
+      this.store.dispatch(UpdateInstanceActions.register_updated_instance(this.instanceUtilities.makeShell(instance)));
   }
 
   private resetUpdatedInstance(instance: Instance) {
