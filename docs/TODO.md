@@ -14,7 +14,9 @@
 - referer check has not considered the updated and new instances: bug in the code, function getReferrersOfNewInstance, need to wrap the code inside subscription.
 - TODO: See if router_link can be used for instance list in the main schema view. Originally it is. Not it is changed to link handling, losing the status update to show the links.
 - TODO: In the instance list, make sure scrolling limits to the instance list, not the top panels. Right now, paging controls are fine, staying at the bottom without scrolling.
-
+- BUG: deletion should remove the instance in the instance list even though it is not committed for existing instances
+- BUG: bookmarked instances dont update their display names when they change via editing
+- BUG: bookmarked instances are used in attributes, resulting a bug when updating attribute's display names during instance loading
 
 #### TODO:
 - Need to style the detailed table view for schema class.
