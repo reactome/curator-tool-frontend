@@ -17,6 +17,7 @@
 - BUG: deletion should remove the instance in the instance list even though it is not committed for existing instances
 - BUG: bookmarked instances dont update their display names when they change via editing
 - BUG: bookmarked instances are used in attributes, resulting a bug when updating attribute's display names during instance loading
+- TODO: When an instance is a new instance, don't call the backend for fetching referrers.
 
 #### TODO:
 - Need to style the detailed table view for schema class.
