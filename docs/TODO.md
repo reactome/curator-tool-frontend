@@ -9,6 +9,8 @@
 - the order inner and outer layers of a compartment needs to be controlled. It is quite random right now.
 - bug: display name (e.g. change a regulator for a Regulation) cannot trigger the change to the display instance. This needs to be handled as in other instance edit action.
 - bug: deleting or updating display name cannot update the loaded instances.
+- Bug: the connecting positions are not updated for helper nodes when they are dragged during editing.
+- Bug: inner shapes are not updated when resizing nodes.
 
 #### Deidre
 - referer check has not considered the updated and new instances: bug in the code, function getReferrersOfNewInstance, need to wrap the code inside subscription.
@@ -18,6 +20,7 @@
 - BUG: bookmarked instances dont update their display names when they change via editing
 - BUG: bookmarked instances are used in attributes, resulting a bug when updating attribute's display names during instance loading
 - TODO: When an instance is a new instance, don't call the backend for fetching referrers.
+- TODO: Use the new set of Reactome icons at Figma, designed by the EBI team.
 
 #### TODO:
 - Need to style the detailed table view for schema class.

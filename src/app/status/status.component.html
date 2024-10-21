@@ -24,8 +24,11 @@
                         [disabled]="updatedInstances.length === 0">{{updatedInstances.length + newInstances.length}}
                 </button>
         </span> -->
+        <a style="position: absolute; right: 3em;" href="https://docs.google.com/document/d/180LCXdsk7Z324uK0FVhDj5fw3HnFPktt6rEqkpass1o/edit?tab=t.0" target="_blank">
+        Report Bug
+        </a>
 
-        <button style="position: absolute; right: 0" class="mat-icon-button" (click)="logout()" matTooltip="Logout"
+        <button style="position: absolute; right: 0;" class="mat-icon-button" (click)="logout()" matTooltip="Logout"
                 matTooltipPosition="right" [matTooltipShowDelay]="500">
                 <mat-icon color="primary">logout</mat-icon>
         </button>
