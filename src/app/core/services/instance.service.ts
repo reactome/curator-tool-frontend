@@ -6,6 +6,8 @@ import { Subject, take } from "rxjs";
 import { Store } from "@ngrx/store";
 import { deleteInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { NewInstanceActions } from "src/app/instance/state/instance.actions";
+import { bookmarkedInstances } from "src/app/schema-view/instance-bookmark/state/bookmark.selectors";
+import { BookmarkActions } from "src/app/schema-view/instance-bookmark/state/bookmark.actions";
 
 /**
  * Group a set of utility methods here for easy access to all other classes.
@@ -49,7 +51,7 @@ export class InstanceUtilities {
     lastUpdatedInstance$ = this.lastUpdatedInstance.asObservable();
 
     // Track the changed display names
-    private dbId2displayName = new Map<number, string|undefined>();
+    private dbId2displayName = new Map<number, string | undefined>();
 
     constructor(private store: Store) { }
 
@@ -59,6 +61,20 @@ export class InstanceUtilities {
      */
     registerDisplayNameChange(instance: Instance) {
         this.dbId2displayName.set(instance.dbId, instance.displayName);
+        this.updateBookmarkStore(instance);
+    }
+
+    updateBookmarkStore(instance: Instance) {
+        let dbIdsFromBookmarkStore: number[] = [];
+        this.store.select(bookmarkedInstances()).pipe(take(1)).subscribe((instances: Instance[] | undefined) => {
+            if (instances !== undefined) {
+                dbIdsFromBookmarkStore = instances.map(inst => inst.dbId);
+            }
+        })
+
+        if (dbIdsFromBookmarkStore.includes(instance.dbId)) {
+            this.store.dispatch(BookmarkActions.add_bookmark(this.makeShell(instance)));
+        }
     }
 
     setLastUpdatedInstance(attribute: string, instance: Instance) {
@@ -121,7 +137,7 @@ export class InstanceUtilities {
         }
     }
 
-    _isSchemaClass(instance: Instance, schemaClass: SchemaClass|undefined): boolean {
+    _isSchemaClass(instance: Instance, schemaClass: SchemaClass | undefined): boolean {
         if (schemaClass === undefined)
             return false;
         // Get all children
@@ -340,7 +356,7 @@ export class InstanceUtilities {
                         if (currentName !== attValue1.displayName)
                             attValue1.displayName = currentName;
                     }
-                    else if (this.dbId2displayName.has(attValue1.dbId)) { 
+                    else if (this.dbId2displayName.has(attValue1.dbId)) {
                         // updated instance may be reset or committed, so it is not in the updatedInst
                         // any more
                         // Its display name has been changed

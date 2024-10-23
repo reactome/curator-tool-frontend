@@ -867,71 +867,19 @@ export class DataService {
     )
   }
 
+  /**
+   * To avoid calling the backend for new instances we need to check the dbId
+   * @param dbId
+   */
   getReferrers(dbId: number): Observable<Referrer[]> {
-    return this.http.get<Referrer[]>(this.getReferrersUrl + `${dbId}`)
-      .pipe(
-        // defaultIfEmpty({}),
+    let referrers: Referrer[] = [];
+    if (dbId > 0) {
+      return this.http.get<Referrer[]>(this.getReferrersUrl + `${dbId}`).pipe(
         map((data: Referrer[]) => {
-          // If instance is in database, get the orginal attribute names of the refs
-          let attributeNames: string[] = data.map((ref) => ref.attributeName);
-          // Checking the store for new and updated instances
-          combineLatest([this.store.select(updatedInstances()).pipe(take(1)), this.store.select(newInstances()).pipe(take(1))])
-            .subscribe(([updatedInstances, newInstances]) => {
-              const dbIds = updatedInstances.map(inst => inst.dbId);
-              newInstances.map(inst => dbIds.push(inst.dbId));
-              this.fetchInstances(dbIds).subscribe(insts => {
-                for (let inst of insts) {
-                  if (!inst.modifiedAttributes)
-                    continue;
-                  // Only need to check the modified attributes for edits
-                  for (let attribute of inst.modifiedAttributes!) {
-                    let attributeData = inst.attributes.get(attribute)
-                    if (!attributeData)
-                      continue;
-                    if (Array.isArray(attributeData)) {
-                      for (let attData of attributeData) {
-                        // Check that the attribute is an Object with the correct dbId
-                        if (attData.dbId && attData.dbId === dbId) {
-                          // The Reference type is used to hold the attribute name and instance,
-                          // the getReferrers method will map to the correct array. 
-                          let ref: Referrer = { attributeName: attribute, referrers: [inst] }
-                          // If the Reference List contains this attribute, add the instance to the array
-                          if (attributeNames.includes(ref.attributeName)) {
-                            let index = attributeNames.indexOf(ref.attributeName);
-                            attributeNames.push(ref.attributeName);
-                            data.at(index)?.referrers.push(ref.referrers.at(0)!);
-                          }
-                          // Otherwise create new reference type
-                          else {
-                            attributeNames.push(ref.attributeName);
-                            data.push(ref);
-                          }
-                        }
-                      }
-                    }
-                    else {
-                      if (attributeData.dbId && attributeData.dbId === dbId) {
-                        let ref: Referrer = { attributeName: attribute, referrers: [inst] }
-                        // If the Reference List contains this attribute, add the instance to the array
-                        if (attributeNames.includes(ref.attributeName)) {
-                          let index = attributeNames.indexOf(ref.attributeName);
-                          attributeNames.push(ref.attributeName);
-                          data.at(index)?.referrers.push(ref.referrers.at(0)!);
-                        }
-                        // Otherwise create new reference type
-                        else {
-                          attributeNames.push(ref.attributeName);
-                          data.push(ref);
-                        }
-                      }
-                    }
-                  }
-
-                }
-              });
-            })
+          this._getReferrers(dbId, data).subscribe(e => {data = e});
           return data;
-        }, // Nothing needs to be done.
+        },
+          // Nothing needs to be done.
           catchError((err: Error) => {
             console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
               panelClass: ['warning-snackbar'],
@@ -939,6 +887,71 @@ export class DataService {
             });
             return throwError(() => err);
           })));
+    }
+    return this._getReferrers(dbId, referrers);
+  }
+
+  _getReferrers(dbId: number, referrers: Referrer[]): Observable<Referrer[]> {
+    // Checking the store for new and updated instances
+    let attributeNames: string[] = referrers?.map((ref) => ref.attributeName);
+    combineLatest([this.store.select(updatedInstances()).pipe(take(1)), this.store.select(newInstances()).pipe(take(1))])
+      .subscribe(([updatedInstances, newInstances]) => {
+        const dbIds = updatedInstances.map(inst => inst.dbId);
+        newInstances.map(inst => dbIds.push(inst.dbId));
+        this.fetchInstances(dbIds).subscribe(insts => {
+          for (let inst of insts) {
+            if (!inst.modifiedAttributes)
+              continue;
+            // Only need to check the modified attributes for edits
+            for (let attribute of inst.modifiedAttributes!) {
+              let attributeData = inst.attributes.get(attribute)
+              if (!attributeData)
+                continue;
+              if (Array.isArray(attributeData)) {
+                for (let attData of attributeData) {
+                  // Check that the attribute is an Object with the correct dbId
+                  if (attData.dbId && attData.dbId === dbId) {
+                    // The Reference type is used to hold the attribute name and instance,
+                    // the getReferrers method will map to the correct array. 
+                    let ref: Referrer = { attributeName: attribute, referrers: [inst] }
+                    // If the Reference List contains this attribute, add the instance to the array
+                    if (attributeNames && attributeNames.includes(ref.attributeName)) {
+                      let index = attributeNames.indexOf(ref.attributeName);
+                      attributeNames.push(ref.attributeName);
+                      referrers.at(index)?.referrers.push(ref.referrers.at(0)!);
+                    }
+                    // Otherwise create new reference type
+                    else {
+                      if (attributeNames)
+                        attributeNames.push(ref.attributeName);
+                      referrers.push(ref);
+                    }
+                  }
+                }
+              }
+              else {
+                if (attributeData.dbId && attributeData.dbId === dbId) {
+                  let ref: Referrer = { attributeName: attribute, referrers: [inst] }
+                  // If the Reference List contains this attribute, add the instance to the array
+                  if (attributeNames?.includes(ref.attributeName)) {
+                    let index = attributeNames.indexOf(ref.attributeName);
+                    attributeNames.push(ref.attributeName);
+                    referrers.at(index)?.referrers.push(ref.referrers.at(0)!);
+                  }
+                  // Otherwise create new reference type
+                  else {
+                    attributeNames?.push(ref.attributeName);
+                    //referrers.forEach(refs => { refs.push(ref) });
+                    referrers.push(ref);
+                  }
+                }
+              }
+            }
+
+          }
+        });
+      })
+    return of(referrers);
   }
 
   isSchemaClass(instance: Instance, className: string): boolean {

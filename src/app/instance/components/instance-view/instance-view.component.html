@@ -35,8 +35,9 @@
 </mat-toolbar>
 <app-text-curation [embedded]="true" [instanceView]="this" style="height: var(--text-curation-height);"
   *ngIf="instance"></app-text-curation>
-<app-instance-table [instance]="instance" [referenceInstance]="dbInstance" (editedInstance)="updateTitle($event)"
-  *ngIf="!showProgressSpinner && instance" [blockRouter]="blockRoute"></app-instance-table>
+<app-instance-table style="overflow: scroll;" [instance]="instance" [referenceInstance]="dbInstance"
+  (editedInstance)="updateTitle($event)" *ngIf="!showProgressSpinner && instance"
+  [blockRouter]="blockRoute"></app-instance-table>
 <ng-template #qa_issues>
   <qa-reports-action-menu [instance]="instance" (actionItem)="onQAReportAction($event)">
   </qa-reports-action-menu>

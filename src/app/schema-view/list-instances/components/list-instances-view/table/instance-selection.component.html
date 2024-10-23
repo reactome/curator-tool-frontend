@@ -1,5 +1,5 @@
-<div *ngIf="!needAdvancedSearch" style="position: sticky !important">
-  <mat-form-field style="float:left; width: 100%">
+<div *ngIf="!needAdvancedSearch">
+  <mat-form-field style="float:left; width: 100%; position: sticky !important">
     <mat-label>Search</mat-label>
     <input matInput (keydown.enter)="doBasicSearch(0)"
     #input [(ngModel)]="searchKey">
@@ -7,8 +7,8 @@
   </mat-form-field>
 </div>
 
-<div *ngIf="needAdvancedSearch" style="position: sticky !important">
-  <mat-form-field style="float:left; width: 100%">
+<div *ngIf="needAdvancedSearch">
+  <mat-form-field style="float:left; width: 100%; position: sticky !important">
     <mat-label>Search</mat-label>
     <input matInput (keydown.enter)="doAdvancedSearch(0)"
     #input readonly="true" [(ngModel)]="advancedSearchKey">
@@ -17,13 +17,13 @@
   </mat-form-field>
 </div>
 
-<search-filter *ngIf="needAdvancedSearch" style="float: right; width: 100%"
+<search-filter *ngIf="needAdvancedSearch" style="float: right; width: 100%; position: sticky !important"
                  [attributes]="schemaClassAttributes"
                  (addSearchCriterium)="addSearchCriterium($event)"
                  (search)="doAdvancedSearch(0)"
                  (removeSearchCriterium)="removeSearchCriterium()"></search-filter>
 
-<section class="table-container">
+<section class="table-container" >
   <ng-container *ngIf="showProgressSpinner">
     <mat-spinner class="spinner"></mat-spinner>
   </ng-container>
