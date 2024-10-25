@@ -22,13 +22,13 @@
   }
 }
 
-mat-sidenav {
-  overflow: unset;
+// mat-sidenav {
+//   overflow: unset;
 
-  > * {
-    overflow-x: auto;
-  }
-}
+//   > * {
+//     overflow-x: auto;
+//   }
+// }
 
 side-nav {
   position:relative;
@@ -43,6 +43,7 @@ side-nav {
   --text-curation-height: 4vh;
   border: 1px solid var(--outline-variant);
   border-left-width: 0;
+  //overflow: visible;
   //width: 60vw;
 }
 

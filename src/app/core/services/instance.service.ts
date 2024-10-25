@@ -4,8 +4,7 @@ import { DataService } from "./data.service";
 import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttribute, SchemaClass } from "../models/reactome-schema.model";
 import { Subject, take } from "rxjs";
 import { Store } from "@ngrx/store";
-import { deleteInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
-import { NewInstanceActions } from "src/app/instance/state/instance.actions";
+import { deleteInstances } from "src/app/instance/state/instance.selectors";
 import { bookmarkedInstances } from "src/app/schema-view/instance-bookmark/state/bookmark.selectors";
 import { BookmarkActions } from "src/app/schema-view/instance-bookmark/state/bookmark.actions";
 
@@ -25,6 +24,10 @@ export class InstanceUtilities {
     // We use this method to make the code much, much simpler!
     private refreshViewDbId = new Subject<number>();
     refreshViewDbId$ = this.refreshViewDbId.asObservable();
+
+    // Notify of display name update for bookmarks
+    private refreshBookmarks = new Subject<number>();
+    refreshBookmarks$ = this.refreshBookmarks.asObservable();
 
     // Call this when an database is marked as deletion but not yet committed to
     // the database
@@ -61,20 +64,7 @@ export class InstanceUtilities {
      */
     registerDisplayNameChange(instance: Instance) {
         this.dbId2displayName.set(instance.dbId, instance.displayName);
-        this.updateBookmarkStore(instance);
-    }
-
-    updateBookmarkStore(instance: Instance) {
-        let dbIdsFromBookmarkStore: number[] = [];
-        this.store.select(bookmarkedInstances()).pipe(take(1)).subscribe((instances: Instance[] | undefined) => {
-            if (instances !== undefined) {
-                dbIdsFromBookmarkStore = instances.map(inst => inst.dbId);
-            }
-        })
-
-        if (dbIdsFromBookmarkStore.includes(instance.dbId)) {
-            this.store.dispatch(BookmarkActions.add_bookmark(this.makeShell(instance)));
-        }
+        this.setRefreshViewDbId(instance.dbId);
     }
 
     setLastUpdatedInstance(attribute: string, instance: Instance) {

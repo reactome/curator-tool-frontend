@@ -28,7 +28,8 @@
       <ng-container *ngIf="!isSelection">
         <a style="text-decoration: underline;" (click)="onInstanceLinkClicked(element)">{{element.displayName}}</a>
       </ng-container>
-      <br></td>
+      <br>
+    </td>
   </ng-container>
 
   <!-- Action Buttons Column -->
@@ -39,12 +40,11 @@
         <!--TODO: The tooltip needs to be improved by using a method in the component-->
         <div style="white-space: nowrap;">
           <button color="primary" *ngFor="let button of actionButtons" mat-icon-button (click)="click(element, button)"
-          matTooltip="{{getToolTip(button)}}"
-          matTooltipPosition="left">
+            matTooltip="{{getToolTip(button)}}" matTooltipPosition="left">
             <mat-icon>{{button}}</mat-icon>
           </button>
-          <button color="primary"  mat-icon-button (click)="addBookmark(element)"
-                  matTooltip="add bookmark" matTooltipPosition="left">
+          <button color="primary" mat-icon-button (click)="addBookmark(element)" matTooltip="add bookmark"
+            matTooltipPosition="left">
             <mat-icon>bookmark</mat-icon>
           </button>
         </div>
@@ -53,26 +53,19 @@
   </ng-container>
 
   <ng-container *ngIf="showHeader">
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
   </ng-container>
   <ng-container *ngIf="!isSelection">
-    <tr
-      mat-row
-      *matRowDef="let row; columns: displayedColumns;"
-    ></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
   </ng-container>
   <ng-container *ngIf="isSelection">
-    <tr
-      mat-row
-      (click)="onRowClick(row)"
-      *matRowDef="let row; columns: displayedColumns;"
-    ></tr>
+    <tr mat-row (click)="onRowClick(row)" *matRowDef="let row; columns: displayedColumns;"></tr>
   </ng-container>
 
   <!-- Row shown when there is no matching data. -->
   <tr class="mat-row" *matNoDataRow>
     <td class="mat-cell" colspan="4">
-      <div *ngIf="showEmptyMessage">No instance matching the search key</div> 
+      <div *ngIf="showEmptyMessage">No instance matching the search key</div>
     </td>
   </tr>
 </table>

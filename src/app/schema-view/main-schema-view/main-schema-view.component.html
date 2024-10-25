@@ -1,5 +1,5 @@
 <div #container>
-  <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh">
+  <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh; overflow: visible !important">
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true" [style.width]="sideWidth + 'px'">
       <app-schema-class-tree *ngIf="!showChanged"></app-schema-class-tree>
       <app-updated-instance-list *ngIf="showChanged" (closeAction)="showUpdatedInstances(false)"></app-updated-instance-list>

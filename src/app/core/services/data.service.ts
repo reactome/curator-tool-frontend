@@ -875,10 +875,9 @@ export class DataService {
     let referrers: Referrer[] = [];
     if (dbId > 0) {
       return this.http.get<Referrer[]>(this.getReferrersUrl + `${dbId}`).pipe(
-        map((data: Referrer[]) => {
-          this._getReferrers(dbId, data).subscribe(e => {data = e});
-          return data;
-        },
+        concatMap((data: Referrer[]) => {
+          return this._getReferrers(dbId, data);
+        }),
           // Nothing needs to be done.
           catchError((err: Error) => {
             console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
@@ -886,7 +885,7 @@ export class DataService {
               duration: 10000
             });
             return throwError(() => err);
-          })));
+          }));
     }
     return this._getReferrers(dbId, referrers);
   }
