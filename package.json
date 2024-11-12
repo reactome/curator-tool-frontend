@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "curator-tool-frontend/node_modules/.bin/ng",
     "start": "curator-tool-frontend/node_modules/.bin/ng serve",
-    "build": "curator-tool-frontend/node_modules/.bin/ng build --base-href='/curatortool/'",
+    "build": "ng build --base-href='/curatortool/'",
     "watch": "curator-tool-frontend/node_modules/.bin/ng build --watch --configuration development",
     "test": "curator-tool-frontend/node_modules/.bin/ng test"
   },
