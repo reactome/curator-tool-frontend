@@ -247,7 +247,7 @@ export class EventTreeComponent {
     this.goToPathway(select, diagramPathwayId);
   }
 
-  goToPathway(select: number|undefined, diagramPathwayId: number) {
+  goToPathway(select: number | undefined, diagramPathwayId: number) {
     const matchedNodes = this.selectNodes(select ? select : diagramPathwayId, diagramPathwayId);
     // If no math, do nothing
     if (!matchedNodes || matchedNodes.length === 0)
@@ -257,17 +257,25 @@ export class EventTreeComponent {
     // or a pathway having no diagram is passed, http://localhost:4200/event_view/instance/69615
     // Check if the diagram node is this diagramPathwaId
     const diagramNode = this.findAncestorDiagramNode(matchedNodes[0]);
-    if (!diagramNode)
+    if (!diagramNode) {
+      // Need to show something here
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Information',
+          message: 'Cannot find a diagram for ' + diagramPathwayId + '. Create an empty diagram for this event or its container pathway.'
+        }
+      });
       return; // Nothing to display
+    }
 
     // if (diagramNode.dbId !== diagramPathwayId) {
-      // Let's just used the first node right now
-      this.navigateToEventNode(matchedNodes[0], select);
-      // mimic a tree click event so that the instance can be shown in the instance view
-      if (select)
-        this.eventClicked.emit(select);
-      else
-        this.eventClicked.emit(matchedNodes[0].dbId);
+    // Let's just used the first node right now
+    this.navigateToEventNode(matchedNodes[0], select);
+    // mimic a tree click event so that the instance can be shown in the instance view
+    if (select)
+      this.eventClicked.emit(select);
+    else
+      this.eventClicked.emit(matchedNodes[0].dbId);
     // }
     // else if (!select) {
     //   // Handle a case like this: http://localhost:4200/event_view/instance/9615710 for a pathway having diagram
@@ -448,12 +456,12 @@ export class EventTreeComponent {
     this.createEmptyDiagramEvent.emit(node.dbId);
     // Wait a little bit
     setTimeout(() => {
-      this.handleEventClick(node);
       // Make sure the node get updated since it has diagram now
       for (let node1 of this.treeControl.dataNodes) {
         if (node1.dbId === node.dbId)
           node1.hasDiagram = true;
       }
+      this.handleEventClick(node);
     }, 500);
   }
 
@@ -481,7 +489,7 @@ export class EventTreeComponent {
         return;
       }
     }
-    // Wrap the needed informatio into an instance and then fire
+    // Wrap the needed information into an instance and then fire
     const instance : Instance = {
       dbId: node.dbId,
       displayName: node.name,

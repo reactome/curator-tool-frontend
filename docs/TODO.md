@@ -1,17 +1,15 @@
 #### Bugs:
-- Make sure the diagram is in editing disabled state when uploading to the server or disable editing when loading back.
-- The autoscroll for the instance view in the event view scroll the whole instance view. But we need to scroll the table content only just like in the schemw view.
-- skip and limit are not udpated even for simple search
+- The autoscroll for the instance view in the event view scroll the whole instance view. But we need to scroll the table content only just like in the schemw view. (some fixed, but not fully ideal)
 - go to pathway in the diagram sometimes has weird selection: the pathway selected is stuck in the URL!
 - the reset in the comparison table cannot fire event across the browser tabs.
 - resizing the nodes cannot change the height of the background for selection. However, sometimes it does work!
 - the order inner and outer layers of a compartment needs to be controlled. It is quite random right now.
-- bug: display name (e.g. change a regulator for a Regulation) cannot trigger the change to the display instance. This needs to be handled as in other instance edit action.
+- bug: display name (e.g. change a regulator for a Regulation) cannot trigger the change to the displayed instance. This needs to be handled as in other instance edit action.
 - bug: deleting or updating display name cannot update the loaded instances.
-- Bug: the connecting positions are not updated for helper nodes when they are dragged during editing.
+- Bug: the connecting positions are not updated for helper nodes when they are dragged during editing. (??)
 - Bug: inner shapes are not updated when resizing nodes.
 - Bug: When a PE is used as both input and catalyst, enable/disable editing in pathway diagram cannot recovers the original diagram (input or catalyst may get lost, e.g. http://localhost:4200/event_view/instance/453279?select=8848436).
-- Bug: Create a new diagram cannot work. Cannot add reactions to the new diagram: https://curator.reactome.org/curatortool/event_view/instance/177037.
+
 
 #### Deidre
 - Bug: After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should be stay at the changes tab.

@@ -114,15 +114,21 @@ export class InstanceUtilities {
         for (let helper of helpers) {
             if (helper.schemaClassName === 'CatalystActivity') {
                 const catalyst = helper.attributes.get('physicalEntity');
-                reaction.attributes.set('catalyst', (reaction.attributes.get('catalyst') ?? []).push(catalyst));
+                const catalystArray = reaction.attributes.get('catalyst') ?? [];
+                catalystArray.push(catalyst);
+                reaction.attributes.set('catalyst', catalystArray);
             }
             else if (helper.schemaClassName.includes('Negative')) { // A simple way to check the class
                 const inhibitor = helper.attributes.get('regulator');
-                reaction.attributes.set('inhibitor', (reaction.attributes.get('inhibitor') ?? []).push(inhibitor));
+                const inhibitorArray = reaction.attributes.get('inhibitor') ?? [];
+                inhibitorArray.push(inhibitor);
+                reaction.attributes.set('inhibitor', inhibitorArray);
             }
             else if (helper.schemaClassName.includes('Positive') || helper.schemaClassName === 'Requirement') {
                 const activator = helper.attributes.get('regulator');
-                reaction.attributes.set('activator', (reaction.attributes.get('activator') ?? []).push(activator));
+                const activatorArray = reaction.attributes.get('activator') ?? [];
+                activatorArray.push(activator);
+                reaction.attributes.set('activator', activatorArray);
             }
         }
     }
