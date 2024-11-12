@@ -1,5 +1,5 @@
 import { CdkAccordionModule } from "@angular/cdk/accordion";
-import { Component, EventEmitter, HostListener, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, inject, Input, OnInit, Output } from '@angular/core';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from "@angular/material/icon";
@@ -16,6 +16,8 @@ import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instanc
 import { bookmarkedInstances } from "../schema-view/instance-bookmark/state/bookmark.selectors";
 import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 import { NgIf } from "@angular/common";
+import { MatSnackBar } from "@angular/material/snack-bar";
+import { Observable } from "rxjs";
 
 @Component({
   selector: 'app-status',
@@ -30,11 +32,19 @@ export class StatusComponent implements OnInit {
   updatedInstances: Instance[] = [];
   newInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
+  error: Observable<Error> = this.dataService.getErrorMessage();
 
   constructor(private store: Store,
               private authenticateService: AuthenticateService,
               private dataService: DataService,
               private router: Router) {
+                this.error.subscribe(err => {this.openSnackBar(err.message, "open")})
+  }
+
+  private _snackBar = inject(MatSnackBar);
+
+  openSnackBar(message: string, action: string) {
+    this._snackBar.open(message, action);
   }
 
   ngOnInit(): void {

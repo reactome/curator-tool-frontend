@@ -25,6 +25,7 @@ export class InstanceListTableComponent {
   // @Input() instanceURL: string | undefined; 
   @Output() urlClickEvent = new EventEmitter<Instance>();
   readonly newDisplayName: string = NEW_DISPLAY_NAME;
+  routerNavigationUrl: string = ''
 
   constructor(private store: Store, 
               private route: ActivatedRoute,
@@ -69,5 +70,9 @@ export class InstanceListTableComponent {
     if (button === 'upload')
       return 'commit';
     return button + ' instance';
+  }
+
+  setNavigationUrl(instance: Instance){
+    this.routerNavigationUrl = "/schema_view/instance/" + instance.dbId.toString();
   }
 }

@@ -7,7 +7,7 @@
         {{element.dbId}}
       </ng-container>
       <ng-container *ngIf="!isSelection">
-        <a style="text-decoration: underline;" (click)="onInstanceLinkClicked(element)">{{element.dbId}}</a><br>
+        <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)" style="text-decoration: underline;" (click)="onInstanceLinkClicked(element)">{{element.dbId}}</a><br>
       </ng-container>
     </td>
   </ng-container>
@@ -17,7 +17,7 @@
     <th mat-header-cell *matHeaderCellDef>Display Name</th>
     <td mat-cell *matCellDef="let element">
       <ng-container *ngIf="isSelection">
-        <!--        Use the schema class name for newly generated instances-->
+        <!-- Use the schema class name for newly generated instances-->
         <ng-container *ngIf="element.displayName === newDisplayName; else display_name">
           {{element.schemaClassName}}
         </ng-container>
@@ -26,7 +26,7 @@
         </ng-template>
       </ng-container>
       <ng-container *ngIf="!isSelection">
-        <a style="text-decoration: underline;" (click)="onInstanceLinkClicked(element)">{{element.displayName}}</a>
+        <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)" style="text-decoration: underline;" (click)="onInstanceLinkClicked(element)">{{element.displayName}}</a>
       </ng-container>
       <br>
     </td>

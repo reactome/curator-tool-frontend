@@ -60,6 +60,7 @@ export class DataService {
   // since we need to load changed instances from cached storage first
   private loadInstanceSubject: Subject<void> | undefined = undefined;
   newInstances: unknown;
+  private errorMessage?: Error = undefined;
 
   constructor(private http: HttpClient,
     private utils: InstanceUtilities,
@@ -133,6 +134,8 @@ export class DataService {
           this.rootClass = data;
           // Let's just cache everything here
           this.buildSchemaClassMap(this.rootClass, this.name2SimpleClass);
+          let err = new Error("This is an error message.");
+          this.handleErrorMessage(new Error());
           return this.rootClass;
         }),
         catchError((err: Error) => {
@@ -956,6 +959,20 @@ export class DataService {
   isSchemaClass(instance: Instance, className: string): boolean {
     let schemaClass = this.getSchemaClass(className);
     return this.utils._isSchemaClass(instance, schemaClass!);
+  }
+
+  handleErrorMessage(err: Error) : Observable<Error> {
+    console.log("The resource could not be loaded: \n" + err.message, "Close", {
+      panelClass: ['warning-snackbar'],
+      duration: 10000
+    });
+    this.errorMessage = err;
+    this.getErrorMessage();
+    return throwError(() => err);
+  };
+
+  getErrorMessage() : Observable<Error> {
+      return throwError(() => this.errorMessage);
   }
 
 }

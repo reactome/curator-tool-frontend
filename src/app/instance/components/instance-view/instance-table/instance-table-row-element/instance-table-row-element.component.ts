@@ -159,7 +159,7 @@ export class InstanceTableRowElementComponent implements OnInit {
     console.log("dropInstance: ", this.attribute, draggedInstance);
     let attributeValue: AttributeValue = {
       attribute: this.attribute!,
-      value: draggedInstance,
+      value: this.instanceUtilities.makeShell(draggedInstance),
       index: this.index,
       editAction: EDIT_ACTION.BOOKMARK,
     }

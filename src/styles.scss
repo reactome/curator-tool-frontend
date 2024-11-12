@@ -50,6 +50,7 @@ mat-vertical-stepper, mat-horizontal-stepper {
     padding: 0 !important;
     min-height: 29px !important; // TODO: USE CALCULATION
     display: flex !important;
+    align-items:flex-start;
   }
 
 
@@ -99,6 +100,7 @@ mat-vertical-stepper, mat-horizontal-stepper {
 
 h1 {
   display: flex;
+  align-items:flex-start;
   justify-content: center;
   margin-bottom: 10px;
   font-weight: bold !important;
@@ -173,11 +175,13 @@ h1 {
 
 .flex {
   display: flex;
+  align-items:flex-start;
 }
 
 /*Flexbox*/
 .flex-container {
   display: flex;
+  align-items:flex-start;
   flex-wrap: wrap;
 
   &.no-wrap {
