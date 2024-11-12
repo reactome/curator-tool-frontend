@@ -60,7 +60,10 @@ export class DataService {
   // since we need to load changed instances from cached storage first
   private loadInstanceSubject: Subject<void> | undefined = undefined;
   newInstances: unknown;
-  private errorMessage?: Error = undefined;
+
+  // Notify when there is an error due to failed api
+  private errorMessage = new Subject<Error>();
+  errorMessage$ = this.errorMessage.asObservable();
 
   constructor(private http: HttpClient,
     private utils: InstanceUtilities,
@@ -98,11 +101,7 @@ export class DataService {
           return schemaCls;
         }),
         catchError((err: Error) => {
-          console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 10000
-          });
-          return throwError(() => err);
+          return this.handleErrorMessage(err);
         }));
   }
 
@@ -135,15 +134,12 @@ export class DataService {
           // Let's just cache everything here
           this.buildSchemaClassMap(this.rootClass, this.name2SimpleClass);
           let err = new Error("This is an error message.");
-          this.handleErrorMessage(new Error());
+          // TODO: remove, only for testing.
+          this.handleErrorMessage(new Error("test message"));
           return this.rootClass;
         }),
         catchError((err: Error) => {
-          console.debug("The schema class table could not been loaded: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 10000
-          });
-          return throwError(() => err);
+          return this.handleErrorMessage(err);
         }));
   }
 
@@ -172,11 +168,7 @@ export class DataService {
           return rootEvent;
         }),
         catchError((err: Error) => {
-          console.log("The events tree could not be loaded: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 10000
-          });
-          return throwError(() => err);
+          return this.handleErrorMessage(err);
         }));
   }
 
@@ -328,11 +320,7 @@ export class DataService {
         }),
 
         catchError((err: Error) => {
-          console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 100
-          });
-          return throwError(() => err);
+          return this.handleErrorMessage(err);
         }),
       );
   }
@@ -387,11 +375,7 @@ export class DataService {
       return instance;
     }),
       catchError((err: Error) => {
-        console.log("The dataset options could not been loaded: \n" + err.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 100
-        });
-        return throwError(() => err);
+        return this.handleErrorMessage(err);
       }),
     );
   }
@@ -515,11 +499,7 @@ export class DataService {
       }),
       // Error handling
       catchError((err: Error) => {
-        console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 10000
-        });
-        return throwError(() => err);
+        return this.handleErrorMessage(err);
       })
     );
   }
@@ -555,11 +535,7 @@ export class DataService {
         return data;
       }), // Nothing needs to be done.
         catchError((err: Error) => {
-          console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 10000
-          });
-          return throwError(() => err);
+          return this.handleErrorMessage(err);
         }));
   }
 
@@ -599,11 +575,7 @@ export class DataService {
           }));
         }),
         catchError((err: Error) => {
-          console.log("Error in loadUserInstances: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 100
-          });
-          return throwError(() => err);
+          return this.handleErrorMessage(err);
         }),
       );
   }
@@ -641,11 +613,7 @@ export class DataService {
     const cloned = this.cloneUserInstances(userInstances);
     return this.http.post<any>(this.persistInstancesUrl + userName, cloned).pipe(
       catchError(error => {
-        console.log("An error is thrown during persistInstances: \n" + error.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 10000
-        });
-        return throwError(() => error);
+        return this.handleErrorMessage(error);
       })
     );
   }
@@ -671,11 +639,7 @@ export class DataService {
       // Since there is nothing needed to be done for the returned value (just true or false),
       // We don't need to do anything here!
       catchError(error => {
-        console.log("An error is thrown during uploadCytoscapeNetwork: \n" + error.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 10000
-        });
-        return throwError(() => error);
+        return this.handleErrorMessage(error);
       })
     );
   }
@@ -683,11 +647,7 @@ export class DataService {
   hasCytoscapeNetwork(pathwayId: any): Observable<boolean> {
     return this.http.get<boolean>(this.hasCyNetworkUrl + pathwayId).pipe(
       catchError(error => {
-        console.log("An error is thrown during calling hasCytoscapeNetwork: \n" + error.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 10000
-        });
-        return throwError(() => error);
+        return this.handleErrorMessage(error);
       })
     );
   }
@@ -696,11 +656,7 @@ export class DataService {
   getCytoscapeNetwork(pathwayId: any): Observable<any> {
     return this.http.get<any>(this.getCyNetworkUrl + pathwayId).pipe(
       catchError(error => {
-        console.log("An error is thrown during getCytoscapeNetwork: \n" + error.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 10000
-        });
-        return throwError(() => error);
+        return this.handleErrorMessage(error);
       })
     );
   }
@@ -714,11 +670,7 @@ export class DataService {
   deletePersistedInstances(userName: string): Observable<any> {
     return this.http.delete<any>(this.deletePersistedInstancesUrl + userName).pipe(
       catchError(error => {
-        console.log("An error is thrown during deletePersistedInstances: \n" + error.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 10000
-        });
-        return throwError(() => error);
+        return this.handleErrorMessage(error);
       })
     );
   }
@@ -737,11 +689,7 @@ export class DataService {
     return this.http.get<Instance>(url)
       .pipe(map((data: Instance) => data), // Nothing needs to be done.
         catchError((err: Error) => {
-          console.log("No instance can be found: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 10000
-          });
-          return throwError(() => err);
+          return this.handleErrorMessage(err);
         }));
   }
 
@@ -762,11 +710,7 @@ export class DataService {
         return inst;
       }),
       catchError(error => {
-        console.log("An error is thrown during committing: \n" + error.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 10000
-        });
-        return throwError(() => error);
+        return this.handleErrorMessage(error);
       })
     );
   }
@@ -785,11 +729,7 @@ export class DataService {
         return inst;
       }),
       catchError(error => {
-        console.log("An error is thrown during filling LiteratureReference: \n" + error.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 10000
-        });
-        return throwError(() => error);
+        return this.handleErrorMessage(error);
       })
     )
   }
@@ -845,11 +785,7 @@ export class DataService {
     )
       .pipe(map((data: string[][]) => data),
         catchError((err: Error) => {
-          console.log("TestQACheck report could not be retrieved: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 100
-          });
-          return throwError(() => err);
+          return this.handleErrorMessage(err);
         }),
       );
   }
@@ -861,11 +797,7 @@ export class DataService {
   delete(instance: Instance): Observable<boolean> {
     return this.http.post<boolean>(this.deleteInstaneUrl, instance).pipe(
       catchError(error => {
-        console.log("An error is thrown during deleting: \n" + error.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 10000
-        });
-        return throwError(() => error);
+        return this.handleErrorMessage(error);
       })
     )
   }
@@ -883,11 +815,7 @@ export class DataService {
         }),
           // Nothing needs to be done.
           catchError((err: Error) => {
-            console.log("The list of instances could not be loaded: \n" + err.message, "Close", {
-              panelClass: ['warning-snackbar'],
-              duration: 10000
-            });
-            return throwError(() => err);
+            return this.handleErrorMessage(err);
           }));
     }
     return this._getReferrers(dbId, referrers);
@@ -961,18 +889,12 @@ export class DataService {
     return this.utils._isSchemaClass(instance, schemaClass!);
   }
 
-  handleErrorMessage(err: Error) : Observable<Error> {
+  handleErrorMessage(err: Error) {
     console.log("The resource could not be loaded: \n" + err.message, "Close", {
       panelClass: ['warning-snackbar'],
       duration: 10000
     });
-    this.errorMessage = err;
-    this.getErrorMessage();
+    this.errorMessage.next(err);
     return throwError(() => err);
   };
-
-  getErrorMessage() : Observable<Error> {
-      return throwError(() => this.errorMessage);
-  }
-
 }
