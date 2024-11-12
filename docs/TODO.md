@@ -1,5 +1,4 @@
 #### Bugs:
-- After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should be stay at the changes tab.
 - Make sure the diagram is in editing disabled state when uploading to the server or disable editing when loading back.
 - The autoscroll for the instance view in the event view scroll the whole instance view. But we need to scroll the table content only just like in the schemw view.
 - skip and limit are not udpated even for simple search
@@ -11,16 +10,18 @@
 - bug: deleting or updating display name cannot update the loaded instances.
 - Bug: the connecting positions are not updated for helper nodes when they are dragged during editing.
 - Bug: inner shapes are not updated when resizing nodes.
+- Bug: When a PE is used as both input and catalyst, enable/disable editing in pathway diagram cannot recovers the original diagram (input or catalyst may get lost, e.g. http://localhost:4200/event_view/instance/453279?select=8848436).
+- Bug: Create a new diagram cannot work. Cannot add reactions to the new diagram: https://curator.reactome.org/curatortool/event_view/instance/177037.
 
 #### Deidre
+- Bug: After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should be stay at the changes tab.
 - referer check has not considered the updated and new instances: bug in the code, function getReferrersOfNewInstance, need to wrap the code inside subscription.
 - TODO: See if router_link can be used for instance list in the main schema view. Originally it is. Not it is changed to link handling, losing the status update to show the links.
 - TODO: In the instance list, make sure scrolling limits to the instance list, not the top panels. Right now, paging controls are fine, staying at the bottom without scrolling.
 - BUG: deletion should remove the instance in the instance list even though it is not committed for existing instances
-- BUG: bookmarked instances dont update their display names when they change via editing
-- BUG: bookmarked instances are used in attributes, resulting a bug when updating attribute's display names during instance loading
-- TODO: When an instance is a new instance, don't call the backend for fetching referrers.
 - TODO: Use the new set of Reactome icons at Figma, designed by the EBI team.
+- TODO: The status bar is not at the same vertical position at the home page and the other two views (schema view and event view), resulting a little bit jumping when switching from home to these views.
+- Bug: In the event view, the mouse position is lowed when scroll up/down the instance view.
 
 #### TODO:
 - Need to style the detailed table view for schema class.
