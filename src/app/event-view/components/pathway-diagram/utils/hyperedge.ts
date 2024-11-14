@@ -77,7 +77,7 @@ export class HyperEdge {
         let reactionNode = this.getReactionNode();
         if (reactionNode === undefined)
             return; // Nothing needs to be done
-        console.debug('Found reaction node: ', reactionNode);
+        // console.debug('Found reaction node: ', reactionNode);
         // Use aStart function to find the paths. dfs and bfs apparently cannot work!
         const collection = this.cy.collection(Array.from(this.id2object.values()));
         const toBeRemoved = new Set<any>();
@@ -87,12 +87,28 @@ export class HyperEdge {
             if (!elm.hasClass('PhysicalEntity'))
                 continue; // For PE only
             
-            let path = collection.aStar({
-                root: '#' + reactionNode.data('id'),
-                goal: '#' + elm.data('id')
-            });
-            console.debug(path.path);
-            this.createRoundSegmentEdgeForPath(path, toBeRemoved);
+            // let path = collection.aStar({
+            //     root: '#' + reactionNode.data('id'),
+            //     goal: '#' + elm.data('id')
+            // });
+            // console.debug(path.path);
+            // this.createRoundSegmentEdgeForPath(path, toBeRemoved);
+
+            let connectedEdges = elm.connectedEdges().filter((edge:any) => this.id2object.has(edge.id())).length;
+            for (let i = 0; i < connectedEdges; i++) {
+                let path: any = collection.aStar({
+                    root: '#' + reactionNode.data('id'),
+                    goal: '#' + elm.data('id')
+                });
+                // console.debug(reactionNode.data('id') + ' - ' +  elm.data('id'));
+                // console.debug(path.path);
+                this.createRoundSegmentEdgeForPath(path, toBeRemoved);
+                for (let element of toBeRemoved) {
+                    if (element.isEdge() && (element.source() === elm || element.target() === elm)) {
+                        this.cy.remove(element);
+                    }
+                }
+            }
         }
         this.cy.remove(this.cy.collection(Array.from(toBeRemoved)));
     }
@@ -196,7 +212,9 @@ export class HyperEdge {
             data: data,
             classes: [...edgeClasses],
         };
-        this.cy.add(edge);
+        // console.debug(data.id);
+        const newEdge = this.cy.add(edge)[0]
+        this.registerObject(newEdge);
     }
 
     private getEndPoint(intersection: Position, node: any) {
@@ -209,6 +227,11 @@ export class HyperEdge {
         let count = 1;
         while (this.id2object.has(id)) {
             id = id + "_" + count;
+            count ++;
+        }
+        while (this.cy.hasElementWithId(id)) {
+            id = id + "_" + count;
+            count ++;
         }
         return id;
     }
