@@ -8,7 +8,8 @@
 - bug: deleting or updating display name cannot update the loaded instances.
 - Bug: the connecting positions are not updated for helper nodes when they are dragged during editing. (??)
 - Bug: inner shapes are not updated when resizing nodes.
-- Bug: When a PE is used as both input and catalyst, enable/disable editing in pathway diagram cannot recovers the original diagram (input or catalyst may get lost, e.g. http://localhost:4200/event_view/instance/453279?select=8848436).
+- Bug: When a PE is used as both input and catalyst, enable/disable editing in pathway diagram cannot recovers the original diagram (input or catalyst may get lost, e.g. http://localhost:4200/event_view/instance/453279?select=8848436) (Fixed. Keep this entry for future test)
+- Bug: LLM geneates text for ALDOB having the original template [PMID: 123456] that is not replaced. See Peter's email on Nov 13, 2024.
 
 
 #### Deidre
@@ -53,3 +54,4 @@
 - resize: need to make sure all associate attachments (e.g. modification, resizing widgets can be moved around).
 - compartment id: since the same compartment can be added multiple times, therefore, we need a central way to manage id
 - refactoring the menus for diagram editing: make them more streamlined.
+- TODO: Better to come with a new implmenetation of finding all paths between two nodes instea of hacking the code for using aStar in hyperEdge.ts (enableRoundSegments and enableRoundSegmentsForFlowLine)
