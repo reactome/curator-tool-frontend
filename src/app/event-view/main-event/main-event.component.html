@@ -29,7 +29,7 @@
           <div class="resize-container-horizontal" (cdkDragMoved)="resizeDown($event)" cdkDrag cdkDragLockAxis="y"
                (cdkDragStarted)="resizingHorizontal = true" (cdkDragReleased)="resizingHorizontal = false"
                [class.resizing]="resizingHorizontal"
-               [style.bottom]="window.innerHeight - 40 - diagramHeight + 1 + 'px'">
+               [style.bottom]="window.innerHeight - 45 - diagramHeight + 2 + 'px'">
             <div class="resize-bar"></div>
           </div>
           <div class="instance-view-container" style="overflow: auto;">

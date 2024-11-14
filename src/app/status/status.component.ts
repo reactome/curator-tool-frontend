@@ -32,13 +32,12 @@ export class StatusComponent implements OnInit {
   updatedInstances: Instance[] = [];
   newInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
-  error = this.dataService.errorMessage$;
 
   constructor(private store: Store,
               private authenticateService: AuthenticateService,
               private dataService: DataService,
               private router: Router) {
-                this.error.subscribe(err => {this.openSnackBar(err.message, "close")})
+                this.dataService.errorMessage$.subscribe(err => {this.openSnackBar(err.message, "close")})
   }
 
   private _snackBar = inject(MatSnackBar);

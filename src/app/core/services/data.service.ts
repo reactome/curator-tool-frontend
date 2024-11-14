@@ -133,7 +133,6 @@ export class DataService {
           this.rootClass = data;
           // Let's just cache everything here
           this.buildSchemaClassMap(this.rootClass, this.name2SimpleClass);
-          let err = new Error("This is an error message.");
           // TODO: remove, only for testing.
           this.handleErrorMessage(new Error("test message"));
           return this.rootClass;
@@ -890,10 +889,7 @@ export class DataService {
   }
 
   handleErrorMessage(err: Error) {
-    console.log("The resource could not be loaded: \n" + err.message, "Close", {
-      panelClass: ['warning-snackbar'],
-      duration: 10000
-    });
+    console.log("The resource could not be loaded: \n" + err.message);
     this.errorMessage.next(err);
     return throwError(() => err);
   };
