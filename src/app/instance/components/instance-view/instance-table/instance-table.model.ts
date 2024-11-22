@@ -72,7 +72,6 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
       // Only show attributes that have been edited
       if(this.filterEdited) {
         let editedAtts: AttributeValue[] = [];
-        console.log(this.instance.modifiedAttributes)
         attributeValues.forEach(att => {
           if(this.instance?.modifiedAttributes?.includes(att.attribute.name)){
             console.log(att.attribute.name)
