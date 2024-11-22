@@ -403,7 +403,7 @@ export class InstanceConverter {
         return cy.add(edge)[0];
     }
 
-    private measureTextWidth(text: string, font: string): number {
+    measureTextWidth(text: string, font: string): number {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         if (!context) {
@@ -413,7 +413,7 @@ export class InstanceConverter {
         return context.measureText(text).width;
     }
     
-    private measureTextHeight(font: string): number {
+    measureTextHeight(font: string): number {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         if (!context) {
@@ -466,7 +466,7 @@ export class InstanceConverter {
         return { label, width, height };
     }
 
-    private getFontStyle(node: any) {
+    getFontStyle(node: any) {
         let fontSize = node.style('font-size');
         let fontFamily = node.style('font-family');
         let fontWeight = node.style('font-weight');

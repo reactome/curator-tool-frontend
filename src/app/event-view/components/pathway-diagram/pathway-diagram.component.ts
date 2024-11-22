@@ -63,7 +63,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   previousDragPos: Position = { x: 0, y: 0 };
   // Track a list of nodes that are under resizing
   resizingNodes: any[] = [];
-
+  
   // To show information
   readonly dialog = inject(MatDialog);
 
@@ -90,7 +90,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       console.debug('Query params before loading in pathway-diagram: ', queryParams);
       const id = params['id'];
       // Do nothing if nothing is loaded
-      if (!id) return;
+      if (!id || id === '0') return;
       this.pathwayId = id;
       this.diagram.diagramId = this.pathwayId;
       this.select = queryParams['select'] ?? '';

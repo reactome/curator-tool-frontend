@@ -3,7 +3,7 @@ import { EdgeDefinition, NodeDefinition, Core } from 'cytoscape';
 import { array } from 'vectorious';
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { Injectable } from "@angular/core";
-import { Instance, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
+import { Instance, LABEL_CLASS, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { HyperEdge } from "./hyperedge";
 import { InstanceConverter } from "./instance-converter";
@@ -31,6 +31,97 @@ export class PathwayDiagramUtilService {
 
     getDataService(): DataService {
         return this.dataService;
+    }
+
+    private assignLabelToCompartment(node: any, cy: Core) {
+        if (!node.isNode() || !node.hasClass(LABEL_CLASS))
+            return; 
+        const compartment = cy.getElementById(node.data('compartmentId'));
+        if (!compartment) return; // Should not occur
+        // Reasign the label
+        const label = node.data('displayName');
+        compartment.data('displayName', label);
+        // Adjust label's position
+        const labelPos = node.position();
+        const compartPos = compartment.position();
+        // This is the default position for compartments
+        const bottomRightPos = {
+            x: compartPos.x + compartment.width() / 2,
+            y: compartPos.y + compartment.height() / 2,
+        };
+
+        const font = this.converter.getFontStyle(compartment);
+        const labelWidth = this.converter.measureTextWidth(label, font);
+        const labelHeight = this.converter.measureTextHeight(font);
+        const textX = labelPos.x - compartPos.x - compartment.width() / 2 - labelWidth / 2;
+        const textY = labelPos.y - compartPos.y - compartment.height() / 2 - labelHeight / 2 - 2;
+        compartment.data('textX', textX);
+        compartment.data('textY', textY);
+        // We can remove this node now
+        cy.remove(node);
+    }
+
+    /**
+     * To enable the change the compartment's label, we add a new node for the lable. 
+     * Instead of working with the label directly, we use this indirect way since the compartment
+     * is better not draggable, which disable the drag action for label (i.e. ondrag is not called!).
+     * @param node 
+     * @returns 
+     */
+    private enableCompartmentEditing(node: any, cy: Core) {
+        if (!node.isNode() || !node.hasClass('Compartment'))
+            return false;
+        // Check the label's bounds
+        const label = node.data('displayName');
+        if (!label)
+            return; // This is an inner. No need to do anything
+        const font = this.converter.getFontStyle(node);
+        const labelWidth = this.converter.measureTextWidth(label, font);
+        const labelHeight = this.converter.measureTextHeight(font);
+        
+        //TODO: Need to adjust the label. It is a bit off from the original label!!!
+        // const marginX = parseInt(node.style('text-margin-x')) || 0; // Horizontal margin
+        // const marginY = parseInt(node.style('text-margin-y')) || 0; // Vertical margin
+        const textX = node.data('textX') || 0;
+        const textY = node.data('textY') || 0;
+        // Calculate label bounding box
+        const nodePos = node.position();
+        // The default label position is at the bottom-right corner
+        const labelPos = {
+            x: nodePos.x + node.width() / 2 + textX + labelWidth / 2,
+            y: nodePos.y + node.height() / 2 + textY + labelHeight / 2 + 2 // For some reason, there is 2 px offset
+        };
+        
+        let nodeId = node.id() + '_label'
+        const labelNode : NodeDefinition = {
+            data: {
+                id: nodeId,
+                // used to track the original compartment
+                // We may parse nodeId. But this is an easier and simplier way.
+                compartmentId: node.id(),
+                displayName: label,
+                width: labelWidth,
+                height: labelHeight,
+                textX: 0,
+                textY: 0
+            },
+            // Flag this as an edge point node
+            classes: [...node.classes(), LABEL_CLASS],
+            position: labelPos,
+        };
+        const newNode = cy.add(labelNode)[0];
+        // Apply style after node creation can bypass the warning such as: 
+        // Setting a style bypass at element creation should be done only when absolutely necessary.
+        newNode.style(
+            {
+                'text-valign': 'center',
+                'text-halign': 'center',
+                'background-opacity': 0,     // Hide the node's background
+                'border-width': 0 // Don't show border for the label node
+            },
+        );
+        node.data('displayName', '');
+        return newNode;
     }
 
     handleInstanceEdit(attribute: string|undefined, instance: Instance | undefined, diagram: PathwayDiagramComponent) {
@@ -163,7 +254,6 @@ export class PathwayDiagramUtilService {
                 if (!compartment || (Array.isArray(compartment) && compartment.length === 0)) // Most likely the dialog is cancelled
                     return;
                 // Use the first compartment only
-                // TODO: Make sure there is only one compartment is selected
                 this.converter.convertCompartmentToNodes(compartment[0], this, diagram.cy);
             });
         });
@@ -601,6 +691,9 @@ export class PathwayDiagramUtilService {
         // Disable node dragging
         diagram.cy.nodes().grabify().panify();
         diagram.cy.nodes('.Compartment').panify();
+        diagram.cy.nodes().forEach((node: any) => {
+            this.assignLabelToCompartment(node, diagram.cy);
+        });
         this.id2hyperEdge.forEach((hyperEdge, _) => {
             hyperEdge.enableRoundSegments();
         });
@@ -622,6 +715,9 @@ export class PathwayDiagramUtilService {
         // But not compartment: In the editing mode, the user can move compartment too
         // apparently moving compartments is not good. Disable for now.
         diagram.cy.nodes('.Compartment').panify();
+        diagram.cy.nodes('.Compartment').forEach((compartment: any) => {
+            this.enableCompartmentEditing(compartment, diagram.cy);
+        });
         // Get the position of nodes to be used for edges
         const id2node = new Map<string, any>();
         diagram.cy.nodes().forEach((node: any) => id2node.set(node.data('id'), node));

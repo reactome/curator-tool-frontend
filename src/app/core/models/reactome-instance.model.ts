@@ -61,6 +61,8 @@ export const EDGE_POINT_CLASS: string = 'edge_point';
 // Used to flag input or ourput hubs
 export const INPUT_HUB_CLASS: string = 'input_hub';
 export const OUTPUT_HUB_CLASS: string = 'output_hub';
+// Used to flag label node that is converted from compartment label for dragging
+export const LABEL_CLASS: string = 'label';
 
 export const NEW_DISPLAY_NAME: string = 'To be generated';
 

@@ -242,6 +242,8 @@ export class EventTreeComponent {
     this.copyNodesInfo();
     // Cache the tree parent/child relationship for performance
     this.cacheTreePaths();
+    if (paramsId === '0')
+      return; // This is just a flag
     const diagramPathwayId = Number(paramsId);
     const select = Number(this.route.snapshot.queryParams['select']);
     this.goToPathway(select, diagramPathwayId);

@@ -133,8 +133,6 @@ export class DataService {
           this.rootClass = data;
           // Let's just cache everything here
           this.buildSchemaClassMap(this.rootClass, this.name2SimpleClass);
-          // TODO: remove, only for testing.
-          this.handleErrorMessage(new Error("test message"));
           return this.rootClass;
         }),
         catchError((err: Error) => {
