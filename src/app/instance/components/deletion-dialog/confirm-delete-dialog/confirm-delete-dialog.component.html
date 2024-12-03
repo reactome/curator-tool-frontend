@@ -1,7 +1,8 @@
 <h2 class="dialog_title" mat-dialog-title cdkdraghandle>Confirm Delete</h2>
 <mat-dialog-content style="width: 100%;">
   <h4>Are you sure you want to delete this instance: {{this.instance.displayName}} [{{this.instance.dbId}}]?</h4>
-  <em>Note: The deleted instance will not be removed from the database. You may need to commit the deletion to remove it from the database in the status list.</em>
+  <div *ngIf="this.instance.dbId >= 0"><em>Note: The deleted instance will not be removed from the database. You may need to commit the deletion to remove 
+    it from the database in the status list.</em></div>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="onDelete()" cdkFocusInitial>Delete</button>

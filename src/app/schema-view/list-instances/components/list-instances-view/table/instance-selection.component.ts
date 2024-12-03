@@ -30,7 +30,7 @@ export class InstanceSelectionComponent {
   showProgressSpinner: boolean = true;
   // To be displayed in instance list table
   data: Instance[] = [];
-  actionButtons: string[] = ["launch", "delete", "list_alt"];
+  actionButtons: string[] = ["launch", "list_alt", "delete"];
   // Used to popup attributes for advanced search (i.e. SearchFilterComponent)
   schemaClassAttributes: string[] = [];
   // New instances to be listed at the top of the first page
