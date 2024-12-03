@@ -35,7 +35,8 @@ export enum AttributeCategory {
   OPTIONAL,
   MANDATORY,
   REQUIRED,
-  NOMANUALEDIT
+  NOMANUALEDIT,
+  NOTDEFINED
 }
 
 export enum AttributeDefiningType {
