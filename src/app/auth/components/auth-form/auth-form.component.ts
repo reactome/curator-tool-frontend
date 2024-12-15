@@ -13,7 +13,7 @@ export class AuthFormComponent implements OnInit {
   form: FormGroup;
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
-      email: [''],
+      username: [''],
       password: ['']
     })
 
