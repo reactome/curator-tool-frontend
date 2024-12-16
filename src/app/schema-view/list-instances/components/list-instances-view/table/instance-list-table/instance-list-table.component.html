@@ -68,12 +68,12 @@
   </ng-container>
 
   <ng-container *ngIf="showHeader">
-    <div [cdkContextMenuTriggerFor]="row_menu">
+    <div>
       <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
     </div>
   </ng-container>
   <ng-container *ngIf="!isSelection">
-    <tr [cdkContextMenuTriggerFor]="row_menu" mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
   </ng-container>
   <ng-container *ngIf="isSelection">
     <tr mat-row (click)="onRowClick(row)" *matRowDef="let row; columns: displayedColumns;"></tr>
@@ -85,8 +85,4 @@
       <div *ngIf="showEmptyMessage">No instance matching the search key</div>
     </td>
   </tr>
-
-  <ng-template #row_menu>
-    <app-instance-list-menu></app-instance-list-menu>
-  </ng-template>
 </table>
