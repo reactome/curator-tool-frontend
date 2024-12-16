@@ -14,17 +14,15 @@ import { AuthenticateService } from "../core/services/authenticate.service";
 import { DataService } from "../core/services/data.service";
 import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instance-bookmark.module";
 import { bookmarkedInstances } from "../schema-view/instance-bookmark/state/bookmark.selectors";
-import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 import { NgIf } from "@angular/common";
 import { MatSnackBar } from "@angular/material/snack-bar";
-import { Observable } from "rxjs";
 
 @Component({
   selector: 'app-status',
   templateUrl: './status.component.html',
   styleUrls: ['./status.component.scss'],
   standalone: true,
-    imports: [NgIf, MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule, CdkAccordionModule, UpdatedInstanceListComponent, InstanceBookmarkModule, MatIconModule, MatTooltipModule]
+    imports: [NgIf, MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule, CdkAccordionModule, InstanceBookmarkModule, MatIconModule, MatTooltipModule]
 })
 export class StatusComponent implements OnInit {
   @Input() hideInstanceStatus: boolean = false;
@@ -32,6 +30,7 @@ export class StatusComponent implements OnInit {
   updatedInstances: Instance[] = [];
   newInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
+  bookmarkedInstances: Instance[] =  [];
 
   constructor(private store: Store,
               private authenticateService: AuthenticateService,
@@ -48,51 +47,49 @@ export class StatusComponent implements OnInit {
 
   ngOnInit(): void {
     this.store.select(updatedInstances()).subscribe((instances) => {
-      if (instances !== undefined)
-        this.updatedInstances = instances;
+      instances ? this.updatedInstances = instances : this.updatedInstances = [];
     });
 
     this.store.select(newInstances()).subscribe((instances) => {
-      if (instances !== undefined) {
-        this.newInstances = instances;
-      }
+      instances ? this.newInstances = instances : this.newInstances = [];
     });
 
     this.store.select(deleteInstances()).subscribe((instances) => {
-      if (instances !== undefined) {
-        this.deletedInstances = instances;
-      }
+      instances ? this.deletedInstances = instances : this.deletedInstances = [];
     });
+
+    this.store.select(bookmarkedInstances()).subscribe((instances) => {
+      instances ? this.bookmarkedInstances = instances : this.bookmarkedInstances = [];
+    })
   }
 
   // Calling ngOnDestroy is not reliable: https://blog.devgenius.io/where-ngondestroy-fails-you-54a8c2eca0e0.
   @HostListener('window:beforeunload', ['$event'])
   persistInstances(): void {
     console.debug('Calling persist instance before window closing...');
-    const instances = [...this.newInstances, ...this.updatedInstances, ...this.deletedInstances];
+    // Clean up localStorage before returning
+    // Keep token so that the user doesn't need to re-enter for refresh
+    const token = localStorage.getItem('token');
+    localStorage.clear();
+    if (token)
+      localStorage.setItem('token', token); //TODO: Need to revisit how to persist token for a certain time
+    const instances = [...this.newInstances, ...this.updatedInstances, ...this.deletedInstances, ...this.bookmarkedInstances];
     if (instances.length == 0) {
       this.dataService.deletePersistedInstances('test').subscribe(() => {
         console.debug('Delete any persisted instance at the server.');
       });
-      // Clean up localStorage before returning
-      localStorage.clear();
       return; // Do nothing
     }
-    // Technically it would be nicer to have a cnetral place to do this.
-    // Put them here for the time being for convenience since we have most of 
-    // objects here already.
-    this.store.select(bookmarkedInstances()).subscribe(bookmarks => {
-      localStorage.clear(); 
-      // To be persist
-      const userInstances = {
-        newInstances: this.newInstances,
-        updatedInstances: this.updatedInstances,
-        deletedInstances: this.deletedInstances,
-        bookmarks: bookmarks
-      };
-      this.dataService.persitUserInstances(userInstances, 'test').subscribe(() => {
-        console.debug('New and updated instances have been persisted at the server.');
-      });
+    // Need to persist these instances
+    // To be persist
+    const userInstances = {
+      newInstances: this.newInstances,
+      updatedInstances: this.updatedInstances,
+      deletedInstances: this.deletedInstances,
+      bookmarks: this.bookmarkedInstances
+    };
+    this.dataService.persitUserInstances(userInstances, 'test').subscribe(() => {
+      console.debug('userInstances have been persisted at the server.');
     });
   }
 
