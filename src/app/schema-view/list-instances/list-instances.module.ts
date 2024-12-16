@@ -12,6 +12,8 @@ import { InstanceListTableComponent } from './components/list-instances-view/tab
 import { StoreModule } from '@ngrx/store';
 import { NEW_INSTANCES_STATE_NAME } from 'src/app/instance/state/instance.selectors';
 import { newInstancesReducer } from 'src/app/instance/state/instance.reducers';
+import { InstanceListMenuComponent } from './components/list-instances-view/table/instance-list-table/instance-list-menu/instance-list-menu.component';
+import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
 
 
 @NgModule({
@@ -20,12 +22,14 @@ import { newInstancesReducer } from 'src/app/instance/state/instance.reducers';
     InstanceListViewComponent,
     SelectInstanceDialogComponent,
     SelectedInstancesTableComponent,
-    InstanceListTableComponent
+    InstanceListTableComponent,
+    InstanceListMenuComponent
   ],
   exports: [
     InstanceSelectionComponent,
     SelectInstanceDialogComponent,
-    InstanceListTableComponent
+    InstanceListTableComponent,
+    InstanceListMenuComponent
   ],
   imports: [
     CommonModule,
@@ -33,6 +37,9 @@ import { newInstancesReducer } from 'src/app/instance/state/instance.reducers';
     MaterialModule,
     MatTooltipModule,
     SharedModule,
+    CdkContextMenuTrigger,
+    CdkMenu,
+    CdkMenuItem,
     // Import this to avoid an error when reload schema_view/list_instance.
     StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer)
   ],

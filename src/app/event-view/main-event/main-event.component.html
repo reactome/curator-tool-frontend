@@ -32,7 +32,7 @@
                [style.bottom]="window.innerHeight - 45 - diagramHeight + 2 + 'px'">
             <div class="resize-bar"></div>
           </div>
-          <div class="instance-view-container" style="overflow: auto;">
+          <div class="instance-view-container" style="overflow: scroll;">
             <app-instance-view #instanceView [needHistory]="true" [blockRoute]="true"></app-instance-view>
           </div>
           <div id="bookmark-boundary">

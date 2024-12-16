@@ -1,0 +1,8 @@
+<mat-action-list class="action-menu" cdkMenu *ngIf="!hidePanel">
+  <ng-container>
+    <button class="action-button" (click)="onClick()">
+      <mat-icon>content_copy</mat-icon> Duplicate Instance</button>
+    <button class="action-button" (click)="onClick()">
+      <mat-icon>search</mat-icon> Find and Replace</button>
+  </ng-container>
+</mat-action-list>

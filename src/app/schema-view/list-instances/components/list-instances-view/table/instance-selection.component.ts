@@ -5,6 +5,9 @@ import { DataService } from "../../../../../core/services/data.service";
 import { Router } from "@angular/router";
 import { ReferrersDialogService } from "../../../../../instance/components/referrers-dialog/referrers-dialog.service";
 import { DeletionDialogService } from "../../../../../instance/components/deletion-dialog/deletion-dialog.service";
+import { Store } from '@ngrx/store';
+import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
+import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 @Component({
   selector: 'app-instance-selection',
@@ -31,6 +34,7 @@ export class InstanceSelectionComponent {
   // To be displayed in instance list table
   data: Instance[] = [];
   actionButtons: string[] = ["launch", "list_alt", "delete"];
+  secondaryActionButtons: string[] = ["content_copy", "search"]
   // Used to popup attributes for advanced search (i.e. SearchFilterComponent)
   schemaClassAttributes: string[] = [];
   // New instances to be listed at the top of the first page
@@ -61,7 +65,9 @@ export class InstanceSelectionComponent {
   constructor(private dataService: DataService,
     private router: Router,
     private referrersDialogService: ReferrersDialogService,
-    private deletionDialogService: DeletionDialogService) {
+    private deletionDialogService: DeletionDialogService,
+    private store: Store,
+    private instUtils: InstanceUtilities) {
   }
 
   /**
@@ -152,7 +158,10 @@ export class InstanceSelectionComponent {
       case "list_alt": {
         this.referrersDialogService.openDialog(actionEvent.instance);
         break;
+      }
 
+      case "content_copy": {
+        this.cloneInstance(actionEvent.instance);
       }
     }
   }
@@ -298,5 +307,14 @@ export class InstanceSelectionComponent {
   navigateUrl(instance: Instance){
     if(!this.isSelection)
        this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()])
+  }
+
+  cloneInstance(instance: Instance) {
+    this.dataService.cloneInstance(instance).subscribe(instance => {
+      this.dataService.registerInstance(instance);
+      this.store.dispatch(NewInstanceActions.register_new_instance(this.instUtils.makeShell(instance)));
+      let dbId = instance.dbId.toString();
+      this.router.navigate(["/schema_view/instance/" + dbId]);
+    });
   }
 }
