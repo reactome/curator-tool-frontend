@@ -1,41 +1,12 @@
-// import { Input, Component, Output, EventEmitter } from '@angular/core';
-// import {FormGroup, FormControl, ReactiveFormsModule} from '@angular/forms';
-// import {AuthenticateService} from "../../core/services/authenticate.service";
-//
-// @Component({
-//   selector: 'app-login',
-//   templateUrl: './login.component.html',
-//   styleUrls: ['./login.component.scss'],
-// })
-//
-// export class LoginComponent {
-//
-//   form: FormGroup = new FormGroup({
-//     username: new FormControl('username'),
-//     password: new FormControl('password'),
-//   });
-//   @Input() error: string = '';
-//   control = new FormControl();
-//   username= new FormControl('username');
-//   password = new FormControl('password');
-//
-//   constructor(private authenticateService: AuthenticateService) {
-//   }
-//
-//   submit() {
-//     if (this.form.valid) {
-//       this.authenticateService.setEnabled(true);
-//     }
-//   }
-// }
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { AuthenticateService } from 'src/app/core/services/authenticate.service';
-import { User } from '../components/auth-form/user.interface';
-import { AuthActions } from '../state/auth.actions'
-import { selectError } from '../state/auth.selectors';
+import { User } from 'src/app/core/models/user';
+import { catchError, of } from 'rxjs';
+import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
 
 
 @Component({
@@ -44,32 +15,36 @@ import { selectError } from '../state/auth.selectors';
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent{
-  error$ = this.store.select(selectError());
+  
+  // To show information
+  readonly dialog = inject(MatDialog);
 
-
-  constructor(private store: Store, private authService: AuthenticateService, private router: Router, private _snackBar: MatSnackBar) {
-    this.checkJWT();
-    this.getError();
+  constructor(private authService: AuthenticateService, private router: Router) {
   }
 
   submit(data: User) {
-    this.store.dispatch({type: AuthActions.LOGIN, payload: data})
-
-  }
-
-  getError() {
-    this.error$.subscribe(data => {
-      if(data) {
-        this._snackBar.open(data.message, "Error");
+    this.authService.login(data).pipe(
+      catchError(error => {
+        this.handleError(error); // Custom error handling
+        return of(null); // Return an observable to complete the stream
+      })
+    ).subscribe(token => {
+      if (token) {
+        localStorage.setItem('token', token);
+        this.router.navigate(['/home']);
       }
-    })
+    });
   }
 
-
-  checkJWT() {
-    if(this.authService.isAuthenticated()) {
-      this.router.navigate(['/home'])
-    }
+  private handleError(error: any): void {
+    this.dialog.open(InfoDialogComponent, {
+      data: {
+        title: 'Error',
+        message: 'Wrong user name or password',
+        instanceInfo: ''
+      }
+    });
+    console.error('Login failed:', error); // Log the error to the console
   }
 
 }

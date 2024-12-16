@@ -24,6 +24,8 @@ export class InstanceEffects {
   ) {
     window.addEventListener('storage', (event) => {
       console.debug('storage event: ' + event.key);
+      if (event.key === 'token')
+        return; // Don't do anything for token
       const inst = this.parseLocalStorageObject(event.newValue);
       switch (event.key) {
         // When a new instance is edited, this case is also
