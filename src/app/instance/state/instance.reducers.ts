@@ -28,7 +28,7 @@ export const updatedInstancesReducer = createReducer(
     (state, instance) => updatedInstancesAdaptor.removeOne(instance.instance.dbId, state)
  ),
   on(UpdateInstanceActions.set_updated_instances,
-    (state, {instances}) => updatedInstancesAdaptor.setMany(instances, state)
+    (state, {instances}) => updatedInstancesAdaptor.setAll(instances, state)
   ),
 )
 
@@ -53,7 +53,7 @@ export const newInstancesReducer = createReducer(
     (state, instance) => newInstancesAdaptor.removeOne(instance.dbId, state)
   ),
   on(NewInstanceActions.set_new_instances,
-    (state, {instances}) => newInstancesAdaptor.setMany(instances, state)
+    (state, {instances}) => newInstancesAdaptor.setAll(instances, state)
   )
 )
 
