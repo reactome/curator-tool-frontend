@@ -6,6 +6,7 @@ import { deleteInstances, newInstances, updatedInstances } from "src/app/instanc
 import { environment } from 'src/environments/environment.dev';
 import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
 import {
+  AttributeCategory,
   SchemaAttribute,
   SchemaClass
 } from '../models/reactome-schema.model';
@@ -375,6 +376,42 @@ export class DataService {
         return this.handleErrorMessage(err);
       }),
     );
+  }
+
+    /**
+   * Create a new instance from an existing instance.
+   */
+  cloneInstance(instance: Instance): Observable<Instance> {
+    let newInstance: Instance;
+    this.createNewInstance(instance.schemaClassName).subscribe((newInst: Instance) => {
+      newInstance = newInst;
+    });
+    return this.fetchInstance(instance.dbId).pipe(map((inst: Instance) => {
+      let uneditableAtts: Array<string> = this.getAttributeNamesNotClonable();
+      let allAttributes: Map<string, any> = inst.attributes;
+      for(let attribute of newInstance.schemaClass!.attributes!){
+        if(attribute.category === AttributeCategory.NOMANUALEDIT){
+          continue;
+        }
+          if(uneditableAtts.includes(attribute.name)) {
+            continue;
+          }
+            newInstance.attributes.set(attribute.name, allAttributes.get(attribute.name));
+        
+      }
+      // Set displayName last
+      newInstance.attributes.set('displayName', 'Clone of ' + instance.displayName);
+      newInstance.displayName = 'Clone of ' + instance.displayName;
+      return newInstance;
+    }),
+      catchError((err: Error) => {
+        return this.handleErrorMessage(err);
+      }),
+    );
+  }
+
+  getAttributeNamesNotClonable(): Array<string> {
+    return ['authored', 'edited', 'reviewed', 'revised', '_doRelease', 'releaseStatus', 'releaseDate', 'doi']
   }
 
   /**

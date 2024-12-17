@@ -7,7 +7,8 @@
         {{element.dbId}}
       </ng-container>
       <ng-container *ngIf="!isSelection">
-        <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)" style="text-decoration: underline;" (click)="onInstanceLinkClicked(element)">{{element.dbId}}</a><br>
+        <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)" style="text-decoration: underline;"
+          (click)="onInstanceLinkClicked(element)">{{element.dbId}}</a><br>
       </ng-container>
     </td>
   </ng-container>
@@ -26,7 +27,8 @@
         </ng-template>
       </ng-container>
       <ng-container *ngIf="!isSelection">
-        <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)" style="text-decoration: underline;" (click)="onInstanceLinkClicked(element)">{{element.displayName}}</a>
+        <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)" style="text-decoration: underline;"
+          (click)="onInstanceLinkClicked(element)">{{element.displayName}}</a>
       </ng-container>
       <br>
     </td>
@@ -47,13 +49,28 @@
             matTooltipPosition="left">
             <mat-icon>bookmark</mat-icon>
           </button>
+
+          <!-- When there are many buttons some may be hidden unless expaned -->
+          <ng-container *ngIf="secondaryActionButtons.length > 0">
+            <ng-container *ngIf="showSecondaryButtons">
+              <button color="primary" *ngFor="let button of secondaryActionButtons" mat-icon-button (click)="click(element, button)"
+              matTooltip="{{getToolTip(button)}}" matTooltipPosition="left">
+              <mat-icon>{{button}}</mat-icon>
+            </button>
+            </ng-container>
+            <button color="primary" mat-icon-button matTooltip="expand" (click)="showSecondaryButtons = !showSecondaryButtons" matTooltipPosition="left">
+              <mat-icon>more_horiz</mat-icon>
+            </button>
+          </ng-container>
         </div>
       </ng-container>
     </td>
   </ng-container>
 
   <ng-container *ngIf="showHeader">
-    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+    <div>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+    </div>
   </ng-container>
   <ng-container *ngIf="!isSelection">
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>

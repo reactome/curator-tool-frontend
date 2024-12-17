@@ -4,6 +4,7 @@ import { Store } from "@ngrx/store";
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Instance, NEW_DISPLAY_NAME } from "../../../../../../core/models/reactome-instance.model";
 import { BookmarkActions } from "../../../../../instance-bookmark/state/bookmark.actions";
+import { CdkContextMenuTrigger } from '@angular/cdk/menu';
 
 @Component({
   selector: 'app-instance-list-table',
@@ -13,6 +14,7 @@ import { BookmarkActions } from "../../../../../instance-bookmark/state/bookmark
 export class InstanceListTableComponent {
   @Input() dataSource: Instance[] = [];
   @Input() actionButtons: string[] = [];
+  @Input() secondaryActionButtons: string[] = [];
   @Input() isSelection: boolean = false;
   @Input() showHeader: boolean = true;
   displayedColumns: string[] = ['dbId', 'displayName', 'actionButtons'];
@@ -26,6 +28,7 @@ export class InstanceListTableComponent {
   @Output() urlClickEvent = new EventEmitter<Instance>();
   readonly newDisplayName: string = NEW_DISPLAY_NAME;
   routerNavigationUrl: string = ''
+  showSecondaryButtons: boolean = false;
 
   constructor(private store: Store, 
               private route: ActivatedRoute,
