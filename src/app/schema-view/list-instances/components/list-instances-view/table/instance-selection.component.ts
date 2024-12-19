@@ -171,7 +171,8 @@ export class InstanceSelectionComponent {
 
       case ACTION_BUTTONS.COMPARE_INSTANCES.name: {
         const matDialogRef =
-        this.listInstancesDialogService.openDialog(actionEvent.instance.schemaClassName);
+        this.listInstancesDialogService.openDialog({schemaClassName: actionEvent.instance.schemaClassName, 
+          title: "Compare " + actionEvent.instance.displayName + " to"});
         matDialogRef.afterClosed().subscribe((result) => {
           this.router.navigate(["/schema_view/instance/" + actionEvent.instance.dbId + "/comparison/" + result?.dbId]);
         });

@@ -13,11 +13,13 @@ export class ListInstancesDialogComponent {
   candidateClasses: string[] = [];
   selectedInstances: Instance[] = [];
   schemaClass: string = '';
+  title: string = '';
   // Using constructor to correctly initialize values
-  constructor(@Inject(MAT_DIALOG_DATA) public schemaClassName: string,
+  constructor(@Inject(MAT_DIALOG_DATA) public data: {schemaClassName: string, title: string},
     public dialogRef: MatDialogRef<ListInstancesDialogService>) {
-    this.schemaClass = schemaClassName;
-    this.selected = schemaClassName;
+    this.schemaClass =data.schemaClassName;
+    this.selected = data.schemaClassName;
+    this.title = data.title;
   }
 
   onSelectRow(row: Instance) {

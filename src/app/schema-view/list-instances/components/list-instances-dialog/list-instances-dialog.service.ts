@@ -11,11 +11,11 @@ export class ListInstancesDialogService {
 
   constructor(private dialog: MatDialog) { }
 
-  openDialog(schemaClassName: string): MatDialogRef<ListInstancesDialogComponent, Instance> {
+  openDialog(data: { schemaClassName: string; title: string; }): MatDialogRef<ListInstancesDialogComponent, Instance> {
     const dialogRef = this.dialog.open(ListInstancesDialogComponent, {
       width: '1100px',
       height: '900px',
-      data: schemaClassName
+      data: data
     });
     return dialogRef;
   }
