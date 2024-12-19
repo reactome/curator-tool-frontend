@@ -5,8 +5,8 @@ import { Instance, UserInstances } from "src/app/core/models/reactome-instance.m
 import { AuthenticateService } from "src/app/core/services/authenticate.service";
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
-import { DeleteInstanceActions, NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
-import { deleteInstances, newInstances, updatedInstances, updatedInstanceState } from "src/app/instance/state/instance.selectors";
+import { DefaultPersonActions, DeleteInstanceActions, NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
+import { defaultPerson, deleteInstances, newInstances, updatedInstances, updatedInstanceState } from "src/app/instance/state/instance.selectors";
 import { BookmarkActions } from "src/app/schema-view/instance-bookmark/state/bookmark.actions";
 import { bookmarkedInstances } from "src/app/schema-view/instance-bookmark/state/bookmark.selectors";
 
@@ -60,6 +60,8 @@ export class UserInstancesService {
                 this.store.dispatch(DeleteInstanceActions.set_deleted_instances({ instances: this.makeShell(userInstances.deletedInstances) }));
             if (userInstances.bookmarks && userInstances.bookmarks.length > 0)
                 this.store.dispatch(BookmarkActions.set_bookmarks({ instances: userInstances.bookmarks }));
+            if (userInstances.defaultPerson)
+                this.store.dispatch(DefaultPersonActions.set_default_person(userInstances.defaultPerson));
         });
     }
 
@@ -94,6 +96,11 @@ export class UserInstancesService {
             userInstances.deletedInstances = deletedInsts;
             deletedInsts.forEach((inst: any) => this.dataService.registerInstance(inst));
         }
+        const defaultPerson = localStorage.getItem(DefaultPersonActions.set_default_person.type);
+        if (defaultPerson) {
+            const defaultPersonInst = JSON.parse(JSON.parse(defaultPerson).object);
+            userInstances.defaultPerson = defaultPersonInst;
+        }
     }
 
     persistInstances(removeToken: boolean = false): void {
@@ -107,14 +114,18 @@ export class UserInstancesService {
             this.store.select(updatedInstances()),
             this.store.select(newInstances()),
             this.store.select(deleteInstances()),
-            this.store.select(bookmarkedInstances())
+            this.store.select(bookmarkedInstances()),
+            this.store.select(defaultPerson())
         ])
             .pipe(take(1)) // Take only the first set of values and complete
-            .subscribe(([updated, newInst, deleted, bookmarked]) => {
+            .subscribe(([updated, newInst, deleted, bookmarked, defaultPerson]) => {
                 const updatedInstances = updated || [];
                 const newInstances = newInst || [];
                 const deletedInstances = deleted || [];
                 const bookmarkedInstances = bookmarked || [];
+                // There should be only one instance for default person. However, we use
+                // an array to make the code simplier
+                const defaultPersonInstances = defaultPerson || [];
                 // Clean up localStorage before returning
                 // Keep token so that the user doesn't need to re-enter for refresh
                 const token = localStorage.getItem('token');
@@ -130,12 +141,14 @@ export class UserInstancesService {
                 }
                 // Need to persist these instances
                 // To be persist
-                const userInstances = {
+                const userInstances: UserInstances = {
                     newInstances: newInstances,
                     updatedInstances: updatedInstances,
                     deletedInstances: deletedInstances,
                     bookmarks: bookmarkedInstances
                 };
+                if (defaultPerson.length > 0)
+                    userInstances.defaultPerson = defaultPerson[0];
                 this.dataService.persitUserInstances(userInstances, user).subscribe(() => {
                     console.debug('userInstances have been persisted at the server.');
                     if (removeToken)

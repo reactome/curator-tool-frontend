@@ -50,7 +50,8 @@ export interface UserInstances {
   newInstances: Instance[],
   updatedInstances: Instance[],
   deletedInstances: Instance[],
-  bookmarks: Instance[]
+  bookmarks: Instance[],
+  defaultPerson?: Instance
 }
 
 
