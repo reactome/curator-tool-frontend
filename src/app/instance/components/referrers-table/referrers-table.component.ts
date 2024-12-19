@@ -3,6 +3,8 @@ import {Instance, Referrer} from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import {ViewOnlyService} from "../../../core/services/view-only.service";
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
+import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
+import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/table/instance-list-table/instance-list-table.component';
 
 /**
  * A dialog component to show referrers of an instance.
@@ -15,7 +17,7 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 export class ReferrersTableComponent {
   selected: string = '';
   instanceList: Referrer[] = [];
-  actionButtons: string[] = ["launch"];
+  actionButtons: Array<ActionButton> = [ACTION_BUTTONS.LAUNCH];
   showProgressSpinner: boolean = false;
   totalCount: number = 0;
   @Input() instance: Instance | undefined;

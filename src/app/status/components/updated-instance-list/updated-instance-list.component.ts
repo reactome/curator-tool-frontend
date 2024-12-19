@@ -15,6 +15,8 @@ import { DataService } from 'src/app/core/services/data.service';
 import { MatToolbar } from '@angular/material/toolbar';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { DeletionDialogService } from 'src/app/instance/components/deletion-dialog/deletion-dialog.service';
+import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
+import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/table/instance-list-table/instance-list-table.component';
 
 
 @Component({
@@ -28,9 +30,9 @@ export class UpdatedInstanceListComponent implements OnInit{
   // instances to be committed
   // There will be a checkbox to manage toBeUploade
   // toBeUploaded: Instance[] = [];
-  updatedInstanceActions: string[] = ['compare', "undo", "upload"];
-  deletedInstanceActions: string[] = ['undo', 'upload']
-  newInstanceActionButtons: string[] = ["delete", 'upload'];
+  updatedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.COMPARE2DB, ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
+  deletedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT]
+  newInstanceActionButtons: Array<ActionButton> = [ACTION_BUTTONS.DELETE, ACTION_BUTTONS.COMMIT];
 
   isSelection: boolean = false;
   newInstances: Instance[] = [];

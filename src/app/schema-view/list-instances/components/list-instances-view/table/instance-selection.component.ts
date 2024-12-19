@@ -8,6 +8,9 @@ import { DeletionDialogService } from "../../../../../instance/components/deleti
 import { Store } from '@ngrx/store';
 import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
+import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
+import { ActionButton } from './instance-list-table/instance-list-table.component';
+import { ListInstancesDialogService } from '../../list-instances-dialog/list-instances-dialog.service';
 
 @Component({
   selector: 'app-instance-selection',
@@ -33,8 +36,8 @@ export class InstanceSelectionComponent {
   showProgressSpinner: boolean = true;
   // To be displayed in instance list table
   data: Instance[] = [];
-  actionButtons: string[] = ["launch", "list_alt", "delete"];
-  secondaryActionButtons: string[] = ["content_copy", "search"]
+  actionButtons: Array<ActionButton> = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.LIST, ACTION_BUTTONS.DELETE];
+  secondaryActionButtons: Array<ActionButton> = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES]
   // Used to popup attributes for advanced search (i.e. SearchFilterComponent)
   schemaClassAttributes: string[] = [];
   // New instances to be listed at the top of the first page
@@ -67,7 +70,8 @@ export class InstanceSelectionComponent {
     private referrersDialogService: ReferrersDialogService,
     private deletionDialogService: DeletionDialogService,
     private store: Store,
-    private instUtils: InstanceUtilities) {
+    private instUtils: InstanceUtilities,
+    private listInstancesDialogService: ListInstancesDialogService) {
   }
 
   /**
@@ -144,42 +148,52 @@ export class InstanceSelectionComponent {
 
   handleAction(actionEvent: { instance: Instance, action: string }) {
     switch (actionEvent.action) {
-      case "launch": {
+      case ACTION_BUTTONS.LAUNCH.name: {
         const dbId = actionEvent.instance.dbId;
         // As of October 15, don't use view only
         window.open(`schema_view/instance/${dbId}`, '_blank');
         // window.open(`schema_view/instance/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
         break;
       }
-      case "delete": {
+      case ACTION_BUTTONS.DELETE.name: {
         this.deletionDialogService.openDialog(actionEvent.instance);
         break;
       }
-      case "list_alt": {
+      case ACTION_BUTTONS.LIST.name: {
         this.referrersDialogService.openDialog(actionEvent.instance);
         break;
       }
 
-      case "content_copy": {
+      case ACTION_BUTTONS.COPY.name: {
         this.cloneInstance(actionEvent.instance);
+        break;
+      }
+
+      case ACTION_BUTTONS.COMPARE_INSTANCES.name: {
+        const matDialogRef =
+        this.listInstancesDialogService.openDialog(actionEvent.instance.schemaClassName);
+        matDialogRef.afterClosed().subscribe((result) => {
+          this.router.navigate(["/schema_view/instance/" + result?.dbId]);
+        });
+        break;
       }
     }
   }
 
-  /**
-   * Handle the search button action.
-   * @param searchFilters
-   */
-  addSearchCriterium(attributeCondition: SearchCriterium) {
-    if (!this.validateSearchCriterium(attributeCondition))
-      return; // Make sure only valid criterium can be added
-    this.searchCriteria.push(attributeCondition);
-    this.updateAdvancedSearchKey();
-  }
+    /**
+     * Handle the search button action.
+     * @param searchFilters
+     */
+    addSearchCriterium(attributeCondition: SearchCriterium) {
+      if (!this.validateSearchCriterium(attributeCondition))
+        return; // Make sure only valid criterium can be added
+      this.searchCriteria.push(attributeCondition);
+      this.updateAdvancedSearchKey();
+    }
 
-  resetSearchCriteria() {
-    this.searchCriteria.length = 0; // reset it
-  }
+    resetSearchCriteria() {
+      this.searchCriteria.length = 0; // reset it
+    }
 
   private updateAdvancedSearchKey() {
     // Reset from the scratch
@@ -304,9 +318,9 @@ export class InstanceSelectionComponent {
       })
   }
 
-  navigateUrl(instance: Instance){
-    if(!this.isSelection)
-       this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()])
+  navigateUrl(instance: Instance) {
+    if (!this.isSelection)
+      this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()])
   }
 
   cloneInstance(instance: Instance) {
@@ -314,7 +328,7 @@ export class InstanceSelectionComponent {
       this.dataService.registerInstance(instance);
       this.store.dispatch(NewInstanceActions.register_new_instance(this.instUtils.makeShell(instance)));
       let dbId = instance.dbId.toString();
-      this.router.navigate(["/schema_view/instance/" + dbId]);
+      this.router.navigate(["/schema_view/instance/" + dbId.toString()]);
     });
   }
 }

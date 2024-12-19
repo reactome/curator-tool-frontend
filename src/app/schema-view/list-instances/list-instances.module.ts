@@ -13,6 +13,7 @@ import { StoreModule } from '@ngrx/store';
 import { NEW_INSTANCES_STATE_NAME } from 'src/app/instance/state/instance.selectors';
 import { newInstancesReducer } from 'src/app/instance/state/instance.reducers';
 import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
+import { ListInstancesDialogComponent } from './components/list-instances-dialog/list-instances-dialog.component';
 
 
 @NgModule({
@@ -22,11 +23,13 @@ import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
     SelectInstanceDialogComponent,
     SelectedInstancesTableComponent,
     InstanceListTableComponent,
+    ListInstancesDialogComponent
   ],
   exports: [
     InstanceSelectionComponent,
     SelectInstanceDialogComponent,
     InstanceListTableComponent,
+    ListInstancesDialogComponent
   ],
   imports: [
     CommonModule,

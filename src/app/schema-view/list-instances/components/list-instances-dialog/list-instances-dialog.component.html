@@ -1,0 +1,23 @@
+<h2 class="dialog_title" mat-dialog-title cdkdraghandle>Compare to:</h2>
+<mat-dialog-content style="width: 100%; height: 100%;">
+  <div>
+    <ng-container *ngIf="this.selectedInstances.length > 0">
+      <section class="scroll_panel">
+        <app-selected-instances-table [dataSource]="selectedInstances"
+          (removeEvent)="onRemoveEvent($event)"></app-selected-instances-table>
+      </section>
+    </ng-container>
+  </div>
+  <br>
+  <div style="height: 65%">
+    <section class="scroll_panel">
+        <!-- For this list, we use a pagesize = 20 as the default for easy check: users are expected to do searching here. -->
+        <app-instance-selection [setClassName]="this.selected" [isSelection]="true" [pageSize]="20"
+          (clickEvent)="onSelectRow($event)"></app-instance-selection>
+    </section>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onOK()" cdkFocusInitial>OK</button>
+  <button mat-button (click)="onCancel()">Cancel</button>
+</mat-dialog-actions>

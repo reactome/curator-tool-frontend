@@ -2,6 +2,8 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {MatTableDataSource} from "@angular/material/table";
 import {Instance} from "../../../../../core/models/reactome-instance.model";
 import { ViewOnlyService } from 'src/app/core/services/view-only.service';
+import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
+import { ActionButton } from '../../list-instances-view/table/instance-list-table/instance-list-table.component';
 
 @Component({
   selector: 'app-selected-instances-table',
@@ -23,7 +25,7 @@ export class SelectedInstancesTableComponent {
   instances: Instance[] = [];
   matDataSource = new MatTableDataSource<Instance>();
   isSelection: boolean = true;
-  actionButtons: string[] = ["launch", "close"];
+  actionButtons: Array<ActionButton> = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.CLOSE];
 
   setTable() {
     this.matDataSource.data = this.instances;

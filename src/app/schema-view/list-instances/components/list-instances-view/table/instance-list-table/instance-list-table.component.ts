@@ -4,17 +4,22 @@ import { Store } from "@ngrx/store";
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Instance, NEW_DISPLAY_NAME } from "../../../../../../core/models/reactome-instance.model";
 import { BookmarkActions } from "../../../../../instance-bookmark/state/bookmark.actions";
-import { CdkContextMenuTrigger } from '@angular/cdk/menu';
+
+export interface ActionButton {
+  name: string;
+  tooltip: string;
+}
 
 @Component({
   selector: 'app-instance-list-table',
   templateUrl: './instance-list-table.component.html',
   styleUrls: ['./instance-list-table.component.scss'],
 })
+
 export class InstanceListTableComponent {
   @Input() dataSource: Instance[] = [];
-  @Input() actionButtons: string[] = [];
-  @Input() secondaryActionButtons: string[] = [];
+  @Input() actionButtons: Array<ActionButton> = [];
+  @Input() secondaryActionButtons: Array<ActionButton> = [];
   @Input() isSelection: boolean = false;
   @Input() showHeader: boolean = true;
   displayedColumns: string[] = ['dbId', 'displayName', 'actionButtons'];
@@ -31,7 +36,6 @@ export class InstanceListTableComponent {
   showSecondaryButtons: boolean = false;
 
   constructor(private store: Store, 
-              private route: ActivatedRoute,
               private instanceUtilities: InstanceUtilities) {
   }
 
@@ -63,16 +67,6 @@ export class InstanceListTableComponent {
     //this.getInstanceUrl(instance);
     this.urlClickEvent.emit(instance);
     this.instanceUtilities.setLastClickedDbId(instance.dbId);
-  }
-
-  getToolTip(button: string) {
-    if (button === 'list_alt')
-      return 'show referrers';
-    if (button === 'undo')
-      return 'reset instance';
-    if (button === 'upload')
-      return 'commit';
-    return button + ' instance';
   }
 
   setNavigationUrl(instance: Instance){

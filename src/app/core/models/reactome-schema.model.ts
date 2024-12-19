@@ -73,3 +73,17 @@ export const REACTION_DIAGRAM_ATTRIBUTES = [
   'catalystActivity', 
   'regulatedBy'
 ];
+
+// Centralizing the material icons used for action buttons and associated tool-tips
+export const ACTION_BUTTONS = {
+  LAUNCH: {name:'launch', tooltip:'launch instance'},
+  LIST: {name:'list_alt', tooltip:'show referrers'},
+  DELETE: {name:'delete', tooltip:'delete instance'},
+  COPY: {name:'content_copy', tooltip:'clone instance'},
+  UNDO: {name:'undo', tooltip:'reset instance'},
+  COMMIT: {name:'upload', tooltip: 'commit'},
+  BOOKMARK: {name: 'bookmark', tooltip: 'add bookmark'},
+  COMPARE2DB: {name: 'compare', tooltip: 'compare instance'},
+  CLOSE : {name: 'close', tooltip: 'close'},
+  COMPARE_INSTANCES: {name: 'compare_arrows', tooltip: 'compare two instances'}
+}
