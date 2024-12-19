@@ -25,12 +25,12 @@ import { InstanceViewComponent } from './components/instance-view/instance-view.
 import { NewInstanceDialogComponent } from './components/new-instance-dialog/new-instance-dialog.component';
 import { QAReportDialogComponent } from './components/qa-report-dialog/qa-report-dialog.component';
 import { InstanceRoutingModule } from './instance-routing.module';
-import {DELETE_INSTANCES_STATE_NAME, NEW_INSTANCES_STATE_NAME} from "./state/instance.selectors";
-import {deletedInstancesReducer, newInstancesReducer} from "./state/instance.reducers";
+import { DELETE_INSTANCES_STATE_NAME, NEW_INSTANCES_STATE_NAME, DEFAUT_PERSON_STATE_NAME } from "./state/instance.selectors";
+import { defaultPersonReducer, deletedInstancesReducer, newInstancesReducer } from "./state/instance.reducers";
 import { TextCurationComponent } from "../schema-view/main-schema-view/text-curation/components/text-curation.component";
-import {ReferrersDialogComponent} from "./components/referrers-dialog/referrers-dialog.component";
-import {DeletionDialogComponent} from "./components/deletion-dialog/deletion-dialog.component";
-import {ReferrersTableComponent} from "./components/referrers-table/referrers-table.component";
+import { ReferrersDialogComponent } from "./components/referrers-dialog/referrers-dialog.component";
+import { DeletionDialogComponent } from "./components/deletion-dialog/deletion-dialog.component";
+import { ReferrersTableComponent } from "./components/referrers-table/referrers-table.component";
 import {
   ConfirmDeleteDialogComponent
 } from "./components/deletion-dialog/confirm-delete-dialog/confirm-delete-dialog.component";
@@ -58,7 +58,7 @@ import {
     // EffectsModule.forFeature(NewInstanceEffects),
     StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer),
     StoreModule.forFeature(DELETE_INSTANCES_STATE_NAME, deletedInstancesReducer),
-
+    StoreModule.forFeature(DEFAUT_PERSON_STATE_NAME, defaultPersonReducer),
     // Need to register here for update. The registered state can be used out of this module.
     // StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),
     SharedModule,

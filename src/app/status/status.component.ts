@@ -9,14 +9,14 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { Router } from "@angular/router";
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
-import { AuthenticateService } from "../core/services/authenticate.service";
-import { DataService } from "../core/services/data.service";
+import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instance-bookmark.module";
 import { bookmarkedInstances } from "../schema-view/instance-bookmark/state/bookmark.selectors";
 import { NgIf } from "@angular/common";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { UserInstancesService } from "../auth/login/user-instances.service";
+import { ListInstancesDialogService } from "../schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service";
+import { DefaultPersonActions } from "../instance/state/instance.actions";
 
 @Component({
   selector: 'app-status',
@@ -32,10 +32,11 @@ export class StatusComponent implements OnInit {
   newInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
   bookmarkedInstances: Instance[] =  [];
+  defaultPerson: Instance|undefined = undefined;
 
   constructor(private store: Store,
-              private authenticateService: AuthenticateService,
               private userInstancesService: UserInstancesService,
+              private instanceSelectionService: ListInstancesDialogService,
               private router: Router) {
   }
 
@@ -60,7 +61,12 @@ export class StatusComponent implements OnInit {
 
     this.store.select(bookmarkedInstances()).subscribe((instances) => {
       instances ? this.bookmarkedInstances = instances : this.bookmarkedInstances = [];
-    })
+    });
+
+    this.store.select(defaultPerson()).subscribe((instances) => {
+      // There should be only one default person
+      instances && instances.length > 0 ? this.defaultPerson = instances[0] : this.defaultPerson = undefined
+    });
   }
 
   // Calling ngOnDestroy is not reliable: https://blog.devgenius.io/where-ngondestroy-fails-you-54a8c2eca0e0.
@@ -71,6 +77,15 @@ export class StatusComponent implements OnInit {
 
   showUpdated(): void {
     this.showUpdatedEvent.emit(true);
+  }
+
+  setDefaultPerson(): void {
+    // Set or change the default person instance
+    const matDialogRef = this.instanceSelectionService.openDialog('Person');
+    matDialogRef.afterClosed().subscribe((result) => {
+      if (result)
+        this.store.dispatch(DefaultPersonActions.set_default_person(result as Instance))
+    });
   }
 
   logout() {

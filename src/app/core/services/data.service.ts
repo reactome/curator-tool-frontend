@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
-import { catchError, combineLatest, concatMap, defaultIfEmpty, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
+import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
 import { deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
 import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
@@ -659,12 +659,17 @@ export class DataService {
     const deletedInstances = userInstances.deletedInstances.map(i => this.utils.makeShell(i));
     // There is no need to get the full instance for a bookmark
     const bookmarks = userInstances.bookmarks.map(i => this.cloneInstanceForCommit(i));
-    return {
+    const clone: UserInstances =
+    {
       newInstances: newInstances,
       updatedInstances: updatedInstances,
       deletedInstances: deletedInstances,
       bookmarks: bookmarks
     };
+    if (userInstances.defaultPerson) {
+      clone.defaultPerson = this.utils.makeShell(userInstances.defaultPerson);
+    }
+    return clone;
   }
 
   uploadCytoscapeNetwork(pathwayId: any, network: any): Observable<boolean> {

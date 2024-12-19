@@ -1,13 +1,14 @@
-import { createFeatureSelector, createSelector, State } from "@ngrx/store";
+import { createFeatureSelector, createSelector } from "@ngrx/store";
 import {
+  DefaultPersonState,
   DeletedInstanceState,
   NewInstanceState,
   UpdatedInstanceState,
+  defaultPersonAdaptor,
   deletedInstancesAdaptor,
   newInstancesAdaptor,
   updatedInstancesAdaptor
 } from "./instance.reducers";
-import { combineLatest } from "rxjs";
 
 // Updated instance state
 export const UPDATE_INSTANCES_STATE_NAME = 'updated_instances'
@@ -32,3 +33,11 @@ export const deleteInstances = () => createSelector(
   deleteInstanceState,
   (state: DeletedInstanceState) => deletedInstancesAdaptor.getSelectors().selectAll(state)
 )
+
+// default person state
+export const DEFAUT_PERSON_STATE_NAME = 'default_person'
+export const defaultPersonState = createFeatureSelector<DefaultPersonState>(DEFAUT_PERSON_STATE_NAME);
+export const defaultPerson = () => createSelector(
+  defaultPersonState,
+  (state: DefaultPersonState) => defaultPersonAdaptor.getSelectors().selectAll(state)
+);
