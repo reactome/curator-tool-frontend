@@ -173,7 +173,7 @@ export class InstanceSelectionComponent {
         const matDialogRef =
         this.listInstancesDialogService.openDialog(actionEvent.instance.schemaClassName);
         matDialogRef.afterClosed().subscribe((result) => {
-          this.router.navigate(["/schema_view/instance/" + result?.dbId]);
+          this.router.navigate(["/schema_view/instance/" + actionEvent.instance.dbId + "/comparison/" + result?.dbId]);
         });
         break;
       }

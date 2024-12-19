@@ -479,12 +479,13 @@ export class InstanceTableComponent implements PostEditListener {
 
   compareToDbInstance(attName: string): boolean {
     if (!this._referenceInstance) return false;
+    if(this._instance?.dbId !== this._referenceInstance?.dbId) return false;
     let instanceVal = this._instance?.attributes.get(attName);
     let refVal = this._referenceInstance?.attributes.get(attName);
     if ((instanceVal && instanceVal.dbId) || instanceVal instanceof Array) {
       return this.getValueTypeForComparison(instanceVal, refVal);
     }
-    return instanceVal !== refVal;
+    return (instanceVal !== refVal);
   }
 
   getValueTypeForComparison(instanceVal: any, refVal: any) {
