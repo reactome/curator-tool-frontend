@@ -1,7 +1,7 @@
 import { EntityState, createEntityAdapter } from "@ngrx/entity";
 import { createReducer, on } from "@ngrx/store";
 import { Instance } from "src/app/core/models/reactome-instance.model";
-import {DeleteInstanceActions, UpdateInstanceActions, NewInstanceActions} from "./instance.actions";
+import {DeleteInstanceActions, UpdateInstanceActions, NewInstanceActions, DefaultPersonActions} from "./instance.actions";
 
 /**
  * Reducer to handle registration of updated instance
@@ -82,3 +82,21 @@ export const deletedInstancesReducer = createReducer(
   )
 )
 
+
+/**
+ * Reducer to handle default person instance
+ */
+export interface DefaultPersonState extends EntityState<Instance> {
+}
+export const defaultPersonAdaptor = createEntityAdapter<Instance>({
+  selectId: instance => instance.dbId
+})
+export const defaultPersonReducer = createReducer(
+  defaultPersonAdaptor.getInitialState(),
+  on(DefaultPersonActions.set_default_person,
+     DefaultPersonActions.ls_set_default_person,
+    (state, instance) => {
+      return defaultPersonAdaptor.setAll([instance], state)
+    }
+  )
+)

@@ -21,6 +21,17 @@ export const UpdateInstanceActions = createActionGroup({
   }
 })
 
+// Set the default Person instance so that it can be used to create InstanceEdit automatically
+// for created and modified slots.
+export const DefaultPersonActions = createActionGroup({
+  source: "default_person_actions",
+  events: {
+    // Default person to be used to create InstanceEdit
+    set_default_person: props<Instance>(),
+    ls_set_default_person: props<Instance>(),
+  }
+})
+
 export const NewInstanceActions = createActionGroup({
   source: "new_instance_actions",
   events: {

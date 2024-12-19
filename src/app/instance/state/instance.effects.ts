@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Actions, createEffect, ofType } from "@ngrx/effects";
 import { DataService } from "src/app/core/services/data.service";
-import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from "./instance.actions";
+import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions, DefaultPersonActions } from "./instance.actions";
 import { Store } from "@ngrx/store";
 import { defaultIfEmpty, take, tap } from "rxjs";
 import { deleteInstances, newInstances, updatedInstances } from "./instance.selectors";
@@ -90,6 +90,9 @@ export class InstanceEffects {
         case DeleteInstanceActions.remove_deleted_instance.type:
           this.store.dispatch(DeleteInstanceActions.ls_remove_deleted_instance(inst));
           this.store.dispatch(BookmarkActions.ls_remove_bookmark(this.instUtils.makeShell(inst)));
+          break;
+        case DefaultPersonActions.set_default_person.type:
+          this.store.dispatch(DefaultPersonActions.ls_set_default_person(inst));
           break;
       }
     });
@@ -203,6 +206,20 @@ export class InstanceEffects {
       ),
     { dispatch: false }
   );
+
+
+  defaultPersonChanges$ = createEffect(
+    () => 
+      this.actions$.pipe(
+        ofType(DefaultPersonActions.set_default_person),
+        tap((action) => {
+          // console.debug('Set local storage item: ', action.type);
+          this.setLocalStorageItem(action.type, this.instUtils.stringifyInstance(action.valueOf() as Instance));
+        })
+      ),
+    {dispatch: false} // This is important to avoid infinity loop.
+  );
+
 
   private storeDeletedInstances() {
     this.store.select(deleteInstances()).pipe(take(1)).subscribe(instances => {
