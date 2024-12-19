@@ -4,6 +4,7 @@ import { catchError, Observable, tap, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import {CanActivateFn, Router} from "@angular/router";
+import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
 
 @Injectable({
   providedIn: 'root'
@@ -27,28 +28,31 @@ export class AuthenticateService {
     )
   }
 
-  isAuthenticated(token: string): boolean {
-    // Check whether the token is expired and return
-    // true or false
-    return !this.jwtHelper.isTokenExpired(token);
+  isAuthenticated(): boolean {
+    const token = localStorage.getItem('token');
+    if (token && !this.jwtHelper.isTokenExpired(token))
+      return true;
+    return false;
   }
 
-  logout() {
-    localStorage.removeItem('token');
+  getUser(): string|undefined {
+    const token = localStorage.getItem('token');
+    if (token) {
+      return this.jwtHelper.decodeToken(token).sub;
+    }
+    return undefined;
   }
 
 }
 
 export const authGuard: CanActivateFn = (route, state) => {
-  const router = inject(Router);
   const authService = inject(AuthenticateService);
-  const token = localStorage.getItem('token');
-
-  if (token && authService.isAuthenticated(token)) {
+  if (authService.isAuthenticated()) {
     return true; // Allow navigation
   }
 
   // Redirect to login if no valid token
+  const router = inject(Router);
   router.navigate(['/login']);
   return false;
 };

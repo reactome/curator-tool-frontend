@@ -8,10 +8,6 @@ import { AuthFormComponent } from "./components/auth-form/auth-form.component";
 import { ActionReducer, MetaReducer } from "@ngrx/store";
 import { localStorageSync } from "ngrx-store-localstorage";
 
-export function localStorageSyncReducer(reducer: ActionReducer<any>): ActionReducer<any> {
-  return localStorageSync({keys: ['token']})(reducer);
-}
-const metaReducers: Array<MetaReducer<any, any>> = [localStorageSyncReducer];
 @NgModule({
   declarations: [LoginComponent, AuthFormComponent],
   exports: [

@@ -1,12 +1,11 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { Store } from '@ngrx/store';
 import { AuthenticateService } from 'src/app/core/services/authenticate.service';
 import { User } from 'src/app/core/models/user';
 import { catchError, of } from 'rxjs';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
+import { UserInstancesService } from './user-instances.service';
 
 
 @Component({
@@ -19,7 +18,9 @@ export class LoginComponent{
   // To show information
   readonly dialog = inject(MatDialog);
 
-  constructor(private authService: AuthenticateService, private router: Router) {
+  constructor(private authService: AuthenticateService, 
+              private userInstancesService: UserInstancesService,
+              private router: Router) {
   }
 
   submit(data: User) {
@@ -32,6 +33,7 @@ export class LoginComponent{
       if (token) {
         localStorage.setItem('token', token);
         this.router.navigate(['/home']);
+        this.userInstancesService.loadUserInstances();
       }
     });
   }

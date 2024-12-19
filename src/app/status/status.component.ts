@@ -16,6 +16,7 @@ import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instanc
 import { bookmarkedInstances } from "../schema-view/instance-bookmark/state/bookmark.selectors";
 import { NgIf } from "@angular/common";
 import { MatSnackBar } from "@angular/material/snack-bar";
+import { UserInstancesService } from "../auth/login/user-instances.service";
 
 @Component({
   selector: 'app-status',
@@ -34,9 +35,8 @@ export class StatusComponent implements OnInit {
 
   constructor(private store: Store,
               private authenticateService: AuthenticateService,
-              private dataService: DataService,
+              private userInstancesService: UserInstancesService,
               private router: Router) {
-                this.dataService.errorMessage$.subscribe(err => {this.openSnackBar(err.message, "close")})
   }
 
   private _snackBar = inject(MatSnackBar);
@@ -66,31 +66,7 @@ export class StatusComponent implements OnInit {
   // Calling ngOnDestroy is not reliable: https://blog.devgenius.io/where-ngondestroy-fails-you-54a8c2eca0e0.
   @HostListener('window:beforeunload', ['$event'])
   persistInstances(): void {
-    console.debug('Calling persist instance before window closing...');
-    // Clean up localStorage before returning
-    // Keep token so that the user doesn't need to re-enter for refresh
-    const token = localStorage.getItem('token');
-    localStorage.clear();
-    if (token)
-      localStorage.setItem('token', token); //TODO: Need to revisit how to persist token for a certain time
-    const instances = [...this.newInstances, ...this.updatedInstances, ...this.deletedInstances, ...this.bookmarkedInstances];
-    if (instances.length == 0) {
-      this.dataService.deletePersistedInstances('test').subscribe(() => {
-        console.debug('Delete any persisted instance at the server.');
-      });
-      return; // Do nothing
-    }
-    // Need to persist these instances
-    // To be persist
-    const userInstances = {
-      newInstances: this.newInstances,
-      updatedInstances: this.updatedInstances,
-      deletedInstances: this.deletedInstances,
-      bookmarks: this.bookmarkedInstances
-    };
-    this.dataService.persitUserInstances(userInstances, 'test').subscribe(() => {
-      console.debug('userInstances have been persisted at the server.');
-    });
+    this.userInstancesService.persistInstances();
   }
 
   showUpdated(): void {
@@ -98,7 +74,7 @@ export class StatusComponent implements OnInit {
   }
 
   logout() {
+    this.userInstancesService.persistInstances(true);
     this.router.navigate(["/login"]);
-    this.authenticateService.logout();
   }
 }
