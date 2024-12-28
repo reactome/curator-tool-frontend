@@ -2,7 +2,7 @@ import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
-import { deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
+import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
 import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
 import {
@@ -599,6 +599,8 @@ export class DataService {
           userInstance.deletedInstances?.forEach(inst => classes.add(inst.schemaClassName));
           userInstance.newInstances?.forEach(inst => classes.add(inst.schemaClassName));
           userInstance.updatedInstances?.forEach(inst => classes.add(inst.schemaClassName));
+          if (classes.size == 0)
+            return of(userInstance);
           return this.fetchSchemaClasses([...classes]).pipe(map(data => {
             // Don't do anything for bookmark. We need a simple, shell instance only
             // userInstance.bookmarks?.map(inst => this.handleUserInstance(inst));
@@ -738,18 +740,23 @@ export class DataService {
    */
   commit(instance: Instance): Observable<Instance> {
     let instanceToBeCommitted = this.cloneInstanceForCommit(instance);
-    return this.http.post<Instance>(this.commitInstanceUrl, instanceToBeCommitted).pipe(
-      map((inst: Instance) => {
-        // Replace whatever or register new
-        // this.registerInstance(inst);
-        // The instance returned is a shell and should not be used for display
-        // Therefore, we will remove the original from the cache to force the view
-        // to use the updated, database version
-        this.removeInstanceInCache(inst.dbId);
-        return inst;
-      }),
-      catchError(error => {
-        return this.handleErrorMessage(error);
+    // Need to add default person id for this instance
+    return this.store.select(defaultPerson()).pipe(
+      take(1),
+      concatMap((person: Instance[]) => {
+        if (!person || person.length == 0) {
+          return this.handleErrorMessage(new Error('Cannot find the default person!'));
+        }
+        instanceToBeCommitted.defaultPersonId = person[0].dbId;
+        return this.http.post<Instance>(this.commitInstanceUrl, instanceToBeCommitted).pipe(
+          map((inst: Instance) => {
+            this.removeInstanceInCache(inst.dbId);
+            return inst;
+          }),
+          catchError(error => {
+            return this.handleErrorMessage(error);
+          })
+        );
       })
     );
   }

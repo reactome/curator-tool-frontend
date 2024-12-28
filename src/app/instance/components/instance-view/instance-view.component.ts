@@ -269,15 +269,17 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     // TODO: Need to present a confirmation dialog after it is done!
     this.dataService.commit(this.instance).subscribe(storedInst => {
       console.debug('Returned dbId: ' + storedInst.dbId);
-      if (this.instance!.dbId >= 0)
+      if (this.instance!.dbId >= 0) {
         this.store.dispatch(UpdateInstanceActions.remove_updated_instance(this.instance!));
+        this.instUtils.setRefreshViewDbId(storedInst.dbId);
+      }
       else {
         this.store.dispatch(NewInstanceActions.remove_new_instance(this.instance!));
         this.commitNewHere = true;
         this.store.dispatch(NewInstanceActions.commit_new_instance({oldDbId: this.instance!.dbId, newDbId: storedInst.dbId}));
         this.instUtils.removeInstInArray(this.instance!, this.viewHistory);
+        this.changeTable(storedInst);
       }
-      this.changeTable(storedInst);
     });
   }
 

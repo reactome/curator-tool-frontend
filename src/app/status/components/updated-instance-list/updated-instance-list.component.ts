@@ -121,6 +121,8 @@ export class UpdatedInstanceListComponent implements OnInit{
       this.dataService.commit(instance).subscribe(rtn => {
         console.log('Updated instances: ' + rtn.dbId);
         this.store.dispatch(UpdateInstanceActions.remove_updated_instance(instance));
+        // Expect to see updated modified slot
+        this.instanceUtilities.setRefreshViewDbId(instance.dbId);
       });
     }
     else if (this.newInstances.includes(instance)) {

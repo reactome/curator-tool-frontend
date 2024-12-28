@@ -43,3 +43,4 @@
 - compartment id: since the same compartment can be added multiple times, therefore, we need a central way to manage id
 - refactoring the menus for diagram editing: make them more streamlined.
 - TODO: Better to come with a new implmenetation of finding all paths between two nodes instea of hacking the code for using aStar in hyperEdge.ts (enableRoundSegments and enableRoundSegmentsForFlowLine)
+- data model: modified is single-valued in the current graph model
