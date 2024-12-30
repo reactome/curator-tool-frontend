@@ -9,6 +9,7 @@
 - Bug: the connecting positions are not updated for helper nodes when they are dragged during editing. (??)
 - Bug: inner shapes are not updated when resizing nodes.
 - Bug (fixed. Kept for future test): When a PE is used as both input and catalyst, enable/disable editing in pathway diagram cannot recovers the original diagram (input or catalyst may get lost, e.g. http://localhost:4200/event_view/instance/453279?select=8848436) - Bug: LLM geneates text for ALDOB having the original template [PMID: 123456] that is not replaced. See Peter's email on Nov 13, 2024.
+- TODO: When an instance is deleted from the instance list (schema view), make it it is removed from the list view automatically. Also make sure the total count is reducted in the schema tree.
 
 
 #### Deidre
@@ -19,7 +20,7 @@
 - TODO: The status bar is not at the same vertical position at the home page and the other two views (schema view and event view), resulting a little bit jumping when switching from home to these views.
 - Bug: In the event view, the mouse position is lowed when scroll up/down the instance view.
 - instance comparison: between two instances in the list view
-
+- TODO: When two instances are compared, change "only show edited attribute" to "attributes having different values".
 
 #### TODO:
 - Need to style the detailed table view for schema class.

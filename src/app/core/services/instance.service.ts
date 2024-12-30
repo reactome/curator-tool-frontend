@@ -498,4 +498,47 @@ export class InstanceUtilities {
         }
     }
 
+    cloneInstanceForCommit(source: Instance): Instance {
+        let instance: Instance = {
+            dbId: source.dbId,
+            displayName: source.displayName,
+            schemaClassName: source.schemaClassName,
+        }
+        if (source.modifiedAttributes && source.modifiedAttributes.length)
+            instance.modifiedAttributes = [...source.modifiedAttributes]
+        // Need to manually convert the instance to a string because the use of map for attributes
+        if (source.attributes && source.attributes.size > 0) {
+            // Need to recursively clone the attributes before assigning
+            // This should be a depth-first cloning
+            instance.attributes = new Map<string, any>();
+            source.attributes.forEach((value: any, key: string) => {
+                if (Array.isArray(value)) {
+                    let arrayValue = [];
+                    for (let element of value) {
+                        if (this.isInstance(element)) {
+                            arrayValue.push(this.cloneInstanceForCommit(element));
+                        }
+                        else
+                            arrayValue.push(element);
+                    }
+                    instance.attributes.set(key, arrayValue);
+                }
+                else if (this.isInstance(value)) {
+                    instance.attributes.set(key, this.cloneInstanceForCommit(value));
+                }
+                else
+                    instance.attributes.set(key, value);
+            });
+            let attributesJson = Object.fromEntries(instance.attributes);
+            instance.attributes = attributesJson;
+        }
+        return instance;
+    }
+
+    isInstance(value: any): boolean {
+        if (typeof value === 'object' && 'dbId' in value)
+            return true;
+        return false;
+    }
+
 }

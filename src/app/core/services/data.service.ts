@@ -656,11 +656,11 @@ export class DataService {
 
 
   private cloneUserInstances(userInstances: UserInstances): UserInstances {
-    const newInstances = userInstances.newInstances.map(i => this.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
-    const updatedInstances = userInstances.updatedInstances.map(i => this.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
+    const newInstances = userInstances.newInstances.map(i => this.utils.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
+    const updatedInstances = userInstances.updatedInstances.map(i => this.utils.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
     const deletedInstances = userInstances.deletedInstances.map(i => this.utils.makeShell(i));
     // There is no need to get the full instance for a bookmark
-    const bookmarks = userInstances.bookmarks.map(i => this.cloneInstanceForCommit(i));
+    const bookmarks = userInstances.bookmarks.map(i => this.utils.cloneInstanceForCommit(i));
     const clone: UserInstances =
     {
       newInstances: newInstances,
@@ -739,7 +739,8 @@ export class DataService {
    * @param instance
    */
   commit(instance: Instance): Observable<Instance> {
-    let instanceToBeCommitted = this.cloneInstanceForCommit(instance);
+    instance = this.fillAttributesForCommit(instance);
+    let instanceToBeCommitted = this.utils.cloneInstanceForCommit(instance);
     // Need to add default person id for this instance
     return this.store.select(defaultPerson()).pipe(
       take(1),
@@ -762,12 +763,51 @@ export class DataService {
   }
 
   /**
+   * Fill the attributes with new Instances so that they can be committed automatically.
+   * @param inst 
+   * @returns 
+   */
+  // TODO: Figure out how to fill and how to add created at the server-side.
+  // Need to call this function recursively for all new instances
+  private fillAttributesForCommit(inst: Instance): Instance {
+    if (inst.attributes) {
+      inst.attributes.forEach((value: any, key: string) => {
+        if (!value) return;
+        // Use to check if this is an object
+        if (this.utils.isInstance(value)) {
+          let valueInst: Instance = value as Instance;
+          if (valueInst.dbId < 0) {
+            valueInst = this.id2instance.get(valueInst.dbId)!;
+            inst.attributes.set(key, valueInst);
+            // Make a recursive call for all new instances
+            this.fillAttributesForCommit(valueInst);
+          }
+        }
+        else if (Array.isArray(value)) {
+          if (value.length > 0 && this.utils.isInstance(value[0])) {
+            for (let i = 0; i < value.length; i++) {
+              let valueInst: Instance = value[i] as Instance;
+              if (valueInst.dbId < 0) {
+                valueInst = this.id2instance.get(valueInst.dbId)!;
+                value[i] = valueInst;
+                // Make a recursive call for all new instances
+                this.fillAttributesForCommit(valueInst);
+              }
+            }
+          }
+        }
+      });
+    }
+    return inst;
+  }
+
+  /**
    * Commit the passed instance back to the database.
    * @param instance
    */
   fillReference(instance: Instance): Observable<Instance> {
     // Need to handle attributes. The map cannot be converted into JSON automatically!!!
-    const copy = this.cloneInstanceForCommit(instance);
+    const copy = this.utils.cloneInstanceForCommit(instance);
     return this.http.post<Instance>(this.fillReferenceUrl, copy).pipe(
       map((inst: Instance) => {
         console.debug('filled reference: \n', inst);
@@ -778,22 +818,6 @@ export class DataService {
         return this.handleErrorMessage(error);
       })
     )
-  }
-
-  private cloneInstanceForCommit(source: Instance): Instance {
-    let instance: Instance = {
-      dbId: source.dbId,
-      displayName: source.displayName,
-      schemaClassName: source.schemaClassName,
-    }
-    if (source.modifiedAttributes && source.modifiedAttributes.length)
-      instance.modifiedAttributes = [...source.modifiedAttributes]
-    // Need to manually convert the instance to a string because the use of map for attributes
-    if (source.attributes && source.attributes.size) {
-      let attributesJson = Object.fromEntries(source.attributes);
-      instance.attributes = attributesJson;
-    }
-    return instance;
   }
 
   // TODO: Create a separate service for instance/attribute logic
