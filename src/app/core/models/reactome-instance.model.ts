@@ -20,6 +20,8 @@ export interface Instance {
   modifiedAttributes?: string[] // Optional list flagging names of modified attributes
   qaIssues?: Map<string, string[][]>; // Optional map of QA check label to the corresponding tabular report
   defaultPersonId?: number; // Used to create InstanceEdit for the created and modified slot at the server-side.
+  // Don't use Map and use JSON object instead for easy converting to JSON
+  newInstOld2NewId?: Map<number, number>; // Used to map old dbId to new dbId for new instances referred after commit
 }
 
 export interface InstanceList {

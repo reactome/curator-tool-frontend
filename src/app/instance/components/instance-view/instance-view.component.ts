@@ -277,6 +277,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         this.store.dispatch(NewInstanceActions.remove_new_instance(this.instance!));
         this.commitNewHere = true;
         this.store.dispatch(NewInstanceActions.commit_new_instance({oldDbId: this.instance!.dbId, newDbId: storedInst.dbId}));
+        // Need to call the following to make sure the instance is updated in the view
+        // this.commitNewHere = true block the update
         this.instUtils.removeInstInArray(this.instance!, this.viewHistory);
         this.changeTable(storedInst);
       }

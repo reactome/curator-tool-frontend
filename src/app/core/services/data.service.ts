@@ -739,6 +739,14 @@ export class DataService {
    * @param instance
    */
   commit(instance: Instance): Observable<Instance> {
+    // In case instance is just a shell, we need to use the cached instance
+    // which should be the full instance
+    const cached = this.id2instance.get(instance.dbId);
+    if (!cached) {
+      return this.handleErrorMessage(new Error('Cannot find the instance to commit!'));
+    } 
+    // To avoid chaning the code here
+    instance = cached
     instance = this.fillAttributesForCommit(instance);
     let instanceToBeCommitted = this.utils.cloneInstanceForCommit(instance);
     // Need to add default person id for this instance
@@ -751,7 +759,9 @@ export class DataService {
         instanceToBeCommitted.defaultPersonId = person[0].dbId;
         return this.http.post<Instance>(this.commitInstanceUrl, instanceToBeCommitted).pipe(
           map((inst: Instance) => {
-            this.removeInstanceInCache(inst.dbId);
+            // Remove the original instance from the cache
+            // This should work for both new and updated instances
+            this.removeInstanceInCache(instance.dbId);
             return inst;
           }),
           catchError(error => {
@@ -767,8 +777,6 @@ export class DataService {
    * @param inst 
    * @returns 
    */
-  // TODO: Figure out how to fill and how to add created at the server-side.
-  // Need to call this function recursively for all new instances
   private fillAttributesForCommit(inst: Instance): Instance {
     if (inst.attributes) {
       inst.attributes.forEach((value: any, key: string) => {

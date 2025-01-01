@@ -5,8 +5,6 @@ import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttr
 import { Subject, take } from "rxjs";
 import { Store } from "@ngrx/store";
 import { deleteInstances } from "src/app/instance/state/instance.selectors";
-import { bookmarkedInstances } from "src/app/schema-view/instance-bookmark/state/bookmark.selectors";
-import { BookmarkActions } from "src/app/schema-view/instance-bookmark/state/bookmark.actions";
 
 /**
  * Group a set of utility methods here for easy access to all other classes.
