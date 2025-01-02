@@ -5,6 +5,7 @@ import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttr
 import { Subject, take } from "rxjs";
 import { Store } from "@ngrx/store";
 import { deleteInstances } from "src/app/instance/state/instance.selectors";
+import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 
 /**
  * Group a set of utility methods here for easy access to all other classes.
@@ -54,6 +55,11 @@ export class InstanceUtilities {
     // Track the changed display names
     private dbId2displayName = new Map<number, string | undefined>();
 
+    // Shell instances are managed here so that we can update their views (e.g. display name for updated instances
+    // or dbId and display name for new instances after comitted)
+    // Note: only shell instances referred are stored here
+    private shellInstances = new Map<number, Instance>();
+
     constructor(private store: Store) { }
 
     /**
@@ -73,6 +79,12 @@ export class InstanceUtilities {
     }
 
     setCommittedNewInstDbId(oldDbId: number, newDbId: number) {
+        let shell = this.shellInstances.get(oldDbId);
+        if (shell) {
+            shell.dbId = newDbId;
+            this.shellInstances.delete(oldDbId);
+            this.shellInstances.set(newDbId, shell);
+        }
         this.committedNewInstDbId.next([oldDbId, newDbId]);
     }
 
@@ -263,8 +275,24 @@ export class InstanceUtilities {
         let attributes: any = instance.attributes;
         Object.keys(attributes).map((key: string) => {
             const value = attributes[key];
-            attributeMap.set(key, value);
-        })
+            // make sure cached shell instances are used here
+            if (Array.isArray(value)) {
+                let arrayValue = [];
+                for (let element of value) {
+                    if (this.isInstance(element)) {
+                        arrayValue.push(this.getShellInstance(element));
+                    }
+                    else
+                        arrayValue.push(element);
+                }
+                attributeMap.set(key, arrayValue);
+            }
+            else if (this.isInstance(value)) {
+                attributeMap.set(key, this.getShellInstance(value));
+            }
+            else
+                attributeMap.set(key, value);
+        });
         instance.attributes = attributeMap;
     }
 
@@ -290,6 +318,20 @@ export class InstanceUtilities {
             schemaClassName: inst.schemaClassName,
             displayName: inst.displayName
         };
+    }
+
+    /**
+     * Get the cached shell instance for the passed instance. If not cached, create one and cache it.
+     * @param inst 
+     * @returns 
+     */
+    getShellInstance(inst: Instance) {
+        let shell = this.shellInstances.get(inst.dbId);
+        if (!shell) {
+            shell = this.makeShell(inst);
+            this.shellInstances.set(inst.dbId, shell);
+        }
+        return shell;
     }
 
     removeInstInArray(target: Instance, array: Instance[]) {
@@ -537,6 +579,38 @@ export class InstanceUtilities {
         if (typeof value === 'object' && 'dbId' in value)
             return true;
         return false;
+    }
+
+    /**
+     * Handle post processing after committing an instance to the database.
+     * @param instance 
+     */
+    processCommit(committedInst: Instance, rtnInst: Instance, dataService: DataService) {
+        if (committedInst.dbId >= 0) { // This is an updated instance
+            this.store.dispatch(UpdateInstanceActions.remove_updated_instance(committedInst));
+            this.setRefreshViewDbId(committedInst.dbId);
+        }
+        else if (committedInst.dbId < 0) { // This is a new instance
+            this.store.dispatch(NewInstanceActions.remove_new_instance(committedInst));
+            this.store.dispatch(NewInstanceActions.commit_new_instance({ oldDbId: committedInst.dbId,
+                                                                         newDbId: rtnInst.dbId }));
+            dataService.flagSchemaTreeForReload()
+        }
+        // Make sure new instances are updated if any
+        if (rtnInst.newInstOld2NewId) {
+            // Have to use this temp variable to avoid type error
+            let old2newId: any = rtnInst.newInstOld2NewId!;
+            Object.keys(old2newId).map((oldId) => {
+                const oldDbId: number = parseInt(oldId, 10);
+                const newDbId: number = old2newId[oldId];
+                const shell = this.shellInstances.get(oldDbId);
+                if (shell) {
+                    this.store.dispatch(NewInstanceActions.remove_new_instance(shell));
+                    this.store.dispatch(NewInstanceActions.commit_new_instance({ oldDbId: oldDbId,
+                                                                                 newDbId: newDbId }));
+                }
+            });
+        }
     }
 
 }

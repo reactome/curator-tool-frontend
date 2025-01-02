@@ -181,7 +181,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       if (tmp.dbId === instance.dbId)
         return; // Nothing to do
     }
-    this.viewHistory.push(instance);
+    // Use the managed, shell instance so that there is no need to reload when it is committed
+    // via an reference graph
+    this.viewHistory.push(this.instUtils.getShellInstance(instance));
   }
 
   updateTitle(instance: Instance) {
@@ -269,16 +271,11 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     // TODO: Need to present a confirmation dialog after it is done!
     this.dataService.commit(this.instance).subscribe(storedInst => {
       console.debug('Returned dbId: ' + storedInst.dbId);
-      if (this.instance!.dbId >= 0) {
-        this.store.dispatch(UpdateInstanceActions.remove_updated_instance(this.instance!));
-        this.instUtils.setRefreshViewDbId(storedInst.dbId);
-      }
-      else {
-        this.store.dispatch(NewInstanceActions.remove_new_instance(this.instance!));
+      if (this.instance!.dbId < 0) {
         this.commitNewHere = true;
-        this.store.dispatch(NewInstanceActions.commit_new_instance({oldDbId: this.instance!.dbId, newDbId: storedInst.dbId}));
-        // Need to call the following to make sure the instance is updated in the view
-        // this.commitNewHere = true block the update
+      }
+      this.instUtils.processCommit(this.instance!, storedInst, this.dataService);
+      if (this.instance!.dbId < 0) {
         this.instUtils.removeInstInArray(this.instance!, this.viewHistory);
         this.changeTable(storedInst);
       }
