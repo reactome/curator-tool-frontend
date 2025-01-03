@@ -36,7 +36,7 @@ export class UserInstancesService {
         this.dataService.startLoadInstances();
         this.dataService.loadUserInstances(user).pipe(
             // Use this so that checkLocalStorage will be called always even though userInstances is empty
-            defaultIfEmpty({ newInstances: [], updatedInstances: [], deletedInstances: [], bookmarks: [] }), // Emit default if nothing is returned
+            defaultIfEmpty({ newInstances: [], updatedInstances: [], deletedInstances: [], bookmarks: [], defaultPerson: undefined }), // Emit default if nothing is returned
             finalize(() => {
                 // These statements will always run regardless of what happens inside
                 // The following two statements will force the dataService to finish the loading first
@@ -132,11 +132,17 @@ export class UserInstancesService {
                 localStorage.clear();
                 if (token)
                     localStorage.setItem('token', token); //TODO: Need to revisit how to persist token for a certain time
-                const instances = [...newInstances, ...updatedInstances, ...deletedInstances, ...bookmarkedInstances];
+                const instances = [...newInstances, 
+                                   ...updatedInstances,  
+                                   ...deletedInstances, 
+                                   ...bookmarkedInstances,
+                                   ...defaultPersonInstances];
                 if (instances.length == 0) {
                     this.dataService.deletePersistedInstances(user).subscribe(() => {
                         console.debug('Delete any persisted instance at the server.');
                     });
+                    if (removeToken)
+                        localStorage.removeItem('token');
                     return; // Do nothing
                 }
                 // Need to persist these instances

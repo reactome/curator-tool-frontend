@@ -12,15 +12,17 @@
     color: var(--primary);
   }
   
-  .mat-icon-button {
-    flex-direction: row-reverse;
-    width: 36px; // This is important to show the icon
-    height: 18px; // 2px is added
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: nowrap;
-    background: transparent; // these two to make sure no background and border for tree nodes having children.
-    border: none;
-    cursor: pointer;
-  }
+.mat-icon-button {
+  // flex-direction: row-reverse;
+  position: absolute;
+  right: 8px;
+  width: 36px; // This is important to show the icon
+  height: 18px; // 2px is added
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // flex-wrap: nowrap;
+  background: transparent; // these two to make sure no background and border for tree nodes having children.
+  border: none;
+  cursor: pointer;
+}

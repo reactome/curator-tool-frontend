@@ -104,14 +104,19 @@ export class InstanceEffects {
         ofType(NewInstanceActions.register_new_instance, 
                NewInstanceActions.remove_new_instance),
         tap((action) => {
-          // The browser tab (window) that setItem should not receive this event.
-          this.dataService.fetchInstance(action.dbId).subscribe(fullInst => {
-            this.setLocalStorageItem(action.type, this.instUtils.stringifyInstance(fullInst));
-          });
-          this.storeNewInstances();
-          // Remove a new instance will remove it from the cached value
-          if (action.type === NewInstanceActions.remove_new_instance.type)
+          if (action.type === NewInstanceActions.register_new_instance.type)
+            // The browser tab (window) that setItem should not receive this event.
+            this.dataService.fetchInstance(action.dbId).subscribe(fullInst => {
+              this.setLocalStorageItem(action.type, this.instUtils.stringifyInstance(fullInst));
+            });
+          else if (action.type === NewInstanceActions.remove_new_instance.type) {
+            // There is no need to query. Actually nothing to query.
+            this.setLocalStorageItem(action.type, this.instUtils.stringifyInstance(action.valueOf() as Instance));
+            // Remove a new instance will remove it from the cached value
             this.dataService.removeInstanceInCache(action.dbId);
+          }
+          // TODO: Check if this is needed
+          this.storeNewInstances();
         })
       ),
     { dispatch: false }
@@ -232,6 +237,7 @@ export class InstanceEffects {
       // We need the whole instance
       const dbIds = instances.map(i => i.dbId);
       this.dataService.fetchInstances(dbIds).pipe(defaultIfEmpty([])).subscribe(fullInsts => {
+        // Need this list so that we can persist it.
         this.setLocalStorageItem(NewInstanceActions.get_new_instances.type, this.instUtils.stringifyInstances(fullInsts));
       });
     });

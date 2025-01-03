@@ -264,7 +264,8 @@ export class InstanceTableComponent implements PostEditListener {
       // Add the new value
       if (result === undefined) return; // Do nothing
       // Check if there is any value
-      this.addValueToAttribute(attributeValue, result, replace);
+      // Use cached shell instance
+      this.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), replace);
     });
   }
 
@@ -277,6 +278,7 @@ export class InstanceTableComponent implements PostEditListener {
       if (result === undefined || !result) return; // Do nothing if this is undefined or resolve to false (e.g. nothing there)
       // Check if there is any value
       //this.addValueToAttribute(attributeValue, result);
+      result = result.map(inst => this.instUtil.getShellInstance(inst));
       let value = this._instance?.attributes?.get(
         attributeValue.attribute.name
       );
