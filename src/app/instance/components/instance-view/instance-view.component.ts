@@ -159,6 +159,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   private _loadIntance(instance: Instance, resetHistory: boolean, needComparsion: boolean, dbId: number) {
     this.dbInstance = undefined;
     this.instance = instance;
+    this.changeTable(instance);
     if (resetHistory)
       this.viewHistory.length = 0;
     this.addToViewHistory(instance);

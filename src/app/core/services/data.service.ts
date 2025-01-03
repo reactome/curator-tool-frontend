@@ -60,7 +60,6 @@ export class DataService {
   // Use this subject to force waiting for components to fetch instance
   // since we need to load changed instances from cached storage first
   private loadInstanceSubject: Subject<void> | undefined = undefined;
-  newInstances: unknown;
 
   // Notify when there is an error due to failed api
   private errorMessage = new Subject<Error>();

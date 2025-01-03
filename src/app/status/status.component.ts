@@ -17,6 +17,7 @@ import { MatSnackBar } from "@angular/material/snack-bar";
 import { UserInstancesService } from "../auth/login/user-instances.service";
 import { ListInstancesDialogService } from "../schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service";
 import { DefaultPersonActions } from "../instance/state/instance.actions";
+import { DataService } from "../core/services/data.service";
 
 @Component({
   selector: 'app-status',
@@ -37,7 +38,8 @@ export class StatusComponent implements OnInit {
   constructor(private store: Store,
               private userInstancesService: UserInstancesService,
               private instanceSelectionService: ListInstancesDialogService,
-              private router: Router) {
+              private router: Router,
+            private dataService: DataService) {
   }
 
   private _snackBar = inject(MatSnackBar);
@@ -66,6 +68,11 @@ export class StatusComponent implements OnInit {
     this.store.select(defaultPerson()).subscribe((instances) => {
       // There should be only one default person
       instances && instances.length > 0 ? this.defaultPerson = instances[0] : this.defaultPerson = undefined
+    });
+
+    this.dataService.errorMessage$.subscribe((message: any) => {
+      if (message)
+        this.openSnackBar(message.error.message, 'Close');
     });
   }
 
