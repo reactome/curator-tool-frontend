@@ -12,6 +12,7 @@ import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.ser
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Subscription } from 'rxjs';
+import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service';
 
 @Component({
   selector: 'app-instance-view',
@@ -30,6 +31,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   showReferenceColumn: boolean = false;
   dbInstance: Instance | undefined;
   title: string = '';
+  showSecondaryButtons: boolean = false;
   // Control if we need to track the loading history
   @Input() needHistory: boolean = true;
   // Control if the route should be used for the links in the table, bookmarks, etc
@@ -49,7 +51,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     private qaReportDialogService: QAReportDialogService,
     private referrersDialogService: ReferrersDialogService,
     private instUtils: InstanceUtilities,
-    private deletionDialogService: DeletionDialogService) {
+    private deletionDialogService: DeletionDialogService,
+    private listInstancesDialogService: ListInstancesDialogService) {
   }
 
   ngOnInit() {
@@ -298,5 +301,23 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   showReferrers() {
     this.referrersDialogService.openDialog(this.instance!);
+  }
+
+  cloneInstance() {
+    this.dataService.cloneInstance(this.instance!).subscribe(instance => {
+      this.dataService.registerInstance(instance);
+      this.store.dispatch(NewInstanceActions.register_new_instance(this.instUtils.makeShell(instance)));
+      let dbId = instance.dbId.toString();
+      this.router.navigate(["/schema_view/instance/" + dbId.toString()]);
+    });
+  }
+
+  compareInstances(){
+    const matDialogRef =
+    this.listInstancesDialogService.openDialog({schemaClassName: this.instance!.schemaClassName, 
+      title: "Compare " + this.instance!.displayName + " to"});
+    matDialogRef.afterClosed().subscribe((result) => {
+      this.router.navigate(["/schema_view/instance/" + this.instance!.dbId + "/comparison/" + result?.dbId]);
+    });
   }
 }
