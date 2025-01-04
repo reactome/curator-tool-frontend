@@ -11,6 +11,7 @@
 - Bug (fixed. Kept for future test): When a PE is used as both input and catalyst, enable/disable editing in pathway diagram cannot recovers the original diagram (input or catalyst may get lost, e.g. http://localhost:4200/event_view/instance/453279?select=8848436) - Bug: LLM geneates text for ALDOB having the original template [PMID: 123456] that is not replaced. See Peter's email on Nov 13, 2024.
 - TODO: When an instance is deleted from the instance list (schema view), make it it is removed from the list view automatically. Also make sure the total count is reducted in the schema tree.
 - TODO: Add a check for circular reference (e.g. precedingEvent): this should be avoided in any case!
+- TODO: Check all code to make sure subscriptions are removed when a component is destroyed.
 
 #### Deidre
 - Bug: After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should be stay at the changes tab.

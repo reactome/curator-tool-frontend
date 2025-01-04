@@ -68,6 +68,9 @@ export class InstanceUtilities {
      */
     registerDisplayNameChange(instance: Instance) {
         this.dbId2displayName.set(instance.dbId, instance.displayName);
+        const shell = this.shellInstances.get(instance.dbId);
+        if (shell)
+            shell.displayName = instance.displayName;
         this.setRefreshViewDbId(instance.dbId);
     }
 

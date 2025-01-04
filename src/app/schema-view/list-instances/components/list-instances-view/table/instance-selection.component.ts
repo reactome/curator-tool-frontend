@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { PageEvent } from "@angular/material/paginator";
 import { SearchCriterium, Instance, InstanceList } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
@@ -11,13 +11,15 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ActionButton } from './instance-list-table/instance-list-table.component';
 import { ListInstancesDialogService } from '../../list-instances-dialog/list-instances-dialog.service';
+import { deleteInstances } from 'src/app/instance/state/instance.selectors';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-instance-selection',
   templateUrl: './instance-selection.component.html',
   styleUrls: ['./instance-selection.component.scss'],
 })
-export class InstanceSelectionComponent {
+export class InstanceSelectionComponent implements OnInit, OnDestroy {
 
   skip: number = 0;
   // This is for doing simple text or dbId based search
@@ -65,6 +67,9 @@ export class InstanceSelectionComponent {
     }); // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
   }
 
+  // So that we can remove subscription
+  private subscription: Subscription = new Subscription
+
   constructor(private dataService: DataService,
     private router: Router,
     private referrersDialogService: ReferrersDialogService,
@@ -72,6 +77,20 @@ export class InstanceSelectionComponent {
     private store: Store,
     private instUtils: InstanceUtilities,
     private listInstancesDialogService: ListInstancesDialogService) {
+  }
+
+  ngOnDestroy(): void {
+    this.subscription.unsubscribe();
+  }
+
+  ngOnInit(): void {
+    const sub = this.store.select(deleteInstances()).subscribe((instances) => {
+      if (this.data && this.data.length > 0 && instances && instances.length > 0) {
+        const deletedDBIds = instances.map(inst => inst.dbId);
+        this.data = this.data.filter(inst => !deletedDBIds.includes(inst.dbId));
+      }
+    });
+    this.subscription.add(sub);
   }
 
   /**
