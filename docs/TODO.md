@@ -22,6 +22,8 @@
 - Bug: In the event view, the mouse position is lowed when scroll up/down the instance view.
 - instance comparison: between two instances in the list view
 - TODO: When two instances are compared, change "only show edited attribute" to "attributes having different values".
+- Bug: Select an instance dialog: bottom panel doesn't have a title, overlapped with the up panel, cannot scroll.
+
 
 #### TODO:
 - Need to style the detailed table view for schema class.
