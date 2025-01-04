@@ -39,7 +39,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   private commitNewHere: boolean = false;
 
   // Track subscriptions added so that we can remove them
-  private subscriptions: Subscription[] = [];
+  private subscriptions: Subscription = new Subscription()
 
   constructor(private router: Router,
     private route: ActivatedRoute,
@@ -81,13 +81,13 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         }
       }
     });
-    this.subscriptions.push(subscription);
+    this.subscriptions.add(subscription);
     subscription = this.instUtils.refreshViewDbId$.subscribe(dbId => {
       if (this.instance && this.instance.dbId === dbId) {
         this.loadInstance(dbId, false, false, true);
       }
     });
-    this.subscriptions.push(subscription);
+    this.subscriptions.add(subscription);
     subscription = this.instUtils.resetInst$.subscribe(data => {
       if (this.instance && this.instance.dbId === data.dbId) {
         this.loadInstance(data.dbId, false, false, true);
@@ -95,7 +95,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       else if (this.instUtils.isReferrer(data.dbId, this.instance!))
         this.loadInstance(this.instance!.dbId, false, false, true);
     });
-    this.subscriptions.push(subscription);
+    this.subscriptions.add(subscription);
     subscription = this.instUtils.deletedDbId$.subscribe(dbId => {
       if (this.instance && this.instance.dbId === dbId) {
         this.instUtils.removeInstInArray(this.instance, this.viewHistory);
@@ -109,7 +109,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         }
       }
     });
-    this.subscriptions.push(subscription);
+    this.subscriptions.add(subscription);
     subscription = this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
       if (!this.instance || this.instance.dbId !== oldDbId)
         return;
@@ -120,12 +120,11 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.instUtils.removeInstInArray(this.instance, this.viewHistory);
       this.dataService.fetchInstance(newDbId).subscribe(inst => this.changeTable(inst));
     });
-    this.subscriptions.push(subscription);
+    this.subscriptions.add(subscription);
   }
 
   ngOnDestroy(): void {
-    for (let subscription of this.subscriptions) 
-      subscription.unsubscribe();
+    this.subscriptions.unsubscribe();
   }
 
   loadInstance(dbId: number,
