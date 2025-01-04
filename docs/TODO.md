@@ -10,7 +10,7 @@
 - Bug: inner shapes are not updated when resizing nodes.
 - Bug (fixed. Kept for future test): When a PE is used as both input and catalyst, enable/disable editing in pathway diagram cannot recovers the original diagram (input or catalyst may get lost, e.g. http://localhost:4200/event_view/instance/453279?select=8848436) - Bug: LLM geneates text for ALDOB having the original template [PMID: 123456] that is not replaced. See Peter's email on Nov 13, 2024.
 - TODO: When an instance is deleted from the instance list (schema view), make it it is removed from the list view automatically. Also make sure the total count is reducted in the schema tree.
-
+- TODO: Add a check for circular reference (e.g. precedingEvent): this should be avoided in any case!
 
 #### Deidre
 - Bug: After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should be stay at the changes tab.
@@ -33,13 +33,11 @@
 - Make sure the disease pathway diagram is correct. Right not it is not!
 - Need some big refactoring for classes in the pathway diagram module: Right now they are all cross-linked together, esp. diagram service utils.
 - For Figure instance: add a customized view to display the figure
-- commit a new or update instance needs to commit all other referred instances too
-- add instance edit at the server-side to the created (for new instance) or the modified slot (for updated instance)
 - for no-instance edit, press return should commit the change. Control-return should add a new line. (now control+return commits the change)
 - pathway diagram: deletion of a reaction in the diagram should delete that reaction. This applies to other object (e.g. a PE that is linked to a reaction).
 - stoichioemtry update has not done yet for diagram update after instance editing.
 - Add a check for event tree to see if there is any circular reference
-- Imagine this scenario: A db instance is loaded. However, one of its attribute is deleted. Therefore, the view for the curator should see the instance without this deleted instance at browser. Should this instance be flagged as updated instance? Probably not since committing the deletion will handle this automatically. Also marking as updating will bring about some side effects (e.g. push the the local storage). But after the loading, the curator start to editing it. Now this instance is updated. Should the modified attributes include the attribute impacted by deletion, assuming the manul edited attribute is not that attribute. Probably we just need to introduce a new field in Instance, deletionImpactedAttribute? For the time being, just add the impacted attribute into the modified attribute list, but not mark it as updated. Need to revisit this later on.
+- Imagine this scenario: A db instance is loaded. However, one of its attribute is deleted. Therefore, the view for the curator should see the instance without this deleted instance at browser. Should this instance be flagged as updated instance? Probably not since committing the deletion will handle this automatically. Also marking as updating will bring about some side effects (e.g. push to the local storage). But after the loading, the curator start to editing it. Now this instance is updated. Should the modified attributes include the attribute impacted by deletion, assuming the manul edited attribute is not that attribute. Probably we just need to introduce a new field in Instance, deletionImpactedAttribute? For the time being, just add the impacted attribute into the modified attribute list, but not mark it as updated. Need to revisit this later on.
 - resize: need to make sure all associate attachments (e.g. modification, resizing widgets can be moved around).
 - compartment id: since the same compartment can be added multiple times, therefore, we need a central way to manage id
 - refactoring the menus for diagram editing: make them more streamlined.
