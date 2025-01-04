@@ -28,6 +28,7 @@ export interface SchemaClass {
   attributes?: SchemaAttribute[];
   abstract?: boolean; // Default should be false. Therefore this property is optional.
   count?: number; // The total count of instances in this class, including all descendants
+  descendants?: Set<string>; // Used to check if a class is a descendant of another class
   // '@JavaClass'?: string; // Map back to Java.
 }
 
@@ -84,6 +85,6 @@ export const ACTION_BUTTONS = {
   COMMIT: {name:'upload', tooltip: 'commit'},
   BOOKMARK: {name: 'bookmark', tooltip: 'add bookmark'},
   COMPARE2DB: {name: 'compare', tooltip: 'compare instance'},
-  CLOSE : {name: 'close', tooltip: 'close'},
+  CLOSE : {name: 'close', tooltip: 'remove instance'},
   COMPARE_INSTANCES: {name: 'compare_arrows', tooltip: 'compare two instances'}
 }

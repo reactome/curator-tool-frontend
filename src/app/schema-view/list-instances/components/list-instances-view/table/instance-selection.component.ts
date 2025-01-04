@@ -11,8 +11,8 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ActionButton } from './instance-list-table/instance-list-table.component';
 import { ListInstancesDialogService } from '../../list-instances-dialog/list-instances-dialog.service';
-import { deleteInstances } from 'src/app/instance/state/instance.selectors';
-import { Subscription } from 'rxjs';
+import { deleteInstances, newInstances } from 'src/app/instance/state/instance.selectors';
+import { combineLatest, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-instance-selection',
@@ -42,8 +42,6 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   secondaryActionButtons: Array<ActionButton> = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES]
   // Used to popup attributes for advanced search (i.e. SearchFilterComponent)
   schemaClassAttributes: string[] = [];
-  // New instances to be listed at the top of the first page
-  newInstances: Instance[] = [];
   // Flag to indicate if the advanced search component should be displayed
   needAdvancedSearch: boolean = false;
 
@@ -84,12 +82,31 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    const sub = this.store.select(deleteInstances()).subscribe((instances) => {
-      if (this.data && this.data.length > 0 && instances && instances.length > 0) {
-        const deletedDBIds = instances.map(inst => inst.dbId);
-        this.data = this.data.filter(inst => !deletedDBIds.includes(inst.dbId));
-      }
+    const sub = combineLatest([
+      this.store.select(deleteInstances()),
+      this.store.select(newInstances())
+    ]).subscribe(([deletedInstances, newInstances]) => {
+      if (!this.data)
+        return
+      if (!deletedInstances)
+        deletedInstances = [];
+      if (!newInstances)
+        newInstances = [];
+      const deletedDbIds = deletedInstances.map(inst => inst.dbId);
+      const newDbIds = newInstances.map(inst => inst.dbId);
+      const preCount = this.data.length;
+      this.data = this.data.filter(inst => {
+        if (inst.dbId > 0 && !deletedDbIds.includes(inst.dbId))
+          return true;
+        if (inst.dbId < 0 && newDbIds.includes(inst.dbId))
+          return true;
+        return false;
+      })
+      // Update the total instance count
+      // Note: for the time being, the page size is fixed
+      this.instanceCount = this.instanceCount - (preCount - this.data.length);
     });
+
     this.subscription.add(sub);
   }
 
