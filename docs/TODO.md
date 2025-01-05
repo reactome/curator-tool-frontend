@@ -13,7 +13,6 @@
 #### Deidre
 - Bug: After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should be stay at the changes tab.
 - TODO: In the instance list, make sure scrolling limits to the instance list, not the top panels. Right now, paging controls are fine, staying at the bottom without scrolling.
-- BUG: deletion should remove the instance in the instance list even though it is not committed for existing instances
 - TODO: Use the new set of Reactome icons at Figma, designed by the EBI team.
 - TODO: The status bar is not at the same vertical position at the home page and the other two views (schema view and event view), resulting a little bit jumping when switching from home to these views.
 - Bug: In the event view, the mouse position is lowed when scroll up/down the instance view.
@@ -45,5 +44,6 @@
 - data model: modified is single-valued in the current graph model
 - TODO: Add a check for circular reference (e.g. precedingEvent): this should be avoided in any case!
 - TODO: Check all code to make sure subscriptions are removed when a component is destroyed.
-- TODO: Add an IE to referrers for the deleted instance at the server-side
+- TODO: Add an IE to referrers for the deleted instance at the server-side, return this IE so that we can manually add it to the local loaded referrers, including updated and deleted instances.
+- TODO: deletion should clear up referrers attributes locally
 - TODO: When a data service's query method is called via subscribe, the generated subscription cannot be subsribed autmoatically. Make sure use take(1) or manually unscribte it: https://devzilla.io/manage-rxjs-subscriptions-in-angular

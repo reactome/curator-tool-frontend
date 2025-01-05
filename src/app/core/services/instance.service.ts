@@ -28,7 +28,7 @@ export class InstanceUtilities {
     private refreshBookmarks = new Subject<number>();
     refreshBookmarks$ = this.refreshBookmarks.asObservable();
 
-    // Call this when an database is marked as deletion but not yet committed to
+    // Call this when an instance is marked as deletion but not yet committed to
     // the database
     private markDeletionDbId = new Subject<number>();
     markDeletionDbId$ = this.markDeletionDbId.asObservable();

@@ -12,6 +12,7 @@ import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.ser
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Subscription } from 'rxjs';
+import { deleteInstances } from '../../state/instance.selectors';
 
 @Component({
   selector: 'app-instance-view',
@@ -40,6 +41,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   // Track subscriptions added so that we can remove them
   private subscriptions: Subscription = new Subscription()
+
+  // Track deleted instances
+  private deletedInstances: Instance[] = [];
 
   constructor(private router: Router,
     private route: ActivatedRoute,
@@ -121,6 +125,19 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.dataService.fetchInstance(newDbId).subscribe(inst => this.changeTable(inst));
     });
     this.subscriptions.add(subscription);
+    // To mark an instance is deleted
+    subscription = this.store.select(deleteInstances()).subscribe(deletedInstances => {
+      this.deletedInstances = deletedInstances;  
+    });
+    this.subscriptions.add(subscription);
+  }
+
+  isDeleted() {
+    if (this.instance) {
+      const deletedIds = this.deletedInstances.map(inst => inst.dbId);
+      return deletedIds.includes(this.instance.dbId);
+    }
+    return false;
   }
 
   ngOnDestroy(): void {
