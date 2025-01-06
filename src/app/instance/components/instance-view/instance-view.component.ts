@@ -96,11 +96,19 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     });
     this.subscriptions.add(subscription);
     subscription = this.instUtils.resetInst$.subscribe(data => {
+      // These two cases work for reset an updated instances
       if (this.instance && this.instance.dbId === data.dbId) {
         this.loadInstance(data.dbId, false, false, true);
       }
       else if (this.instUtils.isReferrer(data.dbId, this.instance!))
         this.loadInstance(this.instance!.dbId, false, false, true);
+    });
+    this.subscriptions.add(subscription);
+    // In case the deleted instance is referred by the current instance
+    subscription = this.instUtils.markDeletionDbId$.subscribe(dbId => {
+      if (this.instance && this.instUtils.isReferrer(dbId, this.instance)) {
+        this.loadInstance(this.instance.dbId, false, false, true);
+      }
     });
     this.subscriptions.add(subscription);
     subscription = this.instUtils.deletedDbId$.subscribe(dbId => {
@@ -130,7 +138,15 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.subscriptions.add(subscription);
     // To mark an instance is deleted
     subscription = this.store.select(deleteInstances()).subscribe(deletedInstances => {
+      const preSize = this.deletedInstances.length;
       this.deletedInstances = deletedInstances;  
+      if ((this.deletedInstances.length - preSize) == -1) {
+        // reset a deleted instance from db. since we don't know if the instance has referred 
+        // this the reset deletion, therefore, we just reload it.
+        if (this.instance) {
+          this.loadInstance(this.instance.dbId, false, false, true);
+        }
+      }
     });
     this.subscriptions.add(subscription);
   }
@@ -162,6 +178,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       // Wrap them together to avoid NG0100 error
       this.showProgressSpinner = true;
+      if (forceReload) // TODO: Make sure this does not have any side effect.
+        this.dataService.removeInstanceInCache(dbId)
       this.dataService.fetchInstance(dbId).subscribe((instance) => {
         if (instance.schemaClass)
           // Turn off the comparison first
