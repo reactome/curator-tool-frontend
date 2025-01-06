@@ -85,12 +85,7 @@ export const ACTION_BUTTONS = {
   COMMIT: {name:'upload', tooltip: 'commit'},
   BOOKMARK: {name: 'bookmark', tooltip: 'add bookmark'},
   COMPARE2DB: {name: 'compare', tooltip: 'compare instance'},
-<<<<<<< HEAD
   CLOSE : {name: 'close', tooltip: 'close'},
   COMPARE_INSTANCES: {name: 'compare_arrows', tooltip: 'compare two instances'},
   SHOW_TREE: {name: 'account_tree', tooltip: 'view in tree'}
-=======
-  CLOSE : {name: 'close', tooltip: 'remove instance'},
-  COMPARE_INSTANCES: {name: 'compare_arrows', tooltip: 'compare two instances'}
->>>>>>> e7fe8ca8d0b355ef4cbdb218f5825c16ce502b0b
 }
