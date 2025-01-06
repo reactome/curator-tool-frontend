@@ -33,6 +33,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   dbInstance: Instance | undefined;
   title: string = '';
   showSecondaryButtons: boolean = false;
+  compareInstanceDialogResult$: number = 0;
+  
   // Control if we need to track the loading history
   @Input() needHistory: boolean = true;
   // Control if the route should be used for the links in the table, bookmarks, etc
@@ -133,6 +135,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.deletedInstances = deletedInstances;  
     });
     this.subscriptions.add(subscription);
+    if(this.compareInstanceDialogResult$ !== 0){
+      this.router.navigate(["/schema_view/instance/" + this.instance!.dbId + "/comparison/" + this.compareInstanceDialogResult$]);
+    }
   }
 
   isDeleted() {
@@ -335,7 +340,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.listInstancesDialogService.openDialog({schemaClassName: this.instance!.schemaClassName, 
       title: "Compare " + this.instance!.displayName + " to"});
     matDialogRef.afterClosed().subscribe((result) => {
-      this.router.navigate(["/schema_view/instance/" + this.instance!.dbId + "/comparison/" + result?.dbId]);
+      if(result)
+        this.router.navigate(["/schema_view/instance/" + this.instance!.dbId.toString() + "/comparison/" + result.dbId.toString()]);
+        //this.compareInstanceDialogResult$ = result.dbId;
     });
   }
 }
