@@ -84,8 +84,10 @@ export class InstanceEffects {
           // Don't register any change for the deleted instance.
           // Any update should be handled already by last_updated_instance or add_updated_instance
           // this.dataService.registerInstance(inst);
-          this.store.dispatch(DeleteInstanceActions.ls_register_deleted_instance(this.instUtils.makeShell(inst)));
-          this.store.dispatch(BookmarkActions.remove_bookmark(this.instUtils.makeShell(inst)));
+          const shell = this.instUtils.makeShell(inst);
+          this.store.dispatch(DeleteInstanceActions.ls_register_deleted_instance(shell));
+          this.store.dispatch(BookmarkActions.remove_bookmark(shell));
+          this.instUtils.setMarkDeletionDbId(inst.dbId);
           break;
         case DeleteInstanceActions.remove_deleted_instance.type:
           this.store.dispatch(DeleteInstanceActions.ls_remove_deleted_instance(inst));

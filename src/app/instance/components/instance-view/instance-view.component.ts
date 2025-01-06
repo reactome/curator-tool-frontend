@@ -5,13 +5,13 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 import { DragDropService } from "../../../schema-view/instance-bookmark/drag-drop.service";
-import { UpdateInstanceActions, NewInstanceActions } from '../../state/instance.actions';
+import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from '../../state/instance.actions';
 import { DeletionDialogService } from "../deletion-dialog/deletion-dialog.service";
 import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
 import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
-import { Subscription } from 'rxjs';
+import { Subscription, take } from 'rxjs';
 import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service';
 import { deleteInstances } from '../../state/instance.selectors';
 
@@ -98,11 +98,19 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     });
     this.subscriptions.add(subscription);
     subscription = this.instUtils.resetInst$.subscribe(data => {
+      // These two cases work for reset an updated instances
       if (this.instance && this.instance.dbId === data.dbId) {
         this.loadInstance(data.dbId, false, false, true);
       }
       else if (this.instUtils.isReferrer(data.dbId, this.instance!))
         this.loadInstance(this.instance!.dbId, false, false, true);
+    });
+    this.subscriptions.add(subscription);
+    // In case the deleted instance is referred by the current instance
+    subscription = this.instUtils.markDeletionDbId$.subscribe(dbId => {
+      if (this.instance && this.instUtils.isReferrer(dbId, this.instance)) {
+        this.loadInstance(this.instance.dbId, false, false, true);
+      }
     });
     this.subscriptions.add(subscription);
     subscription = this.instUtils.deletedDbId$.subscribe(dbId => {
@@ -132,7 +140,15 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.subscriptions.add(subscription);
     // To mark an instance is deleted
     subscription = this.store.select(deleteInstances()).subscribe(deletedInstances => {
+      const preSize = this.deletedInstances.length;
       this.deletedInstances = deletedInstances;  
+      if ((this.deletedInstances.length - preSize) == -1) {
+        // reset a deleted instance from db. since we don't know if the instance has referred 
+        // this the reset deletion, therefore, we just reload it.
+        if (this.instance) {
+          this.loadInstance(this.instance.dbId, false, false, true);
+        }
+      }
     });
     this.subscriptions.add(subscription);
     if(this.compareInstanceDialogResult$ !== 0){
@@ -167,6 +183,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       // Wrap them together to avoid NG0100 error
       this.showProgressSpinner = true;
+      if (forceReload) // TODO: Make sure this does not have any side effect.
+        this.dataService.removeInstanceInCache(dbId)
       this.dataService.fetchInstance(dbId).subscribe((instance) => {
         if (instance.schemaClass)
           // Turn off the comparison first
@@ -276,6 +294,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   isUploadable() {
+    if (this.isDeleted())
+      return true;
     //TODO: an attribute may add a new value and then delete this new value. Need to have a better
     // control!
     return this.instance ? (this.instance.dbId < 0 || (this.instance.modifiedAttributes && this.instance.modifiedAttributes.length)) : false;
@@ -293,8 +313,18 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   upload(): void {
     if (!this.instance) return;
+    if (this.isDeleted()) {
+      // Commit a deletion
+      this.dataService.delete(this.instance).pipe(take(1)).subscribe(rtn => {
+        // Have to subscript it. Otherwise, the http call will not be fired
+        this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(this.instance!));
+        this.instUtils.setDeletedDbId(this.instance!.dbId);
+        this.dataService.flagSchemaTreeForReload();
+      });
+      return;
+    }
     // TODO: Need to present a confirmation dialog after it is done!
-    this.dataService.commit(this.instance).subscribe(storedInst => {
+    this.dataService.commit(this.instance).pipe(take(1)).subscribe(storedInst => {
       console.debug('Returned dbId: ' + storedInst.dbId);
       if (this.instance!.dbId < 0) {
         this.commitNewHere = true;

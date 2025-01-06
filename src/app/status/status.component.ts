@@ -1,5 +1,5 @@
 import { CdkAccordionModule } from "@angular/cdk/accordion";
-import { Component, EventEmitter, HostListener, inject, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from "@angular/material/icon";
@@ -18,6 +18,7 @@ import { UserInstancesService } from "../auth/login/user-instances.service";
 import { ListInstancesDialogService } from "../schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service";
 import { DefaultPersonActions } from "../instance/state/instance.actions";
 import { DataService } from "../core/services/data.service";
+import { Subscription } from "rxjs";
 
 @Component({
   selector: 'app-status',
@@ -26,7 +27,7 @@ import { DataService } from "../core/services/data.service";
   standalone: true,
     imports: [NgIf, MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule, CdkAccordionModule, InstanceBookmarkModule, MatIconModule, MatTooltipModule]
 })
-export class StatusComponent implements OnInit {
+export class StatusComponent implements OnInit, OnDestroy {
   @Input() hideInstanceStatus: boolean = false;
   @Output() showUpdatedEvent = new EventEmitter<boolean>();
   updatedInstances: Instance[] = [];
@@ -34,6 +35,8 @@ export class StatusComponent implements OnInit {
   deletedInstances: Instance[] = [];
   bookmarkedInstances: Instance[] =  [];
   defaultPerson: Instance|undefined = undefined;
+
+  private subscriptions: Subscription = new Subscription();
 
   constructor(private store: Store,
               private userInstancesService: UserInstancesService,
@@ -49,28 +52,33 @@ export class StatusComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.store.select(updatedInstances()).subscribe((instances) => {
+    let sub = this.store.select(updatedInstances()).subscribe((instances) => {
       instances ? this.updatedInstances = instances : this.updatedInstances = [];
     });
+    this.subscriptions.add(sub);  
 
-    this.store.select(newInstances()).subscribe((instances) => {
+    sub = this.store.select(newInstances()).subscribe((instances) => {
       instances ? this.newInstances = instances : this.newInstances = [];
     });
+    this.subscriptions.add(sub);
 
-    this.store.select(deleteInstances()).subscribe((instances) => {
+    sub = this.store.select(deleteInstances()).subscribe((instances) => {
       instances ? this.deletedInstances = instances : this.deletedInstances = [];
     });
+    this.subscriptions.add(sub);  
 
-    this.store.select(bookmarkedInstances()).subscribe((instances) => {
+    sub = this.store.select(bookmarkedInstances()).subscribe((instances) => {
       instances ? this.bookmarkedInstances = instances : this.bookmarkedInstances = [];
     });
+    this.subscriptions.add(sub);
 
-    this.store.select(defaultPerson()).subscribe((instances) => {
+    sub = this.store.select(defaultPerson()).subscribe((instances) => {
       // There should be only one default person
       instances && instances.length > 0 ? this.defaultPerson = instances[0] : this.defaultPerson = undefined
     });
+    this.subscriptions.add(sub);
 
-    this.dataService.errorMessage$.subscribe((message: any) => {
+    sub = this.dataService.errorMessage$.subscribe((message: any) => {
       if (message)
         if (message.error) {
           if (message.error.message)
@@ -83,6 +91,11 @@ export class StatusComponent implements OnInit {
         else 
           this.openSnackBar("There is an error: " + message.name, 'Close');
     });
+    this.subscriptions.add(sub);
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   // Calling ngOnDestroy is not reliable: https://blog.devgenius.io/where-ngondestroy-fails-you-54a8c2eca0e0.
