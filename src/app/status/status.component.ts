@@ -72,8 +72,12 @@ export class StatusComponent implements OnInit {
 
     this.dataService.errorMessage$.subscribe((message: any) => {
       if (message)
-        if (message.error)
-          this.openSnackBar(message.error.message, 'Close');
+        if (message.error) {
+          if (message.error.message)
+            this.openSnackBar(message.error.message, 'Close');
+          else
+            this.openSnackBar(message.error, 'Close');
+        }
         else if (message.message)
           this.openSnackBar(message.message, 'Close');
         else 

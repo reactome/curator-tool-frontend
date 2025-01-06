@@ -377,35 +377,43 @@ export class DataService {
     );
   }
 
-    /**
+  /**
    * Create a new instance from an existing instance.
    */
   cloneInstance(instance: Instance): Observable<Instance> {
-    let newInstance: Instance;
-    this.createNewInstance(instance.schemaClassName).subscribe((newInst: Instance) => {
-      newInstance = newInst;
-    });
-    return this.fetchInstance(instance.dbId).pipe(map((inst: Instance) => {
-      let uneditableAtts: Array<string> = this.getAttributeNamesNotClonable();
-      let allAttributes: Map<string, any> = inst.attributes;
-      for(let attribute of newInstance.schemaClass!.attributes!){
-        if(attribute.category === AttributeCategory.NOMANUALEDIT){
-          continue;
-        }
-          if(uneditableAtts.includes(attribute.name)) {
-            continue;
-          }
-            newInstance.attributes.set(attribute.name, allAttributes.get(attribute.name));
-        
-      }
-      // Set displayName last
-      newInstance.attributes.set('displayName', 'Clone of ' + instance.displayName);
-      newInstance.displayName = 'Clone of ' + instance.displayName;
-      return newInstance;
-    }),
-      catchError((err: Error) => {
-        return this.handleErrorMessage(err);
-      }),
+    return this.createNewInstance(instance.schemaClassName).pipe(
+      concatMap((newInst: Instance) => {
+        return this.fetchInstance(instance.dbId).pipe(
+          map((inst: Instance) => {
+            const uneditableAtts: Array<string> = this.getAttributeNamesNotClonable();
+            const allAttributes: Map<string, any> = inst.attributes;
+
+            for (let attribute of newInst.schemaClass!.attributes!) {
+              if (attribute.category === AttributeCategory.NOMANUALEDIT) {
+                continue;
+              }
+              if (uneditableAtts.includes(attribute.name)) {
+                continue;
+              }
+              let value = allAttributes.get(attribute.name);
+              if (!value) continue
+
+              // Clone the value if it's an array to prevent mutation issues
+              if (Array.isArray(value)) {
+                value = [...value];
+              }
+              newInst.attributes.set(attribute.name, value);
+            }
+            // Set displayName last
+            newInst.attributes.set('displayName', 'Clone of ' + instance.displayName);
+            newInst.displayName = 'Clone of ' + instance.displayName;
+            return newInst;
+          }),
+          catchError((err: Error) => {
+            return this.handleErrorMessage(err);
+          })
+        );
+      })
     );
   }
 
@@ -746,7 +754,8 @@ export class DataService {
     } 
     // To avoid chaning the code here
     instance = cached
-    instance = this.fillAttributesForCommit(instance);
+    const checked = new Set<number>();
+    instance = this.fillAttributesForCommit(instance, checked);
     let instanceToBeCommitted = this.utils.cloneInstanceForCommit(instance);
     // Need to add default person id for this instance
     return this.store.select(defaultPerson()).pipe(
@@ -776,7 +785,10 @@ export class DataService {
    * @param inst 
    * @returns 
    */
-  private fillAttributesForCommit(inst: Instance): Instance {
+  private fillAttributesForCommit(inst: Instance, checked: Set<number>): Instance {
+    if (checked.has(inst.dbId))
+      return inst;
+    checked.add(inst.dbId);
     if (inst.attributes) {
       inst.attributes.forEach((value: any, key: string) => {
         if (!value) return;
@@ -787,7 +799,7 @@ export class DataService {
             valueInst = this.id2instance.get(valueInst.dbId)!;
             inst.attributes.set(key, valueInst);
             // Make a recursive call for all new instances
-            this.fillAttributesForCommit(valueInst);
+            this.fillAttributesForCommit(valueInst, checked);
           }
         }
         else if (Array.isArray(value)) {
@@ -798,7 +810,7 @@ export class DataService {
                 valueInst = this.id2instance.get(valueInst.dbId)!;
                 value[i] = valueInst;
                 // Make a recursive call for all new instances
-                this.fillAttributesForCommit(valueInst);
+                this.fillAttributesForCommit(valueInst, checked);
               }
             }
           }

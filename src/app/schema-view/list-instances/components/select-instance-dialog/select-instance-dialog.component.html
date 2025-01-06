@@ -1,6 +1,6 @@
 <h2 class="dialog_title" mat-dialog-title cdkdraghandle>Select an Instance</h2>
 <mat-dialog-content style="width: 100%; height: 100%;">
-  <div style="height: 65%">
+  <!-- <div style="height: 65%"> -->
     <mat-label>Select a Schema Class: </mat-label>
     <mat-select [(value)]="selected" class="drop_down" (selectionChange)="onSelectionChange()">
       <ng-container>
@@ -14,9 +14,9 @@
       <app-instance-selection [setClassName]="this.selected" [isSelection]="true" [pageSize]="20"
         (clickEvent)="onSelectRow($event)"></app-instance-selection>
     </section>
-  </div>
+  <!-- </div> -->
   <br>
-  <div style="height: 35%">
+  <!-- <div style="height: 35%"> -->
     <mat-label>Selected Instances: </mat-label>
     <ng-container *ngIf="isSingleValued">
       <h4>*Only one value may be selected for {{attributeValue.attribute.name}}.</h4>
@@ -27,7 +27,7 @@
           (removeEvent)="onRemoveEvent($event)"></app-selected-instances-table>
       </section>
     </ng-container>
-  </div>
+  <!-- </div> -->
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="onOK()" cdkFocusInitial>OK</button>

@@ -28,7 +28,7 @@ export class InstanceUtilities {
     private refreshBookmarks = new Subject<number>();
     refreshBookmarks$ = this.refreshBookmarks.asObservable();
 
-    // Call this when an database is marked as deletion but not yet committed to
+    // Call this when an instance is marked as deletion but not yet committed to
     // the database
     private markDeletionDbId = new Subject<number>();
     markDeletionDbId$ = this.markDeletionDbId.asObservable();
@@ -68,6 +68,9 @@ export class InstanceUtilities {
      */
     registerDisplayNameChange(instance: Instance) {
         this.dbId2displayName.set(instance.dbId, instance.displayName);
+        const shell = this.shellInstances.get(instance.dbId);
+        if (shell)
+            shell.displayName = instance.displayName;
         this.setRefreshViewDbId(instance.dbId);
     }
 

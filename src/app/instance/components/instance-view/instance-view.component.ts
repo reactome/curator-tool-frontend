@@ -13,6 +13,7 @@ import { InstanceTableComponent } from './instance-table/instance-table.componen
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Subscription } from 'rxjs';
 import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service';
+import { deleteInstances } from '../../state/instance.selectors';
 
 @Component({
   selector: 'app-instance-view',
@@ -41,7 +42,10 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   private commitNewHere: boolean = false;
 
   // Track subscriptions added so that we can remove them
-  private subscriptions: Subscription[] = [];
+  private subscriptions: Subscription = new Subscription()
+
+  // Track deleted instances
+  private deletedInstances: Instance[] = [];
 
   constructor(private router: Router,
     private route: ActivatedRoute,
@@ -84,13 +88,13 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         }
       }
     });
-    this.subscriptions.push(subscription);
+    this.subscriptions.add(subscription);
     subscription = this.instUtils.refreshViewDbId$.subscribe(dbId => {
       if (this.instance && this.instance.dbId === dbId) {
         this.loadInstance(dbId, false, false, true);
       }
     });
-    this.subscriptions.push(subscription);
+    this.subscriptions.add(subscription);
     subscription = this.instUtils.resetInst$.subscribe(data => {
       if (this.instance && this.instance.dbId === data.dbId) {
         this.loadInstance(data.dbId, false, false, true);
@@ -98,7 +102,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       else if (this.instUtils.isReferrer(data.dbId, this.instance!))
         this.loadInstance(this.instance!.dbId, false, false, true);
     });
-    this.subscriptions.push(subscription);
+    this.subscriptions.add(subscription);
     subscription = this.instUtils.deletedDbId$.subscribe(dbId => {
       if (this.instance && this.instance.dbId === dbId) {
         this.instUtils.removeInstInArray(this.instance, this.viewHistory);
@@ -112,7 +116,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         }
       }
     });
-    this.subscriptions.push(subscription);
+    this.subscriptions.add(subscription);
     subscription = this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
       if (!this.instance || this.instance.dbId !== oldDbId)
         return;
@@ -123,12 +127,24 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.instUtils.removeInstInArray(this.instance, this.viewHistory);
       this.dataService.fetchInstance(newDbId).subscribe(inst => this.changeTable(inst));
     });
-    this.subscriptions.push(subscription);
+    this.subscriptions.add(subscription);
+    // To mark an instance is deleted
+    subscription = this.store.select(deleteInstances()).subscribe(deletedInstances => {
+      this.deletedInstances = deletedInstances;  
+    });
+    this.subscriptions.add(subscription);
+  }
+
+  isDeleted() {
+    if (this.instance) {
+      const deletedIds = this.deletedInstances.map(inst => inst.dbId);
+      return deletedIds.includes(this.instance.dbId);
+    }
+    return false;
   }
 
   ngOnDestroy(): void {
-    for (let subscription of this.subscriptions) 
-      subscription.unsubscribe();
+    this.subscriptions.unsubscribe();
   }
 
   loadInstance(dbId: number,

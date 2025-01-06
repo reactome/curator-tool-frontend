@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { PageEvent } from "@angular/material/paginator";
 import { SearchCriterium, Instance, InstanceList } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
@@ -11,13 +11,15 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ActionButton } from './instance-list-table/instance-list-table.component';
 import { ListInstancesDialogService } from '../../list-instances-dialog/list-instances-dialog.service';
+import { deleteInstances, newInstances } from 'src/app/instance/state/instance.selectors';
+import { combineLatest, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-instance-selection',
   templateUrl: './instance-selection.component.html',
   styleUrls: ['./instance-selection.component.scss'],
 })
-export class InstanceSelectionComponent {
+export class InstanceSelectionComponent implements OnInit, OnDestroy {
 
   skip: number = 0;
   // This is for doing simple text or dbId based search
@@ -40,8 +42,6 @@ export class InstanceSelectionComponent {
   secondaryActionButtons: Array<ActionButton> =[ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
   // Used to popup attributes for advanced search (i.e. SearchFilterComponent)
   schemaClassAttributes: string[] = [];
-  // New instances to be listed at the top of the first page
-  newInstances: Instance[] = [];
   // Flag to indicate if the advanced search component should be displayed
   needAdvancedSearch: boolean = false;
 
@@ -67,6 +67,9 @@ export class InstanceSelectionComponent {
     }); // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
   }
 
+  // So that we can remove subscription
+  private subscription: Subscription = new Subscription
+
   constructor(private dataService: DataService,
     private router: Router,
     private referrersDialogService: ReferrersDialogService,
@@ -74,6 +77,39 @@ export class InstanceSelectionComponent {
     private store: Store,
     private instUtils: InstanceUtilities,
     private listInstancesDialogService: ListInstancesDialogService) {
+  }
+
+  ngOnDestroy(): void {
+    this.subscription.unsubscribe();
+  }
+
+  ngOnInit(): void {
+    const sub = combineLatest([
+      this.store.select(deleteInstances()),
+      this.store.select(newInstances())
+    ]).subscribe(([deletedInstances, newInstances]) => {
+      if (!this.data)
+        return
+      if (!deletedInstances)
+        deletedInstances = [];
+      if (!newInstances)
+        newInstances = [];
+      const deletedDbIds = deletedInstances.map(inst => inst.dbId);
+      const newDbIds = newInstances.map(inst => inst.dbId);
+      const preCount = this.data.length;
+      this.data = this.data.filter(inst => {
+        if (inst.dbId > 0 && !deletedDbIds.includes(inst.dbId))
+          return true;
+        if (inst.dbId < 0 && newDbIds.includes(inst.dbId))
+          return true;
+        return false;
+      })
+      // Update the total instance count
+      // Note: for the time being, the page size is fixed
+      this.instanceCount = this.instanceCount - (preCount - this.data.length);
+    });
+
+    this.subscription.add(sub);
   }
 
   /**

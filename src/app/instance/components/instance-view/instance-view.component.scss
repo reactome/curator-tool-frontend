@@ -54,3 +54,8 @@
   //background-color: var(--surface);
   vertical-align: text-top;
 }
+
+// For deleted instance
+.deleted {
+  text-decoration: line-through;
+}
