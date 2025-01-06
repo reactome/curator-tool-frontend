@@ -30,6 +30,19 @@
       <button mat-icon-button color="primary" class="v-center" (click)="addBookmark()" matTooltip="Add Bookmark">
         <mat-icon>bookmark</mat-icon>
       </button>
+      <!-- Hide buttons unless expanded -->
+      <ng-container *ngIf="showSecondaryButtons">
+        <button mat-icon-button color="primary" class="v-center" (click)="cloneInstance()" matTooltip="copy instance">
+          <mat-icon>content_copy</mat-icon>
+        </button>
+        <button mat-icon-button color="primary" class="v-center" (click)="compareInstances()"
+          matTooltip="compare two instances">
+          <mat-icon>compare_arrows</mat-icon>
+        </button>
+      </ng-container>
+      <button color="primary" mat-icon-button matTooltip="expand" class="v-center" (click)="showSecondaryButtons = !showSecondaryButtons">
+        <mat-icon>more_horiz</mat-icon>
+      </button>
     </div>
   </div>
 </mat-toolbar>

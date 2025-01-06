@@ -14,7 +14,7 @@ export class ListInstancesDialogService {
   openDialog(data: { schemaClassName: string; title: string; }): MatDialogRef<ListInstancesDialogComponent, Instance> {
     const dialogRef = this.dialog.open(ListInstancesDialogComponent, {
       width: '1100px',
-      height: '900px',
+      height: '650px',
       data: data
     });
     return dialogRef;

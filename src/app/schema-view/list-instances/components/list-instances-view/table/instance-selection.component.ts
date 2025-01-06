@@ -39,7 +39,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   // To be displayed in instance list table
   data: Instance[] = [];
   actionButtons: Array<ActionButton> = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.LIST, ACTION_BUTTONS.DELETE];
-  secondaryActionButtons: Array<ActionButton> = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES]
+  secondaryActionButtons: Array<ActionButton> =[ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
   // Used to popup attributes for advanced search (i.e. SearchFilterComponent)
   schemaClassAttributes: string[] = [];
   // Flag to indicate if the advanced search component should be displayed
@@ -58,6 +58,8 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   @Input() set setClassName(inputClassName: string) {
     setTimeout(() => {
       this.className = inputClassName;
+      if(inputClassName === 'Event')
+        this.secondaryActionButtons.push(ACTION_BUTTONS.SHOW_TREE);
       this.skip = 0;
       this.showProgressSpinner = true;
       this.loadInstances();
@@ -213,6 +215,11 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
           this.router.navigate(["/schema_view/instance/" + actionEvent.instance.dbId + "/comparison/" + result?.dbId]);
         });
         break;
+      }
+
+      case ACTION_BUTTONS.SHOW_TREE.name: {
+        if(actionEvent.instance.schemaClassName)
+          this.router.navigate(["/event_view/instance/" + actionEvent.instance.dbId]);
       }
     }
   }

@@ -86,5 +86,6 @@ export const ACTION_BUTTONS = {
   BOOKMARK: {name: 'bookmark', tooltip: 'add bookmark'},
   COMPARE2DB: {name: 'compare', tooltip: 'compare instance'},
   CLOSE : {name: 'close', tooltip: 'remove instance'},
-  COMPARE_INSTANCES: {name: 'compare_arrows', tooltip: 'compare two instances'}
+  COMPARE_INSTANCES: {name: 'compare_arrows', tooltip: 'compare two instances'},
+  SHOW_TREE: {name: 'account_tree', tooltip: 'view in tree'}
 }
