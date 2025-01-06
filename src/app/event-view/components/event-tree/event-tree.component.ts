@@ -1,9 +1,9 @@
 import { FlatTreeControl } from "@angular/cdk/tree";
-import { ChangeDetectorRef, Component, EventEmitter, inject, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, inject, OnDestroy, Output } from '@angular/core';
 import { MatDialog } from "@angular/material/dialog";
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
 import { ActivatedRoute, Router } from "@angular/router";
-import { forkJoin, take } from "rxjs";
+import { forkJoin, Subscription, take } from "rxjs";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
@@ -35,7 +35,7 @@ interface EventNode {
   templateUrl: './event-tree.component.html',
   styleUrls: ['./event-tree.component.scss']
 })
-export class EventTreeComponent {
+export class EventTreeComponent implements OnDestroy {
   // Listen to add to diagram view event
   @Output() addToDiagram = new EventEmitter<Instance>;
   @Output() eventClicked = new EventEmitter<number>;
@@ -102,6 +102,8 @@ export class EventTreeComponent {
   // To show information
   readonly dialog = inject(MatDialog);
 
+  private subscriptions: Subscription = new Subscription();
+
   constructor(
     private cdr: ChangeDetectorRef,
     private service: DataService,
@@ -110,7 +112,7 @@ export class EventTreeComponent {
     private router: Router) {
     // Make sure this is called only once using take(1)
     // We call this only once. Therefore, always need to load the tree
-    this.route.params.pipe(take(1)).subscribe(params => {
+    let sub = this.route.params.pipe(take(1)).subscribe(params => {
       console.debug('handling route param in event tree: ', params);
       forkJoin({
         eventTree: service.fetchEventTree(false, 'all'),
@@ -128,14 +130,21 @@ export class EventTreeComponent {
         }
       });
     });
+    this.subscriptions.add(sub);
 
-    this.instUtils.lastUpdatedInstance$.subscribe(data => {
+    sub = this.instUtils.lastUpdatedInstance$.subscribe(data => {
       this.handleEventEdit(data.attribute, data.instance);
     });
+    this.subscriptions.add(sub);
 
-    this.instUtils.markDeletionDbId$.subscribe(dbId => {
+    sub = this.instUtils.markDeletionDbId$.subscribe(dbId => {
       this.handleInstanceDeletion(dbId);
     });
+    this.subscriptions.add(sub);
+  }
+
+  ngOnDestroy() {
+    this.subscriptions.unsubscribe();
   }
 
   private handleInstanceDeletion(dbId: number) {

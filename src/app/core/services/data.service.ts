@@ -611,7 +611,9 @@ export class DataService {
           return this.fetchSchemaClasses([...classes]).pipe(map(data => {
             // Don't do anything for bookmark. We need a simple, shell instance only
             // userInstance.bookmarks?.map(inst => this.handleUserInstance(inst));
-            userInstance.deletedInstances?.map(inst => this.handleUserInstance(inst));
+            // Don't cache the deleted instances since they are just shell instances
+            // We need to load the attributes from the database
+            userInstance.deletedInstances?.map(inst => this.handleUserInstance(inst, false));
             userInstance.newInstances?.map(inst => this.handleUserInstance(inst));
             userInstance.updatedInstances?.map(inst => this.handleUserInstance(inst));
             return userInstance;
@@ -623,9 +625,10 @@ export class DataService {
       );
   }
 
-  private handleUserInstance(inst: Instance) {
+  private handleUserInstance(inst: Instance, cached: boolean = true): Instance {
     this.handleInstanceAttributes(inst);
-    this.id2instance.set(inst.dbId, inst);
+    if (cached)
+      this.id2instance.set(inst.dbId, inst);
     // In this context, the following should return immediately even though it is
     // wrapped in an observable since we have loaded the whole schema tree already.
     // However, this may be a bug prone. Keep an eye on it!

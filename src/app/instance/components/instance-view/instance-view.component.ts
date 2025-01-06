@@ -5,13 +5,13 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 import { DragDropService } from "../../../schema-view/instance-bookmark/drag-drop.service";
-import { UpdateInstanceActions, NewInstanceActions } from '../../state/instance.actions';
+import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from '../../state/instance.actions';
 import { DeletionDialogService } from "../deletion-dialog/deletion-dialog.service";
 import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
 import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
-import { Subscription } from 'rxjs';
+import { Subscription, take } from 'rxjs';
 import { deleteInstances } from '../../state/instance.selectors';
 
 @Component({
@@ -268,6 +268,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   isUploadable() {
+    if (this.isDeleted())
+      return true;
     //TODO: an attribute may add a new value and then delete this new value. Need to have a better
     // control!
     return this.instance ? (this.instance.dbId < 0 || (this.instance.modifiedAttributes && this.instance.modifiedAttributes.length)) : false;
@@ -285,8 +287,18 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   upload(): void {
     if (!this.instance) return;
+    if (this.isDeleted()) {
+      // Commit a deletion
+      this.dataService.delete(this.instance).pipe(take(1)).subscribe(rtn => {
+        // Have to subscript it. Otherwise, the http call will not be fired
+        this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(this.instance!));
+        this.instUtils.setDeletedDbId(this.instance!.dbId);
+        this.dataService.flagSchemaTreeForReload();
+      });
+      return;
+    }
     // TODO: Need to present a confirmation dialog after it is done!
-    this.dataService.commit(this.instance).subscribe(storedInst => {
+    this.dataService.commit(this.instance).pipe(take(1)).subscribe(storedInst => {
       console.debug('Returned dbId: ' + storedInst.dbId);
       if (this.instance!.dbId < 0) {
         this.commitNewHere = true;
