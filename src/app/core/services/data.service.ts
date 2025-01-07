@@ -755,7 +755,7 @@ export class DataService {
     if (!cached) {
       return this.handleErrorMessage(new Error('Cannot find the instance to commit!'));
     } 
-    // To avoid chaning the code here
+    // To avoid changing the code here
     instance = cached
     const checked = new Set<number>();
     instance = this.fillAttributesForCommit(instance, checked);
@@ -887,11 +887,23 @@ export class DataService {
  * @param instance
  */
   delete(instance: Instance): Observable<boolean> {
-    return this.http.post<boolean>(this.deleteInstaneUrl, instance).pipe(
-      catchError(error => {
-        return this.handleErrorMessage(error);
-      })
-    )
+    // In case is from store, which is immutable
+    let instanceToBeCommitted = this.utils.cloneInstanceForCommit(instance);
+    // Need to add default person id for this instance
+    return this.store.select(defaultPerson()).pipe(
+      take(1),
+      concatMap((person: Instance[]) => {
+        if (!person || person.length == 0) {
+          return this.handleErrorMessage(new Error('Cannot find the default person!'));
+        }
+        instanceToBeCommitted.defaultPersonId = person[0].dbId;
+        return this.http.post<boolean>(this.deleteInstaneUrl, instanceToBeCommitted).pipe(
+          map((data: boolean) => data),
+          catchError(error => {
+            return this.handleErrorMessage(error);
+          })
+        );
+      }));
   }
 
   /**
