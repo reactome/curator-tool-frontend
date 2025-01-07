@@ -248,7 +248,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   changeTable(instance: Instance) {
     this.dragDropService.resetList();
-    if (this.blockRoute) {
+    // If in comparison mode, the showReferenceColumn will be true and the instance should be loaded.
+    if (this.blockRoute || this.showReferenceColumn) {
       this.loadInstance(instance.dbId);
     }
     else {
@@ -366,12 +367,13 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   compareInstances(){
+    this.blockRoute = true;
     const matDialogRef =
     this.listInstancesDialogService.openDialog({schemaClassName: this.instance!.schemaClassName, 
       title: "Compare " + this.instance!.displayName + " to"});
     matDialogRef.afterClosed().subscribe((result) => {
       if(result)
-        this.router.navigate(["/schema_view/instance/" + this.instance!.dbId.toString() + "/comparison/" + result.dbId.toString()]);
+        this.router.navigate(["/schema_view/instance/" + this.instance!.dbId.toString() + "/comparison/" + result?.dbId.toString()]);
         //this.compareInstanceDialogResult$ = result.dbId;
     });
   }
