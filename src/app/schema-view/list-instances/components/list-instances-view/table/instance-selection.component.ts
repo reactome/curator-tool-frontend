@@ -216,7 +216,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
         this.listInstancesDialogService.openDialog({schemaClassName: actionEvent.instance.schemaClassName, 
           title: "Compare " + actionEvent.instance.displayName + " to"});
         matDialogRef.afterClosed().subscribe((result) => {
-          this.router.navigate(["/schema_view/instance/" + actionEvent.instance.dbId + "/comparison/" + result?.dbId]);
+          this.router.navigate(["/schema_view/instance/" + actionEvent.instance.dbId.toString() + "/comparison/" + result?.dbId.toString()]);
         });
         break;
       }
