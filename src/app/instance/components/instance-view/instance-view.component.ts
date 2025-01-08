@@ -140,14 +140,20 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.subscriptions.add(subscription);
     // To mark an instance is deleted
     subscription = this.store.select(deleteInstances()).subscribe(deletedInstances => {
+      if (!this.instance)
+        return;
+      // Check if the current instance is in the deleted instances
+      const isIn = this.deletedInstances.map(inst => inst.dbId).includes(this.instance.dbId);
       const preSize = this.deletedInstances.length;
       this.deletedInstances = deletedInstances;  
+      const isCurrentIn = this.deletedInstances.map(inst => inst.dbId).includes(this.instance.dbId);
+      if (isIn && !isCurrentIn) {
+        return; // The displayed instance is committed
+      }
       if ((this.deletedInstances.length - preSize) == -1) {
         // reset a deleted instance from db. since we don't know if the instance has referred 
         // this the reset deletion, therefore, we just reload it.
-        if (this.instance) {
-          this.loadInstance(this.instance.dbId, false, false, true);
-        }
+        this.loadInstance(this.instance.dbId, false, false, true);
       }
     });
     this.subscriptions.add(subscription);
