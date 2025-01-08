@@ -195,6 +195,18 @@ export class DataService {
     }
   }
 
+  isEventClass(clsName: string): boolean {
+    let eventClassNames = new Set<string>();
+
+    let schemaClass: SchemaClass = this.getSchemaClass('Event')!;
+    this.grepConcreteClasses(schemaClass, eventClassNames);
+
+    if(eventClassNames.has(clsName))
+      return true;
+    else
+      return false;
+  }
+
   /**
    * A helper function to convert a JSON array into a SchemaClass so that it is easier to model.
    * @param data

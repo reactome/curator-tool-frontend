@@ -58,8 +58,6 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   @Input() set setClassName(inputClassName: string) {
     setTimeout(() => {
       this.className = inputClassName;
-      if(inputClassName === 'Event')
-        this.secondaryActionButtons.push(ACTION_BUTTONS.SHOW_TREE);
       this.skip = 0;
       this.showProgressSpinner = true;
       this.loadInstances();
@@ -119,6 +117,12 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   loadInstances() {
     // Make sure className is set!
     if (this.className && this.className.length > 0) {
+      if(this.dataService.isEventClass(this.className))
+        this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES, ACTION_BUTTONS.SHOW_TREE];
+      else {
+        this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
+      }
+      
       this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
         .subscribe((instancesList) => {
           this.displayInstances(instancesList);
