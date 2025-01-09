@@ -422,11 +422,11 @@ export class InstanceUtilities {
     }
 
     /**
-     * Check if the first instance, of which dbId is passed, is a referer of the second instnace
+     * Check if the first instance, of which dbId is passed, is a reference of the second instnace
      * @param referrer 
      * @param inst 
      */
-    isReferrer(referrerDbId: number, inst: Instance) {
+    isReferrer(referenceDbId: number, inst: Instance) {
         if (!inst.attributes)
             return false;
         for (let att of inst.attributes.keys()) {
@@ -436,15 +436,44 @@ export class InstanceUtilities {
             if (Array.isArray(attValue)) {
                 for (let i = 0; i < attValue.length; i++) {
                     const attValue1 = attValue[i];
-                    if (referrerDbId === attValue1.dbId)
+                    if (referenceDbId === attValue1.dbId)
                         return true;
                 }
             }
-            else if (referrerDbId === attValue.dbId) {
+            else if (referenceDbId === attValue.dbId) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Remove an instance from the reference list of the passed instance.
+     * The reference is specified by the referenceDbId.
+     * @param inst 
+     * @param referenceDbId 
+     */
+    removeReference(inst: Instance, referenceDbId: number) {
+        if (!inst.attributes) return;
+    
+        for (let att of inst.attributes.keys()) {
+            const attValue = inst.attributes.get(att);
+            if (!attValue) continue;
+    
+            if (Array.isArray(attValue)) {
+                // Iterate in reverse to avoid skipping elements when splicing
+                for (let i = attValue.length - 1; i >= 0; i--) {
+                    const attValue1 = attValue[i];
+                    if (referenceDbId === attValue1.dbId) {
+                        attValue.splice(i, 1);
+                    }
+                }
+                if (attValue.length === 0) inst.attributes.delete(att);
+            } 
+            else if (referenceDbId === attValue.dbId) {
+                inst.attributes.delete(att);
+            }
+        }
     }
 
     private addToModifiedAttribute(att: string, inst: Instance) {
