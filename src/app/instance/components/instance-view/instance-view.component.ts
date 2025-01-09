@@ -79,7 +79,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         if (params['mode']) {
           this.showReferenceColumn = (params['mode'] === 'comparison');
           if (params['dbId2']) {
-            let dbId2 = params['dbId2'];
+            let dbId2 = params['dbId2']; 
             // Make sure dbId is a number
             dbId2 = parseInt(dbId2);
             this.loadReferenceInstance(dbId2);
@@ -161,9 +161,6 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       }
     });
     this.subscriptions.add(subscription);
-    if(this.compareInstanceDialogResult$ !== 0){
-      this.router.navigate(["/schema_view/instance/" + this.instance!.dbId + "/comparison/" + this.compareInstanceDialogResult$]);
-    }
   }
 
   isDeleted() {
@@ -377,14 +374,12 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   compareInstances(){
-    this.blockRoute = true;
     const matDialogRef =
     this.listInstancesDialogService.openDialog({schemaClassName: this.instance!.schemaClassName, 
       title: "Compare " + this.instance!.displayName + " to"});
     matDialogRef.afterClosed().subscribe((result) => {
       if(result)
-        this.router.navigate(["/schema_view/instance/" + this.instance!.dbId.toString() + "/comparison/" + result?.dbId.toString()]);
-        //this.compareInstanceDialogResult$ = result.dbId;
+        this.router.navigate(["/schema_view/instance/" + this.instance?.dbId.toString() + "/comparison/" + result?.dbId.toString()]);
     });
   }
 }

@@ -216,6 +216,11 @@ export class DataService {
     }
   }
 
+  isEventClass(clsName: string): boolean {
+    let schemaClass = this.getSchemaClass('Event');
+    return this.utils._isSchemaClass(clsName, schemaClass);
+  }
+
   /**
    * A helper function to convert a JSON array into a SchemaClass so that it is easier to model.
    * @param data
@@ -1011,7 +1016,11 @@ export class DataService {
 
   isSchemaClass(instance: Instance, className: string): boolean {
     let schemaClass = this.getSchemaClass(className);
-    return this.utils._isSchemaClass(instance, schemaClass!);
+    if(instance.schemaClass?.name === undefined)
+      return false
+
+    else
+      return this.utils._isSchemaClass(instance.schemaClass?.name, schemaClass!);
   }
 
   handleErrorMessage(err: Error) {

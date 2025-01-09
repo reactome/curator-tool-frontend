@@ -58,8 +58,6 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   @Input() set setClassName(inputClassName: string) {
     setTimeout(() => {
       this.className = inputClassName;
-      if(inputClassName === 'Event')
-        this.secondaryActionButtons.push(ACTION_BUTTONS.SHOW_TREE);
       this.skip = 0;
       this.showProgressSpinner = true;
       this.loadInstances();
@@ -118,14 +116,22 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
    */
   loadInstances() {
     // Make sure className is set!
-    if (this.className && this.className.length > 0) {
+    if (this.className && this.className.length > 0) 
+      
       this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
         .subscribe((instancesList) => {
           this.displayInstances(instancesList);
           this.showProgressSpinner = false;
         }
         )
-    }
+      
+
+        if(this.dataService.isEventClass(this.className))
+          this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES, ACTION_BUTTONS.SHOW_TREE];
+        else {
+          this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
+        }
+  
   }
 
   private displayInstances(instancesList: InstanceList) {
@@ -212,7 +218,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
         this.listInstancesDialogService.openDialog({schemaClassName: actionEvent.instance.schemaClassName, 
           title: "Compare " + actionEvent.instance.displayName + " to"});
         matDialogRef.afterClosed().subscribe((result) => {
-          this.router.navigate(["/schema_view/instance/" + actionEvent.instance.dbId + "/comparison/" + result?.dbId]);
+          this.router.navigate(["/schema_view/instance/" + actionEvent.instance.dbId.toString() + "/comparison/" + result?.dbId.toString()]);
         });
         break;
       }

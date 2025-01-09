@@ -146,7 +146,7 @@ export class InstanceUtilities {
         }
     }
 
-    _isSchemaClass(instance: Instance, schemaClass: SchemaClass | undefined): boolean {
+    _isSchemaClass(instanceSchemaClassName: string, schemaClass: SchemaClass | undefined): boolean {
         if (schemaClass === undefined)
             return false;
         // Get all children
@@ -169,12 +169,12 @@ export class InstanceUtilities {
             current = new Set(next);
             next.clear();
         }
-        return allClsNames.has(instance.schemaClassName);
+        return allClsNames.has(instanceSchemaClassName);
     }
 
     isSchemaClass(instance: Instance, className: string, dataService: DataService): boolean {
         let schemaClass = dataService.getSchemaClass(className);
-        return this._isSchemaClass(instance, schemaClass);
+        return this._isSchemaClass(instance.schemaClass!.name, schemaClass);
     }
 
     /**
