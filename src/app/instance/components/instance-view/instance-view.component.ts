@@ -78,6 +78,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         // May want to change to case statement if multiple modes
         if (params['mode']) {
           this.showReferenceColumn = (params['mode'] === 'comparison');
+          this.blockRoute = true;
           if (params['dbId2']) {
             let dbId2 = params['dbId2']; 
             // Make sure dbId is a number
@@ -295,6 +296,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   private loadReferenceInstance(dbId: number) {
     this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
       dbInstance => this.dbInstance = dbInstance);
+      this.changeTable(this.instance!);
   }
 
   isUploadable() {
