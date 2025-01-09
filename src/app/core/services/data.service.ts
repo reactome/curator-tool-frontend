@@ -196,15 +196,8 @@ export class DataService {
   }
 
   isEventClass(clsName: string): boolean {
-    let eventClassNames = new Set<string>();
-
-    let schemaClass: SchemaClass = this.getSchemaClass('Event')!;
-    this.grepConcreteClasses(schemaClass, eventClassNames);
-
-    if(eventClassNames.has(clsName))
-      return true;
-    else
-      return false;
+    let schemaClass = this.getSchemaClass('Event');
+    return this.utils._isSchemaClass(clsName, schemaClass);
   }
 
   /**
@@ -1002,7 +995,11 @@ export class DataService {
 
   isSchemaClass(instance: Instance, className: string): boolean {
     let schemaClass = this.getSchemaClass(className);
-    return this.utils._isSchemaClass(instance, schemaClass!);
+    if(instance.schemaClass?.name === undefined)
+      return false
+
+    else
+      return this.utils._isSchemaClass(instance.schemaClass?.name, schemaClass!);
   }
 
   handleErrorMessage(err: Error) {

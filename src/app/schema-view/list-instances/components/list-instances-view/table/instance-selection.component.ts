@@ -116,12 +116,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
    */
   loadInstances() {
     // Make sure className is set!
-    if (this.className && this.className.length > 0) {
-      if(this.dataService.isEventClass(this.className))
-        this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES, ACTION_BUTTONS.SHOW_TREE];
-      else {
-        this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
-      }
+    if (this.className && this.className.length > 0) 
       
       this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
         .subscribe((instancesList) => {
@@ -129,7 +124,14 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
           this.showProgressSpinner = false;
         }
         )
-    }
+      
+
+        if(this.dataService.isEventClass(this.className))
+          this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES, ACTION_BUTTONS.SHOW_TREE];
+        else {
+          this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
+        }
+  
   }
 
   private displayInstances(instancesList: InstanceList) {
