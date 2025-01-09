@@ -29,7 +29,7 @@ export class BookmarkListComponent implements OnInit {
     private instUtils: InstanceUtilities,
     private dataService: DataService) {
     // An instance that is marked as deleted should not be used
-    // This is different from the instance view: an instance is deleted by
+    // This is different from the instance view: an instance is deleted but
     // not commited can still be used in the attribute list!!!
     // TODO: This behavior is quite confusing. Need to think more!
     let subscription = (this.instUtils.markDeletionDbId$.subscribe(dbId => {

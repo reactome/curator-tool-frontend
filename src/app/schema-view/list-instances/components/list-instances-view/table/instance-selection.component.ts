@@ -66,7 +66,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   }
 
   // So that we can remove subscription
-  private subscription: Subscription = new Subscription
+  private subscription: Subscription = new Subscription();
 
   constructor(private dataService: DataService,
     private router: Router,

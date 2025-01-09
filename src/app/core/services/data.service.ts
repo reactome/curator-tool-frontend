@@ -69,6 +69,27 @@ export class DataService {
     private utils: InstanceUtilities,
     private store: Store,
   ) {
+    // This is most likely not a good place to do this. But it is difficult to find
+    // somewhere else without introducing a new service. This is a temporary solution for now.
+    this.utils.markDeletionDbId$.subscribe(dbId => {
+      // Go over all cached instances
+      this.id2instance.forEach((inst, id) => {
+        if (!this.utils.isReferrer(dbId, inst)) 
+          return; // Working with referrers only
+        // For instances loaded from database, just mark them for reload if they are
+        // referred by the deleted instance
+        if (id >= 0) {
+            // When an updated instance is reloaded, its attributes will be 
+            // updated automatically. Therefore, we don't need to do anything here
+            this.removeInstanceInCache(inst.dbId);
+        }
+        else {
+          // For new instances, we need to manually remove the deleted instance from its
+          // attributes list
+          this.utils.removeReference(inst, dbId);
+        }
+      });
+    });
   }
 
   /**

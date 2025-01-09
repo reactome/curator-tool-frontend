@@ -141,8 +141,12 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.subscriptions.add(subscription);
     // To mark an instance is deleted
     subscription = this.store.select(deleteInstances()).subscribe(deletedInstances => {
-      if (!this.instance)
+      if (!this.instance) {
+        // When this view first starts, the instance is not loaded yet
+        // but we still need to track the deleted instances for display and other things
+        this.deletedInstances = deletedInstances;
         return;
+      }
       // Check if the current instance is in the deleted instances
       const isIn = this.deletedInstances.map(inst => inst.dbId).includes(this.instance.dbId);
       const preSize = this.deletedInstances.length;
@@ -187,7 +191,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       // Wrap them together to avoid NG0100 error
       this.showProgressSpinner = true;
-      if (forceReload) // TODO: Make sure this does not have any side effect.
+      if (forceReload && dbId >= 0) // TODO: Make sure this does not have any side effect.
         this.dataService.removeInstanceInCache(dbId)
       this.dataService.fetchInstance(dbId).subscribe((instance) => {
         if (instance.schemaClass)
