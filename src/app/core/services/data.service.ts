@@ -540,6 +540,9 @@ export class DataService {
               if (this.isSchemaClass(inst, className) && (skip < limit)) {
                 // Update the data being returned. New instance is placed at index 0.
                 data.instances.splice(0, 0, inst);
+                if(!data.totalCount){
+                  data.totalCount = 0;
+                }
                 data.totalCount++;
               }
             }

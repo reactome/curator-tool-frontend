@@ -187,33 +187,34 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   loadTwoInstances(dbId1: number,
-    dbId2: number,
-    needComparsion: boolean = true,
-    resetHistory: boolean = true) {
+    dbId2: number) {
     // avoid to do anything if both dbIds are empty
     // Must always reload due to the combineLatest reaction, ie always loading both instances together
     if (!dbId1 && !dbId2) return;
     combineLatest([this.dataService.fetchInstance(dbId1).pipe(take(1)), this.dataService.fetchInstance(dbId2).pipe(take(1))])
       .subscribe(([firstInstance, secondInstance]) => {
 
-        this.showReferenceColumn = true;
-        // Load the second instance 
-        if (secondInstance.schemaClass)
-          this._loadIntance(secondInstance, resetHistory, needComparsion, dbId2);
-        else {
-          this.dataService.handleSchemaClassForInstance(secondInstance).subscribe(inst => {
-            this._loadIntance(inst, resetHistory, needComparsion, dbId2);
-          })
-        }
-
         // Load the first instance
         if (firstInstance.schemaClass)
-          this._loadIntance(firstInstance, resetHistory, needComparsion, dbId1);
+          this._loadIntance(firstInstance, false, false, dbId1);
         else {
           this.dataService.handleSchemaClassForInstance(firstInstance).subscribe(inst => {
-            this._loadIntance(inst, resetHistory, needComparsion, dbId1);
+            this._loadIntance(firstInstance, false, false, dbId1);
           })
         }
+        this.dbInstance = secondInstance;
+
+        this.showReferenceColumn = true;
+
+        // Load the second instance 
+        // if (secondInstance.schemaClass)
+        //   this._loadIntance(secondInstance, false, true, dbId2);
+        // else {
+        //   this.dataService.handleSchemaClassForInstance(secondInstance).subscribe(inst => {
+        //     this._loadIntance(secondInstance, false, true, dbId2);
+        //   })
+        // }
+
       })
   }
 
