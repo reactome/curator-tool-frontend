@@ -1016,11 +1016,11 @@ export class DataService {
 
   isSchemaClass(instance: Instance, className: string): boolean {
     let schemaClass = this.getSchemaClass(className);
-    if(instance.schemaClass?.name === undefined)
+    if(instance.schemaClassName === undefined)
       return false
 
     else
-      return this.utils._isSchemaClass(instance.schemaClass?.name, schemaClass!);
+      return this.utils._isSchemaClass(instance.schemaClassName, schemaClass!);
   }
 
   handleErrorMessage(err: Error) {

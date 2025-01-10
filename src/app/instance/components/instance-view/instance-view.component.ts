@@ -11,7 +11,7 @@ import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.serv
 import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
-import { Subscription, take } from 'rxjs';
+import { combineLatest, Subscription, take } from 'rxjs';
 import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service';
 import { deleteInstances } from '../../state/instance.selectors';
 
@@ -34,7 +34,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   title: string = '';
   showSecondaryButtons: boolean = false;
   compareInstanceDialogResult$: number = 0;
-  
+
   // Control if we need to track the loading history
   @Input() needHistory: boolean = true;
   // Control if the route should be used for the links in the table, bookmarks, etc
@@ -66,31 +66,41 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     // Handle the loading of instance directly here without using ngrx's effect, which is just
     // too complicated and not necessary here.
     let subscription = this.route.params.subscribe((params) => {
-      if (params['dbId']) {
-        let dbId = params['dbId'];
-        // Make sure dbId is a number
-        dbId = parseInt(dbId);
-        // This is the case for the default event_view landing page: event_view/instance/0
-        if (dbId === 0) {
-          return;
-        }
-        this.loadInstance(dbId);
-        // May want to change to case statement if multiple modes
-        if (params['mode']) {
-          this.showReferenceColumn = (params['mode'] === 'comparison');
-          this.blockRoute = true;
-          if (params['dbId2']) {
-            let dbId2 = params['dbId2']; 
-            // Make sure dbId is a number
-            dbId2 = parseInt(dbId2);
-            this.loadReferenceInstance(dbId2);
+      if (params['mode'] && params['mode'] === 'comparison') {
+        this.showReferenceColumn = (params['mode'] === 'comparison');
+        if (params['dbId']) {
+          let dbId = params['dbId'];
+          // Make sure dbId is a number
+          dbId = parseInt(dbId);
+          // This is the case for the default event_view landing page: event_view/instance/0
+          if (dbId === 0) {
+            return;
           }
+          if (params['dbId2']) {
+            let dbId2 = params['dbId2'];
+            // Make sure dbId2 is a number
+            dbId2 = parseInt(dbId2);
+            this.loadTwoInstances(dbId, dbId2);
+          }
+          // If no dbId2, the comparison is between the frontend and the database copy
           else {
             this.loadReferenceInstance(dbId);
           }
         }
       }
-    });
+      else {
+        if (params['dbId']) {
+          let dbId = params['dbId'];
+          // Make sure dbId is a number
+          dbId = parseInt(dbId);
+          // This is the case for the default event_view landing page: event_view/instance/0
+          if (dbId === 0) {
+            return;
+          }
+          this.loadInstance(dbId);
+        }
+      }
+    })
     this.subscriptions.add(subscription);
     subscription = this.instUtils.refreshViewDbId$.subscribe(dbId => {
       if (this.instance && this.instance.dbId === dbId) {
@@ -150,7 +160,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       // Check if the current instance is in the deleted instances
       const isIn = this.deletedInstances.map(inst => inst.dbId).includes(this.instance.dbId);
       const preSize = this.deletedInstances.length;
-      this.deletedInstances = deletedInstances;  
+      this.deletedInstances = deletedInstances;
       const isCurrentIn = this.deletedInstances.map(inst => inst.dbId).includes(this.instance.dbId);
       if (isIn && !isCurrentIn) {
         return; // The displayed instance is committed
@@ -176,6 +186,37 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
+  loadTwoInstances(dbId1: number,
+    dbId2: number,
+    needComparsion: boolean = true,
+    resetHistory: boolean = true) {
+    // avoid to do anything if both dbIds are empty
+    // Must always reload due to the combineLatest reaction, ie always loading both instances together
+    if (!dbId1 && !dbId2) return;
+    combineLatest([this.dataService.fetchInstance(dbId1).pipe(take(1)), this.dataService.fetchInstance(dbId2).pipe(take(1))])
+      .subscribe(([firstInstance, secondInstance]) => {
+
+        this.showReferenceColumn = true;
+        // Load the second instance 
+        if (secondInstance.schemaClass)
+          this._loadIntance(secondInstance, resetHistory, needComparsion, dbId2);
+        else {
+          this.dataService.handleSchemaClassForInstance(secondInstance).subscribe(inst => {
+            this._loadIntance(inst, resetHistory, needComparsion, dbId2);
+          })
+        }
+
+        // Load the first instance
+        if (firstInstance.schemaClass)
+          this._loadIntance(firstInstance, resetHistory, needComparsion, dbId1);
+        else {
+          this.dataService.handleSchemaClassForInstance(firstInstance).subscribe(inst => {
+            this._loadIntance(inst, resetHistory, needComparsion, dbId1);
+          })
+        }
+      })
+  }
+
   loadInstance(dbId: number,
     needComparsion: boolean = false,
     resetHistory: boolean = false,
@@ -185,25 +226,29 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     // Avoid reloading if it has been loaded already
     if (dbId && this.instance && !forceReload && dbId === this.instance.dbId)
       return;
-    // if (!this.instance) {
-    //   this.router.navigate(["/schema_view"])
-    // }
     setTimeout(() => {
-      // Wrap them together to avoid NG0100 error
-      this.showProgressSpinner = true;
-      if (forceReload && dbId >= 0) // TODO: Make sure this does not have any side effect.
-        this.dataService.removeInstanceInCache(dbId)
-      this.dataService.fetchInstance(dbId).subscribe((instance) => {
-        if (instance.schemaClass)
-          // Turn off the comparison first
-          this._loadIntance(instance, resetHistory, needComparsion, dbId);
-        else {
-          this.dataService.handleSchemaClassForInstance(instance).subscribe(inst => {
-            this._loadIntance(inst, resetHistory, needComparsion, dbId);
-          })
-        }
-      })
+      this._fetchInstance(dbId, needComparsion, resetHistory, forceReload);
     });
+  }
+
+  private _fetchInstance(dbId: number,
+    needComparsion: boolean = false,
+    resetHistory: boolean = false,
+    forceReload: boolean = false) {
+    // Wrap them together to avoid NG0100 error
+    this.showProgressSpinner = true;
+    if (forceReload && dbId >= 0) // TODO: Make sure this does not have any side effect.
+      this.dataService.removeInstanceInCache(dbId)
+    this.dataService.fetchInstance(dbId).subscribe((instance) => {
+      if (instance.schemaClass)
+        // Turn off the comparison first
+        this._loadIntance(instance, resetHistory, needComparsion, dbId);
+      else {
+        this.dataService.handleSchemaClassForInstance(instance).subscribe(inst => {
+          this._loadIntance(inst, resetHistory, needComparsion, dbId);
+        })
+      }
+    })
   }
 
   private _loadIntance(instance: Instance, resetHistory: boolean, needComparsion: boolean, dbId: number) {
@@ -278,8 +323,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   private getCurrentPathRoot() {
     let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
-    .reduce((acc, val) => acc.concat(val), [])
-    .map(urlSegment => urlSegment.path);
+      .reduce((acc, val) => acc.concat(val), [])
+      .map(urlSegment => urlSegment.path);
     return currentPathRoot[0];
   }
 
@@ -300,7 +345,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   private loadReferenceInstance(dbId: number) {
     this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
       dbInstance => this.dbInstance = dbInstance);
-      this.changeTable(this.instance!);
+    this.changeTable(this.instance!);
   }
 
   isUploadable() {
@@ -375,12 +420,14 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  compareInstances(){
+  compareInstances() {
     const matDialogRef =
-    this.listInstancesDialogService.openDialog({schemaClassName: this.instance!.schemaClassName, 
-      title: "Compare " + this.instance!.displayName + " to"});
+      this.listInstancesDialogService.openDialog({
+        schemaClassName: this.instance!.schemaClassName,
+        title: "Compare " + this.instance!.displayName + " to"
+      });
     matDialogRef.afterClosed().subscribe((result) => {
-      if(result)
+      if (result)
         this.router.navigate(["/schema_view/instance/" + this.instance?.dbId.toString() + "/comparison/" + result?.dbId.toString()]);
     });
   }
