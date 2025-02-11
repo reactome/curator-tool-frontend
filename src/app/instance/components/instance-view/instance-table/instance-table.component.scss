@@ -1,22 +1,33 @@
 .instance-table {
   width: 100%;
-  overflow: auto;
+  //overflow: auto;
 }
 
 .mat-mdc-row {
   height: 30px;
 }
 
-.highlight {
-  background: var(--mat-toolbar-container-background-color); ;
-}
 
 .attColumn {
   background: var(--primary-container);
   color: var(--on-primary-container);
   width: 200px;
   min-width: 100px;
+
+  &.highlight {
+    background-color: var(--mat-toolbar-container-background-color);
+  }
+
+  &.required {
+    background-color: lightcoral;
+
+  }
+
+  &.mandatory {
+    background-color: rgb(167, 57, 57);
+  }
 }
+
 
 .thead {
   height: 40px !important;

@@ -2,7 +2,7 @@ import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 /**
- * A dialog component that is used to create a new Instance object.
+ * A dialog component for displaying qa-report.
  */
 @Component({
   selector: 'qa-report-dialog',

@@ -62,8 +62,10 @@
           </th>
         </div>
         <td class="attColumn" mat-cell *matCellDef="let element"
-          [ngClass]="{highlight: compareToDbInstance(element.attribute.name)}">
-          <div class="attColumn">
+          [ngClass]="{highlight: compareToDbInstance(element.attribute.name),
+                      required: highlightRequired(element),
+                      mandatory: highlightMandatory(element)}">
+          <div>
             <ng-container *ngIf="element.attribute.category === AttributeCategory.MANDATORY">
               <img ngSrc="assets/images/Mandatory.gif" alt="Mandatory" width="16" height="16" priority>
             </ng-container>

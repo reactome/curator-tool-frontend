@@ -15,9 +15,7 @@
                          (actionEvent)="handleAction($event)"
                          (urlClickEvent)="navigateUrl($event)">
 </app-instance-list-table>
-<!-- TODO: Add padding here instead-->
-<!-- <br>
-<hr> -->
+
 <h4>Updated Instances: {{updatedInstances.length}}</h4>
 <app-instance-list-table [dataSource]="updatedInstances"
                          [isSelection]="isSelection"
@@ -28,8 +26,8 @@
                          (actionEvent)="handleAction($event)"
                          (urlClickEvent)="navigateUrl($event)">
 </app-instance-list-table>
-<!-- <br>
-<hr> -->
+<!-- <br> -->
+<!-- <hr> -->
 <h4>Deleted Instances: {{deletedInstances.length}}</h4>
 <app-instance-list-table [dataSource]="deletedInstances"
                          [isSelection]="isSelection"

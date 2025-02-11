@@ -397,11 +397,11 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     // console.debug(" ** onQAReportAction: ", reportName, this.instance!.qaIssues);
     let qaReportData = this.instance!.qaIssues!.get(reportName)!;
     const matDialogRef = this.qaReportDialogService.openDialog(reportName, qaReportData);
-    //       matDialogRef.afterClosed().subscribe(result => {
-    //         if (result !== undefined) {
-    //           console.debug("QA report dialog closed", result);
-    //         }
-    //       });
+          matDialogRef.afterClosed().subscribe(result => {
+            if (result !== undefined) {
+              console.debug("QA report dialog closed", result);
+            }
+          });
   }
 
   delete() {

@@ -25,25 +25,25 @@ export class TestQACheck implements PostEditOperation {
          });
        }
 
-      //  this.dataService.testQACheckReport(
-      //         instance.dbId,
-      //         this.checkType,
-      //         editedAttributeNames.toString(),
-      //         editedAttributeValues.toString())
-      //     .subscribe(data => {
-      //     if (instance.qaIssues === undefined) {
-      //       instance.qaIssues = new Map();
-      //     }
-      //     let key = "TestQA" + this.checkType;
-      //     instance.qaIssues.set(key, data);
-      //     if (instance.qaIssues.get(key)!.length === 0) {
-      //         instance.qaIssues.delete(key);
-      //     }
-      //     // console.debug(instance.qaIssues);
-      //     if (postEditListener)
-      //         postEditListener.donePostEdit(instance, editedAttributeName);
+       this.dataService.testQACheckReport(
+              instance.dbId,
+              this.checkType,
+              editedAttributeNames.toString(),
+              editedAttributeValues.toString())
+          .subscribe(data => {
+          if (instance.qaIssues === undefined) {
+            instance.qaIssues = new Map();
+          }
+          let key = "TestQA" + this.checkType;
+          instance.qaIssues.set(key, data);
+          if (instance.qaIssues.get(key)!.length === 0) {
+              instance.qaIssues.delete(key);
+          }
+          // console.debug(instance.qaIssues);
+          if (postEditListener)
+              postEditListener.donePostEdit(instance, editedAttributeName);
 
-      //  });
+       });
         return true;
     }
 }

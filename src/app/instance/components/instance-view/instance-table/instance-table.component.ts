@@ -557,4 +557,22 @@ export class InstanceTableComponent implements PostEditListener {
     this.filterEdited = !this.filterEdited;
     this.updateTableContent();
   }
+
+  highlightRequired(element: AttributeValue): boolean {
+    if(element.attribute.category === AttributeCategory.REQUIRED && element.value === undefined){
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+
+  highlightMandatory(element: AttributeValue): boolean {
+    if(element.attribute.category === AttributeCategory.MANDATORY && element.value === undefined){
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
 }
