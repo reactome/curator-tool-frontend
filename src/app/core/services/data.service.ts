@@ -11,6 +11,7 @@ import {
   SchemaClass
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
+import { QAReport } from "../models/qa-report.model";
 
 
 @Injectable({
@@ -49,6 +50,7 @@ export class DataService {
   private hasCyNetworkUrl = `${environment.ApiRoot}/hasCyNetwork/`;
   private getCyNetworkUrl = `${environment.ApiRoot}/getCyNetwork/`;
   private deleteInstaneUrl = `${environment.ApiRoot}/delete/`;
+  private fetchQAReportUrl = `${environment.ApiRoot}/qaReport/`;
 
 
   // Track the negative dbId to be used
@@ -1031,4 +1033,20 @@ export class DataService {
     this.errorMessage.next(err);
     return throwError(() => err);
   };
+
+    /**
+   * Pass the instance to the back end for QA checks.
+   * @param instance
+   */
+    fetchQAReport(instance: Instance): Observable<QAReport> {
+      // In case instance is just a shell, we need to use the cached instance
+      return this.http.post<QAReport>(this.fetchQAReportUrl, instance).pipe(
+        map((report: QAReport) => {
+          return report;
+        }),
+        catchError(error => {
+          return this.handleErrorMessage(error);
+        })
+      );
+    }
 }

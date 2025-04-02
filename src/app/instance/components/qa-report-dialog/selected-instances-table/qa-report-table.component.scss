@@ -1,0 +1,34 @@
+mat-paginator {
+  bottom: 0px;
+  position: sticky;
+  z-index: 10;
+}
+
+.instance-list-table {
+  width: 100%;
+}
+
+.table-container {
+  height: calc(100vh - var(--bread-crumb-height) - var(--title-height) - 2 * var(--body-margin));
+  overflow: auto;
+  border: none;
+}
+
+.instance-view-container {
+  max-height: 100vh;
+  --bread-crumb-height: 40px;
+  --title-height: 5vh;
+  --filter-height: 80px;
+  border: 1px solid var(--outline-variant);
+  border-left-width: 0;
+}
+
+.mat-mdc-row {
+  height: 30px;
+}
+
+.column-right {
+  text-align: right;
+  justify-content: flex-end;
+}
+

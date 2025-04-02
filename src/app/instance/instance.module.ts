@@ -34,6 +34,7 @@ import { ReferrersTableComponent } from "./components/referrers-table/referrers-
 import {
   ConfirmDeleteDialogComponent
 } from "./components/deletion-dialog/confirm-delete-dialog/confirm-delete-dialog.component";
+import { QAReportTable } from "./components/qa-report-dialog/selected-instances-table/qa-report-table.component";
 
 @NgModule({
     declarations: [
@@ -49,7 +50,8 @@ import {
         ReferrersDialogComponent,
         DeletionDialogComponent,
         ReferrersTableComponent,
-        ConfirmDeleteDialogComponent
+        ConfirmDeleteDialogComponent,
+        QAReportTable
     ],
   imports: [
     CommonModule,

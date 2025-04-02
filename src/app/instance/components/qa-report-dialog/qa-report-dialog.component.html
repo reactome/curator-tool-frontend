@@ -1,27 +1,15 @@
-<h2 class="dialog_title" mat-dialog-title cdkdraghandle>{{qaReportName}}</h2>
+<h2 class="dialog_title" mat-dialog-title cdkdraghandle> QA Report for {{qaReport!.instance.displayName}}</h2>
 <mat-dialog-content style="width: 100%">
-
-  <table mat-table [dataSource]="qaReport.slice(1)" class="mat-elevation-z0 qa-report-table">
-
-    <ng-container *ngFor="let colHeader of qaReport[0]; let i = index;" matColumnDef="{{colHeader}}">
-      <th mat-header-cell *matHeaderCellDef>{{colHeader}}</th>
-      <td [class] = "i === 0 ? 'highlightCol' : ''" mat-cell *matCellDef="let element">
-        {{element[i]}}
-      </td>
-    </ng-container>
-
-    <ng-container>
-      <tr mat-header-row *matHeaderRowDef="qaReport[0]"></tr>
-    </ng-container>
-    <ng-container>
-      <tr
-        mat-row
-        *matRowDef="let row; columns: qaReport[0];"
-      ></tr>
-    </ng-container>
-  </table>
-
+  <ng-container *ngFor="let check of qaReport!.testsRun" >
+    <h4>{{check.checkName}}:</h4>
+  <ng-container *ngIf="check.checkPassed">
+    <h4 style="color: green">Test Passed</h4>
+  </ng-container>
+    <qa-report-table *ngIf="!check.checkPassed" 
+      [rows]="check.rows"
+      [colNames]="check.columns"></qa-report-table>
+    <br>
+  </ng-container>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button mat-button (click)="onOK()" cdkFocusInitial>OK</button>
 </mat-dialog-actions>

@@ -2,25 +2,24 @@
   text-align: left;
   font-weight: bold;
   font-size: 20px;
+  //color: var(--primary);
+  background-color: var(--primary);
+
 }
 
 .dialog_area {
-  width: 1000px;
+  width: 1200px;
   height: 3000px;
 }
 
 .drop_down {
-  max-width: 150px;
+  max-width: 300px;
   margin: auto;
 }
 
-.qa-report-table {
-  width: 100%;
-}
-
-.highlightCol {
-  background: var(--primary-container);
-  color: var(--on-primary-container);
-  width: 200px;
-  min-width: 100px;
+.scroll_panel {
+  height: auto;
+  max-height: 40vh;
+  overflow: scroll;
+  border: solid;
 }
