@@ -1,11 +1,37 @@
-<mat-toolbar>
+<mat-toolbar style="position: sticky">
     <div class="toolbar">
         <button mat-icon-button color="primary" matTooltip="Close" (click)="close()">
             <mat-icon>close</mat-icon>
         </button>
     </div>
 </mat-toolbar>
+<!-- <h4>Updated Instances: {{updatedInstances.length}}</h4>
+<ng-container>
+<app-instance-list-table [dataSource]="updatedInstances"
+                         [isSelection]="isSelection"
+                         [showHeader]="showHeader"
+                         [actionButtons]="newInstanceActionButtons"
+                         [showEmptyMessage]="false"
+                         [blockRoute]="blockRoute"
+                         (actionEvent)="handleAction($event)"
+                         (urlClickEvent)="navigateUrl($event)">
+</app-instance-list-table>
+</ng-container> -->
 <h4>New Instances: {{newInstances.length}}</h4>
+<ng-container>
+<app-instance-list-table [dataSource]="updatedInstances"
+                         [isSelection]="isSelection"
+                         [showHeader]="showHeader"
+                         [actionButtons]="newInstanceActionButtons"
+                         [showEmptyMessage]="false"
+                         [blockRoute]="blockRoute"
+                         (actionEvent)="handleAction($event)"
+                         (urlClickEvent)="navigateUrl($event)">
+</app-instance-list-table>
+</ng-container>
+
+<h4>New Instances: {{newInstances.length}}</h4>
+<ng-container>
 <app-instance-list-table [dataSource]="newInstances"
                          [isSelection]="isSelection"
                          [showHeader]="showHeader"
@@ -15,17 +41,10 @@
                          (actionEvent)="handleAction($event)"
                          (urlClickEvent)="navigateUrl($event)">
 </app-instance-list-table>
+</ng-container>
 
-<h4>Updated Instances: {{updatedInstances.length}}</h4>
-<app-instance-list-table [dataSource]="updatedInstances"
-                         [isSelection]="isSelection"
-                         [showHeader]="showHeader"
-                         [actionButtons]="updatedInstanceActions"
-                         [showEmptyMessage]="false"
-                         [blockRoute]="blockRoute"
-                         (actionEvent)="handleAction($event)"
-                         (urlClickEvent)="navigateUrl($event)">
-</app-instance-list-table>
+
+
 <!-- <br> -->
 <!-- <hr> -->
 <h4>Deleted Instances: {{deletedInstances.length}}</h4>

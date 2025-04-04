@@ -1,5 +1,6 @@
 .instance-list-table {
   width: 100%;
+  position:relative;
 }
 
 .instance-list-table-row-is-clicked {
@@ -32,4 +33,12 @@ th {
   // height: calc(100vh - var(--bread-crumb-height) - var(--filter-height) - 2 * var(--body-margin));
   overflow: auto;
   border: none;
+}
+
+.buttons-pane {
+  // display: flex;
+  // flex-direction: row-reverse;
+  // padding-top: 8px;
+  position: absolute;
+  min-width: 300px;
 }
