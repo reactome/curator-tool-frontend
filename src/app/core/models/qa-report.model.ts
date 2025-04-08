@@ -6,12 +6,12 @@ import { Instance } from "./reactome-instance.model";
 
 export interface QAReport {
     instance: Instance;
-    testsRun: QACheck[];
+    qaResults: QAResults[];
 }
 
-export interface QACheck {
+export interface QAResults {
     checkName: string;
-    checkPassed: boolean;
+    passed: boolean;
     columns: string[];
     rows: string[][];
 }

@@ -1042,11 +1042,28 @@ export class DataService {
       // In case instance is just a shell, we need to use the cached instance
       return this.http.post<QAReport>(this.fetchQAReportUrl, instance).pipe(
         map((report: QAReport) => {
-          return report;
+        //   for(let result of report.qaResults) {
+        //     this.doubleArrayToDataSource(result.rows, result.columns)
+        // }
+        return report;
         }),
         catchError(error => {
           return this.handleErrorMessage(error);
         })
       );
+    }
+
+    doubleArrayToDataSource(data: any[][], columnNames: string[]): any[] {
+      return data.map(innerArray => {
+        const obj: any = {};
+        innerArray.forEach((value, index) => {
+          obj[columnNames[index]] = value;
+          if(value.includes("SimpleInstance")){
+            value = value.replace("SimpleInstance ", "");
+            value = JSON.parse(value) as Instance  
+          }
+        });
+        return obj;
+      });
     }
 }

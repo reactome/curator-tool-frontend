@@ -2,14 +2,14 @@
   <!-- dbId Column -->
   <ng-container matColumnDef="dbId" style="white-space: normal;">
     <th mat-header-cell *matHeaderCellDef>dbId</th>
-    <td mat-cell *matCellDef="let element">0
-      <!-- <ng-container *ngIf="isSelection">
+    <td mat-cell *matCellDef="let element">
+      <ng-container *ngIf="isSelection">
         {{element.dbId}}
-      </ng-container> -->
-      <!-- <ng-container *ngIf="!isSelection">
+      </ng-container>
+      <ng-container *ngIf="!isSelection">
         <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)" style="text-decoration: underline;"
           (click)="onInstanceLinkClicked(element)">{{element.dbId}}</a><br>
-      </ng-container> -->
+      </ng-container>
     </td>
   </ng-container>
 
