@@ -47,3 +47,26 @@
 - TODO: Add an IE to referrers for the deleted instance at the server-side, return this IE so that we can manually add it to the local loaded referrers, including updated and deleted instances.
 - TODO: deletion should clear up referrers attributes locally
 - TODO: When a data service's query method is called via subscribe, the generated subscription cannot be subsribed autmoatically. Make sure use take(1) or manually unscribte it: https://devzilla.io/manage-rxjs-subscriptions-in-angular
+
+# Deletion related document kept here for the time being
+ * The following may need to be collected into some document for test cases in the doc folder:
+ * Expected behavior of deleting an instance:
+ * 1). There are two steps of deletion: 1). Local deletion 2). Commit the deletion to the server: the instance is removed
+ * at the database
+ * 2). Local deleltion: Mark the instance is deleted. This instance can still be viewed, but cannot be selected as an attribute value
+ * 3). Commit the deletion to the database: The instance cannot be viewed anymore, and of course cannot be used.
+ * 4). When an instance is marked for deletion (Step 1), the following should happen:
+ * 4.1). The instance is listed in the deleteInstances list in the store
+ * 4.2). The instance should be removed from displayed instance's attributes if it is used for both persisted instances
+ * and new instances
+ * 4.3). The instance should not be listed in the instance list
+ * 4.4). The total count of the instance schema class and its ancestors should be updated by reducing 1 in the schema tree if it
+ * is displayed (schema view)
+ * 4.5). The total count of the page view for the instance list including this deleted instance should be updated by reducing 1.
+ * 5). When an instance is committed for deletion (Step 2), the following should happen:
+ * 5.1). The instance should be removed from the deleteInstances list in the store
+ * 5.2). The instance should be removed from the cache
+ * 5.3). The server-side will remove the instance from the database and add an InstanceEdit to the modified slot for all
+ * referrers to this deleted instance.
+ * 5.4). When a referrer is viewed at the front end, the user should see this added InstanceEdit in the modified slot.
+ * Anything missing?
