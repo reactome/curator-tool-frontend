@@ -1,7 +1,7 @@
 <h2 class="dialog_title" mat-dialog-title cdkdraghandle> QA Report for "{{qaReport!.instance.displayName}}"</h2>
 <mat-dialog-content style="width: 100%">
   <ng-container *ngIf="qaReport?.qaResults?.length === 0; else elseblock">
-    <h4>No results to show for "{{qaReport!.instance.displayName}}"</h4>
+    <h4>No QA issue is found for "{{qaReport!.instance.displayName}}"</h4>
   </ng-container>
   <ng-template #elseblock>
     <ng-container *ngFor="let check of qaReport!.qaResults" >
@@ -17,4 +17,5 @@
   </ng-template>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Close</button>
 </mat-dialog-actions>
