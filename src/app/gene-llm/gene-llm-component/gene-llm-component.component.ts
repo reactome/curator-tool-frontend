@@ -8,13 +8,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { environment } from 'src/environments/environment.dev';
+import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
+import {MatOptgroup, MatOption, MatSelect, MatSelectModule} from '@angular/material/select';
 
 @Component({
   selector: 'app-gene-llm-component',
   templateUrl: './gene-llm-component.component.html',
   styleUrls: ['./gene-llm-component.component.scss'],
   standalone: true,
-  imports: [MatFormFieldModule, MatInputModule, NgIf, NgFor, MatProgressSpinnerModule, MatDividerModule, MatExpansionModule]
+  imports: [MatFormFieldModule, MatInputModule, NgIf, NgFor, MatProgressSpinnerModule, MatDividerModule, MatExpansionModule, MatSelect, MatOption]
 })
 export class GeneLlmComponentComponent {
 

@@ -8,6 +8,10 @@
   
   .section_title {
     text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+    background-color: var(--primary);
+    height: 50px;
   }
 
   .title {
@@ -38,4 +42,11 @@
 
   .center {
     text-align: center;
+  }
+
+  .label {
+    background: var(--primary-container); color: var(--on-primary-container);
+    width: 200px;
+    min-width: 100px;
+    outline: black;
   }

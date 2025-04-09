@@ -1,9 +1,85 @@
 <h1 class="section_title">Use LLM to Annotate a Gene in Reactome</h1>
 
+<!-- Args:
+gene (str): _description_
+model (_type_): _description_
+fi_cutoff (float, optional): Default=0.8. Used to filter the pulled PPIs.
+fdr_cutoff (float, optional): _description_. Defaults to 1.0E-2.
+pathway_count (int, optional): _description_. Defaults to 8.
+total_words (int, optional): _description_. Defaults to 300. -->
+
 <!--Enter a gene-->
 <div class="center">
     <mat-label>Enter a gene: </mat-label>
-    <input matInput placeholder="TANC1" #geneInput value="TANC1">
+    <input class="label" matInput placeholder="TANC1" #geneInput value="TANC1">
+    <br>
+    <br>
+    <div >
+        <mat-label>Functional Interaction Score ≥ </mat-label>
+        <mat-select class="label" style="width: 100px;" placeholder="0.8">
+            <mat-option value="option1">0</mat-option>
+            <mat-option value="option2">0.1</mat-option>
+            <mat-option value="option3">0.2</mat-option>
+            <mat-option value="option3">0.3</mat-option>
+            <mat-option value="option3">0.4</mat-option>
+            <mat-option value="option3">0.5</mat-option>
+            <mat-option value="option3">0.6</mat-option>
+            <mat-option value="option3">0.7</mat-option>
+            <mat-option value="option3">0.8</mat-option>
+            <mat-option value="option3">0.9</mat-option>
+
+        </mat-select>
+    </div>
+<br> 
+    <div>
+        <mat-label>FDR < </mat-label>
+        <mat-select class="label" style="width: 100px;" placeholder="0.05">
+            <mat-option value="option1">1</mat-option>
+            <mat-option value="option2">0.05</mat-option>
+            <mat-option value="option3">0.01</mat-option>
+            <mat-option value="option3">0.001</mat-option>
+            <mat-option value="option3">0.0001</mat-option>
+            <mat-option value="option3">0.00001</mat-option>
+        </mat-select>
+    </div>
+<br>
+<br>
+<div>
+    <mat-label>Model: </mat-label>
+    <mat-select class="label" style="width: 100px;" placeholder="0.05">
+        <mat-option value="option1">1</mat-option>
+        <mat-option value="option2">0.05</mat-option>
+        <mat-option value="option3">0.01</mat-option>
+        <mat-option value="option3">0.001</mat-option>
+        <mat-option value="option3">0.0001</mat-option>
+        <mat-option value="option3">0.00001</mat-option>
+    </mat-select>
+</div>
+<br>
+<div>
+    <mat-label>Pathway count: </mat-label>
+    <mat-select class="label" style="width: 100px;" placeholder="0.05">
+        <mat-option value="option1">1</mat-option>
+        <mat-option value="option2">0.05</mat-option>
+        <mat-option value="option3">0.01</mat-option>
+        <mat-option value="option3">0.001</mat-option>
+        <mat-option value="option3">0.0001</mat-option>
+        <mat-option value="option3">0.00001</mat-option>
+    </mat-select>
+</div>
+<br>
+<div>
+    <mat-label>Total Words: < </mat-label>
+    <mat-select class="label" style="width: 100px;" placeholder="0.05">
+        <mat-option value="option1">1</mat-option>
+        <mat-option value="option2">0.05</mat-option>
+        <mat-option value="option3">0.01</mat-option>
+        <mat-option value="option3">0.001</mat-option>
+        <mat-option value="option3">0.0001</mat-option>
+        <mat-option value="option3">0.00001</mat-option>
+    </mat-select>
+</div>
+<br>
     <button mat-button (click)="queryGene(geneInput.value)">Submit</button>
 </div>
 
