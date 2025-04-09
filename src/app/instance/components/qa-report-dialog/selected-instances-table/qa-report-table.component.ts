@@ -19,11 +19,6 @@ export class QAReportTable implements OnInit{
 setNavigationUrl(_t14: any) {
 throw new Error('Method not implemented.');
 }
-routerNavigationUrl: string = '';
-onInstanceLinkClicked(_t14: any) {
-throw new Error('Method not implemented.');
-}
-
   @Input() rows: string[][] = [];
   @Input() colNames: string[] = [];
 
@@ -60,6 +55,6 @@ doubleArrayToDataSource(data: any[][], columnNames: string[]): any[] {
 
 navigate(dbId: string) {
   // This needs to be update by configuring
-  window.open("/schema_view/instance/" + dbId.toString());
+  window.open(`schema_view/instance/${dbId}`, '_blank');
 }
 }

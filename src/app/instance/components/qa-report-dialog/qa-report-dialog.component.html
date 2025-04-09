@@ -1,15 +1,20 @@
 <h2 class="dialog_title" mat-dialog-title cdkdraghandle> QA Report for "{{qaReport!.instance.displayName}}"</h2>
 <mat-dialog-content style="width: 100%">
-  <ng-container *ngFor="let check of qaReport!.qaResults" >
-    <h4>{{check.checkName}}:</h4>
-  <ng-container *ngIf="check.passed">
-    <h4 style="color: green">Test Passed</h4>
+  <ng-container *ngIf="qaReport?.qaResults?.length === 0; else elseblock">
+    <h4>No results to show for "{{qaReport!.instance.displayName}}"</h4>
   </ng-container>
-    <qa-report-table *ngIf="!check.passed" 
-      [rows]="check.rows"
-      [colNames]="check.columns"></qa-report-table>
-    <br>
-  </ng-container>
+  <ng-template #elseblock>
+    <ng-container *ngFor="let check of qaReport!.qaResults" >
+      <h4 class="check-title">{{check.checkName}}:</h4>
+    <ng-container *ngIf="check.passed">
+      <h4 style="color: green">Test Passed</h4>
+    </ng-container>
+      <qa-report-table *ngIf="!check.passed" 
+        [rows]="check.rows"
+        [colNames]="check.columns"></qa-report-table>
+      <br>
+    </ng-container>
+  </ng-template>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
 </mat-dialog-actions>

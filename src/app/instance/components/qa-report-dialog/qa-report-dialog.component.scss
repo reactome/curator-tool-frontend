@@ -2,9 +2,15 @@
   text-align: left;
   font-weight: bold;
   font-size: 20px;
-  //color: var(--primary);
+  color: white;
   background-color: var(--primary);
 
+}
+
+.check-title {
+  font-weight: bold;
+  font-size: 18px;
+  color: var(--primary);
 }
 
 .dialog_area {
