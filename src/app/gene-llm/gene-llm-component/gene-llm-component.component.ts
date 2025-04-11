@@ -12,13 +12,14 @@ import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatOptgroup, MatOption, MatSelect, MatSelectModule} from '@angular/material/select';
 import { MatIcon } from '@angular/material/icon';
 import { Form } from '@angular/forms';
+import { MatCard } from '@angular/material/card';
 
 @Component({
   selector: 'app-gene-llm-component',
   templateUrl: './gene-llm-component.component.html',
   styleUrls: ['./gene-llm-component.component.scss'],
   standalone: true,
-  imports: [MatFormFieldModule, MatInputModule, NgIf, NgFor, MatProgressSpinnerModule, MatDividerModule, MatExpansionModule, MatSelect, MatOption, MatIcon]
+  imports: [MatFormFieldModule, MatInputModule, NgIf, NgFor, MatProgressSpinnerModule, MatDividerModule, MatExpansionModule, MatSelect, MatOption, MatIcon, MatCard]
 })
 export class GeneLlmComponentComponent {
 
@@ -44,34 +45,6 @@ export class GeneLlmComponentComponent {
   pathwayCount: string ="8";
   fdr: string = "0.01";
   model: string = "gpt-4o-mini"
-
-  onGeneChange(geneName: string){
-    this.gene = geneName;
-  }
-  onfiScoreChange(fiScore: string){
-    this.fiScore = fiScore;
-  }
-  onpubmedResultsChange(pubmedResults: string){
-    this.pubmedResults = pubmedResults;
-  }
-  onmaxQueryLengthChange(maxQueryLength: string){
-    this.maxQueryLength = maxQueryLength;
-  }
-  onpathwaySimilarityCutoffChange(pathwaySimilarityCutoff: string){
-    this.pathwaySimilarityCutoff = pathwaySimilarityCutoff;
-  }
-  onllmScoreCutoffChange(llmScoreCutoff: string){
-    this.llmScoreCutoff = llmScoreCutoff;
-  }
-  onpathwayCountChange(pathwayCount: string){
-    this.pathwayCount = pathwayCount;
-  }
-  onFdrChange(fdr: string){
-    this.fdr = fdr;
-  }
-  onModelChange(model: string){
-    this.model = model;
-  }
 
   showConfiguration: boolean = true; 
 
@@ -342,6 +315,34 @@ export class GeneLlmComponentComponent {
         detail.isWorkingFullText = false;
       }
     });
+  }
+
+  onGeneChange(geneName: string){
+    this.gene = geneName;
+  }
+  onfiScoreChange(fiScore: string){
+    this.fiScore = fiScore;
+  }
+  onpubmedResultsChange(pubmedResults: string){
+    this.pubmedResults = pubmedResults;
+  }
+  onmaxQueryLengthChange(maxQueryLength: string){
+    this.maxQueryLength = maxQueryLength;
+  }
+  onpathwaySimilarityCutoffChange(pathwaySimilarityCutoff: string){
+    this.pathwaySimilarityCutoff = pathwaySimilarityCutoff;
+  }
+  onllmScoreCutoffChange(llmScoreCutoff: string){
+    this.llmScoreCutoff = llmScoreCutoff;
+  }
+  onpathwayCountChange(pathwayCount: string){
+    this.pathwayCount = pathwayCount;
+  }
+  onFdrChange(fdr: string){
+    this.fdr = fdr;
+  }
+  onModelChange(model: string){
+    this.model = model;
   }
 
 }
