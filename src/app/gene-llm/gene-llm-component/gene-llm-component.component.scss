@@ -4,6 +4,8 @@
     flex-direction: column;
     align-items: flex-start;
     width: 97vw;
+    text-align: center;
+
   }
   
   .section_title {
@@ -12,6 +14,8 @@
     font-size: 20px;
     background-color: var(--primary);
     height: 50px;
+    color: white;
+    vertical-align :center;
   }
 
   .title {
@@ -40,13 +44,13 @@
     display: none;
   }
 
-  .center {
-    text-align: center;
-  }
+  // .center {
+  //   text-align: center;
+  // }
 
   .label {
     background: var(--primary-container); color: var(--on-primary-container);
-    width: 200px;
-    min-width: 100px;
+    // width: 200px;
+    // min-width: 100px;
     outline: black;
   }

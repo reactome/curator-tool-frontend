@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { NgIf, NgFor } from '@angular/common';
@@ -10,13 +10,15 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { environment } from 'src/environments/environment.dev';
 import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {MatOptgroup, MatOption, MatSelect, MatSelectModule} from '@angular/material/select';
+import { MatIcon } from '@angular/material/icon';
+import { Form } from '@angular/forms';
 
 @Component({
   selector: 'app-gene-llm-component',
   templateUrl: './gene-llm-component.component.html',
   styleUrls: ['./gene-llm-component.component.scss'],
   standalone: true,
-  imports: [MatFormFieldModule, MatInputModule, NgIf, NgFor, MatProgressSpinnerModule, MatDividerModule, MatExpansionModule, MatSelect, MatOption]
+  imports: [MatFormFieldModule, MatInputModule, NgIf, NgFor, MatProgressSpinnerModule, MatDividerModule, MatExpansionModule, MatSelect, MatOption, MatIcon]
 })
 export class GeneLlmComponentComponent {
 
@@ -32,13 +34,78 @@ export class GeneLlmComponentComponent {
   annotated_pathway_details: string | undefined;
   during_query: boolean = false;
 
+  //Parameters
+  gene: string = "TANC1";
+  fiScore: string = "0.8";
+  pubmedResults: string = "8";
+  maxQueryLength: string = "1000";
+  pathwaySimilarityCutoff: string = "0.38";
+  llmScoreCutoff: string = "3";
+  pathwayCount: string ="8";
+  fdr: string = "0.01";
+  model: string = "gpt-4o-mini"
+
+  onGeneChange(geneName: string){
+    this.gene = geneName;
+  }
+  onfiScoreChange(fiScore: string){
+    this.fiScore = fiScore;
+  }
+  onpubmedResultsChange(pubmedResults: string){
+    this.pubmedResults = pubmedResults;
+  }
+  onmaxQueryLengthChange(maxQueryLength: string){
+    this.maxQueryLength = maxQueryLength;
+  }
+  onpathwaySimilarityCutoffChange(pathwaySimilarityCutoff: string){
+    this.pathwaySimilarityCutoff = pathwaySimilarityCutoff;
+  }
+  onllmScoreCutoffChange(llmScoreCutoff: string){
+    this.llmScoreCutoff = llmScoreCutoff;
+  }
+  onpathwayCountChange(pathwayCount: string){
+    this.pathwayCount = pathwayCount;
+  }
+  onFdrChange(fdr: string){
+    this.fdr = fdr;
+  }
+  onModelChange(model: string){
+    this.model = model;
+  }
+
+  showConfiguration: boolean = true; 
+
+  form = new FormControl('');
+
   constructor(private http: HttpClient) {
   }
 
-  queryGene(gene: string) {
-    console.debug('query gene: ', gene);
+  changeShowConfiguration(){ 
+    if(this.showConfiguration) this.showConfiguration = false;
+    else this.showConfiguration = true;
+  }
+
+  // gene: string, ficutoff: string, fdr: string, model: string, pathwayCount: string, words: string
+  //const url = this.LLM_QUERY_GENE_URL + `${gene}/` + `${ficutoff}/` + `${fdr}`+ `${model}` + `${pathwayCount}`+ `${words}`;
+  queryGene() {
+    console.debug('Form data:', this.form);
+    const url = this.LLM_QUERY_GENE_URL;
+
+    let configurations: ConfigurationDetails = {
+      gene: this.gene,
+      fiScore: this.fiScore,
+      pubmedResults: this.pubmedResults,
+      maxQueryLength: this.maxQueryLength,
+      pathwaySimilarityCutoff: this.pathwaySimilarityCutoff,
+      llmScoreCutoff: this.llmScoreCutoff,
+      pathwayCount: this.pathwayCount,
+      fdr: this.fdr,
+      model: this.model
+    }
+
+    // TODO: submit the configuration object, not just the gene. 
+
     this.during_query = true;
-    const url = this.LLM_QUERY_GENE_URL + gene;
     return this.http.get<LLM_Result>(url).pipe(
       concatMap((result: LLM_Result) => {
         return of(result);
@@ -64,15 +131,15 @@ export class GeneLlmComponentComponent {
         this.annotated_pathway_content = this.addPathwayLinks(this.annotated_pathway_content, result.pathway_name_2_id, false);
       }
       this.failure = result.failure;
-      this.content = this.hiliteGene(result.content, gene);
-      if (this.content) {
-        this.content = this.addLinkToPMID(this.content);
-      }
-      this.details = this.splitDetails(result.docs,
-        result.pathway_name_2_id,
-        gene);
+      //this.content = this.hiliteGene(result.content, gene);
+      // if (this.content) {
+      //   this.content = this.addLinkToPMID(this.content);
+      // }
+      // this.details = this.splitDetails(result.docs,
+      //   result.pathway_name_2_id,
+      //   gene);
       this.during_query = false;
-    })
+   })
   }
 
   private splitDetails(details: string | undefined,
@@ -300,4 +367,16 @@ interface Interacting_Pathway_Detail {
   failure?: string;
   needPDFFile?: boolean;
   pdfUrl?: string;
+}
+
+interface ConfigurationDetails {
+  gene: string;
+  fiScore: string;
+  pubmedResults: string;
+  maxQueryLength: string;
+  pathwaySimilarityCutoff: string;
+  llmScoreCutoff: string;
+  pathwayCount: string;
+  fdr: string;
+  model: string;
 }
