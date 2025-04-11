@@ -46,7 +46,7 @@ export class GeneLlmComponentComponent {
   fdr: string = "0.01";
   model: string = "gpt-4o-mini"
 
-  showConfiguration: boolean = true; 
+  showConfiguration: boolean = false; 
 
   form = new FormControl('');
 

@@ -11,17 +11,26 @@ total_words (int, optional): _description_. Defaults to 300. -->
 <!--Enter a gene-->
 <div class="center">
     <div>
-        <mat-form-field style="width: 200px; padding-right: 10px;">
-            <mat-label>Enter a gene: </mat-label>
-            <input class="label" matInput [value]=gene (change)="onGeneChange(geneInput.value)" #geneInput>
-        </mat-form-field>
-        <button mat-button style="border: 0px;" (click)="changeShowConfiguration()" matTooltip="Show Configuration">
-            <mat-icon>settings</mat-icon>
-        </button>
-    </div>
+<!-- 
+        <div *ngIf="needAdvancedSearch">
+            <mat-form-field style="float:left; width: 100%; position: sticky !important">
+              <mat-label>Search</mat-label>
+              <input matInput (keydown.enter)="doAdvancedSearch(0)"
+              #input readonly="true" [(ngModel)]="advancedSearchKey">
+              <mat-icon class="undo-idon" matTooltip="Undo last" (click)="removeSearchCriterium()" matSuffix>undo</mat-icon>
+              <mat-icon class="custom-search-icon" matTooltip="Simple Search" (click)="toggleSearchMode()" matSuffix>manage_search</mat-icon>
+            </mat-form-field>
+          </div> -->
 
-    <mat-card class="card-style">
-        <ng-container *ngIf="showConfiguration">
+        <mat-label>Enter a gene: </mat-label>
+        <mat-form-field style="width: 200px; padding-right: 10px;">
+            <input class="label" matInput [value]=gene (change)="onGeneChange(geneInput.value)" #geneInput>
+              <mat-icon class="custom-search-icon" matTooltip="Simple Search" (click)="changeShowConfiguration()" matSuffix>settings</mat-icon>
+        </mat-form-field>
+    </div>
+    <ng-container *ngIf="showConfiguration">
+
+        <mat-card class="card-style">
             <br>
             <br>
             <div>
@@ -85,8 +94,8 @@ total_words (int, optional): _description_. Defaults to 300. -->
                     </mat-select>
                 </mat-form-field>
             </div>
-        </ng-container>
-    </mat-card>
+        </mat-card>
+    </ng-container>
     <br>
     <button (click)="queryGene()" color="primary" mat-button>Submit</button>
 </div>
