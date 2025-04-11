@@ -25,7 +25,7 @@ export class GeneLlmComponentComponent {
 
   // private LLM_HOST = "http://127.0.0.1:5000/"
   private LLM_HOST = environment.llmURL;
-  private LLM_QUERY_GENE_URL = this.LLM_HOST + "/query/"
+  private LLM_ANNOTATE_GENE_URL = this.LLM_HOST + "/annotate"
   private LLM_FULLTEXT_ANALYSIS_URL = this.LLM_HOST + '/fulltext/'
 
   content: string | undefined;
@@ -62,24 +62,26 @@ export class GeneLlmComponentComponent {
   //const url = this.LLM_QUERY_GENE_URL + `${gene}/` + `${ficutoff}/` + `${fdr}`+ `${model}` + `${pathwayCount}`+ `${words}`;
   queryGene() {
     console.debug('Form data:', this.form);
-    const url = this.LLM_QUERY_GENE_URL;
+    const url = this.LLM_ANNOTATE_GENE_URL;
 
-    let configurations: ConfigurationDetails = {
-      gene: this.gene,
-      fiScore: this.fiScore,
-      pubmedResults: this.pubmedResults,
-      maxQueryLength: this.maxQueryLength,
-      pathwaySimilarityCutoff: this.pathwaySimilarityCutoff,
-      llmScoreCutoff: this.llmScoreCutoff,
-      pathwayCount: this.pathwayCount,
-      fdr: this.fdr,
-      model: this.model
+    let configuration: Configuration = {
+      queryGene: this.gene,
+      fiScoreCutoff: parseFloat(this.fiScore),
+      numberOfPubmed: parseInt(this.pubmedResults),
+      // Hide this field for the time being
+      // maxQueryLength: parseInt(this.maxQueryLength),
+      cosineSimilarityCutoff: parseFloat(this.pathwaySimilarityCutoff),
+      llmScoreCutoff: parseInt(this.llmScoreCutoff),
+      numberOfPathways: parseInt(this.pathwayCount),
+      fdrCutoff: parseFloat(this.fdr)
+      // Disable llm model configurations
+      // llmModel: this.model
     }
 
     // TODO: submit the configuration object, not just the gene. 
 
     this.during_query = true;
-    return this.http.get<LLM_Result>(url).pipe(
+    return this.http.post<LLM_Result>(url, configuration).pipe(
       concatMap((result: LLM_Result) => {
         return of(result);
       }),
@@ -370,14 +372,14 @@ interface Interacting_Pathway_Detail {
   pdfUrl?: string;
 }
 
-interface ConfigurationDetails {
-  gene: string;
-  fiScore: string;
-  pubmedResults: string;
-  maxQueryLength: string;
-  pathwaySimilarityCutoff: string;
-  llmScoreCutoff: string;
-  pathwayCount: string;
-  fdr: string;
-  model: string;
+interface Configuration {
+  queryGene: string;
+  fiScoreCutoff: number;
+  numberOfPubmed: number;
+  // maxQueryLength: number;
+  cosineSimilarityCutoff: number;
+  llmScoreCutoff: number;
+  numberOfPathways: number;
+  fdrCutoff: number;
+  // llmModel: string;
 }
