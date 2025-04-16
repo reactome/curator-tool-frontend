@@ -15,7 +15,7 @@
     background-color: var(--primary);
     height: 50px;
     color: white;
-    vertical-align :center;
+    line-height: 50px;
   }
 
   .title {
@@ -49,15 +49,24 @@
   // }
 
   .label {
-    background: var(--primary-container); color: var(--on-primary-container);
+    background: var(--surface-variant); color: var(--on-primary-container);
     // width: 200px;
     // min-width: 100px;
     outline: black;
   }
 
-  .card-style {
-    width: 80vw;
-    height: 40vh;
-    left: 150px;
-    background-color: var(--surface-variant);
+  .custom-search-icon {
+    height: 24px !important;
+    width: 24px !important;
+    font-size: 24px !important;
+    position: bottom !important;
+    padding: 10px !important;
+  }
+
+  .example-card {
+    max-width: 400px;
+  }
+  
+  .example-card-footer {
+    padding: 16px;
   }

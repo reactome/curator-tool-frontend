@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component } from '@angular/core';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { NgIf, NgFor } from '@angular/common';
@@ -8,22 +8,28 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { environment } from 'src/environments/environment.dev';
-import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {MatOptgroup, MatOption, MatSelect, MatSelectModule} from '@angular/material/select';
+import { FormControl } from '@angular/forms';
+import { MatOption, MatSelect } from '@angular/material/select';
 import { MatIcon } from '@angular/material/icon';
-import { Form } from '@angular/forms';
-import { MatCard } from '@angular/material/card';
+import { Configuration, ConfigurationComponentComponent } from "./configuration-component/configuration-component.component";
+import { MatButton } from '@angular/material/button';
+import { MatCard, MatCardContent, MatCardActions, MatCardHeader, MatCardFooter, MatCardTitle } from '@angular/material/card';
+// import jsonData from './TANC1.json';
+
 
 @Component({
   selector: 'app-gene-llm-component',
   templateUrl: './gene-llm-component.component.html',
   styleUrls: ['./gene-llm-component.component.scss'],
   standalone: true,
-  imports: [MatFormFieldModule, MatInputModule, NgIf, NgFor, MatProgressSpinnerModule, MatDividerModule, MatExpansionModule, MatSelect, MatOption, MatIcon, MatCard]
+  imports: [MatFormFieldModule, MatInputModule, NgIf, NgFor,
+    MatProgressSpinnerModule, MatDividerModule, MatExpansionModule,
+    MatSelect, MatOption, MatIcon, MatCard, ConfigurationComponentComponent, MatButton,
+    MatCardContent, MatCardActions, MatCardHeader, MatCardFooter, MatCardTitle]
 })
 export class GeneLlmComponentComponent {
 
-  // private LLM_HOST = "http://127.0.0.1:5000/"
+  //private LLM_HOST = "http://127.0.0.1:5000/"
   private LLM_HOST = environment.llmURL;
   private LLM_ANNOTATE_GENE_URL = this.LLM_HOST + "/annotate"
   private LLM_FULLTEXT_ANALYSIS_URL = this.LLM_HOST + '/fulltext/'
@@ -35,53 +41,69 @@ export class GeneLlmComponentComponent {
   annotated_pathway_details: string | undefined;
   during_query: boolean = false;
 
-  //Parameters
   gene: string = "TANC1";
-  fiScore: string = "0.8";
-  pubmedResults: string = "8";
-  maxQueryLength: string = "1000";
-  pathwaySimilarityCutoff: string = "0.38";
-  llmScoreCutoff: string = "3";
-  pathwayCount: string ="8";
-  fdr: string = "0.01";
-  model: string = "gpt-4o-mini"
+  configuration: Configuration = {
+    queryGene: "TANC1",
+    fiScoreCutoff: parseFloat("0.8"),
+    numberOfPubmed: parseInt("8"),
+    //maxQueryLength: "1000",
+    cosineSimilarityCutoff: parseFloat("0.38"),
+    llmScoreCutoff: parseInt("3"),
+    numberOfPathways: parseInt("8"),
+    fdrCutoff: parseFloat("0.01"),
+    // model: "gpt-4o-mini"
+  };
 
-  showConfiguration: boolean = false; 
-
-  form = new FormControl('');
+  showConfiguration: boolean = false;
+  resultData: Results[] = [];
 
   constructor(private http: HttpClient) {
   }
 
-  changeShowConfiguration(){ 
-    if(this.showConfiguration) this.showConfiguration = false;
+  changeShowConfiguration() {
+    if (this.showConfiguration) this.showConfiguration = false;
     else this.showConfiguration = true;
   }
 
-  // gene: string, ficutoff: string, fdr: string, model: string, pathwayCount: string, words: string
-  //const url = this.LLM_QUERY_GENE_URL + `${gene}/` + `${ficutoff}/` + `${fdr}`+ `${model}` + `${pathwayCount}`+ `${words}`;
+  setConfiguration(configuration: Configuration) {
+    this.configuration = configuration;
+  }
+
+  // TEMPORARY 
+  // queryGene() {
+  //   this.during_query = true;
+  //   //this.content = jsonData.toString();
+  //   const result: LLM_Result = jsonData;
+  //   console.debug(result);
+  //   this.annotated_pathway_content = result.annotated_pathways_content;
+  //   this.annotated_pathway_details = result.annotated_pathways_docs;
+  //   if (this.annotated_pathway_details) {
+  //     // Perform some formatting
+  //     this.annotated_pathway_details = this.replaceNewLine(this.annotated_pathway_details);
+  //     this.annotated_pathway_details = this.addPathwayLinks(this.annotated_pathway_details,
+  //       result.pathway_name_2_id,
+  //       false);
+  //   }
+  //   if (this.annotated_pathway_content) {
+  //     this.annotated_pathway_content = this.addPathwayLinks(this.annotated_pathway_content, result.pathway_name_2_id, false);
+  //   }
+  //   this.failure = result.failure;
+  //   //this.content = this.hiliteGene(result.content, gene);
+  //   // if (this.content) {
+  //   //   this.content = this.addLinkToPMID(this.content);
+  //   // }
+  //   // this.details = this.splitDetails(result.docs,
+  //   //   result.pathway_name_2_id,
+  //   //   gene);
+  //   this.during_query = false;
+  // }
+
   queryGene() {
-    console.debug('Form data:', this.form);
+    console.debug('Form data:');
     const url = this.LLM_ANNOTATE_GENE_URL;
 
-    let configuration: Configuration = {
-      queryGene: this.gene,
-      fiScoreCutoff: parseFloat(this.fiScore),
-      numberOfPubmed: parseInt(this.pubmedResults),
-      // Hide this field for the time being
-      // maxQueryLength: parseInt(this.maxQueryLength),
-      cosineSimilarityCutoff: parseFloat(this.pathwaySimilarityCutoff),
-      llmScoreCutoff: parseInt(this.llmScoreCutoff),
-      numberOfPathways: parseInt(this.pathwayCount),
-      fdrCutoff: parseFloat(this.fdr)
-      // Disable llm model configurations
-      // llmModel: this.model
-    }
-
-    // TODO: submit the configuration object, not just the gene. 
-
     this.during_query = true;
-    return this.http.post<LLM_Result>(url, configuration).pipe(
+    return this.http.post<LLM_Result>(url, this.configuration).pipe(
       concatMap((result: LLM_Result) => {
         return of(result);
       }),
@@ -318,44 +340,19 @@ export class GeneLlmComponentComponent {
       }
     });
   }
-
-  onGeneChange(geneName: string){
+  onGeneChange(geneName: string) {
     this.gene = geneName;
   }
-  onfiScoreChange(fiScore: string){
-    this.fiScore = fiScore;
-  }
-  onpubmedResultsChange(pubmedResults: string){
-    this.pubmedResults = pubmedResults;
-  }
-  onmaxQueryLengthChange(maxQueryLength: string){
-    this.maxQueryLength = maxQueryLength;
-  }
-  onpathwaySimilarityCutoffChange(pathwaySimilarityCutoff: string){
-    this.pathwaySimilarityCutoff = pathwaySimilarityCutoff;
-  }
-  onllmScoreCutoffChange(llmScoreCutoff: string){
-    this.llmScoreCutoff = llmScoreCutoff;
-  }
-  onpathwayCountChange(pathwayCount: string){
-    this.pathwayCount = pathwayCount;
-  }
-  onFdrChange(fdr: string){
-    this.fdr = fdr;
-  }
-  onModelChange(model: string){
-    this.model = model;
-  }
-
 }
 
 interface LLM_Result {
+  annotated_pathways_content?: string;
+  annotated_pathways_docs?: string;
   content?: string;
   docs?: string;
   failure?: string;
-  annotated_pathways_content?: string;
-  annotated_pathways_docs?: string;
-  pathway_name_2_id: any
+  pathway_2_ppi_abstracts_summary?: any;
+  pathway_name_2_id?: any;
 }
 
 interface Interacting_Pathway_Detail {
@@ -372,14 +369,32 @@ interface Interacting_Pathway_Detail {
   pdfUrl?: string;
 }
 
-interface Configuration {
-  queryGene: string;
-  fiScoreCutoff: number;
-  numberOfPubmed: number;
-  // maxQueryLength: number;
-  cosineSimilarityCutoff: number;
-  llmScoreCutoff: number;
-  numberOfPathways: number;
-  fdrCutoff: number;
-  // llmModel: string;
+interface Results {
+  query_gene: string;
+  data: Data;
+}
+
+interface Data {
+  annotated_pathways_content?: string;
+  annotated_pathways_docs?: string;
+  content?: string;
+  docs?: string;
+
+  pathway_2_ppi_abstracts_summary: Pathway2Abstracts[],
+
+  pathway_name_2_id: PathwayName2Id[]
+}
+
+interface Pathway2Abstracts {
+  pathway_name: string;
+  abstract_summary: {
+    pmids: string[];
+    ppi_genes: string[];
+    summary: string;
+  };
+}
+
+interface PathwayName2Id {
+  name: string;
+  id: number;
 }

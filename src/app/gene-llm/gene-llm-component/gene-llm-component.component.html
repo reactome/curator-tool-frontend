@@ -11,93 +11,19 @@ total_words (int, optional): _description_. Defaults to 300. -->
 <!--Enter a gene-->
 <div class="center">
     <div>
-<!-- 
-        <div *ngIf="needAdvancedSearch">
-            <mat-form-field style="float:left; width: 100%; position: sticky !important">
-              <mat-label>Search</mat-label>
-              <input matInput (keydown.enter)="doAdvancedSearch(0)"
-              #input readonly="true" [(ngModel)]="advancedSearchKey">
-              <mat-icon class="undo-idon" matTooltip="Undo last" (click)="removeSearchCriterium()" matSuffix>undo</mat-icon>
-              <mat-icon class="custom-search-icon" matTooltip="Simple Search" (click)="toggleSearchMode()" matSuffix>manage_search</mat-icon>
-            </mat-form-field>
-          </div> -->
-
-        <mat-label>Enter a gene: </mat-label>
-        <mat-form-field style="width: 200px; padding-right: 10px;">
-            <input class="label" matInput [value]=gene (change)="onGeneChange(geneInput.value)" #geneInput>
-              <mat-icon class="custom-search-icon" matTooltip="Simple Search" (click)="changeShowConfiguration()" matSuffix>settings</mat-icon>
+        <mat-form-field style="width: 260px; padding-right: 10px;">
+            <mat-label>Enter a gene: </mat-label>
+            <!-- <div> -->
+                <input style="width: 200px;" class="label" matInput [value]=gene (change)="onGeneChange(geneInput.value)" #geneInput>
+                <mat-icon class="custom-search-icon" matTooltip="Simple Search" (click)="changeShowConfiguration()" matSuffix>settings</mat-icon>
+            <!-- </div> -->
         </mat-form-field>
+        <button mat-flat-button color="primary" (click)="queryGene()" mat-button>Submit</button>
     </div>
     <ng-container *ngIf="showConfiguration">
-
-        <mat-card class="card-style">
-            <br>
-            <br>
-            <div>
-                <mat-form-field style="width: 200px; padding-right: 10px;">
-                    <mat-label>Functional Interaction Score ≥ </mat-label>
-                    <input class="label" [value]=fiScore (change)="onfiScoreChange(fiScoreInput.value)" matInput min="0"
-                        max="0.9" step="0.1" type="number" #fiScoreInput>
-                </mat-form-field>
-                <mat-form-field style="width: 200px; padding-right: 10px;">
-                    <mat-label>Top Pubmed Results: </mat-label>
-                    <input class="label" [value]=pubmedResults
-                        (change)="onpubmedResultsChange(pubmedResultsInput.value)" matInput placeholder="8" min="0"
-                        type="number" #pubmedResultsInput>
-                </mat-form-field>
-                <mat-form-field style="width: 200px; padding-right: 10px;">
-                    <mat-label>Max Query Length: </mat-label>
-                    <input class="label" [value]=maxQueryLength
-                        (change)="onmaxQueryLengthChange(maxQueryLengthInput.value)" matInput placeholder="1000" min="0"
-                        type="number" #maxQueryLengthInput>
-                </mat-form-field>
-            </div>
-
-            <div>
-                <mat-form-field style="width: 200px; padding-right: 10px;">
-                    <mat-label>Pathway Similarity Cutoff: </mat-label>
-                    <input class="label" [value]=pathwaySimilarityCutoff
-                        (change)="onpathwaySimilarityCutoffChange(pathwaySimilarityCutoffInput.value)" matInput
-                        placeholder="0.38" min="0" max="0.9" step="0.01" type="number" #pathwaySimilarityCutoffInput>
-                </mat-form-field>
-                <mat-form-field style="width: 200px; padding-right: 10px;">
-                    <mat-label>LLM Score Cutoff: </mat-label>
-                    <input class="label" [value]=llmScoreCutoff
-                        (change)="onllmScoreCutoffChange(llmScoreCutoffInput.value)" matInput placeholder="3" min="0"
-                        type="number" #llmScoreCutoffInput>
-                </mat-form-field>
-                <mat-form-field style="width: 200px; padding-right: 10px;">
-                    <mat-label>Pathway count: </mat-label>
-                    <input appearance="outline" [value]=pathwayCount
-                        (change)="onpathwayCountChange(pathwayCountInput.value)" class="label" matInput placeholder="8"
-                        min="0" max="20" step="1" type="number" #pathwayCountInput>
-                </mat-form-field>
-            </div>
-
-            <div>
-                <mat-form-field style="width: 300px; padding-right: 10px;">
-                    <mat-label>False Discovery Rate (FDR): < </mat-label>
-                            <mat-select style="vertical-align:text-top;" [value]=fdr
-                                (change)="onFdrChange(fdrInput.value)" class="label" #fdrInput>
-                                <mat-option value="1">1</mat-option>
-                                <mat-option value="0.05">0.05</mat-option>
-                                <mat-option value="0.01">0.01</mat-option>
-                                <mat-option value="0.001">0.001</mat-option>
-                                <mat-option value="0.0001">0.0001</mat-option>
-                                <mat-option value="0.00001">0.00001</mat-option>
-                            </mat-select>
-                </mat-form-field>
-                <mat-form-field style="width: 300px;">
-                    <mat-label>LLM Model: </mat-label>
-                    <mat-select class="label" [value]=model (change)="modelInput.value" #modelInput>
-                        <mat-option [value]=model>gpt-4o-mini</mat-option>
-                    </mat-select>
-                </mat-form-field>
-            </div>
-        </mat-card>
+        <app-configuration-component [setConfig]="configuration" (getConfig)="setConfiguration($event)"></app-configuration-component>
     </ng-container>
     <br>
-    <button (click)="queryGene()" color="primary" mat-button>Submit</button>
 </div>
 
 <mat-spinner *ngIf="during_query"></mat-spinner>
@@ -133,73 +59,25 @@ total_words (int, optional): _description_. Defaults to 300. -->
     </section>
 
     <section *ngIf="content">
-        <div>
-            <br>
-            <mat-divider></mat-divider>
-            <br>
-            <h2 class="section_title">Predicted Interacting Pathways</h2>
-            <p class="note">The query gene may be functionally interacting with annotated pathways based on Reactome.
-                The app tried to match PubMed abstracts together with interacting pathways for curators.
-            </p>
-            <h4 class="title">Summary</h4>
-            <p class="note">The text is generated by LLM, which collects abstracts best aligned with predicted
-                interacting
-                pathways for the query gene.</p>
-            <p [innerHTML]="content"></p>
-        </div>
-
-        <div *ngIf="details">
-            <h4 class="title">Details</h4>
-            <p class="note">The text is generate by LLM, which collects the best matched abstract for each of the
-                predicted
-                interacting pathways for the query gene.</p>
-            <!--Switch this to use a template-->
-            <div *ngFor="let detail of details">
-                <p style="font-weight: bold;">
-                    PMID: <a href="https://pubmed.ncbi.nlm.nih.gov/{{detail.pmid}}" target="pubmed">{{detail.pmid}}</a>
-                    vs
-                    PATHWAY: <a href="https://reactome.org/PathwayBrowser/#/{{detail.pathwayId}}"
-                        target="reactome">{{detail.pathway}}</a>
-                </p>
-                <p [innerHTML]="detail.text"></p>
-                <p>
-                    <mat-expansion-panel hideToggle class="mat-elevation-z0" (afterExpand)="fetchFullText(detail)">
-                        <mat-expansion-panel-header>
-                            <mat-panel-title>
-                                Click to process the full text paper
-                            </mat-panel-title>
-                            <mat-panel-description>
-                                Relationships between the query gene and other biological concepts will be extracted
-                            </mat-panel-description>
-                        </mat-expansion-panel-header>
-                        <p>
-                            <mat-progress-spinner mode="indeterminate"
-                                *ngIf="!detail.fullPaperResults && detail.isWorkingFullText"></mat-progress-spinner>
-                        </p>
-                        <p *ngIf="detail.failure" class="error">{{detail.failure}}</p>
-                        <p *ngIf="detail.needPDFFile">
-                            You may try to upload a PDF file here (The uploaded file will be kept at the server for some
-                            time):
-                            <!--The following file upload is based on https://blog.angular-university.io/angular-file-upload/ 
-                            More features should be added: e.g. monitor progress, cancel, etc. -->
-                            <input type="file" class="file_input" accept="application/pdf"
-                                (change)="uploadPDFFile($event, detail)" #fileUpload>
-                            {{detail.pdfUrl || "No file uploaded yet."}}
-                            <button mat-button color="primary" (click)="fileUpload.click()">
-                                Choose a File
-                            </button>
-                        </p>
-                        <ol *ngIf="detail.fullPaperResults">
-                            <li *ngFor="let result of detail.fullPaperResults">
-                                <h4 class="title">Extracted Relationships</h4>
-                                <p [innerHTML]="result.content"></p>
-                                <h4 class="title">Source Text from the Full Paper</h4>
-                                <p [innerHTML]="result.docs"></p>
-                            </li>
-                        </ol>
-                    </mat-expansion-panel>
-                </p>
-            </div>
+        <div style="display: flex">
+            <ng-container *ngFor="let e of resultData">
+                <mat-card class="example-card" appearance="outlined">
+                    <mat-card-header>
+                      <mat-card-title>{{e.query_gene}}</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <p>{{e.data.content}}</p>
+                    </mat-card-content>
+                    <mat-card-footer class="example-card-footer">
+                      <!-- <mat-chip-set aria-label="Chihuahua traits">
+                        <mat-chip>charming</mat-chip>
+                        <mat-chip>graceful</mat-chip>
+                        <mat-chip>sassy</mat-chip>
+                      </mat-chip-set> -->
+                    </mat-card-footer>
+                  </mat-card>
+            </ng-container>
         </div>
     </section>
+
 </section>
