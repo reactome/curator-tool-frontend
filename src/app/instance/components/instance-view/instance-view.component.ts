@@ -106,7 +106,10 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.subscriptions.add(subscription);
     subscription = this.instUtils.refreshViewDbId$.subscribe(dbId => {
       if (this.instance && this.instance.dbId === dbId) {
-        this.loadInstance(dbId, false, false, true);
+        if (this.instanceTable.inEditing) 
+          this.updateTitle(this.instance);
+        else
+          this.loadInstance(dbId, false, false, true);
       }
     });
     this.subscriptions.add(subscription);

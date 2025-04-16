@@ -104,9 +104,6 @@ export class GeneLlmComponentComponent {
 
     this.during_query = true;
     return this.http.post<LLM_Result>(url, this.configuration).pipe(
-      concatMap((result: LLM_Result) => {
-        return of(result);
-      }),
       catchError((err: Error) => {
         console.log("Error to query gene: \n" + err.message, "Close", {
           panelClass: ['warning-snackbar'],

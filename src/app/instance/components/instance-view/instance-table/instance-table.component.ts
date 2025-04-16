@@ -48,6 +48,8 @@ export class InstanceTableComponent implements PostEditListener {
   @Input() blockRouter: boolean = false;
   // During new instance creating in a diagram, don't fire any event
   @Input() preventEvent: boolean = false;
+  // Flag to block the table update during editing
+  inEditing: boolean = false;
 
   categoryNames = Object.keys(AttributeCategory).filter((v) =>
     isNaN(Number(v))
@@ -84,6 +86,8 @@ export class InstanceTableComponent implements PostEditListener {
 
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
+    if (this.inEditing)
+      return; // In editing now. Nothing to change from outside.
     this._instance = instance;
     this.updateTableContent();
   }
@@ -313,6 +317,7 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   finishEdit(attName: string, value: any) {
+    this.inEditing = true;
     //Only add attribute name if value was added
     this.postEdit(attName);
     //TODO: Add a new value may reset the scroll position. This needs to be changed!
@@ -325,6 +330,7 @@ export class InstanceTableComponent implements PostEditListener {
     // Fire an event for other components to update their display (e.g. display name)
     // Usually this should be fired without issue
     this.editedInstance.emit(this._instance);
+    this.inEditing = false;
   }
 
   addBookmarkedInstance(attributeValue: AttributeValue) {
