@@ -47,16 +47,21 @@
   .center {
     margin: auto;
     width: 30%;
-    border: 3px solid var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: 4px;
     padding: 10px;
     height:min-content;
   }
 
-  .label {
-    background: var(--surface-variant); color: var(--on-primary-container);
+  .gene_input {
+    background: var(--surface-variant); 
+    color: var(--on-primary-container);
     // width: 200px;
     // min-width: 100px;
-    outline: black;
+    outline: rgb(126, 166, 201);
+    width: 150px; 
+    margin-right: 10px;
+    align-items: center;
   }
 
   .custom-search-icon {
@@ -85,11 +90,14 @@
     // line-height: 50px;
   }
 
-  .container {
+  .button_container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: none;
     // position:relative; 
-    height: 42px;
-    width: 42px;
+    // height: 42px;
+    // width: 42px;
     border: none;
   }
 
@@ -103,17 +111,17 @@
     border-bottom: 1px solid var(--primary);;
   }
 
-  .gene-label {
-    background: var(--surface-variant); color: var(--on-primary-container);
-    height: 32px;
-    border-bottom: 1px solid var(--primary);;
-    padding: 10px;
-    width: 150px;
-    margin-top: 10px;
+  .gene_label {
+    // background: var(--surface-variant); color: var(--on-primary-container);
+    //height: 32px;
+    // border-bottom: 1px solid var(--primary);;
+    // padding: 10px;
+    margin-right: 10px;
     color: var(--primary);
-    line-height: 35px;
-  }
+    align-items: center;
 
-  .enter-gene-text {
-    // bottom: 100px !important;
+    display: flex;
+    justify-content: flex-end; /* Right-align content inside */
+    
+    // line-height: 35px;
   }

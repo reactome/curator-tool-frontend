@@ -10,21 +10,28 @@ total_words (int, optional): _description_. Defaults to 300. -->
 
 <!--Enter a gene-->
 <div class="center">
-    <div style="display: flex;">
-        <div class="gene-label">
-            <mat-label class="enter-gene-text">Enter a gene: </mat-label>
+    <div style="display: flex; align-items: center; justify-content: center; margin-top: 15px; margin-bottom: 5px;">
+        <div class="gene_label">
+            <label>Enter a gene:</label>
         </div>
-        <mat-form-field style="width: 260px; padding: 10px;">
-            <input style="width: 200px;" class="label" matInput [value]=gene (change)="onGeneChange(geneInput.value)"
-                #geneInput>
-            <mat-icon class="custom-search-icon" matTooltip="Edit Configurations" (click)="changeShowConfiguration()"
-                matSuffix>settings</mat-icon>
-        </mat-form-field>
-        <div class="container">
-            <button class="button-style" color="primary" matTooltip="Submit gene for processing" mat-icon-button (click)="queryGene()">
+
+        <div class="gene_input">
+            <input type="text" style="height: 24px;" placeholder="TANC1" [value]="gene" (change)="onGeneChange(geneInput.value)" #geneInput
+                matInput />
+        </div>
+
+        <div class="button_container">
+            <button matTooltip="Submit gene for processing" mat-icon-button (click)="queryGene()">
                 <mat-icon>publish</mat-icon>
             </button>
-        </div> 
+
+            <button style="margin-left: 10px; cursor: pointer;" matTooltip="Edit Configurations"
+                (click)="changeShowConfiguration()" mat-icon-button>
+                <mat-icon>
+                    settings
+                </mat-icon>
+            </button>
+        </div>
     </div>
     <ng-container *ngIf="showConfiguration">
         <app-configuration-component [setConfig]="configuration"
