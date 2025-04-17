@@ -46,10 +46,10 @@
 
   .center {
     margin: auto;
-    width: 30%;
+    width: 25%;
     border: 3px solid var(--primary);
     padding: 10px;
-    height:min-content;
+    height: min-content;
   }
 
   .label {
@@ -91,6 +91,7 @@
     height: 42px;
     width: 42px;
     border: none;
+    padding-right: 10px;
   }
 
   .button-style {
@@ -112,8 +113,10 @@
     margin-top: 10px;
     color: var(--primary);
     line-height: 35px;
+    overflow: hidden;
   }
 
   .enter-gene-text {
     // bottom: 100px !important;
+    overflow: hidden;
   }
