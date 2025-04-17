@@ -46,3 +46,8 @@ Thumbs.db
 
 docs/Notes.txt
 
+.vscode/settings.json
+.codegpt/head
+package-lock copy.json
+.gitignore
+dist.tgz
