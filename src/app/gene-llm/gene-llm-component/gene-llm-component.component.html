@@ -10,18 +10,25 @@ total_words (int, optional): _description_. Defaults to 300. -->
 
 <!--Enter a gene-->
 <div class="center">
-    <div>
-        <mat-form-field style="width: 260px; padding-right: 10px;">
-            <mat-label>Enter a gene: </mat-label>
-            <!-- <div> -->
-                <input style="width: 200px;" class="label" matInput [value]=gene (change)="onGeneChange(geneInput.value)" #geneInput>
-                <mat-icon class="custom-search-icon" matTooltip="Simple Search" (click)="changeShowConfiguration()" matSuffix>settings</mat-icon>
-            <!-- </div> -->
+    <div style="display: flex;">
+        <div class="gene-label">
+            <mat-label class="enter-gene-text">Enter a gene: </mat-label>
+        </div>
+        <mat-form-field style="width: 260px; padding: 10px;">
+            <input style="width: 200px;" class="label" matInput [value]=gene (change)="onGeneChange(geneInput.value)"
+                #geneInput>
+            <mat-icon class="custom-search-icon" matTooltip="Edit Configurations" (click)="changeShowConfiguration()"
+                matSuffix>settings</mat-icon>
         </mat-form-field>
-        <button mat-flat-button color="primary" (click)="queryGene()" mat-button>Submit</button>
+        <div class="container">
+            <button class="button-style" color="primary" matTooltip="Submit gene for processing" mat-icon-button (click)="queryGene()">
+                <mat-icon>publish</mat-icon>
+            </button>
+        </div> 
     </div>
     <ng-container *ngIf="showConfiguration">
-        <app-configuration-component [setConfig]="configuration" (getConfig)="setConfiguration($event)"></app-configuration-component>
+        <app-configuration-component [setConfig]="configuration"
+            (getConfig)="setConfiguration($event)"></app-configuration-component>
     </ng-container>
     <br>
 </div>
@@ -63,19 +70,19 @@ total_words (int, optional): _description_. Defaults to 300. -->
             <ng-container *ngFor="let e of resultData">
                 <mat-card class="example-card" appearance="outlined">
                     <mat-card-header>
-                      <mat-card-title>{{e.query_gene}}</mat-card-title>
+                        <mat-card-title>{{e.query_gene}}</mat-card-title>
                     </mat-card-header>
                     <mat-card-content>
-                      <p>{{e.data.content}}</p>
+                        <p>{{e.data.content}}</p>
                     </mat-card-content>
                     <mat-card-footer class="example-card-footer">
-                      <!-- <mat-chip-set aria-label="Chihuahua traits">
+                        <!-- <mat-chip-set aria-label="Chihuahua traits">
                         <mat-chip>charming</mat-chip>
                         <mat-chip>graceful</mat-chip>
                         <mat-chip>sassy</mat-chip>
                       </mat-chip-set> -->
                     </mat-card-footer>
-                  </mat-card>
+                </mat-card>
             </ng-container>
         </div>
     </section>

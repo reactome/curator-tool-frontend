@@ -44,9 +44,13 @@
     display: none;
   }
 
-  // .center {
-  //   text-align: center;
-  // }
+  .center {
+    margin: auto;
+    width: 30%;
+    border: 3px solid var(--primary);
+    padding: 10px;
+    height:min-content;
+  }
 
   .label {
     background: var(--surface-variant); color: var(--on-primary-container);
@@ -69,4 +73,47 @@
   
   .example-card-footer {
     padding: 16px;
+  }
+
+  .mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    color: var(--primary);
+    text-align: left;
+    vertical-align: middle;
+    // line-height: 50px;
+  }
+
+  .container {
+    background: none;
+    // position:relative; 
+    height: 42px;
+    width: 42px;
+    border: none;
+  }
+
+  .button-style {
+    background:  var(--surface-variant); color: var(--on-primary-container);
+    position:relative; 
+    height:52px;
+    width: 52px;
+    border: none;
+    margin-top: 10px;
+    border-bottom: 1px solid var(--primary);;
+  }
+
+  .gene-label {
+    background: var(--surface-variant); color: var(--on-primary-container);
+    height: 32px;
+    border-bottom: 1px solid var(--primary);;
+    padding: 10px;
+    width: 150px;
+    margin-top: 10px;
+    color: var(--primary);
+    line-height: 35px;
+  }
+
+  .enter-gene-text {
+    // bottom: 100px !important;
   }

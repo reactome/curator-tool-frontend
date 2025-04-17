@@ -34,6 +34,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   title: string = '';
   showSecondaryButtons: boolean = false;
   compareInstanceDialogResult$: number = 0;
+  qaReportPassed?: boolean;
+  qaReportToolTip: string = "Run QA Report";
 
   // Control if we need to track the loading history
   @Input() needHistory: boolean = true;
@@ -310,6 +312,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       let newUrl = this.getCurrentPathRoot() + "/instance/" + instance.dbId.toString();
       this.router.navigate([newUrl], { queryParamsHandling: 'preserve' });
     }
+    this.qaReportPassed = undefined;
   }
 
   private showEmpty() {
@@ -394,15 +397,21 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   onQAReportAction() {
-    // console.debug(" ** onQAReportAction: ", reportName, this.instance!.qaIssues);
-    //let qaReportData = this.instance!.qaIssues!.get(reportName)!;
-    this.qaReportDialogService.openDialog(this.instance!);
-    // const matDialogRef = this.qaReportDialogService.openDialog(this.instance!);
-    //       matDialogRef.afterClosed().subscribe(result => {
-    //         if (result !== undefined) {
-    //           console.debug("QA report dialog closed", result);
-    //         }
-    //       });
+    const matDialogRef = this.qaReportDialogService.openDialog(this.instance!);
+    matDialogRef.afterClosed().subscribe((result) => {
+      this.qaReportPassed = result;
+
+    });
+  }
+
+  setQAReportToolTip() {
+    // Change QA Report toolitp
+    if(this.qaReportPassed === undefined && this.isUploadable() === true) { this.qaReportToolTip = "Run QA Report"}
+    else if (!this.isUploadable()) {this.qaReportToolTip = "Submit changes to run the QA Report"};
+    // else if(this.qaReportPassed === true) {this.qaReportToolTip = "QA Report Passed"};
+    // else if(this.qaReportPassed === false) {this.qaReportToolTip = "QA Report Failed"};
+
+    return this.qaReportToolTip;
   }
 
   delete() {

@@ -59,3 +59,20 @@
 .deleted {
   text-decoration: line-through;
 }
+
+.bug-report-color {
+  vertical-align: text-top;
+  &.unchecked {
+    color: var(--primary);
+  }
+  &.passed {
+    color: rgb(83, 229, 83);
+
+  }
+  &.failed {
+    color: red;
+  }
+  &.disabled{
+    color: grey;
+  }
+}

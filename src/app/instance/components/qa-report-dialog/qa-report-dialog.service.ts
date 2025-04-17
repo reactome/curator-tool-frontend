@@ -10,7 +10,7 @@ export class QAReportDialogService {
 
   constructor(private dialog: MatDialog) { }
 
-  openDialog(instance: Instance): MatDialogRef<QAReportDialogComponent, Instance> {
+  openDialog(instance: Instance): MatDialogRef<QAReportDialogComponent, boolean> {
     return this.dialog.open(QAReportDialogComponent, {
       width: '1000px',
       // height: '900px',

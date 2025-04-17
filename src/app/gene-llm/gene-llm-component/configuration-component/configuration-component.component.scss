@@ -1,14 +1,16 @@
 .card-style {
-    width: 40vw;
-    height: 40vh;
+    width: 100%;
+    height: 50%;
     background-color: var(--primary-container);
-    align-items: center;
-    left: 400px;
   }
 
   .label {
     background: var(--surface-variant); color: var(--on-primary-container);
-    // width: 200px;
-    // min-width: 100px;
     outline: black;
+  }
+
+  .form-field {
+    width: 200px; 
+    padding-left: 10px;
+    padding-right: 10px;
   }

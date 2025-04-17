@@ -10,10 +10,22 @@
     <span [cdkContextMenuTriggerFor]="qa_issues" class="span-menu-trigger" style="color: warn"
       >
     </span>
-    <div class="button-container">
-      <button (click)="onQAReportAction()" matTooltip="Quality Assurance" mat-icon-button class="v-center" color="warn" style="border: 1px;">
-        <mat-icon>bug_report</mat-icon>
-      </button>
+    <div matTooltip="Submit changes to run the QA Reoort." class="button-container">
+      <ng-container *ngIf="(qaReportPassed === undefined && isUploadable())">
+        <div matTooltip="Submit changes to run the QA Reoort.">
+        </div>
+      </ng-container>
+        <button (click)="onQAReportAction()" matTooltip={{setQAReportToolTip()}}
+        mat-icon-button style="border: 1px;"
+        [disabled]="isUploadable()" class="bug-report-color"
+        [ngClass]="{
+          unchecked: (qaReportPassed === undefined && !isUploadable()), 
+          passed: (qaReportPassed === true && !isUploadable()), 
+          failed: (qaReportPassed === false && !isUploadable()),
+          disabled:(qaReportPassed === undefined && isUploadable())}">
+         <mat-icon>bug_report</mat-icon>
+         <!-- TODO: change tooltip based on condition -->
+       </button>
       <button mat-icon-button color="primary" class="v-center" (click)="showReferrers()" matTooltip="Show Referrers">
         <mat-icon>list_alt</mat-icon>
       </button>

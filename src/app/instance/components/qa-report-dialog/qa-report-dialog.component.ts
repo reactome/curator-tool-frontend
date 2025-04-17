@@ -14,6 +14,7 @@ import { DataService } from 'src/app/core/services/data.service';
 })
 export class QAReportDialogComponent {
   qaReport: QAReport | undefined; 
+  qaReportPassed?: boolean = undefined;
 
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public instance: Instance,
@@ -23,11 +24,20 @@ export class QAReportDialogComponent {
 
       this.dataService.fetchQAReport(instance).subscribe(report => {
         this.qaReport = report;
+
+        this.qaReportPassed = true;
+
+        for(let check of report.qaResults){
+          if(!check.passed){
+            this.qaReportPassed = false;
+            return
+          }
+        }
       })
   }
 
 
   onCancel() {
-    this.dialogRef.close();
+    this.dialogRef.close(this.qaReportPassed);
   }
 }
