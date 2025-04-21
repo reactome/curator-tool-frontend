@@ -25,7 +25,8 @@ import { StatusComponent } from '../status/status.component';
 @NgModule({
   declarations: [
     GeneLlmComponentComponent,
-    AbstractSummaryTableComponent
+    AbstractSummaryTableComponent,
+    ConfigurationComponentComponent,
   ],
   exports: [
     GeneLlmComponentComponent,
@@ -44,7 +45,6 @@ import { StatusComponent } from '../status/status.component';
     SharedModule,
     EventFilterComponent,
     PathwayDiagramModule,
-    // ConfigurationComponentComponent,
     // RouterOutlet,
     // AbstractSummaryTableComponent
 

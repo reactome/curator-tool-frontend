@@ -38,7 +38,6 @@ export class GeneLlmComponentComponent {
 
   showConfiguration: boolean = false;
   tableData:  AbstractTableData[] = [];
-  dataSource: AbstractSummary[] = [{ gene: "gene", pmids: ['000', '111', '44'] }];
   colNames: string[] = ['ppi_genes', 'pmids'];
 
   // displayedColumns: string[] = ['ppi_gene', 'pmids'];
@@ -107,8 +106,6 @@ export class GeneLlmComponentComponent {
       let data = this.mappingSummary(abstract.gene, abstract.pmids)
       let pathway: AbstractTableData = { pathway_name: key, summary: abstract.summary, data: data }
       console.log('pathway:', pathway);
-      this.dataSource = data;
-      console.log('datasource:', this.dataSource);
       this.tableData.push(pathway);
     });
   }
