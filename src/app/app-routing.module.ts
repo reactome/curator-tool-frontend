@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { GeneLlmComponentComponent } from './gene-llm/gene-llm-component/gene-llm-component.component';
+import { GeneLlmComponentComponent } from './gene-llm/gene-llm-component.component';
 import { authGuard } from './core/services/authenticate.service';
 
 export const routes: Routes = [

@@ -1,19 +1,9 @@
-import { NgIf, NgFor } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { MatCard } from '@angular/material/card';
-import { MatOption } from '@angular/material/core';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIcon } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelect } from '@angular/material/select';
 
 @Component({
   selector: 'app-configuration-component',
   templateUrl: './configuration-component.component.html',
-  styleUrl: './configuration-component.component.scss'
+  styleUrls: ['./configuration-component.component.scss']
 })
 export class ConfigurationComponentComponent {
 

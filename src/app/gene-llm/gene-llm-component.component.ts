@@ -1,30 +1,13 @@
 import { Component } from '@angular/core';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { NgIf, NgFor } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { catchError, concatMap, of, throwError } from 'rxjs';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDividerModule } from '@angular/material/divider';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { environment } from 'src/environments/environment.dev';
-import { FormControl } from '@angular/forms';
-import { MatOption, MatSelect } from '@angular/material/select';
-import { MatIcon } from '@angular/material/icon';
-import { Configuration, ConfigurationComponentComponent } from "./configuration-component/configuration-component.component";
-import { MatButton } from '@angular/material/button';
-import { MatCard, MatCardContent, MatCardActions, MatCardHeader, MatCardFooter, MatCardTitle } from '@angular/material/card';
-import { MatRow, MatRowDef, MatFooterRow, MatHeaderRow, MatHeaderRowDef, MatTableDataSource } from '@angular/material/table';
-import { MatCell, MatTable, MatHeaderCell } from '@angular/material/table';
-import sum from 'vectorious/dist/core/sum';
-import { AbstractSummaryTableComponent } from "./abstract-summary-table/abstract-summary-table.component";
-// import jsonData from './TANC1.json';
-
+import { Configuration } from "./gene-llm-component/configuration-component/configuration-component.component";
 
 @Component({
   selector: 'app-gene-llm-component',
   templateUrl: './gene-llm-component.component.html',
-  styleUrls: ['./gene-llm-component.component.scss']
+  styleUrls: ['./gene-llm-component.component.scss'],
 })
 export class GeneLlmComponentComponent {
 
@@ -54,7 +37,7 @@ export class GeneLlmComponentComponent {
   };
 
   showConfiguration: boolean = false;
-  tableData:  Abstracts[] = [];
+  tableData:  AbstractTableData[] = [];
   dataSource: AbstractSummary[] = [{ gene: "gene", pmids: ['000', '111', '44'] }];
   colNames: string[] = ['ppi_genes', 'pmids'];
 
@@ -121,12 +104,12 @@ export class GeneLlmComponentComponent {
     Object.entries(summaries).forEach(([key, value]) => {
       let entry: Pathway2Abstracts = { pathway_name: key, abstractData: value }
       let abstract: Abstracts = { summary: entry.abstractData.summary, gene: entry.abstractData.ppi_genes, pmids: entry.abstractData.pmids }
-      // let data = this.mappingSummary(abstract.ppi_genes, abstract.pmids)
-      // let pathway: AbstractTableData = { pathway_name: key, summary: abstract.summary, data: data }
-      // console.log('pathway:', pathway);
-      // this.dataSource = data;
-      // console.log('datasource:', this.dataSource);
-      this.tableData.push(abstract);
+      let data = this.mappingSummary(abstract.gene, abstract.pmids)
+      let pathway: AbstractTableData = { pathway_name: key, summary: abstract.summary, data: data }
+      console.log('pathway:', pathway);
+      this.dataSource = data;
+      console.log('datasource:', this.dataSource);
+      this.tableData.push(pathway);
     });
   }
 

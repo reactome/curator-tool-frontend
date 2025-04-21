@@ -17,7 +17,6 @@ import { AppComponent } from './app.component';
 import { AuthModule } from "./auth/auth.module";
 import { HeaderInterceptor } from "./core/interceptors/header.interceptor";
 import { MainEventModule } from "./event-view/main-event/main-event.module";
-import { GeneLlmComponentComponent } from './gene-llm/gene-llm-component/gene-llm-component.component';
 import { HomeModule } from "./home/home.module";
 import { InstanceEffects } from './instance/state/instance.effects';
 import { BookmarkEffects } from "./schema-view/instance-bookmark/state/bookmark.effects";
@@ -71,7 +70,6 @@ const customTooltipOptions: MatTooltipDefaultOptions = {
     MainEventModule,
     StatusModule,
     HomeModule,
-    GeneLlmComponentComponent,
     AuthModule,
     JwtModule.forRoot({ // for JwtHelperService
       config: {
