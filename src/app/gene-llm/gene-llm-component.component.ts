@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, concatMap, of, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
-import { Configuration } from "./gene-llm-component/configuration-component/configuration-component.component";
+import { Configuration } from "./components/configuration-component/configuration-component.component";
 
 @Component({
   selector: 'app-gene-llm-component',

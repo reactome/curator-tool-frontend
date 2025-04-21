@@ -2,8 +2,8 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { GeneLlmRoutingModule } from './gene-llm-routing.module';
-import { ConfigurationComponentComponent } from './gene-llm-component/configuration-component/configuration-component.component';
-import { AbstractSummaryTableComponent } from './gene-llm-component/abstract-summary-table/abstract-summary-table.component';
+import { ConfigurationComponentComponent } from './components/configuration-component/configuration-component.component';
+import { AbstractSummaryTableComponent } from './components/abstract-summary-table/abstract-summary-table.component';
 import { GeneLlmComponentComponent } from './gene-llm-component.component';
 import { RouterOutlet } from '@angular/router';
 import { CdkAccordionModule } from '@angular/cdk/accordion';
