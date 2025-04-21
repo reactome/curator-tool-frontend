@@ -4,12 +4,12 @@
     <div>
         <mat-form-field class="form-field">
             <mat-label>Functional Interaction Score ≥ </mat-label>
-            <input class="label" [value]=fiScore (change)="onfiScoreChange(fiScoreInput.value)" matInput min="0"
+            <input class="label" [value]=configuration.fiScoreCutoff (change)="onfiScoreChange(fiScoreInput.value)" matInput min="0"
                 max="0.9" step="0.1" type="number" #fiScoreInput>
         </mat-form-field>
         <mat-form-field class="form-field">
             <mat-label>Top Pubmed Results: </mat-label>
-            <input class="label" [value]=pubmedResults
+            <input class="label" [value]=configuration.numberOfPubmed
                 (change)="onpubmedResultsChange(pubmedResultsInput.value)" matInput placeholder="8" min="0"
                 type="number" #pubmedResultsInput>
         </mat-form-field>
@@ -24,13 +24,13 @@
     <div>
         <mat-form-field class="form-field">
             <mat-label>Pathway Similarity Cutoff: </mat-label>
-            <input class="label" [value]=pathwaySimilarityCutoff
+            <input class="label" [value]=configuration.cosineSimilarityCutoff
                 (change)="onpathwaySimilarityCutoffChange(pathwaySimilarityCutoffInput.value)" matInput
                 placeholder="0.38" min="0" max="0.9" step="0.01" type="number" #pathwaySimilarityCutoffInput>
         </mat-form-field>
         <mat-form-field class="form-field">
             <mat-label>LLM Score Cutoff: </mat-label>
-            <input class="label" [value]=llmScoreCutoff
+            <input class="label" [value]=configuration.llmScoreCutoff
                 (change)="onllmScoreCutoffChange(llmScoreCutoffInput.value)" matInput placeholder="3" min="0"
                 type="number" #llmScoreCutoffInput>
         </mat-form-field>
@@ -40,13 +40,13 @@
     <div>
         <mat-form-field class="form-field">
             <mat-label>Pathway count: </mat-label>
-            <input appearance="outline" [value]=pathwayCount
+            <input appearance="outline" [value]=configuration.numberOfPathways
                 (change)="onpathwayCountChange(pathwayCountInput.value)" class="label" matInput placeholder="8"
                 min="0" max="20" step="1" type="number" #pathwayCountInput>
         </mat-form-field>
         <mat-form-field class="form-field">
             <mat-label>FDR: < </mat-label>
-                    <mat-select  [value]=fdr
+                    <mat-select  [value]=configuration.fdrCutoff
                         (change)="onFdrChange(fdrInput.value)" class="label" #fdrInput>
                         <mat-option value="1">1</mat-option>
                         <mat-option value="0.05">0.05</mat-option>

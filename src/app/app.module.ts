@@ -26,6 +26,7 @@ import { MainSchemaViewModule } from "./schema-view/main-schema-view/main-schema
 import { SchemaClassTableModule } from './schema-view/schema-class/components/table/schema-class-table.module';
 import { SharedModule } from "./shared/shared.module";
 import { StatusModule } from './status/status.module';
+import { GeneLlmModule } from './gene-llm/gene-llm.module';
 
 export function tokenGetter() {
   return localStorage.getItem("token");
@@ -49,6 +50,7 @@ const customTooltipOptions: MatTooltipDefaultOptions = {
     AppComponent
   ],
   imports: [
+    GeneLlmModule,
     BrowserModule,
     AppRoutingModule,
     BrowserAnimationsModule,

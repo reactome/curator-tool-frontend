@@ -10,18 +10,20 @@ total_words (int, optional): _description_. Defaults to 300. -->
 
 <!--Enter a gene-->
 <div class="center">
-    <div style="display: flex; align-items: center; justify-content: center; margin-top: 15px; margin-bottom: 5px;">
+    <div
+        style="display: flex; margin: auto; align-items: center; justify-content: center; margin-top: 15px; margin-bottom: 5px;">
         <div class="gene_label">
             <label>Enter a gene:</label>
         </div>
 
         <div class="gene_input">
-            <input type="text" style="height: 24px;" placeholder="TANC1" [value]="gene" (change)="onGeneChange(geneInput.value)" #geneInput
-                matInput />
+            <input type="text" style="height: 24px;" placeholder="TANC1" [value]="gene"
+                (change)="onGeneChange(geneInput.value)" #geneInput matInput />
         </div>
 
         <div class="button_container">
-            <button matTooltip="Submit gene for processing" mat-icon-button (click)="queryGene()">
+            <button style="cursor: pointer;" matTooltip="Submit gene for processing" mat-icon-button
+                (click)="queryGene()">
                 <mat-icon>publish</mat-icon>
             </button>
 
@@ -34,7 +36,7 @@ total_words (int, optional): _description_. Defaults to 300. -->
         </div>
     </div>
     <ng-container *ngIf="showConfiguration">
-        <app-configuration-component [setConfig]="configuration"
+        <app-configuration-component [setGene]="gene"
             (getConfig)="setConfiguration($event)"></app-configuration-component>
     </ng-container>
     <br>
@@ -48,6 +50,31 @@ total_words (int, optional): _description_. Defaults to 300. -->
         <h4 class="title">Failure</h4>
         <p [innerHTML]="failure"></p>
     </div>
+
+    <section *ngIf="content">
+        <div style="display: flex">
+            <mat-card class="example-card" appearance="outlined">
+                <mat-card-header>
+                    <mat-card-title>{{gene}}</mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <!-- <p>{{resultData?.content}}</p> -->
+
+                    <!-- <ng-container *ngFor="let e of tableData"> -->
+                        <h4>{{tableData[0].summary}}</h4>
+
+                        <app-abstract-summary-table ></app-abstract-summary-table>
+
+                        <!-- <ng-container *ngFor="let data of tableData[0]">
+                            <h4>{{data.ppi_genes}}</h4>
+                            <h4>{{data.pmids}}</h4>
+                        </ng-container> -->
+
+                        <p>{{tableData[0].summary}}</p>
+                </mat-card-content>
+            </mat-card>
+        </div>
+    </section>
 
     <section *ngIf="annotated_pathway_content">
         <div>
@@ -70,28 +97,6 @@ total_words (int, optional): _description_. Defaults to 300. -->
             <p [innerHTML]="annotated_pathway_details"></p>
         </div>
 
-    </section>
-
-    <section *ngIf="content">
-        <div style="display: flex">
-            <ng-container *ngFor="let e of resultData">
-                <mat-card class="example-card" appearance="outlined">
-                    <mat-card-header>
-                        <mat-card-title>{{e.query_gene}}</mat-card-title>
-                    </mat-card-header>
-                    <mat-card-content>
-                        <p>{{e.data.content}}</p>
-                    </mat-card-content>
-                    <mat-card-footer class="example-card-footer">
-                        <!-- <mat-chip-set aria-label="Chihuahua traits">
-                        <mat-chip>charming</mat-chip>
-                        <mat-chip>graceful</mat-chip>
-                        <mat-chip>sassy</mat-chip>
-                      </mat-chip-set> -->
-                    </mat-card-footer>
-                </mat-card>
-            </ng-container>
-        </div>
     </section>
 
 </section>

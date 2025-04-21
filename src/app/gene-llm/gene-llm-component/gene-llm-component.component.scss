@@ -46,7 +46,7 @@
 
   .center {
     margin: auto;
-    width: 30%;
+    width: 35%;
     border: 1px solid var(--primary);
     border-radius: 4px;
     padding: 10px;
@@ -73,7 +73,8 @@
   }
 
   .example-card {
-    max-width: 400px;
+    // max-width: 400px;
+    width:fit-content;
   }
   
   .example-card-footer {

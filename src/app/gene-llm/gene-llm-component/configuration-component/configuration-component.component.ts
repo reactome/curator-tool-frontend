@@ -12,9 +12,6 @@ import { MatSelect } from '@angular/material/select';
 
 @Component({
   selector: 'app-configuration-component',
-  standalone: true,
-  imports: [MatFormFieldModule, MatInputModule, NgIf, NgFor, MatProgressSpinnerModule, 
-    MatDividerModule, MatExpansionModule, MatSelect, MatOption, MatIcon, MatCard],
   templateUrl: './configuration-component.component.html',
   styleUrl: './configuration-component.component.scss'
 })
@@ -22,61 +19,71 @@ export class ConfigurationComponentComponent {
 
   @Output() getConfig = new EventEmitter<Configuration>();
   // Make sure it is bound to input instance
-  @Input() set setConfig(configuration: Configuration) {
-    this.sendConfiguration(configuration);
+  @Input() set setGene(gene: string) {
+    this.configuration.queryGene = gene;
   }
     //Parameters
-    gene: string = "TANC1";
-    fiScore: string = "0.8";
-    pubmedResults: string = "8";
-    maxQueryLength: string = "1000";
-    pathwaySimilarityCutoff: string = "0.38";
-    llmScoreCutoff: string = "3";
-    pathwayCount: string ="8";
-    fdr: string = "0.01";
-    model: string = "gpt-4o-mini"
+   configuration: Configuration = {
+    queryGene: "TANC1",
+    fiScoreCutoff: parseFloat("0.8"),
+    numberOfPubmed: parseInt("8"),
+    //maxQueryLength: "1000",
+    cosineSimilarityCutoff: parseFloat("0.38"),
+    llmScoreCutoff: parseInt("3"),
+    numberOfPathways: parseInt("8"),
+    fdrCutoff: parseFloat("0.01"),
+    // model: "gpt-4o-mini"
+   }
 
   sendConfiguration(configuration: Configuration){
     this.getConfig.emit(configuration);
   }  
 
-  onGeneChange(geneName: string){
-    this.gene = geneName;
-  }
+  // onGeneChange(geneName: string){
+  //   this.gene = geneName;
+  //   this.getConfig.emit(configuration);
+  // }
+
   onfiScoreChange(fiScore: string){
-    this.fiScore = fiScore;
+    this.configuration.fiScoreCutoff = parseFloat(fiScore);
+    this.getConfig.emit(this.configuration);
   }
-  onpubmedResultsChange(pubmedResults: string){
-    this.pubmedResults = pubmedResults;
+  onpubmedResultsChange(numberOfPubmed: string){
+    this.configuration.numberOfPubmed = parseInt(numberOfPubmed);
+    this.getConfig.emit(this.configuration);
   }
-  onmaxQueryLengthChange(maxQueryLength: string){
-    this.maxQueryLength = maxQueryLength;
-  }
-  onpathwaySimilarityCutoffChange(pathwaySimilarityCutoff: string){
-    this.pathwaySimilarityCutoff = pathwaySimilarityCutoff;
+  // onmaxQueryLengthChange(maxQueryLength: string){
+  //   this.configuration.maxQueryLength = maxQueryLength;
+  //   this.getConfig.emit(this.configuration);
+  // }
+  onpathwaySimilarityCutoffChange(cosineSimilarityCutoff: string){
+    this.configuration.cosineSimilarityCutoff = parseFloat(cosineSimilarityCutoff);
+    this.getConfig.emit(this.configuration);
   }
   onllmScoreCutoffChange(llmScoreCutoff: string){
-    this.llmScoreCutoff = llmScoreCutoff;
+    this.configuration.llmScoreCutoff = parseInt(llmScoreCutoff);
+    this.getConfig.emit(this.configuration);
   }
-  onpathwayCountChange(pathwayCount: string){
-    this.pathwayCount = pathwayCount;
+  onpathwayCountChange(numberOfPathways: string){
+    this.configuration.numberOfPathways = parseInt(numberOfPathways);
+    this.getConfig.emit(this.configuration);
   }
-  onFdrChange(fdr: string){
-    this.fdr = fdr;
+  onFdrChange(fdrCutoff: string){
+    this.configuration.fdrCutoff = parseFloat(fdrCutoff);
+    this.getConfig.emit(this.configuration);
   }
-  onModelChange(model: string){
-    this.model = model;
-  }
+  // onModelChange(model: string){
+  //   this.configuration.model = model;
+  //   this.getConfig.emit(this.configuration);
+  // }
 }
 
 export interface Configuration {
   queryGene: string;
   fiScoreCutoff: number;
   numberOfPubmed: number;
-  // maxQueryLength: number;
   cosineSimilarityCutoff: number;
   llmScoreCutoff: number;
   numberOfPathways: number;
   fdrCutoff: number;
-  // llmModel: string;
 }

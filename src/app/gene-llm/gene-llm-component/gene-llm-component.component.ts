@@ -14,18 +14,17 @@ import { MatIcon } from '@angular/material/icon';
 import { Configuration, ConfigurationComponentComponent } from "./configuration-component/configuration-component.component";
 import { MatButton } from '@angular/material/button';
 import { MatCard, MatCardContent, MatCardActions, MatCardHeader, MatCardFooter, MatCardTitle } from '@angular/material/card';
+import { MatRow, MatRowDef, MatFooterRow, MatHeaderRow, MatHeaderRowDef, MatTableDataSource } from '@angular/material/table';
+import { MatCell, MatTable, MatHeaderCell } from '@angular/material/table';
+import sum from 'vectorious/dist/core/sum';
+import { AbstractSummaryTableComponent } from "./abstract-summary-table/abstract-summary-table.component";
 // import jsonData from './TANC1.json';
 
 
 @Component({
   selector: 'app-gene-llm-component',
   templateUrl: './gene-llm-component.component.html',
-  styleUrls: ['./gene-llm-component.component.scss'],
-  standalone: true,
-  imports: [MatFormFieldModule, MatInputModule, NgIf, NgFor,
-    MatProgressSpinnerModule, MatDividerModule, MatExpansionModule,
-    MatSelect, MatOption, MatIcon, MatCard, ConfigurationComponentComponent, MatButton,
-    MatCardContent, MatCardActions, MatCardHeader, MatCardFooter, MatCardTitle]
+  styleUrls: ['./gene-llm-component.component.scss']
 })
 export class GeneLlmComponentComponent {
 
@@ -41,9 +40,9 @@ export class GeneLlmComponentComponent {
   annotated_pathway_details: string | undefined;
   during_query: boolean = false;
 
-  gene: string = "TANC1";
+  gene: string = "NTN1";
   configuration: Configuration = {
-    queryGene: "TANC1",
+    queryGene: "NTN1",
     fiScoreCutoff: parseFloat("0.8"),
     numberOfPubmed: parseInt("8"),
     //maxQueryLength: "1000",
@@ -55,7 +54,12 @@ export class GeneLlmComponentComponent {
   };
 
   showConfiguration: boolean = false;
-  resultData: Results[] = [];
+  tableData:  Abstracts[] = [];
+  dataSource: AbstractSummary[] = [{ gene: "gene", pmids: ['000', '111', '44'] }];
+  colNames: string[] = ['ppi_genes', 'pmids'];
+
+  // displayedColumns: string[] = ['ppi_gene', 'pmids'];
+
 
   constructor(private http: HttpClient) {
   }
@@ -68,35 +72,6 @@ export class GeneLlmComponentComponent {
   setConfiguration(configuration: Configuration) {
     this.configuration = configuration;
   }
-
-  // TEMPORARY 
-  // queryGene() {
-  //   this.during_query = true;
-  //   //this.content = jsonData.toString();
-  //   const result: LLM_Result = jsonData;
-  //   console.debug(result);
-  //   this.annotated_pathway_content = result.annotated_pathways_content;
-  //   this.annotated_pathway_details = result.annotated_pathways_docs;
-  //   if (this.annotated_pathway_details) {
-  //     // Perform some formatting
-  //     this.annotated_pathway_details = this.replaceNewLine(this.annotated_pathway_details);
-  //     this.annotated_pathway_details = this.addPathwayLinks(this.annotated_pathway_details,
-  //       result.pathway_name_2_id,
-  //       false);
-  //   }
-  //   if (this.annotated_pathway_content) {
-  //     this.annotated_pathway_content = this.addPathwayLinks(this.annotated_pathway_content, result.pathway_name_2_id, false);
-  //   }
-  //   this.failure = result.failure;
-  //   //this.content = this.hiliteGene(result.content, gene);
-  //   // if (this.content) {
-  //   //   this.content = this.addLinkToPMID(this.content);
-  //   // }
-  //   // this.details = this.splitDetails(result.docs,
-  //   //   result.pathway_name_2_id,
-  //   //   gene);
-  //   this.during_query = false;
-  // }
 
   queryGene() {
     console.debug('Form data:');
@@ -125,15 +100,43 @@ export class GeneLlmComponentComponent {
         this.annotated_pathway_content = this.addPathwayLinks(this.annotated_pathway_content, result.pathway_name_2_id, false);
       }
       this.failure = result.failure;
-      //this.content = this.hiliteGene(result.content, gene);
-      // if (this.content) {
-      //   this.content = this.addLinkToPMID(this.content);
-      // }
-      // this.details = this.splitDetails(result.docs,
-      //   result.pathway_name_2_id,
-      //   gene);
+      this.content = this.hiliteGene(result.content, this.gene);
+      if (this.content) {
+        this.content = this.addLinkToPMID(this.content);
+      }
+      if (result.pathway_2_ppi_abstracts_summary) {
+        let summaries = result.pathway_2_ppi_abstracts_summary;
+        this.createSummaryData(summaries);
+      }
+      setTimeout(() => {
+        this.details = this.splitDetails(result.docs,
+          result.pathway_name_2_id,
+          this.gene);
+      })
       this.during_query = false;
-   })
+    })
+  }
+
+  createSummaryData(summaries: string[]) {
+    Object.entries(summaries).forEach(([key, value]) => {
+      let entry: Pathway2Abstracts = { pathway_name: key, abstractData: value }
+      let abstract: Abstracts = { summary: entry.abstractData.summary, gene: entry.abstractData.ppi_genes, pmids: entry.abstractData.pmids }
+      // let data = this.mappingSummary(abstract.ppi_genes, abstract.pmids)
+      // let pathway: AbstractTableData = { pathway_name: key, summary: abstract.summary, data: data }
+      // console.log('pathway:', pathway);
+      // this.dataSource = data;
+      // console.log('datasource:', this.dataSource);
+      this.tableData.push(abstract);
+    });
+  }
+
+  mappingSummary(ppi_genes: string[], pmids: string[]): AbstractSummary[] {
+    const mappedGenes: AbstractSummary[] = ppi_genes.map((gene, index) => ({
+      gene: gene,
+      pmids: pmids[index].split('|')
+    }
+    ));
+    return mappedGenes;
   }
 
   private splitDetails(details: string | undefined,
@@ -338,8 +341,16 @@ export class GeneLlmComponentComponent {
     });
   }
   onGeneChange(geneName: string) {
+    this.configuration.queryGene = geneName;
     this.gene = geneName;
   }
+
+
+  // toAbstractSummary(obj: any): AbstractSummary {
+  //   return new AbstractSummary(obj.pmids,
+  //     obj.ppi_genes,
+  //     obj.summary);
+  // }
 }
 
 interface LLM_Result {
@@ -366,32 +377,27 @@ interface Interacting_Pathway_Detail {
   pdfUrl?: string;
 }
 
-interface Results {
-  query_gene: string;
-  data: Data;
-}
-
-interface Data {
-  annotated_pathways_content?: string;
-  annotated_pathways_docs?: string;
-  content?: string;
-  docs?: string;
-
-  pathway_2_ppi_abstracts_summary: Pathway2Abstracts[],
-
-  pathway_name_2_id: PathwayName2Id[]
-}
 
 interface Pathway2Abstracts {
   pathway_name: string;
-  abstract_summary: {
-    pmids: string[];
-    ppi_genes: string[];
-    summary: string;
-  };
+  abstractData: any;
+
 }
 
-interface PathwayName2Id {
-  name: string;
-  id: number;
+interface AbstractTableData {
+  pathway_name: string;
+  summary: string;
+  data: AbstractSummary[];
 }
+
+interface Abstracts {
+  summary: string;
+  pmids: string[];
+  gene: string[];
+}
+
+export interface AbstractSummary {
+  gene: string;
+  pmids: string[];
+}
+
