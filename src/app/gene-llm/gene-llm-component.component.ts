@@ -21,6 +21,7 @@ export class GeneLlmComponentComponent {
   failure: string | undefined;
   annotated_pathway_content: string | undefined;
   annotated_pathway_details: string | undefined;
+  pathway_2_ppi_abstracts_summary: string | undefined;
   during_query: boolean = false;
 
   gene: string = "NTN1";
@@ -37,10 +38,8 @@ export class GeneLlmComponentComponent {
   };
 
   showConfiguration: boolean = false;
-  tableData:  AbstractTableData[] = [];
+  tableData: AbstractTableData[] = [];
   colNames: string[] = ['ppi_genes', 'pmids'];
-
-  // displayedColumns: string[] = ['ppi_gene', 'pmids'];
 
 
   constructor(private http: HttpClient) {
@@ -71,6 +70,7 @@ export class GeneLlmComponentComponent {
     ).subscribe(result => {
       this.annotated_pathway_content = result.annotated_pathways_content;
       this.annotated_pathway_details = result.annotated_pathways_docs;
+      this.pathway_2_ppi_abstracts_summary = result.pathway_2_ppi_abstracts_summary;
       if (this.annotated_pathway_details) {
         // Perform some formatting
         this.annotated_pathway_details = this.replaceNewLine(this.annotated_pathway_details);
@@ -325,12 +325,15 @@ export class GeneLlmComponentComponent {
     this.gene = geneName;
   }
 
-
-  // toAbstractSummary(obj: any): AbstractSummary {
-  //   return new AbstractSummary(obj.pmids,
-  //     obj.ppi_genes,
-  //     obj.summary);
-  // }
+  scrollToSection(id: string) {
+    // wait a moment to ensure the view has rendered (if necessary)
+    setTimeout(() => {
+      const section = document.getElementById(id);
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 0);
+  }
 }
 
 interface LLM_Result {
