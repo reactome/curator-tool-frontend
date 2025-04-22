@@ -51,31 +51,36 @@ total_words (int, optional): _description_. Defaults to 300. -->
         <p [innerHTML]="failure"></p>
     </div>
 
-    <mat-sidenav-container>
+    <mat-sidenav-container style="left: 20px;" *ngIf="!during_query">
         <mat-sidenav #sidenav mode="side" opened class="menu_style">
             <!-- <button mat-button [matMenuTriggerFor]="menu">Menu</button>
                 <mat-menu #menu="matMenu"> -->
-                <div style="outline: none;">
-                    <button *ngIf="annotated_pathway_content" mat-button (click)="scrollToSection('pathway_content')">Summary</button>
-                    <br>
-                    <button *ngIf="annotated_pathway_details" mat-button (click)="scrollToSection('pathway_details')">Annotated Pathway Details</button>
-                    <br>
-                    <button *ngIf="content" mat-button (click)="scrollToSection('content')">Content</button>
-                    <br>
-                    <button *ngIf="details" mat-button (click)="scrollToSection('details')">Details </button>
-                    <br>
-                    <button *ngIf="annotated_pathway_content" mat-button (click)="scrollToSection('gene2PPi')">Gene to PPI Summary</button>
-                </div>
-                <!-- </mat-menu> -->
+            <div style="outline: none;">
+                <button *ngIf="annotated_pathway_content" mat-button
+                    (click)="scrollToSection('pathway_content')">Summary</button>
+                <br>
+                <button *ngIf="annotated_pathway_details" mat-button
+                    (click)="scrollToSection('pathway_details')">Annotated Pathway Details</button>
+                <br>
+                <button *ngIf="content" mat-button (click)="scrollToSection('content')">Content</button>
+                <br>
+                <button *ngIf="details" mat-button (click)="scrollToSection('details')">Details </button>
+                <br>
+                <button *ngIf="tableData" mat-button (click)="scrollToSection('gene2PPi')">Gene to PPI Summary</button>
+            </div>
+            <!-- </mat-menu> -->
         </mat-sidenav>
 
         <mat-sidenav-content>
+            <!-- <div *ngIf="content">
+                <h2>Predicted Interacting Pathways</h2>
+            </div> -->
             <!-- Annotated Pathways Content  -->
             <section *ngIf="annotated_pathway_content" id="pathway_content">
                 <div>
                     <br>
                     <mat-divider></mat-divider>
-                    <h2 class="section_title">Annotated Pathways</h2>
+                    <h2 class="section_title">Predicted Interacting Pathways</h2>
                     <p class="note">The query gene has been annotated in Reactome. Its annotation is sumarized below
                         with a
                         focus on its
@@ -100,22 +105,26 @@ total_words (int, optional): _description_. Defaults to 300. -->
             <!-- content -->
             <section *ngIf="content" id="content">
                 <h4 class="title">Content</h4>
-                <p class="note">Get content statement.</p>
+                <p class="note">The query gene may be functionally interacting with annotated pathways based on
+                    Reactome.
+                    The app tried to match PubMed abstracts together with interacting pathways for curators.
+                </p>
                 <p [innerHTML]="content"></p>
             </section>
 
             <!-- Docs -->
             <section *ngIf="details" id="details">
                 <h4 class="title">Details</h4>
-                <p class="note">Details statement.</p>
-                <ng-container *ngFor="let detail of details">
-                    <p [innerHTML]="detail.queryGene"></p>
-                </ng-container>
+                <p class="note">The text is generate by LLM, which collects the best matched abstract for each of the
+                    predicted
+                    interacting pathways for the query gene.</p>
+                <!--Switch this to use a template-->
+                <app-annotated-pathway-details [details]="details"></app-annotated-pathway-details>
             </section>
 
 
             <!-- Pathway to PPI Abstract Summary Data -->
-            <section *ngIf="content" id="gene2PPi">
+            <section *ngIf="tableData" id="gene2PPi">
                 <h4 class="title">Gene to PPI Summary</h4>
                 <p class="note">Get note statement.</p>
                 <div style="display: flex">
@@ -124,8 +133,8 @@ total_words (int, optional): _description_. Defaults to 300. -->
                             <ng-container *ngFor="let e of tableData">
                                 <h4>{{e.pathway_name}}</h4>
 
-                                <app-abstract-summary-table [data]="e.data"></app-abstract-summary-table>
-
+                                <app-protein-partners-table style="margin: auto;" [data]="e.data"></app-protein-partners-table>
+                                <br>
                                 <p>{{e.summary}}</p>
                                 <br>
                             </ng-container>
@@ -136,5 +145,4 @@ total_words (int, optional): _description_. Defaults to 300. -->
 
         </mat-sidenav-content>
     </mat-sidenav-container>
-
 </section>

@@ -1,0 +1,34 @@
+:host {
+    display: table;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: center;
+    overflow: auto;
+
+  }
+  .instance-list-table-row-is-clicked {
+    font-weight: bold;
+  }
+  
+  .mat-mdc-row {
+    height: 30px;
+  }
+  
+  
+  th {
+    background: var(--primary-container) !important;
+    color: var(--on-primary-container) !important;
+    //height: var(--bread-crumb-height, 40px) !important;
+  }
+  
+  .table-container {
+    // height: calc(100vh - var(--bread-crumb-height) - var(--filter-height) - 2 * var(--body-margin));
+    overflow: auto;
+    border: none;
+  }
+  
+  
+  .td{
+    padding: 0 !important;
+    margin: 0 !important;
+  }

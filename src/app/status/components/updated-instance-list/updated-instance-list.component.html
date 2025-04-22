@@ -20,7 +20,7 @@
 </ng-container>
 
 <h4>Updated Instances: {{updatedInstances.length}}</h4>
-<ng-container>
+<!-- <div> -->
 <app-instance-list-table [dataSource]="updatedInstances"
                          [isSelection]="isSelection"
                          [showHeader]="showHeader"
@@ -30,7 +30,7 @@
                          (actionEvent)="handleAction($event)"
                          (urlClickEvent)="navigateUrl($event)">
 </app-instance-list-table>
-</ng-container>
+<!-- </div> -->
 
 <h4>Deleted Instances: {{deletedInstances.length}}</h4>
 <app-instance-list-table [dataSource]="deletedInstances"

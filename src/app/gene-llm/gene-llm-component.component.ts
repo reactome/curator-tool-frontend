@@ -38,7 +38,7 @@ export class GeneLlmComponentComponent {
   };
 
   showConfiguration: boolean = false;
-  tableData: AbstractTableData[] = [];
+  tableData: AbstractTableData[] | undefined;
   colNames: string[] = ['ppi_genes', 'pmids'];
 
 
@@ -88,6 +88,7 @@ export class GeneLlmComponentComponent {
       }
       if (result.pathway_2_ppi_abstracts_summary) {
         let summaries = result.pathway_2_ppi_abstracts_summary;
+        this.tableData = [];
         this.createSummaryData(summaries);
       }
       setTimeout(() => {
@@ -106,7 +107,7 @@ export class GeneLlmComponentComponent {
       let data = this.mappingSummary(abstract.gene, abstract.pmids)
       let pathway: AbstractTableData = { pathway_name: key, summary: abstract.summary, data: data }
       console.log('pathway:', pathway);
-      this.tableData.push(pathway);
+      this.tableData?.push(pathway);
     });
   }
 
@@ -346,7 +347,7 @@ interface LLM_Result {
   pathway_name_2_id?: any;
 }
 
-interface Interacting_Pathway_Detail {
+export interface Interacting_Pathway_Detail {
   pathway?: string;
   pathwayId?: string;
   pmid?: string;

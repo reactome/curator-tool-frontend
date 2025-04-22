@@ -1,6 +1,7 @@
-<table style="width: 500px" [dataSource]="dataSource" mat-table class="mat-elevation-z0 instance-list-table">
+<div width="100%">
+<table style=" margin: auto; width: 80%" [dataSource]="dataSource" mat-table class="mat-elevation-z0 instance-list-table">
 
-    <!-- dbId Column -->
+    <!-- Gene Column -->
     <ng-container matColumnDef='gene' style="white-space: normal;">
         <th mat-header-cell *matHeaderCellDef>Interaction Partner</th>
         <td mat-cell *matCellDef="let element">
@@ -8,11 +9,11 @@
         </td>
     </ng-container>
 
-    <!-- Display Name Column -->
+    <!-- PMIDs Column -->
     <ng-container matColumnDef='pmids' style="white-space: normal;">
         <th mat-header-cell *matHeaderCellDef>PMID</th>
         <td mat-cell *matCellDef="let element">
-            {{element.pmids}}
+            <ng-container *ngTemplateOutlet="pmidTemplate; context: {$implicit: element}"></ng-container>
         </td>
     </ng-container>
 
@@ -20,3 +21,11 @@
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 </table>
+
+<ng-template #pmidTemplate let-element>
+    <ng-container *ngFor="let id of element.pmids">
+        <a href="https://pubmed.ncbi.nlm.nih.gov/{{id}}"
+        target="pubmed">{{ id + ", " }}</a>
+    </ng-container>
+  </ng-template>
+</div>

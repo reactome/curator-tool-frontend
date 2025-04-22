@@ -10,5 +10,22 @@
     top: 0;
     right: 0;
     padding: 8px;
-  }
+}
+
+.title {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    overflow: hidden;
+}
+  
+.ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
   

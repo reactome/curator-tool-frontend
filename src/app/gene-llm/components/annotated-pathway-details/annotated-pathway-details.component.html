@@ -1,0 +1,48 @@
+<div *ngFor="let detail of details">
+    <p style="font-weight: bold;">
+        PMID: <a href="https://pubmed.ncbi.nlm.nih.gov/{{detail.pmid}}"
+            target="pubmed">{{detail.pmid}}</a>
+        vs
+        PATHWAY: <a href="https://reactome.org/PathwayBrowser/#/{{detail.pathwayId}}"
+            target="reactome">{{detail.pathway}}</a>
+    </p>
+    <p [innerHTML]="detail.text"></p>
+    <p>
+        <mat-expansion-panel hideToggle class="mat-elevation-z0" (afterExpand)="fetchFullText(detail)">
+            <mat-expansion-panel-header>
+                <mat-panel-title>
+                    Click to process the full text paper
+                </mat-panel-title>
+                <mat-panel-description>
+                    Relationships between the query gene and other biological concepts will be extracted
+                </mat-panel-description>
+            </mat-expansion-panel-header>
+            <p>
+                <mat-progress-spinner mode="indeterminate"
+                    *ngIf="!detail.fullPaperResults && detail.isWorkingFullText"></mat-progress-spinner>
+            </p>
+            <p *ngIf="detail.failure" class="error">{{detail.failure}}</p>
+            <p *ngIf="detail.needPDFFile">
+                You may try to upload a PDF file here (The uploaded file will be kept at the server for
+                some
+                time):
+                <!--The following file upload is based on https://blog.angular-university.io/angular-file-upload/ 
+                More features should be added: e.g. monitor progress, cancel, etc. -->
+                <input type="file" class="file_input" accept="application/pdf"
+                    (change)="uploadPDFFile($event, detail)" #fileUpload>
+                {{detail.pdfUrl || "No file uploaded yet."}}
+                <button mat-button color="primary" (click)="fileUpload.click()">
+                    Choose a File
+                </button>
+            </p>
+            <ol *ngIf="detail.fullPaperResults">
+                <li *ngFor="let result of detail.fullPaperResults">
+                    <h4 class="title">Extracted Relationships</h4>
+                    <p [innerHTML]="result.content"></p>
+                    <h4 class="title">Source Text from the Full Paper</h4>
+                    <p [innerHTML]="result.docs"></p>
+                </li>
+            </ol>
+        </mat-expansion-panel>
+    </p>
+</div>

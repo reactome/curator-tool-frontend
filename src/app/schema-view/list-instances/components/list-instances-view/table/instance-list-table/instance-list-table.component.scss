@@ -38,7 +38,36 @@ th {
 .buttons-pane {
   // display: flex;
   // flex-direction: row-reverse;
-  // padding-top: 8px;
-  position: absolute;
+   padding: 0;
+  // position: absolute;
   min-width: 300px;
+  flex: 0 0 auto;
+}
+
+.title {
+  // width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+.shrinkable{
+  flex: 1 1 auto;
+  width: 200px;
+  // overflow-wrap: break-word;
+  // word-wrap: break-word;
+  // text-overflow: ellipsis;
+}
+
+.wrap-text-cell {
+  white-space: normal !important;
+  word-break: break-word;
+}
+
+.td{
+  padding: 0 !important;
+  margin: 0 !important;
 }

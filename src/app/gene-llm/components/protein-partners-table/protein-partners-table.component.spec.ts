@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AbstractSummaryTableComponent } from './abstract-summary-table.component';
+import { ProteinPartnersTableComponent } from './protein-partners-table.component';
 
 describe('AbstractSummaryTableComponent', () => {
-  let component: AbstractSummaryTableComponent;
-  let fixture: ComponentFixture<AbstractSummaryTableComponent>;
+  let component: ProteinPartnersTableComponent;
+  let fixture: ComponentFixture<ProteinPartnersTableComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AbstractSummaryTableComponent]
+      imports: [ProteinPartnersTableComponent]
     })
     .compileComponents();
     
-    fixture = TestBed.createComponent(AbstractSummaryTableComponent);
+    fixture = TestBed.createComponent(ProteinPartnersTableComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
