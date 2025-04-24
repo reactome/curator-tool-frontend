@@ -131,8 +131,16 @@
   .menu_style {
     width: 200px; 
     position: fixed; 
-    top: 20em; 
+    top: 5em; 
     left: 1em;
     background: none;
     outline: none;
+  }
+
+  .mat-drawer {
+    bottom: auto !important;
+  }
+
+  .mat-drawer-side {
+    border-right-style: none !important;
   }

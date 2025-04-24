@@ -257,7 +257,9 @@ export class GeneLlmComponentComponent {
     });
   }
 
-  uploadPDFFile(event: any, detail: Interacting_Pathway_Detail) {
+  uploadPDFFile($event: any) {
+    let event: any = $event.event;
+    let detail: Interacting_Pathway_Detail = $event.detail;
     console.debug("Uploading pdf file: ", event.target.files[0]);
     const file = event.target.files[0];
     if (file) {

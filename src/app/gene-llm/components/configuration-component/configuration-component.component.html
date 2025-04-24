@@ -39,17 +39,17 @@
                 (change)="onpathwayCountChange(pathwayCountInput.value)" class="label" matInput placeholder="8"
                 min="0" max="20" step="1" type="number" #pathwayCountInput>
         </mat-form-field>
-        <mat-form-field class="form-field">
+        <mat-form-field >
             <mat-label>FDR: < </mat-label>
-                    <mat-select  [value]=configuration.fdrCutoff
-                        (change)="onFdrChange(fdrInput.value)" class="label" #fdrInput>
-                        <mat-option value="1">1</mat-option>
-                        <mat-option value="0.05">0.05</mat-option>
-                        <mat-option value="0.01">0.01</mat-option>
-                        <mat-option value="0.001">0.001</mat-option>
-                        <mat-option value="0.0001">0.0001</mat-option>
-                        <mat-option value="0.00001">0.00001</mat-option>
-                    </mat-select>
+                <mat-select appearance="outline" matInput placeholder="0.01" [(value)]="configuration.fdrCutoff"
+                    (change)="onFdrChange(fdrInput.value)" class="label" #fdrInput>
+                    <mat-option value="1">1</mat-option>
+                    <mat-option value="0.05">0.05</mat-option>
+                    <mat-option value="0.01">0.01</mat-option>
+                    <mat-option value="0.001">0.001</mat-option>
+                    <mat-option value="0.0001">0.0001</mat-option>
+                    <mat-option value="0.00001">0.00001</mat-option>
+                </mat-select>
         </mat-form-field>
 
     </div>
