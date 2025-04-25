@@ -52,23 +52,8 @@ total_words (int, optional): _description_. Defaults to 300. -->
     </div>
 
     <mat-sidenav-container style="left: 20px;" *ngIf="!during_query">
-        <mat-sidenav #sidenav mode="side" opened class="menu_style">
-            <!-- <button mat-button [matMenuTriggerFor]="menu">Menu</button>
-                <mat-menu #menu="matMenu"> -->
-            <div style="outline: none;">
-                <button *ngIf="annotated_pathway_content" mat-button
-                    (click)="scrollToSection('pathway_content')">Summary</button>
-                <br>
-                <button *ngIf="annotated_pathway_details" mat-button
-                    (click)="scrollToSection('pathway_details')">Annotated Pathway Details</button>
-                <br>
-                <button *ngIf="content" mat-button (click)="scrollToSection('content')">Content</button>
-                <br>
-                <button *ngIf="details" mat-button (click)="scrollToSection('details')">Details </button>
-                <br>
-                <button *ngIf="tableData" mat-button (click)="scrollToSection('gene2PPi')">Gene to PPI Summary</button>
-            </div>
-            <!-- </mat-menu> -->
+        <mat-sidenav *ngIf="content"  #sidenav mode="side" opened class="menu_style">
+            <app-navigation-menu></app-navigation-menu>
         </mat-sidenav>
 
         <mat-sidenav-content>
@@ -140,7 +125,7 @@ total_words (int, optional): _description_. Defaults to 300. -->
                     <mat-card class="example-card" appearance="outlined">
                         <mat-card-content>
                             <ng-container *ngFor="let e of tableData">
-                                <h4>{{e.pathway_name}}</h4>
+                                <h4 id="">{{e.pathway_name}}</h4>
                                 <app-protein-partners-table style="margin: auto;"
                                     [data]="e.data"></app-protein-partners-table>
                                 <br>

@@ -1,0 +1,46 @@
+<!-- <button mat-button [matMenuTriggerFor]="menu">Menu</button>
+                <mat-menu #menu="matMenu"> -->
+<!-- <div style="outline: none;">
+    <button *ngIf="annotated_pathway_content" mat-button (click)="scrollToSection('pathway_content')">Summary</button>
+    <br>
+    <button *ngIf="annotated_pathway_details" mat-button (click)="scrollToSection('pathway_details')">Annotated Pathway
+        Details</button>
+    <br>
+    <button *ngIf="content" mat-button (click)="scrollToSection('content')">Content</button>
+    <br>
+    <button *ngIf="details" mat-button (click)="scrollToSection('details')">Details </button>
+    <br>
+    <button *ngIf="tableData" mat-button (click)="scrollToSection('gene2PPi')">Gene to PPI Summary</button>
+</div> -->
+<!-- </mat-menu> -->
+
+<ng-template #valueColTemplate let-element>
+    <ng-container *ngFor="let data of element.children">
+        <a (click)="scrollToSection('gene2PPi')">{{  data.name}}</a>
+        <br>
+        <ng-container *ngIf="data.children; else elseBlock">
+            <ng-container *ngTemplateOutlet="valueColTemplate; context: {$implicit: data}"></ng-container>
+        </ng-container>
+        <ng-template #elseBlock>
+            <!-- <h2>{{data.name}}</h2> -->
+        </ng-template>
+     </ng-container>
+</ng-template>
+
+
+
+<ng-container *ngFor="let data of dataSource">
+
+    <a>{{data.name}}</a>
+    <br>
+
+    <ng-container *ngIf="data.children; else elseBlock">
+        <ng-container *ngTemplateOutlet="valueColTemplate; context: {$implicit: data}"></ng-container>
+    </ng-container>
+
+    <ng-template #elseBlock>
+        <a>{{data.name}}</a>
+        <br>
+    </ng-template>
+
+</ng-container>

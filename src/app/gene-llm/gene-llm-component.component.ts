@@ -327,16 +327,6 @@ export class GeneLlmComponentComponent {
     this.configuration.queryGene = geneName;
     this.gene = geneName;
   }
-
-  scrollToSection(id: string) {
-    // wait a moment to ensure the view has rendered (if necessary)
-    setTimeout(() => {
-      const section = document.getElementById(id);
-      if (section) {
-        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 0);
-  }
 }
 
 interface LLM_Result {
