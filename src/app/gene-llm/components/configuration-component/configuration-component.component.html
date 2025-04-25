@@ -41,7 +41,7 @@
         </mat-form-field>
         <mat-form-field >
             <mat-label>FDR: < </mat-label>
-                <mat-select appearance="outline" matInput placeholder="0.01" [(value)]="configuration.fdrCutoff"
+                <mat-select appearance="outline" matInput placeholder="0.01" [(value)]=configuration.fdrCutoff
                     (change)="onFdrChange(fdrInput.value)" class="label" #fdrInput>
                     <mat-option value="1">1</mat-option>
                     <mat-option value="0.05">0.05</mat-option>
