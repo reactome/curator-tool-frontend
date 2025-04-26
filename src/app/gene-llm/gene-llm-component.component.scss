@@ -21,7 +21,8 @@
   .title {
     margin-top: 8px;
     font-weight: bold;
-    text-decoration: underline;
+    margin-bottom: 4px;
+    // text-decoration: underline;
   }
   
   .query_gene {
@@ -33,6 +34,7 @@
     font-size: smaller;
     font-weight: lighter;
     font-style: italic;
+    margin-top: 0px;
   }
 
   .error {
@@ -72,14 +74,13 @@
     padding: 10px !important;
   }
 
-  .example-card {
+  .text-block-card {
     // max-width: 400px;
     width:fit-content;
     text-align: left !important;
-  }
-  
-  .example-card-footer {
-    padding: 16px;
+    // add some padding to the text block
+    padding: 4px;
+    border-radius: 4px;
   }
 
   .mat-icon {

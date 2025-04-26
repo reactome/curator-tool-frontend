@@ -16,7 +16,7 @@ import { PathwayDiagramModule } from '../event-view/components/pathway-diagram/p
 import { InstanceBookmarkModule } from '../schema-view/instance-bookmark/instance-bookmark.module';
 import { SharedModule } from '../shared/shared.module';
 import { MatExpansionPanel, MatExpansionPanelDescription, MatExpansionPanelHeader, MatExpansionPanelTitle } from '@angular/material/expansion';
-import { AnnotatedPathwayDetailsComponent } from './components/annotated-pathway-details/annotated-pathway-details.component';
+import { PredictedPathwayDetailsComponent } from './components/predicted-pathway-details/predicted-pathway-details.component';
 import { NavigationMenuComponent } from './components/navigation-menu/navigation-menu.component';
 import { MatTree, MatTreeModule } from '@angular/material/tree';
 
@@ -25,7 +25,7 @@ import { MatTree, MatTreeModule } from '@angular/material/tree';
     GeneLlmComponentComponent,
     ProteinPartnersTableComponent,
     ConfigurationComponentComponent,
-    AnnotatedPathwayDetailsComponent, 
+    PredictedPathwayDetailsComponent, 
     NavigationMenuComponent
   ],
   exports: [

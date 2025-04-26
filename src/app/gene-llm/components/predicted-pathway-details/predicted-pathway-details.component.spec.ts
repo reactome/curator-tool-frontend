@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AnnotatedPathwayDetailsComponent } from './annotated-pathway-details.component';
+import { PredictedPathwayDetailsComponent } from './predicted-pathway-details.component';
 
 describe('AnnotatedPathwayDetailsComponent', () => {
-  let component: AnnotatedPathwayDetailsComponent;
-  let fixture: ComponentFixture<AnnotatedPathwayDetailsComponent>;
+  let component: PredictedPathwayDetailsComponent;
+  let fixture: ComponentFixture<PredictedPathwayDetailsComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AnnotatedPathwayDetailsComponent]
+      imports: [PredictedPathwayDetailsComponent]
     })
     .compileComponents();
     
-    fixture = TestBed.createComponent(AnnotatedPathwayDetailsComponent);
+    fixture = TestBed.createComponent(PredictedPathwayDetailsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

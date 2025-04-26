@@ -1,4 +1,4 @@
-<div *ngFor="let detail of details">
+<div *ngFor="let detail of details; let last = last">
     <p style="font-weight: bold;">
         PMID: <a href="https://pubmed.ncbi.nlm.nih.gov/{{detail.pmid}}"
             target="pubmed">{{detail.pmid}}</a>
@@ -44,5 +44,8 @@
                 </li>
             </ol>
         </mat-expansion-panel>
+    </p>
+    <p *ngIf="!last">
+        <mat-divider></mat-divider>
     </p>
 </div>
