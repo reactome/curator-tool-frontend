@@ -38,7 +38,7 @@ export class GeneLlmComponentComponent {
   };
 
   showConfiguration: boolean = false;
-  tableData: AbstractTableData[] | undefined;
+  ppiTableData: AbstractTableData[] | undefined;
 
   constructor(private http: HttpClient) {
   }
@@ -52,7 +52,7 @@ export class GeneLlmComponentComponent {
     this.configuration = configuration;
   }
 
-  queryGene() {
+  annotateGene() {
     console.debug('Form data:');
     const url = this.LLM_ANNOTATE_GENE_URL;
 
@@ -71,23 +71,26 @@ export class GeneLlmComponentComponent {
       this.pathway_2_ppi_abstracts_summary = result.pathway_2_ppi_abstracts_summary;
       if (this.annotated_pathway_details) {
         // Perform some formatting
-        this.annotated_pathway_details = this.replaceNewLine(this.annotated_pathway_details);
-        this.annotated_pathway_details = this.addPathwayLinks(this.annotated_pathway_details,
-          result.pathway_name_2_id,
-          false);
+        this.annotated_pathway_details = this.postProcessText(this.annotated_pathway_details,
+          this.gene,
+          result.pathway_name_2_id);
       }
       if (this.annotated_pathway_content) {
-        this.annotated_pathway_content = this.addPathwayLinks(this.annotated_pathway_content, result.pathway_name_2_id, false);
+        this.annotated_pathway_content = this.postProcessText(this.annotated_pathway_content,
+          this.gene,
+          result.pathway_name_2_id);
       }
       this.failure = result.failure;
-      this.content = this.hiliteGene(result.content, this.gene);
+      this.content = result.content
       if (this.content) {
-        this.content = this.addLinkToPMID(this.content);
+        this.content = this.postProcessText(this.content, 
+          this.gene, 
+          result.pathway_name_2_id);
       }
       if (result.pathway_2_ppi_abstracts_summary) {
         let summaries = result.pathway_2_ppi_abstracts_summary;
-        this.tableData = [];
-        this.createSummaryData(summaries);
+        this.ppiTableData = [];
+        this.createPPISummaryData(summaries, result.pathway_name_2_id, this.gene);
       }
       setTimeout(() => {
         this.details = this.splitDetails(result.docs,
@@ -98,18 +101,32 @@ export class GeneLlmComponentComponent {
     })
   }
 
-  createSummaryData(summaries: string[]) {
+  private createPPISummaryData(summaries: string[],
+    pathway_name_2_id: any,
+    queryGene: string = this.gene
+  ) 
+  {
     Object.entries(summaries).forEach(([key, value]) => {
       let entry: Pathway2Abstracts = { pathway_name: key, abstractData: value }
-      let abstract: Abstracts = { summary: entry.abstractData.summary, gene: entry.abstractData.ppi_genes, pmids: entry.abstractData.pmids }
+      let summary = this.postProcessText(entry.abstractData.summary, queryGene, pathway_name_2_id);
+      if (summary === undefined) 
+        summary = "";
+      let abstract: Abstracts = {
+        summary: summary,
+        gene: entry.abstractData.ppi_genes, 
+        pmids: entry.abstractData.pmids
+      }
       let data = this.mappingSummary(abstract.gene, abstract.pmids)
-      let pathway: AbstractTableData = { pathway_name: key, summary: abstract.summary, data: data }
+      let pathway: AbstractTableData = { pathwayName: key,
+        pathwayId: pathway_name_2_id[key], 
+        summary: abstract.summary, 
+        data: data }
       console.debug('pathway:', pathway);
-      this.tableData?.push(pathway);
+      this.ppiTableData?.push(pathway);
     });
   }
 
-  mappingSummary(ppi_genes: string[], pmids: string[]): AbstractSummary[] {
+  private mappingSummary(ppi_genes: string[], pmids: string[]): AbstractSummary[] {
     const mappedGenes: AbstractSummary[] = ppi_genes.map((gene, index) => ({
       gene: gene,
       pmids: pmids[index].split('|')
@@ -137,7 +154,8 @@ export class GeneLlmComponentComponent {
       if (pathway) {
         let index = paragraph.indexOf(pathway);
         text = paragraph.substring(index + pathway.length + 2).trim();
-        let tmp = this.hiliteGene(text, queryGene);
+        // let tmp = this.hiliteGene(text, queryGene);
+        let tmp = this.postProcessText(text, queryGene, pathway_name_2_id);
         text = tmp ? tmp : "";
       }
       let detailObject: Interacting_Pathway_Detail = {
@@ -154,16 +172,17 @@ export class GeneLlmComponentComponent {
   }
 
   private extractPathwayName(text: string | undefined) {
-    if (text === undefined)
-      return undefined;
-    let regex = new RegExp('PATHWAY_NAME:"(.+)"', 'g');
-    let match = regex.exec(text);
-    return match ? match[1] : undefined;
+      if (text === undefined) return undefined;
+  
+      // Match the first occurrence of PATHWAY_NAME:"..."
+      let regex = new RegExp('PATHWAY_NAME:"(.+?)"', 'g'); // Non-greedy match for the first pathway name
+      let match = regex.exec(text);
+  
+      // Return the first matched pathway name or undefined if no match
+      return match ? match[1] : undefined;
   }
 
-  private addPathwayLinks(text: string | undefined,
-    name2id: any,
-    for_pathway_name: boolean = true) {
+  private addPathwayLinks(text: string | undefined, name2id: any, for_pathway_name: boolean = true) {
     if (text === undefined)
       return text;
     // Create a map from name to id first for links
@@ -179,6 +198,10 @@ export class GeneLlmComponentComponent {
           link = ' PATHWAY: <a href="https://reactome.org/PathwayBrowser/#/' + dbId + '" target="reactome">' + pathway + '</a>';
         }
         else {
+          // In case there is a pair of brackets
+          let regexWithBrackets = new RegExp(`\\[(${pathway})\\]`, 'g'); // Match with double stars
+          replacedText = replacedText.replace(regexWithBrackets, '$1');
+          // Match the pathway name without brackets
           regex = new RegExp(pathway, 'g');
           link = '<a href="https://reactome.org/PathwayBrowser/#/' + dbId + '" target="reactome">' + pathway + '</a>';
         }
@@ -188,11 +211,42 @@ export class GeneLlmComponentComponent {
     return replacedText;
   }
 
-  private hiliteGene(text: string | undefined, queryGene: string) {
+  private postProcessText(text: string | undefined, queryGene: string, pathway_name_2_id: any) {
     if (text === undefined)
       return text;
-    let regex = new RegExp(`(${queryGene})`, 'gi');
-    let hiliteGene = "<b class=\"query_gene\">$1</b>"
+    text = this.replaceNewLine(text);
+    text = this.addPathwayLinks(text, pathway_name_2_id, false);
+    text = this.hiliteGene(text, queryGene);
+    text = this.addLinkToPMID(text);
+    return text;
+  }
+
+  private hiliteGene(text: string | undefined, queryGene: string) {
+      if (text === undefined) return text;
+  
+      // Create a regex to match the query gene with or without double stars
+      let regexWithStars = new RegExp(`\\*\\*(${queryGene})\\*\\*`, 'gi'); // Match with double stars
+      let regexWithoutStars = new RegExp(`(${queryGene})`, 'gi'); // Match without double stars
+  
+      // First, replace occurrences with double stars and remove the stars
+      text = text.replace(regexWithStars, '$1');
+  
+      // Then, highlight the query gene
+      let hiliteGene = "<b class=\"query_gene\">$1</b>";
+      text = text.replace(regexWithoutStars, hiliteGene);
+  
+      // Finally, highlight anything wrapped in double stars
+      text = this.hiliteTextWithStars(text);
+      return text;
+  }
+
+  // Highlight anything wrapped in double stars
+  private hiliteTextWithStars(text: string | undefined) {
+    if (text === undefined) return text;
+    // Create a regex to match the query gene with double stars
+    let regex = new RegExp(`\\*\\*(.+?)\\*\\*`, 'gi');
+    // Highlight the query gene
+    let hiliteGene = "<b class=\"query_gene\">$1</b>";
     text = text.replace(regex, hiliteGene);
     return text;
   }
@@ -200,9 +254,9 @@ export class GeneLlmComponentComponent {
   private addLinkToPMID(text: string | undefined) {
     if (text === undefined)
       return text;
-    let regex = /PMID:(\d+)/g;
+    let regex = /PMID: (\d+)/g;
     let replacedText = text.replace(regex, '<a href="https://pubmed.ncbi.nlm.nih.gov/$1" target="pubmed">PMID:$1</a>');
-    console.debug(replacedText)
+    console.debug('addLinkToPMID: ', replacedText)
     return replacedText;
   }
 
@@ -359,7 +413,8 @@ interface Pathway2Abstracts {
 }
 
 interface AbstractTableData {
-  pathway_name: string;
+  pathwayName: string;
+  pathwayId: number
   summary: string;
   data: AbstractSummary[];
 }

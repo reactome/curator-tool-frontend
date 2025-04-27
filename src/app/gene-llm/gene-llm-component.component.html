@@ -23,7 +23,7 @@ total_words (int, optional): _description_. Defaults to 300. -->
 
         <div class="button_container">
             <button style="cursor: pointer;" matTooltip="Submit gene for processing" mat-icon-button
-                (click)="queryGene()">
+                (click)="annotateGene()">
                 <mat-icon>publish</mat-icon>
             </button>
 
@@ -118,7 +118,7 @@ total_words (int, optional): _description_. Defaults to 300. -->
 
 
             <!-- Pathway to PPI Abstract Summary Data -->
-            <section *ngIf="tableData" id="gene2PPi">
+            <section *ngIf="ppiTableData" id="gene2PPi">
                 <h4 class="title">Protein-Protein Interactions Supporting Annotation</h4>
                 <p class="note">Protein-protein interactions, collected from IntAct and BioGRID and supported by
                     functional interaction data,
@@ -126,15 +126,16 @@ total_words (int, optional): _description_. Defaults to 300. -->
                 <div style="display: flex">
                     <mat-card class="text-block-card" appearance="outlined">
                         <!-- Don't use this element if class is setup mat-card-content -->
-                        <ng-container *ngFor="let e of tableData; let last = last">
-                            <h4 id="">{{e.pathway_name}}</h4>
+                        <ng-container *ngFor="let e of ppiTableData; let last = last">
+                            <p style="font-weight: bold;">
+                                PATHWAY: <a href="https://reactome.org/PathwayBrowser/#/{{e.pathwayId}}"
+                                    target="reactome">{{e.pathwayName}}</a>
+                            </p>
                             <app-protein-partners-table style="margin: auto;"
                                 [data]="e.data"></app-protein-partners-table>
                             <br>
-                            <p>{{e.summary}}</p>
-                            <br *ngIf="!last">
-                                <mat-divider></mat-divider>
-                            <br *ngIf="!last">
+                            <p [innerHTML]="e.summary"></p>
+                            <mat-divider *ngIf="!last"></mat-divider>
                         </ng-container>
                         <!-- /mat-card-content -->
                     </mat-card>
