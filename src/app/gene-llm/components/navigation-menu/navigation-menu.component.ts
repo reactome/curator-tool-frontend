@@ -1,8 +1,4 @@
-import { ArrayDataSource } from '@angular/cdk/collections';
-import { FlatTreeControl } from '@angular/cdk/tree';
-import { Component, OnInit } from '@angular/core';
-import { MatTreeFlattener, MatTreeFlatDataSource } from '@angular/material/tree';
-import { SchemaClass } from 'src/app/core/models/reactome-schema.model';
+import { Component, Input, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-navigation-menu',
@@ -10,9 +6,18 @@ import { SchemaClass } from 'src/app/core/models/reactome-schema.model';
   styleUrls: ['./navigation-menu.component.scss']
 })
 export class NavigationMenuComponent implements OnInit{
+  @Input() set navigationData(data: NavigationData) {
+    this.navData = data;
+  }
+
+  navData: NavigationData = {
+    annotatedPathwayList: [],
+    predictedPathwayList: [],
+    ppiPathwayList: []
+  };
 
   ngOnInit(): void {
-    console.log('dataSource', this.dataSource);
+    console.log('data', this.navData);
   }
 
   scrollToSection(id: string) {
@@ -25,85 +30,15 @@ export class NavigationMenuComponent implements OnInit{
     }, 0);
   }
 
-  childrenAccessor = (node: MenuNode) => node.children ?? [];
-
-  dataSource = EXAMPLE_DATA;
-
-  // private _transformer = (node: NodeData) => {
-  //   return {
-  //     name: node.name,
-  //     // children: node.children,
-  //     level: node.level,
-  //     expandable: !!node.children && node.children.length > 0,
-  //   };
-  // };
-
-  // hasChild = (_: number, node: MenuNode) => !!node.children && node.children.length
-  
-  //   treeControl = new FlatTreeControl<MenuNode>(
-  //     node => node.level,
-  //     node => node.expandable!,
-  //   );
-  
-  //   treeFlattener = new MatTreeFlattener(
-  //     this._transformer,
-  //     (node: MenuNode) => node.level,
-  //     (node: MenuNode) => node.expandable,
-  //     // required by API
-  //     (menuNode: NodeData) => menuNode.children ?? [],
-  //   );
-
-
-    //dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
   }
 
-
-const EXAMPLE_DATA: NodeData[] = [
-  {
-    name: "Annotated Pathways",
-    children: [ {
-      name: 'Summary',
-      id: 'pathway_content'
-    },
-    {
-      name: 'Pathway Details',
-      id: 'pathway_details',
-      children: [
-        {
-          name: 'Pathway 1',
-        },
-        {
-          name: 'Pathway 2',
-        },
-      ],
-    },]
-  },
-  {
-    name: "Predicted Pathways",
-    id: 'gene2PPi',
-    children: [  {
-      name: 'Pathway 1',
-    },
-    {
-      name: 'Pathway 2',
-    },
-    {
-      name: 'Pathway 3',
-    },]
-  }
-];
-
-
-  /** Flat node with expandable and level information */
-  interface MenuNode {
-    name: string;
-    children?: MenuNode[];
-    expandable: boolean;
-    level: number;
+  export interface NavigationData {
+    annotatedPathwayList: LinkData[]; //for listing annotated pathway details
+    predictedPathwayList: LinkData[]; //for list predicted pathway details)
+    ppiPathwayList: LinkData[]; //for listing ppis for each pathway)
   }
 
-  interface NodeData {
-    name: string;
-    children?: NodeData[];
-    id?: string;
+  interface LinkData {
+    id: string;
+    pathwayName: string;
   }

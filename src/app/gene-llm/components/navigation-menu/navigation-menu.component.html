@@ -14,33 +14,24 @@
 </div> -->
 <!-- </mat-menu> -->
 
-<ng-template #valueColTemplate let-element>
-    <ng-container *ngFor="let data of element.children">
-        <a (click)="scrollToSection('gene2PPi')">{{  data.name}}</a>
-        <br>
-        <ng-container *ngIf="data.children; else elseBlock">
-            <ng-container *ngTemplateOutlet="valueColTemplate; context: {$implicit: data}"></ng-container>
-        </ng-container>
-        <ng-template #elseBlock>
-            <!-- <h2>{{data.name}}</h2> -->
-        </ng-template>
-     </ng-container>
-</ng-template>
 
-
-
-<ng-container *ngFor="let data of dataSource">
-
-    <a>{{data.name}}</a>
+<nav>
+    <a (click)="scrollToSection('annotated_pathways')" class="level_0">Annotated Pathways</a>
     <br>
-
-    <ng-container *ngIf="data.children; else elseBlock">
-        <ng-container *ngTemplateOutlet="valueColTemplate; context: {$implicit: data}"></ng-container>
-    </ng-container>
-
-    <ng-template #elseBlock>
-        <a>{{data.name}}</a>
+    <ng-container *ngFor="let pathway of navData.annotatedPathwayList">
+        <a (click)="scrollToSection('annotated_pathways_' + pathway.pathwayName)" class="level_1">{{pathway.pathwayName}}</a>
         <br>
-    </ng-template>
-
-</ng-container>
+    </ng-container>
+    <a (click)="scrollToSection('predicted_pathways')" class="level_0">Predicted Pathways</a>
+    <br>
+    <ng-container *ngFor="let pathway of navData.predictedPathwayList; let i=index">
+        <a (click)="scrollToSection('predicted_pathways_' + pathway.pathwayName)" class="level_1">{{pathway.pathwayName}}</a>
+        <br>
+    </ng-container>
+    <a (click)="scrollToSection('gene2PPi')" class="level_0">PPI Annotations</a>
+    <br>
+    <ng-container *ngFor="let pathway of navData.ppiPathwayList; let i=index;">
+        <a (click)="scrollToSection('ppi_pathway_' + i)" class="level_1">{{pathway.pathwayName}}</a>
+        <br>
+    </ng-container>
+</nav>
