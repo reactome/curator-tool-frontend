@@ -25,14 +25,33 @@ export class ConfigurationComponentComponent {
     // model: "gpt-4o-mini"
    }
 
+   options = [
+    { value: '1', label: '1' },
+    { value: "0.05", label: '0.05' },
+    { value: '0.01', label: '0.01' },
+    { value: '0.001', label: '0.001' },
+    { value: '0.0001', label: '0.0001' },
+    { value: '0.00001', label: '0.00001' },
+
+  ];
+
   sendConfiguration(configuration: Configuration){
     this.getConfig.emit(configuration);
   }  
 
-  // onGeneChange(geneName: string){
-  //   this.gene = geneName;
-  //   this.getConfig.emit(configuration);
-  // }
+  resetValues(){
+    this.configuration = {
+      queryGene: "TANC1",
+      fiScoreCutoff: parseFloat("0.8"),
+      numberOfPubmed: parseInt("8"),
+      cosineSimilarityCutoff: parseFloat("0.38"),
+      llmScoreCutoff: parseInt("3"),
+      numberOfPathways: parseInt("8"),
+      fdrCutoff: parseFloat("0.01"),
+     }
+     this.getConfig.emit(this.configuration);
+  }
+
 
   onfiScoreChange(fiScore: string){
     this.configuration.fiScoreCutoff = parseFloat(fiScore);
