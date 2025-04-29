@@ -26,9 +26,8 @@ export class GeneLlmComponentComponent {
   during_query: boolean = false;
 
   navigationData: NavigationData = {
-    annotatedPathwayList: [],
-    predictedPathwayList: [],
-    ppiPathwayList: []
+    predPMIDPathways: [],
+    ppiPathways: []
   };
 
 
@@ -81,13 +80,11 @@ export class GeneLlmComponentComponent {
         this.annotated_pathway_details = this.postProcessText(this.annotated_pathway_details,
           this.gene,
           result.pathway_name_2_id);
-          this.navigationData.annotatedPathwayList.push({id: "summary", pathwayName: "Summary"})
       }
       if (this.annotated_pathway_content) {
         this.annotated_pathway_content = this.postProcessText(this.annotated_pathway_content,
           this.gene,
           result.pathway_name_2_id);
-          this.navigationData.annotatedPathwayList.push({id: "details", pathwayName: "Details"})
       }
       this.failure = result.failure;
       this.content = result.content
@@ -95,18 +92,19 @@ export class GeneLlmComponentComponent {
         this.content = this.postProcessText(this.content, 
           this.gene, 
           result.pathway_name_2_id);
-          this.navigationData.predictedPathwayList.push({id: "predicted_pathway_summary", pathwayName: "Summary"})
       }
       if (result.pathway_2_ppi_abstracts_summary) {
         let summaries = result.pathway_2_ppi_abstracts_summary;
         this.ppiTableData = [];
         this.createPPISummaryData(summaries, result.pathway_name_2_id, this.gene);
-        this.navigationData.predictedPathwayList.push({id: "predicted_pathway_details", pathwayName: "Details"})
       }
       setTimeout(() => {
         this.details = this.splitDetails(result.docs,
           result.pathway_name_2_id,
           this.gene);
+        this.details?.forEach((detail) => {
+          this.navigationData.predPMIDPathways.push(detail.pmid + ' vs ' + detail.pathway);
+        });
       })
       this.during_query = false;
     })
@@ -134,7 +132,7 @@ export class GeneLlmComponentComponent {
         data: data }
       console.debug('pathway:', pathway);
       this.ppiTableData?.push(pathway);
-      this.navigationData.ppiPathwayList.push({id: "annotated_pathway_" + pathway.pathwayId, pathwayName: pathway.pathwayName})
+      this.navigationData.ppiPathways.push(pathway.pathwayName)
     });
   }
 

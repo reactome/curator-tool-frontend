@@ -11,9 +11,8 @@ export class NavigationMenuComponent implements OnInit{
   }
 
   navData: NavigationData = {
-    annotatedPathwayList: [],
-    predictedPathwayList: [],
-    ppiPathwayList: []
+    predPMIDPathways: [],
+    ppiPathways: []
   };
 
   ngOnInit(): void {
@@ -33,12 +32,6 @@ export class NavigationMenuComponent implements OnInit{
   }
 
   export interface NavigationData {
-    annotatedPathwayList: LinkData[]; //for listing annotated pathway details
-    predictedPathwayList: LinkData[]; //for list predicted pathway details)
-    ppiPathwayList: LinkData[]; //for listing ppis for each pathway)
-  }
-
-  interface LinkData {
-    id: string;
-    pathwayName: string;
+    predPMIDPathways: string[]; //for list predicted pathway details)
+    ppiPathways: string[]; //for listing ppis for each pathway)
   }

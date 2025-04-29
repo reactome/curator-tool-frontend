@@ -1,5 +1,5 @@
-<div *ngFor="let detail of details; let last = last">
-    <p style="font-weight: bold;">
+<div *ngFor="let detail of details; let i = index; let last = last">
+    <p style="font-weight: bold;" id="pred_pmid_pathway_{{i}}">
         PMID: <a href="https://pubmed.ncbi.nlm.nih.gov/{{detail.pmid}}"
             target="pubmed">{{detail.pmid}}</a>
         vs

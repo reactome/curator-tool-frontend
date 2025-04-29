@@ -1,5 +1,9 @@
+:host {
+    text-align: left;
+}
+
 .level_0 {
-    text-align: left !important;
+    // text-align: left !important;
     cursor: pointer;
     white-space: nowrap;
     overflow: ellipsis;
@@ -7,9 +11,22 @@
     word-wrap: ellipsis;
     text-overflow: ellipsis;
 }
+
 .level_1 {
-    text-align: left !important;
+    // text-align: left !important;
     margin-left: 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: ellipsis;
+    overflow-wrap: ellipsis;
+    word-wrap: ellipsis;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.level_2 {
+    // text-align: left !important;
+    margin-left: 32px;
     cursor: pointer;
     white-space: nowrap;
     overflow: ellipsis;
