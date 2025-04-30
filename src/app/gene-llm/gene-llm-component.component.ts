@@ -1,8 +1,8 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, concatMap, of, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
-import { Configuration, ConfigurationComponentComponent, DEFAULT_LLM_CONFIG } from "./components/configuration-component/configuration-component.component";
+import { Configuration, DEFAULT_LLM_CONFIG } from "./components/configuration-component/configuration-component.component";
 import { NavigationData } from './components/navigation-menu/navigation-menu.component';
 
 @Component({
@@ -30,9 +30,8 @@ export class GeneLlmComponentComponent {
     ppiPathways: []
   };
 
-  // Get the configuration from the configuration component
-  @ViewChild(ConfigurationComponentComponent) configComp!: ConfigurationComponentComponent
   gene: string = "NTN1";
+  configuration: Configuration = {...DEFAULT_LLM_CONFIG};
 
   showConfiguration: boolean = false;
   ppiTableData: AbstractTableData[] | undefined;
@@ -49,10 +48,9 @@ export class GeneLlmComponentComponent {
     console.debug('Form data:');
     const url = this.LLM_ANNOTATE_GENE_URL;
     this.during_query = true;
-    let config: Configuration = this.configComp !== undefined ? this.configComp.configuration : DEFAULT_LLM_CONFIG;
-    config.queryGene = this.gene;
-    console.debug('Configuration:', config);
-    return this.http.post<LLM_Result>(url, config).pipe(
+    this.configuration.queryGene = this.gene;
+    console.debug('Configuration:', this.configuration);
+    return this.http.post<LLM_Result>(url, this.configuration).pipe(
       catchError((err: Error) => {
         console.log("Error to query gene: \n" + err.message, "Close", {
           panelClass: ['warning-snackbar'],
@@ -91,6 +89,7 @@ export class GeneLlmComponentComponent {
         this.details = this.splitDetails(result.docs,
           result.pathway_name_2_id,
           this.gene);
+          this.navigationData.predPMIDPathways.length = 0;
         this.details?.forEach((detail) => {
           this.navigationData.predPMIDPathways.push(detail.pmid + ' vs ' + detail.pathway);
         });
@@ -104,6 +103,7 @@ export class GeneLlmComponentComponent {
     queryGene: string = this.gene
   ) 
   {
+    this.navigationData.ppiPathways.length = 0;
     Object.entries(summaries).forEach(([key, value]) => {
       let entry: Pathway2Abstracts = { pathway_name: key, abstractData: value }
       let summary = this.postProcessText(entry.abstractData.summary, queryGene, pathway_name_2_id);

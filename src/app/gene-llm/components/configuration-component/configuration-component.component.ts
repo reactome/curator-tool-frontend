@@ -7,25 +7,14 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 })
 export class ConfigurationComponentComponent {
 
-  @Output() getConfig = new EventEmitter<Configuration>();
-  // Make sure it is bound to input instance
-  @Input() set setGene(gene: string) {
-    this.configuration.queryGene = gene;
-  }
-
-
-   //Parameters
-   // Copy the default configuration to the configuration variable
-  // to make sure that the default values are used
-  // when the component is initialized
-  configuration: Configuration = {...DEFAULT_LLM_CONFIG}
-
+  @Input() configuration: Configuration = {...DEFAULT_LLM_CONFIG};
+  
   fdrOptions = [
     1, 0.05, 0.01, 0.001, 0.0001, 0.00001
   ]
   
   resetValues() {
-    this.configuration = {...DEFAULT_LLM_CONFIG};
+    Object.assign(this.configuration, DEFAULT_LLM_CONFIG);
   }
 
 }
