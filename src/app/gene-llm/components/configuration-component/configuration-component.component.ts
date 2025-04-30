@@ -12,79 +12,33 @@ export class ConfigurationComponentComponent {
   @Input() set setGene(gene: string) {
     this.configuration.queryGene = gene;
   }
-    //Parameters
-   configuration: Configuration = {
+
+  defaultConfiguration: Configuration = {
     queryGene: "TANC1",
-    fiScoreCutoff: parseFloat("0.8"),
-    numberOfPubmed: parseInt("8"),
+    fiScoreCutoff: 0.8,
+    numberOfPubmed: 8,
     //maxQueryLength: "1000",
-    cosineSimilarityCutoff: parseFloat("0.38"),
-    llmScoreCutoff: parseInt("3"),
-    numberOfPathways: parseInt("8"),
-    fdrCutoff: parseFloat("0.01"),
+    cosineSimilarityCutoff: 0.38,
+    llmScoreCutoff: 3,
+    numberOfPathways: 8,
+    fdrCutoff: 0.01,
     // model: "gpt-4o-mini"
    }
 
-   options = [
-    { value: '1', label: '1' },
-    { value: "0.05", label: '0.05' },
-    { value: '0.01', label: '0.01' },
-    { value: '0.001', label: '0.001' },
-    { value: '0.0001', label: '0.0001' },
-    { value: '0.00001', label: '0.00001' },
+   //Parameters
+   // Copy the default configuration to the configuration variable
+  // to make sure that the default values are used
+  // when the component is initialized
+  configuration: Configuration = {...this.defaultConfiguration}
 
-  ];
-
-  sendConfiguration(configuration: Configuration){
-    this.getConfig.emit(configuration);
-  }  
-
-  resetValues(){
-    this.configuration = {
-      queryGene: "TANC1",
-      fiScoreCutoff: parseFloat("0.8"),
-      numberOfPubmed: parseInt("8"),
-      cosineSimilarityCutoff: parseFloat("0.38"),
-      llmScoreCutoff: parseInt("3"),
-      numberOfPathways: parseInt("8"),
-      fdrCutoff: parseFloat("0.01"),
-     }
-     this.getConfig.emit(this.configuration);
+  fdrOptions = [
+    1, 0.05, 0.01, 0.001, 0.0001, 0.00001
+  ]
+  
+  resetValues() {
+    this.configuration = {...this.defaultConfiguration};
   }
 
-
-  onfiScoreChange(fiScore: string){
-    this.configuration.fiScoreCutoff = parseFloat(fiScore);
-    this.getConfig.emit(this.configuration);
-  }
-  onpubmedResultsChange(numberOfPubmed: string){
-    this.configuration.numberOfPubmed = parseInt(numberOfPubmed);
-    this.getConfig.emit(this.configuration);
-  }
-  // onmaxQueryLengthChange(maxQueryLength: string){
-  //   this.configuration.maxQueryLength = maxQueryLength;
-  //   this.getConfig.emit(this.configuration);
-  // }
-  onpathwaySimilarityCutoffChange(cosineSimilarityCutoff: string){
-    this.configuration.cosineSimilarityCutoff = parseFloat(cosineSimilarityCutoff);
-    this.getConfig.emit(this.configuration);
-  }
-  onllmScoreCutoffChange(llmScoreCutoff: string){
-    this.configuration.llmScoreCutoff = parseInt(llmScoreCutoff);
-    this.getConfig.emit(this.configuration);
-  }
-  onpathwayCountChange(numberOfPathways: string){
-    this.configuration.numberOfPathways = parseInt(numberOfPathways);
-    this.getConfig.emit(this.configuration);
-  }
-  onFdrChange(fdrCutoff: string){
-    this.configuration.fdrCutoff = parseFloat(fdrCutoff);
-    this.getConfig.emit(this.configuration);
-  }
-  // onModelChange(model: string){
-  //   this.configuration.model = model;
-  //   this.getConfig.emit(this.configuration);
-  // }
 }
 
 export interface Configuration {

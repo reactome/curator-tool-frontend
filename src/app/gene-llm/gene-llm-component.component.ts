@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, concatMap, of, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
-import { Configuration } from "./components/configuration-component/configuration-component.component";
+import { Configuration, ConfigurationComponentComponent } from "./components/configuration-component/configuration-component.component";
 import { NavigationData } from './components/navigation-menu/navigation-menu.component';
 
 @Component({
@@ -30,19 +30,9 @@ export class GeneLlmComponentComponent {
     ppiPathways: []
   };
 
-
+  // Get the configuration from the configuration component
+  @ViewChild(ConfigurationComponentComponent) configComp!: ConfigurationComponentComponent
   gene: string = "NTN1";
-  configuration: Configuration = {
-    queryGene: "NTN1",
-    fiScoreCutoff: parseFloat("0.8"),
-    numberOfPubmed: parseInt("8"),
-    //maxQueryLength: "1000",
-    cosineSimilarityCutoff: parseFloat("0.38"),
-    llmScoreCutoff: parseInt("3"),
-    numberOfPathways: parseInt("8"),
-    fdrCutoff: parseFloat("0.01"),
-    // model: "gpt-4o-mini"
-  };
 
   showConfiguration: boolean = false;
   ppiTableData: AbstractTableData[] | undefined;
@@ -55,15 +45,14 @@ export class GeneLlmComponentComponent {
     else this.showConfiguration = true;
   }
 
-  setConfiguration(configuration: Configuration) {
-    this.configuration = configuration;
-  }
-
   annotateGene() {
     console.debug('Form data:');
     const url = this.LLM_ANNOTATE_GENE_URL;
     this.during_query = true;
-    return this.http.post<LLM_Result>(url, this.configuration).pipe(
+    let config = this.configComp.configuration;
+    config.queryGene = this.gene;
+    console.debug('Configuration:', this.configComp.configuration);
+    return this.http.post<LLM_Result>(url, this.configComp.configuration).pipe(
       catchError((err: Error) => {
         console.log("Error to query gene: \n" + err.message, "Close", {
           panelClass: ['warning-snackbar'],
@@ -386,7 +375,6 @@ export class GeneLlmComponentComponent {
     });
   }
   onGeneChange(geneName: string) {
-    this.configuration.queryGene = geneName;
     this.gene = geneName;
   }
 }
