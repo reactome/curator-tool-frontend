@@ -2,7 +2,7 @@ import { Component, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, concatMap, of, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
-import { Configuration, ConfigurationComponentComponent } from "./components/configuration-component/configuration-component.component";
+import { Configuration, ConfigurationComponentComponent, DEFAULT_LLM_CONFIG } from "./components/configuration-component/configuration-component.component";
 import { NavigationData } from './components/navigation-menu/navigation-menu.component';
 
 @Component({
@@ -49,10 +49,10 @@ export class GeneLlmComponentComponent {
     console.debug('Form data:');
     const url = this.LLM_ANNOTATE_GENE_URL;
     this.during_query = true;
-    let config = this.configComp.configuration;
+    let config: Configuration = this.configComp !== undefined ? this.configComp.configuration : DEFAULT_LLM_CONFIG;
     config.queryGene = this.gene;
-    console.debug('Configuration:', this.configComp.configuration);
-    return this.http.post<LLM_Result>(url, this.configComp.configuration).pipe(
+    console.debug('Configuration:', config);
+    return this.http.post<LLM_Result>(url, config).pipe(
       catchError((err: Error) => {
         console.log("Error to query gene: \n" + err.message, "Close", {
           panelClass: ['warning-snackbar'],
