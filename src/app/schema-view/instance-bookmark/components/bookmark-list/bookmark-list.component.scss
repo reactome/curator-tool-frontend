@@ -26,11 +26,25 @@
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
-  //cursor: move;
+  cursor: move;
   background: var(--primary-container);
   color: var(--on-primary-container);
-  width: 250px;
+  width: 275px;
   border: 0;
+  text-align: right;
+}
+
+.drag_icon {
+  width: 24px; 
+  text-align: left;
+  overflow:visible;
+  color: #006782 !important;
+}
+
+.bookmark-container:hover {
+  outline: auto;
+  outline-color: var(--on-primary-container)
+
 }
 
 .clear_button {

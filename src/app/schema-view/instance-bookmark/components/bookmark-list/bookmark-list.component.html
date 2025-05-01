@@ -11,8 +11,10 @@
       </div>
       <button class="drag-item-button" (click)="navigate(instance)"
         [matTooltip]="instance.schemaClassName + ' ' + '[' + instance.dbId.toString() + ']'">
-        {{instance.displayName}}</button>
-      <button class="clear_button" mat-icon-button color="primary" (click)="onRemove(instance)">
+        <mat-icon class="drag_icon">open_with</mat-icon>
+        {{instance.displayName}}
+      </button>
+      <button class="clear_button" matTooltip="Remove Instance" mat-icon-button color="primary" (click)="onRemove(instance)">
         <mat-icon>clear</mat-icon>
       </button>
     </div>

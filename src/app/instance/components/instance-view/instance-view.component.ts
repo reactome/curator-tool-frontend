@@ -409,8 +409,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   setQAReportToolTip() {
     // Change QA Report toolitp
-    if(this.qaReportPassed === undefined && this.isUploadable() === true) { this.qaReportToolTip = "Run QA Report"}
-    else if (!this.isUploadable()) {this.qaReportToolTip = "Submit changes to run the QA Report"};
+    if(this.qaReportPassed === undefined && this.isUploadable() === false) { this.qaReportToolTip = "Run QA Report"}
+    else if (this.isUploadable()) {this.qaReportToolTip = "Submit changes to run the QA Report"};
     // else if(this.qaReportPassed === true) {this.qaReportToolTip = "QA Report Passed"};
     // else if(this.qaReportPassed === false) {this.qaReportToolTip = "QA Report Failed"};
 
