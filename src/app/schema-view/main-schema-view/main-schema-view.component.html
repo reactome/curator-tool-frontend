@@ -1,10 +1,13 @@
 <div #container>
-  <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh; overflow: visible !important">
-    <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true" [style.width]="sideWidth + 'px'">
+  <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true"
+    style="height: 94vh; overflow: visible !important">
+    <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true"
+      [style.width]="sideWidth + 'px'">
       <app-schema-class-tree *ngIf="!showChanged"></app-schema-class-tree>
-      <app-updated-instance-list *ngIf="showChanged" (closeAction)="showUpdatedInstances(false)"></app-updated-instance-list>
+      <app-updated-instance-list *ngIf="showChanged"
+        (closeAction)="showUpdatedInstances(false)"></app-updated-instance-list>
       <div class="resize-container" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
-           (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
+        (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
         <div class="resize-bar"></div>
       </div>
     </mat-sidenav>
@@ -14,10 +17,17 @@
   </mat-sidenav-container>
   <div id="bookmark-boundary">
     <!-- Remove [style.height]="container.clientHeight + 'px'" in the following div to avoid expression changed after checked NG0100 Error
-    TODO: Check with Deidre to make sure this is OK!-->
-    <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="#bookmark-boundary" id="bookmark-container" [ngClass]="status"
+    TODO: fix the dragging after the SAB-->
+    <!-- <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="bookmark-boundary" id="bookmark-container" [ngClass]="status"
          (cdkDragStarted)="onDrag()" (cdkDragEnded)="onDragEnd()">
       <button id="bookmark-handle" cdkDragHandle (click)="toggleBookmarks()">BOOKMARKS
+      </button>
+      <div id="bookmark" #bookmark>
+        <app-bookmark-list></app-bookmark-list>
+      </div>
+    </div> -->
+    <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="bookmark-boundary" id="bookmark-container" [ngClass]="status">
+      <button id="bookmark-handle" (click)="toggleBookmarks()">BOOKMARKS
       </button>
       <div id="bookmark" #bookmark>
         <app-bookmark-list></app-bookmark-list>

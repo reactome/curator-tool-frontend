@@ -14,13 +14,14 @@
 
       <ng-container class="v-center">
         <button (click)="onQAReportAction()" matTooltip={{setQAReportToolTip()}} mat-icon-button
-          [disabled]="isUploadable()" class="bug-report-color" [ngClass]="{
-       unchecked: (qaReportPassed === undefined && !isUploadable()), 
-       passed: (qaReportPassed === true && !isUploadable()), 
-       failed: (qaReportPassed === false && !isUploadable()),
-       disabled:(qaReportPassed === undefined && isUploadable())}">
+          class="bug-report-color" color="primary" [ngClass]="{
+          unchecked: (qaReportPassed === undefined), 
+          passed: (qaReportPassed === true), 
+          failed: (qaReportPassed === false)}">
           <mat-icon>bug_report</mat-icon>
-          <!-- TODO: change tooltip based on condition -->
+          <!-- <mat-expansion-panel (opened)="isUploadable()">
+            <p>You may have to commit your changes first for the QA check.</p>
+          </mat-expansion-panel> -->
         </button>
       </ng-container>
 

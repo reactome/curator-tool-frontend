@@ -35,6 +35,7 @@ import {
   ConfirmDeleteDialogComponent
 } from "./components/deletion-dialog/confirm-delete-dialog/confirm-delete-dialog.component";
 import { QAReportTable } from "./components/qa-report-dialog/selected-instances-table/qa-report-table.component";
+import { MatExpansionModule } from "@angular/material/expansion";
 
 @NgModule({
     declarations: [
@@ -74,7 +75,8 @@ import { QAReportTable } from "./components/qa-report-dialog/selected-instances-
     CdkDropList,
     NgOptimizedImage,
     CdkDragPlaceholder,
-    TextCurationComponent
+    TextCurationComponent,
+    MatExpansionModule
   ],
   exports: [
     InstanceTableComponent,

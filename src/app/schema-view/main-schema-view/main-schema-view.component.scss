@@ -2,7 +2,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  right: 0px;
+  right: 0;
   width: 8px;
   transform: none !important;
   opacity: 0;
@@ -56,6 +56,8 @@ side-nav {
   position: fixed;
   pointer-events: none;
   right: calc(-1 *  var(--bookmark-width) - var(--border-width));
+  // Speicify a minimum value for right
+  // right: max(calc(-1 * var(--bookmark-width) + var(--handle-width)), -230px); // Ensure a minimum value for right
   height: 100%;
   width: calc(2 * var(--bookmark-width) + var(--handle-width));
   top: 0;
@@ -81,8 +83,8 @@ side-nav {
     border-left: var(--border-width) solid var(--primary);
     border-top: var(--border-width) solid var(--primary);
     border-bottom: var(--border-width) solid var(--primary);
-    border-right: 0;
-    cursor: ew-resize;
+    border-right: 5px;
+    cursor: pointer;
     color: var(--on-surface);
   }
 

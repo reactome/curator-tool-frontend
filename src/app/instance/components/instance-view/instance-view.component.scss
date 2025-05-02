@@ -66,13 +66,10 @@
     color: var(--primary);
   }
   &.passed {
-    color: rgb(83, 229, 83);
+    color: rgba(60, 138, 83, 1);
 
   }
   &.failed {
     color: red;
-  }
-  &.disabled{
-    color: grey;
   }
 }

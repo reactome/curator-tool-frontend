@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from "@angular/router";
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
@@ -14,6 +14,8 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { combineLatest, Subscription, take } from 'rxjs';
 import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service';
 import { deleteInstances } from '../../state/instance.selectors';
+import { MatDialog } from '@angular/material/dialog';
+import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 
 @Component({
   selector: 'app-instance-view',
@@ -50,6 +52,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   // Track deleted instances
   private deletedInstances: Instance[] = [];
+
+  readonly dialog = inject(MatDialog);
+
 
   constructor(private router: Router,
     private route: ActivatedRoute,
@@ -106,7 +111,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.subscriptions.add(subscription);
     subscription = this.instUtils.refreshViewDbId$.subscribe(dbId => {
       if (this.instance && this.instance.dbId === dbId) {
-        if (this.instanceTable.inEditing) 
+        if (this.instanceTable.inEditing)
           this.updateTitle(this.instance);
         else
           this.loadInstance(dbId, false, false, true);
@@ -400,17 +405,28 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   onQAReportAction() {
-    const matDialogRef = this.qaReportDialogService.openDialog(this.instance!);
-    matDialogRef.afterClosed().subscribe((result) => {
-      this.qaReportPassed = result;
+    if (this.isUploadable()) {
+            this.dialog.open(InfoDialogComponent, {
+              data: {
+                title: 'Information',
+                message: 'You may need to commit your changes first for the QA Report',
+              }
+            });
 
-    });
+    }
+    else {
+      const matDialogRef = this.qaReportDialogService.openDialog(this.instance!);
+      matDialogRef.afterClosed().subscribe((result) => {
+        this.qaReportPassed = result;
+
+      });
+    }
   }
 
   setQAReportToolTip() {
     // Change QA Report toolitp
-    if(this.qaReportPassed === undefined && this.isUploadable() === false) { this.qaReportToolTip = "Run QA Report"}
-    else if (this.isUploadable()) {this.qaReportToolTip = "Submit changes to run the QA Report"};
+    if (this.qaReportPassed === undefined && this.isUploadable() === false) { this.qaReportToolTip = "Run QA Report" }
+    else if (this.isUploadable()) { this.qaReportToolTip = "You may need to commit your changes first for the QA Report" };
     // else if(this.qaReportPassed === true) {this.qaReportToolTip = "QA Report Passed"};
     // else if(this.qaReportPassed === false) {this.qaReportToolTip = "QA Report Failed"};
 
