@@ -10,6 +10,7 @@ export class ReleaseFlagComponent implements OnInit{
   width = '15px';
   height = '15px';
   icon1Image = '';
+  tooltip = '';
   @Input() doRelease: boolean = false;
   hidden = '';
 
@@ -20,8 +21,11 @@ export class ReleaseFlagComponent implements OnInit{
   getImage() {
     if (this.doRelease) {
       this.icon1Image = 'assets/images/Selected.png';
-    } else {
+      this.tooltip = 'released';
+    } 
+    else {
       this.icon1Image = 'assets/images/Unselected.png';
+      this.tooltip = 'not released';
     }
   }
 }

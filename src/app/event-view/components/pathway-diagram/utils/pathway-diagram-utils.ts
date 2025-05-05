@@ -129,8 +129,8 @@ export class PathwayDiagramUtilService {
             return;
         // Need to get the actual instance. The passed instance is just a shell retried from ngrx store
         this.dataService.fetchInstance(instance.dbId).subscribe((instance: Instance) => {
-            this.setHyperEdgeForValidator(instance, attribute, diagram);
             this.validator.handleInstanceEdit(instance, attribute, diagram?.diagram?.cy);
+            this.setHyperEdgeForValidator(instance, attribute, diagram);
         });
     }
 
@@ -150,8 +150,8 @@ export class PathwayDiagramUtilService {
         // Need to get the actual instance. The passed instance is just a shell retried from ngrx store
         this.dataService.fetchInstance(resetData.dbId).subscribe((instance: Instance) => {
             for (let att of resetData.modifiedAttributes) {
-                this.setHyperEdgeForValidator(instance, att, diagram);
                 this.validator.handleInstanceEdit(instance, att, diagram?.diagram?.cy);
+                this.setHyperEdgeForValidator(instance, att, diagram);
             }
         });
     }
