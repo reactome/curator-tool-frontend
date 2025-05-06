@@ -33,7 +33,7 @@ export class PathwayDiagramValidator{
         if (!instance || !cy || !attribute) 
             return;
         if (instance.schemaClassName === 'CatalystActivity') {
-            this.validateHelperNode(instance, attribute, 'physicalEdit', 'catalystActivity', cy);
+            this.validateHelperNode(instance, attribute, 'physicalEntity', 'catalystActivity', cy);
             return;
         }
         if (this.instanceUtilities.isSchemaClass(instance, 'Regulation', this.dataService)) {
