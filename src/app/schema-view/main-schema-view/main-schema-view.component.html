@@ -4,8 +4,7 @@
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true"
       [style.width]="sideWidth + 'px'">
       <app-schema-class-tree *ngIf="!showChanged"></app-schema-class-tree>
-      <app-updated-instance-list *ngIf="showChanged"
-        (closeAction)="showUpdatedInstances(false)"></app-updated-instance-list>
+      <app-updated-instance-list *ngIf="showChanged" (closeAction)="showUpdatedInstances(false)"></app-updated-instance-list>
       <div class="resize-container" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
         (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
         <div class="resize-bar"></div>

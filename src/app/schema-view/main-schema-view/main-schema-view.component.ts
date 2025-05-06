@@ -1,4 +1,4 @@
-import {Component, ViewChild} from '@angular/core';
+import {Component, OnInit, ViewChild} from '@angular/core';
 import {CdkDragMove} from "@angular/cdk/drag-drop";
 import {MatSidenav} from "@angular/material/sidenav";
 
@@ -7,12 +7,18 @@ import {MatSidenav} from "@angular/material/sidenav";
   templateUrl: './main-schema-view.component.html',
   styleUrls: ['./main-schema-view.component.scss'],
 })
-export class MainSchemaViewComponent {
+export class MainSchemaViewComponent implements OnInit{
   sideWidth = 400;
   schemaPanelOpen= false;
   resizing: boolean = false;
-  showChanged: boolean = false;
+  showChanged = false; // Default state
   status = {closed: true, opened: false, dragging: false};
+
+  ngOnInit(): void {
+    // Restore the state from localStorage
+    const savedState = sessionStorage.getItem('activeTab');
+    this.showChanged = savedState === 'changes';
+  }
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
   
@@ -28,8 +34,10 @@ export class MainSchemaViewComponent {
     this.sideWidth = e.pointerPosition.x
   }
 
-  showUpdatedInstances(showList: boolean) {
-    this.showChanged = !this.showChanged;
+  showUpdatedInstances(show: boolean): void {
+    this.showChanged = show;
+    // Save the state to localStorage
+    sessionStorage.setItem('activeTab', show ? 'changes' : 'schema');
   }
 
   onDrag() {
