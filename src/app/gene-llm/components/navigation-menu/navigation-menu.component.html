@@ -1,10 +1,12 @@
 <nav>
-    <a (click)="scrollToSection('annotated_pathways')" class="level_0">Annotated Pathways</a>
-    <br>
-    <a (click)="scrollToSection('annotated_pathways_summary')" class="level_1">Summary</a>
-    <br>
-    <a (click)="scrollToSection('annotated_pathways_details')" class="level_1">Details</a>
-    <br>
+    <ng-container *ngIf="hasAnnotatedData">
+        <a (click)="scrollToSection('annotated_pathways')" class="level_0">Annotated Pathways</a>
+        <br>
+        <a (click)="scrollToSection('annotated_pathways_summary')" class="level_1">Summary</a>
+        <br>
+        <a (click)="scrollToSection('annotated_pathways_details')" class="level_1">Details</a>
+        <br>
+    </ng-container>
     <a (click)="scrollToSection('predicted_pathways')" class="level_0">Predicted Pathways</a>
     <br>
     <a (click)="scrollToSection('predicted_pathways_summary')" class="level_1">Summary</a>

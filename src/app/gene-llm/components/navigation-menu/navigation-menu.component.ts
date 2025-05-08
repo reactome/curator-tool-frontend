@@ -5,10 +5,12 @@ import { Component, Input, OnInit } from '@angular/core';
   templateUrl: './navigation-menu.component.html',
   styleUrls: ['./navigation-menu.component.scss']
 })
-export class NavigationMenuComponent implements OnInit{
+export class NavigationMenuComponent implements OnInit {
   @Input() set navigationData(data: NavigationData) {
     this.navData = data;
   }
+
+  @Input() hasAnnotatedData: boolean = false;
 
   navData: NavigationData = {
     predPMIDPathways: [],
@@ -29,9 +31,9 @@ export class NavigationMenuComponent implements OnInit{
     }, 0);
   }
 
-  }
+}
 
-  export interface NavigationData {
-    predPMIDPathways: string[]; //for list predicted pathway details)
-    ppiPathways: string[]; //for listing ppis for each pathway)
-  }
+export interface NavigationData {
+  predPMIDPathways: string[]; //for list predicted pathway details)
+  ppiPathways: string[]; //for listing ppis for each pathway)
+}

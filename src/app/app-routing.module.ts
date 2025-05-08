@@ -34,7 +34,8 @@ export const routes: Routes = [
   {
     path: "llm_apps_view",
     component: GeneLlmComponentComponent,
-    canActivate: [authGuard], // Protect the route
+    // disable it for now since the link has been cited in several grant applications
+    // canActivate: [authGuard], // Protect the route
   },
   {
     path: "",

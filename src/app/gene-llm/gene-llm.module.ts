@@ -19,6 +19,7 @@ import { MatExpansionPanel, MatExpansionPanelDescription, MatExpansionPanelHeade
 import { PredictedPathwayDetailsComponent } from './components/predicted-pathway-details/predicted-pathway-details.component';
 import { NavigationMenuComponent } from './components/navigation-menu/navigation-menu.component';
 import { MatTree, MatTreeModule } from '@angular/material/tree';
+import { MatProgressBar} from '@angular/material/progress-bar';
 
 @NgModule({
   declarations: [
@@ -52,6 +53,7 @@ import { MatTree, MatTreeModule } from '@angular/material/tree';
     MatTreeModule,
     MatTree,
     SharedModule,
+    MatProgressBar
     // RouterOutlet,
     // AbstractSummaryTableComponent
 
