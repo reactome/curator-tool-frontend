@@ -14,7 +14,6 @@ const routes: Routes = [
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
-    SchemaClassTableComponent
   ],
   exports: [RouterModule]
 })

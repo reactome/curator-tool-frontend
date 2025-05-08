@@ -16,14 +16,13 @@ import {
   selector: 'app-table',
   templateUrl: './schema-class-table.component.html',
   styleUrls: ['./schema-class-table.component.scss'],
-  standalone: true,
-  imports: [MatTableModule, MatSortModule, NgIf, NgFor, TitleCasePipe, MatSort, MatSortHeader],
 })
 
 //TODO: Enhance the table display so that it is more like
 // https://curator.reactome.org/cgi-bin/classbrowser?DB=gk_central&CLASS=ModifiedResidue
 export class SchemaClassTableComponent implements OnInit {
-  displayedColumns: string[] = ['name', 'type', 'category', 'allowedClases', 'origin', 'cardinality', 'definingType'];
+  // displayedColumns: string[] = ['name', 'type', 'category', 'allowedClases', 'origin', 'cardinality', 'definingType'];
+  displayedColumns: string[] = ['name', 'cardinality', 'type', 'origin'];
   dataSource: any;
 
   constructor(private store: Store, private route: ActivatedRoute, private dataService: DataService) {
@@ -35,8 +34,8 @@ export class SchemaClassTableComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.params.subscribe((clsNameParams) => {
-      const className = clsNameParams['className'];
-      this.dataService.fetchSchemaClass(className).subscribe((schemaClass: SchemaClass) => {
+      this.className = clsNameParams['className'];
+      this.dataService.fetchSchemaClass(this.className).subscribe((schemaClass: SchemaClass) => {
         // Do a sort first
         let sorted_attributes = [...schemaClass.attributes!];
         sorted_attributes.sort((a, b) => a.name.localeCompare(b.name));

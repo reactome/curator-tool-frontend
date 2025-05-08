@@ -22,3 +22,14 @@ th {
   overflow: auto;
   border: none;
 }
+
+.header{
+  text-align: center; 
+  color: white;
+  background-color: var(--primary);
+  margin: 0 !important;
+}
+
+.highlight-row {
+  background-color: #f0f8ff; /* Light blue background */
+}
