@@ -63,4 +63,15 @@ mat-form-field {
   &.notDragging{
     border-color: #8a9296;
   }
+
+}
+// Center the button vertically in the form field
+.form-field {
+  display: flex;
+  align-items: center;
+}
+.edit-button {
+  align-items: center;
+  text-align: center;
+  margin-left: 8px; // Add spacing between the textarea and the button
 }

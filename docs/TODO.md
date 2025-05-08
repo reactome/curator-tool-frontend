@@ -11,9 +11,9 @@
 - Bug (fixed. Kept for future test): When a PE is used as both input and catalyst, enable/disable editing in pathway diagram cannot recovers the original diagram (input or catalyst may get lost, e.g. http://localhost:4200/event_view/instance/453279?select=8848436) - Bug: LLM geneates text for ALDOB having the original template [PMID: 123456] that is not replaced. See Peter's email on Nov 13, 2024.
 
 #### Deidre
-- Bug: After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should  stay at the changes tab.
-- TODO: Use the new set of Reactome icons at Figma, designed by the EBI team.
-- TODO: After logging in, the default page should be home. Right now it is the log-in page. Actually it should be the home page always. If the user has not been logged in, change it to the log-in page. 
+- Bug: After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should  stay at the changes tab. Done 
+- TODO: Use the new set of Reactome icons at Figma, designed by the EBI team. Need to check with Eliott.
+- TODO: After logging in, the default page should be home. Right now it is the log-in page. Actually it should be the home page always. If the user has not been logged in, change it to the log-in page. Done
 - Bug: In the event view, the mouse position is lowed when scroll up/down the instance view.
 - TODO: When two instances are compared, change "only show edited attribute" to "attributes having different values". If the user touches an attribute without actually editing it, the attribute is listed as "edited attribute". This need to change.
 

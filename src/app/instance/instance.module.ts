@@ -36,6 +36,7 @@ import {
 } from "./components/deletion-dialog/confirm-delete-dialog/confirm-delete-dialog.component";
 import { QAReportTable } from "./components/qa-report-dialog/selected-instances-table/qa-report-table.component";
 import { MatExpansionModule } from "@angular/material/expansion";
+import { TextEditorDialogComponent } from "./components/instance-view/instance-table/instance-table-row-element/text-editor-dialog/text-editor-dialog.component";
 
 @NgModule({
     declarations: [
@@ -52,7 +53,8 @@ import { MatExpansionModule } from "@angular/material/expansion";
         DeletionDialogComponent,
         ReferrersTableComponent,
         ConfirmDeleteDialogComponent,
-        QAReportTable
+        QAReportTable,
+        TextEditorDialogComponent
     ],
   imports: [
     CommonModule,
@@ -81,7 +83,8 @@ import { MatExpansionModule } from "@angular/material/expansion";
   exports: [
     InstanceTableComponent,
     InstanceTableRowElementComponent,
-    InstanceViewComponent
+    InstanceViewComponent,
+    TextEditorDialogComponent
   ]
 })
 export class InstanceModule {

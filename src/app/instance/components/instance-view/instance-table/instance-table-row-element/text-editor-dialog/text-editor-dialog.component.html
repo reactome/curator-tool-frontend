@@ -1,0 +1,8 @@
+<h1 mat-dialog-title>Edit Text</h1>
+<div class="main" mat-dialog-content>
+  <textarea matInput [(ngModel)]="data.text" rows="10" style="width: 100%;"></textarea>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-button color="primary" (click)="onSave()">Save</button>
+</div>

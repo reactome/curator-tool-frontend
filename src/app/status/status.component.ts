@@ -123,4 +123,8 @@ export class StatusComponent implements OnInit, OnDestroy {
     this.userInstancesService.persistInstances(true);
     this.router.navigate(["/login"]);
   }
+
+  navigateHome(){
+    this.router.navigate(["/home"]);
+  }
 }

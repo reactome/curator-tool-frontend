@@ -19,6 +19,8 @@ import { DataService } from "../../../../../core/services/data.service";
 import { ViewOnlyService } from "../../../../../core/services/view-only.service";
 import { DragDropService } from "../../../../../schema-view/instance-bookmark/drag-drop.service";
 import { AttributeValue, DragDropStatus, EDIT_ACTION } from '../instance-table.model';
+import { MatDialog } from "@angular/material/dialog";
+import { TextEditorDialogComponent } from "./text-editor-dialog/text-editor-dialog.component";
 /**
  * Used to display a single value of an Instance object.
  */
@@ -70,6 +72,7 @@ export class InstanceTableRowElementComponent implements OnInit {
   control = new FormControl();
   showField: boolean = true;
   color: boolean = false;
+  showEditorButton: boolean = false;
   // viewOnly as a service is drilled down too deep in the component hierarchy. Better not been here and disable
   // the editing using a simple flag!
   constructor(private store: Store,
@@ -78,7 +81,8 @@ export class InstanceTableRowElementComponent implements OnInit {
               private route: ActivatedRoute,
               public viewOnly: ViewOnlyService,
               public dragDropService: DragDropService,
-            private instanceUtilities: InstanceUtilities) {
+            private instanceUtilities: InstanceUtilities,
+            private dialog: MatDialog) {
     if (viewOnly.enabled)
       this.control.disable();
   }
@@ -144,6 +148,7 @@ export class InstanceTableRowElementComponent implements OnInit {
   mouseLeave() {
     this.isMouseIn = false
     this.color = false;
+    this.showEditorButton = false;
   }
 
   mouseEnter() {
@@ -151,6 +156,7 @@ export class InstanceTableRowElementComponent implements OnInit {
     if (this.isDroppable) {
       this.color = true;
     }
+    this.showEditorButton = true;
   }
 
   private dropInstance(draggedInstance: Instance | undefined) {
@@ -188,6 +194,25 @@ export class InstanceTableRowElementComponent implements OnInit {
       .map(urlSegment => urlSegment.path);
     return url;
     // return "/" + currentPathRoot[0] + "/instance/" + instance.dbId.toString();
+  }
+
+  checkTextLength(event: Event): void {
+    const textarea = event.target as HTMLTextAreaElement;
+    const lineCount = textarea.value.split('\n').length;
+    //this.showEditorButton = lineCount > 3;
+  }
+
+  openTextEditorDialog(): void {
+    const dialogRef = this.dialog.open(TextEditorDialogComponent, {
+      width: '500px',
+      data: { text: this.control.value }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result !== undefined) {
+        this.control.setValue(result);
+      }
+    });
   }
 
 }
