@@ -1,7 +1,7 @@
 <section class="table-container" tabindex="0">
   <h2 class="header">Attributes of class '{{className}}'</h2>
   <div class="scrollable-table">
-  <table mat-table [dataSource]="dataSource" matSort class="schema-class-table">
+  <table mat-table [dataSource]="dataSource" matSort>
     <!-- Attribute Name Column -->
     <ng-container matColumnDef="name">
       <th mat-header-cell *matHeaderCellDef mat-sort-header> Attribute Name</th>
@@ -60,7 +60,7 @@
         </td>
     </ng-container>
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-header-row *matHeaderRowDef="displayedColumns" sticky="true"></tr>
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"
       [ngClass]="{'highlight-row': row.origin === className}"></tr>
   </table>

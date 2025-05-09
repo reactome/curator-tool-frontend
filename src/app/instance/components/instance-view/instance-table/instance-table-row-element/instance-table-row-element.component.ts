@@ -148,7 +148,8 @@ export class InstanceTableRowElementComponent implements OnInit {
   mouseLeave() {
     this.isMouseIn = false
     this.color = false;
-    this.showEditorButton = false;
+    if(this.isSummationText())
+      this.showEditorButton = false;
   }
 
   mouseEnter() {
@@ -156,7 +157,8 @@ export class InstanceTableRowElementComponent implements OnInit {
     if (this.isDroppable) {
       this.color = true;
     }
-    this.showEditorButton = true;
+    if(this.isSummationText())
+      this.showEditorButton = true;
   }
 
   private dropInstance(draggedInstance: Instance | undefined) {
@@ -196,21 +198,22 @@ export class InstanceTableRowElementComponent implements OnInit {
     // return "/" + currentPathRoot[0] + "/instance/" + instance.dbId.toString();
   }
 
-  checkTextLength(event: Event): void {
-    const textarea = event.target as HTMLTextAreaElement;
-    const lineCount = textarea.value.split('\n').length;
-    //this.showEditorButton = lineCount > 3;
+  isSummationText(): boolean {
+    if (this.attribute?.name === "text" && this.control.enabled ) {return true;}
+    else return false;
   }
 
   openTextEditorDialog(): void {
     const dialogRef = this.dialog.open(TextEditorDialogComponent, {
       width: '500px',
+      height: '400px',
       data: { text: this.control.value }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result !== undefined) {
         this.control.setValue(result);
+        this.onChange();
       }
     });
   }

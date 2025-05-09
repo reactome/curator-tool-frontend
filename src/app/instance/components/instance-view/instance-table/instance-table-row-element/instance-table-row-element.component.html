@@ -9,10 +9,9 @@
     <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
         <mat-form-field (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="form-field" appearance="outline" subscriptSizing="dynamic">
           <textarea style="height: fit-content" matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize" cdkAutosizeMinRows="1"
-                    cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()" (keydown)="onKeyDown($event)"
-                    (input)="checkTextLength($event)">
+                    cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()" (keydown)="onKeyDown($event)">
           </textarea>
-          <button *ngIf="showEditorButton"  mat-icon-button color="primary" (click)="openTextEditorDialog()" matTooltip="Edit Text" class="edit-button">
+          <button *ngIf="showEditorButton" mat-icon-button color="primary" (click)="openTextEditorDialog()" matTooltip="Edit Text" class="edit-button">
             <mat-icon>edit</mat-icon>
           </button>
         </mat-form-field>

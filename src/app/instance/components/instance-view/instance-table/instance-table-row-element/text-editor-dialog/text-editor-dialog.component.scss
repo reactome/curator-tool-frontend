@@ -4,3 +4,56 @@
     width: 100%;
     line-height: normal;
 }
+
+.dialog_title {
+    text-align: left;
+    font-weight: bold;
+    font-size: 20px;
+    color: white;
+    background-color: var(--primary);
+  
+  }
+  
+  .check-title {
+    font-weight: bold;
+    font-size: 18px;
+    color: var(--primary);
+  }
+  
+  .dialog_area {
+    width: 1200px;
+    // height: 3000px;
+  }
+  
+  .drop_down {
+    max-width: 300px;
+    margin: auto;
+  }
+  
+  .scroll_panel {
+    height: auto;
+    max-height: 40vh;
+    overflow: scroll;
+    border: solid;
+  }
+
+  .find-replace-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 10px;
+    position: absolute;
+    top: 125px;
+    width: 450px;
+
+  
+    // .find-field,
+    // .replace-field {
+    //   flex: 1;
+    // }
+  }
+  .form-field {
+    width: 200px; 
+    padding-left: 10px;
+    padding-right: 10px;
+  }

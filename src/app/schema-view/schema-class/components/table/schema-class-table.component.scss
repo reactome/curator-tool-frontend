@@ -1,27 +1,38 @@
-.schema-class-table {
-  width: 100%;
-  overflow: scroll;
-}
+// .schema-class-table {
+//   width: 100%;
+//   overflow: scroll;
+// }
 
 .mat-mdc-row {
   height: 30px;
+  z-index: 2;
 }
 
 .mat-mdc-row:hover .mat-mdc-cell {
   border-color: currentColor;
 }
 
+.mat-header-row, .mat-header-cell {
+  position: sticky;
+  top: 0;
+  z-index: 2; 
+}
+
 th {
   background: var(--primary-container) !important;
   color: var(--on-primary-container) !important;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+
 }
 
-// .table-container {
-//   max-height: calc(100vh - var(--title-height));
-//   height: calc(100vh - var(--title-height));
-//   overflow: auto;
-//   border: none;
-// }
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 
 .table-container {
   display: flex;
@@ -30,9 +41,8 @@ th {
 }
 
 .scrollable-table {
-  flex: 1;
-  overflow-y: auto; 
-  margin-bottom: 10px; 
+  overflow-y: scroll; 
+  max-height: 400px; 
 }
 
 .fixed-info {

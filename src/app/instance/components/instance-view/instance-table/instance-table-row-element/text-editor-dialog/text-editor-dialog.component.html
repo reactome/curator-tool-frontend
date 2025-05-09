@@ -1,8 +1,21 @@
-<h1 mat-dialog-title>Edit Text</h1>
-<div class="main" mat-dialog-content>
-  <textarea matInput [(ngModel)]="data.text" rows="10" style="width: 100%;"></textarea>
-</div>
-<div mat-dialog-actions>
+<h2 class="dialog_title" mat-dialog-title>Edit Text</h2>
+<mat-dialog-content style="width: 100%;">
+  <div class="find-replace-container">
+    <mat-form-field appearance="outline" class="find-field form-field">
+      <mat-label>Find</mat-label>
+      <input matInput [(ngModel)]="findText" placeholder="Enter text to find" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="replace-field form-field">
+      <mat-label>Replace</mat-label>
+      <input matInput [(ngModel)]="replaceText" placeholder="Enter replacement text" />
+    </mat-form-field>
+    <button mat-raised-button color="primary" (click)="findAndReplace()">OK</button>
+  </div>
+  <div style="position:absolute; bottom: 50px; width: 90%;">
+    <textarea matInput [(ngModel)]="data.text" rows="10" style="width: 100%"></textarea>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onOkay()" cdkFocusInitial>OK</button>
   <button mat-button (click)="onCancel()">Cancel</button>
-  <button mat-button color="primary" (click)="onSave()">Save</button>
-</div>
+</mat-dialog-actions>
