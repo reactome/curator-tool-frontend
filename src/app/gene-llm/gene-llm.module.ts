@@ -20,6 +20,7 @@ import { PredictedPathwayDetailsComponent } from './components/predicted-pathway
 import { NavigationMenuComponent } from './components/navigation-menu/navigation-menu.component';
 import { MatTree, MatTreeModule } from '@angular/material/tree';
 import { MatProgressBar} from '@angular/material/progress-bar';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @NgModule({
   declarations: [
@@ -53,7 +54,8 @@ import { MatProgressBar} from '@angular/material/progress-bar';
     MatTreeModule,
     MatTree,
     SharedModule,
-    MatProgressBar
+    MatProgressBar,
+    MatTooltip
     // RouterOutlet,
     // AbstractSummaryTableComponent
 
