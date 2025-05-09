@@ -42,12 +42,11 @@ thead {
 
 .scrollable-table {
   overflow-y: scroll; 
-  max-height: 400px; 
 }
 
 .fixed-info {
   position: sticky; 
-  bottom: 0; 
+  bottom: 10; 
   background-color: #f9f9f9; 
   padding: 10px;
   border-top: 1px solid #ccc;
