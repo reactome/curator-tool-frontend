@@ -1,5 +1,7 @@
 .bookmark-list {
-  height: 94vh;
+  // TODO: This value 95 has been used in the schema view and event view too.
+  // Need to refactor this to a common place.
+  height: 95vh;
   width: 250px;
   display: block;
   border-radius: 4px;

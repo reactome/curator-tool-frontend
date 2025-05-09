@@ -33,18 +33,21 @@
                 </button>
         </span> -->
 
-        <button style="position: absolute; right: 140px;" mat-icon-button (click)="navigateHome()" matTooltip="Home Page" matTooltipPosition="left"
-                [matTooltipShowDelay]="500">
-                <mat-icon color="primary" style="position: right;">home</mat-icon>
-        </button>
-        <a style="position: absolute; right: 4em;"
-                href="https://docs.google.com/document/d/180LCXdsk7Z324uK0FVhDj5fw3HnFPktt6rEqkpass1o/edit?tab=t.0"
-                target="_blank">
-                Report Bug
-        </a>
+        <div class="toolbar-buttons">
+                <button mat-icon-button (click)="reportBug()" matTooltip="Report bug" matTooltipPosition="left"
+                        [matTooltipShowDelay]="500">
+                        <mat-icon color="primary">bug_report</mat-icon>
+                </button>
 
-        <button class="mat-icon-button" (click)="logout()" matTooltip="Logout" matTooltipPosition="right"
-                [matTooltipShowDelay]="500">
-                <mat-icon color="primary" style="position: right;">logout</mat-icon>
-        </button>
+                <button mat-icon-button (click)="navigateHome()" matTooltip="Go to home page" matTooltipPosition="left"
+                        [matTooltipShowDelay]="500">
+                        <mat-icon color="primary">home</mat-icon>
+                </button>
+
+                <button mat-icon-button (click)="logout()" matTooltip="Log out" matTooltipPosition="right"
+                        [matTooltipShowDelay]="500">
+                        <mat-icon color="primary">logout</mat-icon>
+                </button>
+        </div>
+
 </mat-toolbar>

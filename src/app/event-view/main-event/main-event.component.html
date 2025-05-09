@@ -1,5 +1,5 @@
 <div #container>
-  <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh;">
+  <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 95vh;">
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true"
                  [style.width]="treeWidth  + 'px'">
       <!--Technically it would be nicer to create a new component having both filter and tree. Put it here since the main event view

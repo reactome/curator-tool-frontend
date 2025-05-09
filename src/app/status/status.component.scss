@@ -3,6 +3,8 @@
     height: var(--status-height, 30px);
     font-weight: normal;
     align-items: center;
+    position: absolute;
+    bottom: 4px;
 }
 
 .mat-icon {
@@ -25,4 +27,10 @@
   background: transparent; // these two to make sure no background and border for tree nodes having children.
   border: none;
   cursor: pointer;
+}
+
+.toolbar-buttons {
+  position: absolute;
+  right: 16px; /* Adjust the distance from the right edge */
+  gap: 16px; /* Add spacing between buttons */
 }

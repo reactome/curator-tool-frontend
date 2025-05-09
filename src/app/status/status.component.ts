@@ -127,4 +127,9 @@ export class StatusComponent implements OnInit, OnDestroy {
   navigateHome(){
     this.router.navigate(["/home"]);
   }
+
+  reportBug() {
+    window.open("https://docs.google.com/document/d/180LCXdsk7Z324uK0FVhDj5fw3HnFPktt6rEqkpass1o/edit?tab=t.0-report", "_blank");
+  }
+
 }
