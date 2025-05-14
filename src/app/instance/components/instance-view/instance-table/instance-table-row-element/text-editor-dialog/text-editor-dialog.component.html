@@ -14,14 +14,14 @@
   <button matTooltip="Find and replace text" mat-icon-button (click)="showFindAndReplace()" cdkFocusInitial>
     <mat-icon color="primary">find_replace</mat-icon></button>
   <ng-container *ngIf="findAndReplaceContainer" class="find-replace-container">
-    <mat-form-field appearance="outline" class="find-field form-field">
+    <mat-form-field class="form-field" appearance="outline" class="find-field form-field">
       <mat-label>Find</mat-label>
-      <input matInput (keydown.enter)="highlightMatches()" #input [(ngModel)]="findText"
+      <input matInput (keydown.enter)="highlightMatches()" [(ngModel)]="findText"
         placeholder="Search text" />
       <mat-icon color="primary" class="custom-search-icon" matTooltip="Search text" (click)="highlightMatches()"
         matSuffix>search</mat-icon>
     </mat-form-field>
-    <mat-form-field appearance="outline" class="replace-field form-field">
+    <mat-form-field class="form-field" appearance="outline" class="replace-field form-field">
       <mat-label>Replace</mat-label>
       <input matInput [(ngModel)]="replaceText" (keydown.enter)="findAndReplace()" placeholder="Replacement text" />
       <mat-icon color="primary" class="custom-search-icon" matTooltip="Replace text" (click)="findAndReplace()"

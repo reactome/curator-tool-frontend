@@ -45,12 +45,15 @@
     position: absolute;
     top: 125px;
     width: 450px;
+    height: 16px !important;
 
   }
   .form-field {
     width: 200px; 
     padding-left: 10px;
     padding-right: 10px;
+    height: 14px !important;
+    font-size: 14px;
   }
   
   // .highlight {
@@ -95,8 +98,7 @@ textarea#editor{
 #editor, #highlighting, #highlighting *, #pre {
     /* Also add text styles to highlighting tokens */
     font-family: monospace;
-    font-weight: bold;
-    font-size: 15px;
+    font-size: 14px;
     tab-size: 2;
 }
 
@@ -106,3 +108,37 @@ textarea#editor{
   right: 0;
   width: 50px;
 }
+
+.find-replace-container {
+  display: flex;
+  // gap: 16px; /* Space between the fields */
+  align-items: center; /* Align items vertically */
+}
+
+// .mat-form-field {
+//   height: 16px !important; /* Set a smaller height */
+//   font-size: 12px; /* Reduce font size */
+//   line-height: 1.2; /* Adjust line height */
+// }
+
+// .mat-form-field-wrapper {
+//   padding-bottom: 0; /* Remove extra padding */
+// }
+
+// .mat-form-field-flex {
+//   height: 16px !important; /* Match the height of the form field */
+//   align-items: center; /* Center the input vertically */
+// }
+
+// .mat-input-element {
+//   height: 16px !important; /* Match the height of the form field */
+//   padding: 0 8px; /* Adjust padding for smaller height */
+//   font-size: 12px; /* Match the font size */
+//   line-height: 1.2; /* Match the line height */
+// }
+
+// .mat-icon {
+//   font-size: 16px; /* Reduce the size of the icons */
+//   height: 16px!important;
+//   width: 16px;
+// }
