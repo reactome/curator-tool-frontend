@@ -46,7 +46,8 @@ thead {
 
 .fixed-info {
   position: sticky; 
-  bottom: 10; 
+  margin-top: auto;
+  bottom: 0; 
   background-color: #f9f9f9; 
   padding: 10px;
   border-top: 1px solid #ccc;
