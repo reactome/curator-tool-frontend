@@ -1,21 +1,38 @@
+<!-- Referencing: https://codersblock.com/blog/highlight-text-inside-a-textarea/ -->
+
 <h2 class="dialog_title" mat-dialog-title>Edit Text</h2>
 <mat-dialog-content style="width: 100%;">
-  <div class="find-replace-container">
-    <mat-form-field appearance="outline" class="find-field form-field">
-      <mat-label>Find</mat-label>
-      <input matInput [(ngModel)]="findText" placeholder="Enter text to find" />
-    </mat-form-field>
-    <mat-form-field appearance="outline" class="replace-field form-field">
-      <mat-label>Replace</mat-label>
-      <input matInput [(ngModel)]="replaceText" placeholder="Enter replacement text" />
-    </mat-form-field>
-    <button mat-raised-button color="primary" (click)="findAndReplace()">OK</button>
-  </div>
-  <div style="position:absolute; bottom: 50px; width: 90%;">
-    <textarea matInput [(ngModel)]="data.text" rows="10" style="width: 100%"></textarea>
-  </div>
+  <div class="container">
+    <!-- <div class="backdrop"> -->
+      <!-- <div class="highlighting-content" id="highlighting" #highlighting [innerHTML]="highlightedText"></div> -->
+    <!-- </div> -->
+
+    <textarea id="editor" #editor (input)="highlightMatches()" (scroll)="syncScroll(editor, pre)" matInput [(ngModel)]="data.text"></textarea>
+    <pre id="highlighting" aria-hidden="true" #pre [innerHTML]="highlightedText"></pre>
+  </div> 
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-button (click)="onOkay()" cdkFocusInitial>OK</button>
-  <button mat-button (click)="onCancel()">Cancel</button>
-</mat-dialog-actions>
+
+<!-- <div style="position: relative">
+  <textarea id="editor" #editor (input)="onInput(editor, builder)" (scroll)="syncScroll(editor, pre)"
+            spellcheck="false"></textarea>
+      <pre id="highlighting" aria-hidden="true" #pre><code class="highlighting-content"
+                                                           [innerHTML]="coloredMIQL"></code></pre>
+  </div> -->
+
+
+  <mat-dialog-actions style="display: flex" align="end">
+    <div class="find-replace-container">
+      <mat-form-field appearance="outline" class="find-field form-field">
+        <mat-label>Find</mat-label>
+        <input matInput [(ngModel)]="findText" placeholder="Enter text to find" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="replace-field form-field">
+        <mat-label>Replace</mat-label>
+        <input matInput [(ngModel)]="replaceText" placeholder="Enter replacement text" />
+      </mat-form-field>
+      <button mat-raised-button color="primary" (click)="findAndReplace()">Replace</button>
+      <button mat-raised-button color="accent" (click)="highlightMatches()">Find</button>  
+      </div>
+    <button mat-button (click)="onOkay()" cdkFocusInitial>OK</button>
+    <button mat-button (click)="onCancel()">Cancel</button>
+  </mat-dialog-actions>
