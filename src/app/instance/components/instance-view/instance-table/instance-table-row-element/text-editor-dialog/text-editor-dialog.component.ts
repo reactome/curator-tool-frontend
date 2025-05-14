@@ -7,9 +7,11 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
   styleUrls: ['./text-editor-dialog.component.scss']
 })
 export class TextEditorDialogComponent {
+
   findText: string = ''; // Text to find
   replaceText: string = ''; // Text to replace with
   highlightedText: string = ''; // Text with highlights
+  findAndReplaceContainer: boolean = false; // Flag to show/hide the find and replace container
   
   constructor(
     public dialogRef: MatDialogRef<TextEditorDialogComponent>,
@@ -32,6 +34,7 @@ export class TextEditorDialogComponent {
 
     const regex = new RegExp(this.findText, 'g'); // Create a global regex for the find text
     this.data.text = this.data.text.replace(regex, this.replaceText); // Replace all occurrences
+    this.highlightMatches(); // Highlight the matches after replacement
   }
 
   highlightMatches(): void {
@@ -52,14 +55,6 @@ export class TextEditorDialogComponent {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  // onInput(editor: HTMLTextAreaElement) {
-  //   let miql = editor.value;
-  //   if (miql.endsWith('\n')) {
-  //     miql += ' ';
-  //   }
-  //   this.highlightedText = this.highlightMatches(miql)
-  // }
-
 
   syncScroll(editor: HTMLTextAreaElement, pre: HTMLPreElement) {
     setTimeout(() => {
@@ -67,4 +62,8 @@ export class TextEditorDialogComponent {
       pre.scrollLeft = editor.scrollLeft;
     })
   }
+
+  showFindAndReplace() {
+    this.findAndReplaceContainer = !this.findAndReplaceContainer; // Toggle the visibility of the find and replace container
+    }
 }

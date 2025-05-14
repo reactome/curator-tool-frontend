@@ -22,7 +22,7 @@
   
   .dialog_area {
     width: 1200px;
-    // height: 3000px;
+    height: 2000px;
   }
   
   .drop_down {
@@ -59,48 +59,11 @@
   // }
 
   .container {
-    // width: 100%;
-    // height: 200px; /* Set a fixed height for the container */
-    // overflow-y: scroll; /* Prevent scrolling in the container */
-    // display: grid; /* Use grid layout to stack elements */
     position: relative;
   }
-  
-  // .backdrop,
-  // .text-container {
-  //   font-family: monospace;
-  //   font-size: 16px;
-  //   line-height: 1.5;
-  //   white-space: pre-wrap;
-  //   word-wrap: break-word;
-  //   padding: 8px;
-  //   margin: 0;
-  //   border: none;
-  //   box-sizing: border-box;
-  //   width: 100%;
-  //   height: 200px;
-  //   overflow: auto;
-  //   background-color: white;
-  //   color: black;
-  //   grid-column: 1; /* Align both elements in the same grid cell */
-  //   grid-row: 1;
-  // }
-  
-  // .backdrop {
-  //   background-color: lightblue; /* Match the background color */
-  //   z-index: 1; /* Place it behind the textarea */
-  //   // color: transparent; /* Make the text invisible */
-  // }
-  
-  // .text-container {
-  //   background-color: transparent; /* Make the background transparent */
-  //   z-index: 2; /* Place it above the backdrop */
-  //   resize: none; /* Prevent resizing */
-  //   // padding: 8px; /* Ensure padding is consistent */
 
-  // }
 
-#editor, #highlighting{
+#editor, #highlighting, #pre{
     position: absolute;
     top: 0;
     left: 0;
@@ -108,9 +71,13 @@
     padding: 5px 8px 0 8px;
     border: 1px solid #CCC;
     width: 100%;
-    height: 95px;
+    height: 200px;
     overflow: auto;
     white-space: pre-wrap;
+    line-height: 1.5;
+    word-spacing: normal;
+    word-break: normal;
+    letter-spacing: normal;
 }
 
 textarea#editor{
@@ -125,10 +92,17 @@ textarea#editor{
     z-index: 0;
 }
 
-#editor, #highlighting, #highlighting * {
+#editor, #highlighting, #highlighting *, #pre {
     /* Also add text styles to highlighting tokens */
     font-family: monospace;
     font-weight: bold;
     font-size: 15px;
     tab-size: 2;
+}
+
+.dialog_actions {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 50px;
 }
