@@ -32,6 +32,13 @@ export class HyperEdge {
      * Delete all nodes and edges created for this HyperEdge object.
      */
     delete() {
+        // Remove all edges first
+        this.id2object.forEach((value, key) => {
+            if (value.isEdge()) {
+                this.cy.remove(value);
+            }
+        });
+        // Remove all nodes
         this.id2object.forEach((value, key) => {
             // Keep the pathway node which may be used for other purpose
             if (value.hasClass('SUB'))
