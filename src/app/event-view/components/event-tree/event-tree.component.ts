@@ -270,6 +270,9 @@ export class EventTreeComponent implements OnDestroy {
     // Check if the diagram node is this diagramPathwaId
     const diagramNode = this.findAncestorDiagramNode(matchedNodes[0]);
     if (!diagramNode) {
+      // If diagramPathwayId is 0, do nothing
+      if (diagramPathwayId === 0)
+        return; // Nothing to do
       // Need to show something here
       this.dialog.open(InfoDialogComponent, {
         data: {
