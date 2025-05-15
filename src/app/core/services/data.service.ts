@@ -76,14 +76,14 @@ export class DataService {
     this.utils.markDeletionDbId$.subscribe(dbId => {
       // Go over all cached instances
       this.id2instance.forEach((inst, id) => {
-        if (!this.utils.isReferrer(dbId, inst)) 
+        if (!this.utils.isReferrer(dbId, inst))
           return; // Working with referrers only
         // For instances loaded from database, just mark them for reload if they are
         // referred by the deleted instance
         if (id >= 0) {
-            // When an updated instance is reloaded, its attributes will be 
-            // updated automatically. Therefore, we don't need to do anything here
-            this.removeInstanceInCache(inst.dbId);
+          // When an updated instance is reloaded, its attributes will be 
+          // updated automatically. Therefore, we don't need to do anything here
+          this.removeInstanceInCache(inst.dbId);
         }
         else {
           // For new instances, we need to manually remove the deleted instance from its
@@ -542,7 +542,7 @@ export class DataService {
               if (this.isSchemaClass(inst, className) && (skip < limit)) {
                 // Update the data being returned. New instance is placed at index 0.
                 data.instances.splice(0, 0, inst);
-                if(!data.totalCount){
+                if (!data.totalCount) {
                   data.totalCount = 0;
                 }
                 data.totalCount++;
@@ -785,7 +785,7 @@ export class DataService {
     const cached = this.id2instance.get(instance.dbId);
     if (!cached) {
       return this.handleErrorMessage(new Error('Cannot find the instance to commit!'));
-    } 
+    }
     // To avoid changing the code here
     instance = cached
     const checked = new Set<number>();
@@ -948,10 +948,10 @@ export class DataService {
         concatMap((data: Referrer[]) => {
           return this._getReferrers(dbId, data);
         }),
-          // Nothing needs to be done.
-          catchError((err: Error) => {
-            return this.handleErrorMessage(err);
-          }));
+        // Nothing needs to be done.
+        catchError((err: Error) => {
+          return this.handleErrorMessage(err);
+        }));
     }
     return this._getReferrers(dbId, referrers);
   }
@@ -959,14 +959,30 @@ export class DataService {
   _getReferrers(dbId: number, referrers: Referrer[]): Observable<Referrer[]> {
     // Checking the store for new and updated instances
     let attributeNames: string[] = referrers?.map((ref) => ref.attributeName);
-    combineLatest([this.store.select(updatedInstances()).pipe(take(1)), this.store.select(newInstances()).pipe(take(1))])
-      .subscribe(([updatedInstances, newInstances]) => {
+    combineLatest([this.store.select(updatedInstances()).pipe(take(1)),
+    this.store.select(newInstances()).pipe(take(1)),
+    this.store.select(deleteInstances()).pipe(take(1))])
+      .subscribe(([updatedInstances, newInstances, deletedInstances]) => {
+        const deletedDBIds = deletedInstances.map(inst => inst.dbId);
         const dbIds = updatedInstances.map(inst => inst.dbId);
         newInstances.map(inst => dbIds.push(inst.dbId));
         this.fetchInstances(dbIds).subscribe(insts => {
           for (let inst of insts) {
             if (!inst.modifiedAttributes)
               continue;
+
+            // Avoid querying database on instances where the only modificaiton was on non-reference attributes
+            // if (!inst.modifiedAttributes.every((att) => !isReferenceAttribute(att) )) continue;
+
+
+            // this.fetchInstanceFromDatabase(inst.dbId, false).pipe(
+            //   map((dbInst: Instance) => {
+            //     inst.modifiedAttributes
+            //     ?.filter((att) => isReferenceAttribute(att))
+            //     ..forEach((att) => {
+            //   }
+            // )
+
             // Only need to check the modified attributes for edits
             for (let attribute of inst.modifiedAttributes!) {
               let attributeData = inst.attributes.get(attribute)
@@ -1014,14 +1030,144 @@ export class DataService {
             }
 
           }
+
+          for (let i = 0; i < referrers.length; i++) {
+            let ref = referrers[i];
+            for (let j = 0; j < ref.referrers.length; j++) {
+              let referrer = ref.referrers[j];
+              if (deletedDBIds.includes(referrer.dbId)) {
+                ref.referrers.splice(j, 1);
+              }
+
+              this.fetchInstance(ref.referrers[j].dbId).subscribe((inst: Instance) => {
+                if (inst.attributes) {
+                  // Check if the attribute is a reference and if it matches the dbId
+                  // TODO: Check if attribute is an array or single value 
+                  let attributeData = inst.attributes.get(ref.attributeName);
+
+                  if (attributeData) {
+                    if (Array.isArray(attributeData)) {
+                      for (let k = 0; k < attributeData.length; k++) {
+                        if (attributeData[k].dbId === dbId) {
+                          if (attributeNames?.includes(attributeData[k].attributeName)) {
+                            let index = attributeNames.indexOf(attributeData[k].attributeName);
+                            referrers.at(index)?.referrers.splice(k, 1);
+                          }
+                        }
+                      }
+                    }
+                    else {
+                      if (attributeData.dbId && attributeData.dbId === dbId) {
+                        if (attributeNames?.includes(attributeData.attributeName)) {
+                          let index = attributeNames.indexOf(attributeData.attributeName);
+                          referrers.at(index)?.referrers.splice(j, 1);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              );
+            }
+          }
+
         });
       })
     return of(referrers);
   }
 
+  _getReferrers(dbId: number, referrers: Referrer[]): Observable<Referrer[]> {
+    const attributeNames: string[] = referrers?.map(ref => ref.attributeName);
+  
+    return combineLatest([
+      this.store.select(updatedInstances()).pipe(take(1)),
+      this.store.select(newInstances()).pipe(take(1)),
+      this.store.select(deleteInstances()).pipe(take(1))
+    ]).pipe(
+      concatMap(([updatedInstances, newInstances, deletedInstances]) => {
+        const deletedDBIds = new Set(deletedInstances.map(inst => inst.dbId));
+        const dbIds = new Set([
+          ...updatedInstances.map(inst => inst.dbId),
+          ...newInstances.map(inst => inst.dbId)
+        ]);
+
+        if(dbIds.size === 0 && deletedDBIds.size === 0) {
+          return of(referrers); 
+        }
+        // Fetch instances for the dbIds
+        // Use Set to avoid duplicates
+  
+        return this.fetchInstances(Array.from(dbIds)).pipe( // Convert Set back to an array for fetchInstances
+          map(instances => {
+            instances.forEach(inst => {
+              if (!inst.modifiedAttributes) return;
+  
+              inst.modifiedAttributes.forEach(attribute => {
+                const attributeData = inst.attributes.get(attribute);
+                if (!attributeData) return;
+  
+                this.processAttributeData(attributeData, dbId, attribute, inst, referrers, attributeNames);
+              });
+            });
+  
+            // Filter out deleted instances from the referrers list
+            return this.filterDeletedReferrers(referrers, deletedDBIds);
+          })
+        );
+      })
+    );
+  }
+  
+  private processAttributeData(
+    attributeData: any,
+    dbId: number,
+    attribute: string,
+    inst: Instance,
+    referrers: Referrer[],
+    attributeNames: string[]
+  ): void {
+    if (Array.isArray(attributeData)) {
+      attributeData.forEach(attData => {
+        if (attData.dbId === dbId) {
+          this.addOrUpdateReferrer(referrers, attributeNames, attribute, inst);
+        }
+      });
+    } else if (attributeData.dbId === dbId) {
+      this.addOrUpdateReferrer(referrers, attributeNames, attribute, inst);
+    }
+  }
+  
+  private addOrUpdateReferrer(
+    referrers: Referrer[],
+    attributeNames: string[],
+    attribute: string,
+    inst: Instance
+  ): void {
+    const ref: Referrer = { attributeName: attribute, referrers: [inst] };
+  
+    if (attributeNames.includes(ref.attributeName)) {
+      const index = attributeNames.indexOf(ref.attributeName);
+      referrers[index]?.referrers.push(inst);
+    } else {
+      attributeNames.push(ref.attributeName);
+      referrers.push(ref);
+    }
+  }
+  
+  private filterDeletedReferrers(referrers: Referrer[], deletedDBIds: Set<number>): Referrer[] {
+    return referrers
+      .map(ref => ({
+        ...ref,
+        referrers: ref.referrers.filter(inst => !deletedDBIds.has(inst.dbId))
+      }))
+      .filter(ref => ref.referrers.length > 0); // Remove referrers with no remaining instances
+  }
+
+
+
   isSchemaClass(instance: Instance, className: string): boolean {
     let schemaClass = this.getSchemaClass(className);
-    if(instance.schemaClassName === undefined)
+    if (instance.schemaClassName === undefined)
       return false
 
     else
@@ -1034,36 +1180,36 @@ export class DataService {
     return throwError(() => err);
   };
 
-    /**
-   * Pass the instance to the back end for QA checks.
-   * @param instance
-   */
-    fetchQAReport(instance: Instance): Observable<QAReport> {
-      // In case instance is just a shell, we need to use the cached instance
-      return this.http.post<QAReport>(this.fetchQAReportUrl, instance).pipe(
-        map((report: QAReport) => {
+  /**
+ * Pass the instance to the back end for QA checks.
+ * @param instance
+ */
+  fetchQAReport(instance: Instance): Observable<QAReport> {
+    // In case instance is just a shell, we need to use the cached instance
+    return this.http.post<QAReport>(this.fetchQAReportUrl, instance).pipe(
+      map((report: QAReport) => {
         //   for(let result of report.qaResults) {
         //     this.doubleArrayToDataSource(result.rows, result.columns)
         // }
         return report;
-        }),
-        catchError(error => {
-          return this.handleErrorMessage(error);
-        })
-      );
-    }
+      }),
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    );
+  }
 
-    doubleArrayToDataSource(data: any[][], columnNames: string[]): any[] {
-      return data.map(innerArray => {
-        const obj: any = {};
-        innerArray.forEach((value, index) => {
-          obj[columnNames[index]] = value;
-          if(value.includes("SimpleInstance")){
-            value = value.replace("SimpleInstance ", "");
-            value = JSON.parse(value) as Instance  
-          }
-        });
-        return obj;
+  doubleArrayToDataSource(data: any[][], columnNames: string[]): any[] {
+    return data.map(innerArray => {
+      const obj: any = {};
+      innerArray.forEach((value, index) => {
+        obj[columnNames[index]] = value;
+        if (value.includes("SimpleInstance")) {
+          value = value.replace("SimpleInstance ", "");
+          value = JSON.parse(value) as Instance
+        }
       });
-    }
+      return obj;
+    });
+  }
 }
