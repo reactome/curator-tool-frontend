@@ -129,8 +129,9 @@ export class PathwayDiagramUtilService {
             return;
         // Need to get the actual instance. The passed instance is just a shell retried from ngrx store
         this.dataService.fetchInstance(instance.dbId).subscribe((instance: Instance) => {
-            this.validator.handleInstanceEdit(instance, attribute, diagram?.diagram?.cy);
+            // Don't change the order. The hyperEdge should be set first
             this.setHyperEdgeForValidator(instance, attribute, diagram);
+            this.validator.handleInstanceEdit(instance, attribute, diagram?.diagram?.cy);
         });
     }
 
@@ -150,8 +151,9 @@ export class PathwayDiagramUtilService {
         // Need to get the actual instance. The passed instance is just a shell retried from ngrx store
         this.dataService.fetchInstance(resetData.dbId).subscribe((instance: Instance) => {
             for (let att of resetData.modifiedAttributes) {
-                this.validator.handleInstanceEdit(instance, att, diagram?.diagram?.cy);
+                // Must set up the hyperEdge first to validate the instance
                 this.setHyperEdgeForValidator(instance, att, diagram);
+                this.validator.handleInstanceEdit(instance, att, diagram?.diagram?.cy);
             }
         });
     }
