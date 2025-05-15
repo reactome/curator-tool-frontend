@@ -42,8 +42,7 @@ export class ReferrersTableComponent {
     switch(actionEvent.action) {
       case "launch": {
         const dbId = actionEvent.instance.dbId;
-        window.open('schema_view/instance/${dbId}', '_blank');
-        // window.open(`schema_view/instance/${dbId}?${ViewOnlyService.KEY}=true`, '_blank');
+        window.open(`schema_view/instance/${dbId}`, '_blank');
       }
     }
   }
