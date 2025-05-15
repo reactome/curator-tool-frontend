@@ -70,6 +70,6 @@ export class InstanceListTableComponent {
   }
 
   setNavigationUrl(instance: Instance){
-    this.routerNavigationUrl = "/schema_view/instance/" + instance.dbId.toString();
+    this.routerNavigationUrl = '/schema_view/instance/' + instance.dbId.toString();
   }
 }

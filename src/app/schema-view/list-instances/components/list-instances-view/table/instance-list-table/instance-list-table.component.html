@@ -9,7 +9,7 @@
         </ng-container>
         <ng-container *ngIf="!isSelection">
           <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)"
-            style="text-decoration: underline;" (click)="onInstanceLinkClicked(element)">{{element.dbId}}</a><br>
+            style="text-decoration: underline;">{{element.dbId}}</a><br>
         </ng-container>
       </td>
     </ng-container>
@@ -29,7 +29,7 @@
         </ng-container>
         <ng-container *ngIf="!isSelection">
           <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)"
-            style="text-decoration: underline;" (click)="onInstanceLinkClicked(element)">{{element.displayName}}</a>
+            style="text-decoration: underline;">{{element.displayName}}</a>
         </ng-container>
         <br>
       </td>
