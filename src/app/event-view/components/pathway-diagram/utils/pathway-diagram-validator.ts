@@ -211,8 +211,24 @@ export class PathwayDiagramValidator{
             }
         }
         // Just pick one in case nothing there
-        if (!targetEdge && connectedEdges.length > 0)
-            targetEdge = connectedEdges[0];
+        if (!targetEdge && connectedEdges.length > 0){
+            // Just pick the first one
+            for (let edge of connectedEdges) {
+                if ((hubClass === OUTPUT_HUB_CLASS) && (edge.hasClass('outgoing') || edge.hasClass('production'))) {
+                    targetEdge = edge;
+                    break;
+                }
+                else if ((hubClass === INPUT_HUB_CLASS) && edge.hasClass('input')) {
+                    targetEdge = edge;
+                    break;
+                }
+            }
+            if (!targetEdge) // Just pick the first one
+                targetEdge = connectedEdges[0];
+        }   
+        if (!targetEdge)
+            return; // No edge to use
+        // Need to get the position of the hub node         
         const source = targetEdge.source().position();
         const target = targetEdge.target().position();
         const zoom = cy.zoom();

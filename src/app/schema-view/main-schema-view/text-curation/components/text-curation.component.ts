@@ -65,15 +65,15 @@ export class TextCurationComponent {
     // Fetch OpenAI API key
     // const llm_url_openai_key = 'http://127.0.0.1:5000/openai_key';
     const llm_url_openai_key = environment.llmURL + '/openai_key';
-    // this.http.get(llm_url_openai_key, {responseType: 'text'}).subscribe(result => {
-    //   this.chatModel = new ChatOpenAI(
-    //     {
-    //       openAIApiKey: result,
-    //       modelName: 'gpt-3.5-turbo',
-    //       temperature: 0,
-    //     }
-    //   )
-    // });
+    this.http.get(llm_url_openai_key, {responseType: 'text'}).subscribe(result => {
+      this.chatModel = new ChatOpenAI(
+        {
+          openAIApiKey: result,
+          modelName: 'gpt-4o-mini',
+          temperature: 0,
+        }
+      )
+    });
   }
 
   // The following implementation is based on:

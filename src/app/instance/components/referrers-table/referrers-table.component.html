@@ -10,9 +10,11 @@
       <mat-label>{{referrers.attributeName}}: {{referrers.referrers.length}}</mat-label>
       <button (click)="openTable(referrers.attributeName)" mat-button><mat-icon>arrow_drop_down</mat-icon></button>
     </div>
+    <!-- isSelection so that we don't enable the links for dbIds and display name -->
     <app-instance-list-table
       [id]="referrers.attributeName"
       [hidden]="showFirstTable(i)"
+      [isSelection]="true" 
       [dataSource]="referrers.referrers"
       [actionButtons]="actionButtons"
       (actionEvent)="handleAction($event)"

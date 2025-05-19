@@ -179,6 +179,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     // change the coordinates
     this.diagram.cy.nodes().grabify().panify();
 
+    // Force it to use the light mode
+    this.diagram.dark.isDark = false;
+
     // Have to add the following to zoom using mouse scroll.
     this.diagram.cy.zoomingEnabled(true);
     this.diagram.cy.userZoomingEnabled(true);
