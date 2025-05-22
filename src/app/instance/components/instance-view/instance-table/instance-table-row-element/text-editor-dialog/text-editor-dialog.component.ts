@@ -48,6 +48,10 @@ export class TextEditorDialogComponent {
       regex,
       '<mark class="highlight">$1</mark>' // Wrap matches in a span with a highlight class
     );
+    let textArea = document.getElementById('editor'); // Reference to the text area element
+    let pre = document.getElementById('highlighting'); // Reference to the pre element
+
+    this.syncScroll(textArea!, pre!); // Sync scroll positions
   }
 
   private escapeRegExp(text: string): string {
@@ -56,11 +60,9 @@ export class TextEditorDialogComponent {
   }
 
 
-  syncScroll(editor: HTMLTextAreaElement, pre: HTMLPreElement) {
-    setTimeout(() => {
+  syncScroll(editor: HTMLElement, pre: HTMLElement) {
       pre.scrollTop = editor.scrollTop;
       pre.scrollLeft = editor.scrollLeft;
-    })
   }
 
   showFindAndReplace() {

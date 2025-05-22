@@ -5,7 +5,7 @@
   <div class="container">
     <textarea id="editor" #editor (input)="highlightMatches()" (scroll)="syncScroll(editor, pre)" matInput
       [(ngModel)]="data.text"></textarea>
-    <pre id="highlighting" aria-hidden="true" #pre [innerHTML]="highlightedText"></pre>
+    <pre id="highlighting" #pre [innerHTML]="highlightedText"></pre>
   </div>
 
 </mat-dialog-content>

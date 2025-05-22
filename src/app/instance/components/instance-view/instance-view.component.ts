@@ -461,4 +461,12 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         this.router.navigate(["/schema_view/instance/" + this.instance?.dbId.toString() + "/comparison/" + result?.dbId.toString()]);
     });
   }
+
+  isEventClass() {
+    return this.dataService.isEventClass(this.instance!.schemaClassName)
+  }
+
+  showPathwayDiagram(){
+      this.router.navigate(["/event_view/instance/" + this.instance!.dbId]);
+  }
 }

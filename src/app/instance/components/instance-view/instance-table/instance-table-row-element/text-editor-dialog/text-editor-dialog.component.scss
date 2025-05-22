@@ -63,6 +63,27 @@
 
   .container {
     position: relative;
+    height: 200px;
+    width: 100%;
+  }
+
+  pre#highlighting, #pre {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0;
+    padding: 5px 8px 0 8px;
+    border: 1px solid #CCC;
+    width: 100%;
+    overflow: hidden;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    word-spacing: normal;
+    word-break: normal;
+    letter-spacing: normal;
+    font-family: monospace;
+    font-size: 14px;
+    tab-size: 2;
   }
 
 
@@ -75,12 +96,15 @@
     border: 1px solid #CCC;
     width: 100%;
     height: 200px;
-    overflow: auto;
+    // overflow: auto;
     white-space: pre-wrap;
     line-height: 1.5;
     word-spacing: normal;
     word-break: normal;
     letter-spacing: normal;
+    font-family: monospace;
+    font-size: 14px;
+    tab-size: 2;
 }
 
 textarea#editor{
@@ -114,31 +138,3 @@ textarea#editor{
   // gap: 16px; /* Space between the fields */
   align-items: center; /* Align items vertically */
 }
-
-// .mat-form-field {
-//   height: 16px !important; /* Set a smaller height */
-//   font-size: 12px; /* Reduce font size */
-//   line-height: 1.2; /* Adjust line height */
-// }
-
-// .mat-form-field-wrapper {
-//   padding-bottom: 0; /* Remove extra padding */
-// }
-
-// .mat-form-field-flex {
-//   height: 16px !important; /* Match the height of the form field */
-//   align-items: center; /* Center the input vertically */
-// }
-
-// .mat-input-element {
-//   height: 16px !important; /* Match the height of the form field */
-//   padding: 0 8px; /* Adjust padding for smaller height */
-//   font-size: 12px; /* Match the font size */
-//   line-height: 1.2; /* Match the line height */
-// }
-
-// .mat-icon {
-//   font-size: 16px; /* Reduce the size of the icons */
-//   height: 16px!important;
-//   width: 16px;
-// }
