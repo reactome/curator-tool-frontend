@@ -17,6 +17,7 @@ export class TextEditorDialogComponent {
     public dialogRef: MatDialogRef<TextEditorDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { text: string }
   ) {
+    this.highlightedText = this.data.text; // Initialize highlighted text with the original text
   }
 
   onCancel(): void {
@@ -46,7 +47,7 @@ export class TextEditorDialogComponent {
     const regex = new RegExp(`(${this.escapeRegExp(this.findText)})`, 'gi'); // Create a regex to match the search term
     this.highlightedText = this.data.text.replace(
       regex,
-      '<mark class="highlight">$1</mark>' // Wrap matches in a span with a highlight class
+      '<a href="http://localhost:4200/schema_view/instance/443868" class="highlight-link">$1</a>' // Wrap matches in a span with a highlight class
     );
     let textArea = document.getElementById('editor'); // Reference to the text area element
     let pre = document.getElementById('highlighting'); // Reference to the pre element
@@ -63,6 +64,7 @@ export class TextEditorDialogComponent {
   syncScroll(editor: HTMLElement, pre: HTMLElement) {
       pre.scrollTop = editor.scrollTop;
       pre.scrollLeft = editor.scrollLeft;
+    
   }
 
   showFindAndReplace() {

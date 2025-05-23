@@ -19,7 +19,7 @@
 
 
 #### TODO:
-- Need to style the detailed table view for schema class.
+- Need to style the detailed table view for schema class. Done.
 - isCanonocal in Pathway cannot be edited
 - bug: regulation is not defined in RegulationReference. It is regulatedBy in the Java class model.
 - Make sure to use undefined, not null, to make the coed consistent. Check with the table editing results. Right now: text returns "" and non-text returns null!
