@@ -1,5 +1,7 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { AngularEditorConfig } from '@kolkov/angular-editor';
+import { Editor } from 'ngx-editor';
 
 @Component({
   selector: 'app-text-editor-dialog',
@@ -11,7 +13,9 @@ export class TextEditorDialogComponent {
   findText: string = ''; // Text to find
   replaceText: string = ''; // Text to replace with
   highlightedText: string = ''; // Text with highlights
+  removeFindText: string = ''; // Keep the last search text that was entered
   findAndReplaceContainer: boolean = false; // Flag to show/hide the find and replace container
+  editor: Editor = new Editor();
   
   constructor(
     public dialogRef: MatDialogRef<TextEditorDialogComponent>,
@@ -21,10 +25,12 @@ export class TextEditorDialogComponent {
   }
 
   onCancel(): void {
+    this.removeHighlight();
     this.dialogRef.close();
   }
 
   onOkay(): void {
+    this.removeHighlight();
     this.dialogRef.close(this.data.text);
   }
 
@@ -44,15 +50,28 @@ export class TextEditorDialogComponent {
       return;
     }
 
+    this.removeHighlight();
+
     const regex = new RegExp(`(${this.escapeRegExp(this.findText)})`, 'gi'); // Create a regex to match the search term
-    this.highlightedText = this.data.text.replace(
+    this.data.text = this.data.text.replace(
       regex,
-      '<a href="http://localhost:4200/schema_view/instance/443868" class="highlight-link">$1</a>' // Wrap matches in a span with a highlight class
+      '<mark class="highlight">$1</mark>' // Wrap matches in a span with a highlight class
     );
     let textArea = document.getElementById('editor'); // Reference to the text area element
     let pre = document.getElementById('highlighting'); // Reference to the pre element
 
     this.syncScroll(textArea!, pre!); // Sync scroll positions
+  }
+
+  removeHighlight(): void {
+    const regex = new RegExp(`(${this.escapeRegExp('<mark class="highlight">' + this.removeFindText + '</mark>' )})`, 'gi'); // Create a regex to match the search term
+    this.data.text = this.data.text.replace(
+      regex,
+      this.removeFindText
+      // Wrap matches in a span with a highlight class
+    );
+
+    this.removeFindText = this.findText
   }
 
   private escapeRegExp(text: string): string {
@@ -70,4 +89,85 @@ export class TextEditorDialogComponent {
   showFindAndReplace() {
     this.findAndReplaceContainer = !this.findAndReplaceContainer; // Toggle the visibility of the find and replace container
     }
+
+  onEditorChange($event: any) {
+    this.data.text = $event.html; // Update the data text with the editor's HTML content
+    this.highlightMatches(); // Highlight matches after any change}
+}
+
+editorConfig: AngularEditorConfig = {
+  editable: true,
+    spellcheck: true,
+    height: 'auto',
+    minHeight: '0',
+    maxHeight: 'auto',
+    width: 'auto',
+    minWidth: '0',
+    translate: 'yes',
+    enableToolbar: true,
+    showToolbar: true,
+    placeholder: 'Enter text here...',
+    defaultParagraphSeparator: '',
+    defaultFontName: '',
+    defaultFontSize: '',
+    fonts: [
+      {class: 'arial', name: 'Arial'},
+      {class: 'times-new-roman', name: 'Times New Roman'},
+      {class: 'calibri', name: 'Calibri'},
+      {class: 'comic-sans-ms', name: 'Comic Sans MS'}
+    ],
+    customClasses: [
+    {
+      name: 'quote',
+      class: 'quote',
+    },
+    {
+      name: 'redText',
+      class: 'redText'
+    },
+    {
+      name: 'titleText',
+      class: 'titleText',
+      tag: 'h1',
+    },
+  ],
+  uploadUrl: 'v1/image',
+  // upload: (file: File) => { ... }
+  uploadWithCredentials: false,
+  sanitize: true,
+  toolbarPosition: 'top',
+  toolbarHiddenButtons: [
+    ['bold', 'italic'],
+    ['fontSize']
+  ]
+};
+
+config: AngularEditorConfig = {
+  editable: true,
+  spellcheck: true,
+  height: '15rem',
+  minHeight: '5rem',
+  placeholder: 'Enter text here...',
+  translate: 'no',
+  defaultParagraphSeparator: 'p',
+  defaultFontName: 'Arial',
+  toolbarHiddenButtons: [
+    ['bold']
+    ],
+  customClasses: [
+    {
+      name: "quote",
+      class: "quote",
+    },
+    {
+      name: 'redText',
+      class: 'redText'
+    },
+    {
+      name: "titleText",
+      class: "titleText",
+      tag: "h1",
+    },
+  ]
+};
 }

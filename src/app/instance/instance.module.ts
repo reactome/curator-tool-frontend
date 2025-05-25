@@ -1,7 +1,7 @@
 import { CdkDrag, CdkDragPlaceholder, CdkDropList } from "@angular/cdk/drag-drop";
 import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem } from "@angular/cdk/menu";
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { NgModule } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { MatSidenavModule } from "@angular/material/sidenav";
 import { MatTooltipModule } from "@angular/material/tooltip";
 import { StoreModule } from '@ngrx/store';
@@ -37,6 +37,10 @@ import {
 import { QAReportTable } from "./components/qa-report-dialog/selected-instances-table/qa-report-table.component";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { TextEditorDialogComponent } from "./components/instance-view/instance-table/instance-table-row-element/text-editor-dialog/text-editor-dialog.component";
+import { Editor, NgxEditorModule } from "ngx-editor";
+import { EditorComponent } from "./components/instance-view/instance-table/instance-table-row-element/text-editor-dialog/rich-text-editor/rich-text-editor-component";
+import { HttpClientModule } from "@angular/common/http";
+import { AngularEditorModule } from "@kolkov/angular-editor";
 
 @NgModule({
     declarations: [
@@ -54,7 +58,7 @@ import { TextEditorDialogComponent } from "./components/instance-view/instance-t
         ReferrersTableComponent,
         ConfirmDeleteDialogComponent,
         QAReportTable,
-        TextEditorDialogComponent
+        TextEditorDialogComponent,
     ],
   imports: [
     CommonModule,
@@ -78,14 +82,20 @@ import { TextEditorDialogComponent } from "./components/instance-view/instance-t
     NgOptimizedImage,
     CdkDragPlaceholder,
     TextCurationComponent,
-    MatExpansionModule
-  ],
+    MatExpansionModule,
+    NgxEditorModule,
+    EditorComponent,
+    HttpClientModule, 
+    AngularEditorModule
+],
   exports: [
     InstanceTableComponent,
     InstanceTableRowElementComponent,
     InstanceViewComponent,
-    TextEditorDialogComponent
-  ]
+    TextEditorDialogComponent,
+    // EditorComponent
+  ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class InstanceModule {
 }

@@ -3,9 +3,16 @@
 <h2 class="dialog_title" mat-dialog-title>Edit Text</h2>
 <mat-dialog-content style="width: 100%;">
   <div class="container">
-    <textarea id="editor" #editor (input)="highlightMatches()" (scroll)="syncScroll(editor, pre)" matInput
-      [(ngModel)]="data.text"></textarea>
-    <pre id="highlighting" #pre [innerHTML]="highlightedText"></pre>
+    <!-- <textarea id="editor" #editor (input)="highlightMatches()" (scroll)="syncScroll(editor, pre)" matInput
+      [(ngModel)]="data.text"></textarea> -->
+    <!-- <pre id="highlighting" #pre [innerHTML]="highlightedText"></pre> -->
+    <!-- <div class="NgxEditor__Wrapper textArea">
+      <ngx-editor-menu [editor]="editor"> </ngx-editor-menu>
+      <ngx-editor id="editor" #editorArea
+       [editor]="editor" [(ngModel)]="data.text" [disabled]="false" [placeholder]="data.text"
+        (input)="highlightMatches()"></ngx-editor>
+    </div> -->
+    <angular-editor [placeholder]="'Enter text here...'" [(ngModel)]="data.text" [config]="config"></angular-editor>
   </div>
 
 </mat-dialog-content>
@@ -16,8 +23,7 @@
   <ng-container *ngIf="findAndReplaceContainer" class="find-replace-container">
     <mat-form-field class="form-field" appearance="outline" class="find-field form-field">
       <mat-label>Find</mat-label>
-      <input matInput (keydown.enter)="highlightMatches()" [(ngModel)]="findText"
-        placeholder="Search text" />
+      <input matInput (keydown.enter)="highlightMatches()" [(ngModel)]="findText" placeholder="Search text" />
       <mat-icon color="primary" class="custom-search-icon" matTooltip="Search text" (click)="highlightMatches()"
         matSuffix>search</mat-icon>
     </mat-form-field>
@@ -25,11 +31,11 @@
       <mat-label>Replace</mat-label>
       <input matInput [(ngModel)]="replaceText" (keydown.enter)="findAndReplace()" placeholder="Replacement text" />
       <mat-icon color="primary" class="custom-search-icon" matTooltip="Replace text" (click)="findAndReplace()"
-      matSuffix>cached</mat-icon>
+        matSuffix>cached</mat-icon>
     </mat-form-field>
   </ng-container>
-  </div>
-  <mat-dialog-actions align="end">
-    <button mat-button (click)="onOkay()" cdkFocusInitial>OK</button>
-    <button mat-button (click)="onCancel()">Cancel</button>
-  </mat-dialog-actions>
+</div>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onOkay()" cdkFocusInitial>OK</button>
+  <button mat-button (click)="onCancel()">Cancel</button>
+</mat-dialog-actions>

@@ -115,5 +115,11 @@
   },
   "cli": {
     "analytics": false
-  }
+  },
+
+
+  "glob": "**/*",
+  "input": "node_modules/@kolkov/angular-editor/assets/icons",
+  "output": "assets/ae-icons/"
+  
 }

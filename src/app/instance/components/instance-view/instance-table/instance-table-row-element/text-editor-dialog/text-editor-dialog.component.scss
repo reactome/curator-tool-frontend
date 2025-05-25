@@ -87,7 +87,7 @@
   }
 
 
-#editor, #highlighting, #pre{
+#editorArea, #highlighting, #pre{
     position: absolute;
     top: 0;
     left: 0;
@@ -107,7 +107,7 @@
     tab-size: 2;
 }
 
-textarea#editor{
+.textarea #editorArea{
     z-index: 1;
     resize: none;
     // color: transparent;
@@ -119,7 +119,7 @@ textarea#editor{
     z-index: 0;
 }
 
-#editor, #highlighting, #highlighting *, #pre {
+#editorArea, #highlighting, #highlighting *, #pre {
     /* Also add text styles to highlighting tokens */
     font-family: monospace;
     font-size: 14px;
