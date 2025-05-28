@@ -1,7 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { AngularEditorConfig } from '@kolkov/angular-editor';
-import { Editor } from 'ngx-editor';
 
 @Component({
   selector: 'app-text-editor-dialog',
@@ -15,7 +14,6 @@ export class TextEditorDialogComponent {
   highlightedText: string = ''; // Text with highlights
   removeFindText: string = ''; // Keep the last search text that was entered
   findAndReplaceContainer: boolean = false; // Flag to show/hide the find and replace container
-  editor: Editor = new Editor();
   
   constructor(
     public dialogRef: MatDialogRef<TextEditorDialogComponent>,

@@ -37,8 +37,6 @@ import {
 import { QAReportTable } from "./components/qa-report-dialog/selected-instances-table/qa-report-table.component";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { TextEditorDialogComponent } from "./components/instance-view/instance-table/instance-table-row-element/text-editor-dialog/text-editor-dialog.component";
-import { Editor, NgxEditorModule } from "ngx-editor";
-import { EditorComponent } from "./components/instance-view/instance-table/instance-table-row-element/text-editor-dialog/rich-text-editor/rich-text-editor-component";
 import { HttpClientModule } from "@angular/common/http";
 import { AngularEditorModule } from "@kolkov/angular-editor";
 
@@ -83,8 +81,6 @@ import { AngularEditorModule } from "@kolkov/angular-editor";
     CdkDragPlaceholder,
     TextCurationComponent,
     MatExpansionModule,
-    NgxEditorModule,
-    EditorComponent,
     HttpClientModule, 
     AngularEditorModule
 ],

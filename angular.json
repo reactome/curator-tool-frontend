@@ -27,7 +27,12 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              {
+                "glob": "**/*",
+                "input": "node_modules/@kolkov/angular-editor/assets/icons",
+                "output": "assets/ae-icons/"
+              }
             ],
             "styles": [
               "src/styles.scss",
@@ -115,11 +120,5 @@
   },
   "cli": {
     "analytics": false
-  },
-
-
-  "glob": "**/*",
-  "input": "node_modules/@kolkov/angular-editor/assets/icons",
-  "output": "assets/ae-icons/"
-  
+  }
 }

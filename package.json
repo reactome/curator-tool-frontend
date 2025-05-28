@@ -33,7 +33,6 @@
     "angular-jwt": "^0.1.11",
     "langchain": "^0.1.36",
     "ngrx-store-localstorage": "^17.0.0",
-    "ngx-editor": "^17.2.0",
     "ngx-reactome-cytoscape-style": "file:../ngx-reactome-base/dist/ngx-reactome-cytoscape-style/ngx-reactome-cytoscape-style-0.0.12.tgz",
     "ngx-reactome-diagram": "file:../ngx-reactome-base/dist/ngx-reactome-diagram/ngx-reactome-diagram-0.0.31.tgz",
     "openai": "^4.29.2",
