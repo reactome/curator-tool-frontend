@@ -12,11 +12,7 @@ export interface QAReport {
 export interface QAResults {
     checkName: string;
     passed: boolean;
-    columns: string[];
-    rows: string[][];
+    columns?: string[];
+    rows?: string[][];
 }
 
-// export interface TestAttributes {
-//     issueName: string;
-//     issueDetails: any;
-// }

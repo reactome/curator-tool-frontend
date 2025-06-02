@@ -64,6 +64,9 @@ export class TextCurationComponent {
     private http: HttpClient) {
     // Fetch OpenAI API key
     // const llm_url_openai_key = 'http://127.0.0.1:5000/openai_key';
+    if (!environment.llmOn) 
+      return; // Do not initialize the LLM if it is not turned on.
+    // Turn the following code on if you want to use the OpenAI API key from the backend.
     const llm_url_openai_key = environment.llmURL + '/openai_key';
     this.http.get(llm_url_openai_key, {responseType: 'text'}).subscribe(result => {
       this.chatModel = new ChatOpenAI(
@@ -74,6 +77,7 @@ export class TextCurationComponent {
         }
       )
     });
+
   }
 
   // The following implementation is based on:

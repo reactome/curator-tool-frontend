@@ -14,7 +14,7 @@ import { DataService } from 'src/app/core/services/data.service';
 })
 export class QAReportDialogComponent {
   qaReport: QAReport | undefined; 
-  qaReportPassed?: boolean = undefined;
+  qaReportPassed: boolean = true;
 
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public instance: Instance,
@@ -22,18 +22,26 @@ export class QAReportDialogComponent {
               private dataService: DataService) {
 
 
+      // Initialize qaReport as an empty object to avoid undefined errors in the template
+      this.qaReport = { instance: instance} as QAReport;
+
+      // Fetch the actual report asynchronously
       this.dataService.fetchQAReport(instance).subscribe(report => {
-        this.qaReport = report;
+        this.qaReport = report; // This assignment will update the value and Angular will update the view
 
         this.qaReportPassed = true;
 
-        for(let check of report.qaResults){
-          if(!check.passed){
+        if (!this.qaReport || !Array.isArray(this.qaReport.qaResults) || this.qaReport.qaResults.length === 0) {
+          return;
+        }
+
+        for (let check of this.qaReport.qaResults) {
+          if (!check.passed) {
             this.qaReportPassed = false;
-            return
+            return;
           }
         }
-      })
+      });
   }
 
 
