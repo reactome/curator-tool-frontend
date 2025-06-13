@@ -16,6 +16,7 @@
 - TODO: After logging in, the default page should be home. Right now it is the log-in page. Actually it should be the home page always. If the user has not been logged in, change it to the log-in page. Done
 - Bug: In the event view, the mouse position is lowed when scroll up/down the instance view.
 - TODO: When two instances are compared, change "only show edited attribute" to "attributes having different values". If the user touches an attribute without actually editing it, the attribute is listed as "edited attribute". This need to change.
+- TODO: List all performed QAs in the QA report even though all QAs are passed. By doing this, the tool gives the curator a list of what have been checked.
 
 
 #### TODO:
