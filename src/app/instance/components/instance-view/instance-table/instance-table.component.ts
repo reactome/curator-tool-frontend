@@ -166,6 +166,11 @@ export class InstanceTableComponent implements PostEditListener {
         }
       }
     }
+    if (data.value === value) {
+      // If the value is the same as the current value, do not update
+      // This is to avoid unnecessary updates
+      return;
+    }
     this.finishEdit(data.attribute.name, data.value);
   }
 
@@ -196,6 +201,11 @@ export class InstanceTableComponent implements PostEditListener {
           undefined
         );
       }
+    }
+    if (attributeValue.value === value) {
+      // If the value is the same as the current value, do not update
+      // This is to avoid unnecessary updates
+      return;
     }
     this.finishEdit(attributeValue.attribute.name, undefined);
   }
@@ -266,7 +276,7 @@ export class InstanceTableComponent implements PostEditListener {
     matDialogRef.afterClosed().subscribe((result) => {
       // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
       // Add the new value
-      if (result === undefined) return; // Do nothing
+      if (result === undefined || result === this.instUtil.getShellInstance(result)) return; // Do nothing
       // Check if there is any value
       // Use cached shell instance
       this.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), replace);
@@ -302,12 +312,24 @@ export class InstanceTableComponent implements PostEditListener {
       } else {
         // It should be the first
         if (attributeValue.attribute.cardinality === '1') {
+          if (value === attributeValue.value) {
+            // If the value is the same as the current value, do not update
+            // This is to avoid unnecessary updates
+            return;
+          }
+
           // Make sure only one value used
           this._instance?.attributes?.set(
             attributeValue.attribute.name,
             result.length > 0 ? result[0] : undefined
           );
         } else {
+          //TODO: change to check by dbId, not the object and create a method 
+          if (value.contains(attributeValue.value)) {
+            // If the value is the same as the current value, do not update
+            // This is to avoid unnecessary updates
+            return;
+          }
           const deleteCount = replace ? 1 : 0;
           value.splice(attributeValue.index, deleteCount, ...result);
         }
@@ -355,11 +377,16 @@ export class InstanceTableComponent implements PostEditListener {
       if (attributeValue.attribute.cardinality === '1') {
         // Make sure only one value used
         this._instance?.attributes?.set(attributeValue.attribute.name, result);
-      } 
+      }
       else {
         const deleteCount = replace ? 1 : 0;
         value.splice(attributeValue.index, deleteCount, result);
       }
+    }
+    if (attributeValue.value === value) {
+      // If the value is the same as the current value, do not update
+      // This is to avoid unnecessary updates
+      return;
     }
     this.finishEdit(attributeValue.attribute.name, value);
   }
@@ -395,7 +422,7 @@ export class InstanceTableComponent implements PostEditListener {
       // Force the state to update if needed
       this.store.dispatch(NewInstanceActions.register_new_instance(cloned));
     }
-    this.store.dispatch(UpdateInstanceActions.last_updated_instance({attribute: attName, instance: cloned}));
+    this.store.dispatch(UpdateInstanceActions.last_updated_instance({ attribute: attName, instance: cloned }));
   }
 
   private addModifiedAttribute(attributeName: string, attributeVal: any) {
@@ -487,7 +514,7 @@ export class InstanceTableComponent implements PostEditListener {
 
   compareToDbInstance(attName: string): boolean {
     if (!this._referenceInstance) return false;
-    if(this._instance?.dbId !== this._referenceInstance?.dbId) return false;
+    if (this._instance?.dbId !== this._referenceInstance?.dbId) return false;
     let instanceVal = this._instance?.attributes.get(attName);
     let refVal = this._referenceInstance?.attributes.get(attName);
     if ((instanceVal && instanceVal.dbId) || instanceVal instanceof Array) {
@@ -553,7 +580,7 @@ export class InstanceTableComponent implements PostEditListener {
     this.removeModifiedAttribute(attributeValue.attribute.name);
     // something more needed to be done
     this.store.dispatch(UpdateInstanceActions.last_updated_instance({
-      attribute: attributeValue.attribute.name, 
+      attribute: attributeValue.attribute.name,
       instance: this.instUtil.makeShell(this._instance!)
     }));
     this.editedInstance.emit(this._instance)
@@ -565,19 +592,19 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   highlightRequired(element: AttributeValue): boolean {
-    if(element.attribute.category === AttributeCategory.REQUIRED && element.value === undefined){
+    if (element.attribute.category === AttributeCategory.REQUIRED && element.value === undefined) {
       return true;
     }
-    else{
+    else {
       return false;
     }
   }
 
   highlightMandatory(element: AttributeValue): boolean {
-    if(element.attribute.category === AttributeCategory.MANDATORY && element.value === undefined){
+    if (element.attribute.category === AttributeCategory.MANDATORY && element.value === undefined) {
       return true;
     }
-    else{
+    else {
       return false;
     }
   }

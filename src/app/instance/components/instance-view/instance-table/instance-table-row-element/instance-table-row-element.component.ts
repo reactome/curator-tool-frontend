@@ -76,13 +76,13 @@ export class InstanceTableRowElementComponent implements OnInit {
   // viewOnly as a service is drilled down too deep in the component hierarchy. Better not been here and disable
   // the editing using a simple flag!
   constructor(private store: Store,
-              private _ngZone: NgZone,
-              private dataService: DataService,
-              private route: ActivatedRoute,
-              public viewOnly: ViewOnlyService,
-              public dragDropService: DragDropService,
-            private instanceUtilities: InstanceUtilities,
-            private dialog: MatDialog) {
+    private _ngZone: NgZone,
+    private dataService: DataService,
+    private route: ActivatedRoute,
+    public viewOnly: ViewOnlyService,
+    public dragDropService: DragDropService,
+    private instanceUtilities: InstanceUtilities,
+    private dialog: MatDialog) {
     if (viewOnly.enabled)
       this.control.disable();
   }
@@ -104,6 +104,9 @@ export class InstanceTableRowElementComponent implements OnInit {
 
 
   onChange() {
+    if (this.control.value === this.value) {
+      return; // No change, do nothing
+    }
     let attributeValue: AttributeValue = {
       attribute: this.attribute!,
       value: this.control.value, // Get the new value from control
@@ -148,7 +151,7 @@ export class InstanceTableRowElementComponent implements OnInit {
   mouseLeave() {
     this.isMouseIn = false
     this.color = false;
-    if(this.isSummationText())
+    if (this.isSummationText())
       this.showEditorButton = false;
   }
 
@@ -157,7 +160,7 @@ export class InstanceTableRowElementComponent implements OnInit {
     if (this.isDroppable) {
       this.color = true;
     }
-    if(this.isSummationText())
+    if (this.isSummationText())
       this.showEditorButton = true;
   }
 
@@ -174,13 +177,13 @@ export class InstanceTableRowElementComponent implements OnInit {
     this.editAction.emit(attributeValue);
   }
 
-  onKeyDown(e: any){
+  onKeyDown(e: any) {
     //ctrl and enter key
     // TODO: need to implement the following behavior
     // enter without control to commit and enter with control to enter a new line
-    if(e.ctrlKey && e.key === 'Enter'){
+    if (e.ctrlKey && e.key === 'Enter') {
       this.onChange();
-   }
+    }
   }
 
   onInstanceLinkClicked(instance: Instance) {
@@ -199,14 +202,14 @@ export class InstanceTableRowElementComponent implements OnInit {
   }
 
   isSummationText(): boolean {
-    if (this.attribute?.name === "text" && this.control.enabled ) {return true;}
+    if (this.attribute?.name === "text" && this.control.enabled) { return true; }
     else return false;
   }
 
   openTextEditorDialog(): void {
     const dialogRef = this.dialog.open(TextEditorDialogComponent, {
       width: '700px',
-      height: '600px',
+      height: '550px',
       data: { text: this.control.value }
     });
 

@@ -1,129 +1,156 @@
 .main {
-    font-family: Roboto, "Helvetica Neue", sans-serif;
-    font-size: 14px;
-    width: 100%;
-    line-height: normal;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-size: 14px;
+  width: 100%;
+  line-height: normal;
 }
 
 .dialog_title {
-    text-align: left;
-    font-weight: bold;
-    font-size: 20px;
-    color: white;
-    background-color: var(--primary);
-  
-  }
-  
-  .check-title {
-    font-weight: bold;
-    font-size: 18px;
-    color: var(--primary);
-  }
-  
-  .dialog_area {
-    width: 1200px;
-    height: 2000px;
-  }
-  
-  .drop_down {
-    max-width: 300px;
-    margin: auto;
-  }
-  
-  .scroll_panel {
-    height: auto;
-    max-height: 40vh;
-    overflow: scroll;
-    border: solid;
-  }
+  text-align: left;
+  font-weight: bold;
+  font-size: 20px;
+  color: white;
+  background-color: var(--primary);
 
-  .find-replace-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: 10px;
-    position: absolute;
-    top: 125px;
-    width: 450px;
-    height: 16px !important;
-
-  }
-  .form-field {
-    width: 200px; 
-    padding-left: 10px;
-    padding-right: 10px;
-    height: 14px !important;
-    font-size: 14px;
-  }
-  
-  // .highlight {
-  //   background-color: yellow !important; /* Highlight color */
-  //   color:transparent; /* Make the text invisible */
-  // }
-
-  .container {
-    position: relative;
-    height: 100px;
-    width: 100%;
-  }
-
-  pre#highlighting, #pre {
-    position: absolute;
-    top: 0;
-    left: 0;
-    margin: 0;
-    padding: 5px 8px 0 8px;
-    border: 1px solid #CCC;
-    width: 100%;
-    overflow: hidden;
-    white-space: pre-wrap;
-    line-height: 1.5;
-    word-spacing: normal;
-    word-break: normal;
-    letter-spacing: normal;
-    font-family: monospace;
-    font-size: 14px;
-    tab-size: 2;
-  }
-
-
-#editorArea, #highlighting, #pre{
-    position: absolute;
-    top: 0;
-    left: 0;
-    margin: 0;
-    padding: 5px 8px 0 8px;
-    border: 1px solid #CCC;
-    width: 100%;
-    height: 200px;
-    // overflow: auto;
-    white-space: pre-wrap;
-    line-height: 1.5;
-    word-spacing: normal;
-    word-break: normal;
-    letter-spacing: normal;
-    font-family: monospace;
-    font-size: 14px;
-    tab-size: 2;
 }
 
-.textarea #editorArea{
-    z-index: 1;
-    resize: none;
-    // color: transparent;
-    background: transparent;
-    caret-color: black; /* Or choose your favorite color */
+.check-title {
+  font-weight: bold;
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.dialog_area {
+  width: 1200px;
+  height: 2000px;
+}
+
+.drop_down {
+  max-width: 300px;
+  margin: auto;
+}
+
+.scroll_panel {
+  height: auto;
+  max-height: 40vh;
+  overflow: scroll;
+  border: solid;
+}
+
+.find-replace-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 10px;
+  position: absolute;
+  top: 125px;
+  width: 450px;
+  height: 16px !important;
+
+}
+
+:host ::ng-deep .form-field {
+  width: 100%;
+  height: 18px;
+  font-size: 13px;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  flex: 1 1 0 !important;
+  min-width: 300px !important;
+  max-width: 100% !important;
+}
+
+.form-field .mat-form-field {
+  height: 18px !important;
+  max-height: 18px !important;
+}
+
+// .highlight {
+//   background-color: yellow !important; /* Highlight color */
+//   color:transparent; /* Make the text invisible */
+// }
+
+.container {
+  position: relative;
+  height: 100px;
+  width: 100%;
+}
+
+pre#highlighting,
+#pre {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 5px 8px 0 8px;
+  border: 1px solid #CCC;
+  width: 100%;
+  overflow: hidden;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  word-spacing: normal;
+  word-break: normal;
+  letter-spacing: normal;
+  font-family: monospace;
+  font-size: 14px;
+  tab-size: 2;
+}
+
+
+#editorArea,
+#highlighting,
+#pre {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 5px 8px 0 8px;
+  border: 1px solid #CCC;
+  width: 100%;
+  height: 200px;
+  // overflow: auto;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  word-spacing: normal;
+  word-break: normal;
+  letter-spacing: normal;
+  font-family: monospace;
+  font-size: 14px;
+  tab-size: 2;
+}
+
+.textarea #editorArea {
+  z-index: 1;
+  resize: none;
+  // color: transparent;
+  background: transparent;
+  caret-color: black;
+  /* Or choose your favorite color */
+}
+
+.mat-form-field .mat-icon[matSuffix]+.mat-icon[matSuffix] {
+  margin-left: 2px;
+  margin-right: 4px;
+}
+
+.mat-icon {
+  cursor: pointer;
+    margin-left: 2px;
+  margin-right: 2px;
 }
 
 #highlighting {
-    z-index: 0;
+  z-index: 0;
 }
 
-#editorArea, #highlighting, #highlighting *, #pre {
-    /* Also add text styles to highlighting tokens */
-    font-family: monospace;
-    font-size: 14px;
-    tab-size: 2;
+#editorArea,
+#highlighting,
+#highlighting *,
+#pre {
+  /* Also add text styles to highlighting tokens */
+  font-family: monospace;
+  font-size: 14px;
+  tab-size: 2;
 }
 
 .dialog_actions {
@@ -136,5 +163,21 @@
 .find-replace-container {
   display: flex;
   // gap: 16px; /* Space between the fields */
-  align-items: center; /* Align items vertically */
+  align-items: center;
+  /* Align items vertically */
+}
+
+.editor-fab-container {
+  position: relative;
+}
+
+.fab-bottom-right {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+}
+
+.fab-bottom-right:hover {
+  cursor: select;
 }

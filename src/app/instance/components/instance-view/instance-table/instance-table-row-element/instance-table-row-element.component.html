@@ -7,14 +7,19 @@
 
     <!-- Hide the tooltip. It is quite annoying. matTooltip="control+enter to commit the change" -->
     <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
-        <mat-form-field (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="form-field" appearance="outline" subscriptSizing="dynamic">
-          <textarea style="height: fit-content" matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize" cdkAutosizeMinRows="1"
-                    cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()" (keydown)="onKeyDown($event)">
+      <mat-form-field (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="form-field" appearance="outline"
+        subscriptSizing="dynamic">
+        <textarea style="height: fit-content" matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize"
+          cdkAutosizeMinRows="1" cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()"
+          (keydown)="onKeyDown($event)">
           </textarea>
-          <button *ngIf="showEditorButton" mat-icon-button color="primary" (click)="openTextEditorDialog()" matTooltip="Edit Text" class="edit-button">
-            <mat-icon>edit</mat-icon>
-          </button>
-        </mat-form-field>
+        <!-- <div [formControl]="control" style="height: fit-content" matInput [innerHTML]= control.value>
+        </div> -->
+        <button *ngIf="showEditorButton" mat-icon-button color="primary" (click)="openTextEditorDialog()"
+          matTooltip="Edit Text" class="edit-button">
+          <mat-icon>edit</mat-icon>
+        </button>
+      </mat-form-field>
     </ng-template>
 
     <ng-template [ngSwitchCase]="DATA_TYPES.INTEGER">
@@ -33,19 +38,18 @@
       <ng-container *ngIf="control.disabled; else editInstance">
         <ng-container *ngIf="value !== undefined">
           <a [routerLink]="getInstanceUrlRoot(value)" [queryParamsHandling]="'preserve'"
-             class="padding span-menu-trigger">
+            class="padding span-menu-trigger">
             {{value.displayName}}
             [{{value.dbId}}]</a><br>
         </ng-container>
       </ng-container>
       <ng-template #editInstance>
         <div (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="valueRow"
-             [ngClass]="{dragging: dragging, red: !color, green: color}">
+          [ngClass]="{dragging: dragging, red: !color, green: color}">
           <!-- TODO: Also need to determine if it is required or disabled-->
           <ng-container *ngIf="value !== undefined; else elseblock">
             <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
-               [cdkContextMenuTriggerFor]="row_menu"
-               class="padding span-menu-trigger">
+              [cdkContextMenuTriggerFor]="row_menu" class="padding span-menu-trigger">
               {{value.displayName}}
               [{{value.dbId}}]</a><br>
           </ng-container>
@@ -62,7 +66,8 @@
     </ng-template>
 
     <ng-template #row_menu>
-      <app-action-menu (actionItem)="onEditAction($event)" [isSingledValued]="attribute!.cardinality === '1'"></app-action-menu>
+      <app-action-menu (actionItem)="onEditAction($event)"
+        [isSingledValued]="attribute!.cardinality === '1'"></app-action-menu>
     </ng-template>
   </ng-container>
 

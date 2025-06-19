@@ -570,6 +570,21 @@ export class DataService {
           })
         );
       }),
+      // Fourth concatMap: filter out database copies of instances that have been updated
+      concatMap((data: InstanceList) => {
+        return this.store.select(updatedInstances()).pipe(
+          take(1),
+          map((instances: Instance[]) => {
+            const updatedDbIds = new Set(instances.map(inst => inst.dbId));
+            // Filter out backend instances with matching dbId
+            const filtered = data.instances.filter(inst => !updatedDbIds.has(inst.dbId));
+            // Place updated instances first
+            data.instances = [...instances, ...filtered];
+            return data; // Pass the final modified data
+
+          })
+        );
+      }),
       // Error handling
       catchError((err: Error) => {
         return this.handleErrorMessage(err);
@@ -978,24 +993,24 @@ export class DataService {
           ...newInstances.map(inst => inst.dbId)
         ]);
 
-      // Combine all IDs to filter out
-      const allFilteredDBIds = new Set([...deletedDBIds, ...dbIds]);
+        // Combine all IDs to filter out
+        const allFilteredDBIds = new Set([...deletedDBIds, ...dbIds]);
 
-      // Filter out instances from referrers that match any of the updated or new instances
-      referrers = referrers
-        .map(ref => ({
-          ...ref,
-          referrers: ref.referrers.filter(inst => !allFilteredDBIds.has(inst.dbId))
-        }))
-        .filter(ref => ref.referrers.length > 0); // Remove referrers with no remaining instances
+        // Filter out instances from referrers that match any of the updated or new instances
+        referrers = referrers
+          .map(ref => ({
+            ...ref,
+            referrers: ref.referrers.filter(inst => !allFilteredDBIds.has(inst.dbId))
+          }))
+          .filter(ref => ref.referrers.length > 0); // Remove referrers with no remaining instances
 
-      if (allFilteredDBIds.size === 0) {
-        return of(referrers);
-      }
+        if (allFilteredDBIds.size === 0) {
+          return of(referrers);
+        }
 
         if (dbIds.size > 0) {
           let ids = Array.from(dbIds);
-          let instances = this.fetchInstances(ids).pipe(map((instances: Instance[]) => {return instances}))
+          let instances = this.fetchInstances(ids).pipe(map((instances: Instance[]) => { return instances }))
           instances.subscribe((instances: Instance[]) => {
             instances.forEach(inst => {
               if (!inst.modifiedAttributes) return;

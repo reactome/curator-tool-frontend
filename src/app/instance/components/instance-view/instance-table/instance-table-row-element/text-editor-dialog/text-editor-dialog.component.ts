@@ -14,7 +14,9 @@ export class TextEditorDialogComponent {
   highlightedText: string = ''; // Text with highlights
   removeFindText: string = ''; // Keep the last search text that was entered
   findAndReplaceContainer: boolean = false; // Flag to show/hide the find and replace container
-  
+  matchCount: number = 0; // Count of matches found
+  currentMatch: number = 0; // Index of the current match being viewed
+
   constructor(
     public dialogRef: MatDialogRef<TextEditorDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { text: string }
@@ -45,16 +47,32 @@ export class TextEditorDialogComponent {
   highlightMatches(): void {
     if (!this.findText) {
       this.highlightedText = this.data.text; // Reset to original text if no search term
+      this.matchCount = 0;
       return;
     }
 
     this.removeHighlight();
 
     const regex = new RegExp(`(${this.escapeRegExp(this.findText)})`, 'gi'); // Create a regex to match the search term
+    let matchIndex = 0;
     this.data.text = this.data.text.replace(
       regex,
-      '<mark class="highlight">$1</mark>' // Wrap matches in a span with a highlight class
+      (match) => {
+        const id = `match-${matchIndex}`;
+        matchIndex++;
+        return `<a id="${id}" class="highlight" href="#">${match}</a>`;
+      }
     );
+    this.matchCount = matchIndex;
+    this.currentMatch = 0;
+
+    setTimeout(() => {
+      const firstMatch = document.getElementById('match-0'); // Get the first match element
+      if (firstMatch) {
+        firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        (firstMatch as HTMLElement).focus();
+      }
+    }, 0);
     let textArea = document.getElementById('editor'); // Reference to the text area element
     let pre = document.getElementById('highlighting'); // Reference to the pre element
 
@@ -62,14 +80,22 @@ export class TextEditorDialogComponent {
   }
 
   removeHighlight(): void {
-    const regex = new RegExp(`(${this.escapeRegExp('<mark class="highlight">' + this.removeFindText + '</mark>' )})`, 'gi'); // Create a regex to match the search term
-    this.data.text = this.data.text.replace(
-      regex,
-      this.removeFindText
-      // Wrap matches in a span with a highlight class
-    );
+    // const regex = new RegExp(`(${this.escapeRegExp('<mark class="highlight">' + this.removeFindText + '</mark>')})`, 'gi'); // Create a regex to match the search term
+    // this.data.text = this.data.text.replace(
+    //   regex,
+    //   this.removeFindText
+    // ); // Remove the highlight by replacing it with the original text
 
-    this.removeFindText = this.findText
+    // this.removeFindText = this.findText
+
+      // Remove all HTML tags from highlightedText
+        // Remove opening tags with class="highlight" or class="highlight-link"
+        this.data.text = this.data.text
+          .replace(/<span class="highlight">/g, '')
+          .replace(/<a[^>]*class="highlight"[^>]*>/g, '')
+          // Remove corresponding closing tags
+          .replace(/<\/span>/g, '')
+          .replace(/<\/a>/g, '');
   }
 
   private escapeRegExp(text: string): string {
@@ -79,22 +105,22 @@ export class TextEditorDialogComponent {
 
 
   syncScroll(editor: HTMLElement, pre: HTMLElement) {
-      pre.scrollTop = editor.scrollTop;
-      pre.scrollLeft = editor.scrollLeft;
-    
+    pre.scrollTop = editor.scrollTop;
+    pre.scrollLeft = editor.scrollLeft;
+
   }
 
   showFindAndReplace() {
     this.findAndReplaceContainer = !this.findAndReplaceContainer; // Toggle the visibility of the find and replace container
-    }
+  }
 
   onEditorChange($event: any) {
     this.data.text = $event.html; // Update the data text with the editor's HTML content
     this.highlightMatches(); // Highlight matches after any change}
-}
+  }
 
-editorConfig: AngularEditorConfig = {
-  editable: true,
+  editorConfig: AngularEditorConfig = {
+    editable: true,
     spellcheck: true,
     height: 'auto',
     minHeight: '0',
@@ -109,63 +135,93 @@ editorConfig: AngularEditorConfig = {
     defaultFontName: '',
     defaultFontSize: '',
     fonts: [
-      {class: 'arial', name: 'Arial'},
-      {class: 'times-new-roman', name: 'Times New Roman'},
-      {class: 'calibri', name: 'Calibri'},
-      {class: 'comic-sans-ms', name: 'Comic Sans MS'}
+      { class: 'arial', name: 'Arial' },
+      { class: 'times-new-roman', name: 'Times New Roman' },
+      { class: 'calibri', name: 'Calibri' },
+      { class: 'comic-sans-ms', name: 'Comic Sans MS' }
     ],
     customClasses: [
-    {
-      name: 'quote',
-      class: 'quote',
-    },
-    {
-      name: 'redText',
-      class: 'redText'
-    },
-    {
-      name: 'titleText',
-      class: 'titleText',
-      tag: 'h1',
-    },
-  ],
-  uploadUrl: 'v1/image',
-  // upload: (file: File) => { ... }
-  uploadWithCredentials: false,
-  sanitize: true,
-  toolbarPosition: 'top',
-  toolbarHiddenButtons: [
-    ['bold', 'italic'],
-    ['fontSize']
-  ]
-};
-
-config: AngularEditorConfig = {
-  editable: true,
-  spellcheck: true,
-  height: '15rem',
-  minHeight: '5rem',
-  placeholder: 'Enter text here...',
-  translate: 'no',
-  defaultParagraphSeparator: 'p',
-  defaultFontName: 'Arial',
-  toolbarHiddenButtons: [
-    ['bold']
+      {
+        name: 'quote',
+        class: 'quote',
+      },
+      {
+        name: 'redText',
+        class: 'redText'
+      },
+      {
+        name: 'titleText',
+        class: 'titleText',
+        tag: 'h1',
+      },
     ],
-  customClasses: [
-    {
-      name: "quote",
-      class: "quote",
-    },
-    {
-      name: 'redText',
-      class: 'redText'
-    },
-    {
-      name: "titleText",
-      class: "titleText",
-      tag: "h1",
-    },
-  ]
-};
+    uploadUrl: 'v1/image',
+    // upload: (file: File) => { ... }
+    uploadWithCredentials: false,
+    sanitize: true,
+    toolbarPosition: 'top',
+    toolbarHiddenButtons: [
+      ['bold', 'italic'],
+      ['fontSize']
+    ]
+  };
+
+  config: AngularEditorConfig = {
+    editable: true,
+    spellcheck: true,
+    height: '15rem',
+    minHeight: '5rem',
+    placeholder: 'Enter text here...',
+    translate: 'no',
+    defaultParagraphSeparator: 'p',
+    defaultFontName: 'Arial',
+    toolbarHiddenButtons: [
+      ['bold']
+    ],
+    customClasses: [
+      {
+        name: "quote",
+        class: "quote",
+      },
+      {
+        name: 'redText',
+        class: 'redText'
+      },
+      {
+        name: "titleText",
+        class: "titleText",
+        tag: "h1",
+      },
+    ]
+  };
+clearSearch(): void {
+  this.findText = '';
+  this.removeHighlight();
+  this.highlightedText = this.data.text; // Or set to the original text
+  this.matchCount = 0;
+}
+  goToMatch(index: number) {
+    if (this.matchCount === 0) return;
+    // Clamp index to valid range
+    if (index < 0) index = this.matchCount - 1;
+    if (index >= this.matchCount) index = 0;
+    this.currentMatch = index;
+    setTimeout(() => {
+      const el = document.getElementById(`match-${index}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        (el as HTMLElement).focus();
+      }
+    }, 0);
+  }
+  
+  goToNextMatch() {
+    if (this.matchCount === 0) return;
+    this.goToMatch((this.currentMatch + 1) % this.matchCount);
+  }
+  
+  goToPreviousMatch() {
+    if (this.matchCount === 0) return;
+    this.goToMatch((this.currentMatch - 1 + this.matchCount) % this.matchCount);
+  }
 }
