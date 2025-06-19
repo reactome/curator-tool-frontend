@@ -289,7 +289,7 @@ export class InstanceTableComponent implements PostEditListener {
     matDialogRef.afterClosed().subscribe((result) => {
       // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
       // Add the new value
-      if (result === undefined || !result) return; // Do nothing if this is undefined or resolve to false (e.g. nothing there)
+      if (result === undefined || !result || result[0].dbId === undefined) return; // Do nothing if this is undefined or resolve to false (e.g. nothing there)
       // Check if there is any value
       //this.addValueToAttribute(attributeValue, result);
       result = result.map(inst => this.instUtil.getShellInstance(inst));
@@ -312,24 +312,12 @@ export class InstanceTableComponent implements PostEditListener {
       } else {
         // It should be the first
         if (attributeValue.attribute.cardinality === '1') {
-          if (value === attributeValue.value) {
-            // If the value is the same as the current value, do not update
-            // This is to avoid unnecessary updates
-            return;
-          }
-
           // Make sure only one value used
           this._instance?.attributes?.set(
             attributeValue.attribute.name,
             result.length > 0 ? result[0] : undefined
           );
         } else {
-          //TODO: change to check by dbId, not the object and create a method 
-          if (value.contains(attributeValue.value)) {
-            // If the value is the same as the current value, do not update
-            // This is to avoid unnecessary updates
-            return;
-          }
           const deleteCount = replace ? 1 : 0;
           value.splice(attributeValue.index, deleteCount, ...result);
         }
@@ -362,6 +350,7 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   private addValueToAttribute(attributeValue: AttributeValue, result: any, replace: boolean = false) {
+    if(result === undefined || result === null) {return;} // Do nothing if this is undefined or resolve to false (e.g. nothing there)
     let value = this._instance?.attributes?.get(attributeValue.attribute.name);
     if (value === undefined) {
       // It should be the first
