@@ -38,37 +38,60 @@
 }
 
 .find-replace-container {
-  display: flex;
+  // display: flex;
   align-items: center;
   gap: 8px;
-  height: 10px;
-  position: absolute;
-  top: 125px;
   width: 450px;
-  height: 16px !important;
+  height: 30px !important;
+  position: relative;
+  font-size: 16px;
+  z-index: 10;
+}
 
+.fab-container {
+  display: flex;
+  position: relative;
+  z-index: 10;
+  background: white;
+  top: -22px;
+  height: 30px;
 }
 
 :host ::ng-deep .form-field {
   width: 100%;
-  height: 18px;
   font-size: 13px;
-  padding-left: 10px !important;
-  padding-right: 10px !important;
+  padding-left: 5px !important;
+  padding-right: 5px !important;
   flex: 1 1 0 !important;
   min-width: 300px !important;
   max-width: 100% !important;
+  height: 30px !important;
+  max-height: 30px !important;
 }
 
 .form-field .mat-form-field {
-  height: 18px !important;
-  max-height: 18px !important;
+  height: 30px !important;
+  max-height: 30px !important;
+  font-size: 13px !important;
+  // align-content: center !important;
+  // line-height: center !important;
+
 }
 
-// .highlight {
-//   background-color: yellow !important; /* Highlight color */
-//   color:transparent; /* Make the text invisible */
-// }
+
+:host ::ng-deep .mat-mdc-text-field-wrapper {
+  width: 100%;
+  z-index: 0;
+  height: 30px !important;
+  max-height: 30px !important;
+}
+
+.highlight {
+  background-color: yellow !important;
+  /* Highlight color */
+  color: transparent;
+  /* Make the text invisible */
+}
 
 .container {
   position: relative;
@@ -135,7 +158,7 @@ pre#highlighting,
 
 .mat-icon {
   cursor: pointer;
-    margin-left: 2px;
+  margin-left: 2px;
   margin-right: 2px;
 }
 
@@ -173,11 +196,35 @@ pre#highlighting,
 
 .fab-bottom-right {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  background-color: white;
+  outline: black;
+  width: 30px;
+  height: 30px;
+  font-size: 24px;
+  flood-color: black;
+  top: 40px;
+  right: 65px;
   z-index: 10;
+  border: 1px solid #ddd; border-radius: 4px;
 }
 
 .fab-bottom-right:hover {
   cursor: select;
 }
+
+// :host ::ng-deep .mat-input-element {
+//   text-align: center !important;
+//   line-height: 32px !important; 
+//   padding-bottom: 5px !important;
+// }
+
+.mat-mdc-text-field-wrapper.mdc-text-field--outlined .mdc-text-field__input {
+  // line-height: 32px !important; 
+  position: relative;
+    bottom: 10px;
+
+}
+:host ::ng-deep .mat-mdc-text-field-wrapper.mdc-text-field--outlined .mdc-text-field__input {
+  // line-height: 32px !important; 
+position: relative;
+    bottom: 10px;}

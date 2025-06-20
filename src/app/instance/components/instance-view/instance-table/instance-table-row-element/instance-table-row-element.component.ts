@@ -209,7 +209,7 @@ export class InstanceTableRowElementComponent implements OnInit {
   openTextEditorDialog(): void {
     const dialogRef = this.dialog.open(TextEditorDialogComponent, {
       width: '700px',
-      height: '550px',
+      height: '500px',
       data: { text: this.control.value }
     });
 

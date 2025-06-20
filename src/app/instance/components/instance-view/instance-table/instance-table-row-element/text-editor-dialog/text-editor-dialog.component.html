@@ -3,42 +3,51 @@
 <h2 class="dialog_title" mat-dialog-title>Edit Text</h2>
 <mat-dialog-content style="width: 100%;">
   <div class="container">
-    <ng-container *ngIf="findAndReplaceContainer" class="find-replace-container">
-      <div style="display:flex; height: 40px;  padding-bottom: 20px; padding-top: 10px;">
-
-        <mat-form-field class="form-field" appearance="outline">
-          <mat-label>Find</mat-label>
-          <input matInput (keydown.enter)="highlightMatches()" [(ngModel)]="findText" placeholder="Search text" />
-          <!-- <mat-icon matSuffix color="primary" matTooltip="Search text" (click)="highlightMatches()">search</mat-icon> -->
-          <span style="display: flex; align-items: center; font-size: 14px; position: relative" matSuffix
-            *ngIf="matchCount > 0">
-            <div style="top: 0px;">{{currentMatch}}/{{matchCount}}</div>
-            <div> | </div>
-            <mat-icon style="height: 18px; width: 18px;" *ngIf="matchCount > 0" color="primary" matTooltip="previous match"
-              (click)="goToPreviousMatch()">keyboard_arrow_up</mat-icon>
-            <mat-icon style="height: 18px; width: 18px;" *ngIf="matchCount > 0" color="primary" matTooltip="next match"
-              (click)="goToNextMatch()">keyboard_arrow_down</mat-icon>
-            <mat-icon style="height: 18px; width: 18px;" color="primary" matTooltip="clear" (click)="clearSearch()">close</mat-icon>
-          </span>
-        </mat-form-field>
-        <mat-form-field class="form-field" appearance="outline" class="replace-field form-field">
-          <mat-label>Replace</mat-label>
-          <input matInput [(ngModel)]="replaceText" (keydown.enter)="findAndReplace()" placeholder="Replacement text" />
-          <mat-icon color="primary" class="custom-search-icon" matTooltip="Replace text" (click)="findAndReplace()"
-            matSuffix>cached</mat-icon>
-        </mat-form-field>
-      </div>
-    </ng-container>
 
     <div class="editor-fab-container">
-      <angular-editor [placeholder]="'Enter text here...'" [(ngModel)]="data.text" [config]="config"></angular-editor>
+      <angular-editor style="height: fit-content;" [placeholder]="'Enter text here...'" [(ngModel)]="data.text"
+        [config]="config"></angular-editor>
       <mat-fab class="fab-bottom-right" matTooltip="Find and replace text" mat-icon-button
         (click)="showFindAndReplace()" cdkFocusInitial>
-        <mat-icon style="background-color: aliceblue; outline: black; height: 32px; width:32px; font-size: 64;"
-          color="primary">find_replace</mat-icon>
+        <mat-icon
+          style="background-color: white;outline: black; width: 28px; height: 28px; font-size: 26px; color: black;
+          ">find_replace</mat-icon>
       </mat-fab>
     </div>
   </div>
+
+  <ng-container *ngIf="findAndReplaceContainer" class="find-replace-container">
+    <div class="fab-container">
+      <mat-form-field class="form-field" appearance="outline">
+        <input matInput (keydown.enter)="highlightMatches()" [(ngModel)]="findText" placeholder="Search text" />
+        <mat-icon *ngIf="matchCount == 0" style="height: 36px; width: 24px;" matSuffix color="primary"
+          matTooltip="Search text" (click)="highlightMatches()">search</mat-icon>
+        <span style="display: flex; align-items: center; font-size: 14px; position: relative; " matSuffix
+          *ngIf="matchCount > 0">
+          <div style="bottom: 10px; position: relative">{{currentMatch + 1}}/{{matchCount}}</div>
+          <div style="bottom: 10px; position: relative"> | </div>
+          <mat-icon style="height: 36px; width: 24px;" *ngIf="matchCount > 0" color="primary"
+            matTooltip="previous match" (click)="goToPreviousMatch()">keyboard_arrow_up</mat-icon>
+          <mat-icon style="height: 36px; width: 24px;" *ngIf="matchCount > 0" color="primary" matTooltip="next match"
+            (click)="goToNextMatch()">keyboard_arrow_down</mat-icon>
+          <mat-icon style="height: 36px; width: 24px;" color="primary" matTooltip="clear"
+            (click)="clearSearch()">close</mat-icon>
+        </span>
+      </mat-form-field>
+      <!-- <mat-form-field class="form-field" appearance="outline" class="replace-field form-field">
+        <input matInput [(ngModel)]="replaceText" (keydown.enter)="findAndReplace()" placeholder="Replacement text" />
+        <mat-icon style="height: 36px; width: 24px;" color="primary" class="custom-search-icon" matTooltip="Replace text" (click)="findAndReplace()"
+          matSuffix>cached</mat-icon>
+      </mat-form-field> -->
+      <mat-form-field class="form-field" appearance="outline">
+        <input matInput [(ngModel)]="replaceText" placeholder="Replace" />
+        <mat-icon style="height: 36px; width: 24px;" color="primary" class="custom-search-icon"
+          matTooltip="Replace currentMatch" (click)="replaceCurrent()" matSuffix>redo</mat-icon>
+        <mat-icon style="height: 36px; width: 24px;" color="primary" class="custom-search-icon"
+          matTooltip="Replace all" (click)="replaceAll()" matSuffix>cached</mat-icon>
+      </mat-form-field>
+    </div>
+  </ng-container>
 
 </mat-dialog-content>
 

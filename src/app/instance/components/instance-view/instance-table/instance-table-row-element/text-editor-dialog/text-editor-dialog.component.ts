@@ -34,14 +34,47 @@ export class TextEditorDialogComponent {
     this.dialogRef.close(this.data.text);
   }
 
-  findAndReplace(): void {
-    if (!this.findText) {
-      return; // Do nothing if the find text is empty
-    }
+  // findAndReplace(): void {
+  //   if (!this.findText) {
+  //     return; // Do nothing if the find text is empty
+  //   }
 
-    const regex = new RegExp(this.findText, 'g'); // Create a global regex for the find text
-    this.data.text = this.data.text.replace(regex, this.replaceText); // Replace all occurrences
-    this.highlightMatches(); // Highlight the matches after replacement
+  //   const regex = new RegExp(this.findText, 'g'); // Create a global regex for the find text
+  //   this.data.text = this.data.text.replace(regex, this.replaceText); // Replace all occurrences
+  //   this.highlightMatches(); // Highlight the matches after replacement
+  // }
+
+  replaceAll(): void {
+    if (!this.findText) return;
+    const regex = new RegExp(this.escapeRegExp(this.findText), 'g');
+    this.data.text = this.data.text.replace(regex, this.replaceText);
+    this.highlightMatches();
+  }
+
+replaceCurrent(): void {
+  if (!this.findText || this.matchCount === 0) return;
+
+  const regex = new RegExp(this.escapeRegExp(this.findText), 'gi');
+  let matchIndex = 0;
+  let replaced = false;
+
+  // Replace only the match at currentMatch
+  this.data.text = this.data.text.replace(regex, (match) => {
+    if (matchIndex === this.currentMatch && !replaced) {
+      replaced = true;
+      matchIndex++;
+      return this.replaceText;
+    }
+    matchIndex++;
+    return match;
+  });
+
+  this.highlightMatches();
+}
+
+  // Utility to escape special regex characters
+  escapeRegExp(text: string): string {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   highlightMatches(): void {
@@ -80,27 +113,13 @@ export class TextEditorDialogComponent {
   }
 
   removeHighlight(): void {
-    // const regex = new RegExp(`(${this.escapeRegExp('<mark class="highlight">' + this.removeFindText + '</mark>')})`, 'gi'); // Create a regex to match the search term
-    // this.data.text = this.data.text.replace(
-    //   regex,
-    //   this.removeFindText
-    // ); // Remove the highlight by replacing it with the original text
-
-    // this.removeFindText = this.findText
-
-      // Remove all HTML tags from highlightedText
-        // Remove opening tags with class="highlight" or class="highlight-link"
-        this.data.text = this.data.text
-          .replace(/<span class="highlight">/g, '')
-          .replace(/<a[^>]*class="highlight"[^>]*>/g, '')
-          // Remove corresponding closing tags
-          .replace(/<\/span>/g, '')
-          .replace(/<\/a>/g, '');
-  }
-
-  private escapeRegExp(text: string): string {
-    // Escape special characters for use in a regular expression
-    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Remove all highlights from the text
+    this.data.text = this.data.text
+      .replace(/<span class="highlight">/g, '')
+      .replace(/<a[^>]*class="highlight"[^>]*>/g, '')
+      // Remove corresponding closing tags
+      .replace(/<\/span>/g, '')
+      .replace(/<\/a>/g, '');
   }
 
 
@@ -118,53 +137,6 @@ export class TextEditorDialogComponent {
     this.data.text = $event.html; // Update the data text with the editor's HTML content
     this.highlightMatches(); // Highlight matches after any change}
   }
-
-  editorConfig: AngularEditorConfig = {
-    editable: true,
-    spellcheck: true,
-    height: 'auto',
-    minHeight: '0',
-    maxHeight: 'auto',
-    width: 'auto',
-    minWidth: '0',
-    translate: 'yes',
-    enableToolbar: true,
-    showToolbar: true,
-    placeholder: 'Enter text here...',
-    defaultParagraphSeparator: '',
-    defaultFontName: '',
-    defaultFontSize: '',
-    fonts: [
-      { class: 'arial', name: 'Arial' },
-      { class: 'times-new-roman', name: 'Times New Roman' },
-      { class: 'calibri', name: 'Calibri' },
-      { class: 'comic-sans-ms', name: 'Comic Sans MS' }
-    ],
-    customClasses: [
-      {
-        name: 'quote',
-        class: 'quote',
-      },
-      {
-        name: 'redText',
-        class: 'redText'
-      },
-      {
-        name: 'titleText',
-        class: 'titleText',
-        tag: 'h1',
-      },
-    ],
-    uploadUrl: 'v1/image',
-    // upload: (file: File) => { ... }
-    uploadWithCredentials: false,
-    sanitize: true,
-    toolbarPosition: 'top',
-    toolbarHiddenButtons: [
-      ['bold', 'italic'],
-      ['fontSize']
-    ]
-  };
 
   config: AngularEditorConfig = {
     editable: true,
@@ -194,12 +166,12 @@ export class TextEditorDialogComponent {
       },
     ]
   };
-clearSearch(): void {
-  this.findText = '';
-  this.removeHighlight();
-  this.highlightedText = this.data.text; // Or set to the original text
-  this.matchCount = 0;
-}
+  clearSearch(): void {
+    this.findText = '';
+    this.removeHighlight();
+    this.highlightedText = this.data.text; // Or set to the original text
+    this.matchCount = 0;
+  }
   goToMatch(index: number) {
     if (this.matchCount === 0) return;
     // Clamp index to valid range
@@ -214,12 +186,12 @@ clearSearch(): void {
       }
     }, 0);
   }
-  
+
   goToNextMatch() {
     if (this.matchCount === 0) return;
     this.goToMatch((this.currentMatch + 1) % this.matchCount);
   }
-  
+
   goToPreviousMatch() {
     if (this.matchCount === 0) return;
     this.goToMatch((this.currentMatch - 1 + this.matchCount) % this.matchCount);
