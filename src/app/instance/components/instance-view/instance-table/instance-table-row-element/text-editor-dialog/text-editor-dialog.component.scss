@@ -53,8 +53,9 @@
   position: relative;
   z-index: 10;
   background: white;
-  top: -22px;
+  // top: -1px;
   height: 30px;
+  padding-bottom: 5px;
 }
 
 :host ::ng-deep .form-field {
@@ -91,6 +92,12 @@
   /* Highlight color */
   color: transparent;
   /* Make the text invisible */
+}
+
+.current-match {
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 2px;
 }
 
 .container {

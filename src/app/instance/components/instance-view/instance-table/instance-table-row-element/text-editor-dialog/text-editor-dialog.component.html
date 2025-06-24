@@ -4,19 +4,7 @@
 <mat-dialog-content style="width: 100%;">
   <div class="container">
 
-    <div class="editor-fab-container">
-      <angular-editor style="height: fit-content;" [placeholder]="'Enter text here...'" [(ngModel)]="data.text"
-        [config]="config"></angular-editor>
-      <mat-fab class="fab-bottom-right" matTooltip="Find and replace text" mat-icon-button
-        (click)="showFindAndReplace()" cdkFocusInitial>
-        <mat-icon
-          style="background-color: white;outline: black; width: 28px; height: 28px; font-size: 26px; color: black;
-          ">find_replace</mat-icon>
-      </mat-fab>
-    </div>
-  </div>
-
-  <ng-container *ngIf="findAndReplaceContainer" class="find-replace-container">
+      <ng-container *ngIf="findAndReplaceContainer" class="find-replace-container">
     <div class="fab-container">
       <mat-form-field class="form-field" appearance="outline">
         <input matInput (keydown.enter)="highlightMatches()" [(ngModel)]="findText" placeholder="Search text" />
@@ -42,12 +30,24 @@
       <mat-form-field class="form-field" appearance="outline">
         <input matInput [(ngModel)]="replaceText" placeholder="Replace" />
         <mat-icon style="height: 36px; width: 24px;" color="primary" class="custom-search-icon"
-          matTooltip="Replace currentMatch" (click)="replaceCurrent()" matSuffix>redo</mat-icon>
+          matTooltip="Replace current match" (click)="replaceCurrent()" matSuffix>redo</mat-icon>
         <mat-icon style="height: 36px; width: 24px;" color="primary" class="custom-search-icon"
           matTooltip="Replace all" (click)="replaceAll()" matSuffix>cached</mat-icon>
       </mat-form-field>
     </div>
   </ng-container>
+
+    <div class="editor-fab-container">
+      <angular-editor style="height: fit-content; white-space: 20px;" [placeholder]="'Enter text here...'" [(ngModel)]="data.text"
+        [config]="config" (viewMode)="data.text"></angular-editor>
+      <mat-fab class="fab-bottom-right" matTooltip="Find and replace text" mat-icon-button
+        (click)="showFindAndReplace()" cdkFocusInitial>
+        <mat-icon
+          style="background-color: white;outline: black; width: 28px; height: 28px; font-size: 26px; color: black;
+          ">find_replace</mat-icon>
+      </mat-fab>
+    </div>
+  </div>
 
 </mat-dialog-content>
 

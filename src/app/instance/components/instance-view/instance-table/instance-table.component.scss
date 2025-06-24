@@ -85,3 +85,8 @@
   color: var(--primary);
   text-align: left;
 }
+
+button:disabled { 
+  color: var(--primary);
+  cursor: not-allowed;
+}

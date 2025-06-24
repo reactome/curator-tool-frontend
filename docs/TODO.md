@@ -14,10 +14,11 @@
 - Bug: After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should  stay at the changes tab. Done 
 - TODO: Use the new set of Reactome icons at Figma, designed by the EBI team. Need to check with Eliott.
 - TODO: After logging in, the default page should be home. Right now it is the log-in page. Actually it should be the home page always. If the user has not been logged in, change it to the log-in page. Done
-- Bug: In the event view, the mouse position is lowed when scroll up/down the instance view.
-- TODO: When two instances are compared, change "only show edited attribute" to "attributes having different values". If the user touches an attribute without actually editing it, the attribute is listed as "edited attribute". This need to change.
+- Bug: In the event view, the mouse position is lowed when scroll up/down the instance view. (low priority)
+- TODO: When two instances are compared, change "only show edited attribute" to "attributes having different values".
 - TODO: List all performed QAs in the QA report even though all QAs are passed. By doing this, the tool gives the curator a list of what have been checked. Done
 - TODO: Create a "replace one" and "replace all" for the summation text editor Done
+- TODO: Boolean sliders appear to be 'false' when they are 'true' and disabled due to the gray styling for diabled buttons.
 
 
 #### TODO:

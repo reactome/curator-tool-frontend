@@ -34,16 +34,6 @@ export class TextEditorDialogComponent {
     this.dialogRef.close(this.data.text);
   }
 
-  // findAndReplace(): void {
-  //   if (!this.findText) {
-  //     return; // Do nothing if the find text is empty
-  //   }
-
-  //   const regex = new RegExp(this.findText, 'g'); // Create a global regex for the find text
-  //   this.data.text = this.data.text.replace(regex, this.replaceText); // Replace all occurrences
-  //   this.highlightMatches(); // Highlight the matches after replacement
-  // }
-
   replaceAll(): void {
     if (!this.findText) return;
     const regex = new RegExp(this.escapeRegExp(this.findText), 'g');
@@ -51,26 +41,26 @@ export class TextEditorDialogComponent {
     this.highlightMatches();
   }
 
-replaceCurrent(): void {
-  if (!this.findText || this.matchCount === 0) return;
+  replaceCurrent(): void {
+    if (!this.findText || this.matchCount === 0) return;
 
-  const regex = new RegExp(this.escapeRegExp(this.findText), 'gi');
-  let matchIndex = 0;
-  let replaced = false;
+    const regex = new RegExp(this.escapeRegExp(this.findText), 'gi');
+    let matchIndex = 0;
+    let replaced = false;
 
-  // Replace only the match at currentMatch
-  this.data.text = this.data.text.replace(regex, (match) => {
-    if (matchIndex === this.currentMatch && !replaced) {
-      replaced = true;
+    // Replace only the match at currentMatch
+    this.data.text = this.data.text.replace(regex, (match) => {
+      if (matchIndex === this.currentMatch && !replaced) {
+        replaced = true;
+        matchIndex++;
+        return this.replaceText;
+      }
       matchIndex++;
-      return this.replaceText;
-    }
-    matchIndex++;
-    return match;
-  });
+      return match;
+    });
 
-  this.highlightMatches();
-}
+    this.highlightMatches();
+  }
 
   // Utility to escape special regex characters
   escapeRegExp(text: string): string {
@@ -93,7 +83,7 @@ replaceCurrent(): void {
       (match) => {
         const id = `match-${matchIndex}`;
         matchIndex++;
-        return `<a id="${id}" class="highlight" href="#">${match}</a>`;
+        return `<mark id="${id}" class="highlight">${match}</mark>`;
       }
     );
     this.matchCount = matchIndex;
@@ -109,6 +99,7 @@ replaceCurrent(): void {
     let textArea = document.getElementById('editor'); // Reference to the text area element
     let pre = document.getElementById('highlighting'); // Reference to the pre element
 
+    this.highlightCurrentMatch(1); // Highlight the first match
     this.syncScroll(textArea!, pre!); // Sync scroll positions
   }
 
@@ -116,10 +107,10 @@ replaceCurrent(): void {
     // Remove all highlights from the text
     this.data.text = this.data.text
       .replace(/<span class="highlight">/g, '')
-      .replace(/<a[^>]*class="highlight"[^>]*>/g, '')
+      .replace(/<mark[^>]*class="highlight"[^>]*>/g, '')
       // Remove corresponding closing tags
       .replace(/<\/span>/g, '')
-      .replace(/<\/a>/g, '');
+      .replace(/<\/mark>/g, '');
   }
 
 
@@ -146,10 +137,14 @@ replaceCurrent(): void {
     placeholder: 'Enter text here...',
     translate: 'no',
     defaultParagraphSeparator: 'p',
-    defaultFontName: 'Arial',
-    toolbarHiddenButtons: [
-      ['bold']
+    // defaultFontName: 'Times New Roman',
+    defaultFontSize: '',
+    fonts: [
+      { class: 'times-new-roman', name: 'Times New Roman' },
     ],
+    // toolbarHiddenButtons: [
+    //   ['bold']
+    // ],
     customClasses: [
       {
         name: "quote",
@@ -166,26 +161,56 @@ replaceCurrent(): void {
       },
     ]
   };
+
   clearSearch(): void {
     this.findText = '';
     this.removeHighlight();
     this.highlightedText = this.data.text; // Or set to the original text
     this.matchCount = 0;
   }
+
   goToMatch(index: number) {
     if (this.matchCount === 0) return;
     // Clamp index to valid range
     if (index < 0) index = this.matchCount - 1;
     if (index >= this.matchCount) index = 0;
     this.currentMatch = index;
+
+    this.highlightCurrentMatch(index); // Highlight the current match
+
     setTimeout(() => {
       const el = document.getElementById(`match-${index}`);
       if (el) {
+        const cls = index === this.currentMatch ? 'current-match' : 'highlight';
+        el.className = cls; // Update class to highlight current match
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         (el as HTMLElement).focus();
       }
     }, 0);
   }
+
+  highlightCurrentMatch(index: number): void {
+  // Remove highlight from all matches first
+  this.removeCurrentHighlight();
+
+  // Add highlight to the current match
+  const el = document.getElementById(`match-${index}`);
+  if (el) {
+    el.style.color = 'red'; // Underline the current match
+    el.style.backgroundColor = 'light-brown'; // Highlight the background color
+    el.style.animation = 'highlight-animation 0.5s ease-in-out'; // Add animation for highlighting
+  }
+}
+
+removeCurrentHighlight(): void {
+  let i = 0, el;
+  while ((el = document.getElementById(`match-${i}`))) {
+    el.style.backgroundColor = '';
+    el.style.textDecoration = '';
+    el.style.color = '';
+    i++;
+  }
+}
 
   goToNextMatch() {
     if (this.matchCount === 0) return;
