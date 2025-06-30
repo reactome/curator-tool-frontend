@@ -92,6 +92,7 @@ export class TextEditorDialogComponent {
     setTimeout(() => {
       const firstMatch = document.getElementById('match-0'); // Get the first match element
       if (firstMatch) {
+        this.highlightCurrentMatch(0); // Highlight the first match
         firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
         (firstMatch as HTMLElement).focus();
       }
@@ -181,8 +182,8 @@ export class TextEditorDialogComponent {
     setTimeout(() => {
       const el = document.getElementById(`match-${index}`);
       if (el) {
-        const cls = index === this.currentMatch ? 'current-match' : 'highlight';
-        el.className = cls; // Update class to highlight current match
+        // const cls = index === this.currentMatch ? 'current-match' : 'highlight';
+        // el.className = cls; // Update class to highlight current match
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         (el as HTMLElement).focus();
       }
