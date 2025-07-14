@@ -814,7 +814,9 @@ export class DataService {
         if (!person || person.length == 0) {
           return this.handleErrorMessage(new Error('Cannot find the default person!'));
         }
+
         instanceToBeCommitted.defaultPersonId = person[0].dbId;
+
         return this.http.post<Instance>(this.commitInstanceUrl, instanceToBeCommitted).pipe(
           map((inst: Instance) => {
             // Remove the original instance from the cache

@@ -33,13 +33,22 @@
   height: 40px !important;
 }
 
-.example-box {
+.draggable-instance-box {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
   cursor: move;
+  font-size: 14px;
+}
+
+.instance-box {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
   font-size: 14px;
 }
 

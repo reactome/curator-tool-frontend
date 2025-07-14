@@ -7,29 +7,40 @@
     </ng-container>
     <ng-container *ngIf="element.attribute.cardinality === '+'">
       <ng-container *ngIf="element.value !== undefined; else noValue">
-        <div cdkDropList [cdkDropListData]="element.value" (cdkDropListDropped)="drop($event, element.attribute)">
-          <app-instance-table-row-element cdkDrag *ngFor="let object of element.value; let i = index" class="example-box"
-            [attribute]="element.attribute" [value]="object" [dragDropStatus]="dragDropStatus"
+          <div cdkDropList [cdkDropListData]="element.value" (cdkDropListDropped)="drop($event, element.attribute)">
+            <app-instance-table-row-element cdkDrag *ngFor="let object of element.value; let i = index"
+              class="draggable-instance-box" [attribute]="element.attribute" [value]="object" [dragDropStatus]="dragDropStatus"
+              (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)"
+              [blockRoute]="blockRouter" [index]="i" />
+          </div>
+        </ng-container>
+
+        <!-- Disable drag and drop for no manual edit attributes -->
+        <ng-container *ngIf="element.attribute.category === AttributeCategory.NOMANUALEDIT">
+          <app-instance-table-row-element *ngFor="let object of element.value; let i = index"
+            class="instance-box" [attribute]="element.attribute" [value]="object"
             (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)"
             [blockRoute]="blockRouter" [index]="i" />
-        </div>
-        <!-- Add an empty row for non-instance type slot-->
+        </ng-container>
+
+      </ng-container>
+              <!-- Add an empty row for non-instance type slot-->
         <ng-container *ngIf="element.attribute.type !== DATA_TYPES.INSTANCE">
           <app-instance-table-row-element [attribute]="element.attribute" [dragDropStatus]="dragDropStatus"
             (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)" />
         </ng-container>
-      </ng-container>
+
       <!-- <ng-container *ngIf="showTextArea(element)"> -->
       <ng-template #noValue>
         <app-instance-table-row-element [attribute]="element.attribute" [dragDropStatus]="dragDropStatus"
           (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)" />
       </ng-template>
-    </ng-container>
   </ng-template>
-  
+
   <ng-template #refValueColTemplate let-element>
     <ng-container *ngIf="element.attribute.cardinality === '1'">
-      <app-instance-table-row-element [attribute]="element.attribute" [value]="element.referenceValue" [disable]="true" />
+      <app-instance-table-row-element [attribute]="element.attribute" [value]="element.referenceValue"
+        [disable]="true" />
     </ng-container>
     <ng-container *ngIf="element.attribute.cardinality === '+'">
       <ng-container *ngIf="element.referenceValue === undefined; else elseblock">
@@ -61,8 +72,7 @@
             </button>
           </th>
         </div>
-        <td class="attColumn" mat-cell *matCellDef="let element"
-          [ngClass]="{highlight: compareToDbInstance(element.attribute.name),
+        <td class="attColumn" mat-cell *matCellDef="let element" [ngClass]="{highlight: compareToDbInstance(element.attribute.name),
                       required: highlightRequired(element),
                       mandatory: highlightMandatory(element)}">
           <div>
@@ -76,14 +86,13 @@
               <img ngSrc="assets/images/Optional.gif" alt="Optional" width="16" height="16" priority>
             </ng-container>
             <ng-container *ngIf="element.attribute.category === AttributeCategory.NOMANUALEDIT">
-              <img ngSrc="assets/images/NoManualEdit.gif" alt="NoManualEdit" width="16" height="16"
-                priority>
+              <img ngSrc="assets/images/NoManualEdit.gif" alt="NoManualEdit" width="16" height="16" priority>
             </ng-container>
             {{element.attribute.name}}
           </div>
         </td>
       </ng-container>
-  
+
       <!-- Attribute Value Column -->
       <ng-container matColumnDef="value">
         <div style="display: flex;">
@@ -94,7 +103,8 @@
                 *ngIf="showHeaderActions" mat-icon-button (click)="filterEditedValues()">
                 <mat-icon>filter_list</mat-icon>
               </button>
-              <button style="bottom:5px; right: 35px; position: absolute" mat-icon-button (click)="changeShowFilterOptions()">
+              <button style="bottom:5px; right: 35px; position: absolute" mat-icon-button
+                (click)="changeShowFilterOptions()">
                 <mat-icon>filter_alt</mat-icon>
               </button>
               <section *ngIf="showFilterOptions">
@@ -121,7 +131,7 @@
           </div>
         </td>
       </ng-container>
-  
+
       <!-- Reference value column is any -->
       <ng-container matColumnDef="referenceValue" *ngIf="showReferenceColumn">
         <div style="display: flex;">
@@ -138,7 +148,7 @@
           <ng-container *ngTemplateOutlet="refValueColTemplate; context: {$implicit: element}"></ng-container>
         </td>
       </ng-container>
-  
+
       <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
     </table>
