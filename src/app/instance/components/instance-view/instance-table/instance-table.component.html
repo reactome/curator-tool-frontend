@@ -25,12 +25,11 @@
 
       </ng-container>
               <!-- Add an empty row for non-instance type slot-->
-        <ng-container *ngIf="element.attribute.type !== DATA_TYPES.INSTANCE">
+        <!-- <ng-container *ngIf="element.attribute.type !== DATA_TYPES.INSTANCE">
           <app-instance-table-row-element [attribute]="element.attribute" [dragDropStatus]="dragDropStatus"
             (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)" />
-        </ng-container>
+        </ng-container> -->
 
-      <!-- <ng-container *ngIf="showTextArea(element)"> -->
       <ng-template #noValue>
         <app-instance-table-row-element [attribute]="element.attribute" [dragDropStatus]="dragDropStatus"
           (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)" />

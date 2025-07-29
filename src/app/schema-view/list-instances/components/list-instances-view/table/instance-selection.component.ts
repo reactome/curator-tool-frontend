@@ -11,6 +11,7 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ActionButton } from './instance-list-table/instance-list-table.component';
 import { ListInstancesDialogService } from '../../list-instances-dialog/list-instances-dialog.service';
+import { BatchEditDialogService } from './batch-edit-dialog/batch-edit-dialog-service';
 import { deleteInstances, newInstances } from 'src/app/instance/state/instance.selectors';
 import { combineLatest, Subscription } from 'rxjs';
 
@@ -38,7 +39,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   showProgressSpinner: boolean = true;
   // To be displayed in instance list table
   data: Instance[] = [];
-  actionButtons: Array<ActionButton> = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.LIST, ACTION_BUTTONS.DELETE];
+  actionButtons: Array<ActionButton> = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.DELETE, ACTION_BUTTONS.LIST];
   secondaryActionButtons: Array<ActionButton> =[ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
   // Used to popup attributes for advanced search (i.e. SearchFilterComponent)
   schemaClassAttributes: string[] = [];
@@ -74,7 +75,8 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
     private deletionDialogService: DeletionDialogService,
     private store: Store,
     private instUtils: InstanceUtilities,
-    private listInstancesDialogService: ListInstancesDialogService) {
+    private listInstancesDialogService: ListInstancesDialogService,
+    private batchEditDialogService: BatchEditDialogService) {
   }
 
   ngOnDestroy(): void {
@@ -226,6 +228,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
       case ACTION_BUTTONS.SHOW_TREE.name: {
         if(actionEvent.instance.schemaClassName)
           this.router.navigate(["/event_view/instance/" + actionEvent.instance.dbId]);
+        break;
       }
     }
   }
@@ -380,5 +383,14 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
       let dbId = instance.dbId.toString();
       this.router.navigate(["/schema_view/instance/" + dbId.toString()]);
     });
+  }
+
+  handleBatchEdit() {
+    if (this.needAdvancedSearch)
+      this.doAdvancedSearch(0);
+    else
+      this.doBasicSearch(0);
+    this.batchEditDialogService.openDialog(this.data);
+    // this.listInstancesDialogService.openBatchEditDialog(this.data);
   }
 }

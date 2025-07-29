@@ -330,11 +330,12 @@ export class InstanceTableComponent implements PostEditListener {
     this.inEditing = true;
     //Only add attribute name if value was added
     this.postEdit(attName);
+    this.addModifiedAttribute(attName, value);
+
     //TODO: Add a new value may reset the scroll position. This needs to be changed!
     this.updateTableContent();
     // Need to call this before registerUpdatedInstance
     // in case the instance is used somewhere via the ngrx statement management system
-    this.addModifiedAttribute(attName, value);
     // Register the updated instances
     this.registerUpdatedInstance(attName);
     // Fire an event for other components to update their display (e.g. display name)
@@ -372,11 +373,11 @@ export class InstanceTableComponent implements PostEditListener {
         value.splice(attributeValue.index, deleteCount, result);
       }
     }
-    if (attributeValue.value === value) {
-      // If the value is the same as the current value, do not update
-      // This is to avoid unnecessary updates
-      return;
-    }
+    // if (attributeValue.value === value) {
+    //   // If the value is the same as the current value, do not update
+    //   // This is to avoid unnecessary updates
+    //   return;
+    // }
     this.finishEdit(attributeValue.attribute.name, value);
   }
 

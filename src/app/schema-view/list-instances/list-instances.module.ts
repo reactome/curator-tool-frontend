@@ -14,6 +14,11 @@ import { NEW_INSTANCES_STATE_NAME } from 'src/app/instance/state/instance.select
 import { newInstancesReducer } from 'src/app/instance/state/instance.reducers';
 import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
 import { ListInstancesDialogComponent } from './components/list-instances-dialog/list-instances-dialog.component';
+import { BatchEditDialogComponent } from './components/list-instances-view/table/batch-edit-dialog/batch-edit-dialog.component';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import {MatFormFieldModule } from '@angular/material/form-field';
+import { AttributeEditComponent } from './components/list-instances-view/table/batch-edit-dialog/attribute-edit/attribute-edit.component';
+import { ActionMenuComponent } from './components/list-instances-view/table/batch-edit-dialog/attribute-edit/action-menu/action-menu.component';
 
 
 @NgModule({
@@ -23,7 +28,11 @@ import { ListInstancesDialogComponent } from './components/list-instances-dialog
     SelectInstanceDialogComponent,
     SelectedInstancesTableComponent,
     InstanceListTableComponent,
-    ListInstancesDialogComponent
+    ListInstancesDialogComponent,
+    BatchEditDialogComponent,
+    AttributeEditComponent,
+    ActionMenuComponent
+    
   ],
   exports: [
     InstanceSelectionComponent,
@@ -40,9 +49,11 @@ import { ListInstancesDialogComponent } from './components/list-instances-dialog
     CdkContextMenuTrigger,
     CdkMenu,
     CdkMenuItem,
-    // Import this to avoid an error when reload schema_view/list_instance.
-    StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer)
-  ],
+    StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer),
+    MatSlideToggleModule,
+    MatFormFieldModule,
+    
+],
 })
 export class ListInstancesModule {
 }

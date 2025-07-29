@@ -1,0 +1,52 @@
+<ng-container *ngIf="showField">
+  <ng-container [ngSwitch]="attribute?.type">
+    <ng-template [ngSwitchCase]="DATA_TYPES.BOOLEAN">
+      <mat-slide-toggle [formControl]="control" color="primary" class="padding" (change)="onChange()">
+      </mat-slide-toggle>
+    </ng-template>
+
+    <!-- Hide the tooltip. It is quite annoying. matTooltip="control+enter to commit the change" -->
+    <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
+      <mat-form-field (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="form-field" appearance="outline"
+        subscriptSizing="dynamic">
+        <textarea style="height: fit-content" matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize"
+          cdkAutosizeMinRows="1" cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()"
+          (keydown)="onKeyDown($event)">
+          </textarea>
+        <!-- <div [formControl]="control" style="height: fit-content" matInput [innerHTML]= control.value>
+        </div> -->
+        <!-- <button *ngIf="showEditorButton" mat-icon-button color="primary" (click)="openTextEditorDialog()"
+          matTooltip="Edit Text" class="edit-button">
+          <mat-icon>edit</mat-icon>
+        </button> -->
+      </mat-form-field>
+    </ng-template>
+
+    <ng-template [ngSwitchCase]="DATA_TYPES.INTEGER">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="input-style">
+        <input [formControl]="control" matInput type="number" (change)="onChange()">
+      </mat-form-field>
+    </ng-template>
+
+    <ng-template [ngSwitchCase]="DATA_TYPES.FLOAT">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="input-style">
+        <input [formControl]="control" matInput type="number" (change)="onChange()">
+      </mat-form-field>
+    </ng-template>
+
+    <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
+      <!-- <tr mat-row style="width: 100%; display: flex;" class="instance-row">
+        <div (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="valueRow"> -->
+          <app-action-menu [isSingledValued]="false"></app-action-menu>
+        <!-- </div>
+      </tr> -->
+    </ng-template>
+
+    <ng-template #row_menu>
+      <app-action-menu (actionItem)="onEditAction($event)"
+        [isSingledValued]="attribute!.cardinality === '1'"></app-action-menu>
+    </ng-template>
+  </ng-container>
+
+  <!--  </ng-template>-->
+</ng-container>
