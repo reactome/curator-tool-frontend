@@ -51,6 +51,7 @@ export class DataService {
   private getCyNetworkUrl = `${environment.ApiRoot}/getCyNetwork/`;
   private deleteInstaneUrl = `${environment.ApiRoot}/delete/`;
   private fetchQAReportUrl = `${environment.ApiRoot}/qaReport/`;
+  private fetchInstancesInBatchUrl = `${environment.ApiRoot}/fetchInstancesInBatch/`;
 
 
   // Track the negative dbId to be used
@@ -1146,5 +1147,24 @@ export class DataService {
       });
       return obj;
     });
+  }
+
+  fetchInstanceInBatch(dbIds: number[]): Observable<Instance[]> {
+    if (dbIds.length === 0) {
+      return of([]);
+    }
+    const url = this.fetchInstancesInBatchUrl;
+    return this.http.post<Instance[]>(url, dbIds).pipe(
+      map((data: Instance[]) => {
+        data.forEach(instance => {
+          this.handleInstanceAttributes(instance);
+          this.id2instance.set(instance.dbId, instance);
+        });
+        return data;
+      }),
+      catchError((err: Error) => {
+        return this.handleErrorMessage(err);
+      })
+    );
   }
 }

@@ -27,6 +27,7 @@ import {
   InstanceDataSource,
 } from './instance-table.model';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
+import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -111,7 +112,8 @@ export class InstanceTableComponent implements PostEditListener {
     private selectInstanceDialogService: SelectInstanceDialogService,
     private store: Store,
     private instUtil: InstanceUtilities,
-    private postEditService: PostEditService
+    private attributeEditService: AttributeEditService,
+    private postEditService: PostEditService // This is used to perform post-edit actions
   ) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
@@ -146,32 +148,7 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   onNoInstanceAttributeEdit(data: AttributeValue) {
-    let value = this._instance?.attributes?.get(data.attribute.name);
-    if (data.attribute.cardinality === '1') {
-      this._instance?.attributes?.set(data.attribute.name, data.value);
-    } else {
-      // This should be a list
-      if (data.value === '') {
-        value.splice(data.index, 1);
-      } else {
-        let valueList = this._instance?.attributes!.get(data.attribute.name);
-        if (valueList === undefined) {
-          this._instance?.attributes?.set(data.attribute.name, [data.value]);
-        } else {
-          if (data.index! < 0) {
-            value.push(data.value);
-          } else {
-            value[data.index!] = data.value;
-          }
-        }
-      }
-    }
-    if (data.value === value) {
-      // If the value is the same as the current value, do not update
-      // This is to avoid unnecessary updates
-      return;
-    }
-    this.finishEdit(data.attribute.name, data.value);
+    this.attributeEditService.onNoInstanceAttributeEdit(data, this._instance!);
   }
 
   deleteAttributeValue(attributeValue: AttributeValue) {
@@ -217,10 +194,10 @@ export class InstanceTableComponent implements PostEditListener {
         this.deleteInstanceAttribute(attributeValue);
         break;
       case EDIT_ACTION.ADD_NEW:
-        this.addNewInstanceAttribute(attributeValue);
+        this.addNewInstanceAttribute(attributeValue, false);
         break;
       case EDIT_ACTION.ADD_VIA_SELECT:
-        this.addInstanceViaSelect(attributeValue);
+        this.addInstanceViaSelect(attributeValue, false);
         break;
       case EDIT_ACTION.REPLACE_NEW:
         this.addNewInstanceAttribute(attributeValue, true);
@@ -240,37 +217,8 @@ export class InstanceTableComponent implements PostEditListener {
   // this value will disable the action menu popup!
   private newMap: any;
 
-  private deleteInstanceAttribute(attributeValue: AttributeValue): void {
-    console.debug('deleteInstanceAttribute: ', attributeValue);
-    let value = this._instance?.attributes?.get(attributeValue.attribute.name);
-    if (attributeValue.attribute.cardinality === '1') {
-      // This should not occur. Just in case
-      //this._instance?.attributes?.delete(attributeValue.attribute?.name);
-      this._instance?.attributes?.set(
-        attributeValue.attribute?.name,
-        undefined
-      );
-    } else {
-      // This should be a list
-      const valueList: [] = this._instance?.attributes?.get(
-        attributeValue.attribute.name
-      );
-      // Remove the value if more than one
-      if (valueList.length > 1) {
-        valueList.splice(attributeValue.index!, 1);
-      }
-      // Otherwise need to set the value to undefined so a value is assigned
-      else {
-        this._instance?.attributes?.set(
-          attributeValue.attribute?.name,
-          undefined
-        );
-      }
-    }
-    this.finishEdit(attributeValue.attribute.name, value);
-  }
 
-  private addNewInstanceAttribute(attributeValue: AttributeValue, replace: boolean = false
+  private addNewInstanceAttribute(attributeValue: AttributeValue, replace: boolean
   ): void {
     const matDialogRef = this.dialogService.openDialog(attributeValue);
     matDialogRef.afterClosed().subscribe((result) => {
@@ -279,56 +227,30 @@ export class InstanceTableComponent implements PostEditListener {
       if (result === undefined || result === this.instUtil.getShellInstance(result)) return; // Do nothing
       // Check if there is any value
       // Use cached shell instance
-      this.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), replace);
+      this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!, replace);
+      this.finishEdit(attributeValue.attribute.name, attributeValue.value);
+      this.cdr.detectChanges();
     });
   }
 
-  private addInstanceViaSelect(attributeValue: AttributeValue, replace: boolean = false) {
+  private deleteInstanceAttribute(attributeValue: AttributeValue) {
+    this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!);
+    this.finishEdit(attributeValue.attribute.name, attributeValue.value);
+  }
+
+  private addInstanceViaSelect(attributeValue: AttributeValue, replace: boolean) {
     const matDialogRef =
       this.selectInstanceDialogService.openDialog(attributeValue);
     matDialogRef.afterClosed().subscribe((result) => {
-      // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
-      // Add the new value
-      if (result === undefined || !result || result[0].dbId === undefined) return; // Do nothing if this is undefined or resolve to false (e.g. nothing there)
-      // Check if there is any value
-      //this.addValueToAttribute(attributeValue, result);
-      result = result.map(inst => this.instUtil.getShellInstance(inst));
-      let value = this._instance?.attributes?.get(
-        attributeValue.attribute.name
-      );
-      if (value === undefined) {
-        // It should be the first
-        if (attributeValue.attribute.cardinality === '1') {
-          this._instance?.attributes?.set(
-            attributeValue.attribute.name,
-            result[0]
-          );
-        } else {
-          this._instance?.attributes?.set(
-            attributeValue.attribute.name,
-            result
-          );
-        }
-      } else {
-        // It should be the first
-        if (attributeValue.attribute.cardinality === '1') {
-          // Make sure only one value used
-          this._instance?.attributes?.set(
-            attributeValue.attribute.name,
-            result.length > 0 ? result[0] : undefined
-          );
-        } else {
-          const deleteCount = replace ? 1 : 0;
-          value.splice(attributeValue.index, deleteCount, ...result);
-        }
-      }
-      this.finishEdit(attributeValue.attribute.name, value);
+      this.attributeEditService.addInstanceViaSelect(attributeValue, result, this._instance!, replace);
+      this.finishEdit(attributeValue.attribute.name, attributeValue.value);
+      this.cdr.detectChanges();
     });
   }
 
   finishEdit(attName: string, value: any) {
     this.inEditing = true;
-    //Only add attribute name if value was added
+    //Only add attribute name if value was added 
     this.postEdit(attName);
     this.addModifiedAttribute(attName, value);
 
@@ -346,39 +268,10 @@ export class InstanceTableComponent implements PostEditListener {
 
   addBookmarkedInstance(attributeValue: AttributeValue) {
     let result = attributeValue.value; //Only one value emitted at once
-    this.addValueToAttribute(attributeValue, result);
-    this.cdr.detectChanges();
-  }
 
-  private addValueToAttribute(attributeValue: AttributeValue, result: any, replace: boolean = false) {
-    if(result === undefined || result === null) {return;} // Do nothing if this is undefined or resolve to false (e.g. nothing there)
-    let value = this._instance?.attributes?.get(attributeValue.attribute.name);
-    if (value === undefined) {
-      // It should be the first
-      if (attributeValue.attribute.cardinality === '1') {
-        this._instance?.attributes?.set(attributeValue.attribute.name, result);
-      } else {
-        this._instance?.attributes?.set(attributeValue.attribute.name, [
-          result,
-        ]);
-      }
-    } else {
-      // It should be the first
-      if (attributeValue.attribute.cardinality === '1') {
-        // Make sure only one value used
-        this._instance?.attributes?.set(attributeValue.attribute.name, result);
-      }
-      else {
-        const deleteCount = replace ? 1 : 0;
-        value.splice(attributeValue.index, deleteCount, result);
-      }
-    }
-    // if (attributeValue.value === value) {
-    //   // If the value is the same as the current value, do not update
-    //   // This is to avoid unnecessary updates
-    //   return;
-    // }
-    this.finishEdit(attributeValue.attribute.name, value);
+    this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!);
+    this.finishEdit(attributeValue.attribute.name, attributeValue.value);
+    this.cdr.detectChanges();
   }
 
   donePostEdit(

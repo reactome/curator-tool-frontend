@@ -21,8 +21,8 @@
         </ng-container>
       </mat-select> -->
       <app-attribute-edit [attribute]="selectedAttribute"
-       (newValueEvent)="onAddEvent($event)"
-        (editAction)="onSetEvent($event)" />
+        (newValueEvent)="onNoInstanceAttributeEdit($event)"
+        (editAction)="onInstanceAttributeEdit($event)" />
     </ng-container>
   </div>
 

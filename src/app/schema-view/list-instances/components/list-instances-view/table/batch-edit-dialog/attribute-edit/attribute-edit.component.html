@@ -37,7 +37,7 @@
     <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
       <!-- <tr mat-row style="width: 100%; display: flex;" class="instance-row">
         <div (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="valueRow"> -->
-          <app-action-menu [isSingledValued]="false"></app-action-menu>
+          <app-action-menu (actionItem)="onEditAction($event)" [isSingledValued]="false"></app-action-menu>
         <!-- </div>
       </tr> -->
     </ng-template>
