@@ -250,14 +250,13 @@ export class InstanceTableComponent implements PostEditListener {
 
   finishEdit(attName: string, value: any) {
     this.inEditing = true;
-    //Only add attribute name if value was added 
+    //Only add attribute name if value was added
     this.postEdit(attName);
-    this.addModifiedAttribute(attName, value);
-
     //TODO: Add a new value may reset the scroll position. This needs to be changed!
     this.updateTableContent();
     // Need to call this before registerUpdatedInstance
     // in case the instance is used somewhere via the ngrx statement management system
+    this.addModifiedAttribute(attName, value);
     // Register the updated instances
     this.registerUpdatedInstance(attName);
     // Fire an event for other components to update their display (e.g. display name)

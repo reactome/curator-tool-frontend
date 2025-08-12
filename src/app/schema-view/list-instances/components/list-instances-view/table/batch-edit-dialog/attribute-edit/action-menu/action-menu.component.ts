@@ -11,11 +11,11 @@ export interface User {
  * TODO: See if this menu can be refactored for generic use.
  */
 @Component({
-  selector: 'app-action-menu',
+  selector: 'app-edit-menu',
   templateUrl: './action-menu.component.html',
   styleUrls: ['./action-menu.component.scss'],
 })
-export class ActionMenuComponent {
+export class EditMenuComponent {
   @Input() isSingledValued: boolean = false;
   @Output() actionItem = new EventEmitter<EDIT_ACTION>();
   EDIT_ACTION = EDIT_ACTION;

@@ -522,71 +522,71 @@ export class DataService {
           })
         );
       }),
-      // Second concatMap: First select subscription (newInstances)
-      concatMap((data: InstanceList) => {
-        return this.store.select(newInstances()).pipe(
-          take(1),
-          map((insts) => {
-            for (let inst of insts) {
-              inst = this.utils.makeShell(inst);
-              // This should be faster therefore check it first
-              if (searchKey && searchKey.length > 0) {
-                // If searchKey is integer, check for dbId
-                if (/^\d+$/.test(searchKey)) {
-                  if (inst.dbId.toString() !== searchKey)
-                    continue;
-                }
-                // Otherwise, check for text
-                else if (!inst.displayName?.toLocaleLowerCase().includes(searchKey.toLocaleLowerCase()))
-                  continue;
-              }
-              // The skip should be less than the limit to ensure new instances are only added to the first page.
-              if (this.isSchemaClass(inst, className) && (skip < limit)) {
-                // Update the data being returned. New instance is placed at index 0.
-                data.instances.splice(0, 0, inst);
-                if (!data.totalCount) {
-                  data.totalCount = 0;
-                }
-                data.totalCount++;
-              }
-            }
-            return data; // Pass modified data to the next step
-          })
-        );
-      }),
-      // Third concatMap: Second select subscription (deleteInstances)
-      concatMap((data: InstanceList) => {
-        return this.store.select(deleteInstances()).pipe(
-          take(1),
-          map((instances) => {
-            const deletedDBIds = instances.map(inst => inst.dbId);
-            for (let i = 0; i < data.instances.length; i++) {
-              if (deletedDBIds.includes(data.instances[i].dbId)) {
-                data.instances.splice(i, 1);
-                i--; // Adjust index after removal
-                data.totalCount--;
-              }
-            }
-            return data; // Pass the final modified data
-          })
-        );
-      }),
-      // Fourth concatMap: filter out database copies of instances that have been updated
-      concatMap((data: InstanceList) => {
-        return this.store.select(updatedInstances()).pipe(
-          take(1),
-          map((instances: Instance[]) => {
-            const updatedDbIds = new Set(instances.map(inst => inst.dbId));
-            // Filter out backend instances with matching dbId
-            const filtered = data.instances.filter(inst => !updatedDbIds.has(inst.dbId));
-            // Place updated instances first
-            data.instances = [...instances, ...filtered];
-            return data; // Pass the final modified data
+      //Second concatMap: First select subscription (newInstances)
+      // concatMap((data: InstanceList) => {
+      //   return this.store.select(newInstances()).pipe(
+      //     take(1),
+      //     map((insts) => {
+      //       for (let inst of insts) {
+      //         inst = this.utils.makeShell(inst);
+      //         // This should be faster therefore check it first
+      //         if (searchKey && searchKey.length > 0) {
+      //           // If searchKey is integer, check for dbId
+      //           if (/^\d+$/.test(searchKey)) {
+      //             if (inst.dbId.toString() !== searchKey)
+      //               continue;
+      //           }
+      //           // Otherwise, check for text
+      //           else if (!inst.displayName?.toLocaleLowerCase().includes(searchKey.toLocaleLowerCase()))
+      //             continue;
+      //         }
+      //         // The skip should be less than the limit to ensure new instances are only added to the first page.
+      //         if (this.isSchemaClass(inst, className) && (skip < limit)) {
+      //           // Update the data being returned. New instance is placed at index 0.
+      //           data.instances.splice(0, 0, inst);
+      //           if (!data.totalCount) {
+      //             data.totalCount = 0;
+      //           }
+      //           data.totalCount++;
+      //         }
+      //       }
+      //       return data; // Pass modified data to the next step
+      //     })
+      //   );
+      // }),
+      // // Third concatMap: Second select subscription (deleteInstances)
+      // concatMap((data: InstanceList) => {
+      //   return this.store.select(deleteInstances()).pipe(
+      //     take(1),
+      //     map((instances) => {
+      //       const deletedDBIds = instances.map(inst => inst.dbId);
+      //       for (let i = 0; i < data.instances.length; i++) {
+      //         if (deletedDBIds.includes(data.instances[i].dbId)) {
+      //           data.instances.splice(i, 1);
+      //           i--; // Adjust index after removal
+      //           data.totalCount--;
+      //         }
+      //       }
+      //       return data; // Pass the final modified data
+      //     })
+      //   );
+      // }),
+      // // Fourth concatMap: filter out database copies of instances that have been updated
+      // concatMap((data: InstanceList) => {
+      //   return this.store.select(updatedInstances()).pipe(
+      //     take(1),
+      //     map((instances: Instance[]) => {
+      //       const updatedDbIds = new Set(instances.map(inst => inst.dbId));
+      //       // Filter out backend instances with matching dbId
+      //       const filtered = data.instances.filter(inst => !updatedDbIds.has(inst.dbId));
+      //       // Place updated instances first
+      //       data.instances = [...instances, ...filtered];
+      //       return data; // Pass the final modified data
 
-          })
-        );
-      }),
-      // Error handling
+      //     })
+      //   );
+      // }),
+      //Error handling
       catchError((err: Error) => {
         return this.handleErrorMessage(err);
       })
@@ -1154,13 +1154,16 @@ export class DataService {
       return of([]);
     }
     const url = this.fetchInstancesInBatchUrl;
+    let instanceList: Instance[] = [];
     return this.http.post<Instance[]>(url, dbIds).pipe(
       map((data: Instance[]) => {
         data.forEach(instance => {
-          this.handleInstanceAttributes(instance);
-          this.id2instance.set(instance.dbId, instance);
+          let inst: Instance = instance; // Converted into the Instance object alread
+          this.handleInstanceAttributes(inst);
+          this.id2instance.set(instance.dbId, inst);
+          instanceList.push(inst);
         });
-        return data;
+        return instanceList;
       }),
       catchError((err: Error) => {
         return this.handleErrorMessage(err);

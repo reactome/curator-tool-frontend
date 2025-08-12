@@ -37,14 +37,14 @@
     <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
       <!-- <tr mat-row style="width: 100%; display: flex;" class="instance-row">
         <div (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="valueRow"> -->
-          <app-action-menu (actionItem)="onEditAction($event)" [isSingledValued]="false"></app-action-menu>
+          <app-edit-menu (actionItem)="onEditAction($event)" [isSingledValued]="false"></app-edit-menu>
         <!-- </div>
       </tr> -->
     </ng-template>
 
     <ng-template #row_menu>
-      <app-action-menu (actionItem)="onEditAction($event)"
-        [isSingledValued]="attribute!.cardinality === '1'"></app-action-menu>
+      <app-edit-menu (actionItem)="onEditAction($event)"
+        [isSingledValued]="attribute!.cardinality === '1'"></app-edit-menu>
     </ng-template>
   </ng-container>
 

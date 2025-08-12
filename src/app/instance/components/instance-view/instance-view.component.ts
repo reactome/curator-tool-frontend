@@ -11,7 +11,7 @@ import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.serv
 import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
-import { combineLatest, Subscription, take } from 'rxjs';
+import { combineLatest, concat, Subscription, take } from 'rxjs';
 import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service';
 import { deleteInstances } from '../../state/instance.selectors';
 import { MatDialog } from '@angular/material/dialog';
@@ -87,12 +87,19 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
             let dbId2 = params['dbId2'];
             // Make sure dbId2 is a number
             dbId2 = parseInt(dbId2);
-            this.loadTwoInstances(dbId, dbId2);
+
+            if (dbId === dbId2) {
+              this.loadCacheAndReferenceColumn(dbId);
+            }
+            else {
+              this.loadTwoInstances(dbId, dbId2);
+            }
           }
+          //}
           // If no dbId2, the comparison is between the frontend and the database copy
-          else {
-            this.loadReferenceInstance(dbId);
-          }
+          // else {
+          //   this.loadReferenceInstance(dbId);
+          // }
         }
       }
       else {
@@ -345,6 +352,17 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.store.dispatch(BookmarkActions.add_bookmark(this.instance));
   }
 
+  loadCacheAndReferenceColumn(dbId: number) {
+    //this.showReferenceColumn = !this.showReferenceColumn;
+    // concat the two queries
+    this.loadInstance(dbId, true, false, false);
+
+    this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
+      dbInstance => this.dbInstance = dbInstance);
+    this.changeTable(this.instance!);
+
+  }
+
   showReferenceValueColumn() {
     this.showReferenceColumn = !this.showReferenceColumn;
     if (this.showReferenceColumn)
@@ -406,12 +424,12 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   onQAReportAction() {
     if (this.isUploadable()) {
-            this.dialog.open(InfoDialogComponent, {
-              data: {
-                title: 'Information',
-                message: 'You may need to commit your changes first for the QA Report',
-              }
-            });
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Information',
+          message: 'You may need to commit your changes first for the QA Report',
+        }
+      });
 
     }
     else {
@@ -466,7 +484,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     return this.dataService.isEventClass(this.instance!.schemaClassName)
   }
 
-  showPathwayDiagram(){
-      this.router.navigate(["/event_view/instance/" + this.instance!.dbId]);
+  showPathwayDiagram() {
+    this.router.navigate(["/event_view/instance/" + this.instance!.dbId]);
   }
 }

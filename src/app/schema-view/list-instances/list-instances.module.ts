@@ -18,7 +18,7 @@ import { BatchEditDialogComponent } from './components/list-instances-view/table
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import {MatFormFieldModule } from '@angular/material/form-field';
 import { AttributeEditComponent } from './components/list-instances-view/table/batch-edit-dialog/attribute-edit/attribute-edit.component';
-import { ActionMenuComponent } from './components/list-instances-view/table/batch-edit-dialog/attribute-edit/action-menu/action-menu.component';
+import { EditMenuComponent } from './components/list-instances-view/table/batch-edit-dialog/attribute-edit/action-menu/action-menu.component';
 
 
 @NgModule({
@@ -31,7 +31,7 @@ import { ActionMenuComponent } from './components/list-instances-view/table/batc
     ListInstancesDialogComponent,
     BatchEditDialogComponent,
     AttributeEditComponent,
-    ActionMenuComponent
+    EditMenuComponent
     
   ],
   exports: [
