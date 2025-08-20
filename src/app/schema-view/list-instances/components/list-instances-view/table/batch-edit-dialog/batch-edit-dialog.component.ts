@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { ACTION_BUTTONS, AttributeCategory, SchemaAttribute, SchemaClass } from 'src/app/core/models/reactome-schema.model';
+import { ACTION_BUTTONS, AttributeCategory, AttributeDataType, SchemaAttribute, SchemaClass } from 'src/app/core/models/reactome-schema.model';
 import { SelectInstanceDialogComponent } from '../../../select-instance-dialog/select-instance-dialog.component';
 import { ActionButton } from '../instance-list-table/instance-list-table.component';
 import { DataService } from 'src/app/core/services/data.service';
@@ -16,6 +16,8 @@ import { PostEditService } from 'src/app/core/services/post-edit.service';
 import { UpdateInstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Store } from '@ngrx/store';
+import { AttributeListDialogService } from './attribute-list-dialog/attribute-list-dialog.service';
+import { MatSelect } from '@angular/material/select';
 
 @Component({
   selector: 'app-batch-edit-dialog',
@@ -24,6 +26,7 @@ import { Store } from '@ngrx/store';
 })
 export class BatchEditDialogComponent implements PostEditListener {
   selectedAttribute: SchemaAttribute | undefined;
+  selectedAction: EDIT_ACTION | undefined;
   selected: string = '';
   candidateAttributes: SchemaAttribute[] = [];
   instance: Instance | undefined;
@@ -40,9 +43,12 @@ export class BatchEditDialogComponent implements PostEditListener {
   tempInstance: Instance | undefined;
   _instances: Instance[] | undefined;
 
+  // So that we can use it in the template
+  DATA_TYPES = AttributeDataType;
+
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public data: Instance[],
-    public dialogRef: MatDialogRef<SelectInstanceDialogComponent>,
+    public dialogRef: MatDialogRef<BatchEditDialogComponent>,
     private dataService: DataService,
     private dialogService: NewInstanceDialogService,
     private selectInstanceDialogService: SelectInstanceDialogService,
@@ -50,6 +56,7 @@ export class BatchEditDialogComponent implements PostEditListener {
     private postEditService: PostEditService,
     private instUtil: InstanceUtilities,
     private store: Store,
+    private attributeListDialogService: AttributeListDialogService,
 
   ) {
     this.setCandidateAttributes();
@@ -78,10 +85,10 @@ export class BatchEditDialogComponent implements PostEditListener {
     }
   }
 
-  onSelectionChange(att: SchemaAttribute): void {
+  onSelectionChange(selection: MatSelect): void {
     this.selectedAttribute = undefined;
     this.attributeSelected = true;
-    this.selectedAttribute = this.candidateAttributes.find(attr => attr === att);
+    this.selectedAttribute = this.candidateAttributes.find(attr => attr === selection.value);
     console.log('selected' + this.selectedAttribute);
   }
 
@@ -201,7 +208,7 @@ export class BatchEditDialogComponent implements PostEditListener {
   ): void {
     const matDialogRef = this.dialogService.openDialog(attributeValue);
     matDialogRef.afterClosed().subscribe((result) => {
-            this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: Instance[]) => {
+      this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: Instance[]) => {
         this._instances = [...objects]; // for editing
         for (let instance of this._instances) {
           this.attributeEditService.addValueToAttribute(attributeValue, result, instance, replace);
@@ -251,13 +258,82 @@ export class BatchEditDialogComponent implements PostEditListener {
       instance.modifiedAttributes.push(attributeName);
   }
 
-  private deleteInstanceAttribute(attributeValue: AttributeValue) {
-    this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: Instance[]) => {
+  private aggregateAttributes(attributeValue: AttributeValue): Set<any> {
+      let values: any[] = [];
+      this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: any[]) => {
       this._instances = [...objects]; // for editing
+      let aggregatedAttributes: Set<any> = new Set();
       for (let instance of this._instances) {
-        this.attributeEditService.deleteInstanceAttribute(attributeValue, instance);
-        this.finishEdit(attributeValue.attribute.name, attributeValue.value, instance);
+        let att = instance.attributes.get(attributeValue.attribute.name)
+        if (att !== undefined) {
+          // If the attribute is an array, we need to flatten it
+          if (att instanceof Array) {
+            for (let value of att) {
+              aggregatedAttributes.add(value);
+            }
+          } else {
+            aggregatedAttributes.add(att);
+          }
+        }
       }
+
+      const matDialogRef = this.attributeListDialogService.openDialog(Array.from(aggregatedAttributes));
+      matDialogRef.afterClosed().subscribe((values) => {
+          values = values || [];
+      });
+      return new Set(values);
+
+    }); 
+    return new Set(values)
+  }
+    
+
+  private deleteInstanceAttribute(attributeValue: AttributeValue) {
+    this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: any[]) => {
+      this._instances = [...objects]; // for editing
+      let aggregatedAttributes: Set<any> = new Set();
+      for (let instance of this._instances) {
+        let att = instance.attributes.get(attributeValue.attribute.name)
+        if (att !== undefined) {
+          // If the attribute is an array, we need to flatten it
+          if (att instanceof Array) {
+            for (let value of att) {
+              aggregatedAttributes.add(value);
+            }
+          } else {
+            aggregatedAttributes.add(att);
+          }
+        }
+      }
+
+      const matDialogRef = this.attributeListDialogService.openDialog(Array.from(aggregatedAttributes));
+      matDialogRef.afterClosed().subscribe((values) => {
+        if (values && values.length > 0 && this._instances) {
+          for (let instance of this._instances) {
+            let att = instance.attributes.get(attributeValue.attribute.name);
+            if (att !== undefined) {
+              for (let value of values) {
+                if (att instanceof Array) {
+                  if (att.includes(value.value)) {
+                    let index = att.indexOf(value.value);
+                    value.index = index; // Store the index for further processing
+                    // If the attribute is an array, we need to remove the value from the array
+                    this.attributeEditService.deleteInstanceAttribute(value, instance);
+                    this.finishEdit(attributeValue.attribute.name, value, instance);
+                  }
+                }
+                else {
+                  if (att === value.value) {
+                    // If the attribute is a single value, we can delete it directly
+                    this.attributeEditService.deleteInstanceAttribute(value, instance);
+                    this.finishEdit(attributeValue.attribute.name, value, instance);
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
     });
   }
 
@@ -292,4 +368,29 @@ export class BatchEditDialogComponent implements PostEditListener {
     // You can add custom logic here if needed
     return true;
   }
-} 
+
+  onEditAction(action: EDIT_ACTION) {
+    this.selectedAction = action;
+    let attributeValue: AttributeValue = {
+      attribute: this.selectedAttribute!,
+      value: "",
+      editAction: action,
+    }
+    console.debug("onEditAction: ", attributeValue);
+    switch (attributeValue.editAction) {
+      case EDIT_ACTION.DELETE:
+        this.deleteInstanceAttribute(attributeValue);
+        break;
+      case EDIT_ACTION.ADD_NEW:
+        this.addNewInstanceAttribute(attributeValue, false);
+        break;
+
+      case EDIT_ACTION.REPLACE_NEW:
+        this.addNewInstanceAttribute(attributeValue, true);
+        break;
+      default:
+        console.error("The action doesn't know: ", attributeValue.editAction);
+    }
+  }
+
+}

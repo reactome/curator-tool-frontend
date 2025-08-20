@@ -1,0 +1,32 @@
+<mat-dialog-content>
+    <h2 mat-dialog-title>Batch Edit Attributes</h2>
+    <p>Select attributes to edit:</p>
+
+    <ng-container *ngIf="data.at(0).dbId; else elseTemplate">
+        <mat-selection-list #attributes>
+            @for (attribute of data; track attribute) {
+            <mat-list-option (selectedChange)="onAttributeSelected(attribute)">{{attribute.dbId}} {{attribute.displayName}}</mat-list-option>
+            }
+        </mat-selection-list>
+        <p>
+            Options selected: {{attributes.selectedOptions.selected.length}}
+        </p>
+    </ng-container>
+
+    <ng-template #elseTemplate>
+        <mat-selection-list #attributes>
+            @for (attribute of data; track attribute) {
+            <mat-list-option (selectedChange)="onAttributeSelected(attribute)">{{attribute}}</mat-list-option>
+            }
+        </mat-selection-list>
+        <p>
+            Options selected: {{attributes.selectedOptions.selected.length}}
+        </p>
+    </ng-template>
+
+
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+    <button mat-button (click)="onOK()" cdkFocusInitial>OK</button>
+    <button mat-button (click)="onCancel()">Cancel</button>
+</mat-dialog-actions>

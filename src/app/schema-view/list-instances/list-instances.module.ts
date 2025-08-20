@@ -19,6 +19,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import {MatFormFieldModule } from '@angular/material/form-field';
 import { AttributeEditComponent } from './components/list-instances-view/table/batch-edit-dialog/attribute-edit/attribute-edit.component';
 import { EditMenuComponent } from './components/list-instances-view/table/batch-edit-dialog/attribute-edit/action-menu/action-menu.component';
+import { AttributeListDialogComponent } from './components/list-instances-view/table/batch-edit-dialog/attribute-list-dialog/attribute-list-dialog.component';
 
 
 @NgModule({
@@ -30,15 +31,16 @@ import { EditMenuComponent } from './components/list-instances-view/table/batch-
     InstanceListTableComponent,
     ListInstancesDialogComponent,
     BatchEditDialogComponent,
-    AttributeEditComponent,
-    EditMenuComponent
-    
+    AttributeListDialogComponent,
+    EditMenuComponent,
+    AttributeEditComponent
   ],
   exports: [
     InstanceSelectionComponent,
     SelectInstanceDialogComponent,
     InstanceListTableComponent,
-    ListInstancesDialogComponent
+    ListInstancesDialogComponent,
+    
   ],
   imports: [
     CommonModule,

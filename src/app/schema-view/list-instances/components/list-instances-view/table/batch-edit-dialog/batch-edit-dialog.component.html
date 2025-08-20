@@ -2,7 +2,8 @@
 <mat-dialog-content style="width: 100%; height: 100%;">
   <div style="display:flex; flex-direction: row; padding: 10px;">
     <mat-label>Select an Attribute to Edit: </mat-label>
-    <mat-select mat-select style="width: 30%" #val [(value)]="selected" class="drop_down" (selectionChange)="onSelectionChange(val.value)">
+    <mat-select mat-select style="width: 30%" #val [(value)]="selected" class="drop_down"
+      (selectionChange)="onSelectionChange(val)">
       <ng-container>
         <mat-option *ngFor="let value of candidateAttributes" [value]="value">
           {{value.name}}
@@ -12,18 +13,21 @@
 
     <br>
     <ng-container style="padding:10px; width: 30%" *ngIf="selectedAttribute !== undefined">
-      <!-- <mat-label>Choose an Action:</mat-label>
-      <mat-select #actionSelect [(value)]="selected" class="drop_down">
-        <ng-container>
-          <mat-option *ngFor="let value of batchEditOptions" [value]="value">
-            {{value}}
-          </mat-option>
-        </ng-container>
-      </mat-select> -->
-      <app-attribute-edit [attribute]="selectedAttribute"
-        (newValueEvent)="onNoInstanceAttributeEdit($event)"
+      <app-attribute-edit *ngIf="selectedAttribute.type === DATA_TYPES.INSTANCE; else elseTemplate"
+        [attribute]="selectedAttribute" (newValueEvent)="onNoInstanceAttributeEdit($event)"
         (editAction)="onInstanceAttributeEdit($event)" />
     </ng-container>
+    <ng-template #elseTemplate>
+      <app-edit-menu (actionItem)="onEditAction($event)" [isSingledValued]="false"></app-edit-menu>
+
+      <ng-container *ngIf="selectedAction">
+        <app-attribute-edit
+          [attribute]="selectedAttribute"
+          (newValueEvent)="onNoInstanceAttributeEdit($event)"
+          (editAction)="onInstanceAttributeEdit($event)">
+        </app-attribute-edit>
+      </ng-container>
+    </ng-template>
   </div>
 
 
@@ -36,8 +40,8 @@
     <mat-label>Removed Instances: </mat-label>
     <ng-container *ngIf="this.removedInstances.length > 0">
       <section class="scroll_panel">
-    <app-instance-list-table [dataSource]="removedInstances" [actionButtons]="actionButtons"
-      (actionEvent)="handleAction($event)"></app-instance-list-table>
+        <app-instance-list-table [dataSource]="removedInstances" [actionButtons]="actionButtons"
+          (actionEvent)="handleAction($event)"></app-instance-list-table>
       </section>
     </ng-container>
   </div>

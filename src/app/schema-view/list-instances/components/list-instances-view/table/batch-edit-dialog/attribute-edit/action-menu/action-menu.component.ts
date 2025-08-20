@@ -17,6 +17,8 @@ export interface User {
 })
 export class EditMenuComponent {
   @Input() isSingledValued: boolean = false;
+  @Input() isInstanceType: boolean = false;
+
   @Output() actionItem = new EventEmitter<EDIT_ACTION>();
   EDIT_ACTION = EDIT_ACTION;
   hidePanel: boolean = false;

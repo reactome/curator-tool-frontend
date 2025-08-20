@@ -1170,4 +1170,6 @@ export class DataService {
       })
     );
   }
+
+  // TODO: Create a method to update the fetched list from the database with what is cached and/or in the store 
 }
