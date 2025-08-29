@@ -17,9 +17,7 @@ export class AttributeListDialogComponent {
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public data: any[],
       public dialogRef: MatDialogRef<AttributeListDialogComponent>,
-  
-  ) {
-  }
+  ) {}
 
   onAttributeSelected(attributeValue: AttributeValue) {
     console.debug('onAttributeSelected: ', attributeValue);

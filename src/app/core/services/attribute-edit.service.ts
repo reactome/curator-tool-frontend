@@ -97,21 +97,7 @@ export class AttributeEditService implements PostEditListener {
                 value.splice(attributeValue.index, deleteCount, result);
             }
         }
-        // if (attributeValue.value === value) {
-        //   // If the value is the same as the current value, do not update
-        //   // This is to avoid unnecessary updates
-        //   return;
-        // }
-       // this.finishEdit(attributeValue.attribute.name, value, instance);
     }
-
-    // public addViaSelectionBatch(attributeValue: AttributeValue, result: any, data: Instance[], replace?: boolean) {
-    //     this.dataService.fetchInstanceInBatch(data.map(inst => inst.dbId)).subscribe(objects => {
-    //         for (let instance of objects) {
-    //             this.addInstanceViaSelect(attributeValue, result, instance, replace);
-    //         }
-    //     });
-    // }
 
     public addInstanceViaSelect(attributeValue: AttributeValue, result: any, instance: Instance, replace: boolean = false) {
         // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
@@ -152,68 +138,32 @@ export class AttributeEditService implements PostEditListener {
         //this.finishEdit(attributeValue.attribute.name, value, instance);
     }
 
-    public onNoInstanceAttributeEdit(data: AttributeValue, instance: Instance) {
-        let value = instance?.attributes?.get(data.attribute.name);
-        if (data.attribute.cardinality === '1') {
-            instance?.attributes?.set(data.attribute.name, data.value);
+    public onNoInstanceAttributeEdit(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean) {
+        let value = instance?.attributes?.get(attributeValue.attribute.name);
+        if (attributeValue.attribute.cardinality === '1') {
+            instance?.attributes?.set(attributeValue.attribute.name, result);
         } else {
             // This should be a list
-            if (data.value === '') {
-                value.splice(data.index, 1);
+            if (result === '') {
+                value.splice(attributeValue.index, 1);
             } else {
-                let valueList = instance?.attributes!.get(data.attribute.name);
+                let valueList = instance?.attributes!.get(attributeValue.attribute.name);
                 if (valueList === undefined) {
-                    instance?.attributes?.set(data.attribute.name, [data.value]);
+                    instance?.attributes?.set(attributeValue.attribute.name, [result]);
                 } else {
-                    if (data.index! < 0) {
-                        value.push(data.value);
+                    if (attributeValue.index! < 0) {
+                        value.push(result);
                     } else {
-                        value[data.index!] = data.value;
+                        value[attributeValue.index!] = result;
                     }
                 }
             }
         }
-        if (data.value === value) {
+        if (attributeValue.value === value) {
             // If the value is the same as the current value, do not update
             // This is to avoid unnecessary updates
             return;
         }
-       // this.finishEdit(data.attribute.name, data.value, instance);
     }
 
-
-
-    // private finishEdit(attName: string, value: any, instance: Instance) {
-    //     // Need to call this before registerUpdatedInstance
-    //     // in case the instance is used somewhere via the ngrx statement management system
-    //     this.addModifiedAttribute(attName, value);
-
-    //     // Register the updated instances
-    //     this.registerUpdatedInstance(attName, instance);
-
-    // }
-
-    // private addModifiedAttribute(attributeName: string, attributeVal: any, instance?: Instance) {
-    //     // Do nothing if there is no instance
-    //     if (instance === undefined) return;
-    //     if (instance.modifiedAttributes === undefined) {
-    //         instance.modifiedAttributes = [];
-    //     }
-    //     if (!instance.modifiedAttributes.includes(attributeName))
-    //         instance.modifiedAttributes.push(attributeName);
-    // }
-
-    // private registerUpdatedInstance(attName: string, instance: Instance): void {
-    //     if (this.preventEvent)
-    //         return;
-    //     let cloned: Instance = this.instUtil.makeShell(instance!);
-    //     if (instance!.dbId > 0) {
-    //         // Have to make a clone to avoid any change to the current _instance!
-    //         this.store.dispatch(UpdateInstanceActions.register_updated_instance(cloned));
-    //     } else {
-    //         // Force the state to update if needed
-    //         this.store.dispatch(NewInstanceActions.register_new_instance(cloned));
-    //     }
-    //     this.store.dispatch(UpdateInstanceActions.last_updated_instance({ attribute: attName, instance: cloned }));
-    // }
 }

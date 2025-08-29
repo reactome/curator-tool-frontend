@@ -7,6 +7,7 @@
 
     <!-- Hide the tooltip. It is quite annoying. matTooltip="control+enter to commit the change" -->
     <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
+  
       <mat-form-field (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="form-field" appearance="outline"
         subscriptSizing="dynamic">
         <textarea style="height: fit-content" matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize"

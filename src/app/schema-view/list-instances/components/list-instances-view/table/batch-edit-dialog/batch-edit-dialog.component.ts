@@ -42,15 +42,19 @@ export class BatchEditDialogComponent implements PostEditListener {
   blockRouter: any;
   tempInstance: Instance | undefined;
   _instances: Instance[] | undefined;
+  textAttributeValue: AttributeValue | undefined;
+  selectedAggregatedValues: Set<any> = new Set();
+  storeAggregatedAttributes: Set<any> = new Set();
 
   // So that we can use it in the template
   DATA_TYPES = AttributeDataType;
+  EDIT_ACTION = EDIT_ACTION;
 
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public data: Instance[],
     public dialogRef: MatDialogRef<BatchEditDialogComponent>,
     private dataService: DataService,
-    private dialogService: NewInstanceDialogService,
+    private newInstanceDialogService: NewInstanceDialogService,
     private selectInstanceDialogService: SelectInstanceDialogService,
     private attributeEditService: AttributeEditService,
     private postEditService: PostEditService,
@@ -59,37 +63,8 @@ export class BatchEditDialogComponent implements PostEditListener {
     private attributeListDialogService: AttributeListDialogService,
 
   ) {
+    // Initialize the list of attributes based on the schema classes of the instances
     this.setCandidateAttributes();
-  }
-
-  onSelectRow(row: Instance) {
-    if (this.isSingleValued) {
-      // Only take one value if the cardinality is 1
-      this.selectedInstances = [row];
-    }
-    // input, output, and hasComponent may have multiple values (ex: ATP)
-    else if (this.attributeSchemaClass === 'input' ||
-      this.attributeSchemaClass === 'output' ||
-      this.attributeSchemaClass === 'hasComponent') {
-      this.selectedInstances = [...this.selectedInstances, row];
-    }
-    else {
-      this.selectedInstances = [...this.selectedInstances, row];
-      let noDuplicates: Instance[] = [];
-      this.selectedInstances.forEach(element => {
-        if (!noDuplicates.includes(element)) {
-          noDuplicates.push(element);
-        }
-      });
-      this.selectedInstances = noDuplicates;
-    }
-  }
-
-  onSelectionChange(selection: MatSelect): void {
-    this.selectedAttribute = undefined;
-    this.attributeSelected = true;
-    this.selectedAttribute = this.candidateAttributes.find(attr => attr === selection.value);
-    console.log('selected' + this.selectedAttribute);
   }
 
   onCancel() {
@@ -100,8 +75,22 @@ export class BatchEditDialogComponent implements PostEditListener {
     this.dialogRef.close();
   }
 
-  onRemoveEvent(instance: Instance) {
-    this.removedInstances.push(instance);
+  handleListTableAction(actionButton: { instance: Instance, action: string }) {
+    switch (actionButton.action) {
+      // To remove an instance from the batch edit list
+      case "close": {
+        this.removedInstances.push(actionButton.instance);
+        break;
+      }
+    }
+  }
+
+  handleAttributeSelectionChange(selection: MatSelect): void {
+    this.selectedAttribute = undefined;
+    this.aggregateAttributes();
+    this.attributeSelected = true;
+    this.selectedAttribute = this.candidateAttributes.find(attr => attr === selection.value);
+    console.debug('selected', this.selectedAttribute);
   }
 
   setCandidateAttributes() {
@@ -110,15 +99,7 @@ export class BatchEditDialogComponent implements PostEditListener {
     this.grepAttributes(schemaClasses);
   }
 
-  handleAction(actionButton: { instance: Instance, action: string }) {
-    switch (actionButton.action) {
-      case "close": {
-        this.onRemoveEvent(actionButton.instance);
-        break;
-      }
-    }
-  }
-
+  // Find the common attributes among the given schema classes
   private grepAttributes(schemaClasses: Set<string>): void {
     let attributeArrays: SchemaAttribute[][] = [];
     let fetches: Array<Observable<SchemaClass>> = [];
@@ -167,20 +148,12 @@ export class BatchEditDialogComponent implements PostEditListener {
         }
       }
 
-      // Optional: sort by name
+      // sort by name
       this.candidateAttributes.sort((a, b) => a.name.localeCompare(b.name));
     });
   }
 
-  onAddEvent(e: AttributeValue) {
-
-  }
-  onSetEvent(e: AttributeValue) {
-    // Handle the event when an attribute is set
-    console.log('Attribute set:', e);
-
-  }
-
+  // Edit actions returned from the attribute edit component for instance attributes
   onInstanceAttributeEdit(attributeValue: AttributeValue) {
     console.debug('onEdit: ', attributeValue);
     switch (attributeValue.editAction) {
@@ -204,38 +177,264 @@ export class BatchEditDialogComponent implements PostEditListener {
     }
   }
 
+  // Edit actions returned from the action menu for text attributes
+  // TODO: collect the values that are selected from the aggregated attributes dialog
+  onEditAction(attributeValue: AttributeValue) {
+    console.debug("onEditAction: ", attributeValue);
+    switch (this.selectedAction) {
+      case EDIT_ACTION.DELETE:
+        this.onNonInstanceAttributeEdit(attributeValue, true);
+        break;
+      case EDIT_ACTION.ADD_NEW:
+        this.onNonInstanceAttributeEdit(attributeValue, false);
+        break;
+
+      case EDIT_ACTION.REPLACE_NEW:
+        this.onNonInstanceAttributeEdit(attributeValue, true);
+        break;
+      default:
+        console.error("The action doesn't know: ", this.selectedAction);
+    }
+  }
+  onSelectTextAction(action: EDIT_ACTION) {
+    if (action === EDIT_ACTION.DELETE || action === EDIT_ACTION.REPLACE_NEW) {
+      if (this.storeAggregatedAttributes.size !== 0 || this.storeAggregatedAttributes !== undefined) {
+        const matDialogRef = this.attributeListDialogService.openDialog(Array.from(this.storeAggregatedAttributes));
+        matDialogRef.afterClosed().subscribe((values) => {
+          values = values || [];
+          values.forEach((val) => {
+            let att: AttributeValue = {
+              attribute: this.selectedAttribute!,
+              value: val,
+            }
+            this.selectedAggregatedValues.add(att);
+          });
+          // Set the action only after dialog closes
+          this.selectedAction = action;
+        });
+        return; // Prevent setting selectedAction immediately
+      }
+    }
+    // Set the action immediately for other cases
+    this.selectedAction = action;
+  }
+
+  onNonInstanceAttributeEdit(attributeValue: AttributeValue, replace: boolean = false) {
+    if (replace) {
+      // should only have selected on value to replace so create only one attribute value
+      this.selectedAggregatedValues.forEach((values) => {
+        let att: AttributeValue = {
+          attribute: this.selectedAttribute!,
+          value: values.value,
+        }
+        this.addAttribute(att, attributeValue.value, replace);
+      });
+    }
+    else {
+      this.addAttribute(attributeValue, attributeValue.value, replace);
+
+    }
+
+  }
+
+  private aggregateAttributes() {
+    this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: any[]) => {
+      this._instances = [...objects]; // for editing
+      let aggregatedAttributes: Set<any> = new Set();
+      for (let instance of this._instances) {
+        let att = instance.attributes.get(this.selectedAttribute!.name);
+        if (att !== undefined) {
+          // If the attribute is an array, we need to flatten it
+          if (att instanceof Array) {
+            for (let value of att) {
+              aggregatedAttributes.add(value);
+            }
+          } else {
+            aggregatedAttributes.add(att);
+          }
+        }
+      }
+      this.storeAggregatedAttributes = new Set(aggregatedAttributes);
+
+    });
+  }
+
   private addNewInstanceAttribute(attributeValue: AttributeValue, replace: boolean = false
   ): void {
-    const matDialogRef = this.dialogService.openDialog(attributeValue);
-    matDialogRef.afterClosed().subscribe((result) => {
-      this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: Instance[]) => {
-        this._instances = [...objects]; // for editing
-        for (let instance of this._instances) {
-          this.attributeEditService.addValueToAttribute(attributeValue, result, instance, replace);
-          this.finishEdit(attributeValue.attribute.name, result, instance);
-        }
+    // if replacing then populate the attributeValue with the selected value from 
+    // the aggregated attributes dialog 
+    if (replace) {
+      if (this.storeAggregatedAttributes.size !== 0 || this.storeAggregatedAttributes !== undefined) {
+        const matDialogRef = this.attributeListDialogService.openDialog(Array.from(this.storeAggregatedAttributes));
+        matDialogRef.afterClosed().subscribe((values) => {
+          values = values || [];
+          values.forEach((val) => {
+            let att: AttributeValue = {
+              attribute: this.selectedAttribute!,
+              value: val,
+            }
+            this.selectedAggregatedValues.add(att);
+          });
+
+          // Open the dialog to create a new instance
+          const matDialogRef = this.newInstanceDialogService.openDialog(attributeValue);
+          matDialogRef.afterClosed().subscribe((result) => {
+            if (!result)
+              return;
+            // should only have selected on value to replace so create only one attribute value
+            this.selectedAggregatedValues.forEach((values) => {
+              let att: AttributeValue = {
+                attribute: this.selectedAttribute!,
+                value: values.value,
+              }
+              this.addAttribute(att, result, replace);
+            });
+
+          });
+        });
+      }
+
+    }
+    else {
+      // Open the dialog to create a new instance
+      const matDialogRef = this.newInstanceDialogService.openDialog(attributeValue);
+      matDialogRef.afterClosed().subscribe((result) => {
+        if (!result)
+          return;
+        this.addAttribute(attributeValue, result, replace);
+
       });
-    });
+    }
   }
 
   private addInstanceViaSelect(attributeValue: AttributeValue, replace: boolean = false) {
-    const matDialogRef =
-      this.selectInstanceDialogService.openDialog(attributeValue);
-    matDialogRef.afterClosed().subscribe((result) => {
-      if (!result || result.length === 0)
-        return;
-      this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: Instance[]) => {
-        this._instances = [...objects]; // for editing
-        for (let instance of this._instances) {
-          this.attributeEditService.addInstanceViaSelect(attributeValue, result, instance, replace);
-          this.finishEdit(attributeValue.attribute.name, result, instance);
-        }
+    if (replace) {
+      if (this.storeAggregatedAttributes.size !== 0 || this.storeAggregatedAttributes !== undefined) {
+        const matDialogRef = this.attributeListDialogService.openDialog(Array.from(this.storeAggregatedAttributes));
+        matDialogRef.afterClosed().subscribe((values) => {
+          values = values || [];
+          values.forEach((val) => {
+            let att: AttributeValue = {
+              attribute: this.selectedAttribute!,
+              value: val,
+            }
+            this.selectedAggregatedValues.add(att);
+          });
+
+          const matDialogRef =
+            this.selectInstanceDialogService.openDialog(attributeValue);
+          matDialogRef.afterClosed().subscribe((result) => {
+            if (!result || result.length === 0)
+              return;
+            // should only have selected on value to replace so create only one attribute value
+            this.selectedAggregatedValues.forEach((values) => {
+              let att: AttributeValue = {
+                attribute: this.selectedAttribute!,
+                value: values.value,
+              }
+              this.addAttribute(att, result, replace);
+            });
+
+          });
+        });
+      }
+
+    }
+    else {
+      const matDialogRef =
+        this.selectInstanceDialogService.openDialog(attributeValue);
+      matDialogRef.afterClosed().subscribe((result) => {
+        if (!result || result.length === 0)
+          return;
+        this.addAttribute(attributeValue, result, replace);
       });
+    }
+  }
+
+  private addAttribute(attributeValue: AttributeValue, result: any, replace: boolean) {
+    this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: Instance[]) => {
+      this._instances = [...objects]; // for editing
+      for (let instance of this._instances) {
+        // Add the selected instance to the attribut
+        // TODO: check if the instance has the attribute if replacing=true, 
+        if (replace) {
+          let existingValue = instance.attributes.get(attributeValue.attribute.name);
+          if (Array.isArray(existingValue)) {
+            let contains = existingValue.includes(attributeValue.value) || existingValue.includes(attributeValue.value.toString());
+            let index = existingValue.findIndex((val: string) => val == attributeValue.value || val == attributeValue.value.toString());
+            if (index === -1) continue; // Value not found, skip to next instance
+            attributeValue.index = index; // Store the index for further processing
+            // If the attribute is an array, we need to remove the value from the array
+            if (attributeValue.attribute.type === this.DATA_TYPES.INSTANCE)
+              if (result.dbId < 0)
+                this.attributeEditService.addValueToAttribute(attributeValue, result, instance, replace);
+              else
+                this.attributeEditService.addInstanceViaSelect(attributeValue, result, instance, replace);
+            else
+              this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, result, instance, replace);
+            this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+          }
+          else {
+            if (existingValue !== undefined && existingValue === attributeValue.value) {
+              // If the attribute is a single value, we can delete it directly
+              if (attributeValue.attribute.type === this.DATA_TYPES.INSTANCE)
+                if (result.dbId < 0)
+                  this.attributeEditService.addValueToAttribute(attributeValue, result, instance, replace);
+                else
+                  this.attributeEditService.addInstanceViaSelect(attributeValue, result, instance, replace);
+              else
+                this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, result, instance, replace);
+              this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+            }
+          }
+        }
+        else {
+          if (attributeValue.attribute.type === this.DATA_TYPES.INSTANCE)
+            if (result.dbId < 0)
+              this.attributeEditService.addValueToAttribute(attributeValue, result, instance, replace);
+            else
+              this.attributeEditService.addInstanceViaSelect(attributeValue, result, instance, replace); else
+            this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, result, instance, replace);
+          this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+        }
+      }
     });
   }
 
-  onNoInstanceAttributeEdit(data: AttributeValue) {
-    this.attributeEditService.onNoInstanceAttributeEdit(data, this.tempInstance!);
+  private deleteInstanceAttribute(attributeValue: AttributeValue) {
+    this.storeAggregatedAttributes.forEach((values) => {
+      if (values && values.length > 0 && this._instances) {
+        for (let instance of this._instances) {
+          let att = instance.attributes.get(attributeValue.attribute.name);
+          if (att !== undefined) {
+            for (let value of values) {
+              if (att instanceof Array) {
+                if (att.includes(value.value)) {
+                  let index = att.indexOf(value.value);
+                  value.index = index; // Store the index for further processing
+                  // If the attribute is an array, we need to remove the value from the array
+                  if (attributeValue.attribute.type === this.DATA_TYPES.INSTANCE)
+                    this.attributeEditService.deleteInstanceAttribute(value, instance);
+                  else
+                    //this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, value);
+                    this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+                }
+              }
+              else {
+                if (att === value.value) {
+                  // If the attribute is a single value, we can delete it directly
+                  if (attributeValue.attribute.type === this.DATA_TYPES.INSTANCE)
+                    this.attributeEditService.deleteInstanceAttribute(value, instance);
+                  else
+                    //this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, value);
+                    this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+                }
+              }
+            }
+          }
+        }
+      }
+    });
   }
 
   finishEdit(attName: string, value: any, instance: Instance) {
@@ -258,85 +457,6 @@ export class BatchEditDialogComponent implements PostEditListener {
       instance.modifiedAttributes.push(attributeName);
   }
 
-  private aggregateAttributes(attributeValue: AttributeValue): Set<any> {
-      let values: any[] = [];
-      this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: any[]) => {
-      this._instances = [...objects]; // for editing
-      let aggregatedAttributes: Set<any> = new Set();
-      for (let instance of this._instances) {
-        let att = instance.attributes.get(attributeValue.attribute.name)
-        if (att !== undefined) {
-          // If the attribute is an array, we need to flatten it
-          if (att instanceof Array) {
-            for (let value of att) {
-              aggregatedAttributes.add(value);
-            }
-          } else {
-            aggregatedAttributes.add(att);
-          }
-        }
-      }
-
-      const matDialogRef = this.attributeListDialogService.openDialog(Array.from(aggregatedAttributes));
-      matDialogRef.afterClosed().subscribe((values) => {
-          values = values || [];
-      });
-      return new Set(values);
-
-    }); 
-    return new Set(values)
-  }
-    
-
-  private deleteInstanceAttribute(attributeValue: AttributeValue) {
-    this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: any[]) => {
-      this._instances = [...objects]; // for editing
-      let aggregatedAttributes: Set<any> = new Set();
-      for (let instance of this._instances) {
-        let att = instance.attributes.get(attributeValue.attribute.name)
-        if (att !== undefined) {
-          // If the attribute is an array, we need to flatten it
-          if (att instanceof Array) {
-            for (let value of att) {
-              aggregatedAttributes.add(value);
-            }
-          } else {
-            aggregatedAttributes.add(att);
-          }
-        }
-      }
-
-      const matDialogRef = this.attributeListDialogService.openDialog(Array.from(aggregatedAttributes));
-      matDialogRef.afterClosed().subscribe((values) => {
-        if (values && values.length > 0 && this._instances) {
-          for (let instance of this._instances) {
-            let att = instance.attributes.get(attributeValue.attribute.name);
-            if (att !== undefined) {
-              for (let value of values) {
-                if (att instanceof Array) {
-                  if (att.includes(value.value)) {
-                    let index = att.indexOf(value.value);
-                    value.index = index; // Store the index for further processing
-                    // If the attribute is an array, we need to remove the value from the array
-                    this.attributeEditService.deleteInstanceAttribute(value, instance);
-                    this.finishEdit(attributeValue.attribute.name, value, instance);
-                  }
-                }
-                else {
-                  if (att === value.value) {
-                    // If the attribute is a single value, we can delete it directly
-                    this.attributeEditService.deleteInstanceAttribute(value, instance);
-                    this.finishEdit(attributeValue.attribute.name, value, instance);
-                  }
-                }
-              }
-            }
-          }
-        }
-      });
-    });
-  }
-
   private registerUpdatedInstance(attName: string, instance: Instance): void {
 
     let cloned: Instance = this.instUtil.makeShell(instance);
@@ -351,10 +471,10 @@ export class BatchEditDialogComponent implements PostEditListener {
   }
 
   /**
- * Provide a hook to do something (e.g. update display name, perform QA etc) after
- * any editing.
- * @param attName
- */
+  * Provide a hook to do something (e.g. update display name, perform QA etc) after
+  * any editing.
+  * @param attName
+  */
   postEdit(attName: string, instance: Instance) {
     if (instance)
       this.postEditService.postEdit(instance, attName, this);
@@ -369,28 +489,44 @@ export class BatchEditDialogComponent implements PostEditListener {
     return true;
   }
 
-  onEditAction(action: EDIT_ACTION) {
-    this.selectedAction = action;
-    let attributeValue: AttributeValue = {
-      attribute: this.selectedAttribute!,
-      value: "",
-      editAction: action,
-    }
-    console.debug("onEditAction: ", attributeValue);
-    switch (attributeValue.editAction) {
-      case EDIT_ACTION.DELETE:
-        this.deleteInstanceAttribute(attributeValue);
-        break;
-      case EDIT_ACTION.ADD_NEW:
-        this.addNewInstanceAttribute(attributeValue, false);
-        break;
 
-      case EDIT_ACTION.REPLACE_NEW:
-        this.addNewInstanceAttribute(attributeValue, true);
-        break;
-      default:
-        console.error("The action doesn't know: ", attributeValue.editAction);
-    }
-  }
+  // private addNewAttribute(attributeValue: AttributeValue, replace: boolean) {
+
+  //   this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: Instance[]) => {
+  //     this._instances = [...objects]; // for editing
+  //     for (let instance of this._instances) {
+  //       // check if the instance has the selected attribute value and if so replace with the new attribute value,
+  //       // but only if replcace is true
+  //       if (replace) {
+  //         let existingValue = instance.attributes.get(attributeValue.attribute.name);
+  //         if (existingValue !== undefined && existingValue instanceof Array) {
+  //           if (existingValue.includes(attributeValue.value)) {
+  //             let index = existingValue.indexOf(attributeValue.value);
+  //             attributeValue.index = index; // Store the index for further processing
+  //             // If the attribute is an array, we need to remove the value from the array
+  //             this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, attributeValue.value, instance, replace);
+  //             this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+  //           }
+  //         }
+  //         else {
+  //           if (existingValue === attributeValue.value) {
+  //             // If the attribute is a single value, we can delete it directly
+  //             this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, attributeValue.value, instance, replace);
+  //             this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+  //           }
+  //         }
+  //       }
+
+  //       else {
+  //         this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, attributeValue.value, instance, replace);
+  //         this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+  //       }
+  //     }
+  //   });
+  // }
+
+  // private deleteAttribute(attributeValue: AttributeValue) {
+  //   // this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, this._instances!);
+  // }
 
 }
