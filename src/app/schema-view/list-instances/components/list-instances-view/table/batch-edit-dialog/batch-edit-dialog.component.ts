@@ -402,39 +402,49 @@ export class BatchEditDialogComponent implements PostEditListener {
   }
 
   private deleteInstanceAttribute(attributeValue: AttributeValue) {
-    this.storeAggregatedAttributes.forEach((values) => {
-      if (values && values.length > 0 && this._instances) {
-        for (let instance of this._instances) {
-          let att = instance.attributes.get(attributeValue.attribute.name);
-          if (att !== undefined) {
-            for (let value of values) {
-              if (att instanceof Array) {
-                if (att.includes(value.value)) {
-                  let index = att.indexOf(value.value);
-                  value.index = index; // Store the index for further processing
-                  // If the attribute is an array, we need to remove the value from the array
-                  if (attributeValue.attribute.type === this.DATA_TYPES.INSTANCE)
+    if (this.storeAggregatedAttributes.size !== 0 || this.storeAggregatedAttributes !== undefined) {
+      const matDialogRef = this.attributeListDialogService.openDialog(Array.from(this.storeAggregatedAttributes));
+      matDialogRef.afterClosed().subscribe((values) => {
+        values = values || [];
+        values.forEach((val) => {
+          let att: AttributeValue = {
+            attribute: this.selectedAttribute!,
+            value: val,
+          }
+          this.selectedAggregatedValues.add(att);
+        });
+      });
+
+
+      this.selectedAggregatedValues.forEach((values) => {
+        if (values && values.length > 0 && this._instances) {
+          for (let instance of this._instances) {
+            let att = instance.attributes.get(attributeValue.attribute.name);
+            if (att !== undefined) {
+              for (let value of values) {
+                if (att instanceof Array) {
+                  if (att.includes(value.value)) {
+                    let index = att.indexOf(value.value);
+                    value.index = index; // Store the index for further processing
+                    // If the attribute is an array, we need to remove the value from the array
                     this.attributeEditService.deleteInstanceAttribute(value, instance);
-                  else
-                    //this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, value);
                     this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+                  }
                 }
-              }
-              else {
-                if (att === value.value) {
-                  // If the attribute is a single value, we can delete it directly
-                  if (attributeValue.attribute.type === this.DATA_TYPES.INSTANCE)
+                else {
+                  if (att === value.value) {
+                    // If the attribute is a single value, we can delete it directly
                     this.attributeEditService.deleteInstanceAttribute(value, instance);
-                  else
-                    //this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, value);
                     this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+                  }
                 }
               }
             }
           }
         }
-      }
-    });
+      });
+
+    }
   }
 
   finishEdit(attName: string, value: any, instance: Instance) {

@@ -522,70 +522,33 @@ export class DataService {
           })
         );
       }),
-      //Second concatMap: First select subscription (newInstances)
-      // concatMap((data: InstanceList) => {
-      //   return this.store.select(newInstances()).pipe(
-      //     take(1),
-      //     map((insts) => {
-      //       for (let inst of insts) {
-      //         inst = this.utils.makeShell(inst);
-      //         // This should be faster therefore check it first
-      //         if (searchKey && searchKey.length > 0) {
-      //           // If searchKey is integer, check for dbId
-      //           if (/^\d+$/.test(searchKey)) {
-      //             if (inst.dbId.toString() !== searchKey)
-      //               continue;
-      //           }
-      //           // Otherwise, check for text
-      //           else if (!inst.displayName?.toLocaleLowerCase().includes(searchKey.toLocaleLowerCase()))
-      //             continue;
-      //         }
-      //         // The skip should be less than the limit to ensure new instances are only added to the first page.
-      //         if (this.isSchemaClass(inst, className) && (skip < limit)) {
-      //           // Update the data being returned. New instance is placed at index 0.
-      //           data.instances.splice(0, 0, inst);
-      //           if (!data.totalCount) {
-      //             data.totalCount = 0;
-      //           }
-      //           data.totalCount++;
-      //         }
-      //       }
-      //       return data; // Pass modified data to the next step
-      //     })
-      //   );
-      // }),
-      // // Third concatMap: Second select subscription (deleteInstances)
-      // concatMap((data: InstanceList) => {
-      //   return this.store.select(deleteInstances()).pipe(
-      //     take(1),
-      //     map((instances) => {
-      //       const deletedDBIds = instances.map(inst => inst.dbId);
-      //       for (let i = 0; i < data.instances.length; i++) {
-      //         if (deletedDBIds.includes(data.instances[i].dbId)) {
-      //           data.instances.splice(i, 1);
-      //           i--; // Adjust index after removal
-      //           data.totalCount--;
-      //         }
-      //       }
-      //       return data; // Pass the final modified data
-      //     })
-      //   );
-      // }),
-      // // Fourth concatMap: filter out database copies of instances that have been updated
-      // concatMap((data: InstanceList) => {
-      //   return this.store.select(updatedInstances()).pipe(
-      //     take(1),
-      //     map((instances: Instance[]) => {
-      //       const updatedDbIds = new Set(instances.map(inst => inst.dbId));
-      //       // Filter out backend instances with matching dbId
-      //       const filtered = data.instances.filter(inst => !updatedDbIds.has(inst.dbId));
-      //       // Place updated instances first
-      //       data.instances = [...instances, ...filtered];
-      //       return data; // Pass the final modified data
-
-      //     })
-      //   );
-      // }),
+      // Fourth concatMap: filter out database copies of instances that have been updated
+      // TODO; check instances one by one, if the dbId is contained in the updated instances, then update
+      // the instance display name with the updated instance's display name (if different)
+      // indicate the instance has been updated by creating a css hue 
+      concatMap((data: InstanceList) => {
+        return this.store.select(updatedInstances()).pipe(
+          take(1),
+          map((instances: Instance[]) => {
+            const updatedDbIds = new Set(instances.map(inst => inst.dbId));
+            
+            // Create a map for quick lookup of updated instances by dbId
+            const updatedInstancesMap = new Map(instances.map(inst => [inst.dbId, inst]));
+            
+            // Update display names for instances that exist in both data and store
+            data.instances.forEach(dataInst => {
+              if (updatedInstancesMap.has(dataInst.dbId)) {
+                const updatedInst = updatedInstancesMap.get(dataInst.dbId)!;
+                // If the display name has changed, update it
+                if (dataInst.displayName !== updatedInst.displayName) {
+                  dataInst.displayName = updatedInst.displayName;
+                }
+              }
+            });
+            return data; // Pass the final modified data
+          })
+        );
+      }),
       //Error handling
       catchError((err: Error) => {
         return this.handleErrorMessage(err);
