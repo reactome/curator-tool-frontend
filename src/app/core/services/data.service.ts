@@ -51,7 +51,7 @@ export class DataService {
   private getCyNetworkUrl = `${environment.ApiRoot}/getCyNetwork/`;
   private deleteInstaneUrl = `${environment.ApiRoot}/delete/`;
   private fetchQAReportUrl = `${environment.ApiRoot}/qaReport/`;
-  private fetchInstancesInBatchUrl = `${environment.ApiRoot}/fetchInstancesInBatch/`;
+  private fetchInstancesInBatchUrl = `${environment.ApiRoot}/findByDbIds/`;
 
 
   // Track the negative dbId to be used
@@ -531,10 +531,10 @@ export class DataService {
           take(1),
           map((instances: Instance[]) => {
             const updatedDbIds = new Set(instances.map(inst => inst.dbId));
-            
+
             // Create a map for quick lookup of updated instances by dbId
             const updatedInstancesMap = new Map(instances.map(inst => [inst.dbId, inst]));
-            
+
             // Update display names for instances that exist in both data and store
             data.instances.forEach(dataInst => {
               if (updatedInstancesMap.has(dataInst.dbId)) {
@@ -1116,23 +1116,35 @@ export class DataService {
     if (dbIds.length === 0) {
       return of([]);
     }
-    const url = this.fetchInstancesInBatchUrl;
-    let instanceList: Instance[] = [];
-    return this.http.post<Instance[]>(url, dbIds).pipe(
-      map((data: Instance[]) => {
-        data.forEach(instance => {
-          let inst: Instance = instance; // Converted into the Instance object alread
+  
+    const fromCache: { [key: number]: Instance } = {};
+    const toFetch: number[] = [];
+  
+    dbIds.forEach(id => {
+      if (this.id2instance.has(id)) {
+        fromCache[id] = this.id2instance.get(id)!;
+      } else {
+        toFetch.push(id);
+      }
+    });
+  
+    if (toFetch.length === 0) {
+      // All instances are in the cache
+      return of(dbIds.map(id => fromCache[id]));
+    }
+  
+    // Fetch the rest from the backend
+    return this.http.post<Instance[]>(this.fetchInstancesInBatchUrl, toFetch).pipe(
+      map((fetched: Instance[]) => {
+        fetched.forEach(inst => {
           this.handleInstanceAttributes(inst);
-          this.id2instance.set(instance.dbId, inst);
-          instanceList.push(inst);
+          this.id2instance.set(inst.dbId, inst);
         });
-        return instanceList;
+        const fetchedMap = new Map(fetched.map(inst => [inst.dbId, inst]));
+        // Merge, preserving original order
+        return dbIds.map(id => fromCache[id] || fetchedMap.get(id)!);
       }),
-      catchError((err: Error) => {
-        return this.handleErrorMessage(err);
-      })
+      catchError((err: Error) => this.handleErrorMessage(err))
     );
   }
-
-  // TODO: Create a method to update the fetched list from the database with what is cached and/or in the store 
 }

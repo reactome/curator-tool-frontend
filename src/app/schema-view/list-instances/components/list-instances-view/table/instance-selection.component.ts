@@ -84,32 +84,32 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    const sub = combineLatest([
-      this.store.select(deleteInstances()),
-      this.store.select(newInstances())
-    ]).subscribe(([deletedInstances, newInstances]) => {
-      if (!this.data)
-        return
-      if (!deletedInstances)
-        deletedInstances = [];
-      if (!newInstances)
-        newInstances = [];
-      const deletedDbIds = deletedInstances.map(inst => inst.dbId);
-      const newDbIds = newInstances.map(inst => inst.dbId);
-      const preCount = this.data.length;
-      this.data = this.data.filter(inst => {
-        if (inst.dbId > 0 && !deletedDbIds.includes(inst.dbId))
-          return true;
-        if (inst.dbId < 0 && newDbIds.includes(inst.dbId))
-          return true;
-        return false;
-      })
-      // Update the total instance count
-      // Note: for the time being, the page size is fixed
-      this.instanceCount = this.instanceCount - (preCount - this.data.length);
-    });
+    // const sub = combineLatest([
+    //   this.store.select(deleteInstances()),
+    //   this.store.select(newInstances())
+    // ]).subscribe(([deletedInstances, newInstances]) => {
+    //   if (!this.data)
+    //     return
+    //   if (!deletedInstances)
+    //     deletedInstances = [];
+    //   if (!newInstances)
+    //     newInstances = [];
+    //   const deletedDbIds = deletedInstances.map(inst => inst.dbId);
+    //   const newDbIds = newInstances.map(inst => inst.dbId);
+    //   const preCount = this.data.length;
+    //   this.data = this.data.filter(inst => {
+    //     if (inst.dbId > 0 && !deletedDbIds.includes(inst.dbId))
+    //       return true;
+    //     if (inst.dbId < 0 && newDbIds.includes(inst.dbId))
+    //       return true;
+    //     return false;
+    //   })
+    //   // Update the total instance count
+    //   // Note: for the time being, the page size is fixed
+    //   this.instanceCount = this.instanceCount - (preCount - this.data.length);
+    // });
 
-    this.subscription.add(sub);
+    // this.subscription.add(sub);
   }
 
   /**

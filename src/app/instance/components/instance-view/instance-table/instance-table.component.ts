@@ -150,6 +150,7 @@ export class InstanceTableComponent implements PostEditListener {
   onNoInstanceAttributeEdit(data: AttributeValue) {
    // this.attributeEditService.onNoInstanceAttributeEdit(data, this._instance!);
     this.attributeEditService.onNoInstanceAttributeEdit(data, data.value, this._instance!, false);
+    this.finishEdit(data.attribute.name, undefined);
   }
 
   deleteAttributeValue(attributeValue: AttributeValue) {
