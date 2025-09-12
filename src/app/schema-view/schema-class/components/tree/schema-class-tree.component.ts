@@ -10,7 +10,7 @@ import { NewInstanceActions } from "src/app/instance/state/instance.actions";
 import { SchemaClass } from "../../../../core/models/reactome-schema.model";
 import { DataService } from "../../../../core/services/data.service";
 import { Instance } from "src/app/core/models/reactome-instance.model";
-import { deleteInstances, newInstances } from "src/app/instance/state/instance.selectors";
+import { deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 
 
 /** Tree node with expandable and level information */
@@ -32,14 +32,23 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
   // Use to correct class counts
   private instancesDeleted: Instance[] = [];
   private instancesCreated: Instance[] = [];
+  private instancesUpdated: Instance[] = [];
 
-  private _getCount = (schemaCls: SchemaClass): number => {
+  private _getCountFromDatabase = (schemaCls: SchemaClass): number => {
     let count = schemaCls.count ? schemaCls.count : 0;
     //if (count > 0) {
-      // Correct the count if there are instances deleted or created
-      count += this.instancesCreated.filter(inst => this._isSchemaClass(schemaCls, inst.schemaClassName)).length;
-      count -= this.instancesDeleted.filter(inst => this._isSchemaClass(schemaCls, inst.schemaClassName)).length;
-   // }
+    // Correct the count if there are instances deleted or created
+    // count += this.instancesCreated.filter(inst => this._isSchemaClass(schemaCls, inst.schemaClassName)).length;
+    // count -= this.instancesDeleted.filter(inst => this._isSchemaClass(schemaCls, inst.schemaClassName)).length;
+    // }
+    return count;
+  }
+
+  getLocalCount = (schemaCls: SchemaClass): number => {
+    let count = 0;
+    count += this.instancesCreated.filter(inst => this._isSchemaClass(schemaCls, inst.schemaClassName)).length;
+    count += this.instancesUpdated.filter(inst => this._isSchemaClass(schemaCls, inst.schemaClassName)).length;
+    count -= this.instancesDeleted.filter(inst => this._isSchemaClass(schemaCls, inst.schemaClassName)).length;
     return count;
   }
 
@@ -72,7 +81,7 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
       expandable: !!node.children && node.children.length > 0,
       name: node.name,
       // count: node.count ?? 0,
-      count: this._getCount(node),
+      count: this._getCountFromDatabase(node),
       level: level,
       abstract: node.abstract ?? false, // Default is false
     };
@@ -95,8 +104,8 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
 
   private subscription: Subscription = new Subscription();
 
-  constructor(private service: DataService, 
-    private router: Router, 
+  constructor(private service: DataService,
+    private router: Router,
     private store: Store,
     private instUtils: InstanceUtilities,
     private cdr: ChangeDetectorRef) {
@@ -112,6 +121,11 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
     this.subscription.add(sub);
     sub = this.store.select(newInstances()).subscribe(instances => {
       this.instancesCreated = instances;
+      this.loadSchemaTree();
+    });
+    this.subscription.add(sub);
+    sub = this.store.select(updatedInstances()).subscribe(instances => {
+      this.instancesUpdated = instances;
       this.loadSchemaTree();
     });
     this.subscription.add(sub);

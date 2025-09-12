@@ -2,8 +2,10 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ActivatedRoute } from "@angular/router";
 import { Store } from "@ngrx/store";
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
-import { Instance, NEW_DISPLAY_NAME } from "../../../../../../core/models/reactome-instance.model";
+import { Instance, InstanceList, NEW_DISPLAY_NAME } from "../../../../../../core/models/reactome-instance.model";
 import { BookmarkActions } from "../../../../../instance-bookmark/state/bookmark.actions";
+import { map, Observable, take } from 'rxjs';
+import { deleteInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 
 export interface ActionButton {
   name: string;
@@ -34,13 +36,32 @@ export class InstanceListTableComponent {
   readonly newDisplayName: string = NEW_DISPLAY_NAME;
   routerNavigationUrl: string = ''
   showSecondaryButtons: boolean = false;
+  deletedDBIds: number[] = [];
+  updatedDBIds: number[] = [];
 
-  constructor(private store: Store, 
-              private instanceUtilities: InstanceUtilities) {
+  constructor(private store: Store,
+    private instanceUtilities: InstanceUtilities) {
+  }
+
+  ngOnInit() {
+    this.store.select(deleteInstances()).pipe(
+      take(1),
+      map((instances) => {
+         this.deletedDBIds = instances.map(inst => inst.dbId);
+      })
+    ).subscribe();
+
+        this.store.select(updatedInstances()).pipe(
+      take(1),
+      map((instances) => {
+         this.updatedDBIds = instances.map(inst => inst.dbId);
+      })
+    ).subscribe();
+
   }
 
   click(instance: Instance, action: string) {
-    let actionButton = {instance, action};
+    let actionButton = { instance, action };
     this.actionEvent.emit(actionButton);
   }
 
@@ -56,7 +77,7 @@ export class InstanceListTableComponent {
   // getInstanceUrl(instance: Instance) {
   //   if (this.blockRoute)
   //     return undefined;
-    
+
   //   if (this.instanceURL)
   //     return this.instanceURL + instance.dbId.toString();
   //   else
@@ -69,7 +90,15 @@ export class InstanceListTableComponent {
     this.instanceUtilities.setLastClickedDbId(instance.dbId);
   }
 
-  setNavigationUrl(instance: Instance){
+  setNavigationUrl(instance: Instance) {
     this.routerNavigationUrl = '/schema_view/instance/' + instance.dbId.toString();
+  }
+
+  isDeleted(row: Instance): boolean {
+    return this.deletedDBIds.includes(row.dbId);
+  }
+
+  isUpdated(row: Instance): boolean {
+    return this.updatedDBIds.includes(row.dbId);
   }
 }

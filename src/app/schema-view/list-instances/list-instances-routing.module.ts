@@ -12,6 +12,10 @@ const routes: Routes = [
     path: `:className/:skip/:limit`,
     component: InstanceListViewComponent,
   },
+  {
+    path: `local/:className/:skip/:limit`,
+    component: InstanceListViewComponent,
+  },
   // The following route should not be used! It confuses with the above, second route!
   // {
   //   path: `:className/:attributes/:operands/:searchKey`,

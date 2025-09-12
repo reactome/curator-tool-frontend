@@ -1,6 +1,6 @@
 .instance-list-table {
   width: 100%;
-  position:relative;
+  position: relative;
 }
 
 .instance-list-table-row-is-clicked {
@@ -38,7 +38,7 @@ th {
 .buttons-pane {
   // display: flex;
   // flex-direction: row-reverse;
-   padding: 0;
+  padding: 0;
   // position: absolute;
   min-width: 300px;
   flex: 0 0 auto;
@@ -54,7 +54,7 @@ th {
   overflow: hidden;
 }
 
-.shrinkable{
+.shrinkable {
   flex: 1 1 auto;
   width: 200px;
   // overflow-wrap: break-word;
@@ -67,7 +67,24 @@ th {
   word-break: break-word;
 }
 
-.td{
+.td {
   padding: 0 !important;
   margin: 0 !important;
+}
+
+.rowBackground {
+  // background: var(--primary-container);
+  // color: var(--on-primary-container);
+  // width: 200px;
+  // min-width: 100px;
+
+  &.deleteHighlight {
+    text-decoration: line-through;
+    color: #f28b82;
+    text-decoration-thickness: 2px;
+  }
+  &.updateHighlight {
+    text-decoration: wavy underline;
+    color: #81c995;
+  }
 }

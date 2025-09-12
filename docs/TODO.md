@@ -9,6 +9,9 @@
 - Bug: the connecting positions are not updated for helper nodes when they are dragged during editing. (??)
 - Bug: inner shapes are not updated when resizing nodes.
 - Bug (fixed. Kept for future test): When a PE is used as both input and catalyst, enable/disable editing in pathway diagram cannot recovers the original diagram (input or catalyst may get lost, e.g. http://localhost:4200/event_view/instance/453279?select=8848436) - Bug: LLM geneates text for ALDOB having the original template [PMID: 123456] that is not replaced. See Peter's email on Nov 13, 2024.
+- Order by display name for a list of black box event
+- When an instance has been deleted also make sure that it is removed from the updated store. Make sure that a deleted instance is not editable.
+- Search and advanced search needs to consider the instances that have been updated and added (local changes)
 
 #### Deidre
 - Bug: After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should  stay at the changes tab. Done 
@@ -19,6 +22,11 @@
 - TODO: List all performed QAs in the QA report even though all QAs are passed. By doing this, the tool gives the curator a list of what have been checked. Done
 - TODO: Create a "replace one" and "replace all" for the summation text editor Done
 - TODO: Boolean sliders appear to be 'false' when they are 'true' and disabled due to the gray styling for diabled buttons.
+- For each type of store lists (update, new) create a limit to the number of instances and add a scroll bar 
+- Add checkbox the undo and delete multiple instances at one time
+- New instances are not subject to the search 
+- Update the css for the batch editing drop downs. Also change the batch edit button location. 
+
 
 
 #### TODO:

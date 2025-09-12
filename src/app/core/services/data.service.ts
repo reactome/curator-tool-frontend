@@ -51,6 +51,7 @@ export class DataService {
   private getCyNetworkUrl = `${environment.ApiRoot}/getCyNetwork/`;
   private deleteInstaneUrl = `${environment.ApiRoot}/delete/`;
   private fetchQAReportUrl = `${environment.ApiRoot}/qaReport/`;
+  private fetchInstancesInBatchUrl = `${environment.ApiRoot}/findByDbIds/`;
 
 
   // Track the negative dbId to be used
@@ -521,71 +522,34 @@ export class DataService {
           })
         );
       }),
-      // Second concatMap: First select subscription (newInstances)
-      concatMap((data: InstanceList) => {
-        return this.store.select(newInstances()).pipe(
-          take(1),
-          map((insts) => {
-            for (let inst of insts) {
-              inst = this.utils.makeShell(inst);
-              // This should be faster therefore check it first
-              if (searchKey && searchKey.length > 0) {
-                // If searchKey is integer, check for dbId
-                if (/^\d+$/.test(searchKey)) {
-                  if (inst.dbId.toString() !== searchKey)
-                    continue;
-                }
-                // Otherwise, check for text
-                else if (!inst.displayName?.toLocaleLowerCase().includes(searchKey.toLocaleLowerCase()))
-                  continue;
-              }
-              // The skip should be less than the limit to ensure new instances are only added to the first page.
-              if (this.isSchemaClass(inst, className) && (skip < limit)) {
-                // Update the data being returned. New instance is placed at index 0.
-                data.instances.splice(0, 0, inst);
-                if (!data.totalCount) {
-                  data.totalCount = 0;
-                }
-                data.totalCount++;
-              }
-            }
-            return data; // Pass modified data to the next step
-          })
-        );
-      }),
-      // Third concatMap: Second select subscription (deleteInstances)
-      concatMap((data: InstanceList) => {
-        return this.store.select(deleteInstances()).pipe(
-          take(1),
-          map((instances) => {
-            const deletedDBIds = instances.map(inst => inst.dbId);
-            for (let i = 0; i < data.instances.length; i++) {
-              if (deletedDBIds.includes(data.instances[i].dbId)) {
-                data.instances.splice(i, 1);
-                i--; // Adjust index after removal
-                data.totalCount--;
-              }
-            }
-            return data; // Pass the final modified data
-          })
-        );
-      }),
       // Fourth concatMap: filter out database copies of instances that have been updated
+      // TODO; check instances one by one, if the dbId is contained in the updated instances, then update
+      // the instance display name with the updated instance's display name (if different)
+      // indicate the instance has been updated by creating a css hue 
       concatMap((data: InstanceList) => {
         return this.store.select(updatedInstances()).pipe(
           take(1),
           map((instances: Instance[]) => {
             const updatedDbIds = new Set(instances.map(inst => inst.dbId));
-            // Filter out backend instances with matching dbId
-            const filtered = data.instances.filter(inst => !updatedDbIds.has(inst.dbId));
-            // Place updated instances first
-            data.instances = [...instances, ...filtered];
-            return data; // Pass the final modified data
 
+            // Create a map for quick lookup of updated instances by dbId
+            const updatedInstancesMap = new Map(instances.map(inst => [inst.dbId, inst]));
+
+            // Update display names for instances that exist in both data and store
+            data.instances.forEach(dataInst => {
+              if (updatedInstancesMap.has(dataInst.dbId)) {
+                const updatedInst = updatedInstancesMap.get(dataInst.dbId)!;
+                // If the display name has changed, update it
+                if (dataInst.displayName !== updatedInst.displayName) {
+                  dataInst.displayName = updatedInst.displayName;
+                }
+              }
+            });
+            return data; // Pass the final modified data
           })
         );
       }),
-      // Error handling
+      //Error handling
       catchError((err: Error) => {
         return this.handleErrorMessage(err);
       })
@@ -814,7 +778,9 @@ export class DataService {
         if (!person || person.length == 0) {
           return this.handleErrorMessage(new Error('Cannot find the default person!'));
         }
+
         instanceToBeCommitted.defaultPersonId = person[0].dbId;
+
         return this.http.post<Instance>(this.commitInstanceUrl, instanceToBeCommitted).pipe(
           map((inst: Instance) => {
             // Remove the original instance from the cache
@@ -1144,5 +1110,41 @@ export class DataService {
       });
       return obj;
     });
+  }
+
+  fetchInstanceInBatch(dbIds: number[]): Observable<Instance[]> {
+    if (dbIds.length === 0) {
+      return of([]);
+    }
+  
+    const fromCache: { [key: number]: Instance } = {};
+    const toFetch: number[] = [];
+  
+    dbIds.forEach(id => {
+      if (this.id2instance.has(id)) {
+        fromCache[id] = this.id2instance.get(id)!;
+      } else {
+        toFetch.push(id);
+      }
+    });
+  
+    if (toFetch.length === 0) {
+      // All instances are in the cache
+      return of(dbIds.map(id => fromCache[id]));
+    }
+  
+    // Fetch the rest from the backend
+    return this.http.post<Instance[]>(this.fetchInstancesInBatchUrl, toFetch).pipe(
+      map((fetched: Instance[]) => {
+        fetched.forEach(inst => {
+          this.handleInstanceAttributes(inst);
+          this.id2instance.set(inst.dbId, inst);
+        });
+        const fetchedMap = new Map(fetched.map(inst => [inst.dbId, inst]));
+        // Merge, preserving original order
+        return dbIds.map(id => fromCache[id] || fetchedMap.get(id)!);
+      }),
+      catchError((err: Error) => this.handleErrorMessage(err))
+    );
   }
 }

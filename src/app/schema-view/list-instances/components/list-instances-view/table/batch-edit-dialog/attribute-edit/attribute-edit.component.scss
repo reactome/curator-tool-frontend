@@ -1,0 +1,77 @@
+.span-menu-trigger {
+  display: inline-block;
+  width: 100%;
+  /* Adjust the width to your preference
+  TODO: Make sure this is the same height as the link in other cells! */
+  // Have to set some height for this. Otherwise, popup cannot appear!
+  height: 20px;
+  margin-top: 6px;
+  /* Adjust the height to your preference */
+
+  /* Change the background color as needed */
+}
+
+.padding {
+  padding: 0 16px;
+}
+
+:host {
+  --mdc-shape-small: 0;
+}
+
+mat-form-field {
+  width: 100%;
+  margin: 0;
+  //height: 35px;
+  outline: none;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-size: 14px;
+}
+
+.mat-mdc-form-field-infix {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.input-style {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-size: 14px;
+  width: 100%;
+  line-height: normal;
+}
+
+.valueRow {
+
+  :hover {
+    border: 1px solid grey;
+    border-radius: 4px;
+    transition: border-color 0.3s;
+  }
+
+  &.dragging:hover {
+
+    &.green {
+      border: 4px green;
+      background: green;
+    }
+
+    &.red {
+     border: 4px red;
+      background: red;
+    }
+  }
+  &.notDragging{
+    border-color: #8a9296;
+  }
+
+}
+// Center the button vertically in the form field
+.form-field {
+  display: flex;
+  align-items: center;
+}
+.edit-button {
+  align-items: center;
+  text-align: center;
+  margin-left: 8px; // Add spacing between the textarea and the button
+}
