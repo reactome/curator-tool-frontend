@@ -15,6 +15,7 @@ export class InstanceListViewComponent implements AfterViewInit {
   attributeTypes: Array<string> = [];
   regex: Array<string> = [];
   searchKey: Array<string> = [];
+  isLocal: boolean = true;
   
   // Get this so that we can manipulate the search criteria directly
   @ViewChild(InstanceSelectionComponent) instanceList!: InstanceSelectionComponent;
@@ -27,6 +28,11 @@ export class InstanceListViewComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
     setTimeout(() => {
+    this.route.url.subscribe(urlSegments => {
+      if (urlSegments.length > 0) {
+        this.isLocal = urlSegments[1].path === 'local';
+      }
+    });
     combineLatest([this.route.params, this.route.queryParams]).subscribe(
       ([params, queryParams]) => this.handleRoute(params, queryParams)
     );

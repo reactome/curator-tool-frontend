@@ -20,6 +20,8 @@ import {MatFormFieldModule } from '@angular/material/form-field';
 import { AttributeEditComponent } from './components/list-instances-view/table/batch-edit-dialog/attribute-edit/attribute-edit.component';
 import { EditMenuComponent } from './components/list-instances-view/table/batch-edit-dialog/attribute-edit/action-menu/action-menu.component';
 import { AttributeListDialogComponent } from './components/list-instances-view/table/batch-edit-dialog/attribute-list-dialog/attribute-list-dialog.component';
+import { MatDialog, MatDialogContent, MatDialogModule } from '@angular/material/dialog';
+import { MatTableModule } from '@angular/material/table';
 
 
 @NgModule({
@@ -54,7 +56,8 @@ import { AttributeListDialogComponent } from './components/list-instances-view/t
     StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer),
     MatSlideToggleModule,
     MatFormFieldModule,
-    
+    MatDialogModule,
+    MatTableModule
 ],
 })
 export class ListInstancesModule {

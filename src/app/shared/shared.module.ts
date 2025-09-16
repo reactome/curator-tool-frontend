@@ -9,6 +9,7 @@ import {
 } from "./components/search-filter/attribute-condition/attribute-condition.component";
 import {MatTooltip} from "@angular/material/tooltip";
 import { InfoDialogComponent } from './components/info-dialog/info-dialog.component';
+import { MatDialogModule } from '@angular/material/dialog';
 
 @NgModule({
   declarations: [
@@ -24,7 +25,9 @@ import { InfoDialogComponent } from './components/info-dialog/info-dialog.compon
     CdkVirtualForOf,
     NgFor,
     MatTooltip,
-    InfoDialogComponent
+    InfoDialogComponent,
+    MatDialogModule,
+    
   ],
     exports: [
       MaterialModule,
