@@ -12,8 +12,8 @@ import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ActionButton } from './instance-list-table/instance-list-table.component';
 import { ListInstancesDialogService } from '../../list-instances-dialog/list-instances-dialog.service';
 import { BatchEditDialogService } from './batch-edit-dialog/batch-edit-dialog-service';
-import { deleteInstances, newInstances } from 'src/app/instance/state/instance.selectors';
-import { combineLatest, Subscription } from 'rxjs';
+import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
+import { combineLatest, Subscription, take } from 'rxjs';
 
 @Component({
   selector: 'app-instance-selection',
@@ -40,7 +40,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   // To be displayed in instance list table
   data: Instance[] = [];
   actionButtons: Array<ActionButton> = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.DELETE, ACTION_BUTTONS.LIST];
-  secondaryActionButtons: Array<ActionButton> =[ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
+  secondaryActionButtons: Array<ActionButton> = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
   // Used to popup attributes for advanced search (i.e. SearchFilterComponent)
   schemaClassAttributes: string[] = [];
   // Flag to indicate if the advanced search component should be displayed
@@ -55,6 +55,8 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   @Input() isSelection: boolean = false;
 
   @Output() clickEvent = new EventEmitter<Instance>();
+
+  @Input() isLocal: boolean = true;
 
   @Input() set setClassName(inputClassName: string) {
     setTimeout(() => {
@@ -118,22 +120,39 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
    */
   loadInstances() {
     // Make sure className is set!
-    if (this.className && this.className.length > 0) 
-      
-      this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
-        .subscribe((instancesList) => {
-          this.displayInstances(instancesList);
+    if (this.className && this.className.length > 0)
+      if (this.isLocal) {
+
+        combineLatest([
+          this.store.select(updatedInstances()).pipe(take(1)),
+          this.store.select(newInstances()).pipe(take(1)),
+          this.store.select(deleteInstances()).pipe(take(1))
+        ]).subscribe(([updated, newlyCreated, deleted]) => {
+          // Combine: updated, new, and deleted instances
+          const combined = [...updated, ...newlyCreated, ...deleted];
+          const localInstList: InstanceList = {
+            instances: combined,
+            totalCount: combined.length
+          };
+          this.displayInstances(localInstList);
           this.showProgressSpinner = false;
-        }
-        )
-      
+        });
+      }
+      else {
+            this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
+              .subscribe((instancesList) => {
+                this.displayInstances(instancesList);
+                this.showProgressSpinner = false;
+              }
+              )
+
 
         if(this.dataService.isEventClass(this.className))
-          this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES, ACTION_BUTTONS.SHOW_TREE];
+        this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES, ACTION_BUTTONS.SHOW_TREE];
         else {
           this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
         }
-  
+      }
   }
 
   private displayInstances(instancesList: InstanceList) {
@@ -217,8 +236,10 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
 
       case ACTION_BUTTONS.COMPARE_INSTANCES.name: {
         const matDialogRef =
-        this.listInstancesDialogService.openDialog({schemaClassName: actionEvent.instance.schemaClassName, 
-          title: "Compare " + actionEvent.instance.displayName + " to"});
+          this.listInstancesDialogService.openDialog({
+            schemaClassName: actionEvent.instance.schemaClassName,
+            title: "Compare " + actionEvent.instance.displayName + " to"
+          });
         matDialogRef.afterClosed().subscribe((result) => {
           this.router.navigate(["/schema_view/instance/" + actionEvent.instance.dbId.toString() + "/comparison/" + result?.dbId.toString()]);
         });
@@ -226,27 +247,27 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
       }
 
       case ACTION_BUTTONS.SHOW_TREE.name: {
-        if(actionEvent.instance.schemaClassName)
+        if (actionEvent.instance.schemaClassName)
           this.router.navigate(["/event_view/instance/" + actionEvent.instance.dbId]);
         break;
       }
     }
   }
 
-    /**
-     * Handle the search button action.
-     * @param searchFilters
-     */
-    addSearchCriterium(attributeCondition: SearchCriterium) {
-      if (!this.validateSearchCriterium(attributeCondition))
-        return; // Make sure only valid criterium can be added
-      this.searchCriteria.push(attributeCondition);
-      this.updateAdvancedSearchKey();
-    }
+  /**
+   * Handle the search button action.
+   * @param searchFilters
+   */
+  addSearchCriterium(attributeCondition: SearchCriterium) {
+    if (!this.validateSearchCriterium(attributeCondition))
+      return; // Make sure only valid criterium can be added
+    this.searchCriteria.push(attributeCondition);
+    this.updateAdvancedSearchKey();
+  }
 
-    resetSearchCriteria() {
-      this.searchCriteria.length = 0; // reset it
-    }
+  resetSearchCriteria() {
+    this.searchCriteria.length = 0; // reset it
+  }
 
   private updateAdvancedSearchKey() {
     // Reset from the scratch
