@@ -21,7 +21,7 @@ import { combineLatest, Subscription, take } from 'rxjs';
   styleUrls: ['./instance-selection.component.scss'],
 })
 export class InstanceSelectionComponent implements OnInit, OnDestroy {
-
+  isLocal: boolean = false;
   skip: number = 0;
   // This is for doing simple text or dbId based search
   searchKey: string | undefined = '';
@@ -55,8 +55,6 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   @Input() isSelection: boolean = false;
 
   @Output() clickEvent = new EventEmitter<Instance>();
-
-  @Input() isLocal: boolean = true;
 
   @Input() set setClassName(inputClassName: string) {
     setTimeout(() => {
@@ -139,20 +137,18 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
         });
       }
       else {
-            this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
-              .subscribe((instancesList) => {
-                this.displayInstances(instancesList);
-                this.showProgressSpinner = false;
-              }
-              )
-
-
-        if(this.dataService.isEventClass(this.className))
-        this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES, ACTION_BUTTONS.SHOW_TREE];
-        else {
-          this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
-        }
+        this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
+          .subscribe((instancesList) => {
+            this.displayInstances(instancesList);
+            this.showProgressSpinner = false;
+          });
       }
+
+    if (this.dataService.isEventClass(this.className))
+      this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES, ACTION_BUTTONS.SHOW_TREE];
+    else {
+      this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
+    }
   }
 
   private displayInstances(instancesList: InstanceList) {

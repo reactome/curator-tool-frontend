@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { ActivatedRoute, Params, Route, Router } from "@angular/router";
-import { InstanceSelectionComponent } from './table/instance-selection.component';
+import { InstanceSelectionComponent } from '../table/instance-selection.component';
 import { combineLatest } from 'rxjs';
 import { SearchCriterium } from 'src/app/core/models/reactome-instance.model';
 
@@ -15,8 +15,8 @@ export class InstanceListViewComponent implements AfterViewInit {
   attributeTypes: Array<string> = [];
   regex: Array<string> = [];
   searchKey: Array<string> = [];
-  isLocal: boolean = true;
-  
+  isLocal: boolean = false;
+
   // Get this so that we can manipulate the search criteria directly
   @ViewChild(InstanceSelectionComponent) instanceList!: InstanceSelectionComponent;
 
@@ -28,11 +28,6 @@ export class InstanceListViewComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
     setTimeout(() => {
-    this.route.url.subscribe(urlSegments => {
-      if (urlSegments.length > 0) {
-        this.isLocal = urlSegments[1].path === 'local';
-      }
-    });
     combineLatest([this.route.params, this.route.queryParams]).subscribe(
       ([params, queryParams]) => this.handleRoute(params, queryParams)
     );
@@ -40,6 +35,11 @@ export class InstanceListViewComponent implements AfterViewInit {
   }
 
   private handleRoute(params: Params, queryParams: Params) {
+    if(params['source'] && params['source'] === 'local') {
+      this.instanceList.isLocal = true;
+    } else {
+      this.instanceList.isLocal = false;
+    }
     if (params['skip'])
       this.instanceList.skip = params['skip']; // Use whatever is default
     if (params['limit'])

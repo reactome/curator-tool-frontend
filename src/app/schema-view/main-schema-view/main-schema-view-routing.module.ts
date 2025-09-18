@@ -19,6 +19,11 @@ const routes: Routes = [
           import('../list-instances/list-instances.module').then(m => m.ListInstancesModule),
       },
       {
+        path: 'local_list_instances',
+        loadChildren: () =>
+          import('../list-instances/list-instances.module').then(m => m.ListInstancesModule),
+      },
+      {
         path: 'instance',
         loadChildren: () =>
           import('src/app/instance/instance.module').then(m => m.InstanceModule),

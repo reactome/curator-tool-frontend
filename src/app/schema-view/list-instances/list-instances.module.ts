@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { InstanceSelectionComponent } from "./components/list-instances-view/table/instance-selection.component";
 import { ListInstancesRoutingModule } from "./list-instances-routing.module";
-import { InstanceListViewComponent } from "./components/list-instances-view/instance-list-view.component";
+import { InstanceListViewComponent } from "./components/list-instances-view/instance-list/instance-list-view.component";
 import { SharedModule } from "../../shared/shared.module";
 import { MaterialModule } from "../../shared/material/material.module";
 import { SelectInstanceDialogComponent } from "./components/select-instance-dialog/select-instance-dialog.component";
@@ -35,7 +35,7 @@ import { MatTableModule } from '@angular/material/table';
     BatchEditDialogComponent,
     AttributeListDialogComponent,
     EditMenuComponent,
-    AttributeEditComponent
+    AttributeEditComponent,
   ],
   exports: [
     InstanceSelectionComponent,
