@@ -84,32 +84,6 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // const sub = combineLatest([
-    //   this.store.select(deleteInstances()),
-    //   this.store.select(newInstances())
-    // ]).subscribe(([deletedInstances, newInstances]) => {
-    //   if (!this.data)
-    //     return
-    //   if (!deletedInstances)
-    //     deletedInstances = [];
-    //   if (!newInstances)
-    //     newInstances = [];
-    //   const deletedDbIds = deletedInstances.map(inst => inst.dbId);
-    //   const newDbIds = newInstances.map(inst => inst.dbId);
-    //   const preCount = this.data.length;
-    //   this.data = this.data.filter(inst => {
-    //     if (inst.dbId > 0 && !deletedDbIds.includes(inst.dbId))
-    //       return true;
-    //     if (inst.dbId < 0 && newDbIds.includes(inst.dbId))
-    //       return true;
-    //     return false;
-    //   })
-    //   // Update the total instance count
-    //   // Note: for the time being, the page size is fixed
-    //   this.instanceCount = this.instanceCount - (preCount - this.data.length);
-    // });
-
-    // this.subscription.add(sub);
   }
 
   /**
@@ -120,16 +94,37 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
     // Make sure className is set!
     if (this.className && this.className.length > 0)
       if (this.isLocal) {
-
         combineLatest([
           this.store.select(updatedInstances()).pipe(take(1)),
           this.store.select(newInstances()).pipe(take(1)),
           this.store.select(deleteInstances()).pipe(take(1))
         ]).subscribe(([updated, newlyCreated, deleted]) => {
+          // Only include instances with matching className
+          const filteredUpdated = updated.filter(inst => inst.schemaClassName === this.className);
+          const filteredNew = newlyCreated.filter(inst => inst.schemaClassName === this.className);
+          const filteredDeleted = deleted.filter(inst => inst.schemaClassName === this.className);
+        
+          // Optionally filter by displayName if searchKey is set
+          const filterBySearchKey = (arr: Instance[]) => {
+            if (this.searchKey && this.searchKey.trim().length > 0) {
+              const key = this.searchKey.trim().toLowerCase();
+              return arr.filter(inst => inst.displayName && inst.displayName.toLowerCase().includes(key));
+            }
+            return arr;
+          };
+        
+          const filteredUpdatedByKey = filterBySearchKey(filteredUpdated);
+          const filteredNewByKey = filterBySearchKey(filteredNew);
+          const filteredDeletedByKey = filterBySearchKey(filteredDeleted);
+        
           // Combine: updated, new, and deleted instances
-          const combined = [...updated, ...newlyCreated, ...deleted];
+          const combined = [...filteredUpdatedByKey, ...filteredNewByKey, ...filteredDeletedByKey];
+        
+          // Apply skip and limit
+          const paged = combined.slice(this.skip, this.skip + this.pageSize);
+        
           const localInstList: InstanceList = {
-            instances: combined,
+            instances: paged,
             totalCount: combined.length
           };
           this.displayInstances(localInstList);
@@ -366,7 +361,11 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   }
 
   private getListInstancesURL() {
-    let url = '/schema_view/list_instances/' + this.className + '/' + this.skip + '/' + this.pageSize;
+    let url = '';
+    if (this.isLocal)
+      url = '/schema_view/list_instances/source/local/' + this.className + '/' + this.skip + '/' + this.pageSize;
+    else
+      url = '/schema_view/list_instances/source/db/' + this.className + '/' + this.skip + '/' + this.pageSize;
     return url;
   }
 
@@ -381,11 +380,18 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
     searchKeys: string[]
   ) {
     this.showProgressSpinner = true;
-    this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributeNames, operands, searchKeys)
-      .subscribe(instanceList => {
-        this.displayInstances(instanceList);
-        this.showProgressSpinner = false;
-      })
+
+    if (this.isLocal) {
+
+    }
+    else {
+      this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributeNames, operands, searchKeys)
+        .subscribe(instanceList => {
+          this.displayInstances(instanceList);
+          this.showProgressSpinner = false;
+        })
+    }
+
   }
 
   navigateUrl(instance: Instance) {

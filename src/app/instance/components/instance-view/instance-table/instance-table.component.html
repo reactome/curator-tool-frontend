@@ -1,14 +1,14 @@
 <div style="overflow: scroll;">
   <ng-template #valueColTemplate let-element>
     <ng-container *ngIf="element.attribute.cardinality === '1'">
-      <app-instance-table-row-element [attribute]="element.attribute" [value]="element.value"
+      <app-instance-table-row-element [disable]="isValueDeleted()" [attribute]="element.attribute" [value]="element.value"
         [dragDropStatus]="dragDropStatus" (newValueEvent)="onNoInstanceAttributeEdit($event)"
         (editAction)="onInstanceAttributeEdit($event)" [blockRoute]="blockRouter" />
     </ng-container>
     <ng-container *ngIf="element.attribute.cardinality === '+'">
       <ng-container *ngIf="element.value !== undefined; else noValue">
           <div cdkDropList [cdkDropListData]="element.value" (cdkDropListDropped)="drop($event, element.attribute)">
-            <app-instance-table-row-element cdkDrag *ngFor="let object of element.value; let i = index"
+            <app-instance-table-row-element [disable]="isValueDeleted()" cdkDrag *ngFor="let object of element.value; let i = index"
               class="draggable-instance-box" [attribute]="element.attribute" [value]="object" [dragDropStatus]="dragDropStatus"
               (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)"
               [blockRoute]="blockRouter" [index]="i" />
@@ -17,7 +17,7 @@
 
         <!-- Disable drag and drop for no manual edit attributes -->
         <ng-container *ngIf="element.attribute.category === AttributeCategory.NOMANUALEDIT">
-          <app-instance-table-row-element *ngFor="let object of element.value; let i = index"
+          <app-instance-table-row-element [disable]="isValueDeleted()" *ngFor="let object of element.value; let i = index"
             class="instance-box" [attribute]="element.attribute" [value]="object"
             (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)"
             [blockRoute]="blockRouter" [index]="i" />

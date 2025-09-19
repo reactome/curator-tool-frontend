@@ -28,4 +28,9 @@
     text-overflow: ellipsis;
     max-width: 100%;
 }
+
+.scroll-list {
+  max-height: 250px; // Adjust based on your row height (e.g., 5 rows x 50px)
+  overflow-y: auto;
+}
   

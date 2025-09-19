@@ -1,7 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { InstanceSelectionComponent } from "./components/list-instances-view/table/instance-selection.component";
-import { ListInstancesRoutingModule } from "./list-instances-routing.module";
 import { InstanceListViewComponent } from "./components/list-instances-view/instance-list/instance-list-view.component";
 import { SharedModule } from "../../shared/shared.module";
 import { MaterialModule } from "../../shared/material/material.module";
@@ -22,6 +21,7 @@ import { EditMenuComponent } from './components/list-instances-view/table/batch-
 import { AttributeListDialogComponent } from './components/list-instances-view/table/batch-edit-dialog/attribute-list-dialog/attribute-list-dialog.component';
 import { MatDialog, MatDialogContent, MatDialogModule } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
+import { ListInstancesRoutingModule } from './list-instances-routing.module';
 
 
 @NgModule({

@@ -6,7 +6,7 @@ The limit parameter determines how many items to push into the list to be return
 The paginator is the UI to assist with iterating through the entirety of the instances from the backend so as not to load too many instances at once.
 Three functions for new
 The number of instances is from the back-end with no updates from the stores 
-Show two bracketed numbers to the right of a schema class. The first is the database number of instances. The second number is all of the local changes made by the user. All instances changed by the user. In the database list, still show the unmodified displayname, but show that instance is modified. Second list shows the new instances and updated displaynames. When the updated instances are clicked automatically show the comparison view. 
+Show two bracketed numbers to the right of a schema class. The first is the database number of instances. The second number is all of the local changes made by the user. All instances changed by the user. In the database list, still show the unmodified displayname, but show that instance is modified. Second list shows the new instances and updated displaynames. When the updated instances are clicked automatically show the comparison view. If a db Instance is clicked, show the db version of the instance. As a default for updated instances in BOTH lists show the comparison view. If instance is modified and then deleted, show the deletion and open in comparison mode in BOTH lists . 
 
 Deleted Instances
 Do not filter out, but display with the different hue to indicate deletion 

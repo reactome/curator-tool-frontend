@@ -28,6 +28,8 @@ import {
 } from './instance-table.model';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
+import { deleteInstances } from 'src/app/instance/state/instance.selectors';
+import { map, take } from 'rxjs';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -85,6 +87,9 @@ export class InstanceTableComponent implements PostEditListener {
     draggedInstance: undefined,
   };
 
+  disableEditing: boolean = false;
+  deletedDBIds: number[] = [];
+
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
     if (this.inEditing)
@@ -120,6 +125,14 @@ export class InstanceTableComponent implements PostEditListener {
       this.categories.set(AttributeCategory[categoryKey], true);
     }
     this.dragDropService.register('instance-table');
+
+    this.store.select(deleteInstances()).pipe(
+      take(1),
+      map((instances) => {
+        this.deletedDBIds = instances.map(inst => inst.dbId);
+      })
+    ).subscribe();
+
   } // Use a dialog service to hide the implementation of the dialog.
 
   changeShowFilterOptions() {
@@ -148,7 +161,7 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   onNoInstanceAttributeEdit(data: AttributeValue) {
-   // this.attributeEditService.onNoInstanceAttributeEdit(data, this._instance!);
+    // this.attributeEditService.onNoInstanceAttributeEdit(data, this._instance!);
     this.attributeEditService.onNoInstanceAttributeEdit(data, data.value, this._instance!, false);
     this.finishEdit(data.attribute.name, undefined);
   }
@@ -491,5 +504,11 @@ export class InstanceTableComponent implements PostEditListener {
     else {
       return false;
     }
+  }
+
+  isValueDeleted(): boolean {
+    if (this.deletedDBIds.length === 0) this.disableEditing = false;
+    if (this.deletedDBIds.includes(this._instance!.dbId)) this.disableEditing = true;
+    return this.disableEditing;
   }
 }

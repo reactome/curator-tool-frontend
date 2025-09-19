@@ -5,40 +5,41 @@
         </button>
     </div>
 </mat-toolbar>
-
 <h4>New Instances: {{newInstances.length}}</h4>
-<ng-container>
-<app-instance-list-table [dataSource]="newInstances"
-                         [isSelection]="isSelection"
-                         [showHeader]="showHeader"
-                         [actionButtons]="newInstanceActionButtons"
-                         [showEmptyMessage]="false"
-                         [blockRoute]="blockRoute"
-                         (actionEvent)="handleAction($event)"
-                         (urlClickEvent)="navigateUrl($event)">
-</app-instance-list-table>
-</ng-container>
+<div class="scroll-list">
+  <app-instance-list-table [dataSource]="newInstances"
+                           [isSelection]="isSelection"
+                           [showHeader]="showHeader"
+                           [actionButtons]="newInstanceActionButtons"
+                           [showEmptyMessage]="false"
+                           [blockRoute]="blockRoute"
+                           (actionEvent)="handleAction($event)"
+                           (urlClickEvent)="navigateUrl($event)">
+  </app-instance-list-table>
+</div>
 
 <h4>Updated Instances: {{updatedInstances.length}}</h4>
-<!-- <div> -->
-<app-instance-list-table [dataSource]="updatedInstances"
-                         [isSelection]="isSelection"
-                         [showHeader]="showHeader"
-                         [actionButtons]="updatedInstanceActions"
-                         [showEmptyMessage]="false"
-                         [blockRoute]="blockRoute"
-                         (actionEvent)="handleAction($event)"
-                         (urlClickEvent)="navigateUrl($event)">
-</app-instance-list-table>
-<!-- </div> -->
+<div class="scroll-list">
+  <app-instance-list-table [dataSource]="updatedInstances"
+                           [isSelection]="isSelection"
+                           [showHeader]="showHeader"
+                           [actionButtons]="updatedInstanceActions"
+                           [showEmptyMessage]="false"
+                           [blockRoute]="blockRoute"
+                           (actionEvent)="handleAction($event)"
+                           (urlClickEvent)="navigateUrl($event)">
+  </app-instance-list-table>
+</div>
 
 <h4>Deleted Instances: {{deletedInstances.length}}</h4>
-<app-instance-list-table [dataSource]="deletedInstances"
-                         [isSelection]="isSelection"
-                         [showHeader]="showHeader"
-                         [actionButtons]="deletedInstanceActions"
-                         [showEmptyMessage]="false"
-                         [blockRoute]="blockRoute"
-                         (actionEvent)="handleAction($event)"
-                         (urlClickEvent)="navigateUrl($event)">
-</app-instance-list-table>
+<div class="scroll-list">
+  <app-instance-list-table [dataSource]="deletedInstances"
+                           [isSelection]="isSelection"
+                           [showHeader]="showHeader"
+                           [actionButtons]="deletedInstanceActions"
+                           [showEmptyMessage]="false"
+                           [blockRoute]="blockRoute"
+                           (actionEvent)="handleAction($event)"
+                           (urlClickEvent)="navigateUrl($event)">
+  </app-instance-list-table>
+</div>

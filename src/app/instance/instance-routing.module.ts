@@ -8,7 +8,7 @@ const routes: Routes = [
     path: ':dbId/:mode/:dbId2',
     component: InstanceViewComponent
   },
-  // Somehow this conflicts with list_instance/classname/skip/limit
+  // //Somehow this conflicts with list_instance/classname/skip/limit
   // {
   //   path: `:dbId/:mode`,
   //   component: InstanceViewComponent,

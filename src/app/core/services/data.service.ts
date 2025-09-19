@@ -526,29 +526,29 @@ export class DataService {
       // TODO; check instances one by one, if the dbId is contained in the updated instances, then update
       // the instance display name with the updated instance's display name (if different)
       // indicate the instance has been updated by creating a css hue 
-      concatMap((data: InstanceList) => {
-        return this.store.select(updatedInstances()).pipe(
-          take(1),
-          map((instances: Instance[]) => {
-            const updatedDbIds = new Set(instances.map(inst => inst.dbId));
+      // concatMap((data: InstanceList) => {
+      //   return this.store.select(updatedInstances()).pipe(
+      //     take(1),
+      //     map((instances: Instance[]) => {
+      //       const updatedDbIds = new Set(instances.map(inst => inst.dbId));
 
-            // Create a map for quick lookup of updated instances by dbId
-            const updatedInstancesMap = new Map(instances.map(inst => [inst.dbId, inst]));
+      //       // Create a map for quick lookup of updated instances by dbId
+      //       const updatedInstancesMap = new Map(instances.map(inst => [inst.dbId, inst]));
 
-            // Update display names for instances that exist in both data and store
-            data.instances.forEach(dataInst => {
-              if (updatedInstancesMap.has(dataInst.dbId)) {
-                const updatedInst = updatedInstancesMap.get(dataInst.dbId)!;
-                // If the display name has changed, update it
-                if (dataInst.displayName !== updatedInst.displayName) {
-                  dataInst.displayName = updatedInst.displayName;
-                }
-              }
-            });
-            return data; // Pass the final modified data
-          })
-        );
-      }),
+      //       // Update display names for instances that exist in both data and store
+      //       data.instances.forEach(dataInst => {
+      //         if (updatedInstancesMap.has(dataInst.dbId)) {
+      //           const updatedInst = updatedInstancesMap.get(dataInst.dbId)!;
+      //           // If the display name has changed, update it
+      //           if (dataInst.displayName !== updatedInst.displayName) {
+      //             dataInst.displayName = updatedInst.displayName;
+      //           }
+      //         }
+      //       });
+      //       return data; // Pass the final modified data
+      //     })
+      //   );
+      // }),
       //Error handling
       catchError((err: Error) => {
         return this.handleErrorMessage(err);
