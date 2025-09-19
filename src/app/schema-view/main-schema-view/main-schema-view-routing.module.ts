@@ -24,8 +24,13 @@ const routes: Routes = [
         loadChildren: () =>
           import('../schema-class/components/table/schema-class-table.module').then(m => m.SchemaClassTableModule),
       },
-            {
+      {
         path: 'list_instances',
+        loadChildren: () =>
+          import('../list-instances/list-instances.module').then(m => m.ListInstancesModule),
+      },
+      {
+        path: 'local_list_instances',
         loadChildren: () =>
           import('../list-instances/list-instances.module').then(m => m.ListInstancesModule),
       },

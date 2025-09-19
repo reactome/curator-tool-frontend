@@ -20,7 +20,7 @@ export class InstanceListViewComponent implements AfterViewInit {
   // Get this so that we can manipulate the search criteria directly
   @ViewChild(InstanceSelectionComponent) instanceList!: InstanceSelectionComponent;
 
-  constructor(private route: ActivatedRoute
+  constructor(private route: ActivatedRoute, private router: Router
   ) {
   }
 
@@ -35,7 +35,12 @@ export class InstanceListViewComponent implements AfterViewInit {
   }
 
   private handleRoute(params: Params, queryParams: Params) {
-    if(params['source'] && params['source'] === 'local') {
+    // if(params['source'] && params['source'] === 'local') {
+    //   this.instanceList.isLocal = true;
+    // } else {
+    //   this.instanceList.isLocal = false;
+    // }
+    if(this.router.url.includes('local_list_instances')) {
       this.instanceList.isLocal = true;
     } else {
       this.instanceList.isLocal = false;

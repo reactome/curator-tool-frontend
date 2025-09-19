@@ -5,9 +5,9 @@
     <!-- use a disabled button to provide padding for table leaf -->
     <button mat-icon-button disabled></button>
     <a class="schema_class_text" routerLink="/schema_view/class/{{node.name}}">{{node.name}}</a>&nbsp;
-    <a routerLink="/schema_view/list_instances/source/db/{{node.name}}">[{{node.count}}]</a>&nbsp;
+    <a routerLink="/schema_view/list_instances/{{node.name}}">[{{node.count}}]</a>&nbsp;
     <ng-container *ngIf="getLocalCount(node) !== 0">
-      <a routerLink="/schema_view/list_instances/source/local/{{node.name}}">({{getLocalCount(node)}})</a>
+      <a routerLink="/schema_view/local_list_instances/{{node.name}}">({{getLocalCount(node)}})</a>
     </ng-container>
     <!-- Not use mat-icon-button to avoid the minimum tougch-target size requirment from material design: 40px x 48px. This is just
     too big and hide some clicks in other places. -->
@@ -26,9 +26,9 @@
       </mat-icon>
     </button>
     <a class="schema_class_text" routerLink="/schema_view/class/{{node.name}}">{{node.name}}</a>&nbsp;
-    <a routerLink="/schema_view/list_instances/source/db/{{node.name}}"> [{{node.count}}]</a>&nbsp;
-        <ng-container *ngIf="getLocalCount(node) !== 0">
-      <a routerLink="/schema_view/list_instances/source/local/{{node.name}}">({{getLocalCount(node)}})</a>
+    <a routerLink="/schema_view/list_instances/{{node.name}}"> [{{node.count}}]</a>&nbsp;
+    <ng-container *ngIf="getLocalCount(node) !== 0">
+      <a routerLink="/schema_view/local_list_instances/{{node.name}}">({{getLocalCount(node)}})</a>
     </ng-container>
     <button *ngIf="!node.abstract" (click)="createNewInstance(node.name)" class="mat-icon-button"
       matTooltip="Click to create new {{node.name}}" matTooltipPosition="right" [matTooltipShowDelay]="500">

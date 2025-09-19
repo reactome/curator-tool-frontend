@@ -7,11 +7,11 @@ import { InstanceListViewComponent } from "./components/list-instances-view/inst
 // This makes the routes scoped only to this module/component.
 const routes: Routes = [
   // Without source
-  // { path: ':className', component: InstanceListViewComponent },
-  // { path: ':className/:skip/:limit', component: InstanceListViewComponent },
+  { path: ':className', component: InstanceListViewComponent },
+  { path: ':className/:skip/:limit', component: InstanceListViewComponent },
   // With source
-  { path: 'source/:source/:className', component: InstanceListViewComponent },
-  { path: 'source/:source/:className/:skip/:limit', component: InstanceListViewComponent },
+  // { path: 'source/:source/:className', component: InstanceListViewComponent },
+  // { path: 'source/:source/:className/:skip/:limit', component: InstanceListViewComponent },
 ];
 
 @NgModule({
