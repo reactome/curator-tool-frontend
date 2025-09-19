@@ -58,6 +58,7 @@
 - TODO: When a reaction is marked for deleted, this reaction in the diagram should be removed too. However, this may be difficult to handle since the reaction may not be displayed. Therefore, we will need some validation step to validate deleted or updated objects like this as in the Java curator tool.
 - TODO: Need to disable the drag of nodes and edges in the legdend for the diagram view.
 - TODO: doRelease in the event view has not been handled yet
+- TODO: Automatically creating _Deleted instances has not been handled yet.
 
 # Deletion related document kept here for the time being
  * The following may need to be collected into some document for test cases in the doc folder:
