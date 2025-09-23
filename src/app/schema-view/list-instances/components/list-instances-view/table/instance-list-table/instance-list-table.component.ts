@@ -91,7 +91,12 @@ export class InstanceListTableComponent {
   }
 
   setNavigationUrl(instance: Instance) {
-    this.routerNavigationUrl = '/schema_view/instance/' + instance.dbId.toString();
+    if(this.updatedDBIds.includes(instance.dbId)){
+      this.routerNavigationUrl = '/schema_view/instance/' + instance.dbId.toString() + '/comparison/' + instance.dbId.toString();
+    }
+    else {
+      this.routerNavigationUrl = '/schema_view/instance/' + instance.dbId.toString();
+    }
   }
 
   isDeleted(row: Instance): boolean {
