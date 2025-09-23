@@ -468,6 +468,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
     this.dataService.fetchInstance(instance.dbId).subscribe(fullInstance => {
       instance = fullInstance;
     });
+    if (!instance || !instance.attributes) return null;
     let attribute = instance.attributes.get(attributeName);
     if (!attribute)
       return null;
@@ -477,8 +478,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
       return attribute.map((value: any) => {
         // If the attribute is an instance, we want to return its displayName
         if (value instanceof Object) {
-          let path = "attributes." + attributeName + ".displayName";
-          return this.getNestedAttributeValue(instance, path);
+          return this.getNestedAttributeValue(instance, attributeName);
         }
         else
           return value;
@@ -488,16 +488,16 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
     else {
       // If the attribute is an instance, we want to return its displayName
       if (attribute instanceof Object) {
-        let path = "attributes." + attributeName + ".displayName";
-        return this.getNestedAttributeValue(instance, path);
+        return this.getNestedAttributeValue(instance, attributeName);
       }
       else
         return attribute;
     }
   }
 
-  getNestedAttributeValue(instance: any, attributePath: string): any {
-    return attributePath.split('.').reduce((obj, key) => obj && obj[key], instance);
+  getNestedAttributeValue(instance: any, attributeName: string): any {
+    let displayName = instance.attributes.get(attributeName)?.displayName;
+    return displayName;
   }
 
   navigateUrl(instance: Instance) {
