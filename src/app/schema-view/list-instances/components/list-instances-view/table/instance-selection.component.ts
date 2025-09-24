@@ -13,7 +13,7 @@ import { ActionButton } from './instance-list-table/instance-list-table.componen
 import { ListInstancesDialogService } from '../../list-instances-dialog/list-instances-dialog.service';
 import { BatchEditDialogService } from './batch-edit-dialog/batch-edit-dialog-service';
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
-import { combineLatest, Subscription, take } from 'rxjs';
+import { combineLatest, map, Observable, Subscription, take } from 'rxjs';
 
 @Component({
   selector: 'app-instance-selection',
@@ -382,76 +382,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
     this.showProgressSpinner = true;
 
     if (this.isLocal) {
-      combineLatest([
-        this.store.select(updatedInstances()).pipe(take(1)),
-        this.store.select(newInstances()).pipe(take(1)),
-        this.store.select(deleteInstances()).pipe(take(1))
-      ]).subscribe(([updated, newlyCreated, deleted]) => {
-        // Only include instances with matching className
-        const filteredUpdated = updated.filter(inst => inst.schemaClassName === this.className);
-        const filteredNew = newlyCreated.filter(inst => inst.schemaClassName === this.className);
-        const filteredDeleted = deleted.filter(inst => inst.schemaClassName === this.className);
-
-        const filterByAdvancedCriteria = (arr: Instance[]) => {
-          if (
-            attributeNames.length === 0 ||
-            operands.length !== attributeNames.length ||
-            searchKeys.length !== attributeNames.length
-          ) {
-            return arr;
-          }
-
-          return arr.filter(inst => {
-            // For each criterium, check if the instance matches
-            return attributeNames.every((attrName: string, i: number) => {
-              const operand = operands[i];
-              const pattern = searchKeys[i];
-              const value = this.getAttributeValue(inst, attrName);
-              // getting value, could be + or single 
-
-              if (value == null) return false;
-
-              let valueLength = 1;
-              if (value instanceof Array)
-                valueLength = value.length;
-
-              while (valueLength > 0) {
-                if (operand === 'Contains') {
-                  if (value.toString().toLowerCase().includes(pattern.toString().toLowerCase())) return inst;
-                } else if (operand === 'Equal') {
-                  if (value.toString().toLowerCase() === (pattern.toString().toLowerCase())) return inst;
-                  return value.toString() === pattern;
-                } else if (operand === 'Not Equal') {
-                  if (value.toString().toLowerCase() !== (pattern.toString().toLowerCase())) return inst;
-                } else if (operand === 'IS NULL') {
-                  if (value.toString() === null) return inst;
-                } else if (operand === 'IS NOT NULL') {
-                  if (value.toString() !== null) return inst;
-                }
-                valueLength--;
-              }
-              return false; // Unknown operand, just return false
-            });
-          });
-        };
-
-        const filteredUpdatedByKey = filterByAdvancedCriteria(filteredUpdated);
-        const filteredNewByKey = filterByAdvancedCriteria(filteredNew);
-        const filteredDeletedByKey = filterByAdvancedCriteria(filteredDeleted);
-
-        // Combine: updated, new, and deleted instances
-        const combined = [...filteredUpdatedByKey, ...filteredNewByKey, ...filteredDeletedByKey];
-
-        // Apply skip and limit
-        const paged = combined.slice(this.skip, this.skip + this.pageSize);
-
-        const localInstList: InstanceList = {
-          instances: paged,
-          totalCount: combined.length
-        };
-        this.displayInstances(localInstList);
-        this.showProgressSpinner = false;
-      });
+      this.advancedSearchForLocalInstances(attributeNames, operands, searchKeys);
     }
     else {
       this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributeNames, operands, searchKeys)
@@ -463,42 +394,118 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
 
   }
 
-  getAttributeValue(instance: Instance, attributeName: string): any {
-    // get the full instance, not just shell
-    this.dataService.fetchInstance(instance.dbId).subscribe(fullInstance => {
-      instance = fullInstance;
-    });
-    if (!instance || !instance.attributes) return null;
-    let attribute = instance.attributes.get(attributeName);
-    if (!attribute)
-      return null;
+  advancedSearchForLocalInstances(
+    attributeNames: string[],
+    operands: string[],
+    searchKeys: string[]) {
+    combineLatest([
+      this.store.select(updatedInstances()).pipe(take(1)),
+      this.store.select(newInstances()).pipe(take(1)),
+      this.store.select(deleteInstances()).pipe(take(1))
+    ]).subscribe(([updated, newlyCreated, deleted]) => {
+      // Only include instances with matching className
+      const filteredUpdated = updated.filter(inst => inst.schemaClassName === this.className);
+      const filteredNew = newlyCreated.filter(inst => inst.schemaClassName === this.className);
+      const filteredDeleted = deleted.filter(inst => inst.schemaClassName === this.className);
 
-    // If multivariate, we need to handle multiple values
-    if (attribute instanceof Array) {
-      return attribute.map((value: any) => {
-        // If the attribute is an instance, we want to return its displayName
-        if (value instanceof Object) {
-          return this.getNestedAttributeValue(instance, attributeName);
+      const filterByAdvancedCriteria = (arr: Instance[]) => {
+        if (
+          attributeNames.length === 0 ||
+          operands.length !== attributeNames.length ||
+          searchKeys.length !== attributeNames.length
+        ) {
+          return arr;
         }
-        else
-          return value;
-      });
-    }
-    // Single value
-    else {
-      // If the attribute is an instance, we want to return its displayName
-      if (attribute instanceof Object) {
-        return this.getNestedAttributeValue(instance, attributeName);
-      }
-      else
-        return attribute;
+
+        return arr.filter(inst => {
+          // For each criterium, check if the instance matches
+          return attributeNames.every((attrName: string, i: number) => {
+            const operand = operands[i];
+            const pattern = searchKeys[i];
+            let value: any;
+            this.getAttributeValue(inst, attrName).subscribe(val => {
+              value = val;
+            });
+
+              // TODO: this is a bug, will never check the null case
+              //if (value == null) return;
+
+              if (Array.isArray(value)) {
+                // Check each element in the array
+                if (value.some(val => this.checkOperand(val, operand, pattern))) {
+                  return inst;
+                };
+              } else {
+                // Single value
+                if (this.checkOperand(value, operand, pattern)) {
+                  return inst;
+                }
+              }
+              return false;
+          });
+        });
+      };
+
+      const filteredUpdatedByKey = filterByAdvancedCriteria(filteredUpdated);
+      const filteredNewByKey = filterByAdvancedCriteria(filteredNew);
+      const filteredDeletedByKey = filterByAdvancedCriteria(filteredDeleted);
+
+      // Combine: updated, new, and deleted instances
+      const combined = [...filteredUpdatedByKey, ...filteredNewByKey, ...filteredDeletedByKey];
+
+      // Apply skip and limit
+      const paged = combined.slice(this.skip, this.skip + this.pageSize);
+
+      const localInstList: InstanceList = {
+        instances: paged,
+        totalCount: combined.length
+      };
+      this.displayInstances(localInstList);
+      this.showProgressSpinner = false;
+    });
+  }
+
+  checkOperand(val: any, operand: string, pattern: string): boolean {
+    const valStr = val != null ? val.toString().toLowerCase() : '';
+    const patStr = pattern != null ? pattern.toString().toLowerCase() : '';
+
+    switch (operand) {
+      case 'Contains':
+        return valStr.includes(patStr);
+      case 'Equal':
+        return valStr === patStr;
+      case 'Not Equal':
+        return valStr !== patStr;
+      case 'IS NULL':
+        return val == null || valStr === '';
+      case 'IS NOT NULL':
+        return val != null && valStr !== '';
+      default:
+        return false;
     }
   }
 
-  getNestedAttributeValue(instance: any, attributeName: string): any {
-    let displayName = instance.attributes.get(attributeName)?.displayName;
-    return displayName;
+  // TODO: move this to instance utilities
+  getAttributeValue(instance: Instance, attributeName: string): Observable<any> {
+    return this.dataService.fetchInstance(instance.dbId).pipe(
+      map((fullInstance) => {
+        if (!fullInstance || !fullInstance.attributes) return null;
+        let attributeValue = fullInstance.attributes.get(attributeName);
+        if (!attributeValue) return null;
+
+        if (Array.isArray(attributeValue)) {
+          return attributeValue.map((value: any) =>
+            this.instUtils.isInstance(value) ? value.displayName : value
+          );
+        } else {
+          return this.instUtils.isInstance(attributeValue)
+            ? attributeValue.displayName
+            : attributeValue;
+        }
+      })
+    );
   }
+
 
   navigateUrl(instance: Instance) {
     if (!this.isSelection)

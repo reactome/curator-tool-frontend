@@ -2,6 +2,7 @@
   <mat-form-field style="float:left; width: 100%; position: sticky !important">
     <mat-label>Search</mat-label>
     <input matInput (keydown.enter)="doBasicSearch(0)" #input [(ngModel)]="searchKey">
+    <mat-icon class="undo-icon" matTooltip="Batch Edit" (click)="handleBatchEdit()" matSuffix>edit_square</mat-icon>
     <mat-icon class="custom-search-icon" matTooltip="Advanced Search" (click)="toggleSearchMode()"
       matSuffix>manage_search</mat-icon>
   </mat-form-field>
@@ -12,9 +13,9 @@
     <mat-label>Search</mat-label>
     <input matInput (keydown.enter)="doAdvancedSearch(0)" #input readonly="true" [(ngModel)]="advancedSearchKey">
     <mat-icon class="undo-icon" matTooltip="Undo last" (click)="removeSearchCriterium()" matSuffix>undo</mat-icon>
+    <mat-icon class="undo-icon" matTooltip="Batch Edit" (click)="handleBatchEdit()" matSuffix>edit_square</mat-icon>
     <mat-icon class="custom-search-icon" matTooltip="Simple Search" (click)="toggleSearchMode()"
       matSuffix>manage_search</mat-icon>
-    <mat-icon class="undo-icon" matTooltip="Batch Edit" (click)="handleBatchEdit()"  matSuffix>edit_square</mat-icon>
   </mat-form-field>
 </div>
 
@@ -32,8 +33,7 @@
       (selectionEvent)="onRowClick($event)" (urlClickEvent)="navigateUrl($event)"></app-instance-list-table>
 
     <mat-paginator (page)="onPageChange($event)" [length]="instanceCount" [pageSizeOptions]=pageSizeOptions
-      [pageSize]="pageSize" [pageIndex]="pageIndex" showFirstLastButtons
-      aria-label="Select page of users">
+      [pageSize]="pageSize" [pageIndex]="pageIndex" showFirstLastButtons aria-label="Select page of users">
     </mat-paginator>
   </ng-container>
 </section>

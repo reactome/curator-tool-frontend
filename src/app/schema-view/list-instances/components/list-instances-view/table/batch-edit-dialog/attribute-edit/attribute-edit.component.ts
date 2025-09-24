@@ -73,6 +73,8 @@ export class AttributeEditComponent implements OnInit {
   showField: boolean = true;
   color: boolean = false;
   showEditorButton: boolean = false;
+
+  isBooleanDisabled: boolean = false;
   // viewOnly as a service is drilled down too deep in the component hierarchy. Better not been here and disable
   // the editing using a simple flag!
   constructor(private store: Store,
