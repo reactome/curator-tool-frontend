@@ -17,30 +17,33 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { DeletionDialogService } from 'src/app/instance/components/deletion-dialog/deletion-dialog.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/table/instance-list-table/instance-list-table.component';
+import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 
 
 @Component({
   selector: 'app-updated-instance-list',
   templateUrl: './updated-instance-list.component.html',
   styleUrls: ['./updated-instance-list.component.scss'],
-  standalone: true,
-  imports: [MatListModule, MatButtonModule, MatTableModule, MatIconModule, MatCheckboxModule, ListInstancesModule, MatToolbar],
 })
 export class UpdatedInstanceListComponent implements OnInit{
   // instances to be committed
   // There will be a checkbox to manage toBeUploade
   // toBeUploaded: Instance[] = [];
-  updatedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.COMPARE2DB, ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
-  deletedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT]
-  newInstanceActionButtons: Array<ActionButton> = [ACTION_BUTTONS.DELETE, ACTION_BUTTONS.COMMIT];
+  updatedInstanceActions: Array<ActionButton> = [ ACTION_BUTTONS.COMPARE2DB, ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
+  deletedInstanceActions: Array<ActionButton> = [ ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
+  newInstanceActionButtons: Array<ActionButton> = [ ACTION_BUTTONS.DELETE, ACTION_BUTTONS.COMMIT];
 
   isSelection: boolean = false;
   newInstances: Instance[] = [];
   updatedInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
   showHeader: boolean = false;
+
+  // To notify the parent component to close this panel
   @Output() closeAction = new EventEmitter<undefined>();
   @Input() blockRoute: boolean = false;
+  selectedUpdatedInstances: Instance[] = [];
+  showCheck: boolean = false;
 
   constructor(private router: Router,
               private route: ActivatedRoute,
@@ -103,6 +106,10 @@ export class UpdatedInstanceListComponent implements OnInit{
         this.commitInstance(actionButton.instance);
         break;
       }
+      default: {
+        console.error("Unknown action: ", actionButton);
+        break;
+      }
     }
   }
 
@@ -160,4 +167,18 @@ export class UpdatedInstanceListComponent implements OnInit{
         this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()]);
   }
 
+  onUpdatedSelectionChange(selectedInstances: Instance[]) {
+    this.selectedUpdatedInstances = selectedInstances;
+  }
+
+  toggleSelectAll() {
+    this.showCheck = !this.showCheck;
+    if (this.showCheck) {
+      this.selectedUpdatedInstances = [];
+      this.isSelection = false;
+    } else {
+      this.selectedUpdatedInstances = this.updatedInstances;
+      this.isSelection = true;
+    }
+  }
 }

@@ -7,39 +7,29 @@
 </mat-toolbar>
 <h4>New Instances: {{newInstances.length}}</h4>
 <div class="scroll-list">
-  <app-instance-list-table [dataSource]="newInstances"
-                           [isSelection]="isSelection"
-                           [showHeader]="showHeader"
-                           [actionButtons]="newInstanceActionButtons"
-                           [showEmptyMessage]="false"
-                           [blockRoute]="blockRoute"
-                           (actionEvent)="handleAction($event)"
-                           (urlClickEvent)="navigateUrl($event)">
-  </app-instance-list-table>
+    <app-instance-list-table [dataSource]="newInstances" [isSelection]="isSelection" [showHeader]="showHeader"
+        [actionButtons]="newInstanceActionButtons" [showEmptyMessage]="false" [blockRoute]="blockRoute"
+        (actionEvent)="handleAction($event)" (urlClickEvent)="navigateUrl($event)">
+    </app-instance-list-table>
 </div>
 
-<h4>Updated Instances: {{updatedInstances.length}}</h4>
+<h4 style="display: flex; align-items: center;">Updated Instances: {{updatedInstances.length}}
+    <button (click)="toggleSelectAll()" color="primary" mat-icon-button matTooltip="Select All">
+        <mat-icon>check_box_outline_blank</mat-icon>
+    </button>
+</h4>
 <div class="scroll-list">
-  <app-instance-list-table [dataSource]="updatedInstances"
-                           [isSelection]="isSelection"
-                           [showHeader]="showHeader"
-                           [actionButtons]="updatedInstanceActions"
-                           [showEmptyMessage]="false"
-                           [blockRoute]="blockRoute"
-                           (actionEvent)="handleAction($event)"
-                           (urlClickEvent)="navigateUrl($event)">
-  </app-instance-list-table>
+    <app-instance-list-table [dataSource]="updatedInstances" [isSelection]="isSelection" [showHeader]="showHeader"
+        [actionButtons]="updatedInstanceActions" [showEmptyMessage]="false" [blockRoute]="blockRoute"
+        (actionEvent)="handleAction($event)" (urlClickEvent)="navigateUrl($event)"
+        (selectionChangeEvent)="onUpdatedSelectionChange($event)">
+    </app-instance-list-table>
 </div>
 
 <h4>Deleted Instances: {{deletedInstances.length}}</h4>
 <div class="scroll-list">
-  <app-instance-list-table [dataSource]="deletedInstances"
-                           [isSelection]="isSelection"
-                           [showHeader]="showHeader"
-                           [actionButtons]="deletedInstanceActions"
-                           [showEmptyMessage]="false"
-                           [blockRoute]="blockRoute"
-                           (actionEvent)="handleAction($event)"
-                           (urlClickEvent)="navigateUrl($event)">
-  </app-instance-list-table>
+    <app-instance-list-table [dataSource]="deletedInstances" [isSelection]="isSelection" [showHeader]="showHeader"
+        [actionButtons]="deletedInstanceActions" [showEmptyMessage]="false" [blockRoute]="blockRoute"
+        (actionEvent)="handleAction($event)" (urlClickEvent)="navigateUrl($event)">
+    </app-instance-list-table>
 </div>

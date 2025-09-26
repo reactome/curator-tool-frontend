@@ -11,6 +11,7 @@ import { InstanceBookmarkModule } from "../instance-bookmark/instance-bookmark.m
 import { SchemaClassTreeModule } from "../schema-class/components/tree/schema-class-tree.module";
 import { MainSchemaViewRoutingModule } from "./main-schema-view-routing.module";
 import { MainSchemaViewComponent } from './main-schema-view.component';
+import { StatusModule } from "src/app/status/status.module";
 
 
 @NgModule({
@@ -27,13 +28,12 @@ import { MainSchemaViewComponent } from './main-schema-view.component';
     MatToolbarModule,
     SchemaClassTreeModule,
     RouterOutlet,
-    UpdatedInstanceListComponent,
-    StatusComponent,
     CdkAccordionModule,
     InstanceBookmarkModule,
     CdkDragHandle,
     MainSchemaViewRoutingModule,
-    MatSidenavModule
+    MatSidenavModule,
+    StatusModule
   ]
 })
 export class MainSchemaViewModule { }

@@ -117,6 +117,18 @@ export class AttributeEditComponent implements OnInit {
     this.newValueEvent.emit(attributeValue);
     this.triggerResize();
   }
+  
+    onBooleanChange() {
+    if (this.control.value === this.value) {
+      return; // No change, do nothing
+    }
+    let attributeValue: AttributeValue = {
+      attribute: this.attribute!,
+      value: this.isBooleanDisabled ? undefined : this.control.value,
+    }
+    this.newValueEvent.emit(attributeValue);
+    this.triggerResize();
+  }
 
   onEditAction(action: EDIT_ACTION) {
     let attributeValue: AttributeValue = {

@@ -24,8 +24,6 @@ import { Subscription } from "rxjs";
   selector: 'app-status',
   templateUrl: './status.component.html',
   styleUrls: ['./status.component.scss'],
-  standalone: true,
-    imports: [NgIf, MatToolbarModule, MatButtonModule, MatBottomSheetModule, MatListModule, CdkAccordionModule, InstanceBookmarkModule, MatIconModule, MatTooltipModule]
 })
 export class StatusComponent implements OnInit, OnDestroy {
   @Input() hideInstanceStatus: boolean = false;

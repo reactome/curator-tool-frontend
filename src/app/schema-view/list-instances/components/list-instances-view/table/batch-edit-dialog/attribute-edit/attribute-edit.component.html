@@ -6,6 +6,7 @@
       </mat-checkbox>
       <mat-slide-toggle [disabled]="isBooleanDisabled" [formControl]="control" color="primary" class="padding">
       </mat-slide-toggle>
+      <button mat-button (click)="onBooleanChange()">Set Value</button>
     </ng-template>
 
     <!-- Hide the tooltip. It is quite annoying. matTooltip="control+enter to commit the change" -->

@@ -12,12 +12,12 @@ import { updatedInstancesReducer } from '../instance/state/instance.reducers';
 import { UPDATE_INSTANCES_STATE_NAME } from '../instance/state/instance.selectors';
 import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
 import { StatusComponent } from './status.component';
+import { MaterialModule } from '../shared/material/material.module';
+import { ListInstancesModule } from '../schema-view/list-instances/list-instances.module';
 
 @NgModule({
   imports: [
     CommonModule,
-    StatusComponent,
-    UpdatedInstanceListComponent,
     // Need to register here for update to avoid a warning.
     StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),
     MatDialogModule,
@@ -26,10 +26,17 @@ import { StatusComponent } from './status.component';
     MatIconModule,
     MatSortModule,
     MatTableModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MaterialModule,
+    ListInstancesModule
+  ],
+  declarations: [
+    StatusComponent,
+    UpdatedInstanceListComponent
   ],
   exports: [
-    StatusComponent // Have to export it!!!
+    StatusComponent,
+    UpdatedInstanceListComponent
   ],
 })
 export class StatusModule { }

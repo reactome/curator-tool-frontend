@@ -1,3 +1,50 @@
 .drop_down {
   margin-bottom: 16px;
 }
+
+.action-menu {
+//   width: 200px;
+  background: var(--surface2);
+  padding: 0% !important;
+  border: 1px solid var(--outline-variant);
+  border-bottom: 0;
+}
+
+.action-button {
+  font-size: 12px;
+//   width: 200px;
+  background: var(--surface2);
+  height: 24px !important;
+  min-height: 24px !important;
+  border-bottom: 1px solid var(--outline-variant);
+  justify-content: center;
+  padding-top: 0% !important;
+}
+
+.mat-mdc-select-panel-above {
+    padding: 0 !important;
+}
+
+.mat-mdc-select-value-text, .mat-mdc-select-value {
+    font-size: 12px !important;
+//   width: 200px;
+  background: var(--surface2) !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  border-bottom: 1px solid var(--outline-variant);
+  justify-content: center;
+  padding-top: 0% !important;
+}
+
+
+.action-button:hover {
+  background-color: var(--hover);
+}
+
+.mat-icon {
+  font-size: 12px;
+  width: 12px;
+  height: 12px;
+  color: var(--primary);
+  vertical-align: middle;
+}

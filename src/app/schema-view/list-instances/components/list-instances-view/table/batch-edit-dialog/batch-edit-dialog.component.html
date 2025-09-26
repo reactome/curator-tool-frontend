@@ -4,8 +4,8 @@
     <!-- <mat-form-field appearance="outline" style="width: max-content; min-width: 300px; padding: 10px;"> -->
     <div style="display:flex; flex-direction: row; width: max-content; min-width: 300px; padding: 10px;">
       <!-- <mat-label style="width: 500px;">Select an Attribute to Edit:</mat-label> -->
-      <mat-select placeholder="Select an Attribute to Edit" #val [(value)]="selected" class="drop_down" (selectionChange)="handleAttributeSelectionChange(val)">
-        <mat-option *ngFor="let value of candidateAttributes" [value]="value">
+      <mat-select class="action-button" placeholder="Select an Attribute to Edit" #val [(value)]="selected" class="drop_down" (selectionChange)="handleAttributeSelectionChange(val)">
+        <mat-option class="action-button" *ngFor="let value of candidateAttributes" [value]="value">
           {{value.name}}
         </mat-option>
       </mat-select>
@@ -29,7 +29,7 @@
       </ng-container>
 
       <ng-container *ngIf="selectedAttribute.type === DATA_TYPES.BOOLEAN">
-        <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onNonInstanceAttributeEdit($event)">
+        <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onBooleanAttributeEdit($event)">
         </app-attribute-edit>
       </ng-container>
     </ng-container>

@@ -88,6 +88,6 @@ export const ACTION_BUTTONS = {
   CLOSE : {name: 'close', tooltip: 'remove instance'},
   COMPARE_INSTANCES: {name: 'compare_arrows', tooltip: 'compare two instances'},
   SHOW_TREE: {name: 'account_tree', tooltip: 'view in tree'},
-  CHECK_BOX: {name: 'check_box', tooltip: 'select for batch editing'},
-  CHECK_BOX_OUTLINE: {name: 'check_box_outline_blank', tooltip: 'unselect for batch editing'},
+  CHECK_BOX: {name: 'check_box', tooltip: 'unselect'},
+  CHECK_BOX_OUTLINE: {name: 'check_box_outline_blank', tooltip: 'select'},
 }

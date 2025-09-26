@@ -33,11 +33,14 @@ export class InstanceListTableComponent {
   @Input() blockRoute: boolean = false;
   // @Input() instanceURL: string | undefined; 
   @Output() urlClickEvent = new EventEmitter<Instance>();
+  @Output() selectionChangeEvent = new EventEmitter<Instance[]>();
   readonly newDisplayName: string = NEW_DISPLAY_NAME;
   routerNavigationUrl: string = ''
   showSecondaryButtons: boolean = false;
   deletedDBIds: number[] = [];
   updatedDBIds: number[] = [];
+  checkedMap: Map<number, boolean> = new Map();
+
 
   constructor(private store: Store,
     private instanceUtilities: InstanceUtilities) {
@@ -47,17 +50,34 @@ export class InstanceListTableComponent {
     this.store.select(deleteInstances()).pipe(
       take(1),
       map((instances) => {
-         this.deletedDBIds = instances.map(inst => inst.dbId);
+        this.deletedDBIds = instances.map(inst => inst.dbId);
       })
     ).subscribe();
 
-        this.store.select(updatedInstances()).pipe(
+    this.store.select(updatedInstances()).pipe(
       take(1),
       map((instances) => {
-         this.updatedDBIds = instances.map(inst => inst.dbId);
+        this.updatedDBIds = instances.map(inst => inst.dbId);
       })
     ).subscribe();
 
+  }
+
+
+  addCheckBox(instance: Instance) {
+    this.checkedMap.set(instance.dbId, true);
+    this.selectionChangeEvent.emit(this.dataSource.filter(inst => this.isChecked(inst)));
+
+  }
+
+  removeCheckBox(instance: Instance) {
+    this.checkedMap.set(instance.dbId, false);
+    this.selectionChangeEvent.emit(this.dataSource.filter(inst => this.isChecked(inst)));
+
+  }
+
+  isChecked(instance: Instance): boolean {
+    return this.checkedMap.get(instance.dbId) === true;
   }
 
   click(instance: Instance, action: string) {
@@ -74,16 +94,6 @@ export class InstanceListTableComponent {
     this.store.dispatch(BookmarkActions.add_bookmark(instance));
   }
 
-  // getInstanceUrl(instance: Instance) {
-  //   if (this.blockRoute)
-  //     return undefined;
-
-  //   if (this.instanceURL)
-  //     return this.instanceURL + instance.dbId.toString();
-  //   else
-  //     return window.open("/schema_view/instance/" + instance.dbId.toString());
-  // }
-
   onInstanceLinkClicked(instance: Instance) {
     //this.getInstanceUrl(instance);
     this.urlClickEvent.emit(instance);
@@ -91,7 +101,7 @@ export class InstanceListTableComponent {
   }
 
   setNavigationUrl(instance: Instance) {
-    if(this.updatedDBIds.includes(instance.dbId)){
+    if (this.updatedDBIds.includes(instance.dbId)) {
       this.routerNavigationUrl = '/schema_view/instance/' + instance.dbId.toString() + '/comparison/' + instance.dbId.toString();
     }
     else {

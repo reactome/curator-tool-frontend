@@ -240,6 +240,11 @@ export class BatchEditDialogComponent implements PostEditListener {
 
   }
 
+  onBooleanAttributeEdit(attributeValue: AttributeValue) {
+    
+      this.addAttribute(attributeValue, attributeValue.value, true);
+  }
+
   private aggregateAttributes() {
     this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: any[]) => {
       this._instances = [...objects]; // for editing

@@ -27,6 +27,8 @@ Done
 - Add checkbox the undo and delete multiple instances at one time
 - New instances are not subject to the search 
 - Update the css for the batch editing drop downs. Also change the batch edit button location. 
+- bug: if I click an updated instance listed in the local view, the comparison is displayed. Try to change it: If this updated instance is opened in the local list, show the updated content without comparison. If it is opened in the db list, show the comparison.
+ - Apply the styling from the action menu pop-up to the attribute selection 
 
 
 
