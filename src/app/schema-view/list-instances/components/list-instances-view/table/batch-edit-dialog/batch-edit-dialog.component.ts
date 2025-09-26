@@ -80,6 +80,8 @@ export class BatchEditDialogComponent implements PostEditListener {
       // To remove an instance from the batch edit list
       case "close": {
         this.removedInstances.push(actionButton.instance);
+        this.removedInstances = [...this.removedInstances];
+        this.data = this.data.filter(inst => inst.dbId !== actionButton.instance.dbId);
         break;
       }
     }
@@ -511,45 +513,4 @@ export class BatchEditDialogComponent implements PostEditListener {
     // You can add custom logic here if needed
     return true;
   }
-
-
-  // private addNewAttribute(attributeValue: AttributeValue, replace: boolean) {
-
-  //   this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: Instance[]) => {
-  //     this._instances = [...objects]; // for editing
-  //     for (let instance of this._instances) {
-  //       // check if the instance has the selected attribute value and if so replace with the new attribute value,
-  //       // but only if replcace is true
-  //       if (replace) {
-  //         let existingValue = instance.attributes.get(attributeValue.attribute.name);
-  //         if (existingValue !== undefined && existingValue instanceof Array) {
-  //           if (existingValue.includes(attributeValue.value)) {
-  //             let index = existingValue.indexOf(attributeValue.value);
-  //             attributeValue.index = index; // Store the index for further processing
-  //             // If the attribute is an array, we need to remove the value from the array
-  //             this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, attributeValue.value, instance, replace);
-  //             this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
-  //           }
-  //         }
-  //         else {
-  //           if (existingValue === attributeValue.value) {
-  //             // If the attribute is a single value, we can delete it directly
-  //             this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, attributeValue.value, instance, replace);
-  //             this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
-  //           }
-  //         }
-  //       }
-
-  //       else {
-  //         this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, attributeValue.value, instance, replace);
-  //         this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
-  //       }
-  //     }
-  //   });
-  // }
-
-  // private deleteAttribute(attributeValue: AttributeValue) {
-  //   // this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, this._instances!);
-  // }
-
 }

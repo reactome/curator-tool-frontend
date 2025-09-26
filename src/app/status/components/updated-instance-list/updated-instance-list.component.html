@@ -13,15 +13,30 @@
     </app-instance-list-table>
 </div>
 
-<h4 style="display: flex; align-items: center;">Updated Instances: {{updatedInstances.length}}
-    <button (click)="toggleSelectAll()" color="primary" mat-icon-button matTooltip="Select All">
-        <mat-icon>check_box_outline_blank</mat-icon>
+<div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%;">
+    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+      <span>Updated Instances: {{updatedInstances.length}}</span>
+      <span>Selected: {{selectedUpdatedInstances.length}}</span>
+    </div>
+  <div class ="action-buttons-row">
+    <button class="mini-btn" (click)="toggleSelectAll(true)" color="primary" mat-icon-button matTooltip="select all">
+      <mat-icon>select_all</mat-icon>
     </button>
-</h4>
+    <button class="mini-btn" (click)="toggleSelectAll(false)" color="primary" mat-icon-button matTooltip="deselect all">
+      <mat-icon>deselect_all</mat-icon>
+    </button>
+    <button [disabled]="selectedUpdatedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button matTooltip="undo changes for selected">
+      <mat-icon>undo</mat-icon>
+    </button>
+    <button [disabled]="selectedUpdatedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button matTooltip="commit all selected">
+      <mat-icon>upload</mat-icon>
+    </button>
+  </div>
+</div>
 <div class="scroll-list">
     <app-instance-list-table [dataSource]="updatedInstances" [isSelection]="isSelection" [showHeader]="showHeader"
         [actionButtons]="updatedInstanceActions" [showEmptyMessage]="false" [blockRoute]="blockRoute"
-        (actionEvent)="handleAction($event)" (urlClickEvent)="navigateUrl($event)"
+        [selectAll]="showCheck" (actionEvent)="handleAction($event)" (urlClickEvent)="navigateUrl($event)"
         (selectionChangeEvent)="onUpdatedSelectionChange($event)">
     </app-instance-list-table>
 </div>

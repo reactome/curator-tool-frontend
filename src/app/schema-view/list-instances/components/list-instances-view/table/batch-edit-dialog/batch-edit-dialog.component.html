@@ -4,7 +4,8 @@
     <!-- <mat-form-field appearance="outline" style="width: max-content; min-width: 300px; padding: 10px;"> -->
     <div style="display:flex; flex-direction: row; width: max-content; min-width: 300px; padding: 10px;">
       <!-- <mat-label style="width: 500px;">Select an Attribute to Edit:</mat-label> -->
-      <mat-select class="action-button" placeholder="Select an Attribute to Edit" #val [(value)]="selected" class="drop_down" (selectionChange)="handleAttributeSelectionChange(val)">
+      <mat-select class="action-button" placeholder="Select an Attribute to Edit" #val [(value)]="selected"
+        class="drop_down" (selectionChange)="handleAttributeSelectionChange(val)">
         <mat-option class="action-button" *ngFor="let value of candidateAttributes" [value]="value">
           {{value.name}}
         </mat-option>
@@ -37,19 +38,16 @@
   </div>
 
 
-  <section style="height: 50%" class="scroll_panel">
-    <app-instance-list-table [dataSource]="data" [actionButtons]="actionButtons"
-      (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
-  </section>
-  <br>
-  <div style="height: 35%">
+  <div style="flex-direction: column;">
+    <section class="scroll_panel" style="margin-top: 10px; max-height: 300px; overflow: auto; width: 100%;">
+      <app-instance-list-table [showBookmark]="false" [dataSource]="data" [actionButtons]="actionButtons"
+        (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
+    </section>
     <mat-label>Removed Instances: </mat-label>
-    <ng-container *ngIf="this.removedInstances.length > 0">
-      <section class="scroll_panel">
-        <app-instance-list-table [dataSource]="removedInstances" [actionButtons]="actionButtons"
-          (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
-      </section>
-    </ng-container>
+    <section class="scroll_panel" style="margin-top: 10px; max-height: 300px; overflow: auto; width: 100%;">
+      <app-instance-list-table [showBookmark]="false" [dataSource]="removedInstances" [actionButtons]="actionButtons"
+        (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
+    </section>
   </div>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

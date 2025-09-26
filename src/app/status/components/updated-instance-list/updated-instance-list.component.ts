@@ -171,14 +171,16 @@ export class UpdatedInstanceListComponent implements OnInit{
     this.selectedUpdatedInstances = selectedInstances;
   }
 
-  toggleSelectAll() {
-    this.showCheck = !this.showCheck;
+  toggleSelectAll(selectAll: boolean) {
+    this.showCheck = selectAll;
     if (this.showCheck) {
       this.selectedUpdatedInstances = [];
-      this.isSelection = false;
+      this.showCheck = true;
     } else {
       this.selectedUpdatedInstances = this.updatedInstances;
-      this.isSelection = true;
+      this.showCheck = false;
     }
+
+    // TODO: emit this list back to table 
   }
 }

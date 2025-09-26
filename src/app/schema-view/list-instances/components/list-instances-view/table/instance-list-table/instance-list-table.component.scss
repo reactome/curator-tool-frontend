@@ -88,3 +88,17 @@ th {
     color: #81c995;
   }
 }
+
+.action-buttons-row {
+  display: flex;
+  align-items: center;
+  gap: 2px; // or use column-gap: 2px;
+}
+
+.mini-btn {
+  min-width: 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  margin: 0, 2px !important;
+}

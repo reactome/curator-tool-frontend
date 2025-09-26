@@ -43,28 +43,29 @@
       <td mat-cell *matCellDef="let element">
         <ng-container *ngIf="actionButtons.length > 0">
           <!--TODO: The tooltip needs to be improved by using a method in the component-->
-          <div style="white-space: nowrap; position: relative; justify-content: flex-end; right: -10px;">
-            <button color="primary" *ngIf="isChecked(element)" mat-icon-button (click)="removeCheckBox(element)"><mat-icon>check_box</mat-icon></button>
-            <button color="primary" *ngIf="!isChecked(element)" mat-icon-button (click)="addCheckBox(element)"><mat-icon>check_box_outline_blank</mat-icon></button>
-            <button color="primary" *ngFor="let button of actionButtons" mat-icon-button
+          <div class="action-buttons-row">
+            <button color="primary" *ngIf="isChecked(element)" mat-icon-button class="mini-btn" (click)="removeCheckBox(element)">
+              <mat-icon>check_box</mat-icon>
+            </button>
+            <button color="primary" *ngIf="!isChecked(element)" mat-icon-button class="mini-btn" (click)="addCheckBox(element)">
+              <mat-icon>check_box_outline_blank</mat-icon>
+            </button>
+            <button color="primary" *ngFor="let button of actionButtons" mat-icon-button class="mini-btn"
               (click)="click(element, button.name)" matTooltip="{{button.tooltip}}" matTooltipPosition="above">
               <mat-icon>{{button.name}}</mat-icon>
             </button>
-            <!-- TODO: add flag to disable -->
-            <button color="primary" mat-icon-button (click)="addBookmark(element)" matTooltip="add bookmark"
+            <button *ngIf="showBookmark" color="primary" mat-icon-button class="mini-btn" (click)="addBookmark(element)" matTooltip="add bookmark"
               matTooltipPosition="above">
               <mat-icon>bookmark</mat-icon>
             </button>
-
-            <!-- When there are many buttons some may be hidden unless expaned -->
             <ng-container *ngIf="secondaryActionButtons.length > 0">
               <ng-container *ngIf="showSecondaryButtons">
-                <button color="primary" *ngFor="let button of secondaryActionButtons" mat-icon-button
+                <button color="primary" *ngFor="let button of secondaryActionButtons" mat-icon-button class="mini-btn"
                   (click)="click(element, button.name)" matTooltip="{{button.tooltip}}" matTooltipPosition="above">
                   <mat-icon>{{button.name}}</mat-icon>
                 </button>
               </ng-container>
-              <button color="primary" mat-icon-button matTooltip="expand"
+              <button color="primary" mat-icon-button class="mini-btn" matTooltip="expand"
                 (click)="showSecondaryButtons = !showSecondaryButtons" matTooltipPosition="above">
                 <mat-icon>more_horiz</mat-icon>
               </button>
