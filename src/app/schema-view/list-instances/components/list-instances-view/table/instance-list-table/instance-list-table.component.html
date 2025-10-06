@@ -1,9 +1,9 @@
 <table style="width: 500px" mat-table [dataSource]="dataSource" class="mat-elevation-z0 instance-list-table">
   <div class="ellipsis title">
     <!-- dbId Column -->
-    <ng-container matColumnDef="dbId" style="white-space: normal;">
-      <th mat-header-cell *matHeaderCellDef>dbId</th>
-      <td mat-cell *matCellDef="let element">
+    <ng-container matColumnDef="dbId">
+      <th mat-header-cell *matHeaderCellDef style="width: 110px; min-width: 100px; max-width: 120px;">dbId</th>
+      <td mat-cell *matCellDef="let element" style="width: 110px; min-width: 100px; max-width: 120px;">
         <ng-container *ngIf="isSelection">
           {{element.dbId}}
         </ng-container>
@@ -18,7 +18,7 @@
 
     <!-- Display Name Column -->
     <ng-container matColumnDef="displayName">
-      <th mat-header-cell *matHeaderCellDef>Display Name</th>
+      <th mat-header-cell *matHeaderCellDef >Display Name</th>
       <td mat-cell *matCellDef="let element" class="wrap-text-cell">
 
         <ng-container *ngIf="isSelection">
@@ -39,8 +39,8 @@
 
     <!-- Action Buttons Column -->
     <ng-container matColumnDef="actionButtons" class="buttons-pane" stickyEnd>
-      <th mat-header-cell *matHeaderCellDef></th>
-      <td mat-cell *matCellDef="let element">
+      <th mat-header-cell *matHeaderCellDef style="width: 150px; min-width: 150px; max-width: 270px;"></th>
+      <td mat-cell *matCellDef="let element" style="width: 150px; min-width: 150px; max-width: 270px;">
         <ng-container *ngIf="actionButtons.length > 0">
           <!--TODO: The tooltip needs to be improved by using a method in the component-->
           <div class="action-buttons-row">

@@ -36,11 +36,6 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
 
   private _getCountFromDatabase = (schemaCls: SchemaClass): number => {
     let count = schemaCls.count ? schemaCls.count : 0;
-    //if (count > 0) {
-    // Correct the count if there are instances deleted or created
-    // count += this.instancesCreated.filter(inst => this._isSchemaClass(schemaCls, inst.schemaClassName)).length;
-    // count -= this.instancesDeleted.filter(inst => this._isSchemaClass(schemaCls, inst.schemaClassName)).length;
-    // }
     return count;
   }
 

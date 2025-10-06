@@ -48,7 +48,7 @@ mat-vertical-stepper, mat-horizontal-stepper {
 .table-container .mat-mdc-form-field {
   .mat-mdc-form-field-infix {
     padding: 0 !important;
-    min-height: 29px !important; // TODO: USE CALCULATION
+    min-height: 12px !important; // TODO: USE CALCULATION
     display: flex !important;
     align-items:flex-start;
   }

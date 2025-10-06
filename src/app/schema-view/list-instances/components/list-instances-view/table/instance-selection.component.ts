@@ -21,7 +21,6 @@ import { combineLatest, map, Observable, Subscription, take } from 'rxjs';
   styleUrls: ['./instance-selection.component.scss'],
 })
 export class InstanceSelectionComponent implements OnInit, OnDestroy {
-  isLocal: boolean = false;
   skip: number = 0;
   // This is for doing simple text or dbId based search
   searchKey: string | undefined = '';
@@ -45,6 +44,12 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   schemaClassAttributes: string[] = [];
   // Flag to indicate if the advanced search component should be displayed
   needAdvancedSearch: boolean = false;
+  selectedInstances: Instance[] = [];
+
+
+  @Input() isLocal: boolean = false;
+  @Input() showBatchEdit: boolean = true;
+  @Input() showDeletion: boolean = true;
 
   // A flag to use route to load
   @Input() useRoute: boolean = false;
@@ -53,8 +58,12 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   @Input() pageSize: number = 20;
   // A flag to indicate this selection is used for editing
   @Input() isSelection: boolean = false;
+  @Input() set setSelectedInstances(instances: Instance[]) {
+    this.selectedInstances.push(...instances);
+  }
 
   @Output() clickEvent = new EventEmitter<Instance>();
+  @Output() instanceSelectionChangeEvent = new EventEmitter<Instance[]>();
 
   @Input() set setClassName(inputClassName: string) {
     setTimeout(() => {
@@ -100,9 +109,9 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
           this.store.select(deleteInstances()).pipe(take(1))
         ]).subscribe(([updated, newlyCreated, deleted]) => {
           // Only include instances with matching className
-          const filteredUpdated = updated.filter(inst => inst.schemaClassName === this.className);
-          const filteredNew = newlyCreated.filter(inst => inst.schemaClassName === this.className);
-          const filteredDeleted = deleted.filter(inst => inst.schemaClassName === this.className);
+          const filteredUpdated = updated.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
+          const filteredNew = newlyCreated.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
+          const filteredDeleted = deleted.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
 
           // Optionally filter by displayName if searchKey is set
           const filterBySearchKey = (arr: Instance[]) => {
@@ -427,21 +436,21 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
               value = val;
             });
 
-              // TODO: this is a bug, will never check the null case
-              //if (value == null) return;
+            // TODO: this is a bug, will never check the null case
+            //if (value == null) return;
 
-              if (Array.isArray(value)) {
-                // Check each element in the array
-                if (value.some(val => this.checkOperand(val, operand, pattern))) {
-                  return inst;
-                };
-              } else {
-                // Single value
-                if (this.checkOperand(value, operand, pattern)) {
-                  return inst;
-                }
+            if (Array.isArray(value)) {
+              // Check each element in the array
+              if (value.some(val => this.checkOperand(val, operand, pattern))) {
+                return inst;
+              };
+            } else {
+              // Single value
+              if (this.checkOperand(value, operand, pattern)) {
+                return inst;
               }
-              return false;
+            }
+            return false;
           });
         });
       };
@@ -528,5 +537,9 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
       this.doBasicSearch(0);
     this.batchEditDialogService.openDialog(this.data);
     // this.listInstancesDialogService.openBatchEditDialog(this.data);
+  }
+
+  onSelectionChange(selectedInstances: Instance[]) {
+    this.instanceSelectionChangeEvent.emit(selectedInstances);
   }
 }

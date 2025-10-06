@@ -52,10 +52,18 @@ mat-form-field {
   margin-bottom: -1.25em;
 }
 
-mat-paginator {
+.paginator-container {
   bottom: 0px;
   position: sticky;
   z-index: 10;
+}
+
+material-paginator {
+  width: 100%;
+  justify-content: flex-end;
+   &compressed {
+    width: 80%
+   }
 }
 
 .batch-edit {

@@ -26,6 +26,9 @@ Of all new instances, those that have the schema class as that provided as a par
 NOT adding to the list, curators can access easily from the status panel 
 If curators do not like new instances not being contained, we can add to the top of the list 
 
+Referrers 
+We will continue to display both db and locally 'touched' instances in the referrers list
+
 Test Cases:
 Update an instance, then delete it.
 Create a new instance, update, then delete.

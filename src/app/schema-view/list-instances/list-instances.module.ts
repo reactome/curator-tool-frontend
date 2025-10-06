@@ -22,6 +22,8 @@ import { AttributeListDialogComponent } from './components/list-instances-view/t
 import { MatDialog, MatDialogContent, MatDialogModule } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
 import { ListInstancesRoutingModule } from './list-instances-routing.module';
+import { CdkAccordion } from '@angular/cdk/accordion';
+import { MatExpansionPanel } from '@angular/material/expansion';
 
 
 @NgModule({
@@ -57,7 +59,9 @@ import { ListInstancesRoutingModule } from './list-instances-routing.module';
     MatSlideToggleModule,
     MatFormFieldModule,
     MatDialogModule,
-    MatTableModule
+    MatTableModule,
+    CdkAccordion,
+    MatExpansionPanel
 ],
 })
 export class ListInstancesModule {

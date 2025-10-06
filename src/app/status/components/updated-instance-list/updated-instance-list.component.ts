@@ -1,14 +1,14 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {MatButtonModule} from '@angular/material/button';
-import {MatCheckboxChange, MatCheckboxModule} from '@angular/material/checkbox';
-import {MatIconModule} from '@angular/material/icon';
-import {MatListModule} from '@angular/material/list';
-import {MatTableModule} from '@angular/material/table';
-import {Instance} from 'src/app/core/models/reactome-instance.model';
-import {Router, ActivatedRoute} from "@angular/router";
-import {ListInstancesModule} from "../../../schema-view/list-instances/list-instances.module";
-import {Store} from "@ngrx/store";
-import {deleteInstances, updatedInstances} from 'src/app/instance/state/instance.selectors';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxChange, MatCheckboxModule } from '@angular/material/checkbox';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatTableModule } from '@angular/material/table';
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { Router, ActivatedRoute } from "@angular/router";
+import { ListInstancesModule } from "../../../schema-view/list-instances/list-instances.module";
+import { Store } from "@ngrx/store";
+import { deleteInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { newInstances } from 'src/app/instance/state/instance.selectors';
 import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from 'src/app/instance/state/instance.actions';
 import { DataService } from 'src/app/core/services/data.service';
@@ -25,13 +25,13 @@ import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
   templateUrl: './updated-instance-list.component.html',
   styleUrls: ['./updated-instance-list.component.scss'],
 })
-export class UpdatedInstanceListComponent implements OnInit{
+export class UpdatedInstanceListComponent implements OnInit {
   // instances to be committed
   // There will be a checkbox to manage toBeUploade
   // toBeUploaded: Instance[] = [];
-  updatedInstanceActions: Array<ActionButton> = [ ACTION_BUTTONS.COMPARE2DB, ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
-  deletedInstanceActions: Array<ActionButton> = [ ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
-  newInstanceActionButtons: Array<ActionButton> = [ ACTION_BUTTONS.DELETE, ACTION_BUTTONS.COMMIT];
+  updatedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.COMPARE2DB, ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
+  deletedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
+  newInstanceActionButtons: Array<ActionButton> = [ACTION_BUTTONS.DELETE, ACTION_BUTTONS.COMMIT];
 
   isSelection: boolean = false;
   newInstances: Instance[] = [];
@@ -43,14 +43,17 @@ export class UpdatedInstanceListComponent implements OnInit{
   @Output() closeAction = new EventEmitter<undefined>();
   @Input() blockRoute: boolean = false;
   selectedUpdatedInstances: Instance[] = [];
+  selectedNewInstances: Instance[] = [];
+  selectedDeletedInstances: Instance[] = [];
+
   showCheck: boolean = false;
 
   constructor(private router: Router,
-              private route: ActivatedRoute,
-              private store: Store,
-              private dataService: DataService,
-            private instanceUtilities: InstanceUtilities,
-            private deletionDialogService: DeletionDialogService) {
+    private route: ActivatedRoute,
+    private store: Store,
+    private dataService: DataService,
+    private instanceUtilities: InstanceUtilities,
+    private deletionDialogService: DeletionDialogService) {
   }
 
   ngOnInit(): void {
@@ -74,9 +77,9 @@ export class UpdatedInstanceListComponent implements OnInit{
       return;
     }
     let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
-                                                   .reduce((acc, val) => acc.concat(val), [])
-                                                   .map(urlSegment => urlSegment.path);
-    let newUrl =  currentPathRoot[0] + "/instance/" + instance.dbId.toString();
+      .reduce((acc, val) => acc.concat(val), [])
+      .map(urlSegment => urlSegment.path);
+    let newUrl = currentPathRoot[0] + "/instance/" + instance.dbId.toString();
     // Apparently there is a bug in Angular that confuses the configured router for list_instances
     // and instance view. Therefore, give it something more here.
     this.router.navigate([newUrl, "comparison", instance.dbId.toString()]);
@@ -139,7 +142,7 @@ export class UpdatedInstanceListComponent implements OnInit{
     this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
     // Check if this is an updated instance or new instance: need to add them back.
     if (instance.dbId < 0) // In the current iteration, new intance will be deleted without being staged. Therefore,
-                           // this will not be called at all. Keeping it for completeness.
+      // this will not be called at all. Keeping it for completeness.
       this.store.dispatch(NewInstanceActions.register_new_instance(this.instanceUtilities.makeShell(instance)));
     else if (instance.modifiedAttributes && instance.modifiedAttributes.length > 0)
       this.store.dispatch(UpdateInstanceActions.register_updated_instance(this.instanceUtilities.makeShell(instance)));
@@ -154,6 +157,14 @@ export class UpdatedInstanceListComponent implements OnInit{
     });
   }
 
+  resetSelectedUpdatedInstances() {
+    for (let instance of this.selectedUpdatedInstances) {
+      this.resetUpdatedInstance(instance);
+    }
+    this.selectedUpdatedInstances = [];
+    this.showCheck = false;
+  }
+
   close() {
     this.closeAction.emit();
   }
@@ -163,8 +174,8 @@ export class UpdatedInstanceListComponent implements OnInit{
       this.instanceUtilities.setLastClickedDbId(instance.dbId);
       return;
     }
-    if(!this.isSelection)
-        this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()]);
+    if (!this.isSelection)
+      this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()]);
   }
 
   onUpdatedSelectionChange(selectedInstances: Instance[]) {
@@ -174,10 +185,10 @@ export class UpdatedInstanceListComponent implements OnInit{
   toggleSelectAll(selectAll: boolean) {
     this.showCheck = selectAll;
     if (this.showCheck) {
-      this.selectedUpdatedInstances = [];
       this.showCheck = true;
     } else {
       this.selectedUpdatedInstances = this.updatedInstances;
+      this.selectedUpdatedInstances = [];
       this.showCheck = false;
     }
 

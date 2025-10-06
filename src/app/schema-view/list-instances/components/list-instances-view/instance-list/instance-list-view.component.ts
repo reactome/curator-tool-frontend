@@ -2,7 +2,7 @@ import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { ActivatedRoute, Params, Route, Router } from "@angular/router";
 import { InstanceSelectionComponent } from '../table/instance-selection.component';
 import { combineLatest } from 'rxjs';
-import { SearchCriterium } from 'src/app/core/models/reactome-instance.model';
+import { Instance, SearchCriterium } from 'src/app/core/models/reactome-instance.model';
 
 @Component({
   selector: 'app-list-instances-view',
@@ -16,6 +16,7 @@ export class InstanceListViewComponent implements AfterViewInit {
   regex: Array<string> = [];
   searchKey: Array<string> = [];
   isLocal: boolean = false;
+  selectedInstances: Array<Instance> = [];
 
   // Get this so that we can manipulate the search criteria directly
   @ViewChild(InstanceSelectionComponent) instanceList!: InstanceSelectionComponent;
@@ -84,4 +85,7 @@ export class InstanceListViewComponent implements AfterViewInit {
       this.instanceList.loadSchemaClasses();
   }
 
+  cacheSelectedInstances(instances: Array<Instance>) {
+    this.selectedInstances = instances;
+  }
 }
