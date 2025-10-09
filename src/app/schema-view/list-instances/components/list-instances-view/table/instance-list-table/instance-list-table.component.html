@@ -2,15 +2,18 @@
   <div class="ellipsis title">
     <!-- dbId Column -->
     <ng-container matColumnDef="dbId">
-      <th mat-header-cell *matHeaderCellDef style="width: 110px; min-width: 100px; max-width: 120px;">dbId</th>
-      <td mat-cell *matCellDef="let element" style="width: 110px; min-width: 100px; max-width: 120px;">
+      <th mat-header-cell *matHeaderCellDef style="width: 120px; min-width: 110px; max-width: 120px;">dbId</th>
+      <td mat-cell *matCellDef="let element" style="width: 120px; min-width: 110px; max-width: 120px;">
         <ng-container *ngIf="isSelection">
           {{element.dbId}}
         </ng-container>
         <ng-container *ngIf="!isSelection">
-          <ng-container *ngIf="isUpdated(element)">
-            <span matTooltip="Modified" style="color: darkgoldenrod; font-style: italic;"> M </span>
+          <ng-container *ngIf="isUpdated(element); else not_updated">
+            <span matTooltip="Modified" style="color: darkgoldenrod;"><mat-icon>star</mat-icon></span>
           </ng-container>
+          <ng-template #not_updated>
+              <span style="color: primary;">I </span>
+          </ng-template>
           <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)">{{element.dbId}}</a><br>
         </ng-container>
       </td>
@@ -18,7 +21,7 @@
 
     <!-- Display Name Column -->
     <ng-container matColumnDef="displayName">
-      <th mat-header-cell *matHeaderCellDef >Display Name</th>
+      <th mat-header-cell *matHeaderCellDef>Display Name</th>
       <td mat-cell *matCellDef="let element" class="wrap-text-cell">
 
         <ng-container *ngIf="isSelection">
@@ -44,18 +47,20 @@
         <ng-container *ngIf="actionButtons.length > 0">
           <!--TODO: The tooltip needs to be improved by using a method in the component-->
           <div class="action-buttons-row">
-            <button color="primary" *ngIf="isChecked(element)" mat-icon-button class="mini-btn" (click)="removeCheckBox(element)">
+            <button color="primary" *ngIf="isChecked(element) && showCheckMark" mat-icon-button class="mini-btn"
+              (click)="removeCheckBox(element)">
               <mat-icon>check_box</mat-icon>
             </button>
-            <button color="primary" *ngIf="!isChecked(element)" mat-icon-button class="mini-btn" (click)="addCheckBox(element)">
+            <button color="primary" *ngIf="!isChecked(element) && showCheckMark" mat-icon-button class="mini-btn"
+              (click)="addCheckBox(element)">
               <mat-icon>check_box_outline_blank</mat-icon>
             </button>
             <button color="primary" *ngFor="let button of actionButtons" mat-icon-button class="mini-btn"
               (click)="click(element, button.name)" matTooltip="{{button.tooltip}}" matTooltipPosition="above">
               <mat-icon>{{button.name}}</mat-icon>
             </button>
-            <button *ngIf="showBookmark" color="primary" mat-icon-button class="mini-btn" (click)="addBookmark(element)" matTooltip="add bookmark"
-              matTooltipPosition="above">
+            <button *ngIf="showBookmark" color="primary" mat-icon-button class="mini-btn" (click)="addBookmark(element)"
+              matTooltip="add bookmark" matTooltipPosition="above">
               <mat-icon>bookmark</mat-icon>
             </button>
             <ng-container *ngIf="secondaryActionButtons.length > 0">

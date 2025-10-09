@@ -1,0 +1,24 @@
+<h2 class="dialog_title" mat-dialog-title cdkdraghandle>Confirm Delete</h2>
+<mat-dialog-content style="width: 100%;">
+  <ng-container *ngIf="this.instances.length > 1">
+    <h4>Are you sure you want to delete these {{this.instances.length}} instances?</h4>
+    <div><em>Note: The deleted instances will not be removed from
+        the database. You may need to commit the deletions to remove
+        them from the database in the status list.</em></div>
+    <br>
+    <mat-label>Instances to be deleted:</mat-label>
+    <section class="scroll_panel">
+      <app-instance-list-table 
+      [actionButtons]="actionButtons" 
+      [isSelection]="false" 
+      [showBookmark]="false" 
+      [showCheckMark]="false"
+      [dataSource]="instances"
+      (actionEvent)="handleAction($event)"></app-instance-list-table>
+    </section>
+  </ng-container>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onDelete()" cdkFocusInitial>Delete</button>
+  <button mat-button (click)="onCancel()">Cancel</button>
+</mat-dialog-actions>

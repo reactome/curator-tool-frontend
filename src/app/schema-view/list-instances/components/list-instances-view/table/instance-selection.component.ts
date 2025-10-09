@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { PageEvent } from "@angular/material/paginator";
-import { SearchCriterium, Instance, InstanceList } from "../../../../../core/models/reactome-instance.model";
+import { SearchCriterium, Instance, InstanceList, SelectedInstancesList } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
 import { Router } from "@angular/router";
 import { ReferrersDialogService } from "../../../../../instance/components/referrers-dialog/referrers-dialog.service";
@@ -14,6 +14,8 @@ import { ListInstancesDialogService } from '../../list-instances-dialog/list-ins
 import { BatchEditDialogService } from './batch-edit-dialog/batch-edit-dialog-service';
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { combineLatest, map, Observable, Subscription, take } from 'rxjs';
+import { InstanceSelectionService } from '../../../instance-selection.service';
+import { DeleteBulkDialogService } from '../../delete-bulk-dialog/delete-bulk-dialog.service';
 
 @Component({
   selector: 'app-instance-selection',
@@ -46,7 +48,6 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   needAdvancedSearch: boolean = false;
   selectedInstances: Instance[] = [];
 
-
   @Input() isLocal: boolean = false;
   @Input() showBatchEdit: boolean = true;
   @Input() showDeletion: boolean = true;
@@ -58,12 +59,8 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   @Input() pageSize: number = 20;
   // A flag to indicate this selection is used for editing
   @Input() isSelection: boolean = false;
-  @Input() set setSelectedInstances(instances: Instance[]) {
-    this.selectedInstances.push(...instances);
-  }
 
   @Output() clickEvent = new EventEmitter<Instance>();
-  @Output() instanceSelectionChangeEvent = new EventEmitter<Instance[]>();
 
   @Input() set setClassName(inputClassName: string) {
     setTimeout(() => {
@@ -85,7 +82,8 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
     private store: Store,
     private instUtils: InstanceUtilities,
     private listInstancesDialogService: ListInstancesDialogService,
-    private batchEditDialogService: BatchEditDialogService) {
+    private batchEditDialogService: BatchEditDialogService,
+    private deleteBulkDialogService: DeleteBulkDialogService) {
   }
 
   ngOnDestroy(): void {
@@ -93,6 +91,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.getSelectedInstances();
   }
 
   /**
@@ -539,7 +538,41 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
     // this.listInstancesDialogService.openBatchEditDialog(this.data);
   }
 
-  onSelectionChange(selectedInstances: Instance[]) {
-    this.instanceSelectionChangeEvent.emit(selectedInstances);
+  onSelectionChange(instance: Instance) {
+    if(this.instUtils.isInstanceSelected(SelectedInstancesList.mainInstanceList, instance)) {
+      this.instUtils.removeSelectedInstance(SelectedInstancesList.mainInstanceList, instance);
+    } else {
+      this.instUtils.addSelectedInstance(SelectedInstancesList.mainInstanceList, instance);
+    }
+  }
+
+  handleDeleteSelected() {
+    this.instUtils.getSelectedInstances(SelectedInstancesList.mainInstanceList).pipe(take(1)).subscribe(selectedInstances => {
+      if (selectedInstances.length === 0) return;
+      this.deleteBulkDialogService.openDialog(selectedInstances);
+      this.instUtils.clearSelectedInstances(SelectedInstancesList.mainInstanceList);
+      if (this.needAdvancedSearch)
+        this.doAdvancedSearch(0);
+      else
+        this.doBasicSearch(0);
+    });
+  }
+
+  isInstanceSelected(instance: Instance): boolean {
+    return this.instUtils.isInstanceSelected(SelectedInstancesList.mainInstanceList, instance);
+  }
+
+  getSelectedInstances() {
+     this.instUtils.getSelectedInstances(SelectedInstancesList.mainInstanceList).subscribe(selectedInstances => {
+      this.selectedInstances = selectedInstances;
+     });
+  }
+
+  setSelectedInstances() {
+    this.instUtils.addSelectedInstances(SelectedInstancesList.mainInstanceList, this.data);
+  }
+
+  clearSelectedInstances() {
+    this.instUtils.clearSelectedInstances(SelectedInstancesList.mainInstanceList);
   }
 }

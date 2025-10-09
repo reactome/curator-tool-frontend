@@ -2,7 +2,8 @@ import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { ActivatedRoute, Params, Route, Router } from "@angular/router";
 import { InstanceSelectionComponent } from '../table/instance-selection.component';
 import { combineLatest } from 'rxjs';
-import { Instance, SearchCriterium } from 'src/app/core/models/reactome-instance.model';
+import { Instance, SearchCriterium, SelectedInstancesList } from 'src/app/core/models/reactome-instance.model';
+import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 @Component({
   selector: 'app-list-instances-view',
@@ -16,12 +17,11 @@ export class InstanceListViewComponent implements AfterViewInit {
   regex: Array<string> = [];
   searchKey: Array<string> = [];
   isLocal: boolean = false;
-  selectedInstances: Array<Instance> = [];
 
   // Get this so that we can manipulate the search criteria directly
   @ViewChild(InstanceSelectionComponent) instanceList!: InstanceSelectionComponent;
 
-  constructor(private route: ActivatedRoute, private router: Router
+  constructor(private route: ActivatedRoute, private router: Router, private instanceUtils: InstanceUtilities
   ) {
   }
 
@@ -29,9 +29,9 @@ export class InstanceListViewComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
     setTimeout(() => {
-    combineLatest([this.route.params, this.route.queryParams]).subscribe(
-      ([params, queryParams]) => this.handleRoute(params, queryParams)
-    );
+      combineLatest([this.route.params, this.route.queryParams]).subscribe(
+        ([params, queryParams]) => this.handleRoute(params, queryParams)
+      );
     })
   }
 
@@ -41,7 +41,7 @@ export class InstanceListViewComponent implements AfterViewInit {
     // } else {
     //   this.instanceList.isLocal = false;
     // }
-    if(this.router.url.includes('local_list_instances')) {
+    if (this.router.url.includes('local_list_instances')) {
       this.instanceList.isLocal = true;
     } else {
       this.instanceList.isLocal = false;
@@ -81,11 +81,11 @@ export class InstanceListViewComponent implements AfterViewInit {
     }
     else
       this.instanceList.loadInstances();
-    if (isChangedChanged) // Need to force to reload attributes there.
+    if (isChangedChanged) {
       this.instanceList.loadSchemaClasses();
-  }
+      // Clear out selected instances when class changes
+      this.instanceUtils.clearSelectedInstances(SelectedInstancesList.mainInstanceList);
+    } // Need to force to reload attributes there.
 
-  cacheSelectedInstances(instances: Array<Instance>) {
-    this.selectedInstances = instances;
   }
 }

@@ -33,18 +33,22 @@
   <ng-container *ngIf="!showProgressSpinner">
     <app-instance-list-table [dataSource]="data" [isSelection]="isSelection" [actionButtons]="actionButtons"
       [secondaryActionButtons]="secondaryActionButtons" (actionEvent)="handleAction($event)"
-      (selectionEvent)="onRowClick($event)" (urlClickEvent)="navigateUrl($event)"
-      (selectionChangeEvent)="onSelectionChange($event)">
+      (selectionEvent)="onRowClick($event)" (urlClickEvent)="navigateUrl($event)">
     </app-instance-list-table>
 
     <div class="paginator-container" style="display: flex; justify-content: flex-end; width: 100%">
-      <div *ngIf="selectedInstances.length > 0" style="background-color: white; width: 25%;">
-        <span style="background-color: white; width: 25%; line-height: 60px;">&nbsp;Selected Instances: {{
-          selectedInstances.length }} &nbsp;</span>
-        <mat-icon color="primary" style="line-height: 36px;" matTooltip="Deselect All"
-          matSuffix>deselect_all</mat-icon>
-        <mat-icon color="primary" style="line-height: 36px;" matTooltip="Delete Selected"
-          matSuffix>delete</mat-icon>
+      <div *ngIf="selectedInstances.length > 0"
+        style="background-color: white; width: 40%;">
+        <span style="background-color: white; width: 400%; line-height: 60px;">
+          &nbsp;Selected Instances: {{selectedInstances.length}} &nbsp;</span>
+        <mat-icon color="primary" style="line-height: 36px;" (click)="setSelectedInstances()" matTooltip="Select all on page"
+          matSuffix>check_box_outline</mat-icon>
+        <mat-icon color="primary" style="line-height: 36px;" matTooltip="Select all {{this.instanceCount}} instances"
+          matSuffix>select_all</mat-icon>
+        <mat-icon color="primary" style="line-height: 36px;" matTooltip="Deselect all"
+          (click)="clearSelectedInstances()" matSuffix>deselect_all</mat-icon>
+        <mat-icon color="primary" style="line-height: 36px;" matTooltip="Delete selected" matSuffix
+          (click)="handleDeleteSelected()">delete</mat-icon>
       </div>
       <mat-paginator style="width: 100%" (page)="onPageChange($event)" [length]="instanceCount"
         [pageSizeOptions]=pageSizeOptions [pageSize]="pageSize" [pageIndex]="pageIndex" showFirstLastButtons

@@ -1,85 +1,100 @@
 <mat-toolbar style="position: sticky">
-    <div class="toolbar">
-        <button mat-icon-button color="primary" matTooltip="Close" (click)="close()">
-            <mat-icon>close</mat-icon>
-        </button>
-    </div>
+  <div class="toolbar">
+    <button mat-icon-button color="primary" matTooltip="Close" (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
 </mat-toolbar>
 <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%;">
-    <div style="display: flex; flex-direction: column; align-items: flex-start;">
-      <span>New Instances: {{newInstances.length}} ({{selectedNewInstances.length}})</span>
-    </div>
-  <div class ="action-buttons-row">
-    <button class="mini-btn" (click)="toggleSelectAll(true)" color="primary" mat-icon-button matTooltip="select all">
+  <div style="display: flex; flex-direction: column; align-items: flex-start;">
+    <span>New Instances: {{newInstances.length}} ({{selectedNewInstances.length}})</span>
+  </div>
+  <div class="action-buttons-row">
+    <button class="mini-btn" (click)="setSelectedInstances(SelectedInstancesList.newInstanceList, newInstances)"
+      color="primary" mat-icon-button matTooltip="select all">
       <mat-icon>select_all</mat-icon>
     </button>
-    <button class="mini-btn" (click)="toggleSelectAll(false)" color="primary" mat-icon-button matTooltip="deselect all">
+    <button class="mini-btn" (click)="clearSelectedInstances(SelectedInstancesList.newInstanceList)" color="primary"
+      mat-icon-button matTooltip="deselect all">
       <mat-icon>deselect_all</mat-icon>
     </button>
-    <button (click)="resetSelectedUpdatedInstances()" [disabled]="selectedUpdatedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button matTooltip="undo all changes for selected">
+    <button (click)="deleteAllSelectedNewInstances()" [disabled]="selectedNewInstances.length === 0" class="mini-btn"
+      color="primary" mat-icon-button matTooltip="undo all changes for selected">
       <mat-icon>delete</mat-icon>
     </button>
-    <button [disabled]="selectedUpdatedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button matTooltip="commit all selected">
+    <button [disabled]="selectedNewInstances.length === 0" class="mini-btn" color="primary" mat-icon-button
+      matTooltip="commit all selected">
       <mat-icon>upload</mat-icon>
     </button>
   </div>
 </div>
 <div class="scroll-list">
-    <app-instance-list-table [dataSource]="newInstances" [isSelection]="isSelection" [showHeader]="showHeader"
-        [actionButtons]="newInstanceActionButtons" [showEmptyMessage]="false" [blockRoute]="blockRoute"
-        (actionEvent)="handleAction($event)" (urlClickEvent)="navigateUrl($event)">
-    </app-instance-list-table>
+  <app-instance-list-table [dataSource]="newInstances" [isSelection]="isSelection" [showHeader]="showHeader"
+    [actionButtons]="newInstanceActionButtons" [showEmptyMessage]="false"
+    [selectedInstanceListName]="SelectedInstancesList.newInstanceList" [blockRoute]="blockRoute"
+    (actionEvent)="handleAction($event)" (urlClickEvent)="navigateUrl($event)">
+  </app-instance-list-table>
 </div>
 <br>
 <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%;">
-    <div style="display: flex; flex-direction: column; align-items: flex-start;">
-      <span>Updated Instances: {{updatedInstances.length}} ({{selectedUpdatedInstances.length}})</span>
-    </div>
-  <div class ="action-buttons-row">
-    <button class="mini-btn" (click)="toggleSelectAll(true)" color="primary" mat-icon-button matTooltip="select all">
+  <div style="display: flex; flex-direction: column; align-items: flex-start;">
+    <span>Updated Instances: {{updatedInstances.length}} ({{selectedUpdatedInstances.length}})</span>
+  </div>
+  <div class="action-buttons-row">
+    <button class="mini-btn" (click)="setSelectedInstances(SelectedInstancesList.updatedInstanceList, updatedInstances)"
+      color="primary" mat-icon-button matTooltip="select all">
       <mat-icon>select_all</mat-icon>
     </button>
-    <button class="mini-btn" (click)="toggleSelectAll(false)" color="primary" mat-icon-button matTooltip="deselect all">
+    <button class="mini-btn" (click)="clearSelectedInstances(SelectedInstancesList.updatedInstanceList)" color="primary"
+      mat-icon-button matTooltip="deselect all">
       <mat-icon>deselect_all</mat-icon>
     </button>
-    <button (click)="resetSelectedUpdatedInstances()" [disabled]="selectedUpdatedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button matTooltip="undo all changes for selected">
+    <button (click)="resetSelectedUpdatedInstances()" [disabled]="selectedUpdatedInstances.length === 0"
+      class="mini-btn" color="primary" mat-icon-button matTooltip="undo all changes for selected">
       <mat-icon>undo</mat-icon>
     </button>
-    <button [disabled]="selectedUpdatedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button matTooltip="commit all selected">
+    <button [disabled]="selectedUpdatedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button
+      matTooltip="commit all selected">
       <mat-icon>upload</mat-icon>
     </button>
   </div>
 </div>
 <div class="scroll-list">
-    <app-instance-list-table [dataSource]="updatedInstances" [isSelection]="isSelection" [showHeader]="showHeader"
-        [actionButtons]="updatedInstanceActions" [showEmptyMessage]="false" [blockRoute]="blockRoute"
-        [selectAll]="showCheck == true" (actionEvent)="handleAction($event)" (urlClickEvent)="navigateUrl($event)"
-        (selectionChangeEvent)="onUpdatedSelectionChange($event)">
-    </app-instance-list-table>
+  <app-instance-list-table [dataSource]="updatedInstances" [isSelection]="isSelection" [showHeader]="showHeader"
+    [actionButtons]="updatedInstanceActions" [showEmptyMessage]="false" [blockRoute]="blockRoute"
+    [selectAll]="showCheck == true" [selectedInstanceListName]="SelectedInstancesList.updatedInstanceList"
+    (actionEvent)="handleAction($event)" (urlClickEvent)="navigateUrl($event)"
+    (selectionChangeEvent)="onUpdatedSelectionChange($event)">
+  </app-instance-list-table>
 </div>
 <br>
 <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%;">
-    <div style="display: flex; flex-direction: column; align-items: flex-start;">
-      <span>Deleted Instances: {{deletedInstances.length}} ({{selectedDeletedInstances.length}})</span>
-    </div>
-  <div class ="action-buttons-row">
-    <button class="mini-btn" (click)="toggleSelectAll(true)" color="primary" mat-icon-button matTooltip="select all">
+  <div style="display: flex; flex-direction: column; align-items: flex-start;">
+    <span>Deleted Instances: {{deletedInstances.length}} ({{selectedDeletedInstances.length}})</span>
+  </div>
+  <div class="action-buttons-row">
+    <button class="mini-btn" (click)="setSelectedInstances(SelectedInstancesList.deletedInstanceList, deletedInstances)"
+      color="primary" mat-icon-button matTooltip="select all">
       <mat-icon>select_all</mat-icon>
     </button>
-    <button class="mini-btn" (click)="toggleSelectAll(false)" color="primary" mat-icon-button matTooltip="deselect all">
+    <button class="mini-btn" (click)="clearSelectedInstances(SelectedInstancesList.deletedInstanceList)" color="primary"
+      mat-icon-button matTooltip="deselect all">
       <mat-icon>deselect_all</mat-icon>
     </button>
-    <button (click)="resetSelectedUpdatedInstances()" [disabled]="selectedUpdatedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button matTooltip="undo all changes for selected">
+    <button (click)="resetSelectedDeletedInstances()" [disabled]="selectedDeletedInstances.length === 0"
+      class="mini-btn" color="primary" mat-icon-button matTooltip="undo all changes for selected">
       <mat-icon>undo</mat-icon>
     </button>
-    <button [disabled]="selectedUpdatedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button matTooltip="commit all selected">
+    <button [disabled]="selectedDeletedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button
+      matTooltip="commit all selected">
       <mat-icon>upload</mat-icon>
     </button>
   </div>
 </div>
 <div class="scroll-list">
-    <app-instance-list-table [dataSource]="deletedInstances" [isSelection]="isSelection" [showHeader]="showHeader"
-        [actionButtons]="deletedInstanceActions" [showEmptyMessage]="false" [blockRoute]="blockRoute"
-        (actionEvent)="handleAction($event)" (urlClickEvent)="navigateUrl($event)">
-    </app-instance-list-table>
+  <app-instance-list-table [dataSource]="deletedInstances" [isSelection]="isSelection" [showHeader]="showHeader"
+    [actionButtons]="deletedInstanceActions" [selectedInstanceListName]="SelectedInstancesList.deletedInstanceList"
+    [showEmptyMessage]="false" [blockRoute]="blockRoute" (actionEvent)="handleAction($event)"
+    (urlClickEvent)="navigateUrl($event)">
+  </app-instance-list-table>
 </div>

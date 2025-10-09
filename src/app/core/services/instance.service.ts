@@ -60,6 +60,9 @@ export class InstanceUtilities {
     // Note: only shell instances referred are stored here
     private shellInstances = new Map<number, Instance>();
 
+    // Tracking the instances that are selected
+    private listName2selectedInstances = new Map<string, Instance[]>();
+
     constructor(private store: Store) { }
 
     /**
@@ -645,4 +648,70 @@ export class InstanceUtilities {
         }
     }
 
+    initialzeSelectedInstances(listName: string) {
+        this.listName2selectedInstances.set(listName, []);
+    }
+
+    private selectedInstancesSubject = new Map<string, Subject<Instance[]>>();
+
+    getSelectedInstances(listName: string) {
+        if (!this.selectedInstancesSubject.has(listName)) {
+            this.selectedInstancesSubject.set(listName, new Subject<Instance[]>());
+        }
+        // Emit the current value immediately for new subscribers
+        setTimeout(() => {
+            this.selectedInstancesSubject.get(listName)!.next(this.listName2selectedInstances.get(listName) ?? []);
+        });
+        return this.selectedInstancesSubject.get(listName)!.asObservable();
+    }
+
+    // Update these methods to emit changes:
+    addSelectedInstance(listName: string, inst: Instance) {
+        let selectedInsts = this.listName2selectedInstances.get(listName);
+        if (!selectedInsts) {
+            selectedInsts = [];
+            this.listName2selectedInstances.set(listName, selectedInsts);
+        }
+        if (!selectedInsts.find(i => i.dbId === inst.dbId))
+            selectedInsts.push(inst);
+        this.selectedInstancesSubject.get(listName)?.next([...selectedInsts]);
+    }
+
+    removeSelectedInstance(listName: string, inst: Instance) {
+        let selectedInsts = this.listName2selectedInstances.get(listName);
+        if (!selectedInsts) return;
+        const index = selectedInsts.findIndex(i => i.dbId === inst.dbId);
+        if (index >= 0)
+            selectedInsts.splice(index, 1);
+        this.selectedInstancesSubject.get(listName)?.next([...selectedInsts]);
+    }
+
+    clearSelectedInstances(listName: string) {
+        this.listName2selectedInstances.set(listName, []);
+        this.selectedInstancesSubject.get(listName)?.next([]);
+    }
+
+    isInstanceSelected(listName: string, inst: Instance): boolean {
+        let selectedInsts = this.listName2selectedInstances.get(listName);
+        if (!selectedInsts) return false;
+        return selectedInsts.find(i => i.dbId === inst.dbId) !== undefined;
+    }
+
+    setSelectedInstances(listName: string, instances: Instance[]): void {
+        this.listName2selectedInstances.set(listName, instances);
+        this.selectedInstancesSubject.get(listName)?.next([...instances]);
+    } 
+    
+    addSelectedInstances(listName: string, instances: Instance[]): void {
+        let selectedInsts = this.listName2selectedInstances.get(listName);
+        if (!selectedInsts) {
+            selectedInsts = [];
+            this.listName2selectedInstances.set(listName, selectedInsts);
+        }
+        for (let inst of instances) {
+            if (!selectedInsts.find(i => i.dbId === inst.dbId))
+                selectedInsts.push(inst);
+        }
+        this.selectedInstancesSubject.get(listName)?.next([...selectedInsts]);
+    }
 }

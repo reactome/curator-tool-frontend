@@ -1,0 +1,27 @@
+.dialog_title {
+  text-align: left;
+  font-weight: bold;
+  font-size: 20px;
+  //color: var(--primary);
+  background-color: var(--primary);
+  color: aliceblue
+
+}
+
+.dialog_area {
+  width: 1200px;
+  height: 3000px;
+}
+
+.drop_down {
+  max-width: 300px;
+  margin: auto;
+}
+
+.scroll_panel {
+  height: auto;
+  max-height: 40vh;
+  overflow: scroll;
+  border: solid;
+}
+

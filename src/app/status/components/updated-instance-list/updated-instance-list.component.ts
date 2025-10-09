@@ -4,7 +4,7 @@ import { MatCheckboxChange, MatCheckboxModule } from '@angular/material/checkbox
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatTableModule } from '@angular/material/table';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { Instance, SelectedInstancesList } from 'src/app/core/models/reactome-instance.model';
 import { Router, ActivatedRoute } from "@angular/router";
 import { ListInstancesModule } from "../../../schema-view/list-instances/list-instances.module";
 import { Store } from "@ngrx/store";
@@ -48,6 +48,8 @@ export class UpdatedInstanceListComponent implements OnInit {
 
   showCheck: boolean = false;
 
+  readonly SelectedInstancesList = SelectedInstancesList; // To use in the html file
+
   constructor(private router: Router,
     private route: ActivatedRoute,
     private store: Store,
@@ -69,6 +71,7 @@ export class UpdatedInstanceListComponent implements OnInit {
       if (instances !== undefined)
         this.deletedInstances = instances;
     })
+    this.getSelectedInstances();
   }
 
   compareWithDB(instance: Instance) {
@@ -165,6 +168,23 @@ export class UpdatedInstanceListComponent implements OnInit {
     this.showCheck = false;
   }
 
+  resetSelectedDeletedInstances() {
+    for (let instance of this.selectedDeletedInstances) {
+      this.resetDeletedInstance(instance);
+    }
+    this.selectedDeletedInstances = [];
+    this.showCheck = false;
+  }
+
+  resetSelectedNewInstances() {
+    for (let instance of this.selectedNewInstances) {
+      this.store.dispatch(NewInstanceActions.remove_new_instance(this.instanceUtilities.makeShell(instance)));
+      this.instanceUtilities.setDeletedDbId(instance.dbId); // Commit right away
+    }
+    this.selectedNewInstances = [];
+    this.showCheck = false;
+  }
+
   close() {
     this.closeAction.emit();
   }
@@ -193,5 +213,39 @@ export class UpdatedInstanceListComponent implements OnInit {
     }
 
     // TODO: emit this list back to table 
+  }
+
+
+  isInstanceSelected(listName: string, instance: Instance): boolean {
+    return this.instanceUtilities.isInstanceSelected(listName, instance);
+  }
+
+  getSelectedInstances() {
+    this.instanceUtilities.getSelectedInstances(SelectedInstancesList.updatedInstanceList).subscribe(selectedInstances => {
+      this.selectedUpdatedInstances = selectedInstances;
+    });
+    this.instanceUtilities.getSelectedInstances(SelectedInstancesList.newInstanceList).subscribe(selectedInstances => {
+      this.selectedNewInstances = selectedInstances;
+    });
+    this.instanceUtilities.getSelectedInstances(SelectedInstancesList.deletedInstanceList).subscribe(selectedInstances => {
+      this.selectedDeletedInstances = selectedInstances;
+    });
+  }
+
+  setSelectedInstances(listName: string, data: Instance[]) {
+    this.instanceUtilities.addSelectedInstances(listName, data);
+  }
+
+  clearSelectedInstances(listName: string) {
+    this.instanceUtilities.clearSelectedInstances(listName);
+  }
+
+  deleteAllSelectedNewInstances() {
+    for (let instance of this.selectedNewInstances) {
+      this.store.dispatch(NewInstanceActions.remove_new_instance(this.instanceUtilities.makeShell(instance)));
+      this.instanceUtilities.setDeletedDbId(instance.dbId); // Commit right away
+    }
+    this.selectedNewInstances = [];
+    this.showCheck = false;
   }
 }

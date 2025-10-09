@@ -1,7 +1,4 @@
 <mat-toolbar style="position: sticky !important" color="primary" class="toolbar">
   {{this.schemaClassName }}
 </mat-toolbar>
-<app-instance-selection 
-[useRoute]="true" 
-[setSelectedInstances]="selectedInstances" 
-(instanceSelectionChangeEvent)="cacheSelectedInstances($event)"></app-instance-selection>
+<app-instance-selection [useRoute]="true"></app-instance-selection>

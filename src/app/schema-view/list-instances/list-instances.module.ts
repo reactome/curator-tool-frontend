@@ -24,6 +24,7 @@ import { MatTableModule } from '@angular/material/table';
 import { ListInstancesRoutingModule } from './list-instances-routing.module';
 import { CdkAccordion } from '@angular/cdk/accordion';
 import { MatExpansionPanel } from '@angular/material/expansion';
+import { DeleteBulkDialogComponent } from './components/delete-bulk-dialog/delete-bulk-dialog.component';
 
 
 @NgModule({
@@ -38,13 +39,13 @@ import { MatExpansionPanel } from '@angular/material/expansion';
     AttributeListDialogComponent,
     EditMenuComponent,
     AttributeEditComponent,
+    DeleteBulkDialogComponent
   ],
   exports: [
     InstanceSelectionComponent,
     SelectInstanceDialogComponent,
     InstanceListTableComponent,
-    ListInstancesDialogComponent,
-    
+    ListInstancesDialogComponent,    
   ],
   imports: [
     CommonModule,

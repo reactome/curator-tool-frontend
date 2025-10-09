@@ -29,6 +29,13 @@ export interface InstanceList {
   totalCount: number;
 }
 
+export enum SelectedInstancesList {
+  mainInstanceList = 'mainInstanceList',
+  newInstanceList = 'newInstanceList',
+  updatedInstanceList = 'updatedInstanceList',
+  deletedInstanceList = 'deletedInstanceList',
+}
+
 /**
  * Data structure defined for advanced search based on attribute values
  */
