@@ -40,12 +40,12 @@
 
   <div style="flex-direction: column;">
     <section class="scroll_panel" style="margin-top: 10px; max-height: 300px; overflow: auto; width: 100%;">
-      <app-instance-list-table [showBookmark]="false" [dataSource]="data" [actionButtons]="actionButtons"
+      <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="data" [actionButtons]="actionButtons"
         (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
     </section>
     <mat-label>Removed Instances: </mat-label>
     <section class="scroll_panel" style="margin-top: 10px; max-height: 300px; overflow: auto; width: 100%;">
-      <app-instance-list-table [showBookmark]="false" [dataSource]="removedInstances" [actionButtons]="actionButtons"
+      <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="removedInstances" [actionButtons]="actionButtons"
         (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
     </section>
   </div>

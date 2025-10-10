@@ -2,6 +2,8 @@
   <app-instance-list-table
     [dataSource]="matDataSource.data"
     [isSelection]="isSelection"
+    [showCheckMark]="false"
+    [showBookmark]="false"
     [actionButtons]="actionButtons"
     (actionEvent)="handleAction($event)"></app-instance-list-table>
 </section>

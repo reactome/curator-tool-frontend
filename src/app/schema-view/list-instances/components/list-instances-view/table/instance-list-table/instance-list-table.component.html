@@ -9,10 +9,13 @@
         </ng-container>
         <ng-container *ngIf="!isSelection">
           <ng-container *ngIf="isUpdated(element); else not_updated">
-            <span matTooltip="Modified" style="color: darkgoldenrod;"><mat-icon>star</mat-icon></span>
+            <mat-icon matTooltip="Modified" 
+            style="color: darkgoldenrod; font-size: 12px; height: 12px !important; width: 12px !important;">star</mat-icon>
+            &nbsp;
           </ng-container>
           <ng-template #not_updated>
-              <span style="color: primary;">I </span>
+              <span style="color: primary; font-family: serif;">&nbsp;I</span>
+              &nbsp;
           </ng-template>
           <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)">{{element.dbId}}</a><br>
         </ng-container>

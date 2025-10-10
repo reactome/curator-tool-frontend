@@ -18,6 +18,8 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Store } from '@ngrx/store';
 import { AttributeListDialogService } from './attribute-list-dialog/attribute-list-dialog.service';
 import { MatSelect } from '@angular/material/select';
+import { take, map } from 'rxjs';
+import { deleteInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 
 @Component({
   selector: 'app-batch-edit-dialog',
@@ -45,6 +47,8 @@ export class BatchEditDialogComponent implements PostEditListener {
   textAttributeValue: AttributeValue | undefined;
   selectedAggregatedValues: Set<any> = new Set();
   storeAggregatedAttributes: Set<any> = new Set();
+  deletedDBIds: number[] = [];
+  updatedDBIds: number[] = [];
 
   // So that we can use it in the template
   DATA_TYPES = AttributeDataType;
@@ -65,6 +69,7 @@ export class BatchEditDialogComponent implements PostEditListener {
   ) {
     // Initialize the list of attributes based on the schema classes of the instances
     this.setCandidateAttributes();
+
   }
 
   onCancel() {
@@ -243,8 +248,8 @@ export class BatchEditDialogComponent implements PostEditListener {
   }
 
   onBooleanAttributeEdit(attributeValue: AttributeValue) {
-    
-      this.addAttribute(attributeValue, attributeValue.value, true);
+
+    this.addAttribute(attributeValue, attributeValue.value, true);
   }
 
   private aggregateAttributes() {
@@ -426,34 +431,34 @@ export class BatchEditDialogComponent implements PostEditListener {
 
         this.selectedAggregatedValues.forEach((values) => {
           // if (values && values.length > 0 && this._instances) {
-        //         this.selectedAggregatedValues.forEach((values) => {
-        // let att: AttributeValue = {
-        //   attribute: this.selectedAttribute!,
-        //   value: values.value,
-        // }
-            for (let instance of this._instances!) {
-              let att = instance.attributes.get(attributeValue.attribute.name);
-              if (att !== undefined) {
-                // for (let value of values) {
-                  if (Array.isArray(att)) {
-                    if (att.includes(values.value)) {
-                      let index = att.indexOf(values.value);
-                      values.index = index; // Store the index for further processing
-                      // If the attribute is an array, we need to remove the value from the array
-                      this.attributeEditService.deleteInstanceAttribute(values, instance);
-                      this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
-                    }
-                  }
-                  else {
-                    if (att === values.value) {
-                      // If the attribute is a single value, we can delete it directly
-                      this.attributeEditService.deleteInstanceAttribute(values, instance);
-                      this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
-                    }
-                  }
-                // }
+          //         this.selectedAggregatedValues.forEach((values) => {
+          // let att: AttributeValue = {
+          //   attribute: this.selectedAttribute!,
+          //   value: values.value,
+          // }
+          for (let instance of this._instances!) {
+            let att = instance.attributes.get(attributeValue.attribute.name);
+            if (att !== undefined) {
+              // for (let value of values) {
+              if (Array.isArray(att)) {
+                if (att.includes(values.value)) {
+                  let index = att.indexOf(values.value);
+                  values.index = index; // Store the index for further processing
+                  // If the attribute is an array, we need to remove the value from the array
+                  this.attributeEditService.deleteInstanceAttribute(values, instance);
+                  this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+                }
               }
+              else {
+                if (att === values.value) {
+                  // If the attribute is a single value, we can delete it directly
+                  this.attributeEditService.deleteInstanceAttribute(values, instance);
+                  this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+                }
+              }
+              // }
             }
+          }
           // }
         });
 
@@ -493,6 +498,14 @@ export class BatchEditDialogComponent implements PostEditListener {
       this.store.dispatch(NewInstanceActions.register_new_instance(cloned));
     }
     this.store.dispatch(UpdateInstanceActions.last_updated_instance({ attribute: attName, instance: cloned }));
+  }
+
+  isDeleted(row: Instance): boolean {
+    return this.deletedDBIds.includes(row.dbId);
+  }
+
+  isUpdated(row: Instance): boolean {
+    return this.updatedDBIds.includes(row.dbId);
   }
 
   /**

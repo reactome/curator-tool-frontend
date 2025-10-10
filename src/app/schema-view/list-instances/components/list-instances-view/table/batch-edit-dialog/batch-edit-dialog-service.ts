@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
-import {AttributeValue} from "src/app/instance/components/instance-view/instance-table/instance-table.model";
-import {BatchEditDialogComponent} from "./batch-edit-dialog.component";
+import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
+import { BatchEditDialogComponent } from "./batch-edit-dialog.component";
 
 /**
  * Use a dialog service to hide the actual implementation of this dialog component from
@@ -15,7 +15,9 @@ import {BatchEditDialogComponent} from "./batch-edit-dialog.component";
 })
 export class BatchEditDialogService {
 
-  constructor(private dialog: MatDialog) { }
+  constructor(private dialog: MatDialog) {
+
+  }
 
   openDialog(data: Instance[]): MatDialogRef<BatchEditDialogComponent, Instance[]> {
     const dialogRef = this.dialog.open(BatchEditDialogComponent, {

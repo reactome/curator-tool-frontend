@@ -14,7 +14,6 @@ import { ListInstancesDialogService } from '../../list-instances-dialog/list-ins
 import { BatchEditDialogService } from './batch-edit-dialog/batch-edit-dialog-service';
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { combineLatest, map, Observable, Subscription, take } from 'rxjs';
-import { InstanceSelectionService } from '../../../instance-selection.service';
 import { DeleteBulkDialogService } from '../../delete-bulk-dialog/delete-bulk-dialog.service';
 
 @Component({
@@ -47,6 +46,8 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   // Flag to indicate if the advanced search component should be displayed
   needAdvancedSearch: boolean = false;
   selectedInstances: Instance[] = [];
+  deletedDBIds: number[] = [];
+  updatedDBIds: number[] = [];
 
   @Input() isLocal: boolean = false;
   @Input() showBatchEdit: boolean = true;
@@ -534,12 +535,35 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
       this.doAdvancedSearch(0);
     else
       this.doBasicSearch(0);
-    this.batchEditDialogService.openDialog(this.data);
-    // this.listInstancesDialogService.openBatchEditDialog(this.data);
+
+    if (this.isLocal) {
+      this.batchEditDialogService.openDialog(this.selectedInstances.length > 0 ? this.selectedInstances : this.data);
+    }
+
+    else {
+      this.store.select(deleteInstances()).pipe(
+        take(1),
+        map((instances) => {
+          this.deletedDBIds = instances.map(inst => inst.dbId);
+        })
+      ).subscribe();
+
+      this.store.select(updatedInstances()).pipe(
+        take(1),
+        map((instances) => {
+          this.updatedDBIds = instances.map(inst => inst.dbId);
+        })
+      ).subscribe();
+      
+      const filteredData = this.data.filter(
+        inst => !this.deletedDBIds.includes(inst.dbId) && !this.updatedDBIds.includes(inst.dbId)
+      );
+      this.batchEditDialogService.openDialog(this.selectedInstances.length > 0 ? this.selectedInstances : filteredData);
+    }
   }
 
   onSelectionChange(instance: Instance) {
-    if(this.instUtils.isInstanceSelected(SelectedInstancesList.mainInstanceList, instance)) {
+    if (this.instUtils.isInstanceSelected(SelectedInstancesList.mainInstanceList, instance)) {
       this.instUtils.removeSelectedInstance(SelectedInstancesList.mainInstanceList, instance);
     } else {
       this.instUtils.addSelectedInstance(SelectedInstancesList.mainInstanceList, instance);
@@ -563,9 +587,9 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   }
 
   getSelectedInstances() {
-     this.instUtils.getSelectedInstances(SelectedInstancesList.mainInstanceList).subscribe(selectedInstances => {
+    this.instUtils.getSelectedInstances(SelectedInstancesList.mainInstanceList).subscribe(selectedInstances => {
       this.selectedInstances = selectedInstances;
-     });
+    });
   }
 
   setSelectedInstances() {
