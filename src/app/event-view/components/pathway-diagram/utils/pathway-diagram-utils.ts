@@ -194,7 +194,7 @@ export class PathwayDiagramUtilService {
     clearSelection(diagram: DiagramComponent) {
         if (diagram.cy) {
             diagram.cy.$(':selected').unselect();
-            diagram.cy.fit(100);
+            // diagram.cy.fit(100);
         }
     }
 
