@@ -177,7 +177,10 @@ export class PathwayDiagramUtilService {
         if (areSame) // Or nothing to be selected
             return; 
         this.clearSelection(diagram);
-        diagram.select(dbIds, diagram.cy);
+        if (dbIds.length > 0) {
+            // Only one instance can be selected in the diagram (based on the new pathway browser, Oct 11, 2025)
+            diagram.select(dbIds[0], diagram.cy);
+        }
     }
 
     isDbIdSelected(diagram: DiagramComponent, dbId: number) {
