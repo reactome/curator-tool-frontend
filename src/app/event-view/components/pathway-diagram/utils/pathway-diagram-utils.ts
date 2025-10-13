@@ -180,6 +180,16 @@ export class PathwayDiagramUtilService {
         if (dbIds.length > 0) {
             // Only one instance can be selected in the diagram (based on the new pathway browser, Oct 11, 2025)
             diagram.select(dbIds[0], diagram.cy);
+            // This is a hack. It should be handled by diagram. However, for some reason,
+            // it is blocked.
+            diagram.cy.animate({
+                fit: {
+                    eles: diagram.cy.$(':selected'),
+                    padding: 250
+                },
+                duration: 1000,
+                easing: "ease-in-out"
+            });
         }
     }
 

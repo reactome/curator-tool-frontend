@@ -27,6 +27,7 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   // Special case to navigate away from the current event
   @Output() goToPathwayEvent = new EventEmitter<number>();
+  @Output() openPathwayDiagramEvent = new EventEmitter<any>();
   id$ = this.route.params.pipe(
     map(params => params['id']),
     filter(id => id !== undefined)
@@ -381,6 +382,23 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           this.dialog.open(InfoDialogComponent, dialogConfig);
           if (this.isEditing)
             this.diagramUtils.enableEditing(this.diagram); // Put it back into the editable model
+        });
+        break;
+
+      case 'editPathwayDiagram':
+        this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe((pathwayDiagram: Instance) => {
+          if (pathwayDiagram) {
+            this.openPathwayDiagramEvent.emit(pathwayDiagram.dbId);
+          }
+          else {
+            this.dialog.open(InfoDialogComponent, {
+              data: {
+                title: 'Error',
+                message: 'No PathwayDiagram instance is associated with this pathway: ',
+                instanceInfo: this.pathwayId
+              }
+            });
+          }
         });
         break;
 

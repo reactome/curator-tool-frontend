@@ -22,7 +22,8 @@
       <div style="display: flex; flex-direction: column; height: 100%;;">
         <div style="flex: 2; overflow: hidden;">
           <div style="height: 100%; overflow-x: auto;">
-              <app-pathway-diagram #diagramView (goToPathwayEvent)="handleGoToPathEvent($event)"></app-pathway-diagram>
+              <app-pathway-diagram #diagramView (goToPathwayEvent)="handleGoToPathEvent($event)" 
+              (openPathwayDiagramEvent)="handleOpenPathwayDiagramEvent($event)"></app-pathway-diagram>
           </div>
         </div>
         <div [style.height]="window.innerHeight - 40 - diagramHeight + 'px'">

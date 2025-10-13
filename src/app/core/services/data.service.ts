@@ -52,6 +52,7 @@ export class DataService {
   private deleteInstaneUrl = `${environment.ApiRoot}/delete/`;
   private fetchQAReportUrl = `${environment.ApiRoot}/qaReport/`;
   private fetchInstancesInBatchUrl = `${environment.ApiRoot}/findByDbIds/`;
+  private fetchPathwayDiagramUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
 
 
   // Track the negative dbId to be used
@@ -230,6 +231,19 @@ export class DataService {
    */
   private convertToSchemaClass(clsName: string, data: any): SchemaClass {
     return this.utils.convertToSchemaClass(clsName, data);
+  }
+
+  /**
+   * Fetch the PathwayDiagram for a given pathway based on its dbId.
+   * @param pathwayId
+   * @returns 
+   */
+  fetchPathwayDiagram(pathwayId: any): Observable<Instance> {
+    return this.http.get<Instance>(this.fetchPathwayDiagramUrl + `${pathwayId}`)
+      .pipe(map((data: Instance) => data), // Nothing needs to be done.
+        catchError((err: Error) => {
+          return this.handleErrorMessage(err);
+        }));
   }
 
   /**
