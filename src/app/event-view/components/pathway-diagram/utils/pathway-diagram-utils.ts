@@ -189,7 +189,7 @@ export class PathwayDiagramUtilService {
             diagram.cy.animate({
                 fit: {
                     eles: diagram.cy.$(':selected'),
-                    padding: 250
+                    padding: 100 // Use 100 as in the original code
                 },
                 duration: 1000,
                 easing: "ease-in-out"
