@@ -31,7 +31,7 @@ export class GeneLlmComponentComponent {
   };
 
   gene: string = "NTN1";
-  configuration: Configuration = {...DEFAULT_LLM_CONFIG};
+  configuration: Configuration = { ...DEFAULT_LLM_CONFIG };
 
   showConfiguration: boolean = false;
   ppiTableData: AbstractTableData[] | undefined;
@@ -56,9 +56,17 @@ export class GeneLlmComponentComponent {
           panelClass: ['warning-snackbar'],
           duration: 100
         });
+        this.failure = err.message;
+        this.during_query = false;
         return throwError(() => err);
       })
     ).subscribe(result => {
+      // Need to check failure first
+      if (result.failure) {
+        this.failure = result.failure;
+        this.during_query = false;
+        return;
+      }
       this.annotated_pathway_content = result.annotated_pathways_content;
       this.annotated_pathway_details = result.annotated_pathways_docs;
       this.pathway_2_ppi_abstracts_summary = result.pathway_2_ppi_abstracts_summary;
@@ -73,11 +81,10 @@ export class GeneLlmComponentComponent {
           this.gene,
           result.pathway_name_2_id);
       }
-      this.failure = result.failure;
       this.content = result.content
       if (this.content) {
-        this.content = this.postProcessText(this.content, 
-          this.gene, 
+        this.content = this.postProcessText(this.content,
+          this.gene,
           result.pathway_name_2_id);
       }
       if (result.pathway_2_ppi_abstracts_summary) {
@@ -85,11 +92,15 @@ export class GeneLlmComponentComponent {
         this.ppiTableData = [];
         this.createPPISummaryData(summaries, result.pathway_name_2_id, this.gene);
       }
+      else { // Therefore, we can force to clean up the previous data
+        this.ppiTableData = undefined;
+        this.navigationData.ppiPathways.length = 0;
+      }
       setTimeout(() => {
         this.details = this.splitDetails(result.docs,
           result.pathway_name_2_id,
           this.gene);
-          this.navigationData.predPMIDPathways.length = 0;
+        this.navigationData.predPMIDPathways.length = 0;
         this.details?.forEach((detail) => {
           this.navigationData.predPMIDPathways.push(detail.pmid + ' vs ' + detail.pathway);
         });
@@ -101,24 +112,25 @@ export class GeneLlmComponentComponent {
   private createPPISummaryData(summaries: string[],
     pathway_name_2_id: any,
     queryGene: string = this.gene
-  ) 
-  {
+  ) {
     this.navigationData.ppiPathways.length = 0;
     Object.entries(summaries).forEach(([key, value]) => {
       let entry: Pathway2Abstracts = { pathway_name: key, abstractData: value }
       let summary = this.postProcessText(entry.abstractData.summary, queryGene, pathway_name_2_id);
-      if (summary === undefined) 
+      if (summary === undefined)
         summary = "";
       let abstract: Abstracts = {
         summary: summary,
-        gene: entry.abstractData.ppi_genes, 
+        gene: entry.abstractData.ppi_genes,
         pmids: entry.abstractData.pmids
       }
       let data = this.mappingSummary(abstract.gene, abstract.pmids)
-      let pathway: AbstractTableData = { pathwayName: key,
-        pathwayId: pathway_name_2_id[key], 
-        summary: abstract.summary, 
-        data: data }
+      let pathway: AbstractTableData = {
+        pathwayName: key,
+        pathwayId: pathway_name_2_id[key],
+        summary: abstract.summary,
+        data: data
+      }
       console.debug('pathway:', pathway);
       this.ppiTableData?.push(pathway);
       this.navigationData.ppiPathways.push(pathway.pathwayName)
@@ -171,14 +183,14 @@ export class GeneLlmComponentComponent {
   }
 
   private extractPathwayName(text: string | undefined) {
-      if (text === undefined) return undefined;
-  
-      // Match the first occurrence of PATHWAY_NAME:"..."
-      let regex = new RegExp('PATHWAY_NAME:"(.+?)"', 'g'); // Non-greedy match for the first pathway name
-      let match = regex.exec(text);
-  
-      // Return the first matched pathway name or undefined if no match
-      return match ? match[1] : undefined;
+    if (text === undefined) return undefined;
+
+    // Match the first occurrence of PATHWAY_NAME:"..."
+    let regex = new RegExp('PATHWAY_NAME:"(.+?)"', 'g'); // Non-greedy match for the first pathway name
+    let match = regex.exec(text);
+
+    // Return the first matched pathway name or undefined if no match
+    return match ? match[1] : undefined;
   }
 
   private addPathwayLinks(text: string | undefined, name2id: any, for_pathway_name: boolean = true) {
@@ -221,22 +233,22 @@ export class GeneLlmComponentComponent {
   }
 
   private hiliteGene(text: string | undefined, queryGene: string) {
-      if (text === undefined) return text;
-  
-      // Create a regex to match the query gene with or without double stars
-      let regexWithStars = new RegExp(`\\*\\*(${queryGene})\\*\\*`, 'gi'); // Match with double stars
-      let regexWithoutStars = new RegExp(`(${queryGene})`, 'gi'); // Match without double stars
-  
-      // First, replace occurrences with double stars and remove the stars
-      text = text.replace(regexWithStars, '$1');
-  
-      // Then, highlight the query gene
-      let hiliteGene = "<b class=\"query_gene\">$1</b>";
-      text = text.replace(regexWithoutStars, hiliteGene);
-  
-      // Finally, highlight anything wrapped in double stars
-      text = this.hiliteTextWithStars(text);
-      return text;
+    if (text === undefined) return text;
+
+    // Create a regex to match the query gene with or without double stars
+    let regexWithStars = new RegExp(`\\*\\*(${queryGene})\\*\\*`, 'gi'); // Match with double stars
+    let regexWithoutStars = new RegExp(`(${queryGene})`, 'gi'); // Match without double stars
+
+    // First, replace occurrences with double stars and remove the stars
+    text = text.replace(regexWithStars, '$1');
+
+    // Then, highlight the query gene
+    let hiliteGene = "<b class=\"query_gene\">$1</b>";
+    text = text.replace(regexWithoutStars, hiliteGene);
+
+    // Finally, highlight anything wrapped in double stars
+    text = this.hiliteTextWithStars(text);
+    return text;
   }
 
   // Highlight anything wrapped in double stars

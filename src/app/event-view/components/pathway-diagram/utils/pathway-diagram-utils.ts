@@ -177,12 +177,37 @@ export class PathwayDiagramUtilService {
         if (areSame) // Or nothing to be selected
             return; 
         this.clearSelection(diagram);
-        diagram.select(dbIds, diagram.cy);
+        if (dbIds.length > 0) {
+            // Only one instance can be selected in the diagram (based on the new pathway browser, Oct 11, 2025)
+            diagram.select(dbIds[0], diagram.cy);
+            if (diagram.cyCompare) {
+                // Let's just call select again for diagram.cyCompare to make sure it is selected
+                diagram.select(dbIds[0], diagram.cyCompare);
+            }
+            // This is a hack. It should be handled by diagram. However, for some reason,
+            // it is blocked.
+            diagram.cy.animate({
+                fit: {
+                    eles: diagram.cy.$(':selected'),
+                    padding: 100 // Use 100 as in the original code
+                },
+                duration: 1000,
+                easing: "ease-in-out"
+            });
+        }
     }
 
     isDbIdSelected(diagram: DiagramComponent, dbId: number) {
         if (!diagram.cy)
             return; // Make sure cy exists
+        // Check cyCompare first if it exists
+        if (diagram.cyCompare) {
+            const selectedElements = diagram.cyCompare.$(':selected');
+            const selectedDbIds = Array.from(new Set(selectedElements.map((element:any) => element.data('reactomeId'))));
+            if (selectedDbIds.includes(dbId)) {
+                return true;
+            }
+        }
         const selectedElements = diagram.cy.$(':selected');
         const selectedDbIds = Array.from(new Set(selectedElements.map((element:any) => element.data('reactomeId'))));
         return selectedDbIds.includes(dbId);
@@ -191,7 +216,7 @@ export class PathwayDiagramUtilService {
     clearSelection(diagram: DiagramComponent) {
         if (diagram.cy) {
             diagram.cy.$(':selected').unselect();
-            diagram.cy.fit(100);
+            // diagram.cy.fit(100);
         }
     }
 

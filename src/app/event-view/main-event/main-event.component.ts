@@ -139,6 +139,10 @@ export class MainEventComponent {
     this.eventTree?.selectNodesForDiagram(reactomeIds[0]);
   }
 
+  handleOpenPathwayDiagramEvent(pathwayId: number) {
+    this.instanceView?.loadInstance(pathwayId, false, true);
+  }
+
   handleGoToPathEvent(dbId: number) {
     // this.instanceView?.loadInstance(dbId, false, true);
     this.eventTree?.goToPathway(undefined, dbId);
