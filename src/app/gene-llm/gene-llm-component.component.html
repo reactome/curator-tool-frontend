@@ -55,7 +55,8 @@ total_words (int, optional): _description_. Defaults to 300. -->
     <mat-sidenav-container style="left: 20px;" *ngIf="!during_query">
         <mat-sidenav *ngIf="content" #sidenav mode="side" opened class="menu_style">
             <app-navigation-menu [navigationData]="navigationData"
-                [hasAnnotatedData]="annotated_pathway_content !== undefined"></app-navigation-menu>
+                [hasAnnotatedData]="annotated_pathway_content !== undefined"
+                [hasPPIData]="ppiTableData !== undefined"></app-navigation-menu>
         </mat-sidenav>
 
         <mat-sidenav-content>

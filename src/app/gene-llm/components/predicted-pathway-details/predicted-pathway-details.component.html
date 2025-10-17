@@ -5,6 +5,9 @@
         vs
         PATHWAY: <a href="https://reactome.org/PathwayBrowser/#/{{detail.pathwayId}}"
             target="reactome">{{detail.pathway}}</a>
+         (<span *ngIf="detail.cosScore !== undefined">Semantic Score: {{detail.cosScore | number:'1.2-2'}}; </span>
+        <span *ngIf="detail.llmScore !== undefined">LLM Score: {{detail.llmScore}}; </span>
+        <span *ngIf="detail.enrichmentFDR !== undefined">Pathway FDR: {{detail.enrichmentFDR.toExponential(2) | uppercase}}</span>)       
     </p>
     <p [innerHTML]="detail.text"></p>
     <p>

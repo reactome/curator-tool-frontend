@@ -29,6 +29,8 @@ export const DEFAULT_LLM_CONFIG : Configuration = {
   llmScoreCutoff: 3,
   numberOfPathways: 8,
   fdrCutoff: 0.01,
+  interactionSource: "intact_biogrid",
+  filterPPIs: true,
   // model: "gpt-4o-mini"
 }
 
@@ -40,4 +42,6 @@ export interface Configuration {
   llmScoreCutoff: number;
   numberOfPathways: number;
   fdrCutoff: number;
+  interactionSource?: string; // "intact_biogrid" | "reactome_fis";
+  filterPPIs?: boolean;
 }

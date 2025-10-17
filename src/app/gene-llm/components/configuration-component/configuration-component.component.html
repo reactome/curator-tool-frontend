@@ -1,5 +1,31 @@
 <mat-card class="card-style">
     <br>
+
+    <div class="form-section">
+        <div>
+            <mat-label style="font-weight: bold; flex: 1; display: flex; flex-direction: column; align-items: flex-start;">Choose Interaction Source</mat-label>
+        </div>
+        <mat-radio-group [(ngModel)]="configuration.interactionSource">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; max-width: 500px;">
+                <mat-radio-button value="intact_biogrid" class="radio-option" style="margin-left: 0;">
+                    IntAct &amp; BioGrid Protein-Protein Interactions
+                </mat-radio-button>
+                <div class="checkbox-indent">
+                    <mat-checkbox [(ngModel)]="configuration.filterPPIs" 
+                    [disabled]="configuration.interactionSource !== 'intact_biogrid'" 
+                    matTooltip="Filter PPIs to only include those also found in Reactome FIs">
+                        Filter PPIs based on Reactome FIs
+                    </mat-checkbox>
+                </div>
+                <mat-radio-button value="reactome_fis" class="radio-option" style="margin-left: 0;">
+                    Reactome Functional Interactions
+                </mat-radio-button>
+            </div>
+        </mat-radio-group>
+    </div>
+
+    <mat-divider></mat-divider>
+    <br>
     <div>
         <mat-form-field class="form-field">
             <mat-label>Functional Interaction Score ≥ </mat-label>
@@ -12,7 +38,6 @@
                 matInput placeholder="8" min="0" matTooltip="Used to choose the number of top Pubmed abstracts"
                 type="number" #pubmedResultsInput>
         </mat-form-field>
-
     </div>
 
     <div>
@@ -49,6 +74,10 @@
             </mat-select>
         </mat-form-field>
     </div>
+
+    <mat-divider></mat-divider>
+    <br>
+
     <div>
         <button (click)="resetValues()" mat-button class="reset-button">
             <mat-icon>refresh</mat-icon> Reset

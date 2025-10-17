@@ -1,3 +1,30 @@
+.form-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-left: 75px; // Match the default mat-form-field label indent
+  margin-bottom: 16px;
+}
+
+.section-label {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.radio-option {
+  margin-left: 0;
+  margin-bottom: 4px;
+}
+
+.checkbox-indent {
+  padding-left: 32px;
+  margin-bottom: 4px;
+}
+
+.mat-form-field {
+  margin-bottom: 16px;
+}
+
 .card-style {
     width: 100%;
     height: 50%;

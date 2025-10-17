@@ -44,7 +44,22 @@ export class GeneLlmComponentComponent {
     else this.showConfiguration = true;
   }
 
+  private resetContent() {
+    this.content = undefined;
+    this.details = undefined;
+    this.failure = undefined;
+    this.annotated_pathway_content = undefined;
+    this.annotated_pathway_details = undefined;
+    this.pathway_2_ppi_abstracts_summary = undefined;
+    this.ppiTableData = undefined;
+    this.navigationData.ppiPathways.length = 0;
+    this.navigationData.predPMIDPathways.length = 0;
+  }
+
   annotateGene() {
+    // Before running anything, let's clean up the previous results
+    this.resetContent();
+    console.debug('Query gene: ', this.gene);
     console.debug('Form data:');
     const url = this.LLM_ANNOTATE_GENE_URL;
     this.during_query = true;
@@ -87,7 +102,7 @@ export class GeneLlmComponentComponent {
           this.gene,
           result.pathway_name_2_id);
       }
-      if (result.pathway_2_ppi_abstracts_summary) {
+      if (result.pathway_2_ppi_abstracts_summary && result.pathway_2_ppi_abstracts_summary.length > 0) {
         let summaries = result.pathway_2_ppi_abstracts_summary;
         this.ppiTableData = [];
         this.createPPISummaryData(summaries, result.pathway_name_2_id, this.gene);
@@ -99,6 +114,7 @@ export class GeneLlmComponentComponent {
       setTimeout(() => {
         this.details = this.splitDetails(result.docs,
           result.pathway_name_2_id,
+          result.pathway_abstract_scores,
           this.gene);
         this.navigationData.predPMIDPathways.length = 0;
         this.details?.forEach((detail) => {
@@ -146,11 +162,22 @@ export class GeneLlmComponentComponent {
     return mappedGenes;
   }
 
+  private processPathwayAbstractScores(scores: any[]) {
+    const pathwayPmidScores: { [key: string]: [number?, number?, number?] } = {};
+    for (const score of scores) {
+      const key = `${score['pmid']}:${score['pathway']}`;
+      pathwayPmidScores[key] = [score['cos_score'], score['llm_score'], score['enrichment_fdr']];
+    }
+    return pathwayPmidScores;
+  }
+
   private splitDetails(details: string | undefined,
     pathway_name_2_id: any,
+    pathway_abstract_scores: any,
     queryGene: string) {
     if (details === undefined)
       return undefined;
+    let pathwayPmidScores = this.processPathwayAbstractScores(pathway_abstract_scores);
     let paragraphs = details.split('\n\n')
     let detailObjects: Interacting_Pathway_Detail[] = [];
     for (let i in paragraphs) { // This give us an index
@@ -174,12 +201,22 @@ export class GeneLlmComponentComponent {
         pathway: pathway,
         pathwayId: pathwayId,
         text: text,
-        isWorkingFullText: true, // Ensure the spinner 
+        isWorkingFullText: true, // Ensure the spinner is shown
         queryGene: queryGene
       };
+      let scores = pathwayPmidScores[pmid + ':' + pathway];
+      if (scores) {
+        detailObject.cosScore = scores[0];
+        detailObject.llmScore = scores[1];
+        detailObject.enrichmentFDR = scores[2];
+      }
       detailObjects.push(detailObject);
     }
     return detailObjects;
+  }
+
+  private getScores(pathway: string, pmid: string) {
+    return undefined;
   }
 
   private extractPathwayName(text: string | undefined) {
@@ -394,6 +431,7 @@ export class GeneLlmComponentComponent {
 interface LLM_Result {
   annotated_pathways_content?: string;
   annotated_pathways_docs?: string;
+  pathway_abstract_scores?: any;
   content?: string;
   docs?: string;
   failure?: string;
@@ -406,6 +444,11 @@ export interface Interacting_Pathway_Detail {
   pathwayId?: string;
   pmid?: string;
   text: string;
+  // scores
+  cosScore?: number;
+  llmScore?: number;
+  enrichmentFDR?: number;
+  // For full text
   // For loading full text
   isWorkingFullText: boolean;
   fullPaperResults?: LLM_Result[];
