@@ -141,6 +141,22 @@ export class UpdatedInstanceListComponent implements OnInit {
     }
   }
 
+  // Check the returned object from the server using the map attribute on the instance obj and see if the 
+  // remaining instances need to be committed as well.
+  // The problem is more for new instances, which may have been assigned a dbId during the commit of another instance.
+  // when looping, if an instance's dbId has become positive, it means it has been committed already.
+  // Error, need to add a species to complex and ewas or bug is created. 
+  commitSelectedUpdatedInstances() {
+    for (let instance of this.selectedUpdatedInstances) {
+      this.dataService.commit(instance).subscribe(rtn => {
+        console.debug("returned from commit: ", rtn);
+        this.instanceUtilities.processCommit(instance, rtn, this.dataService);
+      });
+    }
+    this.selectedUpdatedInstances = [];
+    this.showCheck = false;
+  }
+
   private resetDeletedInstance(instance: Instance) {
     this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
     // Check if this is an updated instance or new instance: need to add them back.

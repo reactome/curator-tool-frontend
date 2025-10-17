@@ -729,6 +729,43 @@ export class DataService {
   }
 
   /**
+   * A method to handle queing commits.
+   * @param instances
+   */
+  /**
+   * Commit a batch of instances, ensuring that instances with edited referrers are included.
+   * Returns an Observable of the instances that should be committed together.
+   */
+  /**
+   * Commit a batch of instances, excluding those that have a referrer in the batch.
+   * Only top-level (parent) instances are returned for commit, as they will handle their children.
+   */
+  commitInBatch(instances: Instance[]): Observable<Instance[]> {
+    if (!instances.length) return of([]);
+
+    // Build a set of dbIds for quick lookup
+    const batchDbIds = new Set(instances.map(i => i.dbId));
+
+    // For each instance, get its referrers and check if any are in the batch
+    return forkJoin(
+      instances.map(instance =>
+        this.getReferrers(instance.dbId).pipe(
+          take(1),
+          map(referrers => {
+            // Exclude this instance if any of its referrers are also in the batch
+            const hasReferrerInBatch = referrers?.some(ref =>
+              ref.referrers.some(refInst => batchDbIds.has(refInst.dbId))
+            );
+            return hasReferrerInBatch ? null : instance;
+          })
+        )
+      )
+    ).pipe(
+      map(results => results.filter((inst): inst is Instance => !!inst))
+    );
+  }
+
+  /**
    * Commit the passed instance back to the database.
    * @param instance
    */
@@ -869,9 +906,9 @@ export class DataService {
   }
 
   /**
- * Delete an instance in the database.
- * @param instance
- */
+  * Delete an instance in the database.
+  * @param instance
+  */
   delete(instance: Instance): Observable<boolean> {
     // In case is from store, which is immutable
     let instanceToBeCommitted = this.utils.cloneInstanceForCommit(instance);
@@ -1053,9 +1090,9 @@ export class DataService {
   };
 
   /**
- * Pass the instance to the back end for QA checks.
- * @param instance
- */
+  * Pass the instance to the back end for QA checks.
+  * @param instance
+  */
   fetchQAReport(instance: Instance): Observable<QAReport> {
     // In case instance is just a shell, we need to use the cached instance
     return this.http.post<QAReport>(this.fetchQAReportUrl, instance).pipe(
@@ -1089,10 +1126,10 @@ export class DataService {
     if (dbIds.length === 0) {
       return of([]);
     }
-  
+
     const fromCache: { [key: number]: Instance } = {};
     const toFetch: number[] = [];
-  
+
     dbIds.forEach(id => {
       if (this.id2instance.has(id)) {
         fromCache[id] = this.id2instance.get(id)!;
@@ -1100,12 +1137,12 @@ export class DataService {
         toFetch.push(id);
       }
     });
-  
+
     if (toFetch.length === 0) {
       // All instances are in the cache
       return of(dbIds.map(id => fromCache[id]));
     }
-  
+
     // Fetch the rest from the backend
     return this.http.post<Instance[]>(this.fetchInstancesInBatchUrl, toFetch).pipe(
       map((fetched: Instance[]) => {
