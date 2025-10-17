@@ -102,7 +102,7 @@ export class GeneLlmComponentComponent {
           this.gene,
           result.pathway_name_2_id);
       }
-      if (result.pathway_2_ppi_abstracts_summary && result.pathway_2_ppi_abstracts_summary.length > 0) {
+      if (result.pathway_2_ppi_abstracts_summary) {
         let summaries = result.pathway_2_ppi_abstracts_summary;
         this.ppiTableData = [];
         this.createPPISummaryData(summaries, result.pathway_name_2_id, this.gene);
