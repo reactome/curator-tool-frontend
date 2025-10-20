@@ -11,6 +11,7 @@ export class NavigationMenuComponent implements OnInit {
   }
 
   @Input() hasAnnotatedData: boolean = false;
+  @Input() hasPPIData: boolean = false;
 
   navData: NavigationData = {
     predPMIDPathways: [],

@@ -17,10 +17,12 @@
         <a (click)="scrollToSection('pred_pmid_pathway_' + i)" class="level_2">{{pmid_pathway}}</a>
         <br>
     </ng-container>
-    <a (click)="scrollToSection('gene2PPi')" class="level_1">PPI for Annotation</a>
+    <a (click)="scrollToSection('gene2PPi')" class="level_1" *ngIf="hasPPIData">PPI for Annotation</a>
     <br>
-    <ng-container *ngFor="let pathway of navData.ppiPathways; let i=index;">
-        <a (click)="scrollToSection('ppi_pathway_' + i)" class="level_2">{{pathway}}</a>
-        <br>
+    <ng-container *ngIf="hasPPIData">
+        <ng-container *ngFor="let pathway of navData.ppiPathways; let i=index;">
+            <a (click)="scrollToSection('ppi_pathway_' + i)" class="level_2">{{pathway}}</a>
+            <br>
+        </ng-container>
     </ng-container>
 </nav>
