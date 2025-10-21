@@ -754,29 +754,56 @@ export class DataService {
    * Commit a batch of instances, excluding those that have a referrer in the batch.
    * Only top-level (parent) instances are returned for commit, as they will handle their children.
    */
-  commitInBatch(instances: Instance[]): Observable<Instance[]> {
-    if (!instances.length) return of([]);
+  commitNewInstsInBatch(instances: Instance[]): Observable<Instance[]> {
+    if (!instances || instances.length === 0) return of([]);
 
-    // Build a set of dbIds for quick lookup
     const batchDbIds = new Set(instances.map(i => i.dbId));
+    const referredDbIds = new Set<number>();
 
-    // For each instance, get its referrers and check if any are in the batch
-    return forkJoin(
-      instances.map(instance =>
-        this.getReferrers(instance.dbId).pipe(
-          take(1),
-          map(referrers => {
-            // Exclude this instance if any of its referrers are also in the batch
-            const hasReferrerInBatch = referrers?.some(ref =>
-              ref.referrers.some(refInst => batchDbIds.has(refInst.dbId))
-            );
-            return hasReferrerInBatch ? null : instance;
-          })
-        )
-      )
-    ).pipe(
-      map(results => results.filter((inst): inst is Instance => !!inst))
-    );
+    // Collect all dbIds that are referred to by other instances in the batch
+    const visited = new Set<number>();
+
+    const inspectValue = (value: any) => {
+      if (!value) return;
+
+      if (Array.isArray(value)) {
+        for (const v of value) {
+          inspectValue(v);
+        }
+        return;
+      }
+
+      // Check for instance values 
+      if (this.utils.isInstance(value)) {
+        const ref = value as Instance;
+        if (batchDbIds.has(ref.dbId)) {
+          referredDbIds.add(ref.dbId);
+        }
+        // Recurse into the referenced instance's attributes if not visited.
+        const fullRef = this.id2instance.get(ref.dbId) || ref;
+        inspectInstance(fullRef);
+      }
+    };
+
+    const inspectInstance = (instObj: Instance | undefined) => {
+      if (!instObj) return;
+      if (visited.has(instObj.dbId)) return;
+      visited.add(instObj.dbId);
+
+      if (!instObj.attributes) return;
+      // Use proper Map iteration signature to ensure both keyed and unkeyed maps are handled
+      instObj.attributes.forEach((value: any, _key?: string) => {
+        inspectValue(value);
+      });
+    };
+
+    for (const inst of instances) {
+      inspectInstance(inst);
+    }
+
+    // Return instances with referred ones removed (preserve original order)
+    const result = instances.filter(i => !referredDbIds.has(i.dbId));
+    return of(result);
   }
 
   /**

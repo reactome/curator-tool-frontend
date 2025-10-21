@@ -141,6 +141,15 @@ export class UpdatedInstanceListComponent implements OnInit {
     }
   }
 
+  commitNewInstances() {
+    this.dataService.commitNewInstsInBatch(this.selectedNewInstances).subscribe(rtn => 
+      rtn.forEach((committedInstance, index) => {
+        let originalInstance = this.selectedNewInstances[index];
+        this.instanceUtilities.processCommit(originalInstance, committedInstance, this.dataService);
+      })
+    );
+  }
+
   // Check the returned object from the server using the map attribute on the instance obj and see if the 
   // remaining instances need to be committed as well.
   // The problem is more for new instances, which may have been assigned a dbId during the commit of another instance.
