@@ -18,6 +18,7 @@ import { DeletionDialogService } from 'src/app/instance/components/deletion-dial
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/table/instance-list-table/instance-list-table.component';
 import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
+import { Observable, from, of, filter, concatMap, tap, map, EMPTY } from 'rxjs';
 
 
 @Component({
@@ -141,29 +142,69 @@ export class UpdatedInstanceListComponent implements OnInit {
     }
   }
 
-  commitNewInstances() {
-    this.dataService.commitNewInstsInBatch(this.selectedNewInstances).subscribe(rtn => 
-      rtn.forEach((committedInstance, index) => {
-        let originalInstance = this.selectedNewInstances[index];
-        this.instanceUtilities.processCommit(originalInstance, committedInstance, this.dataService);
-      })
-    );
-  }
-
-  // Check the returned object from the server using the map attribute on the instance obj and see if the 
-  // remaining instances need to be committed as well.
-  // The problem is more for new instances, which may have been assigned a dbId during the commit of another instance.
-  // when looping, if an instance's dbId has become positive, it means it has been committed already.
-  // Error, need to add a species to complex and ewas or bug is created. 
-  commitSelectedUpdatedInstances() {
-    for (let instance of this.selectedUpdatedInstances) {
+  commitUpdatedInstances() {
+    this.selectedUpdatedInstances.forEach(instance => {
       this.dataService.commit(instance).subscribe(rtn => {
-        console.debug("returned from commit: ", rtn);
         this.instanceUtilities.processCommit(instance, rtn, this.dataService);
       });
-    }
+    });
     this.selectedUpdatedInstances = [];
     this.showCheck = false;
+  }
+
+  commitDeletedInstances() {
+    this.selectedDeletedInstances.forEach(instance => {
+      this.dataService.delete(instance).subscribe(rtn => {
+        // Have to subscript it. Otherwise, the http call will not be fired
+        this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
+        this.instanceUtilities.setDeletedDbId(instance.dbId);
+        this.dataService.flagSchemaTreeForReload();
+      });
+    });
+    this.selectedDeletedInstances = [];
+    this.showCheck = false;
+  }
+
+  /**
+* Save a single object via the REST API.
+* Backend may persist related objects and return all saved ones.
+*/
+  private saveOne(inst: Instance): Observable < Instance[] > {
+      return this.dataService.commit(inst).pipe(
+        tap(rtn => {
+          this.instanceUtilities.processCommit(inst, rtn, this.dataService);
+        }),
+        map(saved => Array.isArray(saved) ? saved : [saved])
+      );
+    }
+
+  /**
+* Save a list of instances via REST API (sequentially).
+* The server may persist related objects automatically.
+*/
+  commitNewInstances() {
+      if(!this.selectedNewInstances || this.selectedNewInstances.length === 0) {
+      return;
+    }
+    let shells = this.selectedNewInstances.map(inst => this.instanceUtilities.getShellInstance(inst));
+
+    from(shells).pipe(
+      // filter(inst =>inst.dbId && inst.dbId > 0}), // only save new instances
+      concatMap(inst => {
+        if (inst.dbId && inst.dbId > 0) {
+          // already persisted for this iteration; emit an empty result to continue the sequence
+          return EMPTY;
+        }
+        return this.saveOne(inst);
+      })
+    ).subscribe({
+      error: err => console.error('Error committing new instances', err),
+      complete: () => {
+        // clear selection and UI flags when done
+        this.selectedNewInstances = [];
+        this.showCheck = false;
+      }
+    });
   }
 
   private resetDeletedInstance(instance: Instance) {

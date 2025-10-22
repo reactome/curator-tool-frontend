@@ -54,7 +54,7 @@
       <mat-icon>undo</mat-icon>
     </button>
     <button [disabled]="selectedUpdatedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button
-      matTooltip="commit all selected">
+      matTooltip="commit all selected" (click)="commitUpdatedInstances()">
       <mat-icon>upload</mat-icon>
     </button>
   </div>
@@ -86,7 +86,7 @@
       <mat-icon>undo</mat-icon>
     </button>
     <button [disabled]="selectedDeletedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button
-      matTooltip="commit all selected">
+      matTooltip="commit all selected" (click)="commitDeletedInstances()">
       <mat-icon>upload</mat-icon>
     </button>
   </div>

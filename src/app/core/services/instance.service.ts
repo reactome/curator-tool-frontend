@@ -85,13 +85,17 @@ export class InstanceUtilities {
     }
 
     setCommittedNewInstDbId(oldDbId: number, newDbId: number) {
+        this.updateNewInstanceRegistration(oldDbId, newDbId);
+        this.committedNewInstDbId.next([oldDbId, newDbId]);
+    }
+
+    private updateNewInstanceRegistration(oldDbId: number, newDbId: number) {
         let shell = this.shellInstances.get(oldDbId);
         if (shell) {
             shell.dbId = newDbId;
             this.shellInstances.delete(oldDbId);
             this.shellInstances.set(newDbId, shell);
         }
-        this.committedNewInstDbId.next([oldDbId, newDbId]);
     }
 
     setDeletedDbId(dbId: number) {
@@ -643,6 +647,10 @@ export class InstanceUtilities {
                     this.store.dispatch(NewInstanceActions.remove_new_instance(shell));
                     this.store.dispatch(NewInstanceActions.commit_new_instance({ oldDbId: oldDbId,
                                                                                  newDbId: newDbId }));
+                    // check that the store has updated the dbId, otherwise update it here so that the shell instances are synchronized
+                    if (shell.dbId !== newDbId) {
+                        this.updateNewInstanceRegistration(oldDbId, newDbId);
+                    }
                 }
             });
         }

@@ -760,46 +760,18 @@ export class DataService {
     const batchDbIds = new Set(instances.map(i => i.dbId));
     const referredDbIds = new Set<number>();
 
-    // Collect all dbIds that are referred to by other instances in the batch
-    const visited = new Set<number>();
 
-    const inspectValue = (value: any) => {
-      if (!value) return;
+    instances.forEach(inst => {
+      if (referredDbIds.has(inst.dbId)) return;
 
-      if (Array.isArray(value)) {
-        for (const v of value) {
-          inspectValue(v);
-        }
-        return;
-      }
-
-      // Check for instance values 
-      if (this.utils.isInstance(value)) {
-        const ref = value as Instance;
-        if (batchDbIds.has(ref.dbId)) {
-          referredDbIds.add(ref.dbId);
-        }
-        // Recurse into the referenced instance's attributes if not visited.
-        const fullRef = this.id2instance.get(ref.dbId) || ref;
-        inspectInstance(fullRef);
-      }
-    };
-
-    const inspectInstance = (instObj: Instance | undefined) => {
-      if (!instObj) return;
-      if (visited.has(instObj.dbId)) return;
-      visited.add(instObj.dbId);
-
-      if (!instObj.attributes) return;
+      if (!inst.attributes) return;
       // Use proper Map iteration signature to ensure both keyed and unkeyed maps are handled
-      instObj.attributes.forEach((value: any, _key?: string) => {
-        inspectValue(value);
+      batchDbIds.forEach(batchDbId => {
+        if (this.utils.isReferrer(inst.dbId, this.id2instance.get(batchDbId)!)) {
+          referredDbIds.add(inst.dbId);
+        }
       });
-    };
-
-    for (const inst of instances) {
-      inspectInstance(inst);
-    }
+    });
 
     // Return instances with referred ones removed (preserve original order)
     const result = instances.filter(i => !referredDbIds.has(i.dbId));
