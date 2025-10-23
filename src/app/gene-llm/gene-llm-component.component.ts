@@ -104,12 +104,7 @@ export class GeneLlmComponentComponent {
       }
       if (result.pathway_2_ppi_abstracts_summary) {
         let summaries = result.pathway_2_ppi_abstracts_summary;
-        this.ppiTableData = [];
         this.createPPISummaryData(summaries, result.pathway_name_2_id, this.gene);
-      }
-      else { // Therefore, we can force to clean up the previous data
-        this.ppiTableData = undefined;
-        this.navigationData.ppiPathways.length = 0;
       }
       setTimeout(() => {
         this.details = this.splitDetails(result.docs,
@@ -148,7 +143,9 @@ export class GeneLlmComponentComponent {
         data: data
       }
       console.debug('pathway:', pathway);
-      this.ppiTableData?.push(pathway);
+      if (this.ppiTableData === undefined)
+        this.ppiTableData = [];
+      this.ppiTableData.push(pathway);
       this.navigationData.ppiPathways.push(pathway.pathwayName)
     });
   }
