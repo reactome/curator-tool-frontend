@@ -46,7 +46,7 @@ export class InstanceListTableComponent {
   @Input() set selectAll(value: boolean) {
     for (let instance of this.dataSource) {
       this.checkedMap.set(instance.dbId, value);
-     }
+    }
   }
 
 
@@ -115,11 +115,24 @@ export class InstanceListTableComponent {
     }
   }
 
-  isDeleted(row: Instance): boolean {
+  isDeleted(row: Instance) {
+    this.store.select(deleteInstances()).pipe(
+      take(1),
+      map((instances) => {
+        this.deletedDBIds = instances.map(inst => inst.dbId);
+      })
+    ).subscribe();
     return this.deletedDBIds.includes(row.dbId);
   }
 
-  isUpdated(row: Instance): boolean {
+  isUpdated(row: Instance) {
+    this.store.select(updatedInstances()).pipe(
+      take(1),
+      map((instances) => {
+        this.updatedDBIds = instances.map(inst => inst.dbId);
+      })
+    ).subscribe();
     return this.updatedDBIds.includes(row.dbId);
+
   }
 }

@@ -6,14 +6,14 @@
         (editAction)="onInstanceAttributeEdit($event)" [blockRoute]="blockRouter" />
     </ng-container>
     <ng-container *ngIf="element.attribute.cardinality === '+'">
-      <!-- Disable drag and drop for no manual edit attributes -->
-      <ng-container *ngIf="element.attribute.category === AttributeCategory.NOMANUALEDIT; else dragDropEnabled">
-        <app-instance-table-row-element *ngFor="let object of element.value; let i = index" class="instance-box"
-          [attribute]="element.attribute" [value]="object" [index]="i" />
-      </ng-container>
 
-      <ng-template #dragDropEnabled>
-        <ng-container *ngIf="element.value !== undefined; else noValue">
+      <ng-container *ngIf="element.value !== undefined || element.value  !== null; else noValue">
+        <!-- Disable drag and drop for no manual edit attributes -->
+        <ng-container *ngIf="element.attribute.category === AttributeCategory.NOMANUALEDIT; else dragDropEnabled">
+          <app-instance-table-row-element *ngFor="let object of element.value; let i = index" class="instance-box"
+            [attribute]="element.attribute" [value]="object" [index]="i" />
+        </ng-container>
+        <ng-template #dragDropEnabled>
           <div cdkDropList [cdkDropListData]="element.value" (cdkDropListDropped)="drop($event, element.attribute)">
             <app-instance-table-row-element [disable]="isValueDeleted()" cdkDrag
               *ngFor="let object of element.value; let i = index" class="draggable-instance-box"
@@ -21,8 +21,9 @@
               (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)"
               [blockRoute]="blockRouter" [index]="i" />
           </div>
-        </ng-container>
-      </ng-template>
+        </ng-template>
+
+      </ng-container>
 
     </ng-container>
     <!-- Add an empty row for non-instance type slot-->

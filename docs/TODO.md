@@ -13,6 +13,10 @@
 - When an instance has been deleted also make sure that it is removed from the updated store. Make sure that a deleted instance is not editable.
 Done 
 - Search and advanced search needs to consider the instances that have been updated and added (local changes)
+- Two lines displayed for string-entry values instead of just one (ie name slot) Done
+- Do not show the reference dialog for instances that are subject to be deleted and the instance has no references. 
+- Deleting an instance in the instance list via the deletion button should mark that instance as deleted. This is not done yet.
+-short cut for selecting instances from the dialog 
 
 #### Deidre
 - Bug: After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should  stay at the changes tab. Done 
