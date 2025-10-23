@@ -19,32 +19,21 @@ Done
 -short cut for selecting instances from the dialog 
 
 #### Deidre
-- Bug: After the browser starts or refreshed, click an instance in the changes tab switches to the schema tree. It should  stay at the changes tab. Done 
 - TODO: Use the new set of Reactome icons at Figma, designed by the EBI team. Need to check with Eliott.
-- TODO: After logging in, the default page should be home. Right now it is the log-in page. Actually it should be the home page always. If the user has not been logged in, change it to the log-in page. Done
 - Bug: In the event view, the mouse position is lowed when scroll up/down the instance view. (low priority)
-- TODO: When two instances are compared, change "only show edited attribute" to "attributes having different values".
 - TODO: List all performed QAs in the QA report even though all QAs are passed. By doing this, the tool gives the curator a list of what have been checked. Done
-- TODO: Create a "replace one" and "replace all" for the summation text editor Done
-- TODO: Boolean sliders appear to be 'false' when they are 'true' and disabled due to the gray styling for diabled buttons.
-- For each type of store lists (update, new) create a limit to the number of instances and add a scroll bar, Done 
-- Add checkbox the undo and delete multiple instances at one time
-- New instances are not subject to the search 
-- Update the css for the batch editing drop downs. Also change the batch edit button location. 
+- TODO: Boolean sliders appear to be 'false' when they are 'true' and disabled due to the gray styling for disabled buttons.
 - bug: if I click an updated instance listed in the local view, the comparison is displayed. Try to change it: If this updated instance is opened in the local list, show the updated content without comparison. If it is opened in the db list, show the comparison.
- - Apply the styling from the action menu pop-up to the attribute selection 
-
+- TODO: Automatically add Deleted instance for deletion. There is a controlled vocabulary needing to be used.
 
 
 #### TODO:
-- Need to style the detailed table view for schema class. Done.
 - isCanonocal in Pathway cannot be edited
 - bug: regulation is not defined in RegulationReference. It is regulatedBy in the Java class model.
 - Make sure to use undefined, not null, to make the coed consistent. Check with the table editing results. Right now: text returns "" and non-text returns null!
 - bug: PathwayDiagram is not listed in the schema tree! Also check its display name generation.
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.
 - TODO: Set the color of icons in the event tree for dark mode. Right now, they are all black, which cannot be seen in the dark mode.
-- Make sure the disease pathway diagram is correct. Right not it is not!
 - Need some big refactoring for classes in the pathway diagram module: Right now they are all cross-linked together, esp. diagram service utils.
 - For Figure instance: add a customized view to display the figure
 - for no-instance edit, press return should commit the change. Control-return should add a new line. (now control+return commits the change)
