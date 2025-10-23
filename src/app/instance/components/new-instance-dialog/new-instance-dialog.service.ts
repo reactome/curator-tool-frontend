@@ -20,7 +20,7 @@ export class NewInstanceDialogService {
   openDialog(attributeValue: AttributeValue): MatDialogRef<NewInstanceDialogComponent, Instance> {
     const dialogRef = this.dialog.open(NewInstanceDialogComponent, {
       width: '1000px',
-      // height: '900px',
+      height: '500px',
       data: attributeValue
     });
     return dialogRef;

@@ -1,24 +1,16 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxChange, MatCheckboxModule } from '@angular/material/checkbox';
-import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
-import { MatTableModule } from '@angular/material/table';
 import { Instance, SelectedInstancesList } from 'src/app/core/models/reactome-instance.model';
 import { Router, ActivatedRoute } from "@angular/router";
-import { ListInstancesModule } from "../../../schema-view/list-instances/list-instances.module";
 import { Store } from "@ngrx/store";
 import { deleteInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { newInstances } from 'src/app/instance/state/instance.selectors';
 import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from 'src/app/instance/state/instance.actions';
 import { DataService } from 'src/app/core/services/data.service';
-import { MatToolbar } from '@angular/material/toolbar';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { DeletionDialogService } from 'src/app/instance/components/deletion-dialog/deletion-dialog.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/table/instance-list-table/instance-list-table.component';
-import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
-import { Observable, from, of, filter, concatMap, tap, map, EMPTY } from 'rxjs';
+import { Observable, from, concatMap, tap, map, EMPTY } from 'rxjs';
 
 
 @Component({

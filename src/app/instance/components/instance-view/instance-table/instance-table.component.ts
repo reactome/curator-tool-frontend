@@ -30,6 +30,7 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
 import { deleteInstances } from 'src/app/instance/state/instance.selectors';
 import { map, take } from 'rxjs';
+import { DataService } from 'src/app/core/services/data.service';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -118,7 +119,8 @@ export class InstanceTableComponent implements PostEditListener {
     private store: Store,
     private instUtil: InstanceUtilities,
     private attributeEditService: AttributeEditService,
-    private postEditService: PostEditService // This is used to perform post-edit actions
+    private dataService: DataService,
+    private postEditService: PostEditService, // This is used to perform post-edit actions
   ) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;

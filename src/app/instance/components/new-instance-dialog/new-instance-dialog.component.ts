@@ -5,6 +5,8 @@ import { DataService } from 'src/app/core/services/data.service';
 import { AttributeValue } from '../instance-view/instance-table/instance-table.model';
 import { Store } from '@ngrx/store';
 import { NewInstanceActions } from "src/app/instance/state/instance.actions";
+import { concatMap, from } from 'rxjs';
+import { Pipe } from '@angular/core';
 
 /**
  * A dialog component that is used to create a new Instance object.
@@ -27,9 +29,29 @@ export class NewInstanceDialogComponent {
               public dialogRef: MatDialogRef<NewInstanceDialogComponent>,
               private dataService: DataService,
               private store: Store) {
-      this.candidateClasses = dataService.setCandidateClasses(attributeValue.attribute);
-      this.selected = this.candidateClasses![0];
-      this.dataService.createNewInstance(this.selected).subscribe(instance => this.instance = instance);
+    // initialize candidate classes and selected value, then create the initial instance
+    this.candidateClasses = [];
+    const candidateResult: any = this.dataService.setCandidateClasses(attributeValue.attribute);
+    // handle Observable
+    if (candidateResult && typeof candidateResult.subscribe === 'function') {
+      candidateResult.subscribe((classes: string[]) => {
+        this.candidateClasses = classes || [];
+        this.selected = this.candidateClasses?.[0] ?? '';
+        this.dataService.createNewInstance(this.selected).subscribe((instance: Instance) => this.instance = instance);
+      });
+    // handle Promise
+    } else if (candidateResult && typeof candidateResult.then === 'function') {
+      candidateResult.then((classes: string[]) => {
+        this.candidateClasses = classes || [];
+        this.selected = this.candidateClasses?.[0] ?? '';
+        this.dataService.createNewInstance(this.selected).subscribe((instance: Instance) => this.instance = instance);
+      });
+    // handle synchronous array return
+    } else {
+      this.candidateClasses = candidateResult || [];
+      this.selected = this.candidateClasses?.[0] ?? '';
+      this.dataService.createNewInstance(this.selected).subscribe((instance: Instance) => this.instance = instance);
+    }
   }
 
   onSelectionChange(): void {

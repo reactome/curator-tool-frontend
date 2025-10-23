@@ -200,15 +200,27 @@ export class DataService {
    * @param clsName 
    * @returns 
    */
-  getSchemaClass(clsName: string): SchemaClass | undefined {
-    if (this.name2SimpleClass && this.name2SimpleClass.size > 0) {
-      return this.name2SimpleClass.get(clsName);
-    }
-    if (this.rootClass)
+  getSchemaClass(clsName: string): SchemaClass {
+    // Ensure simple-class map is built if we have the root
+    if ((!this.name2SimpleClass || this.name2SimpleClass.size === 0) && this.rootClass) {
       this.buildSchemaClassMap(this.rootClass, this.name2SimpleClass);
-    else
-      console.error("The class table has not been loaded. No map can be returned!");
-    return this.name2SimpleClass.get(clsName);
+    } else if (!this.rootClass && (!this.name2SimpleClass || this.name2SimpleClass.size === 0)) {
+      console.warn("Schema class map is empty and rootClass is not loaded. Returning a fallback SchemaClass for:", clsName);
+    }
+
+    const found = this.name2SimpleClass.get(clsName);
+    if (found) return found;
+
+    // Create a minimal fallback SchemaClass so callers never receive undefined.
+    const fallback: SchemaClass = {
+      name: clsName,
+      children: [],
+      abstract: false
+    } as SchemaClass;
+
+    // Cache the fallback to avoid creating it repeatedly
+    this.name2SimpleClass.set(clsName, fallback);
+    return fallback;
   }
 
   private buildSchemaClassMap(schemaClass: SchemaClass, name2schemaclass: Map<string, SchemaClass>) {
@@ -885,7 +897,18 @@ export class DataService {
     if (schemaAttribute.allowedClases) {
       for (let clsName of schemaAttribute.allowedClases) {
         let schemaClass: SchemaClass = this.getSchemaClass(clsName)!;
-        this.grepConcreteClasses(schemaClass, concreteClassNames);
+        if (schemaClass) {
+          // ensure grepConcreteClasses runs synchronously before proceeding
+          this.grepConcreteClasses(schemaClass, concreteClassNames);
+        } else {
+          // fallback: try to get a simple class mapping (might be available if tree was built)
+          const fallback = this.getSchemaClass(clsName);
+          if (fallback) {
+            this.grepConcreteClasses(fallback, concreteClassNames);
+          } else {
+            console.warn(`Schema class "${clsName}" is not loaded; skipping concrete-class collection.`);
+          }
+        }
       }
     }
     let candidateClasses = [...concreteClassNames];

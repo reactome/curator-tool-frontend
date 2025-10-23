@@ -11,7 +11,7 @@ import {
 import { FormControl, Validators } from "@angular/forms";
 import { ActivatedRoute } from "@angular/router";
 import { Store } from "@ngrx/store";
-import { take } from "rxjs";
+import { Observable, take } from "rxjs";
 import { AttributeCategory, AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Instance } from "../../../../../core/models/reactome-instance.model";
@@ -119,12 +119,16 @@ export class InstanceTableRowElementComponent implements OnInit {
   onEditAction(action: EDIT_ACTION) {
     let attributeValue: AttributeValue = {
       attribute: this.attribute!,
-      value: this.value,
+      value: this.value === undefined ? this.createNewInstanceValue().subscribe() : this.value,
       index: this.index,
       editAction: action,
     }
     console.debug("onEditAction: ", attributeValue);
     this.editAction.emit(attributeValue);
+  }
+
+  createNewInstanceValue(): Observable<Instance> {
+    return this.dataService.createNewInstance(this.attribute!.name);
   }
 
   triggerResize() {

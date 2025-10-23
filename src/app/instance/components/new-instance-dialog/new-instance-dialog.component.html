@@ -10,7 +10,7 @@
     </ng-container>
   </mat-select>
 <!--  TODO: change to case statement-->
-  <ng-container *ngIf="attributeValue.editAction === 0">
+  <ng-container *ngIf="attributeValue.editAction === 0 || attributeValue.editAction === 2">
     <!-- Don't fire any editing event to the ngrx store during creating and before committing -->
     <app-instance-table [instance]="instance" [preventEvent]="true"></app-instance-table>
   </ng-container>
