@@ -1,12 +1,14 @@
 <h2 class="dialog_title" mat-dialog-title cdkdraghandle>Delete "{{instance.displayName}} [{{instance.dbId}}]"</h2>
 <mat-dialog-content style="width: 100%;">
-  <h4>Would you like to view referrers of {{instance.displayName}} before deleting?</h4>
-  <ng-container *ngIf="numberOfRefs < 1">
-    <h4>"{{instance.displayName}}" has no referrers</h4>
-  </ng-container>
-  <div *ngIf="numberOfRefs > 0">
+  <ng-container *ngIf="numberOfRefs > 0; else noReferrers">
+    <h4>Would you like to view referrers of {{instance.displayName}} before deleting?</h4>
     <button mat-button (click)="showReferrers()" cdkFocusInitial>{{ showReferrersDialog? "Hide Referrers" : "Show Referrers"}}</button>
-  </div>
+  </ng-container>
+
+  <ng-template #noReferrers>
+    <h4>There are no referrers to "{{instance.displayName}}"</h4>
+  </ng-template> 
+
   <ng-container *ngIf="showReferrersDialog">
     <app-referrers-table [instance]="instance"
                         (numberOfRefs)="setNumberOfRefs($event)"></app-referrers-table>

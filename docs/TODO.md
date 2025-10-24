@@ -17,6 +17,7 @@ Done
 - Do not show the reference dialog for instances that are subject to be deleted and the instance has no references. 
 - Deleting an instance in the instance list via the deletion button should mark that instance as deleted. This is not done yet.
 -short cut for selecting instances from the dialog 
+- NOTE: for deletion confirmation we need to get the referrers for an instance before determining if the first dialog should show or the second. Therefore, we have decided to keep the first dialog with "no referrers to show" to avoid performing this action before necessary as getting referrers is a heavy transaction. 10/24/25
 
 #### Deidre
 - TODO: Use the new set of Reactome icons at Figma, designed by the EBI team. Need to check with Eliott.
@@ -25,6 +26,7 @@ Done
 - TODO: Boolean sliders appear to be 'false' when they are 'true' and disabled due to the gray styling for disabled buttons.
 - bug: if I click an updated instance listed in the local view, the comparison is displayed. Try to change it: If this updated instance is opened in the local list, show the updated content without comparison. If it is opened in the db list, show the comparison.
 - TODO: Automatically add Deleted instance for deletion. There is a controlled vocabulary needing to be used.
+- TODO: remove the referrers dialog if the instance is being deleted and there are no referrers to show. 
 
 
 #### TODO:

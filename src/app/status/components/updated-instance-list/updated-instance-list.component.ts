@@ -142,6 +142,8 @@ export class UpdatedInstanceListComponent implements OnInit {
     });
     this.selectedUpdatedInstances = [];
     this.showCheck = false;
+    this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.updatedInstanceList);
+
   }
 
   commitDeletedInstances() {
@@ -155,6 +157,7 @@ export class UpdatedInstanceListComponent implements OnInit {
     });
     this.selectedDeletedInstances = [];
     this.showCheck = false;
+    this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.deletedInstanceList);
   }
 
   /**
@@ -195,6 +198,7 @@ export class UpdatedInstanceListComponent implements OnInit {
         // clear selection and UI flags when done
         this.selectedNewInstances = [];
         this.showCheck = false;
+        this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.newInstanceList);
       }
     });
   }

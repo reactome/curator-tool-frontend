@@ -119,16 +119,12 @@ export class InstanceTableRowElementComponent implements OnInit {
   onEditAction(action: EDIT_ACTION) {
     let attributeValue: AttributeValue = {
       attribute: this.attribute!,
-      value: this.value === undefined ? this.createNewInstanceValue().subscribe() : this.value,
+      value: this.value,
       index: this.index,
       editAction: action,
     }
     console.debug("onEditAction: ", attributeValue);
     this.editAction.emit(attributeValue);
-  }
-
-  createNewInstanceValue(): Observable<Instance> {
-    return this.dataService.createNewInstance(this.attribute!.name);
   }
 
   triggerResize() {

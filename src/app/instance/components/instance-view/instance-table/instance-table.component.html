@@ -7,7 +7,7 @@
     </ng-container>
     <ng-container *ngIf="element.attribute.cardinality === '+'">
 
-      <ng-container *ngIf="element.value !== undefined || element.value  !== null; else noValue">
+      <ng-container *ngIf="element.value !== undefined; else noValue">
         <!-- Disable drag and drop for no manual edit attributes -->
         <ng-container *ngIf="element.attribute.category === AttributeCategory.NOMANUALEDIT; else dragDropEnabled">
           <app-instance-table-row-element *ngFor="let object of element.value; let i = index" class="instance-box"

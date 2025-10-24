@@ -5,7 +5,7 @@ import { DataService } from 'src/app/core/services/data.service';
 import { AttributeValue } from '../instance-view/instance-table/instance-table.model';
 import { Store } from '@ngrx/store';
 import { NewInstanceActions } from "src/app/instance/state/instance.actions";
-import { concatMap, from } from 'rxjs';
+import { concatMap, from, Observable } from 'rxjs';
 import { Pipe } from '@angular/core';
 
 /**
@@ -33,14 +33,14 @@ export class NewInstanceDialogComponent {
     this.candidateClasses = [];
     const candidateResult: any = this.dataService.setCandidateClasses(attributeValue.attribute);
     // handle Observable
-    if (candidateResult && typeof candidateResult.subscribe === 'function') {
+    if (candidateResult instanceof Observable) {
       candidateResult.subscribe((classes: string[]) => {
         this.candidateClasses = classes || [];
         this.selected = this.candidateClasses?.[0] ?? '';
         this.dataService.createNewInstance(this.selected).subscribe((instance: Instance) => this.instance = instance);
       });
     // handle Promise
-    } else if (candidateResult && typeof candidateResult.then === 'function') {
+    } else if (candidateResult) {
       candidateResult.then((classes: string[]) => {
         this.candidateClasses = classes || [];
         this.selected = this.candidateClasses?.[0] ?? '';
