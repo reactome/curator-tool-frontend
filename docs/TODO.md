@@ -19,6 +19,7 @@ Done
 -short cut for selecting instances from the dialog 
 - NOTE: for deletion confirmation we need to get the referrers for an instance before determining if the first dialog should show or the second. Therefore, we have decided to keep the first dialog with "no referrers to show" to avoid performing this action before necessary as getting referrers is a heavy transaction. 10/24/25
 
+
 #### Deidre
 - TODO: Use the new set of Reactome icons at Figma, designed by the EBI team. Need to check with Eliott.
 - Bug: In the event view, the mouse position is lowed when scroll up/down the instance view. (low priority)
@@ -57,6 +58,7 @@ Done
 - TODO: Need to disable the drag of nodes and edges in the legdend for the diagram view.
 - TODO: doRelease in the event view has not been handled yet
 - TODO: Automatically creating _Deleted instances has not been handled yet. Also need to select the reason for deletion from the DeletedControlledVocabulary list.
+- TODO: Update a PE or Event with stable identifier after changing the species should update its stable identifier. Right now it works fine at the server-side. However, the front-end has not updated the display yet.
 
 # Deletion related document kept here for the time being
  * The following may need to be collected into some document for test cases in the doc folder:
