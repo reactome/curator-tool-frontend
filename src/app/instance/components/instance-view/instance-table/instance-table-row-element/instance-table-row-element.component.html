@@ -37,10 +37,13 @@
     <ng-template [ngSwitchCase]="DATA_TYPES.INSTANCE">
       <ng-container *ngIf="control.disabled; else editInstance">
         <ng-container *ngIf="value !== undefined">
-          <a [routerLink]="getInstanceUrlRoot(value)" [queryParamsHandling]="'preserve'"
-            class="padding span-menu-trigger">
+          <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
+            [queryParamsHandling]="'preserve'"
+            class="padding span-menu-trigger"
+            style="cursor: pointer; text-decoration: underline;">
             {{value.displayName}}
-            [{{value.dbId}}]</a><br>
+            [{{value.dbId}}]
+          </a><br>
         </ng-container>
       </ng-container>
       <ng-template #editInstance>
@@ -49,7 +52,7 @@
           <!-- TODO: Also need to determine if it is required or disabled-->
           <ng-container *ngIf="value !== undefined; else elseblock">
             <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
-              [cdkContextMenuTriggerFor]="row_menu" class="padding span-menu-trigger">
+              [cdkContextMenuTriggerFor]="row_menu" class="padding span-menu-trigger" style="cursor: pointer; text-decoration: underline;">
               {{value.displayName}}
               [{{value.dbId}}]</a><br>
           </ng-container>
