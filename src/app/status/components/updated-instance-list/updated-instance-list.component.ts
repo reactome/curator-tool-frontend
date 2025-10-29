@@ -11,6 +11,8 @@ import { DeletionDialogService } from 'src/app/instance/components/deletion-dial
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/table/instance-list-table/instance-list-table.component';
 import { Observable, from, concatMap, tap, map, EMPTY } from 'rxjs';
+import { CreateDeletedDialogComponent } from 'src/app/instance/components/create-deleted-dialog/create-deleted-dialog.component';
+import { CreateDeletedDialogService } from 'src/app/instance/components/create-deleted-dialog/create-deleted-dialog.service';
 
 
 @Component({
@@ -48,8 +50,10 @@ export class UpdatedInstanceListComponent implements OnInit {
     private store: Store,
     private dataService: DataService,
     private instanceUtilities: InstanceUtilities,
-    private deletionDialogService: DeletionDialogService) {
-  }
+    private deletionDialogService: DeletionDialogService,
+    private createDeletedDialogService: CreateDeletedDialogService) {
+    }
+  
 
   ngOnInit(): void {
     this.store.select(newInstances()).subscribe((instances) => {
@@ -115,6 +119,11 @@ export class UpdatedInstanceListComponent implements OnInit {
   private commitInstance(instance: Instance) {
     // instances in different list should have different call
     if (this.deletedInstances.includes(instance)) {
+      // If not PE or event give choice to show this dialog
+      // After close needs a flag if the user cancels 
+      // If there is a Delete instance created, call a dataservice function to submit this inst 
+      // reason will be changed to M and replacement instances will be optional 
+      this.createDeletedDialogService.openDialog().afterClosed().subscribe(result => {});
       this.dataService.delete(instance).subscribe(rtn => {
         // Have to subscript it. Otherwise, the http call will not be fired
         this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));

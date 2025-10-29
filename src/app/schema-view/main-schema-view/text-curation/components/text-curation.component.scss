@@ -5,14 +5,25 @@
     align-items: center;
     // width: 100vw;
     height: 75vh;
+    z-index: 5;
+    background-color: white;
 }
 
 .embedded {
     display: inline;
     margin-left: 16px;
+    z-index: 5;
+    background-color: white;
 }
 
 input {
   outline: none;
   border: none;
+}
+
+.toolbar {
+  font-size: 16px;
+  height: var(--title-height, 40px);
+  position: sticky;
+  padding: 0 0 0 16px;
 }

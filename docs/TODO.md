@@ -18,6 +18,8 @@ Done
 - Deleting an instance in the instance list via the deletion button should mark that instance as deleted. This is not done yet.
 -short cut for selecting instances from the dialog 
 - NOTE: for deletion confirmation we need to get the referrers for an instance before determining if the first dialog should show or the second. Therefore, we have decided to keep the first dialog with "no referrers to show" to avoid performing this action before necessary as getting referrers is a heavy transaction. 10/24/25
+-bug: delete an instance cannot remove the deleted instance from bookmark.
+ 
 
 #### Deidre
 - TODO: Use the new set of Reactome icons at Figma, designed by the EBI team. Need to check with Eliott.
@@ -27,6 +29,10 @@ Done
 - bug: if I click an updated instance listed in the local view, the comparison is displayed. Try to change it: If this updated instance is opened in the local list, show the updated content without comparison. If it is opened in the db list, show the comparison.
 - TODO: Automatically add Deleted instance for deletion. There is a controlled vocabulary needing to be used.
 - TODO: remove the referrers dialog if the instance is being deleted and there are no referrers to show. 
+- TODO: in the attribute table, attributes may be sorted based on names or define attributes (together with name). Could we make the option sticky: Once the user chooses one sort, the same sort will be applied to all tables opened from that point on. Also it would be nicer to keep the option persisted as the status (for new, updated, etc).
+-Hide check box in referrer table 
+-Bug: tooltip in event view 
+ 
 
 
 #### TODO:

@@ -20,11 +20,12 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
 import {MatMenu, MatMenuTrigger} from "@angular/material/menu";
 import { environment } from 'src/environments/environment.dev';
+import { EventTreeModule } from "src/app/event-view/components/event-tree/event-tree.module";
 
 @Component({
   selector: 'app-text-curation',
   standalone: true,
-  imports: [MatLabel, MatTooltip, NgIf, MatMenuTrigger, MatMenu],
+  imports: [MatLabel, MatTooltip, NgIf, MatMenuTrigger, MatMenu, EventTreeModule],
   templateUrl: './text-curation.component.html',
   styleUrl: './text-curation.component.scss',
 })

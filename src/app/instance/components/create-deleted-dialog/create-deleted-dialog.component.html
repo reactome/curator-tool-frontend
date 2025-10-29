@@ -1,0 +1,8 @@
+<mat-dialog-content>
+  <mat-dialog-title>Create Deleted Instance</mat-dialog-title>
+  <app-instance-table [instance]="instance" [preventEvent]="true"></app-instance-table>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onOK()" cdkFocusInitial>OK</button>
+  <button mat-button (click)="onCancel()">Cancel</button>
+</mat-dialog-actions>

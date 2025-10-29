@@ -39,6 +39,7 @@ import { MatExpansionModule } from "@angular/material/expansion";
 import { TextEditorDialogComponent } from "./components/instance-view/instance-table/instance-table-row-element/text-editor-dialog/text-editor-dialog.component";
 import { HttpClientModule } from "@angular/common/http";
 import { AngularEditorModule } from "@kolkov/angular-editor";
+import { CreateDeletedDialogComponent } from "./components/create-deleted-dialog/create-deleted-dialog.component";
 
 @NgModule({
     declarations: [
@@ -57,6 +58,7 @@ import { AngularEditorModule } from "@kolkov/angular-editor";
         ConfirmDeleteDialogComponent,
         QAReportTable,
         TextEditorDialogComponent,
+        CreateDeletedDialogComponent
     ],
   imports: [
     CommonModule,

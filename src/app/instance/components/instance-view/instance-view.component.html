@@ -1,4 +1,4 @@
-<div style="position: sticky; z-index: 2;">
+<div >
   <app-bread-crumb [viewHistory]="viewHistory" (clickEvent)="changeTable($event)" *ngIf="needHistory">
   </app-bread-crumb>
   <ng-container *ngIf="showProgressSpinner">
@@ -66,7 +66,7 @@
       </div>
     </div>
   </mat-toolbar>
-  <app-text-curation [embedded]="true" [instanceView]="this" style="height: var(--text-curation-height);"
+  <app-text-curation [embedded]="true" [instanceView]="this" 
     *ngIf="instance"></app-text-curation>
 </div>
 <app-instance-table style="overflow: scroll; height: 100%" [instance]="instance" [referenceInstance]="dbInstance"
