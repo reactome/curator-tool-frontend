@@ -100,7 +100,7 @@
           <th style="flex: 1" mat-header-cell (mouseenter)="changeShowHeaderActions()"
             (mouseleave)="changeShowHeaderActions()" *matHeaderCellDef> Value
             <ng-container *ngIf="showHeaderActions">
-              <button style="bottom:5px; right: 0; position: absolute" matTooltip="attributes having different values"
+              <button style="bottom:5px; right: 0; position: absolute" matTooltip="edited attributes"
                 *ngIf="showHeaderActions" mat-icon-button (click)="filterEditedValues()">
                 <mat-icon>filter_list</mat-icon>
               </button>
