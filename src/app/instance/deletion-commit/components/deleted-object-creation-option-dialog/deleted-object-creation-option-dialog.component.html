@@ -1,0 +1,8 @@
+<h2 class="dialog_title" mat-dialog-title cdkdraghandle>Confirm Delete</h2>
+<mat-dialog-content style="width: 100%;">
+  <h4>Would you like to create a Deleted instance?</h4>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onDeleteByDeleted()" cdkFocusInitial>Delete with Deleted Instance</button>
+  <button mat-button (click)="onCancel()">Cancel</button>
+</mat-dialog-actions>

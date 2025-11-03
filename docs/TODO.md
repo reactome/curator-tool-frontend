@@ -32,7 +32,16 @@ Done
 - TODO: remove the referrers dialog if the instance is being deleted and there are no referrers to show. 
 - TODO: in the attribute table, attributes may be sorted based on names or define attributes (together with name). Could we make the option sticky: Once the user chooses one sort, the same sort will be applied to all tables opened from that point on. Also it would be nicer to keep the option persisted as the status (for new, updated, etc).
 -Hide check box in referrer table 
--Bug: tooltip in event view 
+-Bug: tooltip in event view for switching to the schema view is wrong
+- consider adding the tooltip that states the schema class for each instance listed in the instance view. this will help curators when searching instances in ie Event. 
+- comparison should be done attribute by attribute, not by modified attributes. this is because the modififed atts are unreliable and when comparing two
+    different instances, this will not work. 
+- "((1,6)-alpha-glucosyl)poly((1,4)-alpha-glucosyl)glycogenin => poly{(1,4)-alpha-glucosyl} glycogenin + alpha-D-glucose" search field for this complicated
+    display name cannot be parsed because of symbols
+- Refresh of updated list (occured after resetting deleted insts) 
+- there is still a bug in the table for rendering an additional line 
+- need another dialog for the user to decide if they would like to create a Deleted inst for non event and pe types
+- Add category column to schema class table  
  
 
 
@@ -65,6 +74,7 @@ Done
 - TODO: doRelease in the event view has not been handled yet
 - TODO: Automatically creating _Deleted instances has not been handled yet. Also need to select the reason for deletion from the DeletedControlledVocabulary list.
 - TODO: Update a PE or Event with stable identifier after changing the species should update its stable identifier. Right now it works fine at the server-side. However, the front-end has not updated the display yet.
+- Merge two instances 
 
 # Deletion related document kept here for the time being
  * The following may need to be collected into some document for test cases in the doc folder:

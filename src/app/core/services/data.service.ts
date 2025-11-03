@@ -53,6 +53,7 @@ export class DataService {
   private fetchQAReportUrl = `${environment.ApiRoot}/qaReport/`;
   private fetchInstancesInBatchUrl = `${environment.ApiRoot}/findByDbIds/`;
   private fetchPathwayDiagramUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
+  private deleteByDeletedUrl = `${environment.ApiRoot}/deleteByDeleted/`;
 
 
   // Track the negative dbId to be used
@@ -234,6 +235,11 @@ export class DataService {
 
   isEventClass(clsName: string): boolean {
     let schemaClass = this.getSchemaClass('Event');
+    return this.utils._isSchemaClass(clsName, schemaClass);
+  }
+
+  isPhysicalEntityClass(clsName: string): boolean {
+    let schemaClass = this.getSchemaClass('PhysicalEntity');
     return this.utils._isSchemaClass(clsName, schemaClass);
   }
 
@@ -964,6 +970,30 @@ export class DataService {
         );
       }));
   }
+
+      /**
+     * Delete one or more than one instances by parsing the Deleted object from the front end.
+     * @param instance
+     * @return
+     */
+    deleteByDeleted(deleted: Instance): Observable<boolean> {
+      let deletedToBeCommitted = this.utils.cloneInstanceForCommit(deleted);
+      // Need to add default person id for this instance
+      return this.store.select(defaultPerson()).pipe(
+        take(1),
+        concatMap((person: Instance[]) => {
+          if (!person || person.length == 0) {
+            return this.handleErrorMessage(new Error('Cannot find the default person!'));
+          }
+          deletedToBeCommitted.defaultPersonId = person[0].dbId;
+          return this.http.post<boolean>(this.deleteByDeletedUrl, deletedToBeCommitted).pipe(
+            map((data: boolean) => data),
+            catchError(error => {
+              return this.handleErrorMessage(error);
+            })
+          );
+        }));
+    }
 
   /**
    * To avoid calling the backend for new instances we need to check the dbId

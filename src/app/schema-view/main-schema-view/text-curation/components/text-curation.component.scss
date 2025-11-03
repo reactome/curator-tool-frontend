@@ -4,15 +4,13 @@
     justify-content: center;
     align-items: center;
     // width: 100vw;
-    height: 75vh;
+    // height: 75vh;
     z-index: 5;
     background-color: white;
 }
 
 .embedded {
     display: inline;
-    margin-left: 16px;
-    z-index: 5;
     background-color: white;
 }
 
@@ -23,7 +21,9 @@ input {
 
 .toolbar {
   font-size: 16px;
-  height: var(--title-height, 40px);
+  // height: var(--title-height, 40px);
+  height: 100%;
   position: sticky;
   padding: 0 0 0 16px;
+  display: flex;
 }

@@ -28,15 +28,15 @@ import { ListInstancesModule } from '../schema-view/list-instances/list-instance
     MatTableModule,
     MatTooltipModule,
     MaterialModule,
-    ListInstancesModule
+    ListInstancesModule,
   ],
   declarations: [
     StatusComponent,
-    UpdatedInstanceListComponent
+    UpdatedInstanceListComponent,
   ],
   exports: [
     StatusComponent,
-    UpdatedInstanceListComponent
+    UpdatedInstanceListComponent,
   ],
 })
 export class StatusModule { }

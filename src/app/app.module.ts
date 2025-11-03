@@ -26,6 +26,7 @@ import { SchemaClassTableModule } from './schema-view/schema-class/components/ta
 import { SharedModule } from "./shared/shared.module";
 import { StatusModule } from './status/status.module';
 import { GeneLlmModule } from './gene-llm/gene-llm.module';
+import { DeletionCommitModule } from './instance/deletion-commit/deletion-commit.module';
 
 export function tokenGetter() {
   return localStorage.getItem("token");
@@ -76,6 +77,7 @@ const customTooltipOptions: MatTooltipDefaultOptions = {
         tokenGetter
       }
     }),
+    DeletionCommitModule
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: HeaderInterceptor, multi: true },

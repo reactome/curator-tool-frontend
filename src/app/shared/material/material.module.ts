@@ -47,7 +47,9 @@ import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
     MatCheckboxModule,
     MatTreeModule,
     MatPaginatorModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatCardModule,
+    MatDialogModule
   ],
   exports: [
     MatTableModule,
@@ -72,7 +74,8 @@ import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
     MatTreeModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
-    MatCardModule
+    MatCardModule,
+    MatDialogModule
   ]
 })
 export class MaterialModule { }
