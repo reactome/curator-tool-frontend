@@ -28,10 +28,7 @@ Done
 - TODO: List all performed QAs in the QA report even though all QAs are passed. By doing this, the tool gives the curator a list of what have been checked. Done
 - TODO: Boolean sliders appear to be 'false' when they are 'true' and disabled due to the gray styling for disabled buttons.
 - bug: if I click an updated instance listed in the local view, the comparison is displayed. Try to change it: If this updated instance is opened in the local list, show the updated content without comparison. If it is opened in the db list, show the comparison.
-- TODO: Automatically add Deleted instance for deletion. There is a controlled vocabulary needing to be used.
-- TODO: remove the referrers dialog if the instance is being deleted and there are no referrers to show. 
 - TODO: in the attribute table, attributes may be sorted based on names or define attributes (together with name). Could we make the option sticky: Once the user chooses one sort, the same sort will be applied to all tables opened from that point on. Also it would be nicer to keep the option persisted as the status (for new, updated, etc).
--Hide check box in referrer table 
 -Bug: tooltip in event view for switching to the schema view is wrong
 - consider adding the tooltip that states the schema class for each instance listed in the instance view. this will help curators when searching instances in ie Event. 
 - comparison should be done attribute by attribute, not by modified attributes. this is because the modififed atts are unreliable and when comparing two
@@ -40,7 +37,6 @@ Done
     display name cannot be parsed because of symbols
 - Refresh of updated list (occured after resetting deleted insts) 
 - there is still a bug in the table for rendering an additional line 
-- need another dialog for the user to decide if they would like to create a Deleted inst for non event and pe types
 - Add category column to schema class table  
  
 

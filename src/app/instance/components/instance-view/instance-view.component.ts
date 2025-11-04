@@ -16,6 +16,7 @@ import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/c
 import { deleteInstances } from '../../state/instance.selectors';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
+import { DeletionService } from '../../deletion-commit/utils/deletion.service';
 
 @Component({
   selector: 'app-instance-view',
@@ -65,7 +66,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     private referrersDialogService: ReferrersDialogService,
     private instUtils: InstanceUtilities,
     private deletionDialogService: DeletionDialogService,
-    private listInstancesDialogService: ListInstancesDialogService) {
+    private listInstancesDialogService: ListInstancesDialogService,
+    private deletionService: DeletionService) {
   }
 
   ngOnInit() {
@@ -400,12 +402,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     if (!this.instance) return;
     if (this.isDeleted()) {
       // Commit a deletion
-      this.dataService.delete(this.instance).pipe(take(1)).subscribe(rtn => {
-        // Have to subscript it. Otherwise, the http call will not be fired
-        this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(this.instance!));
-        this.instUtils.setDeletedDbId(this.instance!.dbId);
-        this.dataService.flagSchemaTreeForReload();
-      });
+      this.deletionService.processDeletion([this.instance]);
       return;
     }
     // TODO: Need to present a confirmation dialog after it is done!

@@ -22,7 +22,7 @@ import {
 // https://curator.reactome.org/cgi-bin/classbrowser?DB=gk_central&CLASS=ModifiedResidue
 export class SchemaClassTableComponent implements OnInit {
   // displayedColumns: string[] = ['name', 'type', 'category', 'allowedClases', 'origin', 'cardinality', 'definingType'];
-  displayedColumns: string[] = ['name', 'cardinality', 'type', 'origin', 'definingType'];
+  displayedColumns: string[] = ['name', 'cardinality', 'type', 'category', 'origin', 'definingType'];
   dataSource: any;
 
   constructor(private store: Store, private route: ActivatedRoute, private dataService: DataService) {

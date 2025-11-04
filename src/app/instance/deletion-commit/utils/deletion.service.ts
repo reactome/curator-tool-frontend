@@ -9,18 +9,9 @@ import { CreateDeletedDialogService } from "../components/deleted-object-creatio
 import { CommitDeletedDialogService } from "../components/deleted-object-creation-option-dialog/deleted-object-creation-option-dialog.service";
 import { Injectable } from "@angular/core";
 
-// Need to determine if instances is single or array
-// createDeletedObject(instances: Instance[]): Observable<Instance> {
-//     // First check if Deleted object is mandatory
-//     // If mandatory open and create Deleted object dialog
-//     // If not mandatory, open commit deleted dialog to confirm if user wants to create Deleted object
-
-// }
-
-// TODO: Figure out how to inject into the instance module level instead of root 
 // TODO: Referrers of deleted instances need to have the referred slot modified and an instanceEdit added to modifiedList 
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'any'
 })
 
 export class DeletionService {
@@ -77,7 +68,7 @@ export class DeletionService {
                     this.dataService.flagSchemaTreeForReload();
                 });
             }
-        
+
         });
     }
 

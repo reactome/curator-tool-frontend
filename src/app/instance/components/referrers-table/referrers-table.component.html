@@ -16,6 +16,7 @@
       [hidden]="showFirstTable(i)"
       [isSelection]="true" 
       [dataSource]="referrers.referrers"
+      [showCheckMark]="false"
       [actionButtons]="actionButtons"
       (actionEvent)="handleAction($event)"
       (urlClickEvent)="navigateUrl($event)">
