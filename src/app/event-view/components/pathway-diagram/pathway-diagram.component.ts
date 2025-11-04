@@ -64,7 +64,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   previousDragPos: Position = { x: 0, y: 0 };
   // Track a list of nodes that are under resizing
   resizingNodes: any[] = [];
-  
+  // Tracking the last viewport for restoring after reloading
+  private storedViewport: { zoom: number, pan: { x: number, y: number } } | null = null;
+  private lastLoadedNetworkId: string = '';
   // To show information
   readonly dialog = inject(MatDialog);
 
@@ -95,20 +97,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       this.pathwayId = id;
       this.diagram.diagramId = this.pathwayId;
       this.select = queryParams['select'] ?? '';
-      // Check if we have cytoscape network. If yes, load it.
-      this.diagramUtils.getDataService().hasCytoscapeNetwork(this.pathwayId).subscribe((exists: boolean) => {
-        // this.diagram.resetState(); 
-        this.diagramUtils.clearSelection(this.diagram);
-        if (exists) {
-          this.diagramUtils.getDataService().getCytoscapeNetwork(this.pathwayId).subscribe((cytoscapeJson: any) => {
-            this.diagram.displayNetwork(cytoscapeJson.elements);
-          });
-        }
-        // Otherwise, handle it in the old way to load the diagrams converted from XML.
-        else {
-          this.diagram.loadDiagram();
-        }
-      });
+      // Always not in the editing mode when loading via URL
+      this.isEditing = false;
+      this.loadPathwayDiagram();
     });
     // Do any post processing after the network is displayed.
     // Use this method to avoid threading issue and any arbitray delay.
@@ -136,6 +127,55 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       const currentSelected = queryParams['select'];
       this.select = currentSelected;
       this.selectObjectsInDiagram(currentSelected);
+    });
+  }
+
+  private storeViewport() {
+    if (this.diagram.cy) {
+      this.storedViewport = {
+        zoom: this.diagram.cy.zoom(),
+        pan: this.diagram.cy.pan()
+      };
+      console.debug('Stored viewport:', this.storedViewport);
+    }
+  }
+
+  private loadPathwayDiagram() {
+    this.storeViewport();
+    // Check if we have cytoscape network. If yes, load it.
+    this.diagramUtils.getDataService().hasCytoscapeNetwork(this.diagram.diagramId).subscribe((exists: boolean) => {
+      // this.diagram.resetState(); 
+      this.diagramUtils.clearSelection(this.diagram);
+      if (exists) {
+        this.diagramUtils.getDataService().getCytoscapeNetwork(this.diagram.diagramId).subscribe((cytoscapeJson: any) => {
+          this.diagram.displayNetwork(cytoscapeJson.elements);
+        });
+      }
+      // Otherwise, handle it in the old way to load the diagrams converted from XML.
+      else {
+        this.diagram.loadDiagram();
+      }
+    });
+  }
+
+  private enableEditing() {
+    // Switch to PathwayDiagram 
+    this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe((pathwayDiagram: Instance) => {
+      if (pathwayDiagram) {
+        this.isEditing = true;
+        this.diagram.diagramId = pathwayDiagram.dbId.toString();
+        // Let the event handler for "network_displayed" to handle the rest
+        this.loadPathwayDiagram();
+      }
+      else {
+        this.dialog.open(InfoDialogComponent, {
+          data: {
+            title: 'Error',
+            message: 'No PathwayDiagram instance is associated with this pathway: ',
+            instanceInfo: this.pathwayId
+          }
+        });
+      }
     });
   }
 
@@ -229,9 +269,23 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         this.diagramUtils.moveModifications(node, e, this.previousDragPos);
       }
     });
-    // Default should not in editing mode
-    this.isEditing = false;
+    // Reset for anything for editing
     this.diagramUtils.id2hyperEdge.clear();
+    if (this.isEditing) {
+      this.diagramUtils.enableEditing(this.diagram);
+    }
+    this.restoreViewport();
+  }
+
+  private restoreViewport() {
+    if (this.storedViewport && this.diagram.cy && this.pathwayId === this.lastLoadedNetworkId) {
+      this.diagram.cy.viewport({
+        zoom: this.storedViewport.zoom,
+        pan: this.storedViewport.pan
+      });
+      console.debug('Restored viewport:', this.storedViewport);
+    }
+    this.lastLoadedNetworkId = this.pathwayId;
   }
 
   private showCyPopup(event: any) { // Use any to avoid any compiling error
@@ -285,8 +339,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
     switch (action) {
       case 'enableEditing':
-        this.diagramUtils.enableEditing(this.diagram);
-        this.isEditing = true;
+        this.enableEditing();
         break;
 
       case 'disableEditing':
@@ -381,7 +434,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           };
           this.dialog.open(InfoDialogComponent, dialogConfig);
           if (this.isEditing)
-            this.diagramUtils.enableEditing(this.diagram); // Put it back into the editable model
+            this.enableEditing(); // Put it back into the editable model
         });
         break;
 
