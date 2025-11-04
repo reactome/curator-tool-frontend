@@ -29,29 +29,9 @@ export class NewInstanceDialogComponent {
               public dialogRef: MatDialogRef<NewInstanceDialogComponent>,
               private dataService: DataService,
               private store: Store) {
-    // initialize candidate classes and selected value, then create the initial instance
-    this.candidateClasses = [];
-    const candidateResult: any = this.dataService.setCandidateClasses(attributeValue.attribute);
-    // handle Observable
-    if (candidateResult instanceof Observable) {
-      candidateResult.subscribe((classes: string[]) => {
-        this.candidateClasses = classes || [];
-        this.selected = this.candidateClasses?.[0] ?? '';
-        this.dataService.createNewInstance(this.selected).subscribe((instance: Instance) => this.instance = instance);
-      });
-    // handle Promise
-    } else if (candidateResult) {
-      candidateResult.then((classes: string[]) => {
-        this.candidateClasses = classes || [];
-        this.selected = this.candidateClasses?.[0] ?? '';
-        this.dataService.createNewInstance(this.selected).subscribe((instance: Instance) => this.instance = instance);
-      });
-    // handle synchronous array return
-    } else {
-      this.candidateClasses = candidateResult || [];
-      this.selected = this.candidateClasses?.[0] ?? '';
-      this.dataService.createNewInstance(this.selected).subscribe((instance: Instance) => this.instance = instance);
-    }
+      this.candidateClasses = dataService.setCandidateClasses(attributeValue.attribute);
+      this.selected = this.candidateClasses![0];
+      this.dataService.createNewInstance(this.selected).subscribe(instance => this.instance = instance);
   }
 
   onSelectionChange(): void {
