@@ -97,4 +97,6 @@ Done
  * 5.3). The server-side will remove the instance from the database and add an InstanceEdit to the modified slot for all
  * referrers to this deleted instance.
  * 5.4). When a referrer is viewed at the front end, the user should see this added InstanceEdit in the modified slot.
+            The server side needs to change so that this list of referrers is return for the update, in case referrers are cached in front end
  * Anything missing?
+

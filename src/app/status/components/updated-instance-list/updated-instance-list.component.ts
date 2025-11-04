@@ -13,6 +13,7 @@ import { ActionButton } from 'src/app/schema-view/list-instances/components/list
 import { Observable, from, concatMap, tap, map, EMPTY } from 'rxjs';
 import { CreateDeletedDialogService } from 'src/app/instance/deletion-commit/components/deleted-object-creation-dialog/deleted-object-creation-dialog.service';
 import { CommitDeletedDialogService } from '../../../instance/deletion-commit/components/deleted-object-creation-option-dialog/deleted-object-creation-option-dialog.service';
+import { DeletionService } from 'src/app/instance/deletion-commit/utils/deletion.service';
 
 
 @Component({
@@ -50,9 +51,7 @@ export class UpdatedInstanceListComponent implements OnInit {
     private store: Store,
     private dataService: DataService,
     private instanceUtilities: InstanceUtilities,
-    private deletionDialogService: DeletionDialogService,
-    private createDeletedDialogService: CreateDeletedDialogService,
-    private commitDeletedDialogService: CommitDeletedDialogService
+    private deletionService: DeletionService
   ) {
   }
 
@@ -95,7 +94,7 @@ export class UpdatedInstanceListComponent implements OnInit {
       }
 
       case "delete": {
-        this.deletionDialogService.openDialog(actionButton.instance);
+        this.deletionService.processDeletion([actionButton.instance]);
         break;
       }
 
@@ -121,32 +120,7 @@ export class UpdatedInstanceListComponent implements OnInit {
   private commitInstance(instance: Instance) {
     // instances in different list should have different call
     if (this.deletedInstances.includes(instance)) {
-      // If not PE or event give choice to show this dialog
-      // After close needs a flag if the user cancels 
-      // If there is a Delete instance created, call a dataservice function to submit this inst 
-      // reason will be changed to M and replacement instances will be optional 
-      // If a combo of PE or Event and any other type instance, they user loses the choice for inclucing those other
-      //instances in the deleted instance action. 
-
-      if (this.checkIsEventOrPE(instance)) {
-        this.createDeletedInstance([instance]);
-      }
-      else {
-        this.commitDeletedDialogService.openDialog().afterClosed().subscribe(result => {
-          if (result) {
-            this.createDeletedInstance([instance]);
-          }
-          else {
-            // If not PE or event, just commit the instance
-            this.dataService.delete(instance).subscribe(rtn => {
-              // Have to subscript it. Otherwise, the http call will not be fired
-              this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
-              this.instanceUtilities.setDeletedDbId(instance.dbId);
-              this.dataService.flagSchemaTreeForReload();
-            });
-          }
-        });
-      }
+      this.deletionService.processDeletion([instance]);
     }
 
     else if (this.updatedInstances.includes(instance)) {
@@ -173,59 +147,8 @@ export class UpdatedInstanceListComponent implements OnInit {
 
   }
 
-  checkIsEventOrPE(instance: Instance): boolean {
-    if (this.dataService.isEventClass(instance.schemaClassName) || this.dataService.isPhysicalEntityClass(instance.schemaClassName)) {
-      return true;
-    }
-    return false;
-  }
-
-  commitDeletedInstances() {
-    // Check the schema class of every instance to see if a Deleted instance needs to be created
-    let needDeleted = this.selectedDeletedInstances.map(instance => { return this.checkIsEventOrPE(instance) });
-    if (needDeleted.includes(true)) {
-      this.createDeletedInstance(this.selectedDeletedInstances);
-    }
-    else {
-      this.commitDeletedDialogService.openDialog().afterClosed().subscribe(result => {
-        if (result) {
-          this.createDeletedInstance(this.selectedDeletedInstances);
-        }
-        else {
-          // Just commit the deleted instances without creating Deleted instance
-          this.selectedDeletedInstances.forEach(instance => {
-            this.dataService.delete(instance).subscribe(rtn => {
-              this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
-              this.instanceUtilities.setDeletedDbId(instance.dbId);
-              this.dataService.flagSchemaTreeForReload();
-            });
-          });
-          this.selectedDeletedInstances = [];
-          this.showCheck = false;
-          this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.deletedInstanceList);
-        }
-      });
-    }
-    // TODO: else statment 
-  }
-
-  createDeletedInstance(instanceToDelete: Instance[]) {
-    this.createDeletedDialogService.openDialog(this.selectedDeletedInstances).afterClosed().subscribe(result => {
-      // Submit the Deleted instance, the selected instances are handled in this component
-      this.dataService.deleteByDeleted(result!).subscribe(rtn => {
-
-        instanceToDelete.forEach(instance => {
-          this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
-          this.instanceUtilities.setDeletedDbId(instance.dbId);
-        });
-
-        this.dataService.flagSchemaTreeForReload();
-        // TODO: debug the marked selected instances after deletion 
-        this.selectedDeletedInstances = [];
-        this.showCheck = false;
-        this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.deletedInstanceList);
-      })
-    })
+  handleDeletion() {
+    this.deletionService.processDeletion(this.selectedDeletedInstances);
   }
 
 

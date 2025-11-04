@@ -6,13 +6,14 @@ import { SharedModule } from 'src/app/shared/shared.module';
 import { MaterialModule } from 'src/app/shared/material/material.module';
 import { InstanceModule } from '../instance.module';
 import { MatDialog, MatDialogTitle } from '@angular/material/dialog';
+import { DeletionService } from './utils/deletion.service';
 
 
 
 @NgModule({
   declarations: [
     DeletedObjectCreationDialogComponent,
-    DeletedObjectCreationOptionDialogComponent
+    DeletedObjectCreationOptionDialogComponent,
   ],
   imports: [
     CommonModule,
@@ -20,6 +21,9 @@ import { MatDialog, MatDialogTitle } from '@angular/material/dialog';
     MaterialModule,
     InstanceModule,
     MatDialogTitle
-  ]
+  ],
+  providers: [
+    DeletionService
+  ],
 })
 export class DeletionCommitModule { }

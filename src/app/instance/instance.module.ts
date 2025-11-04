@@ -39,6 +39,7 @@ import { MatExpansionModule } from "@angular/material/expansion";
 import { TextEditorDialogComponent } from "./components/instance-view/instance-table/instance-table-row-element/text-editor-dialog/text-editor-dialog.component";
 import { HttpClientModule } from "@angular/common/http";
 import { AngularEditorModule } from "@kolkov/angular-editor";
+import { DeletionCommitModule } from "./deletion-commit/deletion-commit.module";
 
 @NgModule({
     declarations: [
@@ -82,7 +83,7 @@ import { AngularEditorModule } from "@kolkov/angular-editor";
     TextCurationComponent,
     MatExpansionModule,
     HttpClientModule, 
-    AngularEditorModule
+    AngularEditorModule,
 ],
   exports: [
     InstanceTableComponent,
