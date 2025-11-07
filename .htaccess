@@ -1,0 +1,15 @@
+#Note: may need to refactor the following configure to avoid unsafe-inline in the future
+Header set Content-Security-Policy "script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+Header set Access-Control-Allow-Origin "*"
+Header set Referer-Policy "unsafe-url"
+AddType application/javascript .js
+
+RewriteEngine On
+# If an existing asset or directory is requested go to it as it is
+RewriteBase /curatortool/
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_URI} !^/assets/(.+)$
+#RewriteRule ^schema_view/(.*)$ index.html [L]
+RewriteRule ^(.*)$ index.html [L]
