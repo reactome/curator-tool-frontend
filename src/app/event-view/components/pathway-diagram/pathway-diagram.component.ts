@@ -37,6 +37,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   pathwayId: string = ""; // Use empty string to make the diagram service happy
   // keep the select id in queryParam
   select: string = "";
+  // PathwayDiagram id for editing
+  pathwayDiagramId: string = "";
 
   @ViewChild('diagramComponent')
   diagram!: DiagramComponent;
@@ -100,6 +102,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       // Always not in the editing mode when loading via URL
       this.isEditing = false;
       this.loadPathwayDiagram();
+      this.pathwayDiagramId = ''; // reset any previous PathwayDiagram id
     });
     // Do any post processing after the network is displayed.
     // Use this method to avoid threading issue and any arbitray delay.
@@ -158,7 +161,31 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     });
   }
 
+  /**
+   * When a diagram is switched to the editing mode, its PathwayDiagram JSON diagram will be used for editing.
+   * If the diagram is not shared (i.e. there is only one representedPathway in the PathwayDiagram instance), the PathwayDiagram
+   * and Pathway itself should have the same JSON text. Using either JSON text should be fine. As the matter of the fact, the 
+   * backend uses symbolic link to point to the same JSON text for both instances. However, if the diagram is shared by multiple pathways 
+   * (one normal and other disease Pathways), the PathwayDiagram JSON text may be different from the Pathway JSON text. Disabling editing
+   * will still use the editing JSON text, which is PathwayDiagram, for display to keep the users at the same view. The user has to 
+   * upload the edited pathway diagram to the JSON text for the Pathway instance, which is post-processed at the server side for 
+   * overlaying etc.
+   */
+  private disableEditing() {
+    this.diagramUtils.disableEditing(this.diagram);
+    this.resizingNodes.forEach(node => this.diagramUtils.disableResizeCompartment(node, this.diagram));
+    this.resizingNodes.length = 0; // reset to empty
+    this.isEditing = false;
+  }
+
   private enableEditing() {
+    if (this.pathwayDiagramId && this.pathwayDiagramId.length > 0) {
+      // Already have a PathwayDiagram id for editing
+      this.isEditing = true;
+      this.diagram.diagramId = this.pathwayDiagramId;
+      this.loadPathwayDiagram();
+      return;
+    }
     // Switch to PathwayDiagram 
     this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe((pathwayDiagram: Instance) => {
       if (pathwayDiagram) {
@@ -166,6 +193,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         this.diagram.diagramId = pathwayDiagram.dbId.toString();
         // Let the event handler for "network_displayed" to handle the rest
         this.loadPathwayDiagram();
+        this.pathwayDiagramId = pathwayDiagram.dbId.toString(); // Store it for future use
       }
       else {
         this.dialog.open(InfoDialogComponent, {
@@ -343,10 +371,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         break;
 
       case 'disableEditing':
-        this.diagramUtils.disableEditing(this.diagram);
-        this.resizingNodes.forEach(node => this.diagramUtils.disableResizeCompartment(node, this.diagram));
-        this.resizingNodes.length = 0; // reset to empty
-        this.isEditing = false;
+        this.disableEditing();
         break;
 
       case 'disableEdgeEditing':
@@ -421,21 +446,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         break;
 
       case 'upload':
-        // Make sure disable diagram first
-        if (this.isEditing)
-          this.diagramUtils.disableEditing(this.diagram);
-        const networkJson = this.diagram.cy.json();
-        this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.diagram.diagramId, networkJson).subscribe((success) => {
-          const dialogConfig = {
-            data: {
-              title: success ? 'Information' : 'Error',
-              message: success ? 'The diagram has been uploaded successfully.' : 'The diagram has not been uploaded successfully.'
-            }
-          };
-          this.dialog.open(InfoDialogComponent, dialogConfig);
-          if (this.isEditing)
-            this.enableEditing(); // Put it back into the editable model
-        });
+        this.uploadDiagram();
+        break;
+
+      case 'reload':
+        this.diagram.diagramId = this.pathwayId
+        this.loadPathwayDiagram();
         break;
 
       case 'editPathwayDiagram':
@@ -462,6 +478,24 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
     // Hide the menu after the action is processed
     this.showMenu = false;
+  }
+
+  private uploadDiagram() {
+    // Make sure disable diagram first
+    if (this.isEditing)
+      this.diagramUtils.disableEditing(this.diagram);
+    const networkJson = this.diagram.cy.json();
+    this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.diagram.diagramId, networkJson).subscribe((success) => {
+      const dialogConfig = {
+        data: {
+          title: success ? 'Information' : 'Error',
+          message: success ? 'The diagram has been uploaded successfully.' : 'The diagram has not been uploaded successfully.'
+        }
+      };
+      this.dialog.open(InfoDialogComponent, dialogConfig);
+      if (this.isEditing)
+        this.enableEditing();
+    });
   }
 
   private disableResize() {
