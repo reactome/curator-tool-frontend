@@ -481,11 +481,36 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   }
 
   private uploadDiagram() {
+    // Check if PathwayDiagram is being edited. If PathwayDiagram is not being edited,
+    // tell the user nothing to be uploaded.
+    if (this.pathwayDiagramId !== undefined && this.pathwayDiagramId.length === 0) {
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Information',
+          message: 'The diagram is not being edited. Nothing to be uploaded.'
+        }
+      });
+      return;
+    }
     // Make sure disable diagram first
     if (this.isEditing)
       this.diagramUtils.disableEditing(this.diagram);
-    const networkJson = this.diagram.cy.json();
-    this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.diagram.diagramId, networkJson).subscribe((success) => {
+    // cy refers to itself. This creates a circular structure.
+    // Need to do a little bit of workaround here.
+    // Get rid of any circular structure by doing the following fixes
+    const elements = this.diagram.cy.elements().jsons();
+    const metadata = {
+      zoom: this.diagram.cy.zoom(),
+      pan: this.diagram.cy.pan(),
+      style: this.diagram.cy.style().json()
+    };
+    const networkJson = {
+      elements: elements,
+      metadata: metadata
+    };
+
+    // Use pathwayDiagramId, instead of pathwayId for uploading
+    this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.pathwayDiagramId, networkJson).subscribe((success) => {
       const dialogConfig = {
         data: {
           title: success ? 'Information' : 'Error',
