@@ -701,9 +701,12 @@ export class DataService {
     return clone;
   }
 
-  uploadCytoscapeNetwork(pathwayId: any, network: any): Observable<boolean> {
-    // console.debug('Uploading cytoscape network for ' + pathwayId + "...");
-    return this.http.post<boolean>(this.uploadCyNetworkUrl + pathwayId, network).pipe(
+  uploadCytoscapeNetwork(pathwayDiagramId: any, network: any): Observable<boolean> {
+    // console.debug('Uploading cytoscape network for ' + pathwayDiagramId + ": ", network);
+    return this.http.post<boolean>(this.uploadCyNetworkUrl + pathwayDiagramId, network).pipe(
+      // tap(() => {
+      //   console.debug('Cytoscape network for ' + pathwayDiagramId + ' uploaded.');
+      // }),
       // Since there is nothing needed to be done for the returned value (just true or false),
       // We don't need to do anything here!
       catchError(error => {
