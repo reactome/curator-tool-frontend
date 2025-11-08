@@ -69,6 +69,7 @@ export class DataService {
   // Notify when there is an error due to failed api
   private errorMessage = new Subject<Error>();
   errorMessage$ = this.errorMessage.asObservable();
+  componentRefreshSubject: any;
 
   constructor(private http: HttpClient,
     private utils: InstanceUtilities,
@@ -971,29 +972,29 @@ export class DataService {
       }));
   }
 
-      /**
-     * Delete one or more than one instances by parsing the Deleted object from the front end.
-     * @param instance
-     * @return
-     */
-    deleteByDeleted(deleted: Instance): Observable<boolean> {
-      let deletedToBeCommitted = this.utils.cloneInstanceForCommit(deleted);
-      // Need to add default person id for this instance
-      return this.store.select(defaultPerson()).pipe(
-        take(1),
-        concatMap((person: Instance[]) => {
-          if (!person || person.length == 0) {
-            return this.handleErrorMessage(new Error('Cannot find the default person!'));
-          }
-          deletedToBeCommitted.defaultPersonId = person[0].dbId;
-          return this.http.post<boolean>(this.deleteByDeletedUrl, deletedToBeCommitted).pipe(
-            map((data: boolean) => data),
-            catchError(error => {
-              return this.handleErrorMessage(error);
-            })
-          );
-        }));
-    }
+  /**
+ * Delete one or more than one instances by parsing the Deleted object from the front end.
+ * @param instance
+ * @return
+ */
+  deleteByDeleted(deleted: Instance): Observable<boolean> {
+    let deletedToBeCommitted = this.utils.cloneInstanceForCommit(deleted);
+    // Need to add default person id for this instance
+    return this.store.select(defaultPerson()).pipe(
+      take(1),
+      concatMap((person: Instance[]) => {
+        if (!person || person.length == 0) {
+          return this.handleErrorMessage(new Error('Cannot find the default person!'));
+        }
+        deletedToBeCommitted.defaultPersonId = person[0].dbId;
+        return this.http.post<boolean>(this.deleteByDeletedUrl, deletedToBeCommitted).pipe(
+          map((data: boolean) => data),
+          catchError(error => {
+            return this.handleErrorMessage(error);
+          })
+        );
+      }));
+  }
 
   /**
    * To avoid calling the backend for new instances we need to check the dbId

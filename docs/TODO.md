@@ -37,7 +37,6 @@ Done
     display name cannot be parsed because of symbols
 - Refresh of updated list (occured after resetting deleted insts) 
 - there is still a bug in the table for rendering an additional line 
-- Add category column to schema class table  
  
 
 

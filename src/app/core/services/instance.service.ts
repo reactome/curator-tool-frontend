@@ -125,10 +125,6 @@ export class InstanceUtilities {
     }
 
 
-    requestComponentRefresh(dbId: number) {
-        this.refreshListInstances.next(dbId);
-    }
-
     /**
      * Add helpers (catalyst, activator, and inhibitor) to the passed reaction instance
      * so that they can be rendered in the pathway diagram.
@@ -467,11 +463,11 @@ export class InstanceUtilities {
      */
     removeReference(inst: Instance, referenceDbId: number) {
         if (!inst.attributes) return;
-    
+
         for (let att of inst.attributes.keys()) {
             const attValue = inst.attributes.get(att);
             if (!attValue) continue;
-    
+
             if (Array.isArray(attValue)) {
                 // Iterate in reverse to avoid skipping elements when splicing
                 for (let i = attValue.length - 1; i >= 0; i--) {
@@ -481,7 +477,7 @@ export class InstanceUtilities {
                     }
                 }
                 if (attValue.length === 0) inst.attributes.delete(att);
-            } 
+            }
             else if (referenceDbId === attValue.dbId) {
                 inst.attributes.delete(att);
             }
@@ -636,8 +632,10 @@ export class InstanceUtilities {
         }
         else if (committedInst.dbId < 0) { // This is a new instance
             this.store.dispatch(NewInstanceActions.remove_new_instance(committedInst));
-            this.store.dispatch(NewInstanceActions.commit_new_instance({ oldDbId: committedInst.dbId,
-                                                                         newDbId: rtnInst.dbId }));
+            this.store.dispatch(NewInstanceActions.commit_new_instance({
+                oldDbId: committedInst.dbId,
+                newDbId: rtnInst.dbId
+            }));
             dataService.flagSchemaTreeForReload()
         }
         // Make sure new instances are updated if any
@@ -650,11 +648,15 @@ export class InstanceUtilities {
                 const shell = this.shellInstances.get(oldDbId);
                 if (shell) {
                     this.store.dispatch(NewInstanceActions.remove_new_instance(shell));
-                    this.store.dispatch(NewInstanceActions.commit_new_instance({ oldDbId: oldDbId,
-                                                                                 newDbId: newDbId }));
+                    this.store.dispatch(NewInstanceActions.commit_new_instance({
+                        oldDbId: oldDbId,
+                        newDbId: newDbId
+                    }));
                     // check that the store has updated the dbId, otherwise update it here so that the shell instances are synchronized
                     if (shell.dbId !== newDbId) {
                         this.updateNewInstanceRegistration(oldDbId, newDbId);
+                                this.setRefreshViewDbId(committedInst.dbId);
+
                     }
                 }
             });
@@ -713,8 +715,8 @@ export class InstanceUtilities {
     setSelectedInstances(listName: string, instances: Instance[]): void {
         this.listName2selectedInstances.set(listName, instances);
         this.selectedInstancesSubject.get(listName)?.next([...instances]);
-    } 
-    
+    }
+
     addSelectedInstances(listName: string, instances: Instance[]): void {
         let selectedInsts = this.listName2selectedInstances.get(listName);
         if (!selectedInsts) {

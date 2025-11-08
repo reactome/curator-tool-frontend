@@ -131,6 +131,11 @@ export class UpdatedInstanceListComponent implements OnInit {
     else if (this.newInstances.includes(instance)) {
       this.dataService.commit(instance).subscribe(rtn => {
         this.instanceUtilities.processCommit(instance, rtn, this.dataService);
+        const idx = this.updatedInstances.indexOf(instance);
+        const updated = this.updatedInstances.at(idx);
+        if (updated) {
+          updated.dbId = rtn['dbId'];
+        }
       });
     }
   }
@@ -149,6 +154,9 @@ export class UpdatedInstanceListComponent implements OnInit {
 
   handleDeletion() {
     this.deletionService.processDeletion(this.selectedDeletedInstances);
+    this.selectedDeletedInstances = [];
+    this.showCheck = false;
+    this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.deletedInstanceList);
   }
 
 

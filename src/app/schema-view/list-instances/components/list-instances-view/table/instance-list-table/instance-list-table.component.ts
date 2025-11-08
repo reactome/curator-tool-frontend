@@ -1,10 +1,11 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { Store } from "@ngrx/store";
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Instance, NEW_DISPLAY_NAME, SelectedInstancesList } from "../../../../../../core/models/reactome-instance.model";
 import { BookmarkActions } from "../../../../../instance-bookmark/state/bookmark.actions";
-import { map, take } from 'rxjs';
-import { deleteInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
+import { map, Observable, take } from 'rxjs';
+import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
+import { combineLatest, Subscription } from 'rxjs';
 
 export interface ActionButton {
   name: string;
@@ -17,7 +18,7 @@ export interface ActionButton {
   styleUrls: ['./instance-list-table.component.scss'],
 })
 
-export class InstanceListTableComponent {
+export class InstanceListTableComponent implements OnInit {
   @Input() dataSource: Instance[] = [];
   @Input() actionButtons: Array<ActionButton> = [];
   @Input() secondaryActionButtons: Array<ActionButton> = [];
@@ -42,6 +43,7 @@ export class InstanceListTableComponent {
   deletedDBIds: number[] = [];
   updatedDBIds: number[] = [];
   checkedMap: Map<number, boolean> = new Map();
+  refreshSubscription: Observable<boolean> = new Observable<boolean>();
 
   @Input() set selectAll(value: boolean) {
     for (let instance of this.dataSource) {
@@ -50,40 +52,35 @@ export class InstanceListTableComponent {
   }
 
 
-
   constructor(private store: Store,
-    private instanceUtilities: InstanceUtilities) {
+    private instUtils: InstanceUtilities) {
   }
 
   ngOnInit() {
-    this.store.select(deleteInstances()).pipe(
-      take(1),
-      map((instances) => {
-        this.deletedDBIds = instances.map(inst => inst.dbId);
-      })
-    ).subscribe();
-
-    this.store.select(updatedInstances()).pipe(
-      take(1),
-      map((instances) => {
-        this.updatedDBIds = instances.map(inst => inst.dbId);
-      })
-    ).subscribe();
-
+    this.setStoreData();
   }
 
+  setStoreData() {
+    combineLatest([
+      this.store.select(deleteInstances()),
+      this.store.select(updatedInstances()),
+    ]).subscribe(([deleted, updated]) => {
+      this.deletedDBIds = deleted.map(inst => inst.dbId);
+      this.updatedDBIds = updated.map(inst => inst.dbId);
+    })
+  }
 
   addCheckBox(instance: Instance) {
-    this.instanceUtilities.addSelectedInstance(this.selectedInstanceListName, instance);
+    this.instUtils.addSelectedInstance(this.selectedInstanceListName, instance);
   }
 
   removeCheckBox(instance: Instance) {
-    this.instanceUtilities.removeSelectedInstance(this.selectedInstanceListName, instance);
+    this.instUtils.removeSelectedInstance(this.selectedInstanceListName, instance);
 
   }
 
   isChecked(instance: Instance): boolean {
-    return this.instanceUtilities.isInstanceSelected(this.selectedInstanceListName, instance);
+    return this.instUtils.isInstanceSelected(this.selectedInstanceListName, instance);
   }
 
   click(instance: Instance, action: string) {
@@ -103,7 +100,7 @@ export class InstanceListTableComponent {
   onInstanceLinkClicked(instance: Instance) {
     //this.getInstanceUrl(instance);
     this.urlClickEvent.emit(instance);
-    this.instanceUtilities.setLastClickedDbId(instance.dbId);
+    this.instUtils.setLastClickedDbId(instance.dbId);
   }
 
   setNavigationUrl(instance: Instance) {

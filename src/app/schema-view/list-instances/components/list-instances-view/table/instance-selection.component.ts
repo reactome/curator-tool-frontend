@@ -93,6 +93,8 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.getSelectedInstances();
+    this.checkStoreData();
+
   }
 
   /**
@@ -160,6 +162,42 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
     this.data = instancesList.instances;
     // The first page should be 0
     this.pageIndex = Math.floor(this.skip / this.pageSize);
+  }
+
+  private checkStoreData() {
+    let subscription = this.instUtils.deletedDbId$.subscribe(dbId => {
+      let deletedInst = this.data.find(inst => inst.dbId === dbId);
+      if (deletedInst) {
+        this.data = this.data.filter(inst => inst.dbId !== dbId);
+      }
+    });
+    this.subscription.add(subscription);
+
+    // New instances are only shown in the local list instances view, so no need to update other views.
+    // This new instance will need to be removed from this view to indicate that it has been committed.
+    subscription = this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
+      let newInst = this.data.find(inst => inst.dbId === oldDbId);
+      if (newInst) {
+        this.data = this.data.filter(inst => inst.dbId !== oldDbId);
+      }
+    });
+    this.subscription.add(subscription);
+
+    // For updated instances in any view, the display name may have changed, so refresh the view.
+    subscription = this.instUtils.refreshViewDbId$.subscribe(dbId => {
+      let updatedInst = this.data.find(inst => inst.dbId === dbId);
+      if (updatedInst) {
+        const shellInst = this.instUtils.getShellInstance(updatedInst);
+        if (shellInst) {
+          // Update only the displayName for the matching instance in the data
+          this.data = this.data.map(inst =>
+            inst.dbId === dbId ? { ...inst, displayName: shellInst.displayName } : inst
+          );
+        }
+      }
+    });
+    this.subscription.add(subscription);
+
   }
 
   /**
@@ -554,7 +592,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
           this.updatedDBIds = instances.map(inst => inst.dbId);
         })
       ).subscribe();
-      
+
       const filteredData = this.data.filter(
         inst => !this.deletedDBIds.includes(inst.dbId) && !this.updatedDBIds.includes(inst.dbId)
       );
