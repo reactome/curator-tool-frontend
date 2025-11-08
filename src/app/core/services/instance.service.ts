@@ -124,6 +124,11 @@ export class InstanceUtilities {
         this.lastClickedDbIdForComparison.next(dbId);
     }
 
+
+    requestComponentRefresh(dbId: number) {
+        this.refreshListInstances.next(dbId);
+    }
+
     /**
      * Add helpers (catalyst, activator, and inhibitor) to the passed reaction instance
      * so that they can be rendered in the pathway diagram.
