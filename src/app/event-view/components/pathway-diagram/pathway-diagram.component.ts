@@ -451,6 +451,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
       case 'reload':
         this.diagram.diagramId = this.pathwayId
+        // Disable editing first
+        this.isEditing = false;
         this.loadPathwayDiagram();
         break;
 
@@ -498,15 +500,22 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     // cy refers to itself. This creates a circular structure.
     // Need to do a little bit of workaround here.
     // Get rid of any circular structure by doing the following fixes
-    const elements = this.diagram.cy.elements().jsons();
-    const metadata = {
-      zoom: this.diagram.cy.zoom(),
-      pan: this.diagram.cy.pan(),
-      style: this.diagram.cy.style().json()
+    const nodes = this.diagram.cy.nodes().jsons();
+    const edges = this.diagram.cy.edges().jsons();
+    const elements = {
+      nodes: nodes,
+      edges: edges
     };
+    // We will use the default style and avoid keeping style. This also reduce the size of
+    // the uploaded JSON.
+    // const metadata = {
+    //   zoom: this.diagram.cy.zoom(),
+    //   pan: this.diagram.cy.pan(),
+    //   style: this.diagram.cy.style().json()
+    // };
     const networkJson = {
       elements: elements,
-      metadata: metadata
+      // metadata: metadata
     };
 
     // Use pathwayDiagramId, instead of pathwayId for uploading
