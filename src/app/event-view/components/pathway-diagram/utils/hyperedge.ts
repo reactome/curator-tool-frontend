@@ -74,6 +74,7 @@ export class HyperEdge {
      * Some edges and nodes will be removed. 
      */
     enableRoundSegments() {
+        // console.debug('Enabling round-segments for HyperEdge: ' + this.reactomeId);
         if (this.reactomeId?.toString().includes('-')) {
             // This should be a FlowLine: no true Reactome id
             this.enableRoundSegmentsForFlowLine();
@@ -86,7 +87,7 @@ export class HyperEdge {
             return; // Nothing needs to be done
         // console.debug('Found reaction node: ', reactionNode);
         // Use aStart function to find the paths. dfs and bfs apparently cannot work!
-        const collection = this.cy.collection(Array.from(this.id2object.values()));
+        let collection = this.cy.collection(Array.from(this.id2object.values()));
         const toBeRemoved = new Set<any>();
         for (let elm of this.id2object.values()) {
             if (elm.isEdge() || elm === reactionNode)
@@ -114,6 +115,14 @@ export class HyperEdge {
                 for (let element of toBeRemoved) {
                     if (element.isEdge() && (element.source() === elm || element.target() === elm)) {
                         this.cy.remove(element);
+                    }
+                }
+                // Since edge will not be reused in any case, remove them so that the same path will not be found again
+                if (path.found && path.distance === 1) { // Only in this case, we need to exclude the edge
+                    for (let element of path.path) {
+                        if (element.isEdge()) {
+                            collection = collection.not(element);
+                        }
                     }
                 }
             }
@@ -154,7 +163,7 @@ export class HyperEdge {
 
     private createRoundSegmentEdgeForPath(path: any, toBeRemoved: Set<any>) {
         // If the path distance is 1, the edge is a line. Nothing to work on it.
-        if (!path.found || path.distance === 1) return; // Nothing can or need to be done
+        if (!path.found || path.distance === 1) return; // Nothing to do
         const sourceNode: any = path.path[0];
         const targetNode: any = path.path[path.path.length - 1];
         if (!targetNode.isNode()) 
