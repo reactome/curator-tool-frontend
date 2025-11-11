@@ -16,7 +16,7 @@
     </ng-container>
   </ng-container>
   <!-- Add a flowline between a PE and a ProcessNode -->
-  <ng-container *ngIf="(elmType === elmTypes.NODE || elmType === elmTypes.PATHWAY_NODE) && isFlowLineAddable">
+  <ng-container *ngIf="(elmType === elmTypes.PE_Node || elmType === elmTypes.PATHWAY_NODE || elmType === elmTypes.CYTOSCAPE) && isFlowLineAddable">
     <button style="margin-bottom: 1px" (click)="onClick('addFlowLine')">Add Flow Line</button>
   </ng-container>
   <!-- Remove a flowline between a PE and a ProcessNode -->
