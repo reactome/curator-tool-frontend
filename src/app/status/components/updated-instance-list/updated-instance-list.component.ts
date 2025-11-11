@@ -13,7 +13,7 @@ import { Observable, from, concatMap, tap, map, EMPTY } from 'rxjs';
 import { CreateDeletedDialogService } from 'src/app/instance/deletion-commit/components/deleted-object-creation-dialog/deleted-object-creation-dialog.service';
 import { CommitDeletedDialogService } from '../../../instance/deletion-commit/components/deleted-object-creation-option-dialog/deleted-object-creation-option-dialog.service';
 import { DeletionService } from 'src/app/instance/deletion-commit/utils/deletion.service';
-import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/table/instance-list-table/instance-list-table.component';
+import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/instance-list-table/instance-list-table.component';
 
 
 @Component({

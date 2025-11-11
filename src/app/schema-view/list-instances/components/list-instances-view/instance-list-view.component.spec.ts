@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { InstanceSelectionComponent } from './instance-list-view.component';
+import { InstanceListViewComponent } from './instance-list-view.component';
 
 describe('ListInstancesComponent', () => {
-  let component: InstanceSelectionComponent;
-  let fixture: ComponentFixture<InstanceSelectionComponent>;
+  let component: InstanceListViewComponent;
+  let fixture: ComponentFixture<InstanceListViewComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ InstanceSelectionComponent ]
+      declarations: [ InstanceListViewComponent ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(InstanceSelectionComponent);
+    fixture = TestBed.createComponent(InstanceListViewComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

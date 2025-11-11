@@ -6,7 +6,7 @@ import { Store } from '@ngrx/store';
 import { DeleteInstanceActions, NewInstanceActions, UpdateInstanceActions } from 'src/app/instance/state/instance.actions';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
-import { ActionButton } from '../list-instances-view/table/instance-list-table/instance-list-table.component';
+import { ActionButton } from '../list-instances-view/instance-list-table/instance-list-table.component';
 
 /**
  * A dialog component to show referrers of an instance.

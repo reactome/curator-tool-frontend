@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { InstanceListViewComponent } from './components/list-instances-view/table/instance-list-view.component';
+import { InstanceListViewComponent } from './components/list-instances-view/instance-list-view.component';
 
 // Define routes as a constant inside the module, not exported, and use RouterModule.forChild(routes)
 // This makes the routes scoped only to this module/component.

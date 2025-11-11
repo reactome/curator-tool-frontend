@@ -1,8 +1,8 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { Store } from "@ngrx/store";
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
-import { Instance, NEW_DISPLAY_NAME, SelectedInstancesList } from "../../../../../../core/models/reactome-instance.model";
-import { BookmarkActions } from "../../../../../instance-bookmark/state/bookmark.actions";
+import { Instance, NEW_DISPLAY_NAME, SelectedInstancesList } from "../../../../../core/models/reactome-instance.model";
+import { BookmarkActions } from "../../../../instance-bookmark/state/bookmark.actions";
 import { map, Observable, take } from 'rxjs';
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { combineLatest, Subscription } from 'rxjs';

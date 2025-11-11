@@ -1,20 +1,20 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { PageEvent } from "@angular/material/paginator";
-import { SearchCriterium, Instance, InstanceList, SelectedInstancesList } from "../../../../../core/models/reactome-instance.model";
-import { DataService } from "../../../../../core/services/data.service";
+import { SearchCriterium, Instance, InstanceList, SelectedInstancesList } from "../../../../core/models/reactome-instance.model";
+import { DataService } from "../../../../core/services/data.service";
 import { ActivatedRoute, Params, Router } from "@angular/router";
-import { ReferrersDialogService } from "../../../../../instance/components/referrers-dialog/referrers-dialog.service";
-import { DeletionDialogService } from "../../../../../instance/components/deletion-dialog/deletion-dialog.service";
+import { ReferrersDialogService } from "../../../../instance/components/referrers-dialog/referrers-dialog.service";
+import { DeletionDialogService } from "../../../../instance/components/deletion-dialog/deletion-dialog.service";
 import { Store } from '@ngrx/store';
 import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ActionButton } from './instance-list-table/instance-list-table.component';
-import { ListInstancesDialogService } from '../../list-instances-dialog/list-instances-dialog.service';
+import { ListInstancesDialogService } from '../list-instances-dialog/list-instances-dialog.service';
 import { BatchEditDialogService } from './batch-edit-dialog/batch-edit-dialog-service';
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { combineLatest, map, Observable, Subscription, take } from 'rxjs';
-import { DeleteBulkDialogService } from '../../delete-bulk-dialog/delete-bulk-dialog.service';
+import { DeleteBulkDialogService } from '../delete-bulk-dialog/delete-bulk-dialog.service';
 
 @Component({
   selector: 'app-instance-list-view',

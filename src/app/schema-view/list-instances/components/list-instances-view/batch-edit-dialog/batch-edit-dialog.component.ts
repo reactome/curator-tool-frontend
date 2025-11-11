@@ -2,14 +2,11 @@ import { ChangeDetectorRef, Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { ACTION_BUTTONS, AttributeCategory, AttributeDataType, SchemaAttribute, SchemaClass } from 'src/app/core/models/reactome-schema.model';
-import { SelectInstanceDialogComponent } from '../../../select-instance-dialog/select-instance-dialog.component';
-import { ActionButton } from '../instance-list-table/instance-list-table.component';
 import { DataService } from 'src/app/core/services/data.service';
 import { Observable } from 'rxjs/internal/Observable';
 import { forkJoin } from 'rxjs/internal/observable/forkJoin';
 import { AttributeValue, EDIT_ACTION } from 'src/app/instance/components/instance-view/instance-table/instance-table.model';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
-import { SelectInstanceDialogService } from '../../../select-instance-dialog/select-instance-dialog.service';
 import { NewInstanceDialogService } from 'src/app/instance/components/new-instance-dialog/new-instance-dialog.service';
 import { PostEditListener } from 'src/app/core/post-edit/PostEditOperation';
 import { PostEditService } from 'src/app/core/services/post-edit.service';
@@ -20,6 +17,8 @@ import { AttributeListDialogService } from './attribute-list-dialog/attribute-li
 import { MatSelect } from '@angular/material/select';
 import { take, map } from 'rxjs';
 import { deleteInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
+import { SelectInstanceDialogService } from '../../select-instance-dialog/select-instance-dialog.service';
+import { ActionButton } from '../instance-list-table/instance-list-table.component';
 
 @Component({
   selector: 'app-batch-edit-dialog',
