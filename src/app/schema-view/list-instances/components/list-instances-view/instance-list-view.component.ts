@@ -78,7 +78,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
   constructor(private dataService: DataService,
     private router: Router,
-    private route : ActivatedRoute,
+    private route: ActivatedRoute,
     private referrersDialogService: ReferrersDialogService,
     private deletionDialogService: DeletionDialogService,
     private store: Store,
@@ -93,12 +93,14 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
-    setTimeout(() => {
-      combineLatest([this.route.params, this.route.queryParams]).subscribe(
-        ([params, queryParams]) => this.handleRoute(params, queryParams)
-      );
-    })
+    if (this.useRoute) {
+      // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
+      setTimeout(() => {
+        combineLatest([this.route.params, this.route.queryParams]).subscribe(
+          ([params, queryParams]) => this.handleRoute(params, queryParams)
+        );
+      })
+    }
     this.getSelectedInstances();
     this.checkStoreData();
 
@@ -150,6 +152,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         });
       }
       else {
+        console.debug(this.searchKey);
         this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
           .subscribe((instancesList) => {
             this.displayInstances(instancesList);
@@ -236,7 +239,8 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       else
         this.router.navigate([url]);
     } else
-      this.loadInstances();
+      console.debug(this.searchKey);
+    this.loadInstances();
   }
 
   onPageChange(pageObject: PageEvent) {

@@ -37,6 +37,7 @@ Done
     display name cannot be parsed because of symbols
 - Refresh of updated list (occured after resetting deleted insts) 
 - there is still a bug in the table for rendering an additional line 
+- When an instance is added, propogate the increase of the count up the hierarchy to database object. 
  
 
 
