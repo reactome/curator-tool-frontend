@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { InstanceSelectionComponent } from './instance-selection.component';
+import { InstanceSelectionComponent } from './instance-list-view.component';
 
 describe('ListInstancesComponent', () => {
   let component: InstanceSelectionComponent;

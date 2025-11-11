@@ -12,6 +12,7 @@ import { SchemaClassTreeModule } from "../schema-class/components/tree/schema-cl
 import { MainSchemaViewRoutingModule } from "./main-schema-view-routing.module";
 import { MainSchemaViewComponent } from './main-schema-view.component';
 import { StatusModule } from "src/app/status/status.module";
+import { ListInstancesModule } from "../list-instances/list-instances.module";
 
 
 @NgModule({
@@ -33,7 +34,8 @@ import { StatusModule } from "src/app/status/status.module";
     CdkDragHandle,
     MainSchemaViewRoutingModule,
     MatSidenavModule,
-    StatusModule
+    StatusModule,
+    ListInstancesModule
   ]
 })
 export class MainSchemaViewModule { }

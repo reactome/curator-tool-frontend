@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angu
 import { PageEvent } from "@angular/material/paginator";
 import { SearchCriterium, Instance, InstanceList, SelectedInstancesList } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
-import { Router } from "@angular/router";
+import { ActivatedRoute, Params, Router } from "@angular/router";
 import { ReferrersDialogService } from "../../../../../instance/components/referrers-dialog/referrers-dialog.service";
 import { DeletionDialogService } from "../../../../../instance/components/deletion-dialog/deletion-dialog.service";
 import { Store } from '@ngrx/store';
@@ -17,11 +17,11 @@ import { combineLatest, map, Observable, Subscription, take } from 'rxjs';
 import { DeleteBulkDialogService } from '../../delete-bulk-dialog/delete-bulk-dialog.service';
 
 @Component({
-  selector: 'app-instance-selection',
-  templateUrl: './instance-selection.component.html',
-  styleUrls: ['./instance-selection.component.scss'],
+  selector: 'app-instance-list-view',
+  templateUrl: './instance-list-view.component.html',
+  styleUrls: ['./instance-list-view.component.scss'],
 })
-export class InstanceSelectionComponent implements OnInit, OnDestroy {
+export class InstanceListViewComponent implements OnInit, OnDestroy {
   skip: number = 0;
   // This is for doing simple text or dbId based search
   searchKey: string | undefined = '';
@@ -69,7 +69,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
       this.skip = 0;
       this.showProgressSpinner = true;
       this.loadInstances();
-      this.loadSchemaClasses();
+      this.loadSchemaClassAttributes();
     }); // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
   }
 
@@ -78,6 +78,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
 
   constructor(private dataService: DataService,
     private router: Router,
+    private route : ActivatedRoute,
     private referrersDialogService: ReferrersDialogService,
     private deletionDialogService: DeletionDialogService,
     private store: Store,
@@ -92,6 +93,12 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
+    setTimeout(() => {
+      combineLatest([this.route.params, this.route.queryParams]).subscribe(
+        ([params, queryParams]) => this.handleRoute(params, queryParams)
+      );
+    })
     this.getSelectedInstances();
     this.checkStoreData();
 
@@ -204,7 +211,7 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
    * Load the schema class for this instance list so that we can do attribute-based
    * search.
    */
-  loadSchemaClasses() {
+  loadSchemaClassAttributes() {
     if (this.className && this.className.length > 0) {
       this.dataService.fetchSchemaClass(this.className).subscribe(cls => {
         if (cls && cls.attributes) {
@@ -636,5 +643,55 @@ export class InstanceSelectionComponent implements OnInit, OnDestroy {
 
   clearSelectedInstances() {
     this.instUtils.clearSelectedInstances(SelectedInstancesList.mainInstanceList);
+  }
+
+  private handleRoute(params: Params, queryParams: Params) {
+    if (this.router.url.includes('local_list_instances')) {
+      this.isLocal = true;
+    } else {
+      this.isLocal = false;
+    }
+    if (params['skip'])
+      this.skip = params['skip']; // Use whatever is default
+    if (params['limit'])
+      this.pageSize = params['limit'];
+    if (queryParams['query']) {
+      console.debug('query: ' + queryParams['query']);
+      this.searchKey = queryParams['query'];
+    }
+    // Give it a little bit delay to avoid ng0100 error.
+    this.className = params['className'];
+    let isChangedChanged = this.className !== params['className'];
+    this.className = params['className'];
+    this.loadSchemaClassAttributes();
+    if (queryParams['attributes'] && queryParams['operands'] && queryParams['searchKeys']) { // This is for search
+      // Need to get attributes
+      let attributes = queryParams['attributes'].split(',');
+      let operands = queryParams['operands'].split(',');
+      let searchKeys = queryParams['searchKeys'].split(',');
+      this.resetSearchCriteria();
+      for (let i = 0; i < attributes.length; i++) {
+        const criterium: SearchCriterium = {
+          attributeName: attributes[i],
+          operand: operands[i],
+          searchKey: searchKeys[i] == 'null' ? '' : searchKeys[i]
+        };
+        this.addSearchCriterium(criterium);
+      }
+      this.needAdvancedSearch = true;
+      // disable use route for the time being
+      const useRoute = this.useRoute;
+      this.useRoute = false; // Regardless the original value, we need to turn it off
+      this.doAdvancedSearch(this.skip);
+      this.useRoute = useRoute; // set it back
+    }
+    else
+      this.loadInstances();
+    if (isChangedChanged) {
+      this.loadSchemaClassAttributes();
+      // Clear out selected instances when class changes
+      this.instUtils.clearSelectedInstances(SelectedInstancesList.mainInstanceList);
+    } // Need to force to reload attributes there.
+
   }
 }

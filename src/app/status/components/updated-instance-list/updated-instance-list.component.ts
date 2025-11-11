@@ -9,11 +9,11 @@ import { DataService } from 'src/app/core/services/data.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { DeletionDialogService } from 'src/app/instance/components/deletion-dialog/deletion-dialog.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
-import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/table/instance-list-table/instance-list-table.component';
 import { Observable, from, concatMap, tap, map, EMPTY } from 'rxjs';
 import { CreateDeletedDialogService } from 'src/app/instance/deletion-commit/components/deleted-object-creation-dialog/deleted-object-creation-dialog.service';
 import { CommitDeletedDialogService } from '../../../instance/deletion-commit/components/deleted-object-creation-option-dialog/deleted-object-creation-option-dialog.service';
 import { DeletionService } from 'src/app/instance/deletion-commit/utils/deletion.service';
+import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/table/instance-list-table/instance-list-table.component';
 
 
 @Component({

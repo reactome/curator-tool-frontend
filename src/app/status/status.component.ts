@@ -1,18 +1,9 @@
-import { CdkAccordionModule } from "@angular/cdk/accordion";
 import { Component, EventEmitter, HostListener, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from "@angular/material/icon";
-import { MatListModule } from '@angular/material/list';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTooltipModule } from "@angular/material/tooltip";
 import { Router } from "@angular/router";
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
-import { InstanceBookmarkModule } from "../schema-view/instance-bookmark/instance-bookmark.module";
 import { bookmarkedInstances } from "../schema-view/instance-bookmark/state/bookmark.selectors";
-import { NgIf } from "@angular/common";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { UserInstancesService } from "../auth/login/user-instances.service";
 import { ListInstancesDialogService } from "../schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service";

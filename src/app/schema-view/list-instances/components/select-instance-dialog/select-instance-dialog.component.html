@@ -14,15 +14,15 @@
     <mat-tab label="Database Instances">
       <section class="scroll_panel">
         <!-- For this list, we use a pagesize = 20 as the default for easy check: users are expected to do searching here. -->
-        <app-instance-selection [showDeletion]="false" [showBatchEdit]="false" [setClassName]="this.selected" [isSelection]="true" [pageSize]="20"
-          (clickEvent)="onSelectRow($event)"></app-instance-selection>
+        <app-instance-list-view [showDeletion]="false" [showBatchEdit]="false" [setClassName]="this.selected" [isSelection]="true" [pageSize]="20"
+          (clickEvent)="onSelectRow($event)"></app-instance-list-view>
       </section>
     </mat-tab>
     <mat-tab label="New and Updated Instances">
       <section class="scroll_panel">
         <!-- For this list, we use a pagesize = 20 as the default for easy check: users are expected to do searching here. -->
-        <app-instance-selection [showDeletion]="false" [showBatchEdit]="false" [isLocal]="true" [setClassName]="this.selected" [isSelection]="true" [pageSize]="20"
-          (clickEvent)="onSelectRow($event)"></app-instance-selection>
+        <app-instance-list-view [showDeletion]="false" [showBatchEdit]="false" [isLocal]="true" [setClassName]="this.selected" [isSelection]="true" [pageSize]="20"
+          (clickEvent)="onSelectRow($event)"></app-instance-list-view>
       </section>
     </mat-tab>
   </mat-tab-group>

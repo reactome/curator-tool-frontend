@@ -89,3 +89,10 @@ material-paginator {
   width: 48px !important;
   font-size: 32px !important;
 }
+
+.toolbar {
+  height: var(--bread-crumb-height, 40px);
+  font-size: 16px;
+  font-weight: bold;
+  position: sticky !important;
+}

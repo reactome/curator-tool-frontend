@@ -1,13 +1,10 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { InstanceSelectionComponent } from "./components/list-instances-view/table/instance-selection.component";
-import { InstanceListViewComponent } from "./components/list-instances-view/instance-list/instance-list-view.component";
 import { SharedModule } from "../../shared/shared.module";
 import { MaterialModule } from "../../shared/material/material.module";
 import { SelectInstanceDialogComponent } from "./components/select-instance-dialog/select-instance-dialog.component";
 import { SelectedInstancesTableComponent } from './components/select-instance-dialog/selected-instances-table/selected-instances-table.component';
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { InstanceListTableComponent } from './components/list-instances-view/table/instance-list-table/instance-list-table.component';
 import { StoreModule } from '@ngrx/store';
 import { NEW_INSTANCES_STATE_NAME } from 'src/app/instance/state/instance.selectors';
 import { newInstancesReducer } from 'src/app/instance/state/instance.reducers';
@@ -25,27 +22,29 @@ import { ListInstancesRoutingModule } from './list-instances-routing.module';
 import { CdkAccordion } from '@angular/cdk/accordion';
 import { MatExpansionPanel } from '@angular/material/expansion';
 import { DeleteBulkDialogComponent } from './components/delete-bulk-dialog/delete-bulk-dialog.component';
+import { InstanceListViewComponent } from './components/list-instances-view/table/instance-list-view.component';
+import { InstanceListTableComponent } from './components/list-instances-view/table/instance-list-table/instance-list-table.component';
 
 
 @NgModule({
   declarations: [
-    InstanceSelectionComponent,
     InstanceListViewComponent,
     SelectInstanceDialogComponent,
     SelectedInstancesTableComponent,
-    InstanceListTableComponent,
     ListInstancesDialogComponent,
     BatchEditDialogComponent,
     AttributeListDialogComponent,
     EditMenuComponent,
     AttributeEditComponent,
-    DeleteBulkDialogComponent
+    DeleteBulkDialogComponent,
+    InstanceListTableComponent
   ],
+
   exports: [
-    InstanceSelectionComponent,
     SelectInstanceDialogComponent,
     InstanceListTableComponent,
-    ListInstancesDialogComponent,    
+    ListInstancesDialogComponent,
+    InstanceListViewComponent
   ],
   imports: [
     CommonModule,
@@ -62,7 +61,7 @@ import { DeleteBulkDialogComponent } from './components/delete-bulk-dialog/delet
     MatDialogModule,
     MatTableModule,
     CdkAccordion,
-    MatExpansionPanel
+    MatExpansionPanel,
 ],
 })
 export class ListInstancesModule {
