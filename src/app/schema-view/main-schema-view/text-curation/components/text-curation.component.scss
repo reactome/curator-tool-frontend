@@ -1,17 +1,6 @@
-.text_curation {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 100vw;
-    height: 75vh;
-    // z-index: 5;
-    // background-color: white;
-}
-
 .embedded {
-    display: inline;
-    background-color: white;
+  display: inline;
+  margin-left: 16px;
 }
 
 input {
@@ -20,10 +9,19 @@ input {
 }
 
 .toolbar {
-  font-size: 16px;
-  // height: var(--title-height, 40px);
+  font-size: 14px;
+  //height: var(--title-height, 40px);
   height: 100%;
   position: sticky;
   padding: 0 0 0 16px;
   display: flex;
+}
+
+.text_curation {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  // width: 100vw;
+  height: 75vh;
 }

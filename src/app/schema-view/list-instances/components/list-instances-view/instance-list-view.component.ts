@@ -54,7 +54,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   @Input() showDeletion: boolean = true;
 
   // A flag to use route to load
-  @Input() useRoute: boolean = false;
+  @Input() useRoute: boolean = true;
   // Use 20 so that the whole list can be seen without scrolling in a 4K monitor
   // 50 always needs scrolling.
   @Input() pageSize: number = 20;
@@ -65,6 +65,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
   @Input() set setClassName(inputClassName: string) {
     setTimeout(() => {
+      this.useRoute = false;
       this.className = inputClassName;
       this.skip = 0;
       this.showProgressSpinner = true;
@@ -684,10 +685,10 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       }
       this.needAdvancedSearch = true;
       // disable use route for the time being
-      const useRoute = this.useRoute;
-      this.useRoute = false; // Regardless the original value, we need to turn it off
+      // const useRoute = this.useRoute;
+      // this.useRoute = false; // Regardless the original value, we need to turn it off
       this.doAdvancedSearch(this.skip);
-      this.useRoute = useRoute; // set it back
+      // this.useRoute = useRoute; // set it back
     }
     else
       this.loadInstances();

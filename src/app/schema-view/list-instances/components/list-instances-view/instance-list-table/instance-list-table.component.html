@@ -90,11 +90,11 @@
     </div>
   </ng-container>
   <ng-container *ngIf="!isSelection">
-    <tr class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row)}" mat-row
+    <tr matTooltip="{{row.schemaClassName}}" class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row)}" mat-row
       *matRowDef="let row; columns: displayedColumns;"></tr>
   </ng-container>
   <ng-container *ngIf="isSelection">
-    <tr class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row)}" mat-row (click)="onRowClick(row)"
+    <tr matTooltip="{{row.schemaClassName}}" class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row)}" mat-row (click)="onRowClick(row)"
       *matRowDef="let row; columns: displayedColumns;"></tr>
   </ng-container>
 
