@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { UpdatedInstanceListComponent } from './updated-instance-list.component';
+import { UpdatedInstanceListComponent } from './local-instance-list.component';
 
 describe('UpdatedInstanceListComponent', () => {
   let component: UpdatedInstanceListComponent;
