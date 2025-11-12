@@ -10,7 +10,7 @@ import { MatTooltipModule } from "@angular/material/tooltip";
 import { StoreModule } from '@ngrx/store';
 import { updatedInstancesReducer } from '../instance/state/instance.reducers';
 import { UPDATE_INSTANCES_STATE_NAME } from '../instance/state/instance.selectors';
-import { UpdatedInstanceListComponent } from './components/updated-instance-list/updated-instance-list.component';
+import { UpdatedInstanceListComponent } from './components/local-instance-list/local-instance-list.component';
 import { StatusComponent } from './status.component';
 import { MaterialModule } from '../shared/material/material.module';
 import { ListInstancesModule } from '../schema-view/list-instances/list-instances.module';

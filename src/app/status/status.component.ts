@@ -88,7 +88,7 @@ export class StatusComponent implements OnInit, OnDestroy {
   }
 
   // Calling ngOnDestroy is not reliable: https://blog.devgenius.io/where-ngondestroy-fails-you-54a8c2eca0e0.
-  @HostListener('window:beforeunload', ['$event'])
+  @HostListener('window:beforeunload')
   persistInstances(): void {
     this.userInstancesService.persistInstances();
   }

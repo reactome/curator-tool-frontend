@@ -17,9 +17,9 @@ import { ActionButton } from 'src/app/schema-view/list-instances/components/list
 
 
 @Component({
-  selector: 'app-updated-instance-list',
-  templateUrl: './updated-instance-list.component.html',
-  styleUrls: ['./updated-instance-list.component.scss'],
+  selector: 'app-local-instance-list',
+  templateUrl: './local-instance-list.component.html',
+  styleUrls: ['./local-instance-list.component.scss'],
 })
 export class UpdatedInstanceListComponent implements OnInit {
   // instances to be committed
