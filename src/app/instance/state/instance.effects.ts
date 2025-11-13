@@ -93,12 +93,12 @@ export class InstanceEffects {
           this.store.dispatch(DeleteInstanceActions.ls_remove_deleted_instance(inst));
           this.store.dispatch(BookmarkActions.ls_remove_bookmark(this.instUtils.makeShell(inst)));
           break;
-          // All deleted instances will be removed from the store in the above action.
-          // We need to clairfy if an instance is reset or committed as deleted.
-        case(DeleteInstanceActions.reset_deleted_instance.type):
-        this.instUtils.setResetDeletedDbId(inst.dbId);
+        // All deleted instances will be removed from the store in the above action.
+        // We need to clairfy if an instance is reset or committed as deleted.
+        case (DeleteInstanceActions.reset_deleted_instance.type):
+          this.instUtils.setResetDeletedDbId(inst.dbId);
           break;
-        case(DeleteInstanceActions.commit_deleted_instance.type):
+        case (DeleteInstanceActions.commit_deleted_instance.type):
           this.dataService.removeInstanceInCache(inst.dbId);
           this.instUtils.setDeletedDbId(inst.dbId);
           break;
@@ -112,8 +112,8 @@ export class InstanceEffects {
   newInstanceChanges$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(NewInstanceActions.register_new_instance, 
-               NewInstanceActions.remove_new_instance),
+        ofType(NewInstanceActions.register_new_instance,
+          NewInstanceActions.remove_new_instance),
         tap((action) => {
           if (action.type === NewInstanceActions.register_new_instance.type)
             // The browser tab (window) that setItem should not receive this event.
@@ -151,9 +151,9 @@ export class InstanceEffects {
   updateInstanceChanges$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(UpdateInstanceActions.register_updated_instance, 
-               UpdateInstanceActions.remove_updated_instance,
-               UpdateInstanceActions.reset_updated_instance),
+        ofType(UpdateInstanceActions.register_updated_instance,
+          UpdateInstanceActions.remove_updated_instance,
+          UpdateInstanceActions.reset_updated_instance),
         tap((action) => {
           this.setLocalStorageItem(action.type, JSON.stringify(action.valueOf()));
           this.storeUpdatedInstances();
@@ -161,18 +161,19 @@ export class InstanceEffects {
           if (action.type === UpdateInstanceActions.remove_updated_instance.type) {
             this.dataService.removeInstanceInCache(action.dbId); // So that it can be re-loaded from database
             // No need to refresh view dbId here. Let lastInstanceEdit handle this.
-            // this.instUtils.setRefreshViewDbId(action.dbId);
+            this.instUtils.setRefreshViewDbId(action.dbId);
           }
           else if (action.type === UpdateInstanceActions.reset_updated_instance.type) {
             this.dataService.removeInstanceInCache(action.instance.dbId);
-            this.resetInstance(action.modifiedAttributes, action.instance.dbId);
+            this.resetInstance(action.modifiedAttributes, action.instance.dbId); 
+            this.instUtils.setRefreshViewDbId(action.instance.dbId);
           }
         })
       ),
     { dispatch: false }
   );
 
-  private resetInstance(modifiedAttributes: string[]| undefined, dbId: number) {
+  private resetInstance(modifiedAttributes: string[] | undefined, dbId: number) {
     // Need to reload the instance in case it is used in the local loaded instance
     // By loading them, we can make sure the display names in these local instances
     // are correctly for this reset instance in their attributes
@@ -210,10 +211,10 @@ export class InstanceEffects {
   deleteInstanceChanges$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(DeleteInstanceActions.register_deleted_instance, 
-               DeleteInstanceActions.remove_deleted_instance,
-               DeleteInstanceActions.reset_deleted_instance,
-               DeleteInstanceActions.commit_deleted_instance),
+        ofType(DeleteInstanceActions.register_deleted_instance,
+          DeleteInstanceActions.remove_deleted_instance,
+          DeleteInstanceActions.reset_deleted_instance,
+          DeleteInstanceActions.commit_deleted_instance),
         tap((action) => {
           // There is no need to query. Actually nothing to query.
           this.setLocalStorageItem(action.type, this.instUtils.stringifyInstance(action.valueOf() as Instance));
@@ -227,7 +228,7 @@ export class InstanceEffects {
 
 
   defaultPersonChanges$ = createEffect(
-    () => 
+    () =>
       this.actions$.pipe(
         ofType(DefaultPersonActions.set_default_person),
         tap((action) => {
@@ -235,7 +236,7 @@ export class InstanceEffects {
           this.setLocalStorageItem(action.type, this.instUtils.stringifyInstance(action.valueOf() as Instance));
         })
       ),
-    {dispatch: false} // This is important to avoid infinity loop.
+    { dispatch: false } // This is important to avoid infinity loop.
   );
 
 
@@ -269,8 +270,8 @@ export class InstanceEffects {
   }
 
   private setLocalStorageItem(key: string, object: string) {
-    localStorage.setItem(key, 
-      JSON.stringify({object: object, timestamp: Date.now()})); // Use timestamp to force firing the window event.
+    localStorage.setItem(key,
+      JSON.stringify({ object: object, timestamp: Date.now() })); // Use timestamp to force firing the window event.
   }
 
   private parseLocalStorageObject(content: string | undefined | null) {

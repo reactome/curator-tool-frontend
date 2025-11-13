@@ -634,8 +634,8 @@ export class InstanceUtilities {
      */
     processCommit(committedInst: Instance, rtnInst: Instance, dataService: DataService) {
         if (committedInst.dbId >= 0) { // This is an updated instance
+            // this.setRefreshViewDbId(committedInst.dbId);
             this.store.dispatch(UpdateInstanceActions.remove_updated_instance(committedInst));
-            this.setRefreshViewDbId(committedInst.dbId);
         }
         else if (committedInst.dbId < 0) { // This is a new instance
             this.store.dispatch(NewInstanceActions.remove_new_instance(committedInst));
@@ -662,7 +662,7 @@ export class InstanceUtilities {
                     // check that the store has updated the dbId, otherwise update it here so that the shell instances are synchronized
                     if (shell.dbId !== newDbId) {
                         this.updateNewInstanceRegistration(oldDbId, newDbId);
-                                this.setRefreshViewDbId(committedInst.dbId);
+                        this.setRefreshViewDbId(committedInst.dbId);
 
                     }
                 }

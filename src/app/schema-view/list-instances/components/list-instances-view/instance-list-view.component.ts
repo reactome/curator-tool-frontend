@@ -196,20 +196,30 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     });
     this.subscription.add(subscription);
 
-    // For updated instances in any view, the display name may have changed, so refresh the view.
+    // After committing an instance, the display name may have changed, so refresh the view.
     subscription = this.instUtils.refreshViewDbId$.subscribe(dbId => {
-      let updatedInst = this.data.find(inst => inst.dbId === dbId);
-      if (updatedInst) {
-        const shellInst = this.instUtils.getShellInstance(updatedInst);
-        if (shellInst) {
-          // Update only the displayName for the matching instance in the data
-          this.data = this.data.map(inst =>
-            inst.dbId === dbId ? { ...inst, displayName: shellInst.displayName } : inst
-          );
-        }
+      this.loadInstances();
+    });
+    this.subscription.add(subscription);
+
+    // For new instances in local list instances view, the display name may have changed, so refresh the view.
+    subscription = combineLatest([
+      this.store.select(newInstances()),
+      this.store.select(updatedInstances())
+    ]).subscribe(([newInsts, updatedInsts]) => {
+      if ((newInsts && newInsts.length > 0) || (updatedInsts && updatedInsts.length > 0)) {
+      const newMap = new Map<number, Instance>();
+      newInsts?.forEach(i => newMap.set(i.dbId, i));
+      if(this.isLocal) // Only update display name in local list instances view
+        updatedInsts?.forEach(i => newMap.set(i.dbId, i));
+      this.data = this.data.map(inst => {
+        const matched = newMap.get(inst.dbId);
+        return matched ? { ...inst, displayName: matched.displayName } : inst;
+      });
       }
     });
     this.subscription.add(subscription);
+
 
   }
 
