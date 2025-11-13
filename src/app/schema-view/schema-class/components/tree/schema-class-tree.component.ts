@@ -3,7 +3,7 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
 import { Router } from "@angular/router";
 import { Store } from "@ngrx/store";
-import { Subscription, take } from "rxjs";
+import { Observable, Subscription, take } from "rxjs";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { EDIT_ACTION } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
 import { NewInstanceActions } from "src/app/instance/state/instance.actions";
@@ -30,21 +30,32 @@ interface SchemaClassNode {
 export class SchemaClassTreeComponent implements OnInit, OnDestroy {
 
   // Use to correct class counts
-  private instancesDeleted: Instance[] = [];
-  private instancesCreated: Instance[] = [];
-  private instancesUpdated: Instance[] = [];
+  private instancesDeleted: Observable<Instance[]> = this.store.select(deleteInstances())
+  private instancesCreated: Observable<Instance[]> = this.store.select(newInstances())
+  private instancesUpdated: Observable<Instance[]> = this.store.select(updatedInstances())
 
   private _getCountFromDatabase = (schemaCls: SchemaClass): number => {
     let count = schemaCls.count ? schemaCls.count : 0;
     return count;
   }
-
   getLocalCount = (schemaCls: SchemaClass): number => {
-    let count = 0;
-    count += this.instancesCreated.filter(inst => this._isSchemaClass(schemaCls, inst.schemaClassName)).length;
-    count += this.instancesUpdated.filter(inst => this._isSchemaClass(schemaCls, inst.schemaClassName)).length;
-    count += this.instancesDeleted.filter(inst => this._isSchemaClass(schemaCls, inst.schemaClassName)).length;
-    return count;
+    const ids = new Set<number | string>();
+    this.instancesDeleted.pipe(take(1)).subscribe(instances => {
+      instances.forEach(inst => {
+        if (this._isSchemaClass(schemaCls, inst.schemaClassName)) ids.add(inst.dbId);
+      });
+    });
+    this.instancesCreated.pipe(take(1)).subscribe(instances => {
+      instances.forEach(inst => {
+        if (this._isSchemaClass(schemaCls, inst.schemaClassName)) ids.add(inst.dbId);
+      });
+    });
+    this.instancesUpdated.pipe(take(1)).subscribe(instances => {
+      instances.forEach(inst => {
+        if (this._isSchemaClass(schemaCls, inst.schemaClassName)) ids.add(inst.dbId);
+      });
+    });
+    return ids.size;
   }
 
   private _isSchemaClass = (schemaCls: SchemaClass, clsName: string): boolean => {
@@ -109,21 +120,21 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
   // When the component change from hidden to show, this method will be called
   // therefore loadSchemaTree
   ngOnInit(): void {
-    let sub = this.store.select(deleteInstances()).subscribe(instances => {
-      this.instancesDeleted = instances;
-      this.loadSchemaTree
-    });
-    this.subscription.add(sub);
-    sub = this.store.select(newInstances()).subscribe(instances => {
-      this.instancesCreated = instances;
-      this.loadSchemaTree();
-    });
-    this.subscription.add(sub);
-    sub = this.store.select(updatedInstances()).subscribe(instances => {
-      this.instancesUpdated = instances;
-      this.loadSchemaTree();
-    });
-    this.subscription.add(sub);
+    // let sub = this.store.select(deleteInstances()).subscribe(instances => {
+    //   this.instancesDeleted = instances;
+    //   this.loadSchemaTree
+    // });
+    // this.subscription.add(sub);
+    // sub = this.store.select(newInstances()).subscribe(instances => {
+    //   this.instancesCreated = instances;
+    //   this.loadSchemaTree();
+    // });
+    // this.subscription.add(sub);
+    // sub = this.store.select(updatedInstances()).subscribe(instances => {
+    //   this.instancesUpdated = instances;
+    //   this.loadSchemaTree();
+    // });
+    // this.subscription.add(sub);
 
     this.loadSchemaTree();
     // This view is on and off. Therefore, we need to turn this on and off 
