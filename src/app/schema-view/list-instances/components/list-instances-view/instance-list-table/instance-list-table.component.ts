@@ -34,6 +34,7 @@ export class InstanceListTableComponent implements OnInit {
   @Input() showBookmark: boolean = true; // Keep true, removing from the batch edit view.
   @Input() showCheckMark: boolean = true;
   @Input() selectedInstanceListName: string = SelectedInstancesList.mainInstanceList;
+  @Input() isLocal: boolean = false;
   // @Input() instanceURL: string | undefined; 
   @Output() urlClickEvent = new EventEmitter<Instance>();
   @Output() selectionChangeEvent = new EventEmitter<Instance[]>();
@@ -43,7 +44,7 @@ export class InstanceListTableComponent implements OnInit {
   deletedDBIds: number[] = [];
   updatedDBIds: number[] = [];
   checkedMap: Map<number, boolean> = new Map();
-  refreshSubscription: Observable<boolean> = new Observable<boolean>();
+  showSchemaClassName: Map<number, boolean> = new Map();
 
   @Input() set selectAll(value: boolean) {
     for (let instance of this.dataSource) {
@@ -104,7 +105,7 @@ export class InstanceListTableComponent implements OnInit {
   }
 
   setNavigationUrl(instance: Instance) {
-    if (this.updatedDBIds.includes(instance.dbId) && !this.routerNavigationUrl.includes('local_list_instances')) {
+    if (this.updatedDBIds.includes(instance.dbId) && !this.isLocal ) {
       this.routerNavigationUrl = '/schema_view/instance/' + instance.dbId.toString() + '/comparison/' + instance.dbId.toString();
     }
     else {

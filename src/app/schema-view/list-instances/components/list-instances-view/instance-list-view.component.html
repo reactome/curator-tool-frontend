@@ -36,7 +36,7 @@
   </ng-container>
   <ng-container *ngIf="!showProgressSpinner">
     <app-instance-list-table [dataSource]="data" [isSelection]="isSelection" [actionButtons]="actionButtons"
-      [secondaryActionButtons]="secondaryActionButtons" [showCheckMark]="!isSelection" (actionEvent)="handleAction($event)"
+      [secondaryActionButtons]="secondaryActionButtons" [showCheckMark]="!isSelection" [isLocal]="isLocal" (actionEvent)="handleAction($event)"
       (selectionEvent)="onRowClick($event)" (urlClickEvent)="navigateUrl($event)">
     </app-instance-list-table>
 

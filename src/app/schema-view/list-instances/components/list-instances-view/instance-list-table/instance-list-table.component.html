@@ -9,13 +9,13 @@
         </ng-container>
         <ng-container *ngIf="!isSelection">
           <ng-container *ngIf="isUpdated(element); else not_updated">
-            <mat-icon matTooltip="Modified" 
-            style="color: darkgoldenrod; font-size: 12px; height: 12px !important; width: 12px !important;">star</mat-icon>
+            <mat-icon matTooltip="Modified"
+              style="color: darkgoldenrod; font-size: 12px; height: 12px !important; width: 12px !important;">star</mat-icon>
             &nbsp;
           </ng-container>
           <ng-template #not_updated>
-              <span style="color: primary; font-family: serif;">&nbsp;I</span>
-              &nbsp;
+            <span style="color: primary; font-family: serif;">&nbsp;I</span>
+            &nbsp;
           </ng-template>
           <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)">{{element.dbId}}</a><br>
         </ng-container>
@@ -25,22 +25,29 @@
     <!-- Display Name Column -->
     <ng-container matColumnDef="displayName">
       <th mat-header-cell *matHeaderCellDef>Display Name</th>
-      <td mat-cell *matCellDef="let element" class="wrap-text-cell">
+      <td mat-cell *matCellDef="let element" class="wrap-text-cell" (mouseenter)="showSchemaClassName.set(element.dbId, true)"
+        (mouseleave)="showSchemaClassName.set(element.dbId, false)">
 
-        <ng-container *ngIf="isSelection">
-          <!-- Use the schema class name for newly generated instances-->
-          <ng-container *ngIf="element.displayName === newDisplayName; else display_name">
-            {{element.schemaClassName}}
+        <div style="display: flex;">
+          <ng-container *ngIf="isSelection">
+            <!-- Use the schema class name for newly generated instances-->
+            <ng-container *ngIf="element.displayName === newDisplayName; else display_name">
+              {{element.schemaClassName}}
+            </ng-container>
+            <ng-template #display_name>
+              {{element.displayName}}
+            </ng-template>
           </ng-container>
-          <ng-template #display_name>
-            {{element.displayName}}
-          </ng-template>
-        </ng-container>
-        <ng-container *ngIf="!isSelection">
-          <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)">{{element.displayName}}</a>
-        </ng-container>
-        <br>
+          <ng-container *ngIf="!isSelection">
+            <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)">{{element.displayName}}</a>
+          </ng-container>
+
+          <ng-container *ngIf="showSchemaClassName.get(element.dbId)">
+            <span style="font-size: smaller; color: gray;">&nbsp;[{{element.schemaClassName}}]</span>
+          </ng-container>
+        </div>
       </td>
+      <br>
     </ng-container>
 
     <!-- Action Buttons Column -->
@@ -90,11 +97,11 @@
     </div>
   </ng-container>
   <ng-container *ngIf="!isSelection">
-    <tr matTooltip="{{row.schemaClassName}}" class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row)}" mat-row
+    <tr class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row)}" mat-row
       *matRowDef="let row; columns: displayedColumns;"></tr>
   </ng-container>
   <ng-container *ngIf="isSelection">
-    <tr matTooltip="{{row.schemaClassName}}" class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row)}" mat-row (click)="onRowClick(row)"
+    <tr class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row)}" mat-row (click)="onRowClick(row)"
       *matRowDef="let row; columns: displayedColumns;"></tr>
   </ng-container>
 
