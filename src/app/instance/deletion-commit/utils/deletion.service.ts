@@ -45,6 +45,7 @@ export class DeletionService {
                 instancesToDelete.forEach(instance => {
                     this.dataService.delete(instance).subscribe(rtn => {
                         this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
+                        this.store.dispatch(DeleteInstanceActions.commit_deleted_instance(instance));
                         this.instanceUtilities.setDeletedDbId(instance.dbId);
                         this.dataService.flagSchemaTreeForReload();
                     });
@@ -62,6 +63,7 @@ export class DeletionService {
 
                     instanceToDelete.forEach(instance => {
                         this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
+                        this.store.dispatch(DeleteInstanceActions.commit_deleted_instance(instance));
                         this.instanceUtilities.setDeletedDbId(instance.dbId);
                     });
 

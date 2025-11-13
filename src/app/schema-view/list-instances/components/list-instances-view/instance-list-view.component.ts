@@ -65,7 +65,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
   @Input() set setClassName(inputClassName: string) {
     setTimeout(() => {
-      this.useRoute = false;
+      // this.useRoute = false;
       this.className = inputClassName;
       this.skip = 0;
       this.showProgressSpinner = true;
@@ -176,6 +176,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   }
 
   private checkStoreData() {
+
     let subscription = this.instUtils.deletedDbId$.subscribe(dbId => {
       let deletedInst = this.data.find(inst => inst.dbId === dbId);
       if (deletedInst) {
@@ -186,6 +187,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
     // New instances are only shown in the local list instances view, so no need to update other views.
     // This new instance will need to be removed from this view to indicate that it has been committed.
+    // TODO: check if we need this 
     subscription = this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
       let newInst = this.data.find(inst => inst.dbId === oldDbId);
       if (newInst) {
@@ -685,10 +687,10 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       }
       this.needAdvancedSearch = true;
       // disable use route for the time being
-      // const useRoute = this.useRoute;
-      // this.useRoute = false; // Regardless the original value, we need to turn it off
+      const useRoute = this.useRoute;
+      this.useRoute = false; // Regardless the original value, we need to turn it off
       this.doAdvancedSearch(this.skip);
-      // this.useRoute = useRoute; // set it back
+      this.useRoute = useRoute; // set it back
     }
     else
       this.loadInstances();

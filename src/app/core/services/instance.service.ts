@@ -37,6 +37,10 @@ export class InstanceUtilities {
     private deletedDbId = new Subject<number>();
     deletedDbId$ = this.deletedDbId.asObservable();
 
+    // Track instances that have been marked for deletion and then reset (not committed)
+    private resetDeletedDbId = new Subject<number>();
+    resetDeletedDbId$ = this.resetDeletedDbId.asObservable();
+
     // The first is the old dbId and second newDbId
     private committedNewInstDbId = new Subject<[number, number]>();
     committedNewInstDbId$ = this.committedNewInstDbId.asObservable();
@@ -100,6 +104,9 @@ export class InstanceUtilities {
 
     setDeletedDbId(dbId: number) {
         this.deletedDbId.next(dbId);
+    }
+    setResetDeletedDbId(dbId: number) {
+        this.resetDeletedDbId.next(dbId);
     }
 
     setMarkDeletionDbId(dbId: number) {

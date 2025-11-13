@@ -205,6 +205,7 @@ export class UpdatedInstanceListComponent implements OnInit {
 
   private resetDeletedInstance(instance: Instance) {
     this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
+    this.store.dispatch(DeleteInstanceActions.reset_deleted_instance(instance));
     // Check if this is an updated instance or new instance: need to add them back.
     if (instance.dbId < 0) // In the current iteration, new intance will be deleted without being staged. Therefore,
       // this will not be called at all. Keeping it for completeness.

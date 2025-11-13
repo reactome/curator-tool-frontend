@@ -93,8 +93,17 @@ export class InstanceEffects {
           this.store.dispatch(DeleteInstanceActions.ls_remove_deleted_instance(inst));
           this.store.dispatch(BookmarkActions.ls_remove_bookmark(this.instUtils.makeShell(inst)));
           break;
+          // All deleted instances will be removed from the store in the above action.
+          // We need to clairfy if an instance is reset or committed as deleted.
+        case(DeleteInstanceActions.reset_deleted_instance.type):
+        this.instUtils.setResetDeletedDbId(inst.dbId);
+          break;
+        case(DeleteInstanceActions.commit_deleted_instance.type):
+          this.dataService.removeInstanceInCache(inst.dbId);
+          this.instUtils.setDeletedDbId(inst.dbId);
+          break;
         case DefaultPersonActions.set_default_person.type:
-          this.store.dispatch(DefaultPersonActions.ls_set_default_person(inst));
+          this.store.dispatch(DefaultPersonActions.ls_set_default_person(this.instUtils.makeShell(inst)));
           break;
       }
     });
@@ -202,7 +211,9 @@ export class InstanceEffects {
     () =>
       this.actions$.pipe(
         ofType(DeleteInstanceActions.register_deleted_instance, 
-               DeleteInstanceActions.remove_deleted_instance),
+               DeleteInstanceActions.remove_deleted_instance,
+               DeleteInstanceActions.reset_deleted_instance,
+               DeleteInstanceActions.commit_deleted_instance),
         tap((action) => {
           // There is no need to query. Actually nothing to query.
           this.setLocalStorageItem(action.type, this.instUtils.stringifyInstance(action.valueOf() as Instance));
