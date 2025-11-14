@@ -187,6 +187,10 @@ export class InstanceUtilities {
         return allClsNames.has(className);
     }
 
+    isDescendantSchemaClass(className: SchemaClass, parentClass: SchemaClass | undefined): boolean { 
+        return this._isSchemaClass(className.name, parentClass);
+    }
+
     isSchemaClass(instance: Instance, className: string, dataService: DataService): boolean {
         let schemaClass = dataService.getSchemaClass(className);
         return this._isSchemaClass(instance.schemaClassName, schemaClass);

@@ -116,54 +116,54 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     // Make sure className is set!
     if (this.className && this.className.length > 0)
       if (this.isLocal) {
-      combineLatest([
-        this.store.select(updatedInstances()).pipe(take(1)),
-        this.store.select(newInstances()).pipe(take(1)),
-        this.store.select(deleteInstances()).pipe(take(1))
-      ]).subscribe(([updated, newlyCreated, deleted]) => {
-        // Only include instances with matching className
-        const filteredUpdated = updated.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
-        const filteredNew = newlyCreated.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
-        const filteredDeleted = deleted.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
+        combineLatest([
+          this.store.select(updatedInstances()).pipe(take(1)),
+          this.store.select(newInstances()).pipe(take(1)),
+          this.store.select(deleteInstances()).pipe(take(1))
+        ]).subscribe(([updated, newlyCreated, deleted]) => {
+          // Only include instances with matching className
+          const filteredUpdated = updated.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
+          const filteredNew = newlyCreated.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
+          const filteredDeleted = deleted.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
 
-        // Optionally filter by displayName if searchKey is set
-        const filterBySearchKey = (arr: Instance[]) => {
-        if (this.searchKey && this.searchKey.trim().length > 0) {
-          const key = this.searchKey.trim().toLowerCase();
-          return arr.filter(inst => inst.displayName && inst.displayName.toLowerCase().includes(key));
-        }
-        return arr;
-        };
+          // Optionally filter by displayName if searchKey is set
+          const filterBySearchKey = (arr: Instance[]) => {
+            if (this.searchKey && this.searchKey.trim().length > 0) {
+              const key = this.searchKey.trim().toLowerCase();
+              return arr.filter(inst => inst.displayName && inst.displayName.toLowerCase().includes(key));
+            }
+            return arr;
+          };
 
-        const filteredUpdatedByKey = filterBySearchKey(filteredUpdated);
-        const filteredNewByKey = filterBySearchKey(filteredNew);
-        const filteredDeletedByKey = filterBySearchKey(filteredDeleted);
+          const filteredUpdatedByKey = filterBySearchKey(filteredUpdated);
+          const filteredNewByKey = filterBySearchKey(filteredNew);
+          const filteredDeletedByKey = filterBySearchKey(filteredDeleted);
 
-        // Combine: updated, new, and deleted instances, ensuring uniqueness by dbId
-        const instanceMap = new Map<number, Instance>();
-        [...filteredUpdatedByKey, ...filteredNewByKey, ...filteredDeletedByKey].forEach(inst => {
-        instanceMap.set(inst.dbId, inst);
+          // Combine: updated, new, and deleted instances, ensuring uniqueness by dbId
+          const instanceMap = new Map<number, Instance>();
+          [...filteredUpdatedByKey, ...filteredNewByKey, ...filteredDeletedByKey].forEach(inst => {
+            instanceMap.set(inst.dbId, inst);
+          });
+          const combined = Array.from(instanceMap.values());
+
+          // Apply skip and limit
+          const paged = combined.slice(this.skip, this.skip + this.pageSize);
+
+          const localInstList: InstanceList = {
+            instances: paged,
+            totalCount: combined.length
+          };
+          this.displayInstances(localInstList);
+          this.showProgressSpinner = false;
         });
-        const combined = Array.from(instanceMap.values());
-
-        // Apply skip and limit
-        const paged = combined.slice(this.skip, this.skip + this.pageSize);
-
-        const localInstList: InstanceList = {
-        instances: paged,
-        totalCount: combined.length
-        };
-        this.displayInstances(localInstList);
-        this.showProgressSpinner = false;
-      });
       }
       else {
-      console.debug(this.searchKey);
-      this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
-        .subscribe((instancesList) => {
-        this.displayInstances(instancesList);
-        this.showProgressSpinner = false;
-        });
+        console.debug(this.searchKey);
+        this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
+          .subscribe((instancesList) => {
+            this.displayInstances(instancesList);
+            this.showProgressSpinner = false;
+          });
       }
 
     if (this.dataService.isEventClass(this.className))
@@ -192,9 +192,14 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
     // When an instance is reset from deleted state, it should re-appear in the local list instances view
     subscription = this.instUtils.resetDeletedDbId$.subscribe(dbId => {
-      if(this.isLocal) {
-        if(dbId)
-        this.data = this.data.filter(inst => inst.dbId !== dbId);
+      if (this.isLocal) {
+        let updatedInsts = this.store.select(updatedInstances()).pipe(take(1)).subscribe(instances => {
+
+          if (dbId && !instances.find(inst => inst.dbId === dbId)) {
+            this.data = this.data.filter(inst => inst.dbId !== dbId);
+          }
+        })
+
       }
     });
     this.subscription.add(subscription);
@@ -221,14 +226,14 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       this.store.select(updatedInstances())
     ]).subscribe(([newInsts, updatedInsts]) => {
       if ((newInsts && newInsts.length > 0) || (updatedInsts && updatedInsts.length > 0)) {
-      const newMap = new Map<number, Instance>();
-      newInsts?.forEach(i => newMap.set(i.dbId, i));
-      if(this.isLocal) // Only update display name in local list instances view
-        updatedInsts?.forEach(i => newMap.set(i.dbId, i));
-      this.data = this.data.map(inst => {
-        const matched = newMap.get(inst.dbId);
-        return matched ? { ...inst, displayName: matched.displayName } : inst;
-      });
+        const newMap = new Map<number, Instance>();
+        newInsts?.forEach(i => newMap.set(i.dbId, i));
+        if (this.isLocal) // Only update display name in local list instances view
+          updatedInsts?.forEach(i => newMap.set(i.dbId, i));
+        this.data = this.data.map(inst => {
+          const matched = newMap.get(inst.dbId);
+          return matched ? { ...inst, displayName: matched.displayName } : inst;
+        });
       }
     });
     this.subscription.add(subscription);
@@ -605,6 +610,8 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     });
   }
 
+  // TODO: need to clean this: either remove take one or update each time 
+  // use combine latest to sync 
   handleBatchEdit() {
     if (this.needAdvancedSearch)
       this.doAdvancedSearch(0);
@@ -621,14 +628,14 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         map((instances) => {
           this.deletedDBIds = instances.map(inst => inst.dbId);
         })
-      ).subscribe();
+      )
 
       this.store.select(updatedInstances()).pipe(
         take(1),
         map((instances) => {
           this.updatedDBIds = instances.map(inst => inst.dbId);
         })
-      ).subscribe();
+      )
 
       const filteredData = this.data.filter(
         inst => !this.deletedDBIds.includes(inst.dbId) && !this.updatedDBIds.includes(inst.dbId)

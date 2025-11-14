@@ -221,6 +221,9 @@ export class InstanceEffects {
           this.storeDeletedInstances();
           if (action.type === DeleteInstanceActions.register_deleted_instance.type)
             this.instUtils.setMarkDeletionDbId(action.dbId);
+          else if( action.type === DeleteInstanceActions.reset_deleted_instance.type){
+            this.instUtils.setResetDeletedDbId(action.dbId);
+          }
         })
       ),
     { dispatch: false }

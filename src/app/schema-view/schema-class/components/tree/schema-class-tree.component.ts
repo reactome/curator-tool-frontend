@@ -59,7 +59,7 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
   }
 
   private _isSchemaClass = (schemaCls: SchemaClass, clsName: string): boolean => {
-    if (schemaCls.name === clsName) {
+    if (this.instUtils.isDescendantSchemaClass(schemaCls, this.service.getSchemaClass(clsName))) {
       return true;
     }
     let descendants = this._getDescendants(schemaCls);
