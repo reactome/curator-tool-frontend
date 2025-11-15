@@ -23,7 +23,7 @@ import { QAReport } from "../models/qa-report.model";
 export class DataService {
   // Cache fetched SchemaClass objects
   // This map caches loaded schema class that has attributes defined
-  name2SchemaClass: Map<string, SchemaClass> = new Map<string, SchemaClass>();
+  private name2SchemaClass: Map<string, SchemaClass> = new Map<string, SchemaClass>();
   // This map is used to make schema class traversal easy. The SchemaClass in this map
   // is not loaded, i.e., without attributes
   private name2SimpleClass: Map<string, SchemaClass> = new Map<string, SchemaClass>();
