@@ -71,6 +71,8 @@ Done
 - TODO: Automatically creating _Deleted instances has not been handled yet. Also need to select the reason for deletion from the DeletedControlledVocabulary list.
 - TODO: Update a PE or Event with stable identifier after changing the species should update its stable identifier. Right now it works fine at the server-side. However, the front-end has not updated the display yet.
 - Merge two instances 
+- This is more like a server side bug: When a stable identifier's display name is updated, its local version (front-end) is not updated. This needs to be changed.
+
 
 # Deletion related document kept here for the time being
  * The following may need to be collected into some document for test cases in the doc folder:
