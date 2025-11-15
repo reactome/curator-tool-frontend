@@ -11,6 +11,7 @@ import { SchemaClass } from "../../../../core/models/reactome-schema.model";
 import { DataService } from "../../../../core/services/data.service";
 import { Instance } from "src/app/core/models/reactome-instance.model";
 import { deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
+import { combineLatest } from "rxjs";
 
 
 /** Tree node with expandable and level information */
@@ -19,6 +20,7 @@ interface SchemaClassNode {
   name: string;
   level: number;
   count: number;
+  localCount: number;
   abstract: boolean;
 }
 
@@ -29,37 +31,76 @@ interface SchemaClassNode {
 })
 export class SchemaClassTreeComponent implements OnInit, OnDestroy {
 
-  // Use to correct class counts
-  private instancesDeleted: Observable<Instance[]> = this.store.select(deleteInstances())
-  private instancesCreated: Observable<Instance[]> = this.store.select(newInstances())
-  private instancesUpdated: Observable<Instance[]> = this.store.select(updatedInstances())
+  private name2schemaClass: Map<string, SchemaClass> = new Map<string, SchemaClass>();
+  private localCountMap: Map<string, number> = new Map<string, number>();
 
   private _getCountFromDatabase = (schemaCls: SchemaClass): number => {
     let count = schemaCls.count ? schemaCls.count : 0;
     return count;
   }
-  getLocalCount = (schemaCls: SchemaClass): number => {
-    const ids = new Set<number | string>();
-    this.instancesDeleted.pipe(take(1)).subscribe(instances => {
-      instances.forEach(inst => {
-        if (this._isSchemaClass(schemaCls, inst.schemaClassName)) ids.add(inst.dbId);
-      });
+
+  private _getLocalCount = (schemaCls: SchemaClass): number => {
+    let count = this.localCountMap.get(schemaCls.name) ?? 0;
+    return count;
+  }
+
+  setUpLocalCount() {
+    combineLatest([
+      this.store.select(deleteInstances()),
+      this.store.select(newInstances()),
+      this.store.select(updatedInstances())
+    ]).subscribe(([deleted, created, updated]) => {
+      this._setUpLocalCount(deleted, created, updated); // Reload the tree to update local counts
     });
-    this.instancesCreated.pipe(take(1)).subscribe(instances => {
-      instances.forEach(inst => {
-        if (this._isSchemaClass(schemaCls, inst.schemaClassName)) ids.add(inst.dbId);
-      });
+  }
+
+  private _setUpLocalCount(deleted: Instance[], created: Instance[], updated: Instance[]) {
+    this.resetLocalCounts();
+    const allInstances = [...deleted, ...created, ...updated];
+    allInstances.forEach(inst => {
+      let schemaClass = this.name2schemaClass.get(inst.schemaClassName);
+      if (schemaClass) {
+        this._incrementLocalCount(schemaClass);
+      }
     });
-    this.instancesUpdated.pipe(take(1)).subscribe(instances => {
-      instances.forEach(inst => {
-        if (this._isSchemaClass(schemaCls, inst.schemaClassName)) ids.add(inst.dbId);
-      });
-    });
-    return ids.size;
+    this.loadSchemaTree(false); 
+  }
+
+  // reset local counts to brute force recalculation
+  // always reset counts and then recalculate
+  private resetLocalCounts() {
+    this.localCountMap.clear();
+  }
+
+
+  // 'incrementLocalCount' recursively from child to parent 
+  // listening to getLocalCount, 
+  private _incrementLocalCount(schemaCls: SchemaClass) {
+    let currentCount = this.localCountMap.get(schemaCls.name) ?? 0;
+    this.localCountMap.set(schemaCls.name, currentCount + 1);
+    // recursively increment parent class localCount
+    if (schemaCls.parent) {
+      this._incrementLocalCount(schemaCls.parent);
+    }
+  }
+
+
+  private _isSchemaClassOf = () => {
+    let root = this.dataSource.data.at(0);
+
+    // Recursively build a map of each schema class and its children
+    const buildChildrenMap = (node: SchemaClass, map: Map<string, SchemaClass[]>) => {
+      if (!node) return;
+      map.set(node.name, node.children ?? []);
+      (node.children ?? []).forEach(child => buildChildrenMap(child, map));
+    };
+
+    const childrenMap = new Map<string, SchemaClass[]>();
+    buildChildrenMap(root!, childrenMap);
   }
 
   private _isSchemaClass = (schemaCls: SchemaClass, clsName: string): boolean => {
-    if (this.instUtils.isDescendantSchemaClass(schemaCls, this.service.getSchemaClass(clsName))) {
+    if (schemaCls.name === clsName) {
       return true;
     }
     let descendants = this._getDescendants(schemaCls);
@@ -88,6 +129,7 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
       name: node.name,
       // count: node.count ?? 0,
       count: this._getCountFromDatabase(node),
+      localCount: this._getLocalCount(node),
       level: level,
       abstract: node.abstract ?? false, // Default is false
     };
@@ -120,23 +162,8 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
   // When the component change from hidden to show, this method will be called
   // therefore loadSchemaTree
   ngOnInit(): void {
-    // let sub = this.store.select(deleteInstances()).subscribe(instances => {
-    //   this.instancesDeleted = instances;
-    //   this.loadSchemaTree
-    // });
-    // this.subscription.add(sub);
-    // sub = this.store.select(newInstances()).subscribe(instances => {
-    //   this.instancesCreated = instances;
-    //   this.loadSchemaTree();
-    // });
-    // this.subscription.add(sub);
-    // sub = this.store.select(updatedInstances()).subscribe(instances => {
-    //   this.instancesUpdated = instances;
-    //   this.loadSchemaTree();
-    // });
-    // this.subscription.add(sub);
-
     this.loadSchemaTree();
+    this.setUpLocalCount();
     // This view is on and off. Therefore, we need to turn this on and off 
     // to avoid it is called multiple times
     const updateTreeHandler = this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newNewDbId]) => {
@@ -146,6 +173,7 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
       this.loadSchemaTree(true); // Force to reload 
     });
     this.subscription.add(updateTreeHandler);
+    // this.setUpLocalCountOnce();
   }
 
   ngOnDestroy(): void {
@@ -156,6 +184,12 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
     // Take one only so that we don't need to unsubscribe
     this.service.fetchSchemaClassTree(skipCache).pipe(take(1)).subscribe(data => {
       this.dataSource.data = [data]
+      this.name2schemaClass.clear();
+      const buildMap = (schemaClass: SchemaClass) => {
+        this.name2schemaClass.set(schemaClass.name, schemaClass);
+        (schemaClass.children ?? []).forEach(child => buildMap(child));
+      };
+      buildMap(data);
       this.treeControl.expandAll();
     });
   }

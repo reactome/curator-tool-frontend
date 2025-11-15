@@ -36,7 +36,7 @@ Done
 - "((1,6)-alpha-glucosyl)poly((1,4)-alpha-glucosyl)glycogenin => poly{(1,4)-alpha-glucosyl} glycogenin + alpha-D-glucose" search field for this complicated
     display name cannot be parsed because of symbols
 - Refresh of updated list (occured after resetting deleted insts) 
-- there is still a bug in the table for rendering an additional line 
+- there is still a bug in the table for rendering an additional line done 
 - When an instance is added, propogate the increase of the count up the hierarchy to database object. 
  
 

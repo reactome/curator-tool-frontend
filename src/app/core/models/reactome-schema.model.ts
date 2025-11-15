@@ -25,9 +25,11 @@ export interface SchemaClass {
    */
   name: string;
   children?: SchemaClass[]; // Optional for the schema class table
+  parent?: SchemaClass; // Optional for the schema tree
   attributes?: SchemaAttribute[];
   abstract?: boolean; // Default should be false. Therefore this property is optional.
   count?: number; // The total count of instances in this class, including all descendants
+  localCount?: number; // The local count of instances in this class
   descendants?: Set<string>; // Used to check if a class is a descendant of another class
   // '@JavaClass'?: string; // Map back to Java.
 }
