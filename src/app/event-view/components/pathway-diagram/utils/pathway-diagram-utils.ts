@@ -300,18 +300,19 @@ export class PathwayDiagramUtilService {
             if (selectedElement === element)
                 return false; // Basically there is only one selected element, itself
             // Make sure one of them is a ProcessNode
-            if (element.classes().includes('SUB') && selectedElement.classes().includes('PhysicalEntity'))
+            // Apparently some pathway node is called "Interacting Pathway". Therefore, check pathway is better
+            if (element.classes().includes('Pathway') && selectedElement.classes().includes('PhysicalEntity'))
                 return true;
-            if (selectedElement.classes().includes('SUB') && element.classes().includes('PhysicalEntity'))
+            if (selectedElement.classes().includes('Pathway') && element.classes().includes('PhysicalEntity'))
                 return true;
         }
         else if (selectedElements.length == 2 && selectedElements.includes(element)) {
             const elm1 = selectedElements[0];
             const elm2 = selectedElements[1];
             // Make sure one of them is a ProcessNode
-            if (elm1.classes().includes('SUB') && elm2.classes().includes('PhysicalEntity'))
+            if (elm1.classes().includes('Pathway') && elm2.classes().includes('PhysicalEntity'))
                 return true;
-            if (elm2.classes().includes('SUB') && elm1.classes().includes('PhysicalEntity'))
+            if (elm2.classes().includes('Pathway') && elm1.classes().includes('PhysicalEntity'))
                 return true;
         }
         return false; // default

@@ -41,7 +41,7 @@ export class HyperEdge {
         // Remove all nodes
         this.id2object.forEach((value, key) => {
             // Keep the pathway node which may be used for other purpose
-            if (value.hasClass('SUB'))
+            if (value.hasClass('Pathway'))
                 return;
             if (value.hasClass('PhysicalEntity')) {
                 // We cannot just remove an element.
@@ -144,11 +144,11 @@ export class HyperEdge {
             if (!elm.isEdge())
                 continue;
             const source = elm.source();
-            if (source.hasClass('PhysicalEntity') || source.hasClass('SUB')) {
+            if (source.hasClass('PhysicalEntity') || source.hasClass('Pathway')) {
                 flSource = source;
             }
             const target = elm.target();
-            if (target.hasClass('PhysicalEntity') || target.hasClass('SUB')) {
+            if (target.hasClass('PhysicalEntity') || target.hasClass('Pathway')) {
                 flTarget = target;
             }
         }
@@ -218,7 +218,7 @@ export class HyperEdge {
         if (edgeType !== 'INPUT') // Need to get the point around the node bounding box
             targetPos = this.utils.findIntersection(points[points.length - 1], target);
         let sourcePos = source.position();
-        if (source.hasClass('PhysicalEntity') || source.hasClass('SUB')) 
+        if (source.hasClass('PhysicalEntity') || source.hasClass('Pathway'))
             sourcePos = this.utils.findIntersection(points[0], source);
         const relPos = this.utils.absoluteToRelative(sourcePos, targetPos, points);
         data.weights = relPos.weights.join(" ");
