@@ -63,7 +63,18 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
         this._incrementLocalCount(schemaClass);
       }
     });
-    this.loadSchemaTree(false); 
+    this.loadSchemaTree(false);
+  }
+
+  private setUpLocalCountOnce() {
+    combineLatest([
+      this.store.select(deleteInstances()),
+      this.store.select(newInstances()),
+      this.store.select(updatedInstances())
+    ]).pipe(take(1)).subscribe(([deleted, created, updated]) => {
+      this._setUpLocalCount(deleted, created, updated); // Reload the tree to update local counts
+    });
+
   }
 
   // reset local counts to brute force recalculation
@@ -173,7 +184,7 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
       this.loadSchemaTree(true); // Force to reload 
     });
     this.subscription.add(updateTreeHandler);
-    // this.setUpLocalCountOnce();
+    this.setUpLocalCountOnce();
   }
 
   ngOnDestroy(): void {
