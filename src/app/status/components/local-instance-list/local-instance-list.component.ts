@@ -29,6 +29,7 @@ export class UpdatedInstanceListComponent implements OnInit {
   deletedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
   newInstanceActionButtons: Array<ActionButton> = [ACTION_BUTTONS.DELETE, ACTION_BUTTONS.COMMIT];
 
+
   isSelection: boolean = false;
   newInstances: Instance[] = [];
   updatedInstances: Instance[] = [];
@@ -62,13 +63,17 @@ export class UpdatedInstanceListComponent implements OnInit {
         this.newInstances = instances;
     })
     this.store.select(updatedInstances()).subscribe((instances) => {
-      if (instances !== undefined)
-        this.updatedInstances = instances;
-    })
+      if (instances !== undefined) {
+      // Remove instances that are also in deletedInstances
+      this.updatedInstances = instances.filter(
+        inst => !this.deletedInstances.some(del => del.dbId === inst.dbId)
+      );
+      }
+    });
     this.store.select(deleteInstances()).subscribe((instances) => {
       if (instances !== undefined)
-        this.deletedInstances = instances;
-    })
+      this.deletedInstances = instances;
+    });
     this.getSelectedInstances();
   }
 
