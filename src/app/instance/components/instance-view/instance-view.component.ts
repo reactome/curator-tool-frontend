@@ -214,26 +214,21 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       .subscribe(([firstInstance, secondInstance]) => {
 
         // Load the first instance
-        if (firstInstance.schemaClass)
-          this._loadIntance(firstInstance, false, false, dbId1);
-        else {
-          this.dataService.handleSchemaClassForInstance(firstInstance).subscribe(inst => {
-            this._loadIntance(firstInstance, false, false, dbId1);
-          })
-        }
-        this.dbInstance = secondInstance;
-
-        this.showReferenceColumn = true;
-
-        // Load the second instance 
-        // if (secondInstance.schemaClass)
-        //   this._loadIntance(secondInstance, false, true, dbId2);
-        // else {
-        //   this.dataService.handleSchemaClassForInstance(secondInstance).subscribe(inst => {
-        //     this._loadIntance(secondInstance, false, true, dbId2);
-        //   })
-        // }
-
+        combineLatest([this.dataService.handleSchemaClassForInstance(firstInstance).pipe(take(1)),
+          this.dataService.handleSchemaClassForInstance(secondInstance).pipe(take(1))
+        ]).subscribe(([inst1, inst2]) => {
+          firstInstance = inst1;
+          secondInstance = inst2;
+          // Continue with the rest of the logic below
+          this.instance = firstInstance;
+          this.dbInstance = secondInstance;
+          this.viewHistory.length = 0;
+          this.addToViewHistory(firstInstance);
+          this.updateTitle(firstInstance);
+          this.changeTable(firstInstance);
+          this.showReferenceColumn = true;
+          this.showProgressSpinner = false;
+        });
       })
   }
 
@@ -360,7 +355,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.loadInstance(dbId, true, false, false);
 
     this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
-      dbInstance => this.dbInstance = dbInstance);
+      dbInstance => this.dataService.handleSchemaClassForInstance(dbInstance).pipe(take(1)));
     this.changeTable(this.instance!);
 
   }
@@ -468,7 +463,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   compareInstances() {
     const matDialogRef =
       this.listInstancesDialogService.openDialog({
-        schemaClassName: this.instance!.schemaClassName,
+        schemaClassName: "DatabaseObject",
         title: "Compare " + this.instance!.displayName + " to"
       });
     matDialogRef.afterClosed().subscribe((result) => {

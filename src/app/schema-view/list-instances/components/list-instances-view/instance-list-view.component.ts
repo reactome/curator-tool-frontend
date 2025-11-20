@@ -731,4 +731,8 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     } // Need to force to reload attributes there.
 
   }
+
+    compareInstances() {
+        this.router.navigate(["/schema_view/instance/" + this.selectedInstances[0].dbId.toString() + "/comparison/" + this.selectedInstances[1].dbId.toString()]);
+    }
 }
