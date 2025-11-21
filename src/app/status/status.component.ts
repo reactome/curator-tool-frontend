@@ -101,7 +101,7 @@ export class StatusComponent implements OnInit, OnDestroy {
 
   setDefaultPerson(): void {
     // Set or change the default person instance
-    const matDialogRef = this.instanceSelectionService.openDialog({schemaClassName: 'Person', title: 'Select default person'});
+    const matDialogRef = this.instanceSelectionService.openDialog({schemaClass: {name: 'Person'}, title: 'Select default person'});
     matDialogRef.afterClosed().subscribe((result) => {
       if (result)
         this.store.dispatch(DefaultPersonActions.set_default_person(result as Instance))

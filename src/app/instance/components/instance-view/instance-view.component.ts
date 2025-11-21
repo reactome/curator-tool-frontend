@@ -463,7 +463,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   compareInstances() {
     const matDialogRef =
       this.listInstancesDialogService.openDialog({
-        schemaClassName: "DatabaseObject",
+        schemaClass: this.instance!.schemaClass!,
         title: "Compare " + this.instance!.displayName + " to"
       });
     matDialogRef.afterClosed().subscribe((result) => {

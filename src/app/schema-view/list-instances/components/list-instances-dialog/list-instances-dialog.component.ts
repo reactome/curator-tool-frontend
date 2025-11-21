@@ -2,6 +2,7 @@ import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { ListInstancesDialogService } from './list-instances-dialog.service';
+import { SchemaClass } from 'src/app/core/models/reactome-schema.model';
 
 @Component({
   selector: 'app-list-instances-dialog',
@@ -12,14 +13,26 @@ export class ListInstancesDialogComponent {
   selected: string = '';
   candidateClasses: string[] = [];
   selectedInstances: Instance[] = [];
-  schemaClass: string = '';
+  schemaClasses: string = '';
   title: string = '';
   // Using constructor to correctly initialize values
-  constructor(@Inject(MAT_DIALOG_DATA) public data: {schemaClassName: string, title: string},
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { schemaClass: SchemaClass, title: string },
     public dialogRef: MatDialogRef<ListInstancesDialogService>) {
-    this.schemaClass =data.schemaClassName;
-    this.selected = data.schemaClassName;
+    this.schemaClasses = data.schemaClass.name;
+    this.candidateClasses = Array.from(this.grepConcreteClasses(data.schemaClass, new Set<string>()));
+    this.selected = data.schemaClass.name;
     this.title = data.title;
+  }
+
+  private grepConcreteClasses(schemaClass: SchemaClass, concreteClsNames: Set<string>): Set<string> {
+    if (!schemaClass.abstract)
+      concreteClsNames.add(schemaClass.name);
+    if (schemaClass.children) {
+      for (let child of schemaClass.children) {
+        this.grepConcreteClasses(child, concreteClsNames)
+      }
+    }
+    return concreteClsNames
   }
 
   onSelectRow(row: Instance) {

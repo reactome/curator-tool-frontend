@@ -317,7 +317,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       case ACTION_BUTTONS.COMPARE_INSTANCES.name: {
         const matDialogRef =
           this.listInstancesDialogService.openDialog({
-            schemaClassName: actionEvent.instance.schemaClassName,
+            schemaClass: actionEvent.instance.schemaClass!,
             title: "Compare " + actionEvent.instance.displayName + " to"
           });
         matDialogRef.afterClosed().subscribe((result) => {
