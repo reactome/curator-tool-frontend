@@ -1,4 +1,4 @@
-<div >
+<div>
   <app-bread-crumb [viewHistory]="viewHistory" (clickEvent)="changeTable($event)" *ngIf="needHistory">
   </app-bread-crumb>
   <ng-container *ngIf="showProgressSpinner">
@@ -19,8 +19,8 @@
           unchecked: (qaReportPassed === undefined), 
           passed: (qaReportPassed === true), 
           failed: (qaReportPassed === false)}">
-          <mat-icon>checklist</mat-icon>
-          <!-- <mat-expansion-panel (opened)="isUploadable()">
+            <mat-icon>checklist</mat-icon>
+            <!-- <mat-expansion-panel (opened)="isUploadable()">
             <p>You may have to commit your changes first for the QA check.</p>
           </mat-expansion-panel> -->
           </button>
@@ -53,10 +53,18 @@
             <mat-icon>compare_arrows</mat-icon>
           </button>
           <ng-container *ngIf="isEventClass()">
+            <ng-container *ngIf="isEventView; else elseTemplate">
+              <button mat-icon-button color="primary" class="v-center" (click)="openSchemaView()"
+                matTooltip="open schema view">
+                <mat-icon>account_tree</mat-icon>
+              </button>
+            </ng-container>
+            <ng-template #elseTemplate>
             <button mat-icon-button color="primary" class="v-center" (click)="showPathwayDiagram()"
               matTooltip="open event view">
               <mat-icon>account_tree</mat-icon>
             </button>
+            </ng-template>
           </ng-container>
         </ng-container>
         <button color="primary" mat-icon-button matTooltip="expand" class="v-center"
@@ -66,8 +74,7 @@
       </div>
     </div>
   </mat-toolbar>
-  <app-text-curation style="height: 80px;" [embedded]="true" [instanceView]="this" 
-    *ngIf="instance"></app-text-curation>
+  <app-text-curation style="height: 80px;" [embedded]="true" [instanceView]="this" *ngIf="instance"></app-text-curation>
 </div>
 <app-instance-table style="overflow: scroll; height: 100%" [instance]="instance" [referenceInstance]="dbInstance"
   (editedInstance)="updateTitle($event)" *ngIf="!showProgressSpinner && instance"

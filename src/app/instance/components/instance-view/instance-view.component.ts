@@ -40,6 +40,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   qaReportPassed?: boolean;
   qaReportToolTip: string = "Run QA Report";
 
+  // Flag to indicate if this is in event view
+  @Input() isEventView: boolean = false;
+
   // Control if we need to track the loading history
   @Input() needHistory: boolean = true;
   // Control if the route should be used for the links in the table, bookmarks, etc
@@ -479,5 +482,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   showPathwayDiagram() {
     this.router.navigate(["/event_view/instance/" + this.instance!.dbId]);
+  }
+
+  openSchemaView() {
+    this.router.navigate(["/schema_view/instance/" + this.instance!.dbId]);
   }
 }
