@@ -315,14 +315,17 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       }
 
       case ACTION_BUTTONS.COMPARE_INSTANCES.name: {
+        let schemaClass = this.dataService.getSchemaClass(actionEvent.instance.schemaClassName)
         const matDialogRef =
           this.listInstancesDialogService.openDialog({
-            schemaClass: actionEvent.instance.schemaClass!,
+            schemaClass: schemaClass,
             title: "Compare " + actionEvent.instance.displayName + " to"
           });
         matDialogRef.afterClosed().subscribe((result) => {
-          this.router.navigate(["/schema_view/instance/" + actionEvent.instance.dbId.toString() + "/comparison/" + result?.dbId.toString()]);
+          if(result)
+            this.router.navigate(["/schema_view/instance/" + actionEvent.instance.dbId.toString() + "/comparison/" + result?.dbId.toString()]);
         });
+        ;
         break;
       }
 
@@ -732,7 +735,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
   }
 
-    compareInstances() {
-        this.router.navigate(["/schema_view/instance/" + this.selectedInstances[0].dbId.toString() + "/comparison/" + this.selectedInstances[1].dbId.toString()]);
-    }
+  compareInstances() {
+    this.router.navigate(["/schema_view/instance/" + this.selectedInstances[0].dbId.toString() + "/comparison/" + this.selectedInstances[1].dbId.toString()]);
+  }
 }

@@ -1,5 +1,12 @@
 <h2 class="dialog_title" mat-dialog-title cdkdraghandle>{{title}}</h2>
 <mat-dialog-content style="width: 100%; height: 100%;">
+    <mat-select [(value)]="selected" class="drop_down" (selectionChange)="onSelectionChange()">
+    <ng-container>
+      <mat-option *ngFor="let value of candidateClasses" [value]="value">
+        {{value}}
+      </mat-option>
+    </ng-container>
+  </mat-select>
   <div>
     <ng-container *ngIf="this.selectedInstances.length > 0">
       <section class="scroll_panel">

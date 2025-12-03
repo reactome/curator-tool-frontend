@@ -3,6 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { ListInstancesDialogService } from './list-instances-dialog.service';
 import { SchemaClass } from 'src/app/core/models/reactome-schema.model';
+import combine from 'vectorious/dist/core/combine';
 
 @Component({
   selector: 'app-list-instances-dialog',
@@ -25,12 +26,10 @@ export class ListInstancesDialogComponent {
   }
 
   private grepConcreteClasses(schemaClass: SchemaClass, concreteClsNames: Set<string>): Set<string> {
-    if (!schemaClass.abstract)
-      concreteClsNames.add(schemaClass.name);
-    if (schemaClass.children) {
-      for (let child of schemaClass.children) {
-        this.grepConcreteClasses(child, concreteClsNames)
-      }
+    concreteClsNames.add(schemaClass.name);
+    if (schemaClass.parent) {
+      concreteClsNames.add(schemaClass.parent.name);
+      this.grepConcreteClasses(schemaClass.parent, concreteClsNames)
     }
     return concreteClsNames
   }
