@@ -271,6 +271,7 @@ onInstanceAttributeEdit(attributeValue: AttributeValue) {
   const matDialogRef =
     this.selectInstanceDialogService.openDialog(attributeValue);
   matDialogRef.afterClosed().subscribe((result) => {
+    if(result === undefined || result.length === 0) return; // Do nothing
     this.attributeEditService.addInstanceViaSelect(attributeValue, result, this._instance!, replace);
     this.finishEdit(attributeValue.attribute.name, attributeValue.value);
     this.cdr.detectChanges();

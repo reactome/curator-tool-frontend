@@ -41,7 +41,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   qaReportToolTip: string = "Run QA Report";
 
   // Flag to indicate if this is in event view
-  @Input() isEventView: boolean = false;
+  @Input() isInEventView: boolean = false;
 
   // Control if we need to track the loading history
   @Input() needHistory: boolean = true;

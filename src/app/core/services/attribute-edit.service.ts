@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
-import { Instance } from "../models/reactome-instance.model";
+import { Instance, ReviewStatus } from "../models/reactome-instance.model";
 import { InstanceUtilities } from "./instance.service";
 import { Store } from "@ngrx/store";
 import { UpdateInstanceActions, NewInstanceActions } from "src/app/instance/state/instance.actions";
@@ -14,7 +14,7 @@ import { DataService } from "./data.service";
 /**
  * This class is used to fetch instance and class definition from the RESTful API.
  */
-export class AttributeEditService implements PostEditListener {
+export class AttributeEditService {
     private preventEvent: boolean = false; // Set to false by default
 
     public constructor(private instUtil: InstanceUtilities,
@@ -24,19 +24,6 @@ export class AttributeEditService implements PostEditListener {
         // Initialize any other properties if needed
     ) {
     }
-    donePostEdit(instance: Instance, editedAttributeName: string | undefined): boolean {
-        throw new Error("Method not implemented.");
-    }
-
-    // public fetchInstancesInBatch(data: Instance[]): Instance[] {
-    //     let databaseObjects: Instance[] = [];
-    //     this.dataService.fetchInstanceInBatch(data.map(inst => inst.dbId)).subscribe(
-    //         (instances: any) => {
-    //             databaseObjects = instances;
-    //         }
-    //     );
-    //     return databaseObjects;
-    // }
 
     public deleteInstanceAttribute(attributeValue: AttributeValue, instance: Instance): void {
         console.debug('deleteInstanceAttribute: ', attributeValue);
@@ -135,7 +122,6 @@ export class AttributeEditService implements PostEditListener {
                 value.splice(attributeValue.index, deleteCount, ...result);
             }
         }
-        //this.finishEdit(attributeValue.attribute.name, value, instance);
     }
 
     public onNoInstanceAttributeEdit(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean) {

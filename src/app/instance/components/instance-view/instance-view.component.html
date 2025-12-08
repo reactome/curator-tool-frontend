@@ -53,7 +53,7 @@
             <mat-icon>compare_arrows</mat-icon>
           </button>
           <ng-container *ngIf="isEventClass()">
-            <ng-container *ngIf="isEventView; else elseTemplate">
+            <ng-container *ngIf="isInEventView; else elseTemplate">
               <button mat-icon-button color="primary" class="v-center" (click)="openSchemaView()"
                 matTooltip="open schema view">
                 <mat-icon>account_tree</mat-icon>
