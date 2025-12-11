@@ -1,19 +1,9 @@
 <h2 class="dialog_title" mat-dialog-title cdkdraghandle>Delete "{{instance.displayName}} [{{instance.dbId}}]"</h2>
 <mat-dialog-content style="width: 100%;">
   <!-- <ng-container *ngIf="numberOfRefs > 0; else noReferrers"> -->
+  <h4 style="color: red;" *ngIf="isStructuralChange()">*Deletion of this instance could cause structural changes and demote the review status of other instances.</h4>
   <h4>Would you like to view referrers of {{instance.displayName}} before deleting?</h4>
-  <button mat-button (click)="showReferrers()" cdkFocusInitial>{{ showReferrersDialog? "Hide Referrers" : "Show
-    Referrers"}}</button>
-  <!-- </ng-container> -->
-
-  <h4>The following instances would experience a structural change to {{instance.displayName}} being deleted?</h4>
-  <ng-container *ngFor="let ref of this.instance2ReviewStatusChange">
-    <ng-container *ngFor="let inst of ref.referrers">
-      {{inst.displayName}} via attribute "{{ref.attributeName}}"
-    </ng-container>
-  </ng-container>
-
-
+  <button mat-button (click)="showReferrers()" cdkFocusInitial>{{ showReferrersDialog? "Hide Referrers" : "Show Referrers"}}</button>
 
   <ng-template #noReferrers>
     <h4>There are no referrers to "{{instance.displayName}}"</h4>

@@ -4,6 +4,8 @@ import { Instance, Referrer, ReviewStatus } from 'src/app/core/models/reactome-i
 import { ConfirmDeleteDialogService } from "./confirm-delete-dialog/confirm-delete-dialog.service";
 import { DataService } from 'src/app/core/services/data.service';
 import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
+import { CLASSES_AFFECTING_STRUCTURE } from 'src/app/core/models/reactome-schema.model';
+import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 /**
  * A dialog component to show referrers of an instance.
@@ -17,15 +19,13 @@ export class DeletionDialogComponent {
   selected: string = '';
   showReferrersDialog: boolean = false;
   numberOfRefs: number = 0;
-  instance2ReviewStatusChange: Array<Referrer> = new Array<Referrer>();
 
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public instance: Instance,
     public dialogRef: MatDialogRef<DeletionDialogComponent>,
     private confirmDeleteDialogService: ConfirmDeleteDialogService,
-    private reviewStatusCheck: ReviewStatusCheck,
-    private dataService: DataService) {
-      this.isStructuralDeletion();
+    private dataService: DataService,
+    private instUtils: InstanceUtilities,) {
   }
 
   onCancel() {
@@ -45,18 +45,14 @@ export class DeletionDialogComponent {
     this.numberOfRefs = refs;
   }
 
-  isStructuralDeletion(): boolean {
-    // Just adding logic to get referrers here. This will mean that referrers will be gotten every time an inst is marked for deletion.
-  this.dataService.getReferrers(this.instance.dbId!).subscribe(referrers => {
-      this.numberOfRefs = referrers.length;
-      for (let ref of referrers) {
-        if (this.reviewStatusCheck.checkChangeReviewStatus(this.instance, ref.attributeName)) {
-          this.instance2ReviewStatusChange.push(ref);
-        };
+  isStructuralChange(): boolean {
+    let structuralClasses = CLASSES_AFFECTING_STRUCTURE
+    for(let cls of structuralClasses) {
+      if (this.instUtils.isSchemaClass(this.instance, cls, this.dataService)) {
+        return true;
       }
-    });
-    console.log('isStructuralDeletion: ', this.instance2ReviewStatusChange);
-    return this.instance2ReviewStatusChange.length > 0;
+    }
+    return false;
   }
 
 }

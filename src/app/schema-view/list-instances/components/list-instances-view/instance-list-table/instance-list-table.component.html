@@ -97,16 +97,16 @@
     </div>
   </ng-container>
   <ng-container *ngIf="!isSelection">
-    <tr class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row)}" mat-row
+    <tr class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row), highlightRow: highlightRow}" mat-row
       *matRowDef="let row; columns: displayedColumns;"></tr>
   </ng-container>
   <ng-container *ngIf="isSelection">
-    <tr class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row)}" mat-row (click)="onRowClick(row)"
+    <tr class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row), highlightRow: highlightRow}" mat-row (click)="onRowClick(row)"
       *matRowDef="let row; columns: displayedColumns;"></tr>
   </ng-container>
 
   <!-- Row shown when there is no matching data. -->
-  <tr class="mat-row" *matNoDataRow>
+  <tr class="mat-row" [ngClass]="{highlightRow: highlightRow}" *matNoDataRow>
     <td class="mat-cell" colspan="4">
       <div *ngIf="showEmptyMessage">No instance matching the search key</div>
     </td>

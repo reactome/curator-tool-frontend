@@ -91,7 +91,7 @@ export class ReviewStatusCheck implements PostEditOperation {
             if (reviewStatus.dbId === ReviewStatus.threeStar.dbId) {
             instance.attributes.set('previousReviewStatus', reviewStatus);
             instance.attributes?.set('reviewStatus', ReviewStatus.oneStar);
-            instance.isStructuralChange = true;
+            instance.isStructureModified = true;
             this.dialog.open(InfoDialogComponent, {
                 data: {
                 title: 'ReviewStatus Demoted',
@@ -104,7 +104,7 @@ export class ReviewStatusCheck implements PostEditOperation {
             if (reviewStatus.dbId === ReviewStatus.fourStar.dbId || reviewStatus.dbId === ReviewStatus.fiveStar.dbId) {
             instance.attributes.set('previousReviewStatus', reviewStatus);
             instance.attributes?.set('reviewStatus', ReviewStatus.twoStar);
-            instance.isStructuralChange = true;
+            instance.isStructureModified = true;
             this.dialog.open(InfoDialogComponent, {
                 data: {
                 title: 'ReviewStatus Demoted',

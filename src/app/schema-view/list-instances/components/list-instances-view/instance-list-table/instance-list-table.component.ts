@@ -35,6 +35,7 @@ export class InstanceListTableComponent implements OnInit {
   @Input() showCheckMark: boolean = true;
   @Input() selectedInstanceListName: string = SelectedInstancesList.mainInstanceList;
   @Input() isLocal: boolean = false;
+  @Input() highlightRow: boolean = false;
   // @Input() instanceURL: string | undefined; 
   @Output() urlClickEvent = new EventEmitter<Instance>();
   @Output() selectionChangeEvent = new EventEmitter<Instance[]>();

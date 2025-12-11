@@ -595,6 +595,8 @@ export class InstanceUtilities {
             displayName: source.displayName,
             schemaClassName: source.schemaClassName,
         }
+        if(source.isStructureModified)
+            instance.isStructureModified = source.isStructureModified;
         if (source.modifiedAttributes && source.modifiedAttributes.length)
             instance.modifiedAttributes = [...source.modifiedAttributes]
         // Need to manually convert the instance to a string because the use of map for attributes

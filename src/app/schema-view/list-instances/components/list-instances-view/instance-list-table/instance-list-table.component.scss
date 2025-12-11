@@ -84,6 +84,9 @@ th {
     text-decoration: wavy underline;
     color: #81c995;
   }
+  &.highlightRow{
+    color: red;
+  } 
 }
 
 .action-buttons-row {

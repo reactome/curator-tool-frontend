@@ -24,3 +24,9 @@
   border: solid;
 }
 
+.referrer_label {
+  &.indicateStructuralIssue{
+    color: red;
+  }
+}
+

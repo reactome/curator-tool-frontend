@@ -22,7 +22,7 @@ export interface Instance {
   defaultPersonId?: number; // Used to create InstanceEdit for the created and modified slot at the server-side.
   // Don't use Map and use JSON object instead for easy converting to JSON
   newInstOld2NewId?: Map<number, number>; // Used to map old dbId to new dbId for new instances referred after commit
-  isStructuralChange?: boolean; // Flag to indicate if this instance has structural changes
+  isStructureModified?: boolean; // Flag to indicate if this instance has structural changes
 }
 
 export interface InstanceList {
@@ -39,11 +39,11 @@ export enum SelectedInstancesList {
 
 
 export const ReviewStatus = {
-  oneStar: {dbId: 9821380, displayName: 'one star'} as Instance,
-  twoStar: {dbId: 9821384, displayName: 'two stars'} as Instance,
-  threeStar: {dbId: 9821383, displayName: 'three stars'} as Instance,
-  fourStar:  {dbId: 9821385, displayName: 'four stars'} as Instance,
-  fiveStar: {dbId: 9821382, displayName: 'five stars'} as Instance
+  oneStar: {dbId: 9821380, displayName: 'one star', schemaClassName: 'ReviewStatus'} as Instance,
+  twoStar: {dbId: 9821384, displayName: 'two stars', schemaClassName: 'ReviewStatus'} as Instance,
+  threeStar: {dbId: 9821383, displayName: 'three stars', schemaClassName: 'ReviewStatus'} as Instance,
+  fourStar:  {dbId: 9821385, displayName: 'four stars', schemaClassName: 'ReviewStatus'} as Instance,
+  fiveStar: {dbId: 9821382, displayName: 'five stars', schemaClassName: 'ReviewStatus'} as Instance
 }
 
 /**
