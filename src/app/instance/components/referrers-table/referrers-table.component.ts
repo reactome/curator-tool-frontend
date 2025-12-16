@@ -74,8 +74,8 @@ export class ReferrersTableComponent {
 
   // For each referrer, check if changing the attribute would cause review status change
   // This structural change will apply to all instances contained by the attribute
-  isStructuralChange(attributeName: string): boolean {
-    return this.reviewStatusCheck.checkChangeReviewStatus(this.instance!, attributeName);
+  isStructuralChange(inst: Instance): boolean {
+    return this.instance2ReviewStatusChange.some(i => i.dbId === inst.dbId);
   }
 
 }

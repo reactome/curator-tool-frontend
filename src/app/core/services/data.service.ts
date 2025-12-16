@@ -27,6 +27,8 @@ export class DataService {
   // This map is used to make schema class traversal easy. The SchemaClass in this map
   // is not loaded, i.e., without attributes
   private name2SimpleClass: Map<string, SchemaClass> = new Map<string, SchemaClass>();
+  // Marking dbIds that will indicate a structural change upon deletion of a reference
+  private structuralChangeOnDeletionDbIds: Map<{attributeName: string, instance: Instance}, Array<number>> = new Map<{attributeName: string, instance: Instance}, Array<number>>();
   // Cache fetched instances
   // List of URLs
   private id2instance: Map<number, Instance> = new Map<number, Instance>();
@@ -1228,4 +1230,25 @@ export class DataService {
       catchError((err: Error) => this.handleErrorMessage(err))
     );
   }
+
+  // TODO: think about how to reset this when needed
+  // During undo delete, remove referrers from this set
+  setStructuralChangeOnDeletion(refInfo: {attributeName: string, instance: Instance}, affectedDbIds: Array<number>): void { 
+    this.structuralChangeOnDeletionDbIds.set(refInfo, affectedDbIds);
+  }
+
+  // Check if an instance has been marked as having a structural change in the front end 
+  hasStructuralChangeOnDeletion(dbId: number): boolean {
+    return this.structuralChangeOnDeletionDbIds.values().next().value?.includes(dbId)!;
+  }
+
+  removeStructuralChangeOnDeletion(dbId: number): void {
+    this.structuralChangeOnDeletionDbIds.delete([...this.structuralChangeOnDeletionDbIds.keys()].find(key => 
+      this.structuralChangeOnDeletionDbIds.get(key)?.includes(dbId)! )!);
+  }
+
+  getStructuralChangeOnDeletionDbIds(): Map<{attributeName: string, instance: Instance}, Array<number>> {
+    return this.structuralChangeOnDeletionDbIds;
+  }
+
 }

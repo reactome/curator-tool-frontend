@@ -8,7 +8,7 @@
     <ng-container *ngFor="let referrers of instanceList; let i = index">
 
       <div>
-        <mat-label class="referrer_label" [ngClass]="{indicateStructuralIssue: isStructuralChange(referrers.attributeName)}">{{referrers.attributeName}}: {{referrers.referrers.length}}</mat-label>
+        <mat-label class="referrer_label" [ngClass]="{indicateStructuralIssue: isStructuralChange(referrers.referrers[0])}">{{referrers.attributeName}}: {{referrers.referrers.length}}</mat-label>
         <button (click)="openTable(referrers.attributeName)" mat-button><mat-icon>arrow_drop_down</mat-icon></button>
 
       </div>
@@ -20,7 +20,7 @@
         [dataSource]="referrers.referrers" 
         [showCheckMark]="false" 
         [actionButtons]="actionButtons"
-        [highlightRow]="isStructuralChange(referrers.attributeName)"
+        [highlightRow]="isStructuralChange(referrers.referrers[0])"
         (actionEvent)="handleAction($event)" (urlClickEvent)="navigateUrl($event)">
       </app-instance-list-table>
     </ng-container>
