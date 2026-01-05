@@ -11,12 +11,15 @@ import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.serv
 import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
-import { combineLatest, concat, Subscription, take } from 'rxjs';
+import { combineLatest, concat, Observable, of, Subscription, take } from 'rxjs';
 import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service';
 import { deleteInstances } from '../../state/instance.selectors';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { DeletionService } from '../../deletion-commit/utils/deletion.service';
+import { DeletedInstanceAttributeFilter } from 'src/app/core/instance-view-filters/DeletedInstanceAttributeFilter';
+import { DisplayNameViewFilter } from 'src/app/core/instance-view-filters/DisplayNameViewFilter';
+import { InstanceViewFilter } from 'src/app/core/instance-view-filters/InstanceViewFilter';
 
 @Component({
   selector: 'app-instance-view',
@@ -57,6 +60,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   // Track deleted instances
   private deletedInstances: Instance[] = [];
 
+  instanceViewFilters: InstanceViewFilter[] = [];
+
+
   readonly dialog = inject(MatDialog);
 
 
@@ -71,6 +77,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     private deletionDialogService: DeletionDialogService,
     private listInstancesDialogService: ListInstancesDialogService,
     private deletionService: DeletionService) {
+    this.instanceViewFilters = this.setUpInstanceViewFilters();
   }
 
   ngOnInit() {
@@ -218,7 +225,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
         // Load the first instance
         combineLatest([this.dataService.handleSchemaClassForInstance(firstInstance).pipe(take(1)),
-          this.dataService.handleSchemaClassForInstance(secondInstance).pipe(take(1))
+        this.dataService.handleSchemaClassForInstance(secondInstance).pipe(take(1))
         ]).subscribe(([inst1, inst2]) => {
           firstInstance = inst1;
           secondInstance = inst2;
@@ -272,6 +279,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   private _loadIntance(instance: Instance, resetHistory: boolean, needComparsion: boolean, dbId: number) {
     this.dbInstance = undefined;
     this.instance = instance;
+    this.runInstanceViewFilters(instance!).subscribe(filteredInstance => {
+      this.instance = filteredInstance;
+    });
     this.changeTable(instance);
     if (resetHistory)
       this.viewHistory.length = 0;
@@ -486,5 +496,23 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   openSchemaView() {
     this.router.navigate(["/schema_view/instance/" + this.instance!.dbId]);
+  }
+
+  // Create a list to hold all service instances
+  private setUpInstanceViewFilters(): InstanceViewFilter[] {
+    return [
+      new DeletedInstanceAttributeFilter(this.instUtils, this.store),
+      //new ReviewStatusUpdateFilter(this.dataService, this.instUtils, this.store, this.reviewStatusCheck),
+      new DisplayNameViewFilter(this.dataService, this.instUtils, this.store),
+    ];
+  }
+  // Function to run all registered services
+  private runInstanceViewFilters(instance: Instance): Observable<Instance> {
+    this.instanceViewFilters.forEach(service => {
+      service.filter(instance).subscribe(filteredInstance => {
+        instance = filteredInstance;
+      });
+    });
+    return of(instance);
   }
 }

@@ -60,7 +60,6 @@ export class InstanceTableComponent implements PostEditListener {
   inEditing: boolean = false;
   referenceColumnTitle: string = 'Reference Value';
   valueColumnTitle: string = 'Value';
-  instanceViewFilters: InstanceViewFilter[] = [];
 
   categoryNames = Object.keys(AttributeCategory).filter((v) =>
     isNaN(Number(v))
@@ -105,10 +104,8 @@ export class InstanceTableComponent implements PostEditListener {
   @Input() set instance(instance: Instance | undefined) {
     if (this.inEditing)
       return; // In editing now. Nothing to change from outside.
-    this.runInstanceViewFilters(instance!).subscribe(filteredInstance => {
-    this._instance = filteredInstance;
+    this._instance = instance;
     this.updateTableContent();
-    });
   }
 
   @Input() set referenceInstance(refInstance: Instance | undefined) {
@@ -144,7 +141,6 @@ export class InstanceTableComponent implements PostEditListener {
       let categoryKey = category as keyof typeof AttributeCategory;
       this.categories.set(AttributeCategory[categoryKey], true);
     }
-    this.instanceViewFilters = this.setUpInstanceViewFilters();
 
     this.dragDropService.register('instance-table');
 
@@ -555,23 +551,6 @@ export class InstanceTableComponent implements PostEditListener {
     return this.disableEditing;
   }
 
-    // Create a list to hold all service instances
-  private setUpInstanceViewFilters(): InstanceViewFilter[] {
-    return [
-      new DeletedInstanceAttributeFilter(this.instUtil, this.store),
-      // new ReviewStatusUpdateFilter(this, this.utils, this.store, this.reviewStatusCheck)
-      new DisplayNameViewFilter(this.dataService, this.instUtil, this.store),
-    ];
-  }
-  // Function to run all registered services
-  private runInstanceViewFilters(instance: Instance): Observable<Instance> {
-    this.instanceViewFilters.forEach(service => {
-      service.filter(instance).subscribe(filteredInstance => {
-        instance = filteredInstance;
-      });
-    });
-    return of(instance);
-  }
 
   // // Only Event Classes should be checked
   // checkReviewStatus(instance: Instance): Instance {
