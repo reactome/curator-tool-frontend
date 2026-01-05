@@ -19,7 +19,7 @@ export class ReviewStatusCheck implements PostEditOperation {
     postEdit(instance: Instance,
         editedAttributeName: string | undefined): boolean {
 
-        this.handleReviewStatus(instance, { attribute: { name: editedAttributeName! } } as any);
+        this.handleReviewStatus(instance, editedAttributeName!);
         return true;
     }
 
@@ -79,15 +79,15 @@ export class ReviewStatusCheck implements PostEditOperation {
     }
 
 
-    public handleReviewStatus(instance: Instance, attributeValue: AttributeValue): void {
-        if (this.isAttributeStructuralChange(instance, attributeValue.attribute.name)) {
+    public handleReviewStatus(instance: Instance, attributeName: string): boolean {
+        let reviewStatusChanged = false;
+        if (this.isAttributeStructuralChange(instance, attributeName)) {
             // Regardless of review status, mark structure modified
             instance.isStructureModified = true;
             let reviewStatus = instance.attributes?.get('reviewStatus');
 
             if (reviewStatus === undefined || reviewStatus.dbId === ReviewStatus.oneStar.dbId || reviewStatus.dbId === ReviewStatus.twoStar.dbId) {
-                return; // do nothing, review status for one and two stars are handled internally 
-                return; // do nothing, review status for one and two stars are handled internally 
+                return false; // do nothing, review status for one and two stars are handled internally 
             }
 
             // Structural changes for a three star review should be demoted to a one star review status 
@@ -100,6 +100,7 @@ export class ReviewStatusCheck implements PostEditOperation {
                         message: 'Your edit changes the structure of the event instance. The reviewStatus has been demoted.',
                     }
                 });
+                reviewStatusChanged = true;
             }
 
             // structural changes for four and five star reviews should be demoted to a two star review status
@@ -112,10 +113,11 @@ export class ReviewStatusCheck implements PostEditOperation {
                         message: 'Your edit changes the structure of the event instance. The reviewStatus has been demoted.',
                     }
                 });
+                reviewStatusChanged = true;
             }
         }
 
-        else if (this.isInternalReviewedAdded(instance, attributeValue.attribute.name)) {
+        else if (this.isInternalReviewedAdded(instance, attributeName)) {
             // ensureReviewStatusInLocal(e.getEditingComponent());
             let preStatus = instance.attributes?.get('reviewStatus');
             if (preStatus === null ||
@@ -126,9 +128,11 @@ export class ReviewStatusCheck implements PostEditOperation {
             else if (preStatus?.dbId === ReviewStatus.twoStar.dbId) {
                 instance.attributes.set('previousReviewStatus', preStatus);
                 instance.attributes?.set('reviewStatus', ReviewStatus.fourStar);
+                reviewStatusChanged = true;
             }
+
         }
-        else if (this.isExternalReviewedAdded(instance, attributeValue.attribute.name)) {
+        else if (this.isExternalReviewedAdded(instance, attributeName)) {
             // ensureReviewStatusInLocal(e.getEditingComponent());
             let preStatus = instance.attributes?.get('reviewStatus');
             if (preStatus === null ||
@@ -139,5 +143,6 @@ export class ReviewStatusCheck implements PostEditOperation {
                 instance.attributes?.set('reviewStatus', ReviewStatus.fiveStar);
             }
         }
+        return reviewStatusChanged;
     }
 }

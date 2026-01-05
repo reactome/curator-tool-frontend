@@ -187,7 +187,7 @@ export class InstanceUtilities {
         return allClsNames.has(className);
     }
 
-    isDescendantSchemaClass(className: SchemaClass, parentClass: SchemaClass | undefined): boolean { 
+    isDescendantSchemaClass(className: SchemaClass, parentClass: SchemaClass | undefined): boolean {
         return this._isSchemaClass(className.name, parentClass);
     }
 
@@ -285,6 +285,10 @@ export class InstanceUtilities {
         return dataCopy;
     }
 
+    cloneInstance(instance: Instance): Instance {  
+        return JSON.parse(JSON.stringify(instance));
+    }
+
     /**
        * Attributes returned from the server are kept as JavaScript object since JavaScript really
        * doesn't care about the type. Therefore, we need to do some converting here.
@@ -363,10 +367,11 @@ export class InstanceUtilities {
             array.splice(index, 1);
     }
 
-    applyLocalDeletions(inst: Instance, deletedInsts: Instance[]) {
+    applyLocalDeletions(inst: Instance, deletedInsts: Instance[]): boolean {
         if (!deletedInsts || deletedInsts.length === 0 || !inst.attributes)
-            return;
+            return false;
         const dbIds = deletedInsts.map(inst => inst.dbId);
+        let modified = false;
         for (let att of inst.attributes.keys()) {
             const attValue = inst.attributes.get(att);
             if (!attValue)
@@ -380,6 +385,7 @@ export class InstanceUtilities {
                         attValue.splice(i, 1);
                         i--;
                         this.addToModifiedAttribute(att, inst);
+                        modified = true;
                     }
                 }
             }
@@ -390,15 +396,18 @@ export class InstanceUtilities {
                     // Remove this attribute since nothing is there
                     inst.attributes.delete(att);
                     this.addToModifiedAttribute(att, inst);
+                    modified = true;
                 }
             }
         }
+        return modified;
     }
 
-    validateReferDisplayName(inst: Instance, updatedInsts: Instance[]) {
+    validateReferenceDisplayName(inst: Instance, updatedInsts: Instance[]): boolean {
         if (!inst.attributes)
-            return;
+            return false;
         const dbId2updatedInst = new Map(updatedInsts.map(inst => [inst.dbId, inst]));
+        let instanceAttributeNameChanged = false;
         for (let att of inst.attributes.keys()) {
             const attValue = inst.attributes.get(att);
             if (!attValue)
@@ -411,8 +420,11 @@ export class InstanceUtilities {
                     // check update first
                     if (dbId2updatedInst.has(attValue1.dbId)) {
                         const currentName = dbId2updatedInst.get(attValue1.dbId)?.displayName;
-                        if (currentName !== attValue1.displayName)
+                        if (currentName !== attValue1.displayName) {
                             attValue1.displayName = currentName;
+                            instanceAttributeNameChanged = true;
+                        }
+
                     }
                     else if (this.dbId2displayName.has(attValue1.dbId)) {
                         // updated instance may be reset or committed, so it is not in the updatedInst
@@ -420,8 +432,10 @@ export class InstanceUtilities {
                         // Its display name has been changed
                         // Since this is a shell instance, no need to set attribute here
                         const currentName = this.dbId2displayName.get(attValue1.dbId);
-                        if (currentName !== attValue1.displayName)
+                        if (currentName !== attValue1.displayName) {
                             attValue1.displayName = currentName;
+                            instanceAttributeNameChanged = true;
+                        }
                     }
                 }
             }
@@ -430,14 +444,18 @@ export class InstanceUtilities {
             else if (attValue.dbId) {
                 if (dbId2updatedInst.has(attValue.dbId)) {
                     const currentName = dbId2updatedInst.get(attValue.dbId)?.displayName;
-                    if (currentName !== attValue.displayName)
+                    if (currentName !== attValue.displayName) {
                         attValue.displayName = currentName;
+                        instanceAttributeNameChanged = true;
+                    }
                 }
                 else if (this.dbId2displayName.has(attValue.dbId)) {
                     attValue.displayName = this.dbId2displayName.get(attValue.dbId);
+                    instanceAttributeNameChanged = true;
                 }
             }
         }
+        return instanceAttributeNameChanged;
     }
 
     /**
@@ -595,7 +613,7 @@ export class InstanceUtilities {
             displayName: source.displayName,
             schemaClassName: source.schemaClassName,
         }
-        if(source.isStructureModified)
+        if (source.isStructureModified)
             instance.isStructureModified = source.isStructureModified;
         if (source.modifiedAttributes && source.modifiedAttributes.length)
             instance.modifiedAttributes = [...source.modifiedAttributes]

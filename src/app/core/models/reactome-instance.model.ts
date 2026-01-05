@@ -23,6 +23,7 @@ export interface Instance {
   // Don't use Map and use JSON object instead for easy converting to JSON
   newInstOld2NewId?: Map<number, number>; // Used to map old dbId to new dbId for new instances referred after commit
   isStructureModified?: boolean; // Flag to indicate if this instance has structural changes
+  source?: Instance; // Determine if an instance is from the original database copy or staged user edits. 
 }
 
 export interface InstanceList {

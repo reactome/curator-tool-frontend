@@ -29,11 +29,12 @@ import {
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
 import { deleteInstances } from 'src/app/instance/state/instance.selectors';
-import { map, take } from 'rxjs';
+import { map, Observable, of, take } from 'rxjs';
 import { DataService } from 'src/app/core/services/data.service';
 import { InstanceComparisonDataSource } from './instance-table-comparison.model';
-import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
-
+import { InstanceViewFilter } from 'src/app/core/instance-view-filters/InstanceViewFilter';
+import { DeletedInstanceAttributeFilter } from 'src/app/core/instance-view-filters/DeletedInstanceAttributeFilter';
+import { DisplayNameViewFilter } from 'src/app/core/instance-view-filters/DisplayNameViewFilter';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -59,6 +60,7 @@ export class InstanceTableComponent implements PostEditListener {
   inEditing: boolean = false;
   referenceColumnTitle: string = 'Reference Value';
   valueColumnTitle: string = 'Value';
+  instanceViewFilters: InstanceViewFilter[] = [];
 
   categoryNames = Object.keys(AttributeCategory).filter((v) =>
     isNaN(Number(v))
@@ -103,12 +105,10 @@ export class InstanceTableComponent implements PostEditListener {
   @Input() set instance(instance: Instance | undefined) {
     if (this.inEditing)
       return; // In editing now. Nothing to change from outside.
-    this._instance = instance;
-    if (this.dataService.isEventClass(this._instance?.schemaClassName!)){
-      this.checkReviewStatus(this._instance!);
-    }
-
+    this.runInstanceViewFilters(instance!).subscribe(filteredInstance => {
+    this._instance = filteredInstance;
     this.updateTableContent();
+    });
   }
 
   @Input() set referenceInstance(refInstance: Instance | undefined) {
@@ -138,13 +138,14 @@ export class InstanceTableComponent implements PostEditListener {
     private instUtil: InstanceUtilities,
     private attributeEditService: AttributeEditService,
     private dataService: DataService,
-    private reviewStatusCheck: ReviewStatusCheck,
     private postEditService: PostEditService, // This is used to perform post-edit actions
   ) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
       this.categories.set(AttributeCategory[categoryKey], true);
     }
+    this.instanceViewFilters = this.setUpInstanceViewFilters();
+
     this.dragDropService.register('instance-table');
 
     this.store.select(deleteInstances()).pipe(
@@ -314,6 +315,11 @@ export class InstanceTableComponent implements PostEditListener {
     instance: Instance,
     editedAttributeName: string | undefined
   ): boolean {
+    this.updateTableContent();
+    return true;
+  }
+
+  donePreProcess(instance: Instance): boolean {
     this.updateTableContent();
     return true;
   }
@@ -549,16 +555,63 @@ export class InstanceTableComponent implements PostEditListener {
     return this.disableEditing;
   }
 
-    // Only Event Classes should be checked
-  checkReviewStatus(instance: Instance): void {
-
-    for(let refs of this.dataService.getStructuralChangeOnDeletionDbIds()) {
-      if(refs[1].includes(instance.dbId)) {
-        let attributeName = refs[0].attributeName;
-        let attValue = instance.attributes.get(attributeName);
-        this.reviewStatusCheck.handleReviewStatus(instance, attValue);
-      }
-
-    }
+    // Create a list to hold all service instances
+  private setUpInstanceViewFilters(): InstanceViewFilter[] {
+    return [
+      new DeletedInstanceAttributeFilter(this.instUtil, this.store),
+      // new ReviewStatusUpdateFilter(this, this.utils, this.store, this.reviewStatusCheck)
+      new DisplayNameViewFilter(this.dataService, this.instUtil, this.store),
+    ];
   }
+  // Function to run all registered services
+  private runInstanceViewFilters(instance: Instance): Observable<Instance> {
+    this.instanceViewFilters.forEach(service => {
+      service.filter(instance).subscribe(filteredInstance => {
+        instance = filteredInstance;
+      });
+    });
+    return of(instance);
+  }
+
+  // // Only Event Classes should be checked
+  // checkReviewStatus(instance: Instance): Instance {
+
+  //   let instanceCopy = instance;
+  //   // check the list of deleted instances to see if there is any structural change to be removed
+  //   // if a deleted instance is included in ie: hasEvent, input, output, catalystActivity, regulatedBy, change review status
+  //   this.store.select(deleteInstances()).pipe(
+  //     take(1),
+  //     map((instances) => {
+  //       let deletedDbIds = instances.map(inst => inst.dbId);
+  //       this.dataService.fetchInstanceFromDatabase(instance.dbId!, false).subscribe(dbInstance => {
+  //         if (dbInstance.attributes) {
+  //           let dbIdInstanceAtts = dbInstance.attributes;
+  //           let structuralAttributes = ['hasEvent', 'input', 'output', 'catalystActivity', 'regulatedBy'];
+  //           for (let attName of dbIdInstanceAtts.keys()) {
+  //             if (structuralAttributes.includes(attName)) {
+  //               let attValue = dbIdInstanceAtts.get(attName);
+  //               if (attValue) {
+  //                 if (attValue instanceof Array) {
+  //                   for (let val of attValue) {
+  //                     if (deletedDbIds.includes(val.dbId)) {
+  //                       this.reviewStatusCheck.handleReviewStatus(instanceCopy, attName);
+  //                       break;
+  //                     }
+  //                   }
+  //                 }
+  //                 else {
+  //                   if (deletedDbIds.includes(attValue.dbId)) {
+  //                     this.reviewStatusCheck.handleReviewStatus(instanceCopy, attValue.attribute.name);
+  //                   }
+  //                 }
+  //               }
+  //             }
+  //           }
+  //         }
+  //       })
+  //     }),
+  //     take(1)
+  //   ).subscribe();
+  //   return instanceCopy;
+  // }
 }

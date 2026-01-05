@@ -73,6 +73,7 @@ Done
 - TODO: Update a PE or Event with stable identifier after changing the species should update its stable identifier. Right now it works fine at the server-side. However, the front-end has not updated the display yet.
 - Merge two instances 
 - This is more like a server side bug: When a stable identifier's display name is updated, its local version (front-end) is not updated. This needs to be changed.
+- Indiate attributes are passively or actively changed with a color 
 
 
 # Deletion related document kept here for the time being

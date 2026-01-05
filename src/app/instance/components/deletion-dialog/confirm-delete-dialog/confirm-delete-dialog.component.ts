@@ -44,18 +44,5 @@ export class ConfirmDeleteDialogComponent {
     }
     this.dialogRef.close(this.instance);
     // this.router.navigate(["/schema_view"])
-
-    this.dataService.getReferrers(this.instance!.dbId).subscribe(referrers => {
-      let reviewStatusChnageInstances: Array<Instance> = new Array<Instance>();
-      referrers.forEach(ref => {
-        for (let inst of ref.referrers) {
-          if (this.reviewStatusCheck.checkChangeReviewStatus(inst, ref.attributeName)) {
-            reviewStatusChnageInstances.push(inst);
-          };
-        }
-      let refInfo = {attributeName: ref.attributeName, instance: this.instance};
-      this.dataService.setStructuralChangeOnDeletion(refInfo, reviewStatusChnageInstances.map(inst => inst.dbId));
-      })
-    })
   } 
 }
