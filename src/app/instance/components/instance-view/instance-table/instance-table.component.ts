@@ -35,6 +35,8 @@ import { InstanceComparisonDataSource } from './instance-table-comparison.model'
 import { InstanceViewFilter } from 'src/app/core/instance-view-filters/InstanceViewFilter';
 import { DeletedInstanceAttributeFilter } from 'src/app/core/instance-view-filters/DeletedInstanceAttributeFilter';
 import { DisplayNameViewFilter } from 'src/app/core/instance-view-filters/DisplayNameViewFilter';
+import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
+import { ReviewStatusUpdateFilter } from 'src/app/core/instance-view-filters/ReviewStatusUpdateFilter';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -105,10 +107,12 @@ export class InstanceTableComponent implements PostEditListener {
   @Input() set instance(instance: Instance | undefined) {
     if (this.inEditing)
       return; // In editing now. Nothing to change from outside.
-    this.runInstanceViewFilters(instance!).subscribe(filteredInstance => {
-    this._instance = filteredInstance;
+    // this.runInstanceViewFilters(instance!).subscribe(filteredInstance => {
+    // this._instance = filteredInstance;
+    // this.updateTableContent();
+    // });
+    this._instance = instance;
     this.updateTableContent();
-    });
   }
 
   @Input() set referenceInstance(refInstance: Instance | undefined) {
@@ -139,6 +143,7 @@ export class InstanceTableComponent implements PostEditListener {
     private attributeEditService: AttributeEditService,
     private dataService: DataService,
     private postEditService: PostEditService, // This is used to perform post-edit actions
+    private reviewStatusCheck: ReviewStatusCheck
   ) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
@@ -559,7 +564,7 @@ export class InstanceTableComponent implements PostEditListener {
   private setUpInstanceViewFilters(): InstanceViewFilter[] {
     return [
       new DeletedInstanceAttributeFilter(this.instUtil, this.store),
-      // new ReviewStatusUpdateFilter(this, this.utils, this.store, this.reviewStatusCheck)
+      new ReviewStatusUpdateFilter(this.dataService, this.instUtil, this.store, this.reviewStatusCheck),
       new DisplayNameViewFilter(this.dataService, this.instUtil, this.store),
     ];
   }

@@ -6,6 +6,7 @@ import { Subject, take } from "rxjs";
 import { Store } from "@ngrx/store";
 import { deleteInstances } from "src/app/instance/state/instance.selectors";
 import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
+import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table-comparison.model";
 
 /**
  * Group a set of utility methods here for easy access to all other classes.
@@ -285,7 +286,7 @@ export class InstanceUtilities {
         return dataCopy;
     }
 
-    cloneInstance(instance: Instance): Instance {  
+    cloneInstance(instance: Instance): Instance {
         return JSON.parse(JSON.stringify(instance));
     }
 
@@ -367,7 +368,7 @@ export class InstanceUtilities {
             array.splice(index, 1);
     }
 
-    applyLocalDeletions(inst: Instance, deletedInsts: Instance[]): boolean {
+    applyLocalDeletions(inst: Instance, deletedInsts: Instance[], apply: boolean = true): boolean {
         if (!deletedInsts || deletedInsts.length === 0 || !inst.attributes)
             return false;
         const dbIds = deletedInsts.map(inst => inst.dbId);
@@ -382,6 +383,7 @@ export class InstanceUtilities {
                     if (!attValue1.dbId)
                         break; // This is not a instance type attribute
                     if (dbIds.includes(attValue1.dbId)) {
+                        if(!apply) return true;
                         attValue.splice(i, 1);
                         i--;
                         this.addToModifiedAttribute(att, inst);
@@ -393,6 +395,7 @@ export class InstanceUtilities {
             // But we can check if it has dbId
             else if (attValue.dbId) {
                 if (dbIds.includes(attValue.dbId)) {
+                    if(!apply) return true;
                     // Remove this attribute since nothing is there
                     inst.attributes.delete(att);
                     this.addToModifiedAttribute(att, inst);
@@ -403,7 +406,7 @@ export class InstanceUtilities {
         return modified;
     }
 
-    validateReferenceDisplayName(inst: Instance, updatedInsts: Instance[]): boolean {
+    validateReferenceDisplayName(inst: Instance, updatedInsts: Instance[], apply: boolean = true): boolean {
         if (!inst.attributes)
             return false;
         const dbId2updatedInst = new Map(updatedInsts.map(inst => [inst.dbId, inst]));
@@ -417,24 +420,16 @@ export class InstanceUtilities {
                     const attValue1 = attValue[i];
                     if (!attValue1.dbId)
                         break; // This is not a instance type attribute
-                    // check update first
+                    let currentName: string | undefined = undefined;
                     if (dbId2updatedInst.has(attValue1.dbId)) {
-                        const currentName = dbId2updatedInst.get(attValue1.dbId)?.displayName;
-                        if (currentName !== attValue1.displayName) {
-                            attValue1.displayName = currentName;
-                            instanceAttributeNameChanged = true;
-                        }
-
+                        currentName = dbId2updatedInst.get(attValue1.dbId)?.displayName;
+                    } else if (this.dbId2displayName.has(attValue1.dbId)) {
+                        currentName = this.dbId2displayName.get(attValue1.dbId);
                     }
-                    else if (this.dbId2displayName.has(attValue1.dbId)) {
-                        // updated instance may be reset or committed, so it is not in the updatedInst
-                        // any more
-                        // Its display name has been changed
-                        // Since this is a shell instance, no need to set attribute here
-                        const currentName = this.dbId2displayName.get(attValue1.dbId);
-                        if (currentName !== attValue1.displayName) {
+                    if (currentName !== undefined && currentName !== attValue1.displayName) {
+                        instanceAttributeNameChanged = true;
+                        if (apply) {
                             attValue1.displayName = currentName;
-                            instanceAttributeNameChanged = true;
                         }
                     }
                 }
@@ -442,16 +437,17 @@ export class InstanceUtilities {
             // We cannot use instanceof to check if attValue is an Instance
             // But we can check if it has dbId
             else if (attValue.dbId) {
+                let currentName: string | undefined = undefined;
                 if (dbId2updatedInst.has(attValue.dbId)) {
-                    const currentName = dbId2updatedInst.get(attValue.dbId)?.displayName;
-                    if (currentName !== attValue.displayName) {
-                        attValue.displayName = currentName;
-                        instanceAttributeNameChanged = true;
-                    }
+                    currentName = dbId2updatedInst.get(attValue.dbId)?.displayName;
+                } else if (this.dbId2displayName.has(attValue.dbId)) {
+                    currentName = this.dbId2displayName.get(attValue.dbId);
                 }
-                else if (this.dbId2displayName.has(attValue.dbId)) {
-                    attValue.displayName = this.dbId2displayName.get(attValue.dbId);
+                if (currentName !== undefined && currentName !== attValue.displayName) {
                     instanceAttributeNameChanged = true;
+                    if (apply) {
+                        attValue.displayName = currentName;
+                    }
                 }
             }
         }
@@ -759,5 +755,40 @@ export class InstanceUtilities {
                 selectedInsts.push(inst);
         }
         this.selectedInstancesSubject.get(listName)?.next([...selectedInsts]);
+    }
+
+    isInstanceModified(inst: Instance): boolean {
+        let schemaAttributes: SchemaAttribute[] = inst.schemaClass?.attributes ? inst.schemaClass.attributes : [];
+        for (const attribute of schemaAttributes) {
+            let values = inst.attributes?.get(attribute.name);
+            let referenceValues = inst.source?.attributes?.get(attribute.name);
+            if (!values)
+                values = [];
+            if (!Array.isArray(values)) { values = [values]; }
+            if (!referenceValues)
+                return false; // If no source, no filter has been applied, no edits
+                //referenceValues = [];
+            if (!Array.isArray(referenceValues)) { referenceValues = [referenceValues]; }
+            // if the values for a shared attribute differ, add them to be displayed 
+
+            if (values.length !== referenceValues.length) {
+                return true;
+            }
+
+            for (let i = 0; i < values.length; i++) {
+                const val = values[i];
+                const refVal = referenceValues[i];
+                if (attribute.type === AttributeDataType.INSTANCE) {
+                    if (val?.dbId && refVal?.dbId && val.dbId !== refVal.dbId) {
+                        return true; // once one value is different, add the whole attribute
+                    }
+                } else {
+                    if (val !== refVal) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

@@ -11,12 +11,17 @@ import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.serv
 import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
-import { combineLatest, concat, Subscription, take } from 'rxjs';
+import { combineLatest, concat, Observable, of, Subscription, take } from 'rxjs';
 import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service';
 import { deleteInstances } from '../../state/instance.selectors';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { DeletionService } from '../../deletion-commit/utils/deletion.service';
+import { DeletedInstanceAttributeFilter } from 'src/app/core/instance-view-filters/DeletedInstanceAttributeFilter';
+import { DisplayNameViewFilter } from 'src/app/core/instance-view-filters/DisplayNameViewFilter';
+import { InstanceViewFilter } from 'src/app/core/instance-view-filters/InstanceViewFilter';
+import { ReviewStatusUpdateFilter } from 'src/app/core/instance-view-filters/ReviewStatusUpdateFilter';
+import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
 
 @Component({
   selector: 'app-instance-view',
@@ -39,6 +44,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   compareInstanceDialogResult$: number = 0;
   qaReportPassed?: boolean;
   qaReportToolTip: string = "Run QA Report";
+  instanceViewFilters: InstanceViewFilter[] = [];
 
   // Flag to indicate if this is in event view
   @Input() isInEventView: boolean = false;
@@ -70,7 +76,11 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     private instUtils: InstanceUtilities,
     private deletionDialogService: DeletionDialogService,
     private listInstancesDialogService: ListInstancesDialogService,
-    private deletionService: DeletionService) {
+    private deletionService: DeletionService,
+    private reviewStatusCheck: ReviewStatusCheck
+  ) {
+    this.instanceViewFilters = this.setUpInstanceViewFilters();
+
   }
 
   ngOnInit() {
@@ -218,7 +228,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
         // Load the first instance
         combineLatest([this.dataService.handleSchemaClassForInstance(firstInstance).pipe(take(1)),
-          this.dataService.handleSchemaClassForInstance(secondInstance).pipe(take(1))
+        this.dataService.handleSchemaClassForInstance(secondInstance).pipe(take(1))
         ]).subscribe(([inst1, inst2]) => {
           firstInstance = inst1;
           secondInstance = inst2;
@@ -271,18 +281,39 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   private _loadIntance(instance: Instance, resetHistory: boolean, needComparsion: boolean, dbId: number) {
     this.dbInstance = undefined;
-    this.instance = instance;
-    this.changeTable(instance);
-    if (resetHistory)
-      this.viewHistory.length = 0;
-    this.addToViewHistory(instance);
-    this.showProgressSpinner = false;
-    this.updateTitle(instance);
-    if (needComparsion) {
-      this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(instance => {
-        this.dbInstance = instance;
+    this.runInstanceViewFilters(instance).subscribe(filteredInstance => {
+      this.instance = filteredInstance;
+      this.changeTable(instance);
+      if (resetHistory)
+        this.viewHistory.length = 0;
+      this.addToViewHistory(instance);
+      this.showProgressSpinner = false;
+      this.updateTitle(instance);
+      if (needComparsion) {
+        this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(instance => {
+          this.dbInstance = instance;
+        });
+      }
+    });
+
+  }
+
+  // Create a list to hold all service instances
+  private setUpInstanceViewFilters(): InstanceViewFilter[] {
+    return [
+      new DeletedInstanceAttributeFilter(this.instUtils, this.store),
+      new ReviewStatusUpdateFilter(this.dataService, this.instUtils, this.store, this.reviewStatusCheck),
+      new DisplayNameViewFilter(this.dataService, this.instUtils, this.store),
+    ];
+  }
+  // Function to run all registered services
+  private runInstanceViewFilters(instance: Instance): Observable<Instance> {
+    this.instanceViewFilters.forEach(service => {
+      service.filter(instance).subscribe(filteredInstance => {
+        instance = filteredInstance;
       });
-    }
+    });
+    return of(instance);
   }
 
   addToViewHistory(instance: Instance) {

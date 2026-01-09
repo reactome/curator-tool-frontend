@@ -277,6 +277,7 @@ export class InstanceEffects {
       JSON.stringify({ object: object, timestamp: Date.now() })); // Use timestamp to force firing the window event.
   }
 
+  // TODO: test the attributes of the instance, do we need to use the instance service 'handleInstanceAttributes' method here?
   private parseLocalStorageObject(content: string | undefined | null) {
     const value = JSON.parse(content || '{}');
     return JSON.parse(value.object || '{}');

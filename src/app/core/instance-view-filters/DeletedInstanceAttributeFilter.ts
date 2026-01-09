@@ -19,10 +19,17 @@ export class DeletedInstanceAttributeFilter implements InstanceViewFilter {
         return this.store.select(deleteInstances()).pipe(
             take(1),
             map(deletedInsts => {
-                if (this.utils.applyLocalDeletions(instance, deletedInsts)) {
+                // check if local deletions should be applied before deleting, otherwise source is changed 
+                if (this.utils.applyLocalDeletions(instance, deletedInsts, false)) {
                     // create a copy of the instance to avoid mutating the original one
-                    let instanceCopy = this.utils.cloneInstance(instance);
-                    instanceCopy.source = instance.source ?? instance;
+                    let shemaClass = instance.schemaClass;
+                    let source = instance.source ?? instance;
+                    let instanceCopyJSON = this.utils.stringifyInstance(instance);
+                    let instanceCopy = JSON.parse(instanceCopyJSON);
+                    instanceCopy.schemaClass = shemaClass;
+                    instanceCopy.source = source;
+                    this.utils.handleInstanceAttributes(instanceCopy);
+                    this.utils.applyLocalDeletions(instanceCopy, deletedInsts);
                     return instanceCopy;
                 }
                 else

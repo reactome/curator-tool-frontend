@@ -21,9 +21,9 @@ export class ReviewStatusUpdateFilter implements InstanceViewFilter {
 
     filter(instance: Instance): Observable<Instance> {
         // Only check review status for event instances 
-        if (!this.dataService.isEventClass(instance.schemaClass?.name!)) { 
-            return of(instance);
-        }
+        // if (!this.dataService.isEventClass(instance.schemaClass?.name!)) {
+        //     return of(instance);
+        // }
 
         return this.store.select(deleteInstances()).pipe(
             take(1),
@@ -41,8 +41,9 @@ export class ReviewStatusUpdateFilter implements InstanceViewFilter {
                                     for (let val of attValue) {
                                         if (deletedDbIds.includes(val.dbId)) {
                                             if (this.reviewStatusCheck.handleReviewStatus(instance, attName)) {
-                                                let instanceCopy = this.utils.cloneInstance(instance);
-                                                instanceCopy.source = instance.source ?? instance;
+                                                let instanceCopyJSON = this.utils.stringifyInstance(instance);
+                                                let instanceCopy = JSON.parse(instanceCopyJSON); instanceCopy.source = instance.source ?? instance;
+                                                this.utils.handleInstanceAttributes(instanceCopy);
                                                 return instanceCopy;
                                             }
                                         }
@@ -51,15 +52,16 @@ export class ReviewStatusUpdateFilter implements InstanceViewFilter {
                                 else {
                                     if (deletedDbIds.includes(attValue.dbId)) {
                                         if (this.reviewStatusCheck.handleReviewStatus(instance, attValue.attribute.name)) {
-                                            let instanceCopy = this.utils.cloneInstance(instance);
-                                            instanceCopy.source = instance.source ?? instance;
+                                            let instanceCopyJSON = this.utils.stringifyInstance(instance);
+                                            let instanceCopy = JSON.parse(instanceCopyJSON); instanceCopy.source = instance.source ?? instance;
+                                            this.utils.handleInstanceAttributes(instanceCopy);
                                             return instanceCopy;
                                         }
                                     }
                                 }
                             }
                         }
-                }
+                    }
                 }
                 return instance;
             })
