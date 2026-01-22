@@ -35,6 +35,7 @@ export class InstanceTableRowElementComponent implements OnInit {
   @Input() value: any;
   @Input() index: number = -1; // The position for a value in multi-slot
   @Input() blockRoute: boolean = false;
+  @Input() passiveEdit: boolean = false;
 
   // The following properties and attributes are used for DnD from bookmarks
   private isMouseIn: boolean = false;

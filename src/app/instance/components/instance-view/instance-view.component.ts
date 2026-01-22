@@ -390,7 +390,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
     this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
       dbInstance => this.dataService.handleSchemaClassForInstance(dbInstance).pipe(take(1)));
-    this.changeTable(this.instance!);
+          this.changeTable(this.instance!);
 
   }
 

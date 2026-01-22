@@ -41,9 +41,14 @@ export class ReviewStatusUpdateFilter implements InstanceViewFilter {
                                     for (let val of attValue) {
                                         if (deletedDbIds.includes(val.dbId)) {
                                             if (this.reviewStatusCheck.handleReviewStatus(instance, attName)) {
+                                                // create a copy of the instance to avoid mutating the original one
+                                                let shemaClass = instance.schemaClass;
+                                                let source = instance.source ?? instance;
                                                 let instanceCopyJSON = this.utils.stringifyInstance(instance);
                                                 let instanceCopy = JSON.parse(instanceCopyJSON); instanceCopy.source = instance.source ?? instance;
                                                 this.utils.handleInstanceAttributes(instanceCopy);
+                                                instanceCopy.schemaClass = shemaClass;
+                                                instanceCopy.source = source;
                                                 return instanceCopy;
                                             }
                                         }
@@ -52,9 +57,14 @@ export class ReviewStatusUpdateFilter implements InstanceViewFilter {
                                 else {
                                     if (deletedDbIds.includes(attValue.dbId)) {
                                         if (this.reviewStatusCheck.handleReviewStatus(instance, attValue.attribute.name)) {
+                                            // create a copy of the instance to avoid mutating the original one
+                                            let shemaClass = instance.schemaClass;
+                                            let source = instance.source ?? instance;
                                             let instanceCopyJSON = this.utils.stringifyInstance(instance);
                                             let instanceCopy = JSON.parse(instanceCopyJSON); instanceCopy.source = instance.source ?? instance;
                                             this.utils.handleInstanceAttributes(instanceCopy);
+                                            instanceCopy.schemaClass = shemaClass;
+                                            instanceCopy.source = source;
                                             return instanceCopy;
                                         }
                                     }

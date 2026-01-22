@@ -9,7 +9,7 @@
     <ng-template [ngSwitchCase]="DATA_TYPES.STRING">
       <mat-form-field (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="form-field" appearance="outline"
         subscriptSizing="dynamic">
-        <textarea style="height: fit-content" matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize"
+        <textarea  style="height: fit-content" matInput cdkTextareaAutosize #autosize="cdkTextareaAutosize"
           cdkAutosizeMinRows="1" cdkAutosizeMaxRows="5" [formControl]="control" (change)="onChange()"
           (keydown)="onKeyDown($event)">
           </textarea>
@@ -39,7 +39,8 @@
         <ng-container *ngIf="value !== undefined">
           <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
             [queryParamsHandling]="'preserve'"
-            class="padding span-menu-trigger"
+            class="padding span-menu-trigger valueText"
+            [ngClass]="{passiveEdit: passiveEdit}"
             style="cursor: pointer; text-decoration: underline;">
             {{value.displayName}}
             [{{value.dbId}}]
@@ -48,7 +49,7 @@
       </ng-container>
       <ng-template #editInstance>
         <div (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="valueRow"
-          [ngClass]="{dragging: dragging, red: !color, green: color}">
+          [ngClass]="{dragging: dragging, red: !color, green: color, passiveEdit: passiveEdit}">
           <!-- TODO: Also need to determine if it is required or disabled-->
           <ng-container *ngIf="value !== undefined; else elseblock">
             <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"

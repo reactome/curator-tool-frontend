@@ -16,6 +16,7 @@ export interface AttributeValue {
   index?: number // index of the value for an multi-valued slot
   editAction?: EDIT_ACTION // May be used to encode editing action
   referenceValue?: any // To be used for comparison
+  passiveEdit?: boolean // To indicate if the edit is passive (e.g., review status change due to deletion of linked instance)
 }
 
 export interface DragDropStatus {

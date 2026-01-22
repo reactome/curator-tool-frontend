@@ -468,6 +468,8 @@ export class InstanceTableComponent implements PostEditListener {
     return (instanceVal !== refVal);
   }
 
+  // values removed or edited passively should be compared to the instance value 
+  // to display the passive index of a multivariate attribute 
   getValueTypeForComparison(instanceVal: any, refVal: any) {
     // One singular instance
     if (instanceVal.dbId) {
@@ -560,7 +562,7 @@ export class InstanceTableComponent implements PostEditListener {
     return this.disableEditing;
   }
 
-    // Create a list to hold all service instances
+  // Create a list to hold all service instances
   private setUpInstanceViewFilters(): InstanceViewFilter[] {
     return [
       new DeletedInstanceAttributeFilter(this.instUtil, this.store),
@@ -576,6 +578,109 @@ export class InstanceTableComponent implements PostEditListener {
       });
     });
     return of(instance);
+  }
+
+  compareDbToSourceInstance(attName: string, index?: number): boolean {
+    if (!this._instance?.modifiedAttributes?.includes(attName)) return false;
+    let dbVal = this.referenceInstance?.attributes.get(attName);
+    let instanceVal = this._instance?.attributes.get(attName);
+    let refVal = this._instance?.source?.attributes.get(attName);
+    let found = false;
+    let dbItem =  dbVal?.at(index) ?? dbVal;
+
+    if (Array.isArray(instanceVal)) {
+      found = instanceVal.some(val => (val?.dbId && dbItem?.dbId) ? val.dbId === dbItem.dbId : val === dbItem) &&
+        refVal.some((val: any) => (val?.dbId && dbItem?.dbId) ? val.dbId === dbItem.dbId : val === dbItem);
+    } else {
+      found = (instanceVal?.dbId && dbItem?.dbId) ? instanceVal.dbId === dbItem.dbId : instanceVal === dbItem &&
+        (refVal?.dbId && dbItem?.dbId) ? instanceVal.dbId === dbItem.dbId : instanceVal === dbItem;
+    }
+
+
+    return !found;
+  }
+
+  compareToSourceInstance(attName: string, index?: number): boolean {
+    if (this._instance?.modifiedAttributes?.includes(attName)) return false;
+    if (!this._instance?.source) return false;
+    let instanceVal = this._instance?.attributes.get(attName);
+    let refVal = this._instance?.source?.attributes.get(attName);
+    if ((instanceVal && instanceVal.dbId) || instanceVal instanceof Array) {
+      if (index)
+        return this.singleValueCheck(attName, index!);
+      else
+        return this.getValueTypeForComparison(instanceVal, refVal);
+
+    }
+    return (instanceVal !== refVal);
+  }
+
+  singleValueCheck(attName: string, index: number): boolean {
+    let isModified = this._instance?.modifiedAttributes?.includes(attName);
+    let instanceVal = this._instance?.attributes.get(attName);
+    if (!instanceVal) return false;
+    if (!Array.isArray(instanceVal)) return false;
+    let refVal = this._instance?.source?.attributes.get(attName);
+    if (!refVal) return false;
+    if (!Array.isArray(refVal)) return false;
+    if (instanceVal.at(index) && refVal?.at(index)) {
+      if (instanceVal.at(index).dbId && refVal.at(index).dbId) {
+        // if(isModified && this._instance?.modifiedAttributes?.at(attName))
+        return instanceVal.at(index).dbId !== refVal.at(index).dbId;
+      } else {
+        return instanceVal.at(index) !== refVal.at(index);
+      }
+    }
+    return false;
+  }
+
+
+  // TODO: specify passively applied changes to the user. These edits do not affect the instance structure,
+  // but are applied as filters via the instance view filters. For example, review status changes due to deletions of linked instances.
+  // Compare instance attributes to source attributes to determine passively applied changes.
+
+  // three versions of the instance: staged instance, database instance, source instance
+  // the staged instance contains the active edits and passive edits
+  // database instance contains no active or passive edits
+  // source instance contains no active edits, but may contain passive edits
+  // if an attribute value in the staged instance differs from the source instance, it is an active edit
+  private filterPassiveEdits(attributeValues: AttributeValue[]): void {
+    if (this.instance?.source) {
+      attributeValues = attributeValues.filter(att => {
+        let values = this.instance?.attributes?.get(att.attribute.name);
+        let referenceValues = this.instance?.source?.attributes?.get(att.attribute.name);
+        if (!values)
+          values = [];
+        if (!Array.isArray(values)) { values = [values]; }
+        if (!referenceValues)
+          referenceValues = [];
+        if (!Array.isArray(referenceValues)) { referenceValues = [referenceValues]; }
+        // if the values for a shared attribute differ, add them to be displayed 
+
+        if (values.length !== referenceValues.length) {
+          values.forEach((val: AttributeValue) => val.passiveEdit = true);
+          return true;
+        }
+
+        for (let i = 0; i < values.length; i++) {
+          const val = values[i];
+          const refVal = referenceValues[i];
+          if (att.attribute.type === AttributeDataType.INSTANCE) {
+            if (val?.dbId && refVal?.dbId && val.dbId !== refVal.dbId) {
+              val.passiveEdit = true;
+              return true; // once one value is different, add the whole attribute
+            }
+          } else {
+            if (val !== refVal) {
+              val.passiveEdit = true;
+              return true;
+            }
+          }
+        }
+        return false;
+      });
+
+    }
   }
 
   // // Only Event Classes should be checked
