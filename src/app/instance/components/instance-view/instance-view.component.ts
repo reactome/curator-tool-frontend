@@ -20,6 +20,8 @@ import { DeletionService } from '../../deletion-commit/utils/deletion.service';
 import { DeletedInstanceAttributeFilter } from 'src/app/core/instance-view-filters/DeletedInstanceAttributeFilter';
 import { DisplayNameViewFilter } from 'src/app/core/instance-view-filters/DisplayNameViewFilter';
 import { InstanceViewFilter } from 'src/app/core/instance-view-filters/InstanceViewFilter';
+import { ReviewStatusUpdateFilter } from 'src/app/core/instance-view-filters/ReviewStatusUpdateFilter';
+import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
 
 @Component({
   selector: 'app-instance-view',
@@ -61,9 +63,6 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   // Track deleted instances
   private deletedInstances: Instance[] = [];
 
-  instanceViewFilters: InstanceViewFilter[] = [];
-
-
   readonly dialog = inject(MatDialog);
 
 
@@ -77,8 +76,11 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     private instUtils: InstanceUtilities,
     private deletionDialogService: DeletionDialogService,
     private listInstancesDialogService: ListInstancesDialogService,
-    private deletionService: DeletionService) {
+    private deletionService: DeletionService,
+    private reviewStatusCheck: ReviewStatusCheck
+  ) {
     this.instanceViewFilters = this.setUpInstanceViewFilters();
+
   }
 
   ngOnInit() {
@@ -279,21 +281,39 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   private _loadIntance(instance: Instance, resetHistory: boolean, needComparsion: boolean, dbId: number) {
     this.dbInstance = undefined;
-    this.instance = instance;
-    this.runInstanceViewFilters(instance!).subscribe(filteredInstance => {
+    this.runInstanceViewFilters(instance).subscribe(filteredInstance => {
       this.instance = filteredInstance;
+      this.changeTable(instance);
+      if (resetHistory)
+        this.viewHistory.length = 0;
+      this.addToViewHistory(instance);
+      this.showProgressSpinner = false;
+      this.updateTitle(instance);
+      if (needComparsion) {
+        this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(instance => {
+          this.dbInstance = instance;
+        });
+      }
     });
-    this.changeTable(instance);
-    if (resetHistory)
-      this.viewHistory.length = 0;
-    this.addToViewHistory(instance);
-    this.showProgressSpinner = false;
-    this.updateTitle(instance);
-    if (needComparsion) {
-      this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(instance => {
-        this.dbInstance = instance;
+
+  }
+
+  // Create a list to hold all service instances
+  private setUpInstanceViewFilters(): InstanceViewFilter[] {
+    return [
+      new DeletedInstanceAttributeFilter(this.instUtils, this.store),
+      new ReviewStatusUpdateFilter(this.dataService, this.instUtils, this.store, this.reviewStatusCheck),
+      new DisplayNameViewFilter(this.dataService, this.instUtils, this.store),
+    ];
+  }
+  // Function to run all registered services
+  private runInstanceViewFilters(instance: Instance): Observable<Instance> {
+    this.instanceViewFilters.forEach(service => {
+      service.filter(instance).subscribe(filteredInstance => {
+        instance = filteredInstance;
       });
-    }
+    });
+    return of(instance);
   }
 
   addToViewHistory(instance: Instance) {
@@ -497,23 +517,5 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   openSchemaView() {
     this.router.navigate(["/schema_view/instance/" + this.instance!.dbId]);
-  }
-
-  // Create a list to hold all service instances
-  private setUpInstanceViewFilters(): InstanceViewFilter[] {
-    return [
-      new DeletedInstanceAttributeFilter(this.instUtils, this.store),
-      //new ReviewStatusUpdateFilter(this.dataService, this.instUtils, this.store, this.reviewStatusCheck),
-      new DisplayNameViewFilter(this.dataService, this.instUtils, this.store),
-    ];
-  }
-  // Function to run all registered services
-  private runInstanceViewFilters(instance: Instance): Observable<Instance> {
-    this.instanceViewFilters.forEach(service => {
-      service.filter(instance).subscribe(filteredInstance => {
-        instance = filteredInstance;
-      });
-    });
-    return of(instance);
   }
 }
