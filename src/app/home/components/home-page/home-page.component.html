@@ -21,15 +21,19 @@
     <div class="card-container">
       <mat-card class="card">
         <mat-card-content>
-          <mat-icon class="card-icon">account_tree</mat-icon>
-          <a routerLink="/schema_view">Schema View</a>
+          <a routerLink="/schema_view" class="card-link">
+            <mat-icon class="card-icon">account_tree</mat-icon>
+            <span>Schema View</span>
+          </a>
         </mat-card-content>
       </mat-card>
       <br>
       <mat-card class="card">
         <mat-card-content>
-          <mat-icon class="card-icon">timeline</mat-icon>
-          <a routerLink="/event_view">Event View</a>
+          <a routerLink="/event_view" class="card-link">
+            <mat-icon class="card-icon">timeline</mat-icon>
+            <span>Event View</span>
+          </a>
         </mat-card-content>
       </mat-card>
       <!-- <mat-card class="card">
@@ -39,8 +43,10 @@
       </mat-card> -->
       <mat-card class="card">
         <mat-card-content style="text-align: center;">
-          <mat-icon class="card-icon">psychology</mat-icon>
-          <a routerLink="/llm_apps_view">Gene2Path App</a>
+          <a routerLink="/llm_apps_view" class="card-link">
+            <mat-icon class="card-icon">psychology</mat-icon>
+            <span>Gene2Path App</span>
+          </a>
         </mat-card-content>
       </mat-card>
     </div>
