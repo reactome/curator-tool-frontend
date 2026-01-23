@@ -418,7 +418,7 @@ export class InstanceUtilities {
             if (Array.isArray(attValue)) {
                 for (let i = 0; i < attValue.length; i++) {
                     const attValue1 = attValue[i];
-                    if (!attValue1.dbId)
+                    if (!this.isInstance(attValue1))
                         break; // This is not a instance type attribute
                     let currentName: string | undefined = undefined;
                     if (dbId2updatedInst.has(attValue1.dbId)) {
@@ -427,10 +427,9 @@ export class InstanceUtilities {
                         currentName = this.dbId2displayName.get(attValue1.dbId);
                     }
                     if (currentName !== undefined && currentName !== attValue1.displayName) {
+                        if (!apply) return true; // Just return true if there is no need to apply the change
                         instanceAttributeNameChanged = true;
-                        if (apply) {
-                            attValue1.displayName = currentName;
-                        }
+                        attValue1.displayName = currentName;
                     }
                 }
             }
@@ -444,10 +443,9 @@ export class InstanceUtilities {
                     currentName = this.dbId2displayName.get(attValue.dbId);
                 }
                 if (currentName !== undefined && currentName !== attValue.displayName) {
+                    if (!apply) return true;
                     instanceAttributeNameChanged = true;
-                    if (apply) {
-                        attValue.displayName = currentName;
-                    }
+                    attValue.displayName = currentName;
                 }
             }
         }
