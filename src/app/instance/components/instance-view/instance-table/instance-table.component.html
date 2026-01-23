@@ -44,15 +44,15 @@
   <ng-template #refValueColTemplate let-element>
     <ng-container *ngIf="element.attribute.cardinality === '1'">
       <app-instance-table-row-element [attribute]="element.attribute" [value]="element.referenceValue"
-        [disable]="true" [passiveEdit]="compareDbToSourceInstance(element.attribute.name)" />
+        [disable]="true" [passiveEdit]="compareDbToSourceInstance(element.dbId)" />
     </ng-container>
     <ng-container *ngIf="element.attribute.cardinality === '+'">
       <ng-container *ngIf="element.referenceValue === undefined; else elseblock">
-        <app-instance-table-row-element [attribute]="element.attribute" [disable]="true" [passiveEdit]="compareDbToSourceInstance(element.attribute.name, element.index)" />
+        <app-instance-table-row-element [attribute]="element.attribute" [disable]="true" [passiveEdit]="compareDbToSourceInstance(element.dbId)" />
       </ng-container>
       <ng-template #elseblock>
         <app-instance-table-row-element *ngFor="let object of element.referenceValue; let i = index" class="example-box"
-          [attribute]="element.attribute" [value]="object" [disable]="true" [passiveEdit]="compareDbToSourceInstance(element.attribute.name, i)" />
+          [attribute]="element.attribute" [value]="object" [disable]="true" [passiveEdit]="compareDbToSourceInstance(object.dbId)" />
       </ng-template>
     </ng-container>
   </ng-template>

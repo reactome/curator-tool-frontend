@@ -349,6 +349,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   changeTable(instance: Instance) {
+    if (!instance) return;
     this.dragDropService.resetList();
     // If in comparison mode, the showReferenceColumn will be true and the instance should be loaded.
     if (this.blockRoute || this.showReferenceColumn) {
