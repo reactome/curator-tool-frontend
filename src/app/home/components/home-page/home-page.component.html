@@ -14,27 +14,42 @@
     </mat-form-field>
   </form> -->
   <div class="center-content">
-    <mat-card class="card">
-      <mat-card-content>
-         <a routerLink="/schema_view">Schema View</a>
-      </mat-card-content>
-    </mat-card>
-    <br>
-    <mat-card class="card">
-      <mat-card-content>
-        <a routerLink="/event_view">Event View</a>
-      </mat-card-content>
-    </mat-card>
-    <!-- <mat-card class="card">
-      <mat-card-content>
-        <a routerLink="/elv_view">ELV View</a>
-      </mat-card-content>
-    </mat-card> -->
-    <mat-card class="card">
-      <mat-card-content>
-        <a routerLink="/llm_apps_view">LLM App</a>
-      </mat-card-content>
-    </mat-card>
+    <div class="app-title">
+      <img src="assets/images/reactome-logo.svg" alt="Reactome Logo" class="app-icon">
+      <h1>Reactome Curation WebBench</h1>
+    </div>
+    <div class="card-container">
+      <mat-card class="card">
+        <mat-card-content>
+          <a routerLink="/schema_view" class="card-link">
+            <mat-icon class="card-icon">account_tree</mat-icon>
+            <span>Schema View</span>
+          </a>
+        </mat-card-content>
+      </mat-card>
+      <br>
+      <mat-card class="card">
+        <mat-card-content>
+          <a routerLink="/event_view" class="card-link">
+            <mat-icon class="card-icon">timeline</mat-icon>
+            <span>Event View</span>
+          </a>
+        </mat-card-content>
+      </mat-card>
+      <!-- <mat-card class="card">
+        <mat-card-content>
+          <a routerLink="/elv_view">ELV View</a>
+        </mat-card-content>
+      </mat-card> -->
+      <mat-card class="card">
+        <mat-card-content style="text-align: center;">
+          <a routerLink="/llm_apps_view" class="card-link">
+            <mat-icon class="card-icon">psychology</mat-icon>
+            <span>Gene2Path App</span>
+          </a>
+        </mat-card-content>
+      </mat-card>
+    </div>
   </div>
   <!-- <div >
     <mat-card style="margin-bottom: 1rem;">

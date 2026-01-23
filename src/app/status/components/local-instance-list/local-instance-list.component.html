@@ -19,7 +19,7 @@
       <mat-icon>deselect_all</mat-icon>
     </button>
     <button (click)="deleteAllSelectedNewInstances()" [disabled]="selectedNewInstances.length === 0" class="mini-btn"
-      color="primary" mat-icon-button matTooltip="undo all changes for selected">
+      color="primary" mat-icon-button matTooltip="delete all selected new instances">
       <mat-icon>delete</mat-icon>
     </button>
     <button [disabled]="selectedNewInstances.length === 0" class="mini-btn" color="primary" mat-icon-button
@@ -50,7 +50,7 @@
       <mat-icon>deselect_all</mat-icon>
     </button>
     <button (click)="resetSelectedUpdatedInstances()" [disabled]="selectedUpdatedInstances.length === 0"
-      class="mini-btn" color="primary" mat-icon-button matTooltip="undo all changes for selected">
+      class="mini-btn" color="primary" mat-icon-button matTooltip="undo all changes for selected updated instances">
       <mat-icon>undo</mat-icon>
     </button>
     <button [disabled]="selectedUpdatedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button
@@ -82,7 +82,7 @@
       <mat-icon>deselect_all</mat-icon>
     </button>
     <button (click)="resetSelectedDeletedInstances()" [disabled]="selectedDeletedInstances.length === 0"
-      class="mini-btn" color="primary" mat-icon-button matTooltip="undo all changes for selected">
+      class="mini-btn" color="primary" mat-icon-button matTooltip="restore all selected deleted instances">
       <mat-icon>undo</mat-icon>
     </button>
     <button [disabled]="selectedDeletedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button

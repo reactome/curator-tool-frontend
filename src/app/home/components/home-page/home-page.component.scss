@@ -7,18 +7,96 @@
 
 .center-content{
   display: flex;
+  flex-direction: column;
   height: 94vh;
   justify-content: center;
   align-items: center;
 }
 
+.center-content h1 {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.app-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.app-icon {
+  height: 48px;
+  width: 48px;
+  margin-right: 16px;
+  object-fit: contain;
+}
+
+.app-title h1 {
+  margin: 0;
+  color: #333;
+  font-weight: 500;
+}
+
+.center-content .card-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .card {
-  height: 75px;
+  height: 100px;
   width: 150px;
   align-items: center;
   vertical-align: bottom;
   margin-right: 1rem;
   margin-bottom: 1rem;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.card mat-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.card-icon {
+  font-size: 32px;
+  height: 32px;
+  width: 32px;
+  margin-bottom: 8px;
+  color: #1976d2;
+}
+
+.card a {
+  text-decoration: none;
+  color: inherit;
+  font-weight: 500;
+}
+
+.card-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.card-link:hover .card-icon {
+  transform: scale(1.1);
+  transition: transform 0.2s ease-in-out;
 }
 
 .form-field {
