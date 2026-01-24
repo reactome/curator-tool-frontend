@@ -580,24 +580,8 @@ export class InstanceTableComponent implements PostEditListener {
     return of(instance);
   }
 
-  compareDbToSourceInstance(attName: string, index?: number): boolean {
-    if (!this._instance?.modifiedAttributes?.includes(attName)) return false;
-    let dbVal = this.referenceInstance?.attributes.get(attName);
-    let instanceVal = this._instance?.attributes.get(attName);
-    let refVal = this._instance?.source?.attributes.get(attName);
-    let found = false;
-    let dbItem =  dbVal?.at(index) ?? dbVal;
-
-    if (Array.isArray(instanceVal)) {
-      found = instanceVal.some(val => (val?.dbId && dbItem?.dbId) ? val.dbId === dbItem.dbId : val === dbItem) &&
-        refVal.some((val: any) => (val?.dbId && dbItem?.dbId) ? val.dbId === dbItem.dbId : val === dbItem);
-    } else {
-      found = (instanceVal?.dbId && dbItem?.dbId) ? instanceVal.dbId === dbItem.dbId : instanceVal === dbItem &&
-        (refVal?.dbId && dbItem?.dbId) ? instanceVal.dbId === dbItem.dbId : instanceVal === dbItem;
-    }
-
-
-    return !found;
+  compareDbToSourceInstance(dbId: number): boolean {
+    return this.deletedDBIds.includes(dbId);
   }
 
   compareToSourceInstance(attName: string, index?: number): boolean {

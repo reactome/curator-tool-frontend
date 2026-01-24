@@ -347,6 +347,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   changeTable(instance: Instance) {
+    if (!instance) return;
     this.dragDropService.resetList();
     // If in comparison mode, the showReferenceColumn will be true and the instance should be loaded.
     if (this.blockRoute || this.showReferenceColumn) {
@@ -389,7 +390,16 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
       dbInstance => this.dataService.handleSchemaClassForInstance(dbInstance).pipe(take(1)));
     this.changeTable(this.instance!);
+
   }
+
+  // showReferenceValueColumn() {
+  //   this.showReferenceColumn = !this.showReferenceColumn;
+  //   if (this.showReferenceColumn)
+  //     this.loadReferenceInstance(this.instance!.dbId);
+  //   else
+  //     this.dbInstance = undefined;
+  // }
 
   showReferenceValueColumn() {
     this.showReferenceColumn = !this.showReferenceColumn;
