@@ -45,6 +45,7 @@ testem.log
 Thumbs.db
 
 docs/Notes.txt
+docs/note2myself
 
 .vscode/settings.json
 .codegpt/head

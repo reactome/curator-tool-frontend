@@ -1,6 +1,0 @@
-1. Currently the links between member and set and other similar links are not handled correctly. They are all treated as FlowLines.
-2. stoichiometry has not been treated yet
-3. add a check to make sure the diagram can be displayed still when a disease reaction is not drawn or cannot be overlaid (e.g. no normal reaction is assigned.) This is important for curation. Also make sure all local instances have been committed before updating the diagram to make sure all instances are in the database.
-4. Check if modified residues can be displayed as node features at the front-end for EWAS with translational modification. Need to make sure EWAS has modifiedResidues loaded from the WS API.
-5. LLM App: KLK4 generates an internal error with the default setting due to no PPIs available with filtering. Need to show the error message.
-6. Bug: When directly load an instance, e.g. by running this URL, http://localhost:4200/schema_view/instance/9608860, the schema class tree is not loaded. This may break some code: e.g. display name generation for this NegativeRegulation since it cannot be determined it is a subclass of Regulation.
