@@ -5,13 +5,13 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 import { DragDropService } from "../../../schema-view/instance-bookmark/drag-drop.service";
-import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from '../../state/instance.actions';
+import { NewInstanceActions } from '../../state/instance.actions';
 import { DeletionDialogService } from "../deletion-dialog/deletion-dialog.service";
 import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
 import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
-import { combineLatest, concat, Observable, of, Subscription, take } from 'rxjs';
+import { combineLatest, Observable, of, Subscription, take, concatMap } from 'rxjs';
 import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service';
 import { deleteInstances } from '../../state/instance.selectors';
 import { MatDialog } from '@angular/material/dialog';
@@ -283,12 +283,12 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.dbInstance = undefined;
     this.runInstanceViewFilters(instance).subscribe(filteredInstance => {
       this.instance = filteredInstance;
-      this.changeTable(instance);
+      this.changeTable(this.instance);
       if (resetHistory)
         this.viewHistory.length = 0;
-      this.addToViewHistory(instance);
+      this.addToViewHistory(this.instance);
       this.showProgressSpinner = false;
-      this.updateTitle(instance);
+      this.updateTitle(this.instance);
       if (needComparsion) {
         this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(instance => {
           this.dbInstance = instance;
@@ -308,12 +308,10 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
   // Function to run all registered services
   private runInstanceViewFilters(instance: Instance): Observable<Instance> {
-    this.instanceViewFilters.forEach(service => {
-      service.filter(instance).subscribe(filteredInstance => {
-        instance = filteredInstance;
-      });
-    });
-    return of(instance);
+    return this.instanceViewFilters.reduce(
+      (acc$, service) => acc$.pipe(concatMap(inst => service.filter(inst))),
+      of(instance)
+    );
   }
 
   addToViewHistory(instance: Instance) {
@@ -390,16 +388,25 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
     this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
       dbInstance => this.dataService.handleSchemaClassForInstance(dbInstance).pipe(take(1)));
-          this.changeTable(this.instance!);
-
+    this.changeTable(this.instance!);
   }
 
   showReferenceValueColumn() {
     this.showReferenceColumn = !this.showReferenceColumn;
+    if (this.blockRoute) {
+      this.instUtils.setLastClickedDbIdForComparison(this.instance!.dbId);
+      return;
+    }
+    let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
+      .reduce((acc, val) => acc.concat(val), [])
+      .map(urlSegment => urlSegment.path);
+    let newUrl = currentPathRoot[0] + "/instance/" + this.instance!.dbId.toString();
+    // Apparently there is a bug in Angular that confuses the configured router for list_instances
+    // and instance view. Therefore, give it something more here.
     if (this.showReferenceColumn)
-      this.loadReferenceInstance(this.instance!.dbId);
+      this.router.navigate([newUrl, "comparison", this.instance!.dbId.toString()]);
     else
-      this.dbInstance = undefined;
+      this.router.navigate([newUrl]);
   }
 
   //TODO: Consider showing the different attributes as the default.

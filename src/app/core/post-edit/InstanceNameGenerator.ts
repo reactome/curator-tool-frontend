@@ -32,7 +32,7 @@ export class InstanceNameGenerator implements PostEditOperation {
   }
 
   // For if value check, use if(value), not if (value === undefined || value == null) since the value may be null or undefined
-  private generateDisplayName(instance: Instance) {
+  generateDisplayName(instance: Instance) {
     let clsName = instance.schemaClassName;
     if (clsName === 'ModifiedResidue')
       return this.generateModifiedResidueName(instance);

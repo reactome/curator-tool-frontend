@@ -3,10 +3,8 @@ import {
   PostEditListener,
   PostEditOperation,
 } from '../post-edit/PostEditOperation';
-import { InstanceNameGenerator } from '../post-edit/InstanceNameGenerator';
 import { DataService } from './data.service';
 import { Instance } from '../models/reactome-instance.model';
-import { LiteratureReferenceFiller } from '../post-edit/LiteratureReferenceFiller';
 import { TestQACheck } from '../post-edit/TestQACheck';
 import { Store } from '@ngrx/store';
 import { InstanceUtilities } from './instance.service';

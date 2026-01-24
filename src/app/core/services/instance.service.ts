@@ -7,6 +7,7 @@ import { Store } from "@ngrx/store";
 import { deleteInstances } from "src/app/instance/state/instance.selectors";
 import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table-comparison.model";
+import { InstanceNameGenerator } from "../post-edit/InstanceNameGenerator";
 
 /**
  * Group a set of utility methods here for easy access to all other classes.
@@ -68,7 +69,8 @@ export class InstanceUtilities {
     // Tracking the instances that are selected
     private listName2selectedInstances = new Map<string, Instance[]>();
 
-    constructor(private store: Store) { }
+    constructor(private store: Store) { 
+    }
 
     /**
      * Track display name change for instance so that we can update display name in view.
@@ -406,9 +408,12 @@ export class InstanceUtilities {
         return modified;
     }
 
-    validateReferenceDisplayName(inst: Instance, updatedInsts: Instance[], apply: boolean = true): boolean {
+    validateReferenceDisplayName(inst: Instance, 
+                                 updatedInsts: Instance[], 
+                                 nameGenerator: InstanceNameGenerator,
+                                 apply: boolean = true): boolean {
         if (!inst.attributes)
-            return false;
+            return false; // No attributes, nothing to validate
         const dbId2updatedInst = new Map(updatedInsts.map(inst => [inst.dbId, inst]));
         let instanceAttributeNameChanged = false;
         for (let att of inst.attributes.keys()) {
@@ -433,9 +438,7 @@ export class InstanceUtilities {
                     }
                 }
             }
-            // We cannot use instanceof to check if attValue is an Instance
-            // But we can check if it has dbId
-            else if (attValue.dbId) {
+            else if (this.isInstance(attValue)) {
                 let currentName: string | undefined = undefined;
                 if (dbId2updatedInst.has(attValue.dbId)) {
                     currentName = dbId2updatedInst.get(attValue.dbId)?.displayName;
@@ -448,6 +451,20 @@ export class InstanceUtilities {
                     attValue.displayName = currentName;
                 }
             }
+        }
+        // Check should this instance's display name be changed too
+        // This check should be done independently from attribute display name change
+        // since an attribuate name change may be commiited already.
+        let currentName = inst.displayName;
+        // The supposed new display name due to attribute change
+        let newDisplayName = nameGenerator.generateDisplayName(inst);
+        if (newDisplayName !== 'unknown' && currentName !== newDisplayName) {   
+            if (!apply) return true;
+            inst.displayName = newDisplayName;
+            if (inst.attributes)
+                inst.attributes.set('displayName', newDisplayName);
+            this.registerDisplayNameChange(inst);
+            instanceAttributeNameChanged
         }
         return instanceAttributeNameChanged;
     }
