@@ -34,7 +34,6 @@ export class DisplayNameViewFilter implements InstanceViewFilter {
                     this.utils.handleInstanceAttributes(instanceCopy);
                     this.utils.validateReferenceDisplayName(instanceCopy, updatedInsts, this.nameGenerator, true);
                     return instanceCopy;
-
                 }
                 return instance;
             })

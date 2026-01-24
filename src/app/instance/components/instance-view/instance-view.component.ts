@@ -390,16 +390,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
       dbInstance => this.dataService.handleSchemaClassForInstance(dbInstance).pipe(take(1)));
     this.changeTable(this.instance!);
-
   }
-
-  // showReferenceValueColumn() {
-  //   this.showReferenceColumn = !this.showReferenceColumn;
-  //   if (this.showReferenceColumn)
-  //     this.loadReferenceInstance(this.instance!.dbId);
-  //   else
-  //     this.dbInstance = undefined;
-  // }
 
   showReferenceValueColumn() {
     this.showReferenceColumn = !this.showReferenceColumn;
@@ -413,7 +404,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     let newUrl = currentPathRoot[0] + "/instance/" + this.instance!.dbId.toString();
     // Apparently there is a bug in Angular that confuses the configured router for list_instances
     // and instance view. Therefore, give it something more here.
-    if (this.showReferenceColumn)
+    if(this.showReferenceColumn)
       this.router.navigate([newUrl, "comparison", this.instance!.dbId.toString()]);
     else
       this.router.navigate([newUrl]);

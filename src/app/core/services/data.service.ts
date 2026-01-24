@@ -505,11 +505,25 @@ export class DataService {
    */
   handleSchemaClassForInstance(instance: Instance): Observable<Instance> {
     let className: string = instance.schemaClassName!;
-    let schemaClass$: Observable<SchemaClass> = this.fetchSchemaClass(className);
-    return schemaClass$.pipe(
-      map((schemaClass: SchemaClass) => {
+    
+    // Load schema tree first to ensure name2SchemaClass map is populated
+    return this.fetchSchemaClassTree(false).pipe(
+      concatMap(() => {
+        // Use cached class directly instead of fetchSchemaClass
+        let schemaClass = this.name2SchemaClass.get(className);
+        if (!schemaClass) {
+          // Fallback: fetch individually if not found in cache
+          return this.fetchSchemaClass(className).pipe(
+            map((fetchedSchemaClass: SchemaClass) => {
+              instance.schemaClass = fetchedSchemaClass;
+              return instance;
+            })
+          );
+        }
+        
+        // Use cached schema class directly
         instance.schemaClass = schemaClass;
-        return instance;
+        return of(instance);
       })
     );
   }

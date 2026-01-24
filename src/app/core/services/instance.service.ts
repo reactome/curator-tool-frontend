@@ -414,6 +414,12 @@ export class InstanceUtilities {
                                  apply: boolean = true): boolean {
         if (!inst.attributes)
             return false; // No attributes, nothing to validate
+        // TODO: Any update instance should have its new display name registered already if its name gets changes
+        // However, a reference may need to update its display name if it has any passive edit such as compartment name
+        // change in EWAS etc. Such change is not tracked. Therefore, we have to call this methid recursively for 
+        // all references. To make it work, we may have to apply display name filter.
+        // TODO: Refactor the code to create a new DisplayNameViewFilter what is applied to an instance only, not to
+        // its references.
         const dbId2updatedInst = new Map(updatedInsts.map(inst => [inst.dbId, inst]));
         let instanceAttributeNameChanged = false;
         for (let att of inst.attributes.keys()) {

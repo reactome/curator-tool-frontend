@@ -19,6 +19,7 @@ Done
 -short cut for selecting instances from the dialog 
 - NOTE: for deletion confirmation we need to get the referrers for an instance before determining if the first dialog should show or the second. Therefore, we have decided to keep the first dialog with "no referrers to show" to avoid performing this action before necessary as getting referrers is a heavy transaction. 10/24/25
 -bug: delete an instance cannot remove the deleted instance from bookmark.
+-bug: need to apply display name filter to local instance list.
  
 
 
