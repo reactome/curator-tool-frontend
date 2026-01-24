@@ -79,7 +79,7 @@ export class ReviewStatusCheck implements PostEditOperation {
     }
 
 
-    public handleReviewStatus(instance: Instance, attributeName: string): boolean {
+    public handleReviewStatus(instance: Instance, attributeName: string, showDialog?: boolean): boolean {
         let reviewStatusChanged = false;
         if (this.isAttributeStructuralChange(instance, attributeName)) {
             // Regardless of review status, mark structure modified
@@ -94,12 +94,14 @@ export class ReviewStatusCheck implements PostEditOperation {
             if (reviewStatus.dbId === ReviewStatus.threeStar.dbId) {
                 instance.attributes.set('previousReviewStatus', reviewStatus);
                 instance.attributes?.set('reviewStatus', ReviewStatus.oneStar);
-                this.dialog.open(InfoDialogComponent, {
-                    data: {
-                        title: 'ReviewStatus Demoted',
-                        message: 'Your edit changes the structure of the event instance. The reviewStatus has been demoted.',
-                    }
-                });
+                if(showDialog === undefined || showDialog) {
+                    this.dialog.open(InfoDialogComponent, {
+                        data: {
+                            title: 'ReviewStatus Demoted',
+                            message: 'Your edit changes the structure of the event instance. The reviewStatus has been demoted.',
+                        }
+                    });
+                }
                 reviewStatusChanged = true;
             }
 
@@ -107,12 +109,14 @@ export class ReviewStatusCheck implements PostEditOperation {
             if (reviewStatus.dbId === ReviewStatus.fourStar.dbId || reviewStatus.dbId === ReviewStatus.fiveStar.dbId) {
                 instance.attributes.set('previousReviewStatus', reviewStatus);
                 instance.attributes?.set('reviewStatus', ReviewStatus.twoStar);
-                this.dialog.open(InfoDialogComponent, {
-                    data: {
-                        title: 'ReviewStatus Demoted',
-                        message: 'Your edit changes the structure of the event instance. The reviewStatus has been demoted.',
-                    }
-                });
+                if(showDialog === undefined || showDialog) {
+                    this.dialog.open(InfoDialogComponent, {
+                        data: {
+                            title: 'ReviewStatus Demoted',
+                            message: 'Your edit changes the structure of the event instance. The reviewStatus has been demoted.',
+                        }
+                    });
+                }
                 reviewStatusChanged = true;
             }
         }

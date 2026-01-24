@@ -40,7 +40,7 @@ export class ReviewStatusUpdateFilter implements InstanceViewFilter {
                                 if (attValue instanceof Array) {
                                     for (let val of attValue) {
                                         if (deletedDbIds.includes(val.dbId)) {
-                                            if (this.reviewStatusCheck.handleReviewStatus(instance, attName)) {
+                                            if (this.reviewStatusCheck.handleReviewStatus(instance, attName, false)) {
                                                 // create a copy of the instance to avoid mutating the original one
                                                 let shemaClass = instance.schemaClass;
                                                 let source = instance.source ?? instance;
@@ -56,7 +56,7 @@ export class ReviewStatusUpdateFilter implements InstanceViewFilter {
                                 }
                                 else {
                                     if (deletedDbIds.includes(attValue.dbId)) {
-                                        if (this.reviewStatusCheck.handleReviewStatus(instance, attValue.attribute.name)) {
+                                        if (this.reviewStatusCheck.handleReviewStatus(instance, attValue.attribute.name, false)) {
                                             // create a copy of the instance to avoid mutating the original one
                                             let shemaClass = instance.schemaClass;
                                             let source = instance.source ?? instance;
