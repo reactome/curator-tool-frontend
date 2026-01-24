@@ -345,7 +345,7 @@ export class InstanceUtilities {
         return {
             dbId: inst.dbId,
             schemaClassName: inst.schemaClassName,
-            displayName: inst.displayName
+            displayName: this.dbId2displayName.get(inst.dbId) ?? inst.displayName
         };
     }
 
@@ -406,73 +406,6 @@ export class InstanceUtilities {
             }
         }
         return modified;
-    }
-
-    validateReferenceDisplayName(inst: Instance, 
-                                 updatedInsts: Instance[], 
-                                 nameGenerator: InstanceNameGenerator,
-                                 apply: boolean = true): boolean {
-        if (!inst.attributes)
-            return false; // No attributes, nothing to validate
-        // TODO: Any update instance should have its new display name registered already if its name gets changes
-        // However, a reference may need to update its display name if it has any passive edit such as compartment name
-        // change in EWAS etc. Such change is not tracked. Therefore, we have to call this methid recursively for 
-        // all references. To make it work, we may have to apply display name filter.
-        // TODO: Refactor the code to create a new DisplayNameViewFilter what is applied to an instance only, not to
-        // its references.
-        const dbId2updatedInst = new Map(updatedInsts.map(inst => [inst.dbId, inst]));
-        let instanceAttributeNameChanged = false;
-        for (let att of inst.attributes.keys()) {
-            const attValue = inst.attributes.get(att);
-            if (!attValue)
-                continue;
-            if (Array.isArray(attValue)) {
-                for (let i = 0; i < attValue.length; i++) {
-                    const attValue1 = attValue[i];
-                    if (!this.isInstance(attValue1))
-                        break; // This is not a instance type attribute
-                    let currentName: string | undefined = undefined;
-                    if (dbId2updatedInst.has(attValue1.dbId)) {
-                        currentName = dbId2updatedInst.get(attValue1.dbId)?.displayName;
-                    } else if (this.dbId2displayName.has(attValue1.dbId)) {
-                        currentName = this.dbId2displayName.get(attValue1.dbId);
-                    }
-                    if (currentName !== undefined && currentName !== attValue1.displayName) {
-                        if (!apply) return true; // Just return true if there is no need to apply the change
-                        instanceAttributeNameChanged = true;
-                        attValue1.displayName = currentName;
-                    }
-                }
-            }
-            else if (this.isInstance(attValue)) {
-                let currentName: string | undefined = undefined;
-                if (dbId2updatedInst.has(attValue.dbId)) {
-                    currentName = dbId2updatedInst.get(attValue.dbId)?.displayName;
-                } else if (this.dbId2displayName.has(attValue.dbId)) {
-                    currentName = this.dbId2displayName.get(attValue.dbId);
-                }
-                if (currentName !== undefined && currentName !== attValue.displayName) {
-                    if (!apply) return true;
-                    instanceAttributeNameChanged = true;
-                    attValue.displayName = currentName;
-                }
-            }
-        }
-        // Check should this instance's display name be changed too
-        // This check should be done independently from attribute display name change
-        // since an attribuate name change may be commiited already.
-        let currentName = inst.displayName;
-        // The supposed new display name due to attribute change
-        let newDisplayName = nameGenerator.generateDisplayName(inst);
-        if (newDisplayName !== 'unknown' && currentName !== newDisplayName) {   
-            if (!apply) return true;
-            inst.displayName = newDisplayName;
-            if (inst.attributes)
-                inst.attributes.set('displayName', newDisplayName);
-            this.registerDisplayNameChange(inst);
-            instanceAttributeNameChanged
-        }
-        return instanceAttributeNameChanged;
     }
 
     /**
