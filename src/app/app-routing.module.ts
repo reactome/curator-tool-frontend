@@ -32,7 +32,7 @@ export const routes: Routes = [
     canActivate: [authGuard], // Protect the route
   },
   {
-    path: "llm_apps_view",
+    path: "gene2path",
     component: GeneLlmComponentComponent,
     // disable it for now since the link has been cited in several grant applications
     // canActivate: [authGuard], // Protect the route
