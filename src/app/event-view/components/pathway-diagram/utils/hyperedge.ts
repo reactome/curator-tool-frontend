@@ -171,6 +171,7 @@ export class HyperEdge {
         let points: Position[] = [];
         let lastEdge = undefined;
         let firstEdge = undefined;
+        let stoichiometry = undefined; // Track stoichiometry from any edge in the path
         for (let i = 1; i < path.path.length - 1; i++) { // Path has both nodes and edges
             let element = path.path[i];
             // Mark to be removed
@@ -182,6 +183,10 @@ export class HyperEdge {
                     firstEdge = element;
                 else
                     lastEdge = element;
+                // Preserve stoichiometry from any edge that has it
+                if (element.data('stoichiometry') !== undefined) {
+                    stoichiometry = element.data('stoichiometry');
+                }
             }
         }
         // Use the lastEdge's data for the new edge
@@ -226,6 +231,10 @@ export class HyperEdge {
         data.curveStyle = "round-segments";
         data.sourceEndpoint = this.getEndPoint(sourcePos, source);
         data.targetEndpoint = this.getEndPoint(targetPos, target);
+        // Restore stoichiometry if it was found in any edge of the path
+        if (stoichiometry !== undefined) {
+            data.stoichiometry = stoichiometry;
+        }
         const edge: EdgeDefinition = {
             data: data,
             classes: [...edgeClasses],
@@ -432,17 +441,23 @@ export class HyperEdge {
         data.source = source;
         data.target = target;
         data.id = newEdgeId;
-        // The new edges should be straigh line
+        // The new edges should be straight line
         delete data.distances;
         delete data.weights;
         delete data.sourceEndpoint;
         delete data.targetEndpoint;
-        delete data.stoichiometry; // We will add this later on depenends on need
+        // Preserve stoichiometry before deleting it
+        const stoichiometry = data.stoichiometry;
+        delete data.stoichiometry; // We will add this later on depends on need
         const edge: EdgeDefinition = {
             data: data,
             classes: [...edgeClasses],
         };
         const newEdge = this.cy.add(edge)[0];
+        // Restore stoichiometry if it existed
+        if (stoichiometry !== undefined) {
+            newEdge.data('stoichiometry', stoichiometry);
+        }
         this.id2object.set(newEdgeId, newEdge);
         return newEdge;
     }
