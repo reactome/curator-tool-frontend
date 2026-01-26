@@ -157,7 +157,12 @@ export class HyperEdge {
                 root: '#' + flSource.data('id'),
                 goal: '#' + flTarget.data('id')
             });
-        this.createRoundSegmentEdgeForPath(path, toBeRemoved);
+        let newEdge = this.createRoundSegmentEdgeForPath(path, toBeRemoved);
+        if (newEdge) {
+            // Copy something specific for this flow line
+            newEdge.data('reactomeId', this.reactomeId);
+            newEdge.data('edgeType', 'FlowLine');
+        }
         this.cy.remove(this.cy.collection(Array.from(toBeRemoved)));
     }
 
@@ -242,6 +247,7 @@ export class HyperEdge {
         // console.debug(data.id);
         const newEdge = this.cy.add(edge)[0]
         this.registerObject(newEdge);
+        return newEdge
     }
 
     private getEndPoint(intersection: Position, node: any) {
