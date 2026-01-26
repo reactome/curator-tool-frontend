@@ -4,7 +4,7 @@ import { Store } from "@ngrx/store";
 import { SelectedInstancesList, Instance } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
-import { DeleteInstanceActions } from "../../state/instance.actions";
+import { DeleteInstanceActions, NewInstanceActions } from "../../state/instance.actions";
 import { CreateDeletedDialogService } from "../components/deleted-object-creation-dialog/deleted-object-creation-dialog.service";
 import { CommitDeletedDialogService } from "../components/deleted-object-creation-option-dialog/deleted-object-creation-option-dialog.service";
 import { Injectable } from "@angular/core";
@@ -26,6 +26,12 @@ export class DeletionService {
     processDeletion(instancesToDelete: Instance[]) {
         // Check the schema class of every instance to see if a Deleted instance needs to be created
         let needDeleted = instancesToDelete.map(instance => { return this.checkIsEventOrPE(instance) });
+        let newInstances = instancesToDelete.filter(instance => instance.dbId < 0);
+        // If all instancesToDelete are new instances, no need to create Deleted instance
+        if (newInstances.length === instancesToDelete.length) {
+            this.commitWithoutDeletedInstance(instancesToDelete);
+            return;
+        }
         if (needDeleted.includes(true)) {
             this.createDeletedObject(instancesToDelete);
         }
@@ -35,26 +41,41 @@ export class DeletionService {
     }
 
     commitDeletedInstances(instancesToDelete: Instance[]) {
+        let newInstances = instancesToDelete.filter(instance => instance.dbId < 0);
+        if (newInstances.length === instancesToDelete.length) {
+            this.commitWithoutDeletedInstance(instancesToDelete);
+            return;
+        }
 
         this.commitDeletedDialogService.openDialog().afterClosed().subscribe(needDeleted => {
-            if (needDeleted) {
+            // If all instancesToDelete are new instances, no need to create Deleted instance
+            if (newInstances.length !== instancesToDelete.length && needDeleted) {
                 this.createDeletedObject(instancesToDelete);
             }
             else {
-                // Just commit the deleted instances without creating Deleted instance
-                instancesToDelete.forEach(instance => {
-                    this.dataService.delete(instance).subscribe(rtn => {
-                        this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
-                        this.store.dispatch(DeleteInstanceActions.commit_deleted_instance(instance));
-                        this.instanceUtilities.setDeletedDbId(instance.dbId);
-                        this.dataService.flagSchemaTreeForReload();
-                    });
-                });
-
+                this.commitWithoutDeletedInstance(instancesToDelete);
             }
         });
     }
 
+    commitWithoutDeletedInstance(instancesToDelete: Instance[]) {
+        // Just commit the deleted instances without creating Deleted instance
+        instancesToDelete.forEach(instance => {
+            if (instance.dbId < 0) {
+                this.store.dispatch(NewInstanceActions.remove_new_instance(this.instanceUtilities.makeShell(instance)));
+                this.instanceUtilities.setDeletedDbId(instance.dbId); // Commit right away
+            }
+            else {
+                this.dataService.delete(instance).subscribe(rtn => {
+                    this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
+                    this.store.dispatch(DeleteInstanceActions.commit_deleted_instance(instance));
+                    this.instanceUtilities.setDeletedDbId(instance.dbId);
+                    this.dataService.flagSchemaTreeForReload();
+                });
+            }
+        });
+
+    }
     createDeletedObject(instanceToDelete: Instance[]) {
         this.createDeletedDialogService.openDialog(instanceToDelete).afterClosed().subscribe(deletedObject => {
             if (deletedObject) {

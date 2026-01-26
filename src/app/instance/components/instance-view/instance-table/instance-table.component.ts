@@ -570,18 +570,13 @@ export class InstanceTableComponent implements PostEditListener {
       new DisplayNameViewFilter(this.dataService, this.instUtil, this.store),
     ];
   }
-  // Function to run all registered services
-  private runInstanceViewFilters(instance: Instance): Observable<Instance> {
-    this.instanceViewFilters.forEach(service => {
-      service.filter(instance).subscribe(filteredInstance => {
-        instance = filteredInstance;
-      });
-    });
-    return of(instance);
-  }
 
   compareDbToSourceInstance(dbId: number): boolean {
     return this.deletedDBIds.includes(dbId);
+  }
+
+  activAndPassiveEdit(attName: string, index?: number): boolean {
+    return this.compareToSourceInstance(attName, index) && !!this._instance!.modifiedAttributes?.includes(attName);
   }
 
   compareToSourceInstance(attName: string, index?: number): boolean {

@@ -32,6 +32,12 @@
     background-color: #ad7a76;
   }
 
+  &.activeAndPassiveEdit {
+    font-weight: bold;
+    font-style: italic;
+    background-color: #e06666;
+  }
+
 }
 
 .valueColumn {
