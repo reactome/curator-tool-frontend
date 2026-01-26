@@ -30,7 +30,7 @@
           <mat-icon>list_alt</mat-icon>
         </button>
         <button mat-icon-button color="primary" class="v-center" (click)="showReferenceValueColumn()"
-          matTooltip="Compare instance" [disabled]="!isComparable()">
+          [matTooltip]="isComparable() && dbInstance ? 'turn off comparison' : 'compare to instance at db'" [disabled]="!isComparable()">
           <mat-icon>compare</mat-icon>
         </button>
         <button mat-icon-button color="primary" class="v-center" (click)="delete()" matTooltip="Delete Instance">
