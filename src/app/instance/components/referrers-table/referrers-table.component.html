@@ -1,5 +1,8 @@
 <h3>Total Referrers: {{totalCount}}</h3>
-<ng-container *ngIf="totalCount === 1000">Complete referrer list is too large to display</ng-container>
+<ng-container style="margin: 0px; padding: 0px" *ngIf="totalCount >= 1000">Complete referrer list is too large to display</ng-container>
+<h5 style="color: red; margin: 0px; padding: 0px" *ngIf="instance2ReviewStatusChange.length > 0">*Instances listed in red would experience a
+  structural change due to {{instance?.displayName}}'s deletion</h5>
+
 <section class="table-container" tabindex="0">
   <ng-container *ngIf="showProgressSpinner">
     <mat-spinner class="spinner"></mat-spinner>
@@ -8,20 +11,17 @@
     <ng-container *ngFor="let referrers of instanceList; let i = index">
 
       <div>
-        <mat-label class="referrer_label" [ngClass]="{indicateStructuralIssue: isStructuralChange(referrers.referrers[0])}">{{referrers.attributeName}}: {{referrers.referrers.length}}</mat-label>
+        <mat-label class="referrer_label"
+          [ngClass]="{indicateStructuralIssue: isStructuralChange(referrers.referrers[0])}">{{referrers.attributeName}}:
+          {{referrers.referrers.length}}</mat-label>
         <button (click)="openTable(referrers.attributeName)" mat-button><mat-icon>arrow_drop_down</mat-icon></button>
 
       </div>
       <!-- isSelection so that we don't enable the links for dbIds and display name -->
-      <app-instance-list-table
-        [id]="referrers.attributeName" 
-        [hidden]="showFirstTable(i)" 
-        [isSelection]="true"
-        [dataSource]="referrers.referrers" 
-        [showCheckMark]="false" 
-        [actionButtons]="actionButtons"
-        [highlightRow]="isStructuralChange(referrers.referrers[0])"
-        (actionEvent)="handleAction($event)" (urlClickEvent)="navigateUrl($event)">
+      <app-instance-list-table [id]="referrers.attributeName" [hidden]="showFirstTable(i)" [isSelection]="true"
+        [dataSource]="referrers.referrers" [showCheckMark]="false" [actionButtons]="actionButtons"
+        [highlightRow]="isStructuralChange(referrers.referrers[0])" (actionEvent)="handleAction($event)"
+        (urlClickEvent)="navigateUrl($event)">
       </app-instance-list-table>
     </ng-container>
   </ng-container>
