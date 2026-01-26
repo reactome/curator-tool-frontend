@@ -580,6 +580,17 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       });
       return;
     }
+    // Need to enable editing first
+    if (!this.isEditing) {
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Error',
+          message: 'Editing must be enabled before adding a new event.',
+          instanceInfo: event.displayName + '[' + event.dbId + ']'
+        }
+      });
+      return;
+    }
     this.diagramUtils.addNewEvent(event, this.diagram.cy);
   }
 
