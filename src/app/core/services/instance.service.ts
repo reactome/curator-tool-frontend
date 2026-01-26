@@ -6,8 +6,6 @@ import { Subject, take } from "rxjs";
 import { Store } from "@ngrx/store";
 import { deleteInstances } from "src/app/instance/state/instance.selectors";
 import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
-import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table-comparison.model";
-import { InstanceNameGenerator } from "../post-edit/InstanceNameGenerator";
 
 /**
  * Group a set of utility methods here for easy access to all other classes.
