@@ -50,6 +50,12 @@ export class MainEventComponent {
     });
   }
 
+  ngOnInit(): void {
+    // Restore the state from localStorage
+    const savedState = sessionStorage.getItem('statusPaneInEventView');
+    this.showChanged = savedState === 'shown' ? true : false;
+  }
+
   openSidenav() {
     this.sidenav?.open();
   }
@@ -68,6 +74,7 @@ export class MainEventComponent {
 
   showUpdatedInstances(showList: boolean) {
     this.showChanged = !this.showChanged; 
+    sessionStorage.setItem('statusPaneInEventView', this.showChanged ? 'shown' : 'hidden');
   }
 
   onDrag() {

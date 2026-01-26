@@ -16,8 +16,8 @@ export class MainSchemaViewComponent implements OnInit{
 
   ngOnInit(): void {
     // Restore the state from localStorage
-    const savedState = sessionStorage.getItem('activeTab');
-    this.showChanged = savedState === 'changes';
+    const savedState = sessionStorage.getItem('statusPaneInSchemaView');
+    this.showChanged = savedState === 'shown' ? true : false;
   }
 
   @ViewChild('sidenav') sidenav: MatSidenav | undefined;
@@ -35,9 +35,9 @@ export class MainSchemaViewComponent implements OnInit{
   }
 
   showUpdatedInstances(show: boolean): void {
-    this.showChanged = show;
+    this.showChanged = ! this.showChanged;
     // Save the state to localStorage
-    sessionStorage.setItem('activeTab', show ? 'changes' : 'schema');
+    sessionStorage.setItem('statusPaneInSchemaView', this.showChanged ? 'shown' : 'hidden');
   }
 
   onDrag() {

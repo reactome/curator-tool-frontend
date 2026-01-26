@@ -95,8 +95,6 @@ export class StatusComponent implements OnInit, OnDestroy {
 
   showUpdated(): void {
     this.showUpdatedEvent.emit(true);
-    sessionStorage.setItem('activeTab','changes');
-
   }
 
   setDefaultPerson(): void {
