@@ -319,12 +319,29 @@ export class PathwayDiagramUtilService {
     }
 
     addFlowLine(elementUnderMouse: any, diagramComp: PathwayDiagramComponent) {
-        // The follow line will be added from another element to this elementUnderMouse
-        // It is supposed all has been checked
-        const selectedElement = diagramComp.diagram.cy.$(':selected')[0];
+        // Ensure exactly two nodes are selected
+        const selectedElements = diagramComp.diagram.cy.$(':selected');
+        if (selectedElements.length !== 2) {
+            return; // Must have exactly two selected nodes
+        }
+        
+        // Find the other selected element (not the elementUnderMouse)
+        const selectedElement = selectedElements.filter((el: any) => el !== elementUnderMouse)[0];
+        if (!selectedElement) {
+            return; // Should not happen if we have exactly 2 selected elements
+        }
+        
+        // Get reactomeId from element data, not dbId
+        const selectedReactomeId = selectedElement.data('reactomeId');
+        const targetReactomeId = elementUnderMouse.data('reactomeId');
+        
+        if (!selectedReactomeId || !targetReactomeId) {
+            return; // Both elements must have reactomeId
+        }
+        
         // Follow the same logic to add a new reaction
-        // We need HyperEdge to make the code simplier
-        const reactomeId = selectedElement.dbId + '-' + elementUnderMouse.dbId;
+        // We need HyperEdge to make the code simpler
+        const reactomeId = selectedReactomeId + '-' + targetReactomeId;
         const hyperEdge = new HyperEdge(this, diagramComp.diagram.cy, reactomeId);
         hyperEdge.createFlowLine(selectedElement, elementUnderMouse, this, diagramComp.diagram.cy);
         this.id2hyperEdge.set(reactomeId, hyperEdge);

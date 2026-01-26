@@ -557,9 +557,10 @@ export class HyperEdge {
                 target: target.id(),
                 // add a new attribute to determine the type of this edge
                 edgeType: 'FlowLine',
+                reactomeId: this.reactomeId,
                 // Since we don't have actual Reactome id for this, we will add
                 // a new hyperEdge id
-                hyperEdgeId: source.dbId + '-' + target.dbId
+                hyperEdgeId: source.data('reactomeId') + '-' + target.data('reactomeId')
             },
             classes: utils.diagramService?.linkClassMap.get('FlowLine')
         };
