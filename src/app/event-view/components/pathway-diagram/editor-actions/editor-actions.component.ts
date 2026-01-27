@@ -43,5 +43,6 @@ export enum ElementType {
   NODE = "node",
   PE_Node = 'physicalentity_node',
   COMPARTMENT = "compartment",
-  PATHWAY_NODE = 'pathway_node'
+  PATHWAY_NODE = 'pathway_node',
+  MULTIPLE_NODES = 'multiple_nodes'
 }

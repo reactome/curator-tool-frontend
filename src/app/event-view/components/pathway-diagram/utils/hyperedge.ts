@@ -319,9 +319,12 @@ export class HyperEdge {
                 // Use input for any internal edges to avoid showing arrows.
                 let newEdge = this.createNewEdge(source, target, edgeData, this.utils.diagramService!.edgeTypeMap.get("INPUT"));
                 source = target;
-                if (!firstEdge) firstEdge = newEdge;
+                if (!firstEdge) 
+                    firstEdge = newEdge;
+                newEdge?.removeData('stoichiometry'); // Internal edges do not need stoichiometry
             }
             let lastEdge = this.createNewEdge(source, targetNode, edgeData, edge.classes());
+            lastEdge?.removeData('stoichiometry');
             // A hack to call data
             let newEdge: any = undefined;
             if (edge.classes().includes('consumption'))
@@ -329,7 +332,8 @@ export class HyperEdge {
             else if (edge.classes().includes('production'))
                 newEdge = lastEdge;
             if (newEdge !== undefined)
-                newEdge.data.stoichiometry = edgeData.stoichiometry;
+                newEdge.data('stoichiometry', edgeData.stoichiometry);
+            // Finally, remove the original edge
             this.cy.remove(edge);
         }
         this.identifyHubNodes();
