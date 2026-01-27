@@ -80,7 +80,7 @@
                       required: highlightRequired(element),
                       mandatory: highlightMandatory(element),
                       passiveEdit: compareToSourceInstance(element.attribute.name, element.index),
-                      activeAndPassiveEdit: activAndPassiveEdit(element.attribute.name, element.index)}">
+                      activeAndPassiveEdit: activeAndPassiveEdit(element.attribute.name, element.index)}">
           <div>
             <ng-container *ngIf="element.attribute.category === AttributeCategory.MANDATORY">
               <img ngSrc="assets/images/Mandatory.gif" alt="Mandatory" width="16" height="16" priority>

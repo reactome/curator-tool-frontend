@@ -24,10 +24,12 @@ export class DeletedInstanceAttributeFilter implements InstanceViewFilter {
                     // create a copy of the instance to avoid mutating the original one
                     let shemaClass = instance.schemaClass;
                     let source = instance.source ?? instance;
+                    let modifiedAttributes = instance.modifiedAttributes ? [...instance.modifiedAttributes] : [];
                     let instanceCopyJSON = this.utils.stringifyInstance(instance);
                     let instanceCopy = JSON.parse(instanceCopyJSON);
                     instanceCopy.schemaClass = shemaClass;
                     instanceCopy.source = source;
+                    instanceCopy.modifiedAttributes = modifiedAttributes;
                     this.utils.handleInstanceAttributes(instanceCopy);
                     this.utils.applyLocalDeletions(instanceCopy, deletedInsts);
                     return instanceCopy;

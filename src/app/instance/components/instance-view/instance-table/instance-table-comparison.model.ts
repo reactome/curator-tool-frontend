@@ -53,10 +53,12 @@ export class InstanceComparisonDataSource extends DataSource<AttributeValue> {
 
         // Create a union of attributes from both instance and referenceInstance schema classes
         const allAttributes = new Map<string, SchemaAttribute>();
-        for (const attr of this.referenceInstance!.schemaClass!.attributes!) {
+        let instanceAttributes = this.instance?.schemaClass?.attributes || [];
+        let referenceAttributes = this.referenceInstance?.schemaClass?.attributes || [];
+        for (const attr of referenceAttributes) {
             allAttributes.set(attr.name, attr);
         }
-        for (const attr of this.instance!.schemaClass!.attributes!) {
+        for (const attr of instanceAttributes) {
             allAttributes.set(attr.name, attr);
         }
 

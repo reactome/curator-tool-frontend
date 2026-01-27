@@ -44,11 +44,13 @@ export class ReviewStatusUpdateFilter implements InstanceViewFilter {
                                                 // create a copy of the instance to avoid mutating the original one
                                                 let shemaClass = instance.schemaClass;
                                                 let source = instance.source ?? instance;
+                                                let modifiedAttributes = instance.modifiedAttributes ? [...instance.modifiedAttributes] : [];
                                                 let instanceCopyJSON = this.utils.stringifyInstance(instance);
                                                 let instanceCopy = JSON.parse(instanceCopyJSON); instanceCopy.source = instance.source ?? instance;
                                                 this.utils.handleInstanceAttributes(instanceCopy);
                                                 instanceCopy.schemaClass = shemaClass;
                                                 instanceCopy.source = source;
+                                                instanceCopy.modifiedAttributes = modifiedAttributes;
                                                 return instanceCopy;
                                             }
                                         }
@@ -60,11 +62,13 @@ export class ReviewStatusUpdateFilter implements InstanceViewFilter {
                                             // create a copy of the instance to avoid mutating the original one
                                             let shemaClass = instance.schemaClass;
                                             let source = instance.source ?? instance;
+                                            let modifiedAttributes = instance.modifiedAttributes ? [...instance.modifiedAttributes] : [];
                                             let instanceCopyJSON = this.utils.stringifyInstance(instance);
                                             let instanceCopy = JSON.parse(instanceCopyJSON); instanceCopy.source = instance.source ?? instance;
                                             this.utils.handleInstanceAttributes(instanceCopy);
                                             instanceCopy.schemaClass = shemaClass;
                                             instanceCopy.source = source;
+                                            instanceCopy.modifiedAttributes = modifiedAttributes;
                                             return instanceCopy;
                                         }
                                     }

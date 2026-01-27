@@ -337,13 +337,13 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   isChanged() {
-    // New instance
-    if ((this.instance?.dbId ?? -1) < 0)
-      return true;
-    // updated instance
-    if ((this.instance?.modifiedAttributes?.length ?? 0) > 0)
-      return true;
-    return false;
+    // // New instance
+    // if ((this.instance?.dbId ?? -1) < 0)
+    //   return true;
+    // // updated instance
+    // if ((this.instance?.modifiedAttributes?.length ?? 0) > 0)
+    //   return true;
+     return false;
   }
 
   changeTable(instance: Instance) {

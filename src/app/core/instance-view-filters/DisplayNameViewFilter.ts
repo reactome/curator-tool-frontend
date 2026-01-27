@@ -26,11 +26,13 @@ export class DisplayNameViewFilter implements InstanceViewFilter {
                 if (this.validateReferenceDisplayName(instance, updatedInsts, this.nameGenerator, false)) {
                     let shemaClass = instance.schemaClass;
                     let source = instance.source ?? instance;
+                    let modifiedAttributes = instance.modifiedAttributes ? [...instance.modifiedAttributes] : [];
                     // create a copy of the instance to avoid mutating the original one
                     let instanceCopyJSON = this.utils.stringifyInstance(instance);
                     let instanceCopy = JSON.parse(instanceCopyJSON);
                     instanceCopy.schemaClass = shemaClass;
                     instanceCopy.source = source;
+                    instanceCopy.modifiedAttributes = modifiedAttributes;
                     this.utils.handleInstanceAttributes(instanceCopy);
                     this.validateReferenceDisplayName(instanceCopy, updatedInsts, this.nameGenerator, true);
                     return instanceCopy;

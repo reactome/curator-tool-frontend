@@ -107,10 +107,6 @@ export class InstanceTableComponent implements PostEditListener {
   @Input() set instance(instance: Instance | undefined) {
     if (this.inEditing)
       return; // In editing now. Nothing to change from outside.
-    // this.runInstanceViewFilters(instance!).subscribe(filteredInstance => {
-    // this._instance = filteredInstance;
-    // this.updateTableContent();
-    // });
     this._instance = instance;
     this.updateTableContent();
   }
@@ -292,14 +288,14 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   finishEdit(attName: string, value: any) {
+    // Need to call this before registerUpdatedInstance
+    // in case the instance is used somewhere via the ngrx statement management system
+    this.addModifiedAttribute(attName, value);
     this.inEditing = true;
     //Only add attribute name if value was added
     this.postEdit(attName);
     //TODO: Add a new value may reset the scroll position. This needs to be changed!
     this.updateTableContent();
-    // Need to call this before registerUpdatedInstance
-    // in case the instance is used somewhere via the ngrx statement management system
-    this.addModifiedAttribute(attName, value);
     // Register the updated instances
     this.registerUpdatedInstance(attName);
     // Fire an event for other components to update their display (e.g. display name)
@@ -575,7 +571,7 @@ export class InstanceTableComponent implements PostEditListener {
     return this.deletedDBIds.includes(dbId);
   }
 
-  activAndPassiveEdit(attName: string, index?: number): boolean {
+  activeAndPassiveEdit(attName: string, index?: number): boolean {
     return this.compareToSourceInstance(attName, index) && !!this._instance!.modifiedAttributes?.includes(attName);
   }
 
