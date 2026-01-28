@@ -74,7 +74,7 @@
       </div>
     </div>
   </mat-toolbar>
-  <app-text-curation style="height: 80px;" [embedded]="true" [instanceView]="this" *ngIf="instance"></app-text-curation>
+  <!-- <app-text-curation style="height: 80px;" [embedded]="true" [instanceView]="this" *ngIf="instance"></app-text-curation> -->
 </div>
 <app-instance-table style="overflow: scroll; height: 100%" [instance]="instance" [referenceInstance]="dbInstance"
   (editedInstance)="updateTitle($event)" *ngIf="!showProgressSpinner && instance"

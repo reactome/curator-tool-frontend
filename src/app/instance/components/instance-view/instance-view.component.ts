@@ -337,12 +337,12 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   isChanged() {
-    // // New instance
-    // if ((this.instance?.dbId ?? -1) < 0)
-    //   return true;
-    // // updated instance
-    // if ((this.instance?.modifiedAttributes?.length ?? 0) > 0)
-    //   return true;
+    // New instance
+    if ((this.instance?.dbId ?? -1) < 0)
+      return true;
+    // updated instance
+    if ((this.instance?.modifiedAttributes?.length ?? 0) > 0)
+      return true;
      return false;
   }
 
@@ -502,6 +502,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     });
   }
 
+  // TODO: do not hardcode schema view, should not always point back to schema view 
   compareInstances() {
     let schemaClass = this.dataService.getSchemaClass(this.instance!.schemaClassName)
     const matDialogRef =

@@ -28,7 +28,8 @@ export class DeletionService {
         let needDeleted = instancesToDelete.map(instance => { return this.checkIsEventOrPE(instance) });
         let newInstances = instancesToDelete.filter(instance => instance.dbId < 0);
         // If all instancesToDelete are new instances, no need to create Deleted instance
-        if (newInstances.length === instancesToDelete.length) {
+        if (newInstances.length > 0) {
+            // TODO: use confrim to delete dialog 
             this.commitWithoutDeletedInstance(instancesToDelete);
             return;
         }
