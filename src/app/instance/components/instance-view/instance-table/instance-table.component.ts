@@ -453,17 +453,6 @@ export class InstanceTableComponent implements PostEditListener {
     };
   }
 
-  compareToDbInstance(attName: string): boolean {
-    if (!this._referenceInstance) return false;
-    if (this._instance?.dbId !== this._referenceInstance?.dbId) return false;
-    let instanceVal = this._instance?.attributes.get(attName);
-    let refVal = this._referenceInstance?.attributes.get(attName);
-    if ((instanceVal && instanceVal.dbId) || instanceVal instanceof Array) {
-      return this.getValueTypeForComparison(instanceVal, refVal);
-    }
-    return (instanceVal !== refVal);
-  }
-
   // values removed or edited passively should be compared to the instance value 
   // to display the passive index of a multivariate attribute 
   getValueTypeForComparison(instanceVal: any, refVal: any) {
@@ -571,13 +560,33 @@ export class InstanceTableComponent implements PostEditListener {
     return this.deletedDBIds.includes(dbId);
   }
 
+  isActiveEdit(attName: string): boolean {
+    if (!this._referenceInstance) return false;
+    if (this._instance?.dbId !== this._referenceInstance?.dbId) return false;
+    let instanceVal = this._instance?.attributes.get(attName);
+    let refVal = this._referenceInstance?.attributes.get(attName);
+    if ((instanceVal && instanceVal.dbId) || instanceVal instanceof Array) {
+      return this.getValueTypeForComparison(instanceVal, refVal);
+    }
+    return (instanceVal !== refVal);
+  }
+
+  compareToDbInstance(attName: string): boolean {
+    return this.isActiveEdit(attName);
+  }
+
   activeAndPassiveEdit(attName: string, index?: number): boolean {
-    return this.compareToSourceInstance(attName, index) && !!this._instance!.modifiedAttributes?.includes(attName);
+    let active = this._instance?.modifiedAttributes?.includes(attName) ? true : false;
+    return this.isPassiveEdit(attName, index) && active;
   }
 
   compareToSourceInstance(attName: string, index?: number): boolean {
     if (this._instance?.modifiedAttributes?.includes(attName)) return false;
     if (!this._instance?.source) return false;
+    return this.isPassiveEdit(attName, index);
+  }
+
+  isPassiveEdit(attName: string, index?: number): boolean {
     let instanceVal = this._instance?.attributes.get(attName);
     let refVal = this._instance?.source?.attributes.get(attName);
     if ((instanceVal && instanceVal.dbId) || instanceVal instanceof Array) {
