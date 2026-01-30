@@ -343,7 +343,10 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     // updated instance
     if ((this.instance?.modifiedAttributes?.length ?? 0) > 0)
       return true;
-     return false;
+    // updated passive attributes
+    if ((this.instance?.passiveModifiedAttributes?.length ?? 0) > 0)
+      return true;
+    return false;
   }
 
   changeTable(instance: Instance) {
@@ -428,9 +431,14 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   isComparable() {
     if (this.dbInstance)
       return true; // Make sure the comparison can be turned off
-    if (this.instance && this.instance.dbId > 0 &&
-      this.instance.modifiedAttributes &&
-      this.instance.modifiedAttributes.length)
+    if (
+      this.instance &&
+      this.instance.dbId > 0 &&
+      (
+        (this.instance.modifiedAttributes && this.instance.modifiedAttributes.length) ||
+        (this.instance.passiveModifiedAttributes && this.instance.passiveModifiedAttributes.length)
+      )
+    )
       return true;
     return false;
   }

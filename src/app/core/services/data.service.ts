@@ -1061,9 +1061,14 @@ export class DataService {
           let instances = this.fetchInstances(ids).pipe(map((instances: Instance[]) => { return instances }))
           instances.subscribe((instances: Instance[]) => {
             instances.forEach(inst => {
-              if (!inst.modifiedAttributes) return;
+              if (!inst.modifiedAttributes || !inst.passiveModifiedAttributes) return;
 
-              inst.modifiedAttributes!.forEach(attribute => {
+                // Process both modifiedAttributes and passiveModifiedAttributes
+                const allAttributes = [
+                ...(inst.modifiedAttributes || []),
+                ...(inst.passiveModifiedAttributes || [])
+                ];
+                allAttributes.forEach(attribute => {
                 const attributeData = inst.attributes.get(attribute);
                 if (!attributeData) return;
 

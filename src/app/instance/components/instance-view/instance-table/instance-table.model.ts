@@ -54,7 +54,7 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
       if(this.filterEdited) {
         let editedAtts: AttributeValue[] = [];
         attributeValues.forEach(att => {
-          if(this.instance?.modifiedAttributes?.includes(att.attribute.name)){
+          if(this.instance?.modifiedAttributes?.includes(att.attribute.name) || this.instance?.passiveModifiedAttributes?.includes(att.attribute.name)) {
             console.log(att.attribute.name)
             editedAtts.push(att);
           }

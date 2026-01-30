@@ -480,6 +480,7 @@ export class InstanceUtilities {
         });
     }
 
+    // TODO: ask Guanming about merging passive edits to the event tree
     private _mergeLocalChangesToEventTree(event: Instance,
         id2event: Map<number, Instance>,
         deletedDbIds: number[],
@@ -565,6 +566,7 @@ export class InstanceUtilities {
             instance.isStructureModified = source.isStructureModified;
         if (source.modifiedAttributes && source.modifiedAttributes.length)
             instance.modifiedAttributes = [...source.modifiedAttributes]
+        // Should not need to consider passiveModifiedAttributes here as they will be applied via other commits to the database.
         // Need to manually convert the instance to a string because the use of map for attributes
         if (source.attributes && source.attributes.size > 0) {
             // Need to recursively clone the attributes before assigning
@@ -603,10 +605,9 @@ export class InstanceUtilities {
     isChanged(instance: Instance): boolean {
         if (instance.dbId < 0)
             return false; // New instance
-        if (instance.modifiedAttributes && instance.modifiedAttributes.length > 0)
+        if ((instance.modifiedAttributes && instance.modifiedAttributes.length > 0) ||
+            (instance.passiveModifiedAttributes && instance.passiveModifiedAttributes.length > 0))
             return true;
-        if (instance.passiveModifiedAttributes && instance.passiveModifiedAttributes.length > 0)
-            return true;    
         return false;
     }
 
