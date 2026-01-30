@@ -1,11 +1,9 @@
 import { Injectable } from "@angular/core";
 import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
-import { Instance, ReviewStatus } from "../models/reactome-instance.model";
+import { Instance } from "../models/reactome-instance.model";
 import { InstanceUtilities } from "./instance.service";
 import { Store } from "@ngrx/store";
-import { UpdateInstanceActions, NewInstanceActions } from "src/app/instance/state/instance.actions";
 import { PostEditService } from "./post-edit.service";
-import { PostEditListener } from "../post-edit/PostEditOperation";
 import { DataService } from "./data.service";
 
 @Injectable({
@@ -15,12 +13,9 @@ import { DataService } from "./data.service";
  * This class is used to fetch instance and class definition from the RESTful API.
  */
 export class AttributeEditService {
-    private preventEvent: boolean = false; // Set to false by default
-
+    
     public constructor(private instUtil: InstanceUtilities,
-        private store: Store,
-        private dataService: DataService,
-        private postEditService: PostEditService, // This is used to perform post-edit actions) {
+        private dataService: DataService
         // Initialize any other properties if needed
     ) {
     }
@@ -61,6 +56,7 @@ export class AttributeEditService {
         //     this.addValueToAttribute(attributeValue, result, instance, replace);
         // }
     }
+    
     public addValueToAttribute(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean,) {
         if (result === undefined || result === null) { return; } // Do nothing if this is undefined or resolve to false (e.g. nothing there)
         let value = instance?.attributes?.get(attributeValue.attribute.name);
