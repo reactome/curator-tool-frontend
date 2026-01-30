@@ -17,7 +17,14 @@
             <span style="color: primary; font-family: serif;">&nbsp;I</span>
             &nbsp;
           </ng-template>
-          <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)">{{element.dbId}}</a><br>
+          <ng-container *ngIf="!blockRoute; else staticDbId">
+            <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)">{{element.dbId}}</a>
+          </ng-container>
+          <ng-template #staticDbId>
+            <a (click)="onInstanceLinkClicked(element)" class="ng-star-inserted" style="text-decoration: underline;">
+              {{element.dbId}}
+            </a>
+          </ng-template>
         </ng-container>
       </td>
     </ng-container>
@@ -25,7 +32,8 @@
     <!-- Display Name Column -->
     <ng-container matColumnDef="displayName">
       <th mat-header-cell *matHeaderCellDef>Display Name</th>
-      <td mat-cell *matCellDef="let element" class="wrap-text-cell" (mouseenter)="showSchemaClassName.set(element.dbId, true)"
+      <td mat-cell *matCellDef="let element" class="wrap-text-cell"
+        (mouseenter)="showSchemaClassName.set(element.dbId, true)"
         (mouseleave)="showSchemaClassName.set(element.dbId, false)">
 
         <div style="display: flex;">
@@ -39,7 +47,14 @@
             </ng-template>
           </ng-container>
           <ng-container *ngIf="!isSelection">
-            <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)">{{element.displayName}}</a>
+            <ng-container *ngIf="!blockRoute; else staticDbId">
+              <a [routerLink]=routerNavigationUrl (mouseenter)="setNavigationUrl(element)">{{element.displayName}}</a>
+            </ng-container>
+            <ng-template #staticDbId>
+              <a (click)="onInstanceLinkClicked(element)" class="ng-star-inserted" style="text-decoration: underline;">
+                {{element.displayName}}
+              </a>
+            </ng-template>
           </ng-container>
 
           <ng-container *ngIf="showSchemaClassName.get(element.dbId)">
@@ -101,8 +116,8 @@
       *matRowDef="let row; columns: displayedColumns;"></tr>
   </ng-container>
   <ng-container *ngIf="isSelection">
-    <tr class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row), highlightRow: highlightRow}" mat-row (click)="onRowClick(row)"
-      *matRowDef="let row; columns: displayedColumns;"></tr>
+    <tr class="rowBackground" [ngClass]="{deleteHighlight: isDeleted(row), highlightRow: highlightRow}" mat-row
+      (click)="onRowClick(row)" *matRowDef="let row; columns: displayedColumns;"></tr>
   </ng-container>
 
   <!-- Row shown when there is no matching data. -->
