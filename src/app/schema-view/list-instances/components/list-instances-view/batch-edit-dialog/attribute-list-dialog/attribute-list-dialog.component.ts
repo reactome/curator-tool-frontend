@@ -1,8 +1,8 @@
 import { Component, EventEmitter, Inject, Output, ViewChild } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent } from '@angular/material/dialog';
 import { MatSelectionList } from '@angular/material/list';
+import { AttributeValue } from 'src/app/core/models/reactome-instance.model';
 import { AttributeDataType } from 'src/app/core/models/reactome-schema.model';
-import { AttributeValue } from 'src/app/instance/components/instance-view/instance-table/instance-table.model';
 
 @Component({
   selector: 'app-attribute-list-dialog',

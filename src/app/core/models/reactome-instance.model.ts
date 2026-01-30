@@ -3,7 +3,7 @@
  */
 
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
-import { SchemaClass } from "./reactome-schema.model";
+import { SchemaAttribute, SchemaClass } from "./reactome-schema.model";
 
 export interface Instance {
   /**
@@ -24,6 +24,28 @@ export interface Instance {
   newInstOld2NewId?: Map<number, number>; // Used to map old dbId to new dbId for new instances referred after commit
   isStructureModified?: boolean; // Flag to indicate if this instance has structural changes
   source?: Instance; // Determine if an instance is from the original database copy or staged user edits. 
+}
+
+/**
+ * Used to encode the data for the attribute value cell.
+ */
+export interface AttributeValue {
+  attribute: SchemaAttribute,
+  value: any,
+  index?: number // index of the value for an multi-valued slot
+  editAction?: EDIT_ACTION // May be used to encode editing action
+  referenceValue?: any // To be used for comparison
+  passiveEdit?: boolean // To indicate if the edit is passive (e.g., review status change due to deletion of linked instance)
+}
+
+export enum EDIT_ACTION {
+  ADD_NEW,
+  ADD_VIA_SELECT,
+  REPLACE_NEW,
+  REPLACE_VIA_SELECT,
+  DELETE,
+  EDIT,
+  BOOKMARK
 }
 
 export interface InstanceList {

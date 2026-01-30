@@ -38,6 +38,8 @@ Done
 - there is still a bug in the table for rendering an additional line done 
 - When an instance is added, propogate the increase of the count up the hierarchy to database object. Done
 - When an instance such as a PE is deleted, the user needs to be alerted of all of the intances that will experince a structural change from this event. 
+- Add local vs db to the list instances 
+- Deletion dialog 
  
 
 

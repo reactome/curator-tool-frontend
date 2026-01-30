@@ -1,4 +1,3 @@
-import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
 import { Instance, ReviewStatus } from "../models/reactome-instance.model";
 import { DataService } from "../services/data.service";
 import { PostEditListener, PostEditOperation } from "./PostEditOperation";

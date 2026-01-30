@@ -1,11 +1,10 @@
 import { ChangeDetectorRef, Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { AttributeValue, EDIT_ACTION, Instance } from 'src/app/core/models/reactome-instance.model';
 import { ACTION_BUTTONS, AttributeCategory, AttributeDataType, SchemaAttribute, SchemaClass } from 'src/app/core/models/reactome-schema.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { Observable } from 'rxjs/internal/Observable';
 import { forkJoin } from 'rxjs/internal/observable/forkJoin';
-import { AttributeValue, EDIT_ACTION } from 'src/app/instance/components/instance-view/instance-table/instance-table.model';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
 import { NewInstanceDialogService } from 'src/app/instance/components/new-instance-dialog/new-instance-dialog.service';
 import { PostEditListener } from 'src/app/core/post-edit/PostEditOperation';

@@ -1,8 +1,7 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { AttributeValue, Instance } from 'src/app/core/models/reactome-instance.model';
 import { SchemaClass } from "../../../../core/models/reactome-schema.model";
-import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
 
 /**
  * A dialog component that is used to create a new Instance object.

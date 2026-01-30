@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { NewInstanceDialogComponent } from './new-instance-dialog.component';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { AttributeValue } from '../instance-view/instance-table/instance-table.model';
+import { AttributeValue, Instance } from 'src/app/core/models/reactome-instance.model';
 
 /**
  * Use a dialog service to hide the actual implementation of this dialog component from

@@ -12,7 +12,7 @@ import { PathwayDiagramComponent } from "../pathway-diagram.component";
 import { PathwayDiagramValidator } from "./pathway-diagram-validator";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { SelectInstanceDialogService } from "src/app/schema-view/list-instances/components/select-instance-dialog/select-instance-dialog.service";
-import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
+import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table-comparison.model";
 
 @Injectable()
 export class PathwayDiagramUtilService {

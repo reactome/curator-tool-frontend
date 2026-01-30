@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { EDIT_ACTION } from 'src/app/instance/components/instance-view/instance-table/instance-table.model';
+import { EDIT_ACTION } from 'src/app/core/models/reactome-instance.model';
 
 export interface User {
   name: string;

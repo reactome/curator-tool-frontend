@@ -15,10 +15,10 @@ import { take } from "rxjs";
 import { AttributeCategory, AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { MatDialog } from "@angular/material/dialog";
-import { Instance } from "src/app/core/models/reactome-instance.model";
+import { AttributeValue, EDIT_ACTION, Instance } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { ViewOnlyService } from "src/app/core/services/view-only.service";
-import { DragDropStatus, AttributeValue, EDIT_ACTION } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
+import { DragDropStatus } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
 import { DragDropService } from "src/app/schema-view/instance-bookmark/drag-drop.service";
 import { MatSlideToggle } from "@angular/material/slide-toggle";
 /**

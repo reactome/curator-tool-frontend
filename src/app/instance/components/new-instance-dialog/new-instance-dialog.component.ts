@@ -1,8 +1,7 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { AttributeValue, Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
-import { AttributeValue } from '../instance-view/instance-table/instance-table.model';
 import { Store } from '@ngrx/store';
 import { NewInstanceActions } from "src/app/instance/state/instance.actions";
 import { concatMap, from, Observable } from 'rxjs';

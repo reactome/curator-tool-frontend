@@ -5,13 +5,13 @@ import { Router } from "@angular/router";
 import { Store } from "@ngrx/store";
 import { Observable, Subscription, take } from "rxjs";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
-import { EDIT_ACTION } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
 import { NewInstanceActions } from "src/app/instance/state/instance.actions";
 import { SchemaClass } from "../../../../core/models/reactome-schema.model";
 import { DataService } from "../../../../core/services/data.service";
 import { Instance } from "src/app/core/models/reactome-instance.model";
 import { deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { combineLatest } from "rxjs";
+import { EDIT_ACTION } from "src/app/instance/components/instance-view/instance-table/instance-table-comparison.model";
 
 /** Tree node with expandable and level information */
 interface SchemaClassNode {

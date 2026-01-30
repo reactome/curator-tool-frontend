@@ -1,6 +1,5 @@
 import { Injectable } from "@angular/core";
-import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
-import { Instance } from "../models/reactome-instance.model";
+import { AttributeValue, Instance } from "../models/reactome-instance.model";
 import { InstanceUtilities } from "./instance.service";
 import { Store } from "@ngrx/store";
 import { PostEditService } from "./post-edit.service";

@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { EDIT_ACTION } from '../../instance-table.model';
+import { EDIT_ACTION } from '../../instance-table-comparison.model';
 
 export interface User {
   name: string;

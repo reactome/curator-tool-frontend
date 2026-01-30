@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
-import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
 import { BatchEditDialogComponent } from "./batch-edit-dialog.component";
 
 /**

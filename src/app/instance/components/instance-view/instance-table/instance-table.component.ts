@@ -21,9 +21,7 @@ import {
 import { DragDropService } from '../../../../schema-view/instance-bookmark/drag-drop.service';
 import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
 import {
-  AttributeValue,
   DragDropStatus,
-  EDIT_ACTION,
   InstanceDataSource,
 } from './instance-table.model';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
@@ -31,7 +29,7 @@ import { AttributeEditService } from 'src/app/core/services/attribute-edit.servi
 import { deleteInstances } from 'src/app/instance/state/instance.selectors';
 import { map, Observable, of, take } from 'rxjs';
 import { DataService } from 'src/app/core/services/data.service';
-import { InstanceComparisonDataSource } from './instance-table-comparison.model';
+import { AttributeValue, EDIT_ACTION, InstanceComparisonDataSource } from './instance-table-comparison.model';
 import { InstanceViewFilter } from 'src/app/core/instance-view-filters/InstanceViewFilter';
 import { DeletedInstanceAttributeFilter } from 'src/app/core/instance-view-filters/DeletedInstanceAttributeFilter';
 import { DisplayNameViewFilter } from 'src/app/core/instance-view-filters/DisplayNameViewFilter';

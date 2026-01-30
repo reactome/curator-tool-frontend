@@ -14,11 +14,11 @@ import { Store } from "@ngrx/store";
 import { Observable, take } from "rxjs";
 import { AttributeCategory, AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
-import { Instance } from "../../../../../core/models/reactome-instance.model";
+import { AttributeValue, EDIT_ACTION, Instance } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
 import { ViewOnlyService } from "../../../../../core/services/view-only.service";
 import { DragDropService } from "../../../../../schema-view/instance-bookmark/drag-drop.service";
-import { AttributeValue, DragDropStatus, EDIT_ACTION } from '../instance-table.model';
+import { DragDropStatus } from '../instance-table.model';
 import { MatDialog } from "@angular/material/dialog";
 import { TextEditorDialogComponent } from "./text-editor-dialog/text-editor-dialog.component";
 /**
