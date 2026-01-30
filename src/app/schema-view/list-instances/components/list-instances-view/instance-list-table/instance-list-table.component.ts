@@ -1,11 +1,12 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Store } from "@ngrx/store";
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Instance, NEW_DISPLAY_NAME, SelectedInstancesList } from "../../../../../core/models/reactome-instance.model";
 import { BookmarkActions } from "../../../../instance-bookmark/state/bookmark.actions";
-import { map, Observable, take } from 'rxjs';
-import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
-import { combineLatest, Subscription } from 'rxjs';
+import { map, take } from 'rxjs';
+import { deleteInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
+import { combineLatest } from 'rxjs';
 
 export interface ActionButton {
   name: string;
@@ -55,7 +56,8 @@ export class InstanceListTableComponent implements OnInit {
 
 
   constructor(private store: Store,
-    private instUtils: InstanceUtilities) {
+    private instUtils: InstanceUtilities,
+    private router: Router) {
   }
 
   ngOnInit() {
@@ -106,11 +108,21 @@ export class InstanceListTableComponent implements OnInit {
   }
 
   setNavigationUrl(instance: Instance) {
-    if (this.updatedDBIds.includes(instance.dbId) && !this.isLocal ) {
-      this.routerNavigationUrl = '/schema_view/instance/' + instance.dbId.toString() + '/comparison/' + instance.dbId.toString();
+    // Determine the parent view context from the current route
+    const currentUrl = this.router.url;
+    let baseView = 'schema_view'; // default
+    
+    if (currentUrl.includes('/event_view')) {
+      baseView = 'event_view';
+    } else if (currentUrl.includes('/schema_view')) {
+      baseView = 'schema_view';
     }
-    else {
-      this.routerNavigationUrl = '/schema_view/instance/' + instance.dbId.toString();
+    
+    // Build the navigation URL based on the determined view context
+    if (this.updatedDBIds.includes(instance.dbId) && !this.isLocal ) {
+      this.routerNavigationUrl = `/${baseView}/instance/${instance.dbId.toString()}/comparison/${instance.dbId.toString()}`;
+    } else {
+      this.routerNavigationUrl = `/${baseView}/instance/${instance.dbId.toString()}`;
     }
   }
 
