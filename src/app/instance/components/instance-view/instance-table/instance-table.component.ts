@@ -184,6 +184,8 @@ export class InstanceTableComponent implements PostEditListener {
   onNoInstanceAttributeEdit(data: AttributeValue) {
     // this.attributeEditService.onNoInstanceAttributeEdit(data, this._instance!);
     this.attributeEditService.onNoInstanceAttributeEdit(data, data.value, this._instance!, false);
+    if (this._instance!.source)
+      this.attributeEditService.onNoInstanceAttributeEdit(data, data.value, this._instance!.source, false);
     this.finishEdit(data.attribute.name, undefined);
   }
 
@@ -264,13 +266,17 @@ export class InstanceTableComponent implements PostEditListener {
       // Check if there is any value
       // Use cached shell instance
       this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!, replace);
+      if (this._instance!.source)
+        this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!.source, replace);
       this.finishEdit(attributeValue.attribute.name, attributeValue.value);
       this.cdr.detectChanges();
     });
   }
 
   private deleteInstanceAttribute(attributeValue: AttributeValue) {
-    this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!);
+    // if (this._instance!.source)
+    //   this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!.source);
+    this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!.source ? this._instance!.source : this._instance!);
     this.finishEdit(attributeValue.attribute.name, attributeValue.value);
   }
 
@@ -280,6 +286,8 @@ export class InstanceTableComponent implements PostEditListener {
     matDialogRef.afterClosed().subscribe((result) => {
       if (result === undefined || result.length === 0) return; // Do nothing
       this.attributeEditService.addInstanceViaSelect(attributeValue, result, this._instance!, replace);
+      if (this._instance!.source)
+        this.attributeEditService.addInstanceViaSelect(attributeValue, result, this._instance!.source, replace);
       this.finishEdit(attributeValue.attribute.name, attributeValue.value);
       this.cdr.detectChanges();
     });
@@ -299,6 +307,9 @@ export class InstanceTableComponent implements PostEditListener {
     // Fire an event for other components to update their display (e.g. display name)
     // Usually this should be fired without issue
     this.editedInstance.emit(this._instance);
+    if(this._instance?.source) {
+      this.editedInstance.emit(this._instance.source);
+    }
     this.inEditing = false;
   }
 
@@ -306,6 +317,8 @@ export class InstanceTableComponent implements PostEditListener {
     let result = attributeValue.value; //Only one value emitted at once
 
     this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!);
+    if (this._instance!.source)
+      this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!.source);
     this.finishEdit(attributeValue.attribute.name, attributeValue.value);
     this.cdr.detectChanges();
   }
