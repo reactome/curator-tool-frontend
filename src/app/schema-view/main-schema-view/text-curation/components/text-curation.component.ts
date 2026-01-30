@@ -10,7 +10,6 @@ import { AgentExecutor, createOpenAIFunctionsAgent } from "langchain/agents";
 import { pull } from 'langchain/hub';
 import { AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
 import { DataService } from 'src/app/core/services/data.service';
-import { InstanceTableComponent } from 'src/app/instance/components/instance-view/instance-table/instance-table.component';
 import { NewInstanceActions } from "src/app/instance/state/instance.actions";
 import { z } from "zod";
 
@@ -18,8 +17,7 @@ import { HttpClient } from '@angular/common/http';
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
-import {MatMenu, MatMenuTrigger} from "@angular/material/menu";
-import { environment } from 'src/environments/environment.dev';
+import { MatMenu, MatMenuTrigger } from "@angular/material/menu";
 import { EventTreeModule } from "src/app/event-view/components/event-tree/event-tree.module";
 
 @Component({

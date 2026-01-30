@@ -25,3 +25,46 @@ input {
   // width: 100vw;
   height: 75vh;
 }
+
+.reactome-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 75vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo-container {
+  margin-bottom: 2rem;
+}
+
+.reactome-logo {
+  height: 120px;
+  width: auto;
+  max-width: 100%;
+}
+
+.title-container {
+  margin-top: 1rem;
+}
+
+.banner-title {
+  font-size: 1.8rem;
+  font-weight: 300;
+  color: #333;
+  margin: 0;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  .reactome-logo {
+    height: 80px;
+  }
+  
+  .banner-title {
+    font-size: 1.4rem;
+  }
+}

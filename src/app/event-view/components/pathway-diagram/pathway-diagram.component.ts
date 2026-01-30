@@ -318,6 +318,23 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
   private showCyPopup(event: any) { // Use any to avoid any compiling error
     this.elementUnderMouse = event.target;
+    
+    // Check for multiple selected nodes with reactomeId in editing mode first
+    if (this.isEditing && this.diagram?.cy) {
+      const selectedNodes = this.diagram.cy.$(':selected').nodes().filter((node: any) => {
+        // Use the following to check if it is a reaction node or PE node
+        return this.isNodeForAlignment(node);
+      });
+      if (selectedNodes.length > 1) {
+        this.elementTypeForPopup = ElementType.MULTIPLE_NODES;
+        // The offset set 5px is important to prevent the native popup menu appear
+        this.menuPositionX = (event.renderedPosition.x + this.MENU_POSITION_BUFFER) + "px";
+        this.menuPositionY = (event.renderedPosition.y + this.MENU_POSITION_BUFFER) + "px";
+        this.showMenu = true;
+        return;
+      }
+    }
+    
     if (this.elementUnderMouse === undefined ||
       this.elementUnderMouse === this.diagram!.cy) { // Should check for instanceof. But not sure how!
       this.elementTypeForPopup = ElementType.CYTOSCAPE; // As the default
@@ -473,6 +490,14 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         });
         break;
 
+      case 'alignCentersVertically':
+        this.alignNodesVertically();
+        break;
+
+      case 'alignCentersHorizontally':
+        this.alignNodesHorizontally();
+        break;
+
       default:
         console.debug('Unknown action: ' + action);
         break;
@@ -592,6 +617,57 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       return;
     }
     this.diagramUtils.addNewEvent(event, this.diagram.cy);
+  }
+
+  private alignNodesVertically() {
+    if (!this.diagram?.cy) return;
+    
+    const selectedNodes = this.diagram.cy.$(':selected').nodes().filter((node: any) => {
+      return this.isNodeForAlignment(node);
+    });
+    if (selectedNodes.length < 2) return;
+    
+    // Calculate the average x position (vertical center line)
+    let totalX = 0;
+    selectedNodes.forEach((node: any) => {
+      totalX += node.position('x');
+    });
+    const averageX = totalX / selectedNodes.length;
+    
+    // Move all nodes to the average x position
+    selectedNodes.forEach((node: any) => {
+      node.position('x', averageX);
+    });
+  }
+
+  private alignNodesHorizontally() {
+    if (!this.diagram?.cy) return;
+    
+    const selectedNodes = this.diagram.cy.$(':selected').nodes().filter((node: any) => {
+      return this.isNodeForAlignment(node);
+    });
+    if (selectedNodes.length < 2) return;
+    
+    // Calculate the average y position (horizontal center line)
+    let totalY = 0;
+    selectedNodes.forEach((node: any) => {
+      totalY += node.position('y');
+    });
+    const averageY = totalY / selectedNodes.length;
+    
+    // Move all nodes to the average y position
+    selectedNodes.forEach((node: any) => {
+      node.position('y', averageY);
+    });
+  }
+
+  /**
+   * Check if a node should be used for alignment
+   * @param node
+   * @returns 
+   */
+  private isNodeForAlignment(node: any): boolean {
+    return node.hasClass('PhysicalEntity') || (node.hasClass('reaction') && !node.hasClass(EDGE_POINT_CLASS));
   }
 
 }
