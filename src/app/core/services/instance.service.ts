@@ -67,7 +67,7 @@ export class InstanceUtilities {
     // Tracking the instances that are selected
     private listName2selectedInstances = new Map<string, Instance[]>();
 
-    constructor(private store: Store) { 
+    constructor(private store: Store) {
     }
 
     /**
@@ -383,10 +383,10 @@ export class InstanceUtilities {
                     if (!attValue1.dbId)
                         break; // This is not a instance type attribute
                     if (dbIds.includes(attValue1.dbId)) {
-                        if(!apply) return true;
+                        if (!apply) return true;
                         attValue.splice(i, 1);
                         i--;
-                        this.addToModifiedAttribute(att, inst);
+                        this.addToPassiveModifiedAttribute(att, inst);
                         modified = true;
                     }
                 }
@@ -395,10 +395,10 @@ export class InstanceUtilities {
             // But we can check if it has dbId
             else if (attValue.dbId) {
                 if (dbIds.includes(attValue.dbId)) {
-                    if(!apply) return true;
+                    if (!apply) return true;
                     // Remove this attribute since nothing is there
                     inst.attributes.delete(att);
-                    this.addToModifiedAttribute(att, inst);
+                    this.addToPassiveModifiedAttribute(att, inst);
                     modified = true;
                 }
             }
@@ -466,6 +466,13 @@ export class InstanceUtilities {
             inst.modifiedAttributes = [];
         if (!inst.modifiedAttributes.includes(att))
             inst.modifiedAttributes.push(att);
+    }
+
+    private addToPassiveModifiedAttribute(att: string, inst: Instance) {
+        if (!inst.passiveModifiedAttributes)
+            inst.passiveModifiedAttributes = [];
+        if (!inst.passiveModifiedAttributes.includes(att))
+            inst.passiveModifiedAttributes.push(att);
     }
 
     mergeLocalChangesToEventTree(rootEvent: Instance, id2instance: Map<number, Instance>) {
@@ -730,7 +737,7 @@ export class InstanceUtilities {
             if (!Array.isArray(values)) { values = [values]; }
             if (!referenceValues)
                 return false; // If no source, no filter has been applied, no edits
-                //referenceValues = [];
+            //referenceValues = [];
             if (!Array.isArray(referenceValues)) { referenceValues = [referenceValues]; }
             // if the values for a shared attribute differ, add them to be displayed 
 
