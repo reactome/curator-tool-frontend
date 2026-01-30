@@ -600,6 +600,16 @@ export class InstanceUtilities {
         return false;
     }
 
+    isChanged(instance: Instance): boolean {
+        if (instance.dbId < 0)
+            return false; // New instance
+        if (instance.modifiedAttributes && instance.modifiedAttributes.length > 0)
+            return true;
+        if (instance.passiveModifiedAttributes && instance.passiveModifiedAttributes.length > 0)
+            return true;    
+        return false;
+    }
+
     /**
      * Handle post processing after committing an instance to the database.
      * @param instance 

@@ -18,6 +18,7 @@ export interface Instance {
   displayName?: string;
   attributes?: Map<string, any> | any; // This is optional so that we can have a simple shell instance. Use also any for easy converting
   modifiedAttributes?: string[] // Optional list flagging names of modified attributes
+  passiveModifiedAttributes?: string[] // Optional list flagging names of passively modified attributes (e.g., due to deletion of linked instance)
   qaIssues?: Map<string, string[][]>; // Optional map of QA check label to the corresponding tabular report
   defaultPersonId?: number; // Used to create InstanceEdit for the created and modified slot at the server-side.
   // Don't use Map and use JSON object instead for easy converting to JSON
