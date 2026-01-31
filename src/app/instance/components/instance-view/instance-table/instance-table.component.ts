@@ -110,21 +110,7 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   @Input() set referenceInstance(refInstance: Instance | undefined) {
-    if (refInstance === undefined) return;
-    this._referenceInstance = refInstance;
-    if (refInstance === undefined) {
-      this.showReferenceColumn = false;
-      this.displayedColumns = ['name', 'value'];
-    } else {
-      this.showReferenceColumn = true;
-      this.displayedColumns = ['name', 'value', 'referenceValue'];
-      if (this._instance?.dbId === refInstance.dbId) { this.referenceColumnTitle = 'Database Value' }
-      else {
-        this.referenceColumnTitle = this._referenceInstance?.displayName!;
-        this.valueColumnTitle = this._instance?.displayName!;
-      }
-    }
-    this.updateTableContent();
+    this.setReferenceInstance(refInstance!);
   }
 
   constructor(
@@ -158,6 +144,26 @@ export class InstanceTableComponent implements PostEditListener {
 
   changeShowFilterOptions() {
     this.showFilterOptions = !this.showFilterOptions;
+  }
+
+  setReferenceInstance(refInstance: Instance | undefined) {
+    this._referenceInstance = refInstance;
+    if (refInstance === undefined) {
+      this.showReferenceColumn = false;
+      this.displayedColumns = ['name', 'value'];
+    } 
+    else {
+      this.showReferenceColumn = true;
+      this.displayedColumns = ['name', 'value', 'referenceValue'];
+      if (this._instance?.dbId === refInstance.dbId) { 
+        this.referenceColumnTitle = 'Database Value' 
+      }
+      else {
+        this.referenceColumnTitle = this._referenceInstance?.displayName!;
+        this.valueColumnTitle = this._instance?.displayName!;
+      }
+    }
+    this.updateTableContent();
   }
 
   changeShowHeaderActions() {
@@ -337,7 +343,7 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   updateTableContent(): void {
-    if (this._referenceInstance === undefined || this._referenceInstance?.dbId === this._instance?.dbId) {
+    if (this._referenceInstance === undefined || this._referenceInstance?.dbId !== this._instance?.dbId) {
       this.instanceDataSource = new InstanceDataSource(
         this._instance,
         this.categories,

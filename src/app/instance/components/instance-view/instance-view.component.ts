@@ -37,6 +37,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   instance: Instance | undefined;
   // Control if the instance is loading
   showProgressSpinner: boolean = false;
+  // TODO: Try to remove showReferenceColumn and use dbInstance to determine
+  // if showReferenceColumn is true.
+  // If there id dbInstance, showReferenceColumn is true.
   showReferenceColumn: boolean = false;
   dbInstance: Instance | undefined;
   title: string = '';
@@ -252,7 +255,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     // avoid to do anything if nothing there
     if (!dbId) return;
     // Avoid reloading if it has been loaded already
-    if (dbId && this.instance && !forceReload && dbId === this.instance.dbId)
+    if (dbId && this.instance && !forceReload && dbId === this.instance.dbId && (!needComparsion || (needComparsion && this.dbInstance)))
       return;
     setTimeout(() => {
       this._fetchInstance(dbId, needComparsion, resetHistory, forceReload);
@@ -282,8 +285,10 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   private _loadIntance(instance: Instance, resetHistory: boolean, needComparsion: boolean, dbId: number) {
     this.dbInstance = undefined;
     this.runInstanceViewFilters(instance).subscribe(filteredInstance => {
+      // Due to the switch of the bound instance identify, the table will be reloaded automatically.
+      // Therefore, nothing needs to be done here.
       this.instance = filteredInstance;
-      this.changeTable(this.instance);
+      // this.changeTable(this.instance);
       if (resetHistory)
         this.viewHistory.length = 0;
       this.addToViewHistory(this.instance);
@@ -398,6 +403,14 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   showReferenceValueColumn() {
     this.showReferenceColumn = !this.showReferenceColumn;
     if (this.blockRoute) {
+      // If this is used to switch off the reference column, just return
+      if (!this.showReferenceColumn) {
+        this.dbInstance = undefined;
+        // The following is hard-wired to clear the reference column in the table
+        // This should be improved later
+        this.instanceTable.setReferenceInstance(undefined);
+        return;
+      }
       this.instUtils.setLastClickedDbIdForComparison(this.instance!.dbId);
       return;
     }
