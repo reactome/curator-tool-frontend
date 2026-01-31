@@ -40,6 +40,7 @@ Done
 - When an instance such as a PE is deleted, the user needs to be alerted of all of the intances that will experince a structural change from this event. 
 - Add local vs db to the list instances 
 - Deletion dialog 
+- TODO: Merge AttributeValue in reactome-comparison together with another one defined in the reactome-instance model.
  
 
 

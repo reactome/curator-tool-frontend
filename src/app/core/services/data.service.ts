@@ -1,10 +1,10 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
-import { catchError, combineLatest, concat, concatMap, forkJoin, map, Observable, of, Subject, take, tap, throwError } from 'rxjs';
+import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
-import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, ReviewStatus, UserInstances } from "../models/reactome-instance.model";
+import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
 import {
   AttributeCategory,
   SchemaAttribute,
@@ -12,9 +12,6 @@ import {
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
 import { QAReport } from "../models/qa-report.model";
-import { InstanceViewFilter } from "../instance-view-filters/InstanceViewFilter";
-import { DisplayNameViewFilter } from "../instance-view-filters/DisplayNameViewFilter";
-import { DeletedInstanceAttributeFilter } from "../instance-view-filters/DeletedInstanceAttributeFilter";
 
 
 @Injectable({
@@ -373,18 +370,6 @@ export class DataService {
       );
   }
 
-  fetchEventPlotData(dbId: number, plotType: string): Observable<JSON> {
-    return this.http.get<JSON>(this.eventPlotDataUrl + `${dbId}` + "?type=" + plotType)
-      .pipe(map((data: JSON) => data),
-        catchError((err: Error) => {
-          console.log("Plot data could not be retrieved: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 100
-          });
-          return throwError(() => err);
-        }),
-      );
-  }
 
   getNextNewDbId(): number {
     let rtn = this.nextNewDbId;

@@ -73,7 +73,7 @@ export class InstanceEffects {
             attribute: inst.attribute,
             instance: this.instUtils.makeShell(inst.instance)
           }));
-          // By registering instance, the identify if the instance obejct is changed.
+          // By registering instance, the identity of the instance object is changed.
           // Therefore, we have to call this again to make sure the same instance is used
           // for both display and cache. This call is duplicated for registering (for updated)
           // But so far, there is no better way to solve this issue

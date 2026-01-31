@@ -1,8 +1,6 @@
 import { Injectable } from "@angular/core";
 import { AttributeValue, Instance } from "../models/reactome-instance.model";
 import { InstanceUtilities } from "./instance.service";
-import { Store } from "@ngrx/store";
-import { PostEditService } from "./post-edit.service";
 import { DataService } from "./data.service";
 
 @Injectable({
@@ -12,7 +10,7 @@ import { DataService } from "./data.service";
  * This class is used to fetch instance and class definition from the RESTful API.
  */
 export class AttributeEditService {
-    
+
     public constructor(private instUtil: InstanceUtilities,
         private dataService: DataService
         // Initialize any other properties if needed
@@ -55,7 +53,7 @@ export class AttributeEditService {
         //     this.addValueToAttribute(attributeValue, result, instance, replace);
         // }
     }
-    
+
     public addValueToAttribute(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean,) {
         if (result === undefined || result === null) { return; } // Do nothing if this is undefined or resolve to false (e.g. nothing there)
         let value = instance?.attributes?.get(attributeValue.attribute.name);
@@ -138,6 +136,47 @@ export class AttributeEditService {
                         value[attributeValue.index!] = result;
                     }
                 }
+            }
+        }
+        if (attributeValue.value === value) {
+            // If the value is the same as the current value, do not update
+            // This is to avoid unnecessary updates
+            return;
+        }
+    }
+
+    /**
+     * Delete an non-instance attribute value
+     * @param attributeValue
+     * @returns 
+     */
+    deleteAttributeValue(instance: Instance | undefined, attributeValue: AttributeValue) {
+        if (!instance) return; // Do nothing if instance is undefined
+        console.log('deleteAttributeValue: ', attributeValue);
+        let value = instance?.attributes?.get(attributeValue.attribute.name);
+        //this.addModifiedAttribute(attributeValue.attribute.name, value);
+        if (attributeValue.attribute.cardinality === '1') {
+            // This should not occur. Just in case
+            //this._instance?.attributes?.delete(attributeValue.attribute?.name);
+            instance?.attributes?.set(
+                attributeValue.attribute?.name,
+                undefined
+            );
+        } else {
+            // This should be a list
+            const valueList: [] = instance?.attributes?.get(
+                attributeValue.attribute.name
+            );
+            // Remove the value if more than one
+            if (valueList.length > 1) {
+                valueList.splice(attributeValue.index!, 1);
+            }
+            // Otherwise need to set the value to undefined so a value is assigned
+            else {
+                instance?.attributes?.set(
+                    attributeValue.attribute?.name,
+                    undefined
+                );
             }
         }
         if (attributeValue.value === value) {

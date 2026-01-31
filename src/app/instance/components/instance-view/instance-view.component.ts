@@ -146,16 +146,16 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     subscription = this.instUtils.resetInst$.subscribe(data => {
       // These two cases work for reset an updated instances
       if (this.instance && this.instance.dbId === data.dbId) {
-        this.loadInstance(data.dbId, false, false, true);
+        this.loadInstance(data.dbId, false, false, true, true);
       }
       else if (this.instUtils.isReferrer(data.dbId, this.instance!))
-        this.loadInstance(this.instance!.dbId, false, false, true);
+        this.loadInstance(this.instance!.dbId, false, false, true, false);
     });
     this.subscriptions.add(subscription);
     // In case the deleted instance is referred by the current instance
     subscription = this.instUtils.markDeletionDbId$.subscribe(dbId => {
       if (this.instance && this.instUtils.isReferrer(dbId, this.instance)) {
-        this.loadInstance(this.instance.dbId, false, false, true);
+        this.loadInstance(this.instance.dbId, false, false, true, false);
       }
     });
     this.subscriptions.add(subscription);
@@ -251,24 +251,25 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   loadInstance(dbId: number,
     needComparsion: boolean = false,
     resetHistory: boolean = false,
-    forceReload: boolean = false) {
+    forceReload: boolean = false,
+    resetCache: boolean = false) {
     // avoid to do anything if nothing there
     if (!dbId) return;
     // Avoid reloading if it has been loaded already
     if (dbId && this.instance && !forceReload && dbId === this.instance.dbId && (!needComparsion || (needComparsion && this.dbInstance)))
       return;
     setTimeout(() => {
-      this._fetchInstance(dbId, needComparsion, resetHistory, forceReload);
+      this._fetchInstance(dbId, needComparsion, resetHistory, resetCache);
     });
   }
 
   private _fetchInstance(dbId: number,
     needComparsion: boolean = false,
     resetHistory: boolean = false,
-    forceReload: boolean = false) {
+    resetCache: boolean = false) {
     // Wrap them together to avoid NG0100 error
     this.showProgressSpinner = true;
-    if (forceReload && dbId >= 0) // TODO: Make sure this does not have any side effect.
+    if (resetCache && dbId >= 0) // TODO: Make sure this does not have any side effect.
       this.dataService.removeInstanceInCache(dbId)
     this.dataService.fetchInstance(dbId).subscribe((instance) => {
       if (instance.schemaClass)
@@ -297,6 +298,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       if (needComparsion) {
         this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(instance => {
           this.dbInstance = instance;
+          this.showReferenceColumn = true;
         });
       }
     });
@@ -405,14 +407,18 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     if (this.blockRoute) {
       // If this is used to switch off the reference column, just return
       if (!this.showReferenceColumn) {
+        // Reset this dbInstance to undefined should be enough to refresh 
+        // the table
         this.dbInstance = undefined;
         // The following is hard-wired to clear the reference column in the table
         // This should be improved later
-        this.instanceTable.setReferenceInstance(undefined);
+        // this.instanceTable.setReferenceInstance(undefined);
         return;
       }
-      this.instUtils.setLastClickedDbIdForComparison(this.instance!.dbId);
-      return;
+      else {
+        this.instUtils.setLastClickedDbIdForComparison(this.instance!.dbId);
+        return;
+      }
     }
     let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
       .reduce((acc, val) => acc.concat(val), [])
