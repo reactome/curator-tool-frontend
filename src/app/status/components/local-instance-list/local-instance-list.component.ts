@@ -256,12 +256,9 @@ export class UpdatedInstanceListComponent implements OnInit {
 
   navigateUrl(instance: Instance) {
     if (this.blockRoute) {
-      // Updated instances should open comparison view
-      let isUpdated = this.updatedInstances.find(inst => inst.dbId === instance.dbId);
-      if (isUpdated)
-        this.instanceUtilities.setLastClickedDbIdForComparison(instance.dbId);
-      else  
-        this.instanceUtilities.setLastClickedDbId(instance.dbId);
+      // Using the comparison is not that convenient for the users.
+      // Just open the instance view.
+      this.instanceUtilities.setLastClickedDbId(instance.dbId);
       return;
     }
     if (!this.isSelection)
