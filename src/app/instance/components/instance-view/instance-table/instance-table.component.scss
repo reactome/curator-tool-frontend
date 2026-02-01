@@ -14,10 +14,6 @@
   width: 200px;
   min-width: 100px;
 
-  &.highlight {
-    background-color: var(--mat-toolbar-container-background-color);
-  }
-
   &.required {
     background-color: #f8dcbf;
 
@@ -27,25 +23,23 @@
     background-color: #f28b82;
   }
 
-  &.passiveEdit {
+  &.active_edit {
+    font-weight: bold;
+    background-color: rgb(235, 148, 235);
+  }
+
+  &.passive_edit {
     font-style: italic;
     background-color: #ad7a76;
   }
 
-  &.activeAndPassiveEdit {
+  &.active_and_passive_edit {
     font-weight: bold;
     font-style: italic;
     background-color: rgb(157, 99, 157);
   }
 
 }
-
-.valueColumn {
-  // &.passiveEdit {
-  //   font-style: italic;
-  // }
-}
-
 
 .thead {
   height: 40px !important;

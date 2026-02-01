@@ -407,7 +407,7 @@ export class InstanceUtilities {
     }
 
     /**
-     * Check if the first instance, of which dbId is passed, is a reference of the second instnace
+     * Check if the first instance, of which dbId is passed, is a reference of the second instance.
      * @param referrer 
      * @param inst 
      */
@@ -459,13 +459,6 @@ export class InstanceUtilities {
                 inst.attributes.delete(att);
             }
         }
-    }
-
-    private addToModifiedAttribute(att: string, inst: Instance) {
-        if (!inst.modifiedAttributes)
-            inst.modifiedAttributes = [];
-        if (!inst.modifiedAttributes.includes(att))
-            inst.modifiedAttributes.push(att);
     }
 
     private addToPassiveModifiedAttribute(att: string, inst: Instance) {

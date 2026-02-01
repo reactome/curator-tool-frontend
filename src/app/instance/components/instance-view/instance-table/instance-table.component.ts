@@ -271,8 +271,9 @@ export class InstanceTableComponent implements PostEditListener {
     //TODO: Add a new value may reset the scroll position. This needs to be changed!
     this.updateTableContent();
     // Need to call this before registerUpdatedInstance
-    // in case the instance is used somewhere via the ngrx statement management system
-    this.addModifiedAttribute(attName, value);
+    // in case the instance is used somewhere via the ngrx state management system
+    this.attributeEditService.addModifiedAttribute(this._instance, attName);
+    this.attributeEditService.addModifiedAttribute(this._instance!.source, attName);
     // Register the updated instances
     this.registerUpdatedInstance(attName);
     // Fire an event for other components to update their display (e.g. display name)
@@ -505,7 +506,7 @@ export class InstanceTableComponent implements PostEditListener {
     this.updateTableContent();
   }
 
-  highlightRequired(element: AttributeValue): boolean {
+  isRequired(element: AttributeValue): boolean {
     if (element.attribute.category === AttributeCategory.REQUIRED && element.value === undefined) {
       return true;
     }
@@ -514,7 +515,7 @@ export class InstanceTableComponent implements PostEditListener {
     }
   }
 
-  highlightMandatory(element: AttributeValue): boolean {
+  isMandatory(element: AttributeValue): boolean {
     if (element.attribute.category === AttributeCategory.MANDATORY && element.value === undefined) {
       return true;
     }
@@ -523,72 +524,34 @@ export class InstanceTableComponent implements PostEditListener {
     }
   }
 
-  isValueDeleted(): boolean {
+  isInstanceDeleted(): boolean {
     if (this.deletedDBIds.length === 0) return false;
     if (this.deletedDBIds.includes(this._instance!.dbId)) return true;
     return false  ;
   }
 
-  compareDbToSourceInstance(dbId: number): boolean {
-    return this.deletedDBIds.includes(dbId);
-  }
-
-  isActiveEdit(attName: string): boolean {
-    if (!this._referenceInstance) return false;
-    if (this._instance?.dbId !== this._referenceInstance?.dbId) return false;
-    let instanceVal = this._instance?.attributes.get(attName);
-    let refVal = this._referenceInstance?.attributes.get(attName);
-    if ((instanceVal && instanceVal.dbId) || instanceVal instanceof Array) {
-      return this.getValueTypeForComparison(instanceVal, refVal);
-    }
-    return (instanceVal !== refVal);
-  }
-
-  compareToDbInstance(attName: string): boolean {
-    return this.isActiveEdit(attName);
-  }
-
-  activeAndPassiveEdit(attName: string, index?: number): boolean {
-    let active = this._instance?.modifiedAttributes?.includes(attName) ? true : false;
-    return this.isPassiveEdit(attName, index) && active;
-  }
-
-  compareToSourceInstance(attName: string, index?: number): boolean {
-    if (this._instance?.modifiedAttributes?.includes(attName)) return false;
-    if (!this._instance?.source) return false;
-    return this.isPassiveEdit(attName, index);
-  }
-
-  isPassiveEdit(attName: string, index?: number): boolean {
-    let instanceVal = this._instance?.attributes.get(attName);
-    let refVal = this._instance?.source?.attributes.get(attName);
-    if ((instanceVal && instanceVal.dbId) || instanceVal instanceof Array) {
-      if (index)
-        return this.singleValueCheck(attName, index!);
-      else
+  isActiveEdited(attName: string): boolean {
+    // For comparison mode (instance vs reference instance)
+    if (this._referenceInstance && this._instance?.dbId !== this._referenceInstance?.dbId) {
+      let instanceVal = this._instance?.attributes.get(attName);
+      let refVal = this._referenceInstance?.attributes.get(attName);
+      if ((instanceVal && instanceVal.dbId) || instanceVal instanceof Array) {
         return this.getValueTypeForComparison(instanceVal, refVal);
-
+      }
+      return (instanceVal !== refVal);
     }
-    return (instanceVal !== refVal);
+    // For regular edit mode (check if attribute was modified by user)
+    return this._instance?.modifiedAttributes?.includes(attName) || false;
   }
 
-  singleValueCheck(attName: string, index: number): boolean {
-    let isModified = this._instance?.modifiedAttributes?.includes(attName);
-    let instanceVal = this._instance?.attributes.get(attName);
-    if (!instanceVal) return false;
-    if (!Array.isArray(instanceVal)) return false;
-    let refVal = this._instance?.source?.attributes.get(attName);
-    if (!refVal) return false;
-    if (!Array.isArray(refVal)) return false;
-    if (instanceVal.at(index) && refVal?.at(index)) {
-      if (instanceVal.at(index).dbId && refVal.at(index).dbId) {
-        // if(isModified && this._instance?.modifiedAttributes?.at(attName))
-        return instanceVal.at(index).dbId !== refVal.at(index).dbId;
-      } else {
-        return instanceVal.at(index) !== refVal.at(index);
-      }
-    }
-    return false;
+  activeAndPassiveEdit(attName: string): boolean {
+    let hasActiveEdit = this.isActiveEdited(attName);
+    let hasPassiveEdit = this.isPassiveEdited(attName);
+    return hasActiveEdit && hasPassiveEdit;
+  }
+
+  isPassiveEdited(attName: string): boolean {
+    return this._instance?.passiveModifiedAttributes?.includes(attName) || false;
   }
 
 }

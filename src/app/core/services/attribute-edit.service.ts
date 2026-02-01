@@ -186,4 +186,14 @@ export class AttributeEditService {
         }
     }
 
+    addModifiedAttribute(instance: Instance | undefined, attributeName: string) {
+        // Do nothing if there is no instance
+        if (instance === undefined) return; // Do nothing if there is no instance
+        if (instance.modifiedAttributes === undefined) {
+            instance.modifiedAttributes = [];
+        }
+        if (!instance.modifiedAttributes.includes(attributeName))
+            instance.modifiedAttributes.push(attributeName);
+    }
+
 }

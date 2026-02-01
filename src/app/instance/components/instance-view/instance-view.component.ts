@@ -107,7 +107,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
             dbId2 = parseInt(dbId2);
 
             if (dbId === dbId2) {
-              this.loadCacheAndReferenceColumn(dbId);
+              this.loadInstance(dbId, true)
             }
             else {
               this.loadTwoInstances(dbId, dbId2);
@@ -159,6 +159,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       }
     });
     this.subscriptions.add(subscription);
+    // When a deletion is committed. 
     subscription = this.instUtils.deletedDbId$.subscribe(dbId => {
       if (this.instance && this.instance.dbId === dbId) {
         this.instUtils.removeInstInArray(this.instance, this.viewHistory);
@@ -181,7 +182,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         return;
       }
       this.instUtils.removeInstInArray(this.instance, this.viewHistory);
-      this.dataService.fetchInstance(newDbId).subscribe(inst => this.changeTable(inst));
+      this.loadInstance(newDbId, false, false, true);
     });
     this.subscriptions.add(subscription);
     // To mark an instance is deleted
@@ -259,36 +260,28 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     if (dbId && this.instance && !forceReload && dbId === this.instance.dbId && (!needComparsion || (needComparsion && this.dbInstance)))
       return;
     setTimeout(() => {
-      this._fetchInstance(dbId, needComparsion, resetHistory, resetCache);
+      this.showProgressSpinner = true;
+      if (resetCache && dbId >= 0) // TODO: Make sure this does not have any side effect.
+        this.dataService.removeInstanceInCache(dbId)
+      this.dataService.fetchInstance(dbId).subscribe((instance) => {
+        if (instance.schemaClass)
+          // Turn off the comparison first
+          this._loadIntance(instance, resetHistory, needComparsion, dbId);
+        else {
+          this.dataService.handleSchemaClassForInstance(instance).subscribe(inst => {
+            this._loadIntance(inst, resetHistory, needComparsion, dbId);
+          })
+        }
+      })
     });
   }
 
-  private _fetchInstance(dbId: number,
-    needComparsion: boolean = false,
-    resetHistory: boolean = false,
-    resetCache: boolean = false) {
-    // Wrap them together to avoid NG0100 error
-    this.showProgressSpinner = true;
-    if (resetCache && dbId >= 0) // TODO: Make sure this does not have any side effect.
-      this.dataService.removeInstanceInCache(dbId)
-    this.dataService.fetchInstance(dbId).subscribe((instance) => {
-      if (instance.schemaClass)
-        // Turn off the comparison first
-        this._loadIntance(instance, resetHistory, needComparsion, dbId);
-      else {
-        this.dataService.handleSchemaClassForInstance(instance).subscribe(inst => {
-          this._loadIntance(inst, resetHistory, needComparsion, dbId);
-        })
-      }
-    })
-  }
-
   private _loadIntance(instance: Instance, resetHistory: boolean, needComparsion: boolean, dbId: number) {
-    this.dbInstance = undefined;
     this.runInstanceViewFilters(instance).subscribe(filteredInstance => {
       // Due to the switch of the bound instance identify, the table will be reloaded automatically.
       // Therefore, nothing needs to be done here.
       this.instance = filteredInstance;
+      // No need to change the table here. When the instance is changed, the table will be updated automatically.
       // this.changeTable(this.instance);
       if (resetHistory)
         this.viewHistory.length = 0;
@@ -302,7 +295,6 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         });
       }
     });
-
   }
 
   // Create a list to hold all service instances
@@ -392,16 +384,6 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.store.dispatch(BookmarkActions.add_bookmark(this.instance));
   }
 
-  loadCacheAndReferenceColumn(dbId: number) {
-    //this.showReferenceColumn = !this.showReferenceColumn;
-    // concat the two queries
-    this.loadInstance(dbId, true, false, false);
-
-    this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
-      dbInstance => this.dataService.handleSchemaClassForInstance(dbInstance).pipe(take(1)));
-    this.changeTable(this.instance!);
-  }
-
   showReferenceValueColumn() {
     this.showReferenceColumn = !this.showReferenceColumn;
     if (this.blockRoute) {
@@ -432,13 +414,6 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.router.navigate([newUrl]);
   }
 
-  //TODO: Consider showing the different attributes as the default.
-  private loadReferenceInstance(dbId: number) {
-    this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(
-      dbInstance => this.dbInstance = dbInstance);
-    this.changeTable(this.instance!);
-  }
-
   isUploadable() {
     if (this.isDeleted())
       return true;
@@ -454,8 +429,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.instance &&
       this.instance.dbId > 0 &&
       (
-        (this.instance.modifiedAttributes && this.instance.modifiedAttributes.length) ||
-        (this.instance.passiveModifiedAttributes && this.instance.passiveModifiedAttributes.length)
+        (this.instance.modifiedAttributes && this.instance.modifiedAttributes.length > 0) ||
+        (this.instance.passiveModifiedAttributes && this.instance.passiveModifiedAttributes.length > 0)
       )
     )
       return true;

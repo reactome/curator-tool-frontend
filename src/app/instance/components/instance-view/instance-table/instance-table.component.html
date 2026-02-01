@@ -1,8 +1,9 @@
 <div style="overflow: scroll;">
   <ng-template #valueColTemplate let-element>
     <ng-container *ngIf="element.attribute.cardinality === '1'">
-      <app-instance-table-row-element [disable]="isValueDeleted()" [attribute]="element.attribute"
-        [value]="element.value" [dragDropStatus]="dragDropStatus" [passiveEdit]="compareToSourceInstance(element.attribute.name)" (newValueEvent)="onNoInstanceAttributeEdit($event)"
+      <app-instance-table-row-element [disable]="isInstanceDeleted()" [attribute]="element.attribute"
+        [value]="element.value" [dragDropStatus]="dragDropStatus"
+        (newValueEvent)="onNoInstanceAttributeEdit($event)"
         (editAction)="onInstanceAttributeEdit($event)" [blockRoute]="blockRouter" />
     </ng-container>
     <ng-container *ngIf="element.attribute.cardinality === '+'">
@@ -11,16 +12,16 @@
         <!-- Disable drag and drop for no manual edit attributes -->
         <ng-container *ngIf="element.attribute.category === AttributeCategory.NOMANUALEDIT; else dragDropEnabled">
           <app-instance-table-row-element *ngFor="let object of element.value; let i = index" class="instance-box"
-            [attribute]="element.attribute" [value]="object" [index]="i" [blockRoute]="blockRouter" [passiveEdit]="compareToSourceInstance(element.attribute.name, i)">
+            [attribute]="element.attribute" [value]="object" [index]="i" [blockRoute]="blockRouter">
           </app-instance-table-row-element>
         </ng-container>
         <ng-template #dragDropEnabled>
           <div cdkDropList [cdkDropListData]="element.value" (cdkDropListDropped)="drop($event, element.attribute)">
-            <app-instance-table-row-element [disable]="isValueDeleted()" cdkDrag
+            <app-instance-table-row-element [disable]="isInstanceDeleted()" cdkDrag
               *ngFor="let object of element.value; let i = index" class="draggable-instance-box"
               [attribute]="element.attribute" [value]="object" [dragDropStatus]="dragDropStatus"
               (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)"
-              [blockRoute]="blockRouter" [index]="i" [passiveEdit]="compareToSourceInstance(element.attribute.name, i)" />
+              [blockRoute]="blockRouter" [index]="i" />
           </div>
         </ng-template>
       </ng-container>
@@ -29,30 +30,33 @@
     <!-- Add an empty row for non-instance type slot-->
     <ng-container *ngIf="element.attribute.type !== DATA_TYPES.INSTANCE && element.attribute.cardinality === '+'">
       <app-instance-table-row-element [attribute]="element.attribute" [dragDropStatus]="dragDropStatus"
-      [passiveEdit]="compareToSourceInstance(element.attribute.name, element.index)"
-        (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)" />
+        (newValueEvent)="onNoInstanceAttributeEdit($event)"
+        (editAction)="onInstanceAttributeEdit($event)" />
     </ng-container>
 
     <ng-template #noValue>
       <ng-container *ngIf="element.attribute.type === DATA_TYPES.INSTANCE">
         <app-instance-table-row-element [attribute]="element.attribute" [dragDropStatus]="dragDropStatus"
-          [passiveEdit]="compareToSourceInstance(element.attribute.name, element.index)" (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)" />
+          (newValueEvent)="onNoInstanceAttributeEdit($event)"
+          (editAction)="onInstanceAttributeEdit($event)" />
       </ng-container>
     </ng-template>
   </ng-template>
 
   <ng-template #refValueColTemplate let-element>
     <ng-container *ngIf="element.attribute.cardinality === '1'">
-      <app-instance-table-row-element [attribute]="element.attribute" [value]="element.referenceValue"
-        [disable]="true" [passiveEdit]="compareDbToSourceInstance(element.dbId)" />
+      <app-instance-table-row-element [attribute]="element.attribute" [value]="element.referenceValue" [disable]="true"
+        [passiveEdit]="isPassiveEdited(element.attribute.name)" />
     </ng-container>
     <ng-container *ngIf="element.attribute.cardinality === '+'">
       <ng-container *ngIf="element.referenceValue === undefined; else elseblock">
-        <app-instance-table-row-element [attribute]="element.attribute" [disable]="true" [passiveEdit]="compareDbToSourceInstance(element.dbId)" />
+        <app-instance-table-row-element [attribute]="element.attribute" [disable]="true"
+          [passiveEdit]="isPassiveEdited(element.attribute.name)" />
       </ng-container>
       <ng-template #elseblock>
         <app-instance-table-row-element *ngFor="let object of element.referenceValue; let i = index" class="example-box"
-          [attribute]="element.attribute" [value]="object" [disable]="true" [passiveEdit]="compareDbToSourceInstance(object.dbId)" />
+          [attribute]="element.attribute" [value]="object" [disable]="true"
+          [passiveEdit]="isPassiveEdited(element.attribute.name)" />
       </ng-template>
     </ng-container>
   </ng-template>
@@ -76,11 +80,13 @@
             </button>
           </th>
         </div>
-        <td class="attColumn" mat-cell *matCellDef="let element" [ngClass]="{highlight: compareToDbInstance(element.attribute.name),
-                      required: highlightRequired(element),
-                      mandatory: highlightMandatory(element),
-                      passiveEdit: compareToSourceInstance(element.attribute.name, element.index),
-                      activeAndPassiveEdit: activeAndPassiveEdit(element.attribute.name, element.index)}">
+        <td class="attColumn" mat-cell *matCellDef="let element" [ngClass]="{
+                      required: isRequired(element),
+                      mandatory: isMandatory(element),
+                      active_edit: isActiveEdited(element.attribute.name),
+                      passive_edit: isPassiveEdited(element.attribute.name),
+                      active_and_passive_edit: activeAndPassiveEdit(element.attribute.name)
+                    }">
           <div>
             <ng-container *ngIf="element.attribute.category === AttributeCategory.MANDATORY">
               <img ngSrc="assets/images/Mandatory.gif" alt="Mandatory" width="16" height="16" priority>
@@ -120,16 +126,13 @@
             </ng-container>
           </th>
         </div>
-        <td mat-cell *matCellDef="let element" style="padding:0" class="valueColumn"
-          [ngClass]="{passiveEdit: compareToSourceInstance(element.attribute.name, element.index),
-                      highlight: compareToDbInstance(element.attribute.name)}">
+        <td mat-cell *matCellDef="let element" style="padding:0" class="valueColumn">
           <div style="display: flex;">
             <div style="flex: 1">
               <ng-container *ngTemplateOutlet="valueColTemplate; context: {$implicit: element}"></ng-container>
             </div>
-            <div
-              *ngIf="compareToDbInstance(element.attribute.name) && element.attribute.category !== AttributeCategory.NOMANUALEDIT
-               && !compareToSourceInstance(element.attribute.name, element.index)"
+            <!-- reset button for active edits only -->
+            <div *ngIf="isActiveEdited(element.attribute.name) && element.attribute.category !== AttributeCategory.NOMANUALEDIT"
               style="height: 24px; width: 35px; float: right; z-index: 3; bottom: 10px;">
               <button style="bottom: 7px; right: 5px;" mat-icon-button (click)="resetEdit(element)"
                 matTooltip="reset to db value">
@@ -151,8 +154,7 @@
             </button>
           </th>
         </div>
-        <td mat-cell *matCellDef="let element" style="padding: 0"
-          [ngClass]="{highlight: compareToDbInstance(element.attribute.name), passiveEdit: compareToSourceInstance(element.attribute.name, element.index)}">
+        <td mat-cell *matCellDef="let element" style="padding: 0">
           <ng-container *ngTemplateOutlet="refValueColTemplate; context: {$implicit: element}"></ng-container>
         </td>
       </ng-container>
