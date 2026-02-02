@@ -41,6 +41,7 @@ Done
 - Deletion dialog 
 - TODO: Merge AttributeValue in reactome-comparison together with another one defined in the reactome-instance model.
 - Bug: Open http://localhost:4200/schema_view/instance/9947940, delete an Input (e.g. the second one), and then open its summation (DB_ID: 9947864). Check its reference should show this reaction at least. However, no reference is shown. This doesn't happen if the edit is reset.
+- Bug: Open http://localhost:4200/schema_view/instance/874079 and then click its Summation instance. Delete it. The original instance has the summation as a passive edited attribute. But this summation attribute is not editable any more. Make sure it is editable as other instance-type attributes.
 
 
 #### TODO:
