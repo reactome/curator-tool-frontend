@@ -1,10 +1,10 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Component, EventEmitter, Input, OnInit, OnDestroy, Output } from '@angular/core';
+import { Router } from '@angular/router';
 import { Store } from "@ngrx/store";
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Instance, NEW_DISPLAY_NAME, SelectedInstancesList } from "../../../../../core/models/reactome-instance.model";
 import { BookmarkActions } from "../../../../instance-bookmark/state/bookmark.actions";
-import { map, take } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { deleteInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { combineLatest } from 'rxjs';
 
@@ -19,7 +19,7 @@ export interface ActionButton {
   styleUrls: ['./instance-list-table.component.scss'],
 })
 
-export class InstanceListTableComponent implements OnInit {
+export class InstanceListTableComponent implements OnInit, OnDestroy {
   @Input() dataSource: Instance[] = [];
   @Input() actionButtons: Array<ActionButton> = [];
   @Input() secondaryActionButtons: Array<ActionButton> = [];
@@ -47,6 +47,7 @@ export class InstanceListTableComponent implements OnInit {
   updatedDBIds: number[] = [];
   checkedMap: Map<number, boolean> = new Map();
   showSchemaClassName: Map<number, boolean> = new Map();
+  private storeSubscription!: Subscription;
 
   @Input() set selectAll(value: boolean) {
     for (let instance of this.dataSource) {
@@ -61,17 +62,19 @@ export class InstanceListTableComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.setStoreData();
-  }
-
-  setStoreData() {
-    combineLatest([
+    this.storeSubscription = combineLatest([
       this.store.select(deleteInstances()),
       this.store.select(updatedInstances()),
     ]).subscribe(([deleted, updated]) => {
       this.deletedDBIds = deleted.map(inst => inst.dbId);
       this.updatedDBIds = updated.map(inst => inst.dbId);
-    })
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.storeSubscription) {
+      this.storeSubscription.unsubscribe();
+    }
   }
 
   addCheckBox(instance: Instance) {
@@ -119,31 +122,15 @@ export class InstanceListTableComponent implements OnInit {
     }
     
     // Build the navigation URL based on the determined view context
-    if (this.updatedDBIds.includes(instance.dbId) && !this.isLocal ) {
-      this.routerNavigationUrl = `/${baseView}/instance/${instance.dbId.toString()}/comparison/${instance.dbId.toString()}`;
-    } else {
-      this.routerNavigationUrl = `/${baseView}/instance/${instance.dbId.toString()}`;
-    }
+    // Don't use comparison view
+    this.routerNavigationUrl = `/${baseView}/instance/${instance.dbId.toString()}`;
   }
 
-  isDeleted(row: Instance) {
-    this.store.select(deleteInstances()).pipe(
-      take(1),
-      map((instances) => {
-        this.deletedDBIds = instances.map(inst => inst.dbId);
-      })
-    ).subscribe();
+  isDeleted(row: Instance): boolean {
     return this.deletedDBIds.includes(row.dbId);
   }
 
-  isUpdated(row: Instance) {
-    this.store.select(updatedInstances()).pipe(
-      take(1),
-      map((instances) => {
-        this.updatedDBIds = instances.map(inst => inst.dbId);
-      })
-    ).subscribe();
+  isUpdated(row: Instance): boolean {
     return this.updatedDBIds.includes(row.dbId);
-
   }
 }

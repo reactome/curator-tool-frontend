@@ -1,10 +1,10 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
-import { catchError, combineLatest, concat, concatMap, forkJoin, map, Observable, of, Subject, take, tap, throwError } from 'rxjs';
+import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
-import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, ReviewStatus, UserInstances } from "../models/reactome-instance.model";
+import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
 import {
   AttributeCategory,
   SchemaAttribute,
@@ -12,9 +12,6 @@ import {
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
 import { QAReport } from "../models/qa-report.model";
-import { InstanceViewFilter } from "../instance-view-filters/InstanceViewFilter";
-import { DisplayNameViewFilter } from "../instance-view-filters/DisplayNameViewFilter";
-import { DeletedInstanceAttributeFilter } from "../instance-view-filters/DeletedInstanceAttributeFilter";
 
 
 @Injectable({
@@ -80,27 +77,28 @@ export class DataService {
     private utils: InstanceUtilities,
     private store: Store,
   ) {
+    // The following code is not needed anymore after switching to use view filtering.
     // This is most likely not a good place to do this. But it is difficult to find
     // somewhere else without introducing a new service. This is a temporary solution for now.
-    this.utils.markDeletionDbId$.subscribe(dbId => {
-      // Go over all cached instances
-      this.id2instance.forEach((inst, id) => {
-        if (!this.utils.isReferrer(dbId, inst))
-          return; // Working with referrers only
-        // For instances loaded from database, just mark them for reload if they are
-        // referred by the deleted instance
-        if (id >= 0) {
-          // When an updated instance is reloaded, its attributes will be 
-          // updated automatically. Therefore, we don't need to do anything here
-          this.removeInstanceInCache(inst.dbId);
-        }
-        else {
-          // For new instances, we need to manually remove the deleted instance from its
-          // attributes list
-          this.utils.removeReference(inst, dbId);
-        }
-      });
-    });
+    // this.utils.markDeletionDbId$.subscribe(dbId => {
+    //   // Go over all cached instances
+    //   this.id2instance.forEach((inst, id) => {
+    //     if (!this.utils.isReferrer(dbId, inst))
+    //       return; // Working with referrers only
+    //     // For instances loaded from database, just mark them for reload if they are
+    //     // referred by the deleted instance
+    //     if (id >= 0) {
+    //       // When an updated instance is reloaded, its attributes will be 
+    //       // updated automatically. Therefore, we don't need to do anything here
+    //       this.removeInstanceInCache(inst.dbId);
+    //     }
+    //     else {
+    //       // For new instances, we need to manually remove the deleted instance from its
+    //       // attributes list
+    //       this.utils.removeReference(inst, dbId);
+    //     }
+    //   });
+    // });
   }
 
 
@@ -373,18 +371,6 @@ export class DataService {
       );
   }
 
-  fetchEventPlotData(dbId: number, plotType: string): Observable<JSON> {
-    return this.http.get<JSON>(this.eventPlotDataUrl + `${dbId}` + "?type=" + plotType)
-      .pipe(map((data: JSON) => data),
-        catchError((err: Error) => {
-          console.log("Plot data could not be retrieved: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 100
-          });
-          return throwError(() => err);
-        }),
-      );
-  }
 
   getNextNewDbId(): number {
     let rtn = this.nextNewDbId;

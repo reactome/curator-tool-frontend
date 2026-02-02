@@ -256,6 +256,8 @@ export class UpdatedInstanceListComponent implements OnInit {
 
   navigateUrl(instance: Instance) {
     if (this.blockRoute) {
+      // Using the comparison is not that convenient for the users.
+      // Just open the instance view.
       this.instanceUtilities.setLastClickedDbId(instance.dbId);
       return;
     }

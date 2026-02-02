@@ -386,7 +386,7 @@ export class InstanceUtilities {
                         if (!apply) return true;
                         attValue.splice(i, 1);
                         i--;
-                        this.addToPassiveModifiedAttribute(att, inst);
+                        this.addToPassiveModifiedAttributes(att, inst);
                         modified = true;
                     }
                 }
@@ -398,7 +398,7 @@ export class InstanceUtilities {
                     if (!apply) return true;
                     // Remove this attribute since nothing is there
                     inst.attributes.delete(att);
-                    this.addToPassiveModifiedAttribute(att, inst);
+                    this.addToPassiveModifiedAttributes(att, inst);
                     modified = true;
                 }
             }
@@ -407,7 +407,7 @@ export class InstanceUtilities {
     }
 
     /**
-     * Check if the first instance, of which dbId is passed, is a reference of the second instnace
+     * Check if the first instance, of which dbId is passed, is a reference of the second instance.
      * @param referrer 
      * @param inst 
      */
@@ -461,18 +461,20 @@ export class InstanceUtilities {
         }
     }
 
-    private addToModifiedAttribute(att: string, inst: Instance) {
-        if (!inst.modifiedAttributes)
-            inst.modifiedAttributes = [];
-        if (!inst.modifiedAttributes.includes(att))
-            inst.modifiedAttributes.push(att);
-    }
-
-    private addToPassiveModifiedAttribute(att: string, inst: Instance) {
+    private addToPassiveModifiedAttributes(att: string, inst: Instance | undefined) {
+        if (!inst) return;
         if (!inst.passiveModifiedAttributes)
             inst.passiveModifiedAttributes = [];
         if (!inst.passiveModifiedAttributes.includes(att))
             inst.passiveModifiedAttributes.push(att);
+    }
+
+    addToModifiedAttributes(att: string, inst: Instance | undefined) {
+        if (!inst) return;
+        if (!inst.modifiedAttributes)
+            inst.modifiedAttributes = [];
+        if (!inst.modifiedAttributes.includes(att))
+            inst.modifiedAttributes.push(att);
     }
 
     mergeLocalChangesToEventTree(rootEvent: Instance, id2instance: Map<number, Instance>) {

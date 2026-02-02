@@ -27,14 +27,9 @@ import {
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
 import { deleteInstances } from 'src/app/instance/state/instance.selectors';
-import { map, Observable, of, take } from 'rxjs';
-import { DataService } from 'src/app/core/services/data.service';
-import { AttributeValue, EDIT_ACTION, InstanceComparisonDataSource } from './instance-table-comparison.model';
-import { InstanceViewFilter } from 'src/app/core/instance-view-filters/InstanceViewFilter';
-import { DeletedInstanceAttributeFilter } from 'src/app/core/instance-view-filters/DeletedInstanceAttributeFilter';
-import { DisplayNameViewFilter } from 'src/app/core/instance-view-filters/DisplayNameViewFilter';
-import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
-import { ReviewStatusUpdateFilter } from 'src/app/core/instance-view-filters/ReviewStatusUpdateFilter';
+import { map, Subscription, take } from 'rxjs';
+import { AttributeValue, EDIT_ACTION } from 'src/app/core/models/reactome-instance.model';
+import { InstanceComparisonDataSource } from './instance-table-comparison.model';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -54,14 +49,13 @@ export class InstanceTableComponent implements PostEditListener {
   sortAttDefined: boolean = false;
   filterEdited: boolean = false;
   @Input() blockRouter: boolean = false;
-  // During new instance creating in a diagram, don't fire any event
+  // During new instance creation in a diagram, don't fire any event
   @Input() preventEvent: boolean = false;
   // Flag to block the table update during editing
   inEditing: boolean = false;
   referenceColumnTitle: string = 'Reference Value';
   valueColumnTitle: string = 'Value';
-  instanceViewFilters: InstanceViewFilter[] = [];
-
+  
   categoryNames = Object.keys(AttributeCategory).filter((v) =>
     isNaN(Number(v))
   );
@@ -89,8 +83,7 @@ export class InstanceTableComponent implements PostEditListener {
   // For comparison
   _referenceInstance?: Instance;
   showReferenceColumn: boolean = false;
-  modifiedAtts: string[] = [];
-
+  
   // For highlighting rows during drag/drop event-view
   dragDropStatus: DragDropStatus = {
     dragging: false,
@@ -98,7 +91,7 @@ export class InstanceTableComponent implements PostEditListener {
     draggedInstance: undefined,
   };
 
-  disableEditing: boolean = false;
+  // To check if a value has been deleted
   deletedDBIds: number[] = [];
 
   // Make sure it is bound to input instance
@@ -110,22 +103,11 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   @Input() set referenceInstance(refInstance: Instance | undefined) {
-    if (refInstance === undefined) return;
-    this._referenceInstance = refInstance;
-    if (refInstance === undefined) {
-      this.showReferenceColumn = false;
-      this.displayedColumns = ['name', 'value'];
-    } else {
-      this.showReferenceColumn = true;
-      this.displayedColumns = ['name', 'value', 'referenceValue'];
-      if (this._instance?.dbId === refInstance.dbId) { this.referenceColumnTitle = 'Database Value' }
-      else {
-        this.referenceColumnTitle = this._referenceInstance?.displayName!;
-        this.valueColumnTitle = this._instance?.displayName!;
-      }
-    }
-    this.updateTableContent();
+    this.setReferenceInstance(refInstance!);
   }
+
+  // Track subscriptions added so that we can remove them
+  private subscriptions: Subscription = new Subscription()
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -135,29 +117,47 @@ export class InstanceTableComponent implements PostEditListener {
     private store: Store,
     private instUtil: InstanceUtilities,
     private attributeEditService: AttributeEditService,
-    private dataService: DataService,
     private postEditService: PostEditService, // This is used to perform post-edit actions
-    private reviewStatusCheck: ReviewStatusCheck
   ) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
       this.categories.set(AttributeCategory[categoryKey], true);
     }
-    this.instanceViewFilters = this.setUpInstanceViewFilters();
-
+    
     this.dragDropService.register('instance-table');
 
-    this.store.select(deleteInstances()).pipe(
-      take(1),
-      map((instances) => {
-        this.deletedDBIds = instances.map(inst => inst.dbId);
-      })
-    ).subscribe();
+    let subscription = this.store.select(deleteInstances()).subscribe(instances => {
+      this.deletedDBIds = instances.map(inst => inst.dbId);
+    });
+    this.subscriptions.add(subscription);
+  }
 
-  } // Use a dialog service to hide the implementation of the dialog.
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
 
   changeShowFilterOptions() {
     this.showFilterOptions = !this.showFilterOptions;
+  }
+
+  setReferenceInstance(refInstance: Instance | undefined) {
+    this._referenceInstance = refInstance;
+    if (refInstance === undefined) {
+      this.showReferenceColumn = false;
+      this.displayedColumns = ['name', 'value'];
+    } 
+    else {
+      this.showReferenceColumn = true;
+      this.displayedColumns = ['name', 'value', 'referenceValue'];
+      if (this._instance?.dbId === refInstance.dbId) { 
+        this.referenceColumnTitle = 'Database Value' 
+      }
+      else {
+        this.referenceColumnTitle = this._referenceInstance?.displayName!;
+        this.valueColumnTitle = this._instance?.displayName!;
+      }
+    }
+    this.updateTableContent();
   }
 
   changeShowHeaderActions() {
@@ -184,44 +184,15 @@ export class InstanceTableComponent implements PostEditListener {
   onNoInstanceAttributeEdit(data: AttributeValue) {
     // this.attributeEditService.onNoInstanceAttributeEdit(data, this._instance!);
     this.attributeEditService.onNoInstanceAttributeEdit(data, data.value, this._instance!, false);
-    if (this._instance!.source)
+    if (this._instance!.source) // Need to push the change to the source instance as well
       this.attributeEditService.onNoInstanceAttributeEdit(data, data.value, this._instance!.source, false);
     this.finishEdit(data.attribute.name, undefined);
   }
 
   deleteAttributeValue(attributeValue: AttributeValue) {
-    console.log('deleteAttributeValue: ', attributeValue);
-    let value = this._instance?.attributes?.get(attributeValue.attribute.name);
-    //this.addModifiedAttribute(attributeValue.attribute.name, value);
-    if (attributeValue.attribute.cardinality === '1') {
-      // This should not occur. Just in case
-      //this._instance?.attributes?.delete(attributeValue.attribute?.name);
-      this._instance?.attributes?.set(
-        attributeValue.attribute?.name,
-        undefined
-      );
-    } else {
-      // This should be a list
-      const valueList: [] = this._instance?.attributes?.get(
-        attributeValue.attribute.name
-      );
-      // Remove the value if more than one
-      if (valueList.length > 1) {
-        valueList.splice(attributeValue.index!, 1);
-      }
-      // Otherwise need to set the value to undefined so a value is assigned
-      else {
-        this._instance?.attributes?.set(
-          attributeValue.attribute?.name,
-          undefined
-        );
-      }
-    }
-    if (attributeValue.value === value) {
-      // If the value is the same as the current value, do not update
-      // This is to avoid unnecessary updates
-      return;
-    }
+    this.attributeEditService.deleteAttributeValue(this._instance, attributeValue);
+    if (this._instance!.source)
+      this.attributeEditService.deleteAttributeValue(this._instance!.source, attributeValue);
     this.finishEdit(attributeValue.attribute.name, undefined);
   }
 
@@ -274,9 +245,9 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   private deleteInstanceAttribute(attributeValue: AttributeValue) {
+    this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!);
     if (this._instance!.source)
       this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!.source);
-    this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!);
     this.finishEdit(attributeValue.attribute.name, attributeValue.value);
   }
 
@@ -300,8 +271,9 @@ export class InstanceTableComponent implements PostEditListener {
     //TODO: Add a new value may reset the scroll position. This needs to be changed!
     this.updateTableContent();
     // Need to call this before registerUpdatedInstance
-    // in case the instance is used somewhere via the ngrx statement management system
-    this.addModifiedAttribute(attName, value);
+    // in case the instance is used somewhere via the ngrx state management system
+    this.attributeEditService.addModifiedAttribute(this._instance, attName);
+    this.attributeEditService.addModifiedAttribute(this._instance!.source, attName);
     // Register the updated instances
     this.registerUpdatedInstance(attName);
     // Fire an event for other components to update their display (e.g. display name)
@@ -337,7 +309,7 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   updateTableContent(): void {
-    if (this._referenceInstance === undefined || this._referenceInstance?.dbId === this._instance?.dbId) {
+    if (this._referenceInstance === undefined || this._referenceInstance?.dbId !== this._instance?.dbId) {
       this.instanceDataSource = new InstanceDataSource(
         this._instance,
         this.categories,
@@ -534,7 +506,7 @@ export class InstanceTableComponent implements PostEditListener {
     this.updateTableContent();
   }
 
-  highlightRequired(element: AttributeValue): boolean {
+  isRequired(element: AttributeValue): boolean {
     if (element.attribute.category === AttributeCategory.REQUIRED && element.value === undefined) {
       return true;
     }
@@ -543,7 +515,7 @@ export class InstanceTableComponent implements PostEditListener {
     }
   }
 
-  highlightMandatory(element: AttributeValue): boolean {
+  isMandatory(element: AttributeValue): boolean {
     if (element.attribute.category === AttributeCategory.MANDATORY && element.value === undefined) {
       return true;
     }
@@ -552,174 +524,34 @@ export class InstanceTableComponent implements PostEditListener {
     }
   }
 
-  isValueDeleted(): boolean {
-    if (this.deletedDBIds.length === 0) this.disableEditing = false;
-    if (this.deletedDBIds.includes(this._instance!.dbId)) this.disableEditing = true;
-    return this.disableEditing;
+  isInstanceDeleted(): boolean {
+    if (this.deletedDBIds.length === 0) return false;
+    if (this.deletedDBIds.includes(this._instance!.dbId)) return true;
+    return false  ;
   }
 
-  // Create a list to hold all service instances
-  private setUpInstanceViewFilters(): InstanceViewFilter[] {
-    return [
-      new DeletedInstanceAttributeFilter(this.instUtil, this.store),
-      new ReviewStatusUpdateFilter(this.dataService, this.instUtil, this.store, this.reviewStatusCheck),
-      new DisplayNameViewFilter(this.dataService, this.instUtil, this.store),
-    ];
-  }
-
-  compareDbToSourceInstance(dbId: number): boolean {
-    return this.deletedDBIds.includes(dbId);
-  }
-
-  isActiveEdit(attName: string): boolean {
-    if (!this._referenceInstance) return false;
-    if (this._instance?.dbId !== this._referenceInstance?.dbId) return false;
-    let instanceVal = this._instance?.attributes.get(attName);
-    let refVal = this._referenceInstance?.attributes.get(attName);
-    if ((instanceVal && instanceVal.dbId) || instanceVal instanceof Array) {
-      return this.getValueTypeForComparison(instanceVal, refVal);
+  isActiveEdited(attName: string): boolean {
+    // For comparison mode (instance vs reference instance)
+    if (this._referenceInstance && this._instance?.dbId !== this._referenceInstance?.dbId) {
+      let instanceVal = this._instance?.attributes.get(attName);
+      let refVal = this._referenceInstance?.attributes.get(attName);
+      if ((instanceVal && instanceVal.dbId) || instanceVal instanceof Array) {
+        return this.getValueTypeForComparison(instanceVal, refVal);
+      }
+      return (instanceVal !== refVal);
     }
-    return (instanceVal !== refVal);
+    // For regular edit mode (check if attribute was modified by user)
+    return this._instance?.modifiedAttributes?.includes(attName) || false;
   }
-
-  compareToDbInstance(attName: string): boolean {
-    // return this.isActiveEdit(attName);
-    let active = this._instance?.modifiedAttributes?.includes(attName) ? true : false;
-    let passive = this._instance?.passiveModifiedAttributes?.includes(attName) ? true : false;
-    return active && !passive; }
 
   activeAndPassiveEdit(attName: string): boolean {
-    let active = this._instance?.modifiedAttributes?.includes(attName) ? true : false;
-    let passive = this.isPassiveEdit(attName);
-    return active && passive;
+    let hasActiveEdit = this.isActiveEdited(attName);
+    let hasPassiveEdit = this.isPassiveEdited(attName);
+    return hasActiveEdit && hasPassiveEdit;
   }
 
-  compareToSourceInstance(attName: string, index?: number): boolean {
-    if (this._instance?.modifiedAttributes?.includes(attName)) return false;
-    if (!this._instance?.source) return false;
-    return this.isPassiveEdit(attName, index);
+  isPassiveEdited(attName: string): boolean {
+    return this._instance?.passiveModifiedAttributes?.includes(attName) || false;
   }
 
-  isPassiveEdit(attName: string, index?: number): boolean {
-    let instanceVal = this._instance?.attributes.get(attName);
-    let refVal = this._instance?.source?.attributes.get(attName);
-    if ((instanceVal && instanceVal.dbId) || instanceVal instanceof Array) {
-      if (index)
-        return this.singleValueCheck(attName, index!);
-      else
-        return this.getValueTypeForComparison(instanceVal, refVal);
-
-    }
-    return (instanceVal !== refVal);
-  }
-
-  singleValueCheck(attName: string, index: number): boolean {
-    let isModified = this._instance?.modifiedAttributes?.includes(attName);
-    let instanceVal = this._instance?.attributes.get(attName);
-    if (!instanceVal) return false;
-    if (!Array.isArray(instanceVal)) return false;
-    let refVal = this._instance?.source?.attributes.get(attName);
-    if (!refVal) return false;
-    if (!Array.isArray(refVal)) return false;
-    if (instanceVal.at(index) && refVal?.at(index)) {
-      if (instanceVal.at(index).dbId && refVal.at(index).dbId) {
-        // if(isModified && this._instance?.modifiedAttributes?.at(attName))
-        return instanceVal.at(index).dbId !== refVal.at(index).dbId;
-      } else {
-        return instanceVal.at(index) !== refVal.at(index);
-      }
-    }
-    return false;
-  }
-
-
-  // TODO: specify passively applied changes to the user. These edits do not affect the instance structure,
-  // but are applied as filters via the instance view filters. For example, review status changes due to deletions of linked instances.
-  // Compare instance attributes to source attributes to determine passively applied changes.
-
-  // three versions of the instance: staged instance, database instance, source instance
-  // the staged instance contains the active edits and passive edits
-  // database instance contains no active or passive edits
-  // source instance contains no active edits, but may contain passive edits
-  // if an attribute value in the staged instance differs from the source instance, it is an active edit
-  private filterPassiveEdits(attributeValues: AttributeValue[]): void {
-    if (this.instance?.source) {
-      attributeValues = attributeValues.filter(att => {
-        let values = this.instance?.attributes?.get(att.attribute.name);
-        let referenceValues = this.instance?.source?.attributes?.get(att.attribute.name);
-        if (!values)
-          values = [];
-        if (!Array.isArray(values)) { values = [values]; }
-        if (!referenceValues)
-          referenceValues = [];
-        if (!Array.isArray(referenceValues)) { referenceValues = [referenceValues]; }
-        // if the values for a shared attribute differ, add them to be displayed 
-
-        if (values.length !== referenceValues.length) {
-          values.forEach((val: AttributeValue) => val.passiveEdit = true);
-          return true;
-        }
-
-        for (let i = 0; i < values.length; i++) {
-          const val = values[i];
-          const refVal = referenceValues[i];
-          if (att.attribute.type === AttributeDataType.INSTANCE) {
-            if (val?.dbId && refVal?.dbId && val.dbId !== refVal.dbId) {
-              val.passiveEdit = true;
-              return true; // once one value is different, add the whole attribute
-            }
-          } else {
-            if (val !== refVal) {
-              val.passiveEdit = true;
-              return true;
-            }
-          }
-        }
-        return false;
-      });
-
-    }
-  }
-
-  // // Only Event Classes should be checked
-  // checkReviewStatus(instance: Instance): Instance {
-
-  //   let instanceCopy = instance;
-  //   // check the list of deleted instances to see if there is any structural change to be removed
-  //   // if a deleted instance is included in ie: hasEvent, input, output, catalystActivity, regulatedBy, change review status
-  //   this.store.select(deleteInstances()).pipe(
-  //     take(1),
-  //     map((instances) => {
-  //       let deletedDbIds = instances.map(inst => inst.dbId);
-  //       this.dataService.fetchInstanceFromDatabase(instance.dbId!, false).subscribe(dbInstance => {
-  //         if (dbInstance.attributes) {
-  //           let dbIdInstanceAtts = dbInstance.attributes;
-  //           let structuralAttributes = ['hasEvent', 'input', 'output', 'catalystActivity', 'regulatedBy'];
-  //           for (let attName of dbIdInstanceAtts.keys()) {
-  //             if (structuralAttributes.includes(attName)) {
-  //               let attValue = dbIdInstanceAtts.get(attName);
-  //               if (attValue) {
-  //                 if (attValue instanceof Array) {
-  //                   for (let val of attValue) {
-  //                     if (deletedDbIds.includes(val.dbId)) {
-  //                       this.reviewStatusCheck.handleReviewStatus(instanceCopy, attName);
-  //                       break;
-  //                     }
-  //                   }
-  //                 }
-  //                 else {
-  //                   if (deletedDbIds.includes(attValue.dbId)) {
-  //                     this.reviewStatusCheck.handleReviewStatus(instanceCopy, attValue.attribute.name);
-  //                   }
-  //                 }
-  //               }
-  //             }
-  //           }
-  //         }
-  //       })
-  //     }),
-  //     take(1)
-  //   ).subscribe();
-  //   return instanceCopy;
-  // }
 }

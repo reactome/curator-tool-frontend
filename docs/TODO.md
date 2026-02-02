@@ -40,7 +40,8 @@ Done
 - When an instance such as a PE is deleted, the user needs to be alerted of all of the intances that will experince a structural change from this event. 
 - Add local vs db to the list instances 
 - Deletion dialog 
- 
+- TODO: Merge AttributeValue in reactome-comparison together with another one defined in the reactome-instance model.
+- Bug: Open http://localhost:4200/schema_view/instance/9947940, delete an Input (e.g. the second one), and then open its summation (DB_ID: 9947864). Check its reference should show this reaction at least. However, no reference is shown. This doesn't happen if the edit is reset.
 
 
 #### TODO:

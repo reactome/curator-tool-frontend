@@ -5,9 +5,8 @@ import {
 } from '../post-edit/PostEditOperation';
 import { InstanceNameGenerator } from '../post-edit/InstanceNameGenerator';
 import { DataService } from './data.service';
-import { Instance, ReviewStatus } from '../models/reactome-instance.model';
+import { Instance } from '../models/reactome-instance.model';
 import { LiteratureReferenceFiller } from '../post-edit/LiteratureReferenceFiller';
-import { TestQACheck } from '../post-edit/TestQACheck';
 import { Store } from '@ngrx/store';
 import { InstanceUtilities } from './instance.service';
 import { ReviewStatusCheck } from '../post-edit/ReviewStatusCheck';
@@ -29,10 +28,6 @@ export class PostEditService {
     // Make sure display name generation service is at the bottom
     const nameOperation = new InstanceNameGenerator(this.dataService, this.utilities);
     this.postEditOperations.push(nameOperation);
-    const testQACheck1 = new TestQACheck(this.dataService, "NonNullCheck");
-    this.postEditOperations.push(testQACheck1);
-    const testQACheck2 = new TestQACheck(this.dataService, "NegativeValueCheck");
-    this.postEditOperations.push(testQACheck2);
     const reviewStatusCheck = new ReviewStatusCheck(this.dataService, this.utilities);
     this.postEditOperations.push(reviewStatusCheck);
   }
