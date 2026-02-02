@@ -1,5 +1,4 @@
 import { Instance } from '../models/reactome-instance.model';
-import { SchemaClass } from '../models/reactome-schema.model';
 import { DataService } from '../services/data.service';
 import { InstanceUtilities } from '../services/instance.service';
 import { PostEditOperation } from './PostEditOperation';
@@ -11,7 +10,7 @@ export class InstanceNameGenerator implements PostEditOperation {
   //TODO: May need to make sure this is a singleton!!!
   constructor(private dataService: DataService,
     private instanceUtilities: InstanceUtilities
-  ) { 
+  ) {
   }
 
   postEdit(instance: Instance, 

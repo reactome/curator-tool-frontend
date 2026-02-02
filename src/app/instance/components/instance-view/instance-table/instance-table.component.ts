@@ -183,16 +183,16 @@ export class InstanceTableComponent implements PostEditListener {
 
   onNoInstanceAttributeEdit(data: AttributeValue) {
     // this.attributeEditService.onNoInstanceAttributeEdit(data, this._instance!);
-    this.attributeEditService.onNoInstanceAttributeEdit(data, data.value, this._instance!, false);
-    if (this._instance!.source) // Need to push the change to the source instance as well
+    if (this._instance!.source) // Need to push the change to the source instance first
       this.attributeEditService.onNoInstanceAttributeEdit(data, data.value, this._instance!.source, false);
+    this.attributeEditService.onNoInstanceAttributeEdit(data, data.value, this._instance!, false);
     this.finishEdit(data.attribute.name, undefined);
   }
 
   deleteAttributeValue(attributeValue: AttributeValue) {
-    this.attributeEditService.deleteAttributeValue(this._instance, attributeValue);
     if (this._instance!.source)
       this.attributeEditService.deleteAttributeValue(this._instance!.source, attributeValue);
+    this.attributeEditService.deleteAttributeValue(this._instance, attributeValue);
     this.finishEdit(attributeValue.attribute.name, undefined);
   }
 
@@ -236,18 +236,18 @@ export class InstanceTableComponent implements PostEditListener {
       if (result === undefined || result === this.instUtil.getShellInstance(result)) return; // Do nothing
       // Check if there is any value
       // Use cached shell instance
-      this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!, replace);
       if (this._instance!.source)
         this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!.source, replace);
+      this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!, replace);
       this.finishEdit(attributeValue.attribute.name, attributeValue.value);
       this.cdr.detectChanges();
     });
   }
 
   private deleteInstanceAttribute(attributeValue: AttributeValue) {
-    this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!);
     if (this._instance!.source)
       this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!.source);
+    this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!);
     this.finishEdit(attributeValue.attribute.name, attributeValue.value);
   }
 
@@ -256,14 +256,15 @@ export class InstanceTableComponent implements PostEditListener {
       this.selectInstanceDialogService.openDialog(attributeValue);
     matDialogRef.afterClosed().subscribe((result) => {
       if (result === undefined || result.length === 0) return; // Do nothing
-      this.attributeEditService.addInstanceViaSelect(attributeValue, result, this._instance!, replace);
       if (this._instance!.source)
         this.attributeEditService.addInstanceViaSelect(attributeValue, result, this._instance!.source, replace);
+      this.attributeEditService.addInstanceViaSelect(attributeValue, result, this._instance!, replace);
       this.finishEdit(attributeValue.attribute.name, attributeValue.value);
       this.cdr.detectChanges();
     });
   }
 
+  // Note: the value parameter is not used here, but kept for future extension
   finishEdit(attName: string, value: any) {
     this.inEditing = true;
     //Only add attribute name if value was added
@@ -288,9 +289,9 @@ export class InstanceTableComponent implements PostEditListener {
   addBookmarkedInstance(attributeValue: AttributeValue) {
     let result = attributeValue.value; //Only one value emitted at once
 
-    this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!);
     if (this._instance!.source)
       this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!.source);
+    this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!);
     this.finishEdit(attributeValue.attribute.name, attributeValue.value);
     this.cdr.detectChanges();
   }
@@ -349,26 +350,16 @@ export class InstanceTableComponent implements PostEditListener {
     this.store.dispatch(UpdateInstanceActions.last_updated_instance({ attribute: attName, instance: cloned }));
   }
 
-  private addModifiedAttribute(attributeName: string, attributeVal: any) {
-    // Do nothing if there is no instance
-    if (this._instance === undefined) return;
-    if (this._instance.modifiedAttributes === undefined) {
-      this._instance.modifiedAttributes = [];
-    }
-    if (!this._instance.modifiedAttributes.includes(attributeName))
-      this._instance.modifiedAttributes.push(attributeName);
-  }
-
   private removeModifiedAttribute(attributeName: string) {
     if (
       this._instance === undefined ||
       this._instance.modifiedAttributes === undefined
     )
       return;
-    let index = this._instance.modifiedAttributes.indexOf(attributeName);
-    if (index > -1)
-      this._instance.modifiedAttributes.splice(index, 1);
     // If nothing is in the modifiedAttributes, remove this instance from the changed list
+    if (this._instance.source)
+      this.attributeEditService.removeModifiedAttribute(this._instance.source, attributeName);
+    this.attributeEditService.removeModifiedAttribute(this._instance, attributeName);
     if (this._instance.modifiedAttributes.length === 0) {
       this.store.dispatch(
         // Always make a shell when dispatch to avoid lock the instance by ngrx store!!!
@@ -385,6 +376,8 @@ export class InstanceTableComponent implements PostEditListener {
   postEdit(attName: string) {
     if (this._instance)
       this.postEditService.postEdit(this._instance, attName, this);
+    if (this._instance?.source)
+      this.postEditService.postEdit(this._instance.source, attName, this);
   }
 
   drop(event: CdkDragDrop<string[]>, value: SchemaAttribute) {
@@ -403,6 +396,8 @@ export class InstanceTableComponent implements PostEditListener {
       );
     }
     console.debug('value', this._instance);
+    if (this._instance?.source)
+      this._instance?.source?.attributes?.set(value.name, event.container.data);
     this._instance?.attributes?.set(value.name, event.container.data);
     this.finishEdit(value.name, event.container.data);
   }
@@ -471,34 +466,13 @@ export class InstanceTableComponent implements PostEditListener {
 
   resetEdit(attributeValue: AttributeValue) {
     if (!this._instance) return; // Do nothing
-    let refValue = attributeValue.referenceValue;
-    if (refValue) {
-      if (attributeValue.attribute.cardinality === '1') {
-        this._instance.attributes.set(
-          attributeValue.attribute.name,
-          refValue
-        );
-      } else {
-        this._instance.attributes.set(
-          attributeValue.attribute.name,
-          [...refValue]
-        );
-      }
-    } else {
-      // Use delete for the map!
-      this._instance.attributes.delete(attributeValue.attribute.name);
+    if (this._instance.source) {
+      this.attributeEditService.resetAttributeValue(this._instance.source, attributeValue);
     }
-    // Update the status of this table
-    this.postEdit(attributeValue.attribute.name);
-    this.updateTableContent();
+    this.attributeEditService.resetAttributeValue(this._instance, attributeValue);
+    this.finishEdit(attributeValue.attribute.name, attributeValue.value);
     // Call this as the last step to update the list of changed instances.
     this.removeModifiedAttribute(attributeValue.attribute.name);
-    // something more needed to be done
-    this.store.dispatch(UpdateInstanceActions.last_updated_instance({
-      attribute: attributeValue.attribute.name,
-      instance: this.instUtil.makeShell(this._instance!)
-    }));
-    this.editedInstance.emit(this._instance)
   }
 
   filterEditedValues() {

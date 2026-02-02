@@ -78,6 +78,8 @@ export class DisplayNameViewFilter implements InstanceViewFilter {
                 }
             }
         }
+        if (!instanceAttributeNameChanged && !inst.passiveModifiedAttributes)
+            return false; // No attribute name change detected
         // Check should this instance's display name be changed too
         // This check should be done independently from attribute display name change
         // since an attribuate name change may be commiited already.

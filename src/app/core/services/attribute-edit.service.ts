@@ -193,5 +193,37 @@ export class AttributeEditService {
     addModifiedAttribute(instance: Instance | undefined, attributeName: string) {
         this.instUtil.addToModifiedAttributes(attributeName, instance);
     }
+    
+    removeModifiedAttribute(instance: Instance | undefined, attributeName: string) {
+        if (!instance ||
+            !instance.modifiedAttributes ||
+            instance.modifiedAttributes.length === 0
+        ) return; // Do nothing if there is no modified attributes
+        let index = instance.modifiedAttributes.indexOf(attributeName);
+        if (index > -1)
+            instance.modifiedAttributes!.splice(index, 1);
+    }
+
+    resetAttributeValue(instance: Instance | undefined, attributeValue: AttributeValue) {
+        if (!instance || !instance.attributes) return; // Do nothing if instance is undefined
+        let refValue = attributeValue.referenceValue;
+        if (refValue) {
+            if (attributeValue.attribute.cardinality === '1') {
+                instance.attributes.set(
+                    attributeValue.attribute.name,
+                    refValue
+                );
+            } else {
+                instance.attributes.set(
+                    attributeValue.attribute.name,
+                    [...refValue]
+                );
+            }
+        } 
+        else {
+            // Use delete for the map!
+            instance.attributes.delete(attributeValue.attribute.name);
+        }
+    }
 
 }

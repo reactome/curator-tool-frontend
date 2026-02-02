@@ -12,7 +12,8 @@ export class AppComponent {
   // This is a hack to show different views at the top. We should use angular route to manage these views!
   current_view: string = 'home_view';
 
-  constructor(private userInstancesService: UserInstancesService
+  constructor(
+    private userInstancesService: UserInstancesService
   ) {}
 
   ngOnInit() {

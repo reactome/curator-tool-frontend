@@ -77,28 +77,29 @@ export class DataService {
     private utils: InstanceUtilities,
     private store: Store,
   ) {
-    // The following code is not needed anymore after switching to use view filtering.
-    // This is most likely not a good place to do this. But it is difficult to find
-    // somewhere else without introducing a new service. This is a temporary solution for now.
-    // this.utils.markDeletionDbId$.subscribe(dbId => {
-    //   // Go over all cached instances
-    //   this.id2instance.forEach((inst, id) => {
-    //     if (!this.utils.isReferrer(dbId, inst))
-    //       return; // Working with referrers only
-    //     // For instances loaded from database, just mark them for reload if they are
-    //     // referred by the deleted instance
-    //     if (id >= 0) {
-    //       // When an updated instance is reloaded, its attributes will be 
-    //       // updated automatically. Therefore, we don't need to do anything here
-    //       this.removeInstanceInCache(inst.dbId);
-    //     }
-    //     else {
-    //       // For new instances, we need to manually remove the deleted instance from its
-    //       // attributes list
-    //       this.utils.removeReference(inst, dbId);
-    //     }
-    //   });
-    // });
+  }
+
+  /**
+   * Initialize the DataService by loading schema classes.
+   * This method is designed to be used with APP_INITIALIZER to ensure
+   * schema classes are loaded before the app starts.
+   */
+  initialize(): Promise<void> {
+    console.debug('Initializing DataService - loading schema classes...');
+    
+    return new Promise((resolve, reject) => {
+      this.fetchSchemaClassTree().subscribe({
+        next: (rootSchemaClass) => {
+          console.debug('Schema class tree loaded successfully during initialization:', rootSchemaClass.name);
+          // Schema classes are automatically cached in the dataService
+          resolve();
+        },
+        error: (error) => {
+          console.error('Failed to load schema classes during initialization:', error);
+          reject(error);
+        }
+      });
+    });
   }
 
 
@@ -170,6 +171,7 @@ export class DataService {
           return this.handleErrorMessage(err);
         }));
   }
+
 
   /**
    * Fetch Event Tree

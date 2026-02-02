@@ -1,5 +1,5 @@
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http'; // importing the http module
-import { NgModule } from '@angular/core';
+import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
 import { MAT_TOOLTIP_DEFAULT_OPTIONS, MatTooltipDefaultOptions } from '@angular/material/tooltip';
@@ -16,6 +16,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { AuthModule } from "./auth/auth.module";
 import { HeaderInterceptor } from "./core/interceptors/header.interceptor";
+import { DataService } from "./core/services/data.service";
 import { MainEventModule } from "./event-view/main-event/main-event.module";
 import { HomeModule } from "./home/home.module";
 import { InstanceEffects } from './instance/state/instance.effects';
@@ -30,6 +31,11 @@ import { DeletionCommitModule } from './instance/deletion-commit/deletion-commit
 
 export function tokenGetter() {
   return localStorage.getItem("token");
+}
+
+// Factory function for DataService initialization
+export function initializeDataService(dataService: DataService): () => Promise<void> {
+  return () => dataService.initialize();
 }
 
 // diagram configuration
@@ -82,7 +88,14 @@ const customTooltipOptions: MatTooltipDefaultOptions = {
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: HeaderInterceptor, multi: true },
     {provide: DIAGRAM_CONFIG_TOKEN, useValue: diagramServiceConfig},
-    { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: customTooltipOptions }  ],
+    { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: customTooltipOptions },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeDataService,
+      deps: [DataService],
+      multi: true
+    }
+  ],
   bootstrap: [AppComponent],
 })
 export class AppModule {
