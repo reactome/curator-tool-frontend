@@ -274,9 +274,9 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   private deleteInstanceAttribute(attributeValue: AttributeValue) {
-    // if (this._instance!.source)
-    //   this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!.source);
-    this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!.source ? this._instance!.source : this._instance!);
+    if (this._instance!.source)
+      this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!.source);
+    this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!);
     this.finishEdit(attributeValue.attribute.name, attributeValue.value);
   }
 
@@ -583,12 +583,15 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   compareToDbInstance(attName: string): boolean {
-    return this.isActiveEdit(attName);
-  }
-
-  activeAndPassiveEdit(attName: string, index?: number): boolean {
+    // return this.isActiveEdit(attName);
     let active = this._instance?.modifiedAttributes?.includes(attName) ? true : false;
-    return this.isPassiveEdit(attName, index) && active;
+    let passive = this._instance?.passiveModifiedAttributes?.includes(attName) ? true : false;
+    return active && !passive; }
+
+  activeAndPassiveEdit(attName: string): boolean {
+    let active = this._instance?.modifiedAttributes?.includes(attName) ? true : false;
+    let passive = this.isPassiveEdit(attName);
+    return active && passive;
   }
 
   compareToSourceInstance(attName: string, index?: number): boolean {
