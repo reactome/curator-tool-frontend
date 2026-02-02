@@ -41,6 +41,14 @@ export class DeleteBulkDialogComponent {
     }
   }
 
+  allInstancesLocal(): boolean {
+    for (let instance of this.instances) {
+      if (instance.dbId >= 0) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   onCancel() {
     this.dialogRef.close();

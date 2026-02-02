@@ -8,6 +8,7 @@ import { DeleteInstanceActions, NewInstanceActions } from "../../state/instance.
 import { CreateDeletedDialogService } from "../components/deleted-object-creation-dialog/deleted-object-creation-dialog.service";
 import { CommitDeletedDialogService } from "../components/deleted-object-creation-option-dialog/deleted-object-creation-option-dialog.service";
 import { Injectable } from "@angular/core";
+import { DeleteBulkDialogService } from "src/app/schema-view/list-instances/components/delete-bulk-dialog/delete-bulk-dialog.service";
 
 // TODO: Referrers of deleted instances need to have the referred slot modified and an instanceEdit added to modifiedList 
 @Injectable({
@@ -20,7 +21,9 @@ export class DeletionService {
         private store: Store,
         private instanceUtilities: InstanceUtilities,
         private createDeletedDialogService: CreateDeletedDialogService,
-        private commitDeletedDialogService: CommitDeletedDialogService) {
+        private commitDeletedDialogService: CommitDeletedDialogService,
+        private deleteBulkDialogService: DeleteBulkDialogService
+    ) {
     }
 
     processDeletion(instancesToDelete: Instance[]) {
@@ -29,8 +32,12 @@ export class DeletionService {
         let newInstances = instancesToDelete.filter(instance => instance.dbId < 0);
         // If all instancesToDelete are new instances, no need to create Deleted instance
         if (newInstances.length > 0) {
-            // TODO: use confrim to delete dialog 
-            this.commitWithoutDeletedInstance(instancesToDelete);
+
+            this.deleteBulkDialogService.openDialog(instancesToDelete).afterClosed().subscribe(confirmed => {
+                if (confirmed) {
+                    this.commitWithoutDeletedInstance(instancesToDelete);
+                }
+            });
             return;
         }
         if (needDeleted.includes(true)) {

@@ -11,6 +11,7 @@ import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { Observable, from, concatMap, tap, map, EMPTY } from 'rxjs';
 import { DeletionService } from 'src/app/instance/deletion-commit/utils/deletion.service';
 import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/instance-list-table/instance-list-table.component';
+import { DeleteBulkDialogService } from 'src/app/schema-view/list-instances/components/delete-bulk-dialog/delete-bulk-dialog.service';
 
 
 @Component({
@@ -49,7 +50,8 @@ export class UpdatedInstanceListComponent implements OnInit {
     private store: Store,
     private dataService: DataService,
     private instanceUtilities: InstanceUtilities,
-    private deletionService: DeletionService
+    private deletionService: DeletionService,
+    private deleteBulkDialogService: DeleteBulkDialogService
   ) {
   }
 
@@ -61,15 +63,15 @@ export class UpdatedInstanceListComponent implements OnInit {
     })
     this.store.select(updatedInstances()).subscribe((instances) => {
       if (instances !== undefined) {
-      // Remove instances that are also in deletedInstances
-      this.updatedInstances = instances.filter(
-        inst => !this.deletedInstances.some(del => del.dbId === inst.dbId)
-      );
+        // Remove instances that are also in deletedInstances
+        this.updatedInstances = instances.filter(
+          inst => !this.deletedInstances.some(del => del.dbId === inst.dbId)
+        );
       }
     });
     this.store.select(deleteInstances()).subscribe((instances) => {
       if (instances !== undefined)
-      this.deletedInstances = instances;
+        this.deletedInstances = instances;
     });
     this.getSelectedInstances();
   }
@@ -308,11 +310,13 @@ export class UpdatedInstanceListComponent implements OnInit {
   }
 
   deleteAllSelectedNewInstances() {
-    for (let instance of this.selectedNewInstances) {
-      this.store.dispatch(NewInstanceActions.remove_new_instance(this.instanceUtilities.makeShell(instance)));
-      this.instanceUtilities.setDeletedDbId(instance.dbId); // Commit right away
-    }
-    this.selectedNewInstances = [];
-    this.showCheck = false;
+    this.deleteBulkDialogService.openDialog(this.selectedNewInstances).afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.selectedNewInstances = [];
+        this.showCheck = false;
+      }
+    });
+
   }
+
 }

@@ -2,7 +2,7 @@
 <mat-dialog-content style="width: 100%;">
   <ng-container *ngIf="this.instances.length > 0">
     <h4>Are you sure you want to delete these {{this.instances.length}} instances?</h4>
-    <div><em>Note: The deleted instances will not be removed from
+    <div *ngIf="allInstancesLocal()"><em>Note: The deleted instances will not be removed from
         the database. You may need to commit the deletions to remove
         them from the database in the status list.</em></div>
     <br>
