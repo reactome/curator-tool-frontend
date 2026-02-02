@@ -7,7 +7,11 @@ import { DataService } from "./data.service";
     providedIn: 'root'
 })
 /**
- * This class is used to fetch instance and class definition from the RESTful API.
+ * This service is to handle attribute editing for instances. 
+ * There are two types of editing regarding the editing source: 1). Active editing via instance attribute edit component; 
+ * 2). Passive editing by changing in in the referenced instance, e.g. deletion of the reference instance, changes in 
+ * reference instance resulting in changes in the attribute value (display name usually). Active edting includes post edting
+ * such as _displayName update, reviewStatus update, etc.
  */
 export class AttributeEditService {
 
@@ -187,13 +191,7 @@ export class AttributeEditService {
     }
 
     addModifiedAttribute(instance: Instance | undefined, attributeName: string) {
-        // Do nothing if there is no instance
-        if (instance === undefined) return; // Do nothing if there is no instance
-        if (instance.modifiedAttributes === undefined) {
-            instance.modifiedAttributes = [];
-        }
-        if (!instance.modifiedAttributes.includes(attributeName))
-            instance.modifiedAttributes.push(attributeName);
+        this.instUtil.addToModifiedAttributes(attributeName, instance);
     }
 
 }
