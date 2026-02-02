@@ -3,7 +3,7 @@ import { EdgeDefinition, NodeDefinition, Core } from 'cytoscape';
 import { array } from 'vectorious';
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { Injectable } from "@angular/core";
-import { Instance, LABEL_CLASS, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
+import { AttributeValue, Instance, LABEL_CLASS, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { HyperEdge } from "./hyperedge";
 import { InstanceConverter } from "./instance-converter";
@@ -12,7 +12,6 @@ import { PathwayDiagramComponent } from "../pathway-diagram.component";
 import { PathwayDiagramValidator } from "./pathway-diagram-validator";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { SelectInstanceDialogService } from "src/app/schema-view/list-instances/components/select-instance-dialog/select-instance-dialog.service";
-import { AttributeValue } from "src/app/instance/components/instance-view/instance-table/instance-table-comparison.model";
 
 @Injectable()
 export class PathwayDiagramUtilService {

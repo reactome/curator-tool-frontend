@@ -4,20 +4,9 @@
 
 import { DataSource } from "@angular/cdk/collections";
 import { Observable, of } from "rxjs";
-import { Instance } from "src/app/core/models/reactome-instance.model";
+import { AttributeValue, Instance } from "src/app/core/models/reactome-instance.model";
 import { AttributeCategory, AttributeDataType, SchemaAttribute } from "src/app/core/models/reactome-schema.model";
 
-/**
- * Used to encode the data for the attribute value cell.
- */
-export interface AttributeValue {
-    attribute: SchemaAttribute,
-    value: any,
-    index?: number // index of the value for an multi-valued slot
-    editAction?: EDIT_ACTION // May be used to encode editing action
-    referenceValue?: any // To be used for comparison
-    passiveEdit?: boolean // To indicate if the edit is passive (e.g., review status change due to deletion of linked instance)
-}
 
 export interface DragDropStatus {
     dragging: boolean,
