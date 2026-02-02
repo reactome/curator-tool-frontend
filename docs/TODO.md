@@ -24,21 +24,15 @@ Done
 #### Deidre
 - TODO: Use the new set of Reactome icons at Figma, designed by the EBI team. Need to check with Eliott.
 - Bug: In the event view, the mouse position is lowed when scroll up/down the instance view. (low priority)
-- TODO: List all performed QAs in the QA report even though all QAs are passed. By doing this, the tool gives the curator a list of what have been checked. Done
 - TODO: Boolean sliders appear to be 'false' when they are 'true' and disabled due to the gray styling for disabled buttons.
-- bug: if I click an updated instance listed in the local view, the comparison is displayed. Try to change it: If this updated instance is opened in the local list, show the updated content without comparison. If it is opened in the db list, show the comparison. done 
 - TODO: in the attribute table, attributes may be sorted based on names or define attributes (together with name). Could we make the option sticky: Once the user chooses one sort, the same sort will be applied to all tables opened from that point on. Also it would be nicer to keep the option persisted as the status (for new, updated, etc).
-- consider adding the tooltip that states the schema class for each instance listed in the instance view. this will help curators when searching instances in ie Event. Done 
+-Bug: tooltip in event view for switching to the schema view is wrong
 - comparison should be done attribute by attribute, not by modified attributes. this is because the modififed atts are unreliable and when comparing two
     different instances, this will not work. 
 - "((1,6)-alpha-glucosyl)poly((1,4)-alpha-glucosyl)glycogenin => poly{(1,4)-alpha-glucosyl} glycogenin + alpha-D-glucose" search field for this complicated
     display name cannot be parsed because of symbols
 - Refresh of updated list (occured after resetting deleted insts) 
-- there is still a bug in the table for rendering an additional line done 
-- When an instance is added, propogate the increase of the count up the hierarchy to database object. Done
 - When an instance such as a PE is deleted, the user needs to be alerted of all of the intances that will experince a structural change from this event. 
-- Add local vs db to the list instances 
-- Deletion dialog 
 - TODO: Merge AttributeValue in reactome-comparison together with another one defined in the reactome-instance model.
 - Bug: Open http://localhost:4200/schema_view/instance/9947940, delete an Input (e.g. the second one), and then open its summation (DB_ID: 9947864). Check its reference should show this reaction at least. However, no reference is shown. This doesn't happen if the edit is reset.
 
