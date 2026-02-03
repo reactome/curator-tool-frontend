@@ -473,7 +473,7 @@ export class InstanceUtilities {
         }
     }
 
-    private addToPassiveModifiedAttributes(att: string, inst: Instance | undefined) {
+    addToPassiveModifiedAttributes(att: string, inst: Instance | undefined) {
         if (!inst) return;
         if (!inst.passiveModifiedAttributes)
             inst.passiveModifiedAttributes = [];

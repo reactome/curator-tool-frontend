@@ -78,7 +78,7 @@ export class ReviewStatusCheck implements PostEditOperation {
     }
 
 
-    public handleReviewStatus(instance: Instance, attributeName: string, showDialog?: boolean): boolean {
+    public handleReviewStatus(instance: Instance, attributeName: string, isActiveEdit: boolean = true): boolean {
         let reviewStatusChanged = false;
         if (this.isAttributeStructuralChange(instance, attributeName)) {
             // Regardless of review status, mark structure modified
@@ -92,11 +92,11 @@ export class ReviewStatusCheck implements PostEditOperation {
             // Structural changes for a three star review should be demoted to a one star review status 
             if (reviewStatus.dbId === ReviewStatus.threeStar.dbId) {
                 instance.attributes.set('previousReviewStatus', reviewStatus);
-                this.utils.addToModifiedAttributes('previousReviewStatus', instance);
+                this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
 
                 instance.attributes?.set('reviewStatus', ReviewStatus.oneStar);
-                this.utils.addToModifiedAttributes('reviewStatus', instance);
-                if (showDialog === undefined || showDialog) {
+                this.addModifiedAttributes('reviewStatus', instance, isActiveEdit);
+                if (isActiveEdit === undefined || isActiveEdit) {
                     this.dialog.open(InfoDialogComponent, {
                         data: {
                             title: 'ReviewStatus Demoted',
@@ -110,12 +110,12 @@ export class ReviewStatusCheck implements PostEditOperation {
             // structural changes for four and five star reviews should be demoted to a two star review status
             if (reviewStatus.dbId === ReviewStatus.fourStar.dbId || reviewStatus.dbId === ReviewStatus.fiveStar.dbId) {
                 instance.attributes.set('previousReviewStatus', reviewStatus);
-                this.utils.addToModifiedAttributes('previousReviewStatus', instance);
+                this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
 
                 instance.attributes?.set('reviewStatus', ReviewStatus.twoStar);
-                this.utils.addToModifiedAttributes('reviewStatus', instance);
+                this.addModifiedAttributes('reviewStatus', instance, isActiveEdit);
 
-                if (showDialog === undefined || showDialog) {
+                if (isActiveEdit === undefined || isActiveEdit) {
                     this.dialog.open(InfoDialogComponent, {
                         data: {
                             title: 'ReviewStatus Demoted',
@@ -133,17 +133,17 @@ export class ReviewStatusCheck implements PostEditOperation {
             if (preStatus === null ||
                 preStatus?.dbId === ReviewStatus.oneStar.dbId) {
                 instance.attributes.set('previousReviewStatus', preStatus);
-                this.utils.addToModifiedAttributes('previousReviewStatus', instance);
+                this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
 
                 instance.attributes?.set('reviewStatus', ReviewStatus.threeStar);
-                this.utils.addToModifiedAttributes('reviewStatus', instance);
+                this.addModifiedAttributes('reviewStatus', instance, isActiveEdit);
 
             }
             else if (preStatus?.dbId === ReviewStatus.twoStar.dbId) {
                 instance.attributes.set('previousReviewStatus', preStatus);
-                this.utils.addToModifiedAttributes('previousReviewStatus', instance);
+                this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
                 instance.attributes?.set('reviewStatus', ReviewStatus.fourStar);
-                this.utils.addToModifiedAttributes('reviewStatus', instance);
+                this.addModifiedAttributes('reviewStatus', instance, isActiveEdit);
                 reviewStatusChanged = true;
             }
 
@@ -156,9 +156,16 @@ export class ReviewStatusCheck implements PostEditOperation {
                 preStatus?.dbId === ReviewStatus.threeStar.dbId ||
                 preStatus?.dbId === ReviewStatus.fourStar.dbId) {
                 instance.attributes.set('previousReviewStatus', preStatus);
-                this.utils.addToModifiedAttributes('previousReviewStatus', instance);
+                this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
             }
         }
         return reviewStatusChanged;
+    }
+
+    addModifiedAttributes(attributeName: string, instance: Instance, isActiveEdit: boolean) {
+        if (isActiveEdit)
+            this.utils.addToModifiedAttributes(attributeName, instance);
+        else
+            this.utils.addToPassiveModifiedAttributes(attributeName, instance);
     }
 }

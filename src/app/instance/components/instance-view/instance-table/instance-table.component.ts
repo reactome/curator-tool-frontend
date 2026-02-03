@@ -501,8 +501,8 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   isInstanceDeleted(): boolean {
-    // if (this.deletedDBIds.length === 0) return false;
-    // if (this.deletedDBIds.includes(this._instance!.dbId)) return true;
+    if (this.deletedDBIds.length === 0) return false;
+    if (this.deletedDBIds.includes(this._instance!.dbId)) return true;
      return false;
   }
 
