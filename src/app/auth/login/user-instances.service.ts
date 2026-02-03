@@ -24,6 +24,7 @@ export class UserInstancesService {
         private store: Store) {
     }
 
+    // TODO: This may use the same pattern as being used to load schema tree by using APP_INITIALIZER
     loadUserInstances() {
         // Before we do anything, load the persisted instances if any
         console.debug('App loading instances from server...');

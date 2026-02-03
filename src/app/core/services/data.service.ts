@@ -102,6 +102,12 @@ export class DataService {
     });
   }
 
+  /**
+   * Check if schema classes have been loaded
+   */
+  isSchemaClassesLoaded(): boolean {
+    return this.rootClass !== undefined;
+  }
 
   /**
    * Call this method will reset the cached schema tree so that the schema tree will be reloaded
