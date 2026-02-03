@@ -17,6 +17,7 @@ import { AppComponent } from './app.component';
 import { AuthModule } from "./auth/auth.module";
 import { HeaderInterceptor } from "./core/interceptors/header.interceptor";
 import { DataService } from "./core/services/data.service";
+import { AuthenticateService } from "./core/services/authenticate.service";
 import { MainEventModule } from "./event-view/main-event/main-event.module";
 import { HomeModule } from "./home/home.module";
 import { InstanceEffects } from './instance/state/instance.effects';
@@ -34,8 +35,27 @@ export function tokenGetter() {
 }
 
 // Factory function for DataService initialization
-export function initializeDataService(dataService: DataService): () => Promise<void> {
-  return () => dataService.initialize();
+export function initializeDataService(dataService: DataService, authService: AuthenticateService): () => Promise<void> {
+  return () => {
+    return new Promise((resolve) => {
+      // Check if user is authenticated
+      const token = localStorage.getItem('token');
+      if (!token || !authService.getUser()) {
+        console.debug('No authenticated user found, skipping DataService initialization');
+        resolve();
+        return;
+      }
+      
+      // User is authenticated, proceed with initialization
+      dataService.initialize().then(() => {
+        resolve();
+      }).catch((error) => {
+        console.warn('DataService initialization failed, continuing anyway:', error);
+        // Don't reject the promise to prevent app startup failure
+        resolve();
+      });
+    });
+  };
 }
 
 // diagram configuration
@@ -92,7 +112,7 @@ const customTooltipOptions: MatTooltipDefaultOptions = {
     {
       provide: APP_INITIALIZER,
       useFactory: initializeDataService,
-      deps: [DataService],
+      deps: [DataService, AuthenticateService],
       multi: true
     }
   ],
