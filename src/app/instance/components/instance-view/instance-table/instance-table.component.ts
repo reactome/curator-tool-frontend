@@ -265,7 +265,7 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   // Note: the value parameter is not used here, but kept for future extension
-  finishEdit(attName: string, value: any) {
+  finishEdit(attName: string, value: any, removeModifiedAttribute: boolean = false) {
     this.inEditing = true;
     //Only add attribute name if value was added
     this.postEdit(attName);
@@ -273,8 +273,12 @@ export class InstanceTableComponent implements PostEditListener {
     this.updateTableContent();
     // Need to call this before registerUpdatedInstance
     // in case the instance is used somewhere via the ngrx state management system
-    this.attributeEditService.addModifiedAttribute(this._instance, attName);
-    this.attributeEditService.addModifiedAttribute(this._instance!.source, attName);
+    if (!removeModifiedAttribute) {
+      this.attributeEditService.addModifiedAttribute(this._instance, attName);
+      this.attributeEditService.addModifiedAttribute(this._instance!.source, attName);
+    } else {
+      this.removeModifiedAttribute(attName);
+    }
     // Register the updated instances
     this.registerUpdatedInstance(attName);
     // Fire an event for other components to update their display (e.g. display name)
@@ -470,9 +474,7 @@ export class InstanceTableComponent implements PostEditListener {
       this.attributeEditService.resetAttributeValue(this._instance.source, attributeValue);
     }
     this.attributeEditService.resetAttributeValue(this._instance, attributeValue);
-    this.finishEdit(attributeValue.attribute.name, attributeValue.value);
-    // Call this as the last step to update the list of changed instances.
-    this.removeModifiedAttribute(attributeValue.attribute.name);
+    this.finishEdit(attributeValue.attribute.name, attributeValue.value, true);
   }
 
   filterEditedValues() {
