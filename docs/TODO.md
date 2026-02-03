@@ -35,8 +35,7 @@ Done
 - When an instance such as a PE is deleted, the user needs to be alerted of all of the intances that will experince a structural change from this event. 
 - TODO: Merge AttributeValue in reactome-comparison together with another one defined in the reactome-instance model.
 - Bug: Open http://localhost:4200/schema_view/instance/9947940, delete an Input (e.g. the second one), and then open its summation (DB_ID: 9947864). Check its reference should show this reaction at least. However, no reference is shown. This doesn't happen if the edit is reset.
-- Bug: Open http://localhost:4200/schema_view/instance/874079 and then click its Summation instance. Delete it. The original instance has the summation as a passive edited attribute. But this summation attribute is not editable any more. Make sure it is editable as other instance-type attributes. Also for instance attribute: when an attribute is mandatory, single-valued, then passively deletetd, it can no longer be edited. 
-
+- Bug: Open http://localhost:4200/schema_view/instance/874079. Open its input and then delete this input in the view. There are two bugs: 1). the input itself should not be editable since it is deleted. Yes for attributes having values. But for empty attributes (e.g. reactionType), editing is still enabled; 2). Deleting this input results a passive editing to both reviewStatus and previousReviewStatus. However, these two attributes are recorded as active edited attributes. 
 
 
 #### TODO:
