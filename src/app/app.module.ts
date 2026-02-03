@@ -89,12 +89,12 @@ const customTooltipOptions: MatTooltipDefaultOptions = {
     { provide: HTTP_INTERCEPTORS, useClass: HeaderInterceptor, multi: true },
     {provide: DIAGRAM_CONFIG_TOKEN, useValue: diagramServiceConfig},
     { provide: MAT_TOOLTIP_DEFAULT_OPTIONS, useValue: customTooltipOptions },
-    {
-      provide: APP_INITIALIZER,
-      useFactory: initializeDataService,
-      deps: [DataService],
-      multi: true
-    }
+    // {
+    //   // provide: APP_INITIALIZER,
+    //   useFactory: initializeDataService,
+    //   deps: [DataService],
+    //   multi: true
+    // }
   ],
   bootstrap: [AppComponent],
 })
