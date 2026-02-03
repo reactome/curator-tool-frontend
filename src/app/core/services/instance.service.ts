@@ -382,10 +382,18 @@ export class InstanceUtilities {
                     const attValue1 = attValue[i];
                     if (!attValue1.dbId)
                         break; // This is not a instance type attribute
+
                     if (dbIds.includes(attValue1.dbId)) {
                         if (!apply) return true;
-                        attValue.splice(i, 1);
-                        i--;
+                        // Ensure a value is defined for this attribute
+                        if (attValue.length === 1) {
+                            attValue[0] = undefined;
+                            inst.attributes.delete(att);
+                        }
+                        else {
+                            attValue.splice(i, 1);
+                            i--;
+                        }
                         this.addToPassiveModifiedAttributes(att, inst);
                         modified = true;
                     }
@@ -397,10 +405,12 @@ export class InstanceUtilities {
                 if (dbIds.includes(attValue.dbId)) {
                     if (!apply) return true;
                     // Remove this attribute since nothing is there
-                    inst?.attributes?.set(
-                        att.attribute?.name,
-                        undefined
-                    ); this.addToPassiveModifiedAttributes(att, inst);
+                    // inst?.attributes?.set(
+                    //     att.attribute?.name,
+                    //     undefined
+                    inst.attributes.delete(att);
+
+                    this.addToPassiveModifiedAttributes(att, inst);
                     modified = true;
                 }
             }
