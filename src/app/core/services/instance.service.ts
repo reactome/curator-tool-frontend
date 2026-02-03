@@ -397,8 +397,10 @@ export class InstanceUtilities {
                 if (dbIds.includes(attValue.dbId)) {
                     if (!apply) return true;
                     // Remove this attribute since nothing is there
-                    inst.attributes.delete(att);
-                    this.addToPassiveModifiedAttributes(att, inst);
+                    inst?.attributes?.set(
+                        att.attribute?.name,
+                        undefined
+                    ); this.addToPassiveModifiedAttributes(att, inst);
                     modified = true;
                 }
             }
