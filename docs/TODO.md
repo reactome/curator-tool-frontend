@@ -71,6 +71,7 @@ Done
 - Merge two instances 
 - This is more like a server side bug: When a stable identifier's display name is updated, its local version (front-end) is not updated. This needs to be changed.
 - Indiate attributes are passively or actively changed with a color 
+- TODO: change input/output or other may cause structure change and demoted the review status. However, reset the change will not reset the changed review status. Also a structureChanged flag is stuck, which results a new structureEdit value. This may need to be udpated in the future.
 
 
 # Deletion related document kept here for the time being
