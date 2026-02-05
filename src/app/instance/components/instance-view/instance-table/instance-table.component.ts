@@ -247,10 +247,10 @@ export class InstanceTableComponent implements PostEditListener {
   private deleteInstanceAttribute(attributeValue: AttributeValue) {
     // If there is a source instance, map the index based on dbId
     const sourceAttributeValue = this.mapppingIndexInSourceInstance(attributeValue);
-    if (this._instance?.source && Array.isArray(attributeValue.value)) {
+    if (this._instance?.source) {
       this.attributeEditService.deleteInstanceAttribute(sourceAttributeValue, this._instance.source);
     }
-    this.attributeEditService.deleteInstanceAttribute(sourceAttributeValue, this._instance!);
+    this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!);
     this.finishEdit(attributeValue.attribute.name, attributeValue.value);
   }
 
