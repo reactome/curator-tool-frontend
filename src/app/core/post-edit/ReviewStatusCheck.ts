@@ -163,9 +163,10 @@ export class ReviewStatusCheck implements PostEditOperation {
     }
 
     addModifiedAttributes(attributeName: string, instance: Instance, isActiveEdit: boolean) {
-        if (isActiveEdit)
+        if (isActiveEdit) {
             this.utils.addToModifiedAttributes(attributeName, instance);
-        else
+        } else {
             this.utils.addToPassiveModifiedAttributes(attributeName, instance);
+        }
     }
 }

@@ -380,7 +380,7 @@ export class InstanceUtilities {
             if (Array.isArray(attValue)) {
                 for (let i = 0; i < attValue.length; i++) {
                     const attValue1 = attValue[i];
-                    if (!attValue1.dbId)
+                    if (!this.isInstance(attValue1))
                         break; // This is not a instance type attribute
 
                     if (dbIds.includes(attValue1.dbId)) {

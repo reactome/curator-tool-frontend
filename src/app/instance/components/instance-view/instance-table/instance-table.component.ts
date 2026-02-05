@@ -27,7 +27,7 @@ import {
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
 import { deleteInstances } from 'src/app/instance/state/instance.selectors';
-import { map, Subscription, take } from 'rxjs';
+import { filter, map, Subscription, take } from 'rxjs';
 import { AttributeValue, EDIT_ACTION } from 'src/app/core/models/reactome-instance.model';
 import { InstanceComparisonDataSource } from './instance-table-comparison.model';
 
@@ -55,7 +55,7 @@ export class InstanceTableComponent implements PostEditListener {
   inEditing: boolean = false;
   referenceColumnTitle: string = 'Reference Value';
   valueColumnTitle: string = 'Value';
-  
+
   categoryNames = Object.keys(AttributeCategory).filter((v) =>
     isNaN(Number(v))
   );
@@ -83,7 +83,7 @@ export class InstanceTableComponent implements PostEditListener {
   // For comparison
   _referenceInstance?: Instance;
   showReferenceColumn: boolean = false;
-  
+
   // For highlighting rows during drag/drop event-view
   dragDropStatus: DragDropStatus = {
     dragging: false,
@@ -123,7 +123,7 @@ export class InstanceTableComponent implements PostEditListener {
       let categoryKey = category as keyof typeof AttributeCategory;
       this.categories.set(AttributeCategory[categoryKey], true);
     }
-    
+
     this.dragDropService.register('instance-table');
 
     let subscription = this.store.select(deleteInstances()).subscribe(instances => {
@@ -145,12 +145,12 @@ export class InstanceTableComponent implements PostEditListener {
     if (refInstance === undefined) {
       this.showReferenceColumn = false;
       this.displayedColumns = ['name', 'value'];
-    } 
+    }
     else {
       this.showReferenceColumn = true;
       this.displayedColumns = ['name', 'value', 'referenceValue'];
-      if (this._instance?.dbId === refInstance.dbId) { 
-        this.referenceColumnTitle = 'Database Value' 
+      if (this._instance?.dbId === refInstance.dbId) {
+        this.referenceColumnTitle = 'Database Value'
       }
       else {
         this.referenceColumnTitle = this._referenceInstance?.displayName!;
@@ -245,10 +245,33 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   private deleteInstanceAttribute(attributeValue: AttributeValue) {
-    if (this._instance!.source)
-      this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!.source);
-    this.attributeEditService.deleteInstanceAttribute(attributeValue, this._instance!);
+    // If there is a source instance, map the index based on dbId
+    const sourceAttributeValue = this.mapppingIndexInSourceInstance(attributeValue);
+    if (this._instance?.source && Array.isArray(attributeValue.value)) {
+      this.attributeEditService.deleteInstanceAttribute(sourceAttributeValue, this._instance.source);
+    }
+    this.attributeEditService.deleteInstanceAttribute(sourceAttributeValue, this._instance!);
     this.finishEdit(attributeValue.attribute.name, attributeValue.value);
+  }
+
+  private mapppingIndexInSourceInstance(attributeValue: AttributeValue): AttributeValue {
+    let sourceAttributeValue = attributeValue;
+    const sourceValues = this._instance!.source!.attributes.get(attributeValue.attribute.name) || [];
+    const targetValue = this._instance!.attributes.get(attributeValue.attribute.name) || [];
+    sourceValues.forEach((element: { dbId: any; }) => {
+      if (Array.isArray(targetValue)) {
+        for (let val of targetValue) {
+          if (element.dbId === val.dbId) {
+            let sourceIndex = sourceValues.indexOf(element);
+            if (sourceIndex !== -1) {
+              sourceAttributeValue = { ...attributeValue, index: sourceIndex };
+            }
+          }
+        }
+      }
+    });
+
+    return sourceAttributeValue
   }
 
   private addInstanceViaSelect(attributeValue: AttributeValue, replace: boolean) {
@@ -284,7 +307,7 @@ export class InstanceTableComponent implements PostEditListener {
     // Fire an event for other components to update their display (e.g. display name)
     // Usually this should be fired without issue
     this.editedInstance.emit(this._instance);
-    if(this._instance?.source) {
+    if (this._instance?.source) {
       this.editedInstance.emit(this._instance.source);
     }
     this.inEditing = false;
@@ -473,8 +496,32 @@ export class InstanceTableComponent implements PostEditListener {
     if (this._instance.source) {
       this.attributeEditService.resetAttributeValue(this._instance.source, attributeValue);
     }
-    this.attributeEditService.resetAttributeValue(this._instance, attributeValue);
+    // Need a small utility to check that instance has not been deleted 
+    let filteredValues = this.filterAttributeValueForDeletion(attributeValue);
+    let attributeValueClone: AttributeValue = {
+      attribute: attributeValue.attribute,
+      referenceValue: filteredValues,
+      value: attributeValue.value
+    };
+    this.attributeEditService.resetAttributeValue(this._instance, attributeValueClone);
     this.finishEdit(attributeValue.attribute.name, attributeValue.value, true);
+  }
+
+  private filterAttributeValueForDeletion(attributeValue: AttributeValue): any[] {
+    if (!attributeValue || !attributeValue.referenceValue) return [];
+    // If value is an array, filter out deleted dbIds
+    if (Array.isArray(attributeValue.referenceValue)) {
+      return attributeValue.referenceValue
+        .filter(
+          (val: any) => !(val && val.dbId && this.deletedDBIds.includes(val.dbId))
+        );
+    }
+    // If value is a single instance, check dbId
+    if (attributeValue.referenceValue.dbId) {
+      return this.deletedDBIds.includes(attributeValue.referenceValue.dbId) ? [] : [attributeValue.referenceValue];
+    }
+    // For primitive values, just return as is
+    return [attributeValue.referenceValue];
   }
 
   filterEditedValues() {
@@ -503,7 +550,7 @@ export class InstanceTableComponent implements PostEditListener {
   isInstanceDeleted(): boolean {
     if (this.deletedDBIds.length === 0) return false;
     if (this.deletedDBIds.includes(this._instance!.dbId)) return true;
-     return false;
+    return false;
   }
 
   isActiveEdited(attName: string): boolean {
