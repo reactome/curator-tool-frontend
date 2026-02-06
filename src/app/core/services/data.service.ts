@@ -1020,117 +1020,59 @@ export class DataService {
    * @param referrers
    */
 
+  /**
+   * Get local referrers for a given dbId, merging with store-updated/new instances,
+   * and filtering out deleted instances.
+   */
   _getReferrers(dbId: number, referrers: Referrer[]): Observable<Referrer[]> {
-    const attributeNames: string[] = referrers?.map(ref => ref.attributeName);
+    const attributeNames = new Set<string>(referrers?.map(ref => ref.attributeName));
 
     return combineLatest([
       this.store.select(updatedInstances()).pipe(take(1)),
       this.store.select(newInstances()).pipe(take(1)),
       this.store.select(deleteInstances()).pipe(take(1))
     ]).pipe(
-      concatMap(([updatedInstances, newInstances, deletedInstances]) => {
-        const deletedDBIds = new Set(deletedInstances.map(inst => inst.dbId));
-        const dbIds = new Set([
-          ...updatedInstances.map(inst => inst.dbId),
-          ...newInstances.map(inst => inst.dbId)
-        ]);
+      map(([updated, created, deleted]) => {
+        const deletedDBIds = new Set(deleted.map(inst => inst.dbId));
+        const candidateDBIds = [
+          ...updated.map(inst => inst.dbId),
+          ...created.map(inst => inst.dbId)
+        ];
 
-        // Combine all IDs to filter out
-        const allFilteredDBIds = new Set([...deletedDBIds, ...dbIds]);
+        // Remove deleted and candidate instances from referrers
+        referrers = this.filterDeletedReferrers(referrers, deletedDBIds);
+        referrers = referrers.map(ref => ({
+          ...ref,
+          referrers: ref.referrers.filter(inst => !candidateDBIds.includes(inst.dbId))
+        })).filter(ref => ref.referrers.length > 0);
 
-        // Filter out instances from referrers that match any of the updated or new instances
-        referrers = referrers
-          .map(ref => ({
-            ...ref,
-            referrers: ref.referrers.filter(inst => !allFilteredDBIds.has(inst.dbId))
-          }))
-          .filter(ref => ref.referrers.length > 0); // Remove referrers with no remaining instances
-
-        if (allFilteredDBIds.size === 0) {
-          return of(referrers);
-        }
-
-        if (dbIds.size > 0) {
-          let ids = Array.from(dbIds);
-          ids.forEach(id => {
-            let inst = this.id2instance.get(id);
-            if (!inst) {
-              console.warn(`Instance with dbId ${id} not found in cache.`);
-              return;
-            }
-            if (!inst.attributes) {
-              console.warn(`Instance with dbId ${id} has no attributes.`);
-              return;
-            }
-            for (let att of inst!.attributes!.keys()) {
-              let attribute = inst!.attributes!.get(att);
-              referrers = this.processAttributeData(attribute, dbId, attribute.name, inst!, referrers, attributeNames);
+        // Add local referrers from updated/new instances
+        candidateDBIds.forEach(id => {
+          const inst = this.id2instance.get(id);
+          if (!inst || !inst.attributes) return;
+          inst.attributes.forEach((value: any, att: string) => {
+            if (Array.isArray(value)) {
+              value.forEach(v => {
+                if (v?.dbId === dbId) this.addReferrer(referrers, attributeNames, att, inst);
+              });
+            } else if (value?.dbId === dbId) {
+              this.addReferrer(referrers, attributeNames, att, inst);
             }
           });
+        });
 
-          if (deletedDBIds.size > 0) {
-            referrers = this.filterDeletedReferrers(referrers, deletedDBIds);
-          }
-
-          return of(referrers);
-        }
-
-        // Ensure all code paths return an observable
-        return of(referrers);
+        return referrers;
       })
     );
   }
 
-  private processAttributeData(
-    attributeData: any,
-    dbId: number,
-    attribute: string,
-    inst: Instance,
-    referrers: Referrer[],
-    attributeNames: string[]
-  ): Referrer[] {
-    if (Array.isArray(attributeData)) {
-      attributeData.forEach(attData => {
-        if (attData.dbId === dbId) {
-          const ref: Referrer = { attributeName: attribute, referrers: [inst] };
-          if (attributeNames.includes(ref.attributeName)) {
-            const index = attributeNames.indexOf(ref.attributeName);
-            referrers[index]?.referrers.push(inst);
-          } else {
-            attributeNames.push(ref.attributeName);
-            referrers.push(ref);
-          }
-          this.addOrUpdateReferrer(referrers, attributeNames, attribute, inst);
-        }
-      });
-    } else if (attributeData.dbId === dbId) {
-      const ref: Referrer = { attributeName: attribute, referrers: [inst] };
-      if (attributeNames.includes(ref.attributeName)) {
-        const index = attributeNames.indexOf(ref.attributeName);
-        referrers[index]?.referrers.push(inst);
-      } else {
-        attributeNames.push(ref.attributeName);
-        referrers.push(ref);
-      }
-      this.addOrUpdateReferrer(referrers, attributeNames, attribute, inst);
-    }
-    return referrers;
-  }
-
-  private addOrUpdateReferrer(
-    referrers: Referrer[],
-    attributeNames: string[],
-    attribute: string,
-    inst: Instance
-  ): void {
-    const ref: Referrer = { attributeName: attribute, referrers: [inst] };
-
-    if (attributeNames.includes(ref.attributeName)) {
-      const index = attributeNames.indexOf(ref.attributeName);
-      referrers[index]?.referrers.push(inst);
+  private addReferrer(referrers: Referrer[], attributeNames: Set<string>, attribute: string, inst: Instance) {
+    let ref = referrers.find(r => r.attributeName === attribute);
+    if (ref) {
+      if (!ref.referrers.some(i => i.dbId === inst.dbId)) ref.referrers.push(inst);
     } else {
-      attributeNames.push(ref.attributeName);
-      referrers.push(ref);
+      referrers.push({ attributeName: attribute, referrers: [inst] });
+      attributeNames.add(attribute);
     }
   }
 
