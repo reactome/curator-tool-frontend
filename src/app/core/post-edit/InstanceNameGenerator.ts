@@ -339,14 +339,20 @@ export class InstanceNameGenerator implements PostEditOperation {
   private generateControlReferenceName(instance: Instance) {
     let builder = [];
     if (this.isSchemaClass(instance, 'RegulationReference')) {
-      //TODO: There is a bug in the data model: regulation is defined by 'regulatedBy' in the class!
-      // let regulation = instance.attributes?.get('regulation');
-      let regulation = instance.attributes?.get('regulatedBy');
-      builder.push(regulation.displayName);
+      // There is a bug in the data model: regulation is defined by 'regulatedBy' in the class!
+      // This bas been fixed. But need to pay attention to that. 
+      let regulation = instance.attributes?.get('regulation');
+      if (regulation)
+        builder.push(regulation.displayName ?? 'unknown');
+      else
+        builder.push('unknown');
     }
     else if (this.isSchemaClass(instance, 'CatalystActivityReference')) {
       let ca = instance.attributes?.get('catalystActivity');
-      builder.push(ca.displayName);
+      if (ca)
+        builder.push(ca.displayName ?? 'unknown');
+      else
+        builder.push('unknown');
     }
     else if (this.isSchemaClass(instance, 'MarkerReference')) {
       let markers = instance.attributes?.get('marker');
@@ -354,7 +360,7 @@ export class InstanceNameGenerator implements PostEditOperation {
         builder.push("Marker unknown");
       else if (markers.length === 1) {
         let markerName = markers[0].displayName;
-        builder.push(markerName);
+        builder.push(markerName ?? 'unknown');
       }
       else {
         let markerName = markers[0].displayName;
