@@ -35,18 +35,15 @@ Done
 - When an instance such as a PE is deleted, the user needs to be alerted of all of the intances that will experince a structural change from this event. 
 - TODO: Merge AttributeValue in reactome-comparison together with another one defined in the reactome-instance model.
 - Bug: Open http://localhost:4200/schema_view/instance/9947940, delete an Input (e.g. the second one), and then open its summation (DB_ID: 9947864). Check its reference should show this reaction at least. However, no reference is shown. This doesn't happen if the edit is reset.
-- Bug: Open http://localhost:4200/schema_view/instance/874079. Open its input and then delete this input in the view. There are two bugs: 1). the input itself should not be editable since it is deleted. Yes for attributes having values. But for empty attributes (e.g. reactionType), editing is still enabled; 2). Deleting this input results a passive editing to both reviewStatus and previousReviewStatus. However, these two attributes are recorded as active edited attributes. 
+- Bug: Open http://localhost:4200/schema_view/instance/874079. Open its input and then delete this input in the view. There are two bugs: 1). the input itself should not be editable since it is deleted. Yes for attributes having values. But for empty attributes (e.g. reactionType), editing is still enabled; 2). Deleting this input results a passive editing to both reviewStatus and previousReviewStatus. However, these two attributes are recorded as active edited attributes.
 - Map the source instance index to the local instance, and check this will work for 
 
 
 #### TODO:
-- isCanonocal in Pathway cannot be edited
 - bug: regulation is not defined in RegulationReference. It is regulatedBy in the Java class model.
 - Make sure to use undefined, not null, to make the coed consistent. Check with the table editing results. Right now: text returns "" and non-text returns null!
-- bug: PathwayDiagram is not listed in the schema tree! Also check its display name generation.
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.
 - TODO: Set the color of icons in the event tree for dark mode. Right now, they are all black, which cannot be seen in the dark mode.
-- Need some big refactoring for classes in the pathway diagram module: Right now they are all cross-linked together, esp. diagram service utils.
 - For Figure instance: add a customized view to display the figure
 - for no-instance edit, press return should commit the change. Control-return should add a new line. (now control+return commits the change)
 - pathway diagram: deletion of a reaction in the diagram should delete that reaction. This applies to other object (e.g. a PE that is linked to a reaction).
@@ -55,7 +52,6 @@ Done
 - Imagine this scenario: A db instance is loaded. However, one of its attribute is deleted. Therefore, the view for the curator should see the instance without this deleted instance at browser. Should this instance be flagged as updated instance? Probably not since committing the deletion will handle this automatically. Also marking as updating will bring about some side effects (e.g. push to the local storage). But after the loading, the curator start to editing it. Now this instance is updated. Should the modified attributes include the attribute impacted by deletion, assuming the manul edited attribute is not that attribute. Probably we just need to introduce a new field in Instance, deletionImpactedAttribute? For the time being, just add the impacted attribute into the modified attribute list, but not mark it as updated. Need to revisit this later on.
 - resize: need to make sure all associate attachments (e.g. modification, resizing widgets can be moved around).
 - compartment id: since the same compartment can be added multiple times, therefore, we need a central way to manage id
-- refactoring the menus for diagram editing: make them more streamlined.
 - TODO: Better to come with a new implmenetation of finding all paths between two nodes instea of hacking the code for using aStar in hyperEdge.ts (enableRoundSegments and enableRoundSegmentsForFlowLine)
 - data model: modified is single-valued in the current graph model
 - TODO: Add a check for circular reference (e.g. precedingEvent): this should be avoided in any case!
