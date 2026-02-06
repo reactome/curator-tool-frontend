@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { Injectable } from '@angular/core';
+import { Attribute, Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
@@ -86,7 +86,7 @@ export class DataService {
    */
   initialize(): Promise<void> {
     console.debug('Initializing DataService - loading schema classes...');
-    
+
     return new Promise((resolve, reject) => {
       this.fetchSchemaClassTree().subscribe({
         next: (rootSchemaClass) => {
@@ -499,7 +499,7 @@ export class DataService {
    */
   handleSchemaClassForInstance(instance: Instance): Observable<Instance> {
     let className: string = instance.schemaClassName!;
-    
+
     // Load schema tree first to ensure name2SchemaClass map is populated
     return this.fetchSchemaClassTree(false).pipe(
       concatMap(() => {
@@ -514,7 +514,7 @@ export class DataService {
             })
           );
         }
-        
+
         // Use cached schema class directly
         instance.schemaClass = schemaClass;
         return of(instance);
@@ -1052,34 +1052,32 @@ export class DataService {
 
         if (dbIds.size > 0) {
           let ids = Array.from(dbIds);
-          let instances = this.fetchInstances(ids).pipe(map((instances: Instance[]) => { return instances }))
-          instances.subscribe((instances: Instance[]) => {
-            instances.forEach(inst => {
-              if (!inst.modifiedAttributes || !inst.passiveModifiedAttributes) return;
-
-                // Process both modifiedAttributes and passiveModifiedAttributes
-                const allAttributes = [
-                ...(inst.modifiedAttributes || []),
-                ...(inst.passiveModifiedAttributes || [])
-                ];
-                allAttributes.forEach(attribute => {
-                const attributeData = inst.attributes.get(attribute);
-                if (!attributeData) return;
-
-                referrers = this.processAttributeData(attributeData, dbId, attribute, inst, referrers, attributeNames);
-              });
-            })
+          ids.forEach(id => {
+            let inst = this.id2instance.get(id);
+            if (!inst) {
+              console.warn(`Instance with dbId ${id} not found in cache.`);
+              return;
+            }
+            if (!inst.attributes) {
+              console.warn(`Instance with dbId ${id} has no attributes.`);
+              return;
+            }
+            for (let att of inst!.attributes!.keys()) {
+              let attribute = inst!.attributes!.get(att);
+              referrers = this.processAttributeData(attribute, dbId, attribute.name, inst!, referrers, attributeNames);
+            }
           });
+
+          if (deletedDBIds.size > 0) {
+            referrers = this.filterDeletedReferrers(referrers, deletedDBIds);
+          }
+
+          return of(referrers);
         }
 
-        if (deletedDBIds.size > 0) {
-          referrers = this.filterDeletedReferrers(referrers, deletedDBIds);
-        }
-
-        // Default return in case no conditions are met
+        // Ensure all code paths return an observable
         return of(referrers);
       })
-
     );
   }
 
@@ -1102,7 +1100,7 @@ export class DataService {
             attributeNames.push(ref.attributeName);
             referrers.push(ref);
           }
-          //this.addOrUpdateReferrer(referrers, attributeNames, attribute, inst);
+          this.addOrUpdateReferrer(referrers, attributeNames, attribute, inst);
         }
       });
     } else if (attributeData.dbId === dbId) {
@@ -1114,9 +1112,9 @@ export class DataService {
         attributeNames.push(ref.attributeName);
         referrers.push(ref);
       }
-      //this.addOrUpdateReferrer(referrers, attributeNames, attribute, inst);
+      this.addOrUpdateReferrer(referrers, attributeNames, attribute, inst);
     }
-    return referrers
+    return referrers;
   }
 
   private addOrUpdateReferrer(

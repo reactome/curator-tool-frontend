@@ -36,6 +36,7 @@ Done
 - TODO: Merge AttributeValue in reactome-comparison together with another one defined in the reactome-instance model.
 - Bug: Open http://localhost:4200/schema_view/instance/9947940, delete an Input (e.g. the second one), and then open its summation (DB_ID: 9947864). Check its reference should show this reaction at least. However, no reference is shown. This doesn't happen if the edit is reset.
 - Bug: Open http://localhost:4200/schema_view/instance/874079. Open its input and then delete this input in the view. There are two bugs: 1). the input itself should not be editable since it is deleted. Yes for attributes having values. But for empty attributes (e.g. reactionType), editing is still enabled; 2). Deleting this input results a passive editing to both reviewStatus and previousReviewStatus. However, these two attributes are recorded as active edited attributes. 
+- Map the source instance index to the local instance, and check this will work for 
 
 
 #### TODO:
