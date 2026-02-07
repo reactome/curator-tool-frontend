@@ -507,8 +507,8 @@ export class InstanceTableComponent implements PostEditListener {
     this.finishEdit(attributeValue.attribute.name, attributeValue.value, true);
   }
 
-  private filterAttributeValueForDeletion(attributeValue: AttributeValue): any[] {
-    if (!attributeValue || !attributeValue.referenceValue) return [];
+  private filterAttributeValueForDeletion(attributeValue: AttributeValue): any {
+    if (!attributeValue || !attributeValue.referenceValue) return undefined;
     // If value is an array, filter out deleted dbIds
     if (Array.isArray(attributeValue.referenceValue)) {
       return attributeValue.referenceValue
@@ -518,10 +518,10 @@ export class InstanceTableComponent implements PostEditListener {
     }
     // If value is a single instance, check dbId
     if (attributeValue.referenceValue.dbId) {
-      return this.deletedDBIds.includes(attributeValue.referenceValue.dbId) ? [] : [attributeValue.referenceValue];
+      return this.deletedDBIds.includes(attributeValue.referenceValue.dbId) ? undefined : attributeValue.referenceValue;
     }
     // For primitive values, just return as is
-    return [attributeValue.referenceValue];
+    return attributeValue.referenceValue;
   }
 
   filterEditedValues() {
