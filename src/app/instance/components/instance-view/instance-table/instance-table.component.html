@@ -135,7 +135,7 @@
             <div *ngIf="isActiveEdited(element.attribute.name) && element.attribute.category !== AttributeCategory.NOMANUALEDIT && showReferenceColumn"
               style="height: 24px; width: 35px; float: right; z-index: 3; bottom: 10px;">
               <button style="bottom: 7px; right: 5px;" mat-icon-button (click)="resetEdit(element)"
-                matTooltip="reset to db value">
+                [matTooltip]="_instance?.dbId === _referenceInstance?.dbId ? 'reset to the db value' : 'set to the right value'">
                 <mat-icon>undo</mat-icon>
               </button>
             </div>

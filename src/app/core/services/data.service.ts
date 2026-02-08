@@ -318,9 +318,8 @@ export class DataService {
    * @param dbIds 
    */
   fetchInstances(dbIds: number[]): Observable<Instance[]> {
+    if (!dbIds) return of([]); // Return an empty array if dbIds is undefined or null
     const observables: Observable<Instance>[] = dbIds.map((dbId: number) => this.fetchInstance(dbId));
-    console.log('observables', observables)
-
     return forkJoin(observables);
   }
 
@@ -328,6 +327,9 @@ export class DataService {
    * Fetch the reaction with all participants so that it can be laid out in a
    * pathway diagram.
    * Note: the attributes here don't follow the schema definition of ReactionLikeEvent.
+   * We don't ask the server to provide participants since some of paricipants may be updated
+   * locally but not committed to the server. Therfore, we need to fetch the participants separately
+   * based on the loaded reaction.
    * @param dbId
    * @returns
    */
@@ -350,13 +352,36 @@ export class DataService {
             }
           }
         }
-        if (helperDbIds.size === 0)
-          return of(inst);
-        // Need to do another around to fetch helper nodes
-        return this.fetchInstances([...helperDbIds]).pipe(map((helpers: Instance[]) => {
-          this.utils.addHelpersToReaction(inst, helpers);
-          return inst;
-        }));
+        const helpersList = [...helperDbIds];
+        if (helpersList.length === 0) {
+          // If no helpers to fetch, proceed directly to the next step
+          const additionalDbIds = this.utils.grepReactomeParticipantIds(inst);
+          if (additionalDbIds.length === 0)
+            return of(inst);
+          return this.fetchInstances(additionalDbIds).pipe(
+            map((pes: Instance[]) => {
+              this.utils.setRefSchemaClassForReactionParticipants(inst, pes);
+              return inst;
+            })
+          );
+        }
+        return this.fetchInstances(helpersList).pipe(
+          concatMap((helpers: Instance[]) => {
+            this.utils.addHelpersToReaction(inst, helpers);
+            // Add another fetchInstances call here to make sure each PE
+            // has its refSchemaClass and hasModifiedResidue filled.
+            const additionalDbIds = this.utils.grepReactomeParticipantIds(inst);
+            // Populate additionalDbIds based on your logic
+            if (additionalDbIds.length === 0)
+              return of(inst);
+            return this.fetchInstances(additionalDbIds).pipe(
+              map((pes: Instance[]) => {
+                this.utils.setRefSchemaClassForReactionParticipants(inst, pes);
+                return inst;
+              })
+            );
+          })
+        );
       })
     );
   }

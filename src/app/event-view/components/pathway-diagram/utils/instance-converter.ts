@@ -241,6 +241,8 @@ export class InstanceConverter {
         const reactionNodes: NodeDefinition = {
             data: {
                 id: 'reaction_' + instance.dbId,
+                // Also need reaction id to mark this as the reaction node.
+                reactionId: 'reaction_' + instance.dbId,
                 reactomeId: instance.dbId,
                 // displayName: instance.displayName,
                 width: 20,
@@ -362,7 +364,7 @@ export class InstanceConverter {
             // when query the server.
             let refSchemaClass = undefined;
             if (inst.attributes)
-                refSchemaClass = inst.attributes["refSchemaClass"];
+                refSchemaClass = inst.attributes.get("refSchemaClass");
             if (refSchemaClass) {
                 if (refSchemaClass === "ReferenceGeneProduct")
                     return "Protein";

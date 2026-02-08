@@ -162,6 +162,45 @@ export class InstanceUtilities {
         }
     }
 
+    grepReactomeParticipantIds(reaction: Instance): number[] {
+        let dbIds = new Set<number>();
+        const participantAtts = ['input', 'output', 'catalyst', 'activator', 'inhibitor'];
+        for (let att of participantAtts) {  
+            const attValue = reaction.attributes.get(att);
+            if (!attValue) continue;
+            attValue.forEach((element: any) => {dbIds.add(element.dbId)});    
+        }
+        return Array.from(dbIds);
+    }
+
+    private grepReactomeParticipants(reaction: Instance): Instance[] {
+        let particiapnts = new Set<Instance>();
+        const participantAtts = ['input', 'output', 'catalyst', 'activator', 'inhibitor'];
+        for (let att of participantAtts) {  
+            const attValue = reaction.attributes.get(att);
+            if (!attValue) continue;
+            attValue.forEach((element: any) => {particiapnts.add(element)});    
+        }
+        return Array.from(particiapnts);
+    }
+
+    setRefSchemaClassForReactionParticipants(reaction: Instance, instances: Instance[]) {
+        // Generate a map for easy setting
+        let id2cls = new Map<number, string>();
+        instances.forEach(participant => {
+            const refClsName = participant.attributes?.get('referenceEntity')?.schemaClassName ?? 'ReferenceEntity';
+            id2cls.set(participant.dbId, refClsName);
+        });
+        const participants = this.grepReactomeParticipants(reaction);
+        participants.forEach(participant => {
+            const refClsName = id2cls.get(participant.dbId);
+            if (refClsName) {
+                if (!participant.attributes) participant.attributes = new Map<string, any>();
+                participant.attributes.set('refSchemaClass', refClsName);
+            }
+        });
+    }
+
     _isSchemaClass(className: string, schemaClass: SchemaClass | undefined): boolean {
         if (schemaClass === undefined)
             return false;

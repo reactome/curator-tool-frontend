@@ -27,7 +27,7 @@ import {
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
 import { deleteInstances } from 'src/app/instance/state/instance.selectors';
-import { filter, map, Subscription, take } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { AttributeValue, EDIT_ACTION } from 'src/app/core/models/reactome-instance.model';
 import { InstanceComparisonDataSource } from './instance-table-comparison.model';
 
@@ -492,7 +492,7 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   resetEdit(attributeValue: AttributeValue) {
-    if (!this._instance) return; // Do nothing
+    if (!this._instance || !this._referenceInstance) return; // Do nothing if instance or reference instance is not defined
     if (this._instance.source) {
       this.attributeEditService.resetAttributeValue(this._instance.source, attributeValue);
     }
@@ -504,7 +504,9 @@ export class InstanceTableComponent implements PostEditListener {
       value: attributeValue.value
     };
     this.attributeEditService.resetAttributeValue(this._instance, attributeValueClone);
-    this.finishEdit(attributeValue.attribute.name, attributeValue.value, true);
+    this.finishEdit(attributeValue.attribute.name, 
+                    attributeValue.value, 
+                    this._instance.dbId === this._referenceInstance.dbId);
   }
 
   private filterAttributeValueForDeletion(attributeValue: AttributeValue): any {

@@ -1,7 +1,6 @@
 <h3>Total Referrers: {{totalCount}}</h3>
 <ng-container style="margin: 0px; padding: 0px" *ngIf="totalCount >= 1000">Complete referrer list is too large to display</ng-container>
-<h5 style="color: red; margin: 0px; padding: 0px" *ngIf="instance2ReviewStatusChange.length > 0">*Instances listed in red would experience a
-  structural change due to {{instance?.displayName}}'s deletion</h5>
+<h5 style="color: red; margin: 0px; padding: 0px; font-style: italic;" *ngIf="instance2ReviewStatusChange.length > 0">*Instances listed in red would experience a structural change if this instance is deleted</h5>
 
 <section class="table-container" tabindex="0">
   <ng-container *ngIf="showProgressSpinner">
