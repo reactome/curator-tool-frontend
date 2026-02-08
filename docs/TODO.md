@@ -1,4 +1,5 @@
 #### Bugs:
+- Bug: In Java, getSpeciesFromPE() is wrong, resulting an error in stable id generation for EWAS etc. Basically need to review the whole StableIdentifierGenerator class.
 - The autoscroll for the instance view in the event view scroll the whole instance view. But we need to scroll the table content only just like in the schemw view. (some fixed, but not fully ideal)
 - go to pathway in the diagram sometimes has weird selection: the pathway selected is stuck in the URL!
 - resizing the nodes cannot change the height of the background for selection. However, sometimes it does work!
@@ -6,7 +7,6 @@
 - Bug: the connecting positions are not updated for helper nodes when they are dragged during editing. (??)
 - Bug: inner shapes are not updated when resizing nodes.
 - Bug (fixed. Kept for future test): When a PE is used as both input and catalyst, enable/disable editing in pathway diagram cannot recovers the original diagram (input or catalyst may get lost, e.g. http://localhost:4200/event_view/instance/453279?select=8848436) - Bug: LLM geneates text for ALDOB having the original template [PMID: 123456] that is not replaced. See Peter's email on Nov 13, 2024.
--short cut for selecting instances from the dialog 
 - NOTE: for deletion confirmation we need to get the referrers for an instance before determining if the first dialog should show or the second. Therefore, we have decided to keep the first dialog with "no referrers to show" to avoid performing this action before necessary as getting referrers is a heavy transaction. 10/24/25
 
 #### Deidre
@@ -15,17 +15,16 @@
 - TODO: Boolean sliders appear to be 'false' when they are 'true' and disabled due to the gray styling for disabled buttons.
 - TODO: in the attribute table, attributes may be sorted based on names or define attributes (together with name). Could we make the option sticky: Once the user chooses one sort, the same sort will be applied to all tables opened from that point on. Also it would be nicer to keep the option persisted as the status (for new, updated, etc).
 -Bug: tooltip in event view for switching to the schema view is wrong
-- comparison should be done attribute by attribute, not by modified attributes. this is because the modififed atts are unreliable and when comparing two
-    different instances, this will not work. 
 - "((1,6)-alpha-glucosyl)poly((1,4)-alpha-glucosyl)glycogenin => poly{(1,4)-alpha-glucosyl} glycogenin + alpha-D-glucose" search field for this complicated
     display name cannot be parsed because of symbols
 - Refresh of updated list (occured after resetting deleted insts) 
-- When an instance such as a PE is deleted, the user needs to be alerted of all of the intances that will experince a structural change from this event. 
-- TODO: Merge AttributeValue in reactome-comparison together with another one defined in the reactome-instance model.
 - Bug: Open http://localhost:4200/schema_view/instance/9947940, delete an Input (e.g. the second one), and then open its summation (DB_ID: 9947864). Check its reference should show this reaction at least. However, no reference is shown. This doesn't happen if the edit is reset.
 - Bug: Open http://localhost:4200/schema_view/instance/874079. Open its input and then delete this input in the view. There are two bugs: 1). the input itself should not be editable since it is deleted. Yes for attributes having values. But for empty attributes (e.g. reactionType), editing is still enabled; 2). Deleting this input results a passive editing to both reviewStatus and previousReviewStatus. However, these two attributes are recorded as active edited attributes.
-- Map the source instance index to the local instance, and check this will work for 
-
+- Map the source instance index to the local instance, and check this will work for DnD
+- Bug: http://localhost:4200/schema_view/instance/9008456. This BlackBoxEvent has a regulationReference, which has a very long displayName and displayed at more than one line. Put your mouse onto this regulation reference instance. Only the first line is highlighted with a block. It is supposed to have all lines blocked (wrapped by a rectangle defined by CSS).
+- TODO: Write a script or manually try to create an object for each concrete class and then upload them. This is to test if all new instances can be saved.
+- TODO: During the comparison model, if the code finds a modified attribute is not changed (e.g. _displayName after reset), remove this attribute from the modified array.
+- Bug: The referrer dialog should not have the structural change warning (red text) when the referrers are shown not for deletion (low priority). However, if the user just wants to see the instance's referrers, why do we need to check structural changes? This may have some perfornace overhead.
 
 #### TODO:
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.
