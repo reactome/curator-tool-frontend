@@ -608,11 +608,11 @@ export class HyperEdge {
         if (reactionNode === undefined)
             return; // Nothing to do.
         // Put the reaction node to the passed position
-        reactionNode.position({x: pos.x, y: pos.y});
+        this.setNodePositionWithModifications(reactionNode, {x: pos.x, y: pos.y});
         const inputNodes = this.getNodesForClass('consumption');
         const inputHubNode = this.getHubNode('consumption');
         if (inputHubNode !== reactionNode) {
-            inputHubNode.position({
+            this.setNodePositionWithModifications(inputHubNode, {
                 x: pos.x - 100, // Get this number from Java
                 y: pos.y
             });
@@ -632,7 +632,7 @@ export class HyperEdge {
                     continue;
                 x = w * Math.sin((i + 1) * div - shift);
                 y = w * Math.cos((i + 1) * div - shift);
-                inputNodes[i].position({
+                this.setNodePositionWithModifications(inputNodes[i], {
                     x: inputHubPos.x - x,
                     y: inputHubPos.y - y
                 });
@@ -642,7 +642,7 @@ export class HyperEdge {
         const outputNodes = this.getNodesForClass('production', true);
         const outputHubNode = this.getHubNode('production');
         if (outputHubNode !== reactionNode) {
-            outputHubNode.position({
+            this.setNodePositionWithModifications(outputHubNode, {
                 x: pos.x + 100,
                 y: pos.y
             });
@@ -658,7 +658,7 @@ export class HyperEdge {
                     continue;
                 x = w * Math.sin((i + 1) * div - shift);
                 y = w * Math.cos((i + 1) * div - shift);
-                outputNodes[i].position({
+                this.setNodePositionWithModifications(outputNodes[i], {
                     x: outputHubPos.x + x,
                     y: outputHubPos.y - y
                 });
@@ -674,12 +674,44 @@ export class HyperEdge {
                     continue;
                 x = w * Math.sin(i * div);
                 y = w * Math.cos(i * div);
-                accessoryNodes[i].position({
+                this.setNodePositionWithModifications(accessoryNodes[i], {
                     x: pos.x - x,
                     y: pos.y - y
                 });
             }
         }
+    }
+
+    /**
+     * Set node position and move all associated modification nodes by the same delta.
+     * @param node The parent node to move
+     * @param newPos The new position for the parent node
+     */
+    private setNodePositionWithModifications(node: any, newPos: Position) {
+        // Get the old position
+        const oldPos = node.position();
+        const deltaX = newPos.x - oldPos.x;
+        const deltaY = newPos.y - oldPos.y;
+        
+        // Set the new position for the parent node
+        node.position(newPos);
+        
+        // Find and move all modification nodes associated with this parent
+        const parentReactomeId = node.data('reactomeId');
+        const modificationNodes = this.cy.nodes().filter((modNode: any) => {
+            return modNode.hasClass('Modification') && modNode.data('nodeReactomeId') === parentReactomeId;
+        });
+        
+        if (!modificationNodes) return;
+        
+        // Move each modification node by the same delta
+        modificationNodes.forEach((modNode: any) => {
+            const modPos = modNode.position();
+            modNode.position({
+                x: modPos.x + deltaX,
+                y: modPos.y + deltaY
+            });
+        });
     }
 
     private getHubNode(role: string) : any {

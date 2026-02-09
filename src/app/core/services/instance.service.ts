@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { Instance } from "../models/reactome-instance.model";
 import { DataService } from "./data.service";
 import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttribute, SchemaClass } from "../models/reactome-schema.model";
-import { Subject, take } from "rxjs";
+import { Subject, take, Observable, of, concatMap, map } from "rxjs";
 import { Store } from "@ngrx/store";
 import { deleteInstances } from "src/app/instance/state/instance.selectors";
 import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
@@ -184,21 +184,109 @@ export class InstanceUtilities {
         return Array.from(particiapnts);
     }
 
-    setRefSchemaClassForReactionParticipants(reaction: Instance, instances: Instance[]) {
+    fillRenderInfoForReactionParticipants(reaction: Instance, instances: Instance[], dataService: DataService): Observable<void> {
         // Generate a map for easy setting
-        let id2cls = new Map<number, string>();
+        // the value in this map is fully loaded instance with all attributes.
+        let id2inst = new Map<number, Instance>();
         instances.forEach(participant => {
-            const refClsName = participant.attributes?.get('referenceEntity')?.schemaClassName ?? 'ReferenceEntity';
-            id2cls.set(participant.dbId, refClsName);
+            id2inst.set(participant.dbId, participant);
         });
         const participants = this.grepReactomeParticipants(reaction);
         participants.forEach(participant => {
-            const refClsName = id2cls.get(participant.dbId);
-            if (refClsName) {
+            const loadedInst = id2inst.get(participant.dbId);
+            if (loadedInst) {
                 if (!participant.attributes) participant.attributes = new Map<string, any>();
+                const refClsName = loadedInst.attributes?.get('referenceEntity')?.schemaClassName ?? 'ReferenceEntity';
                 participant.attributes.set('refSchemaClass', refClsName);
+                participant.attributes.set('hasModifiedResidue', loadedInst.attributes?.get('hasModifiedResidue'));
             }
         });
+
+        // Step 1: Collect all hasModifiedResidue dbIds
+        const modifiedResidueDbIds = new Set<number>();
+        participants.forEach(participant => {
+            const modifiedResidues = participant.attributes?.get('hasModifiedResidue');
+            if (modifiedResidues && Array.isArray(modifiedResidues)) {
+                modifiedResidues.forEach((residue: any) => {
+                    if (residue && residue.dbId) {
+                        modifiedResidueDbIds.add(residue.dbId);
+                    }
+                });
+            } else if (modifiedResidues && modifiedResidues.dbId) {
+                modifiedResidueDbIds.add(modifiedResidues.dbId);
+            }
+        });
+
+        // If no modified residues, return immediately
+        if (modifiedResidueDbIds.size === 0) {
+            return of(undefined);
+        }
+
+        // Step 2: Fetch all hasModifiedResidue instances fully
+        return dataService.fetchInstances(Array.from(modifiedResidueDbIds)).pipe(
+            concatMap((modifiedResidueInstances: Instance[]) => {
+                // Update participants with fully loaded ModifiedResidue instances
+                const modResidueMap = new Map<number, Instance>();
+                modifiedResidueInstances.forEach(modRes => {
+                    modResidueMap.set(modRes.dbId, modRes);
+                });
+
+                participants.forEach(participant => {
+                    const modifiedResidues = participant.attributes?.get('hasModifiedResidue');
+                    if (modifiedResidues && Array.isArray(modifiedResidues)) {
+                        const fullyLoadedResidues = modifiedResidues.map((residue: any) => {
+                            if (residue && residue.dbId) {
+                                return modResidueMap.get(residue.dbId) || residue;
+                            }
+                            return residue;
+                        });
+                        participant.attributes?.set('hasModifiedResidue', fullyLoadedResidues);
+                    } else if (modifiedResidues && modifiedResidues.dbId) {
+                        const fullyLoaded = modResidueMap.get(modifiedResidues.dbId);
+                        if (fullyLoaded) {
+                            participant.attributes?.set('hasModifiedResidue', fullyLoaded);
+                        }
+                    }
+                });
+
+                // Step 3: Collect all psiMod dbIds from ModifiedResidue instances
+                const psiModDbIds = new Set<number>();
+                modifiedResidueInstances.forEach(modRes => {
+                    const psiMod = modRes.attributes?.get('psiMod');
+                    if (psiMod && psiMod.dbId) {
+                        psiModDbIds.add(psiMod.dbId);
+                    }
+                });
+
+                // If no psiMod references, return
+                if (psiModDbIds.size === 0) {
+                    return of(undefined);
+                }
+
+                // Step 4: Fetch all psiMod instances fully
+                return dataService.fetchInstances(Array.from(psiModDbIds)).pipe(
+                    map((psiModInstances: Instance[]) => {
+                        // Update ModifiedResidue instances with fully loaded psiMod
+                        const psiModMap = new Map<number, Instance>();
+                        psiModInstances.forEach(psiMod => {
+                            psiModMap.set(psiMod.dbId, psiMod);
+                        });
+
+                        modifiedResidueInstances.forEach(modRes => {
+                            const psiMod = modRes.attributes?.get('psiMod');
+                            if (psiMod && psiMod.dbId) {
+                                const fullyLoadedPsiMod = psiModMap.get(psiMod.dbId);
+                                if (fullyLoadedPsiMod) {
+                                    modRes.attributes?.set('psiMod', fullyLoadedPsiMod);
+                                }
+                            }
+                        });
+
+                        return undefined;
+                    })
+                );
+            })
+        );
     }
 
     _isSchemaClass(className: string, schemaClass: SchemaClass | undefined): boolean {

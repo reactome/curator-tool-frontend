@@ -330,6 +330,8 @@ export class DataService {
    * We don't ask the server to provide participants since some of paricipants may be updated
    * locally but not committed to the server. Therfore, we need to fetch the participants separately
    * based on the loaded reaction.
+   * TODO: There are multiple rounds of load instances here and inside instance.services.ts. We need to
+   * optimize by loading reaction participants from the server still.
    * @param dbId
    * @returns
    */
@@ -359,9 +361,10 @@ export class DataService {
           if (additionalDbIds.length === 0)
             return of(inst);
           return this.fetchInstances(additionalDbIds).pipe(
-            map((pes: Instance[]) => {
-              this.utils.setRefSchemaClassForReactionParticipants(inst, pes);
-              return inst;
+            concatMap((pes: Instance[]) => {
+              return this.utils.fillRenderInfoForReactionParticipants(inst, pes, this).pipe(
+                map(() => inst)
+              );
             })
           );
         }
@@ -375,9 +378,10 @@ export class DataService {
             if (additionalDbIds.length === 0)
               return of(inst);
             return this.fetchInstances(additionalDbIds).pipe(
-              map((pes: Instance[]) => {
-                this.utils.setRefSchemaClassForReactionParticipants(inst, pes);
-                return inst;
+              concatMap((pes: Instance[]) => {
+                return this.utils.fillRenderInfoForReactionParticipants(inst, pes, this).pipe(
+                  map(() => inst)
+                );
               })
             );
           })

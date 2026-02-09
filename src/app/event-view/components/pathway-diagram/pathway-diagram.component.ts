@@ -296,6 +296,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         // should handle moving resizing widgets
         this.diagramUtils.moveModifications(node, e, this.previousDragPos);
       }
+      // Always update previousDragPos to track the current position
+      const pos = node.position();
+      this.previousDragPos.x = pos.x;
+      this.previousDragPos.y = pos.y;
     });
     // Reset for anything for editing
     this.diagramUtils.id2hyperEdge.clear();

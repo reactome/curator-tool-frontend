@@ -222,11 +222,15 @@ export class InstanceConverter {
             const edge = this.createEdge(inhibitorNode, reactionNode, instance, 'INHIBITOR', utils.diagramService!, cy);
             hyperEdge.registerObject(edge);
         }
-        const newNodes = [...inputStoichiometry.keys(), ...outputStoichiometry.keys(), 
-            ...catalystNodes, 
-            ...activatorNodes,
-            ...inhibitorNodes,
-            reactionNode]
+        // const newNodes = [...inputStoichiometry.keys(), ...outputStoichiometry.keys(), 
+        //     ...catalystNodes, 
+        //     ...activatorNodes,
+        //     ...inhibitorNodes,
+        //     reactionNode]
+        // Here I just want to select edge related nodes, including reaction node.
+        // Otherwise, modification nodes added will be subject to draggin for unknown reason.
+        // This is a temporary solution. We can find a better way to handle this in the future.
+        const newNodes = [reactionNode]
         if (inputHubNode !== undefined)
             newNodes.push(inputHubNode);
         if (outputHubNode !== undefined)
@@ -332,7 +336,95 @@ export class InstanceConverter {
             service.nodeTypeMap.get(this.getNodeType(inst)).forEach((cls: string) => newNode.addClass(cls));
         if (inst.schemaClassName === "RNADrug")
             newNode.addClass("drug");
+        
+        // Create modification nodes for TranslationalModification
+        this.createModificationNodes(inst, newNode, cy);
+        
         return newNode;
+    }
+
+    private createModificationNodes(inst: Instance, parentNode: any, cy: Core) {
+        // Only create modification nodes for TranslationalModification
+        const refSchemaClass = inst.attributes?.get('refSchemaClass');
+        if (refSchemaClass !== 'ReferenceGeneProduct' && inst.schemaClassName !== 'EntityWithAccessionedSequence') {
+            return;
+        }
+        
+        const hasModifiedResidue = inst.attributes?.get('hasModifiedResidue');
+        if (!hasModifiedResidue) {
+            return;
+        }
+        
+        // Convert to array if it's not already
+        const modifiedResidues = Array.isArray(hasModifiedResidue) ? hasModifiedResidue : [hasModifiedResidue];
+        
+        const parentWidth = parentNode.data('width');
+        const parentHeight = parentNode.data('height');
+        const parentPos = parentNode.position();
+        const parentX = parentPos.x;
+        const parentY = parentPos.y;
+        
+        // filter modified residues that do not have psiMod attribute or label
+        const validModifiedResidues = modifiedResidues.filter((modifiedResidue: any) => {
+            if (!modifiedResidue || !modifiedResidue.dbId) {
+                return false;
+            }
+            const psiMod = modifiedResidue.attributes?.get('psiMod');
+            return psiMod && psiMod.attributes?.get('label');
+        });
+        // Distribute nodes around the rectangle perimeter
+        // Calculate the perimeter of the rectangle
+        const perimeter = 2 * (parentWidth + parentHeight);
+        const spacing = perimeter / validModifiedResidues.length;
+        
+        // Create a node for each modified residue
+        validModifiedResidues.forEach((modifiedResidue: any, index: number) => {
+            const psiMod = modifiedResidue.attributes?.get('psiMod');
+            let label = psiMod.attributes?.get('label') ?? '';
+            
+            // Create a small node for the modification
+            const modNodeSize = 20; // Small circular node
+            
+            const distanceAlongPerimeter = spacing * index + Math.random() * spacing * 0.3;
+            let modX, modY;
+            
+            // Calculate position on rectangle perimeter
+            if (distanceAlongPerimeter < parentWidth) {
+                // Top edge
+                modX = parentX - parentWidth / 2 + distanceAlongPerimeter;
+                modY = parentY - parentHeight / 2;
+            } else if (distanceAlongPerimeter < parentWidth + parentHeight) {
+                // Right edge
+                modX = parentX + parentWidth / 2;
+                modY = parentY - parentHeight / 2 + (distanceAlongPerimeter - parentWidth);
+            } else if (distanceAlongPerimeter < 2 * parentWidth + parentHeight) {
+                // Bottom edge
+                modX = parentX + parentWidth / 2 - (distanceAlongPerimeter - parentWidth - parentHeight);
+                modY = parentY + parentHeight / 2;
+            } else {
+                // Left edge
+                modX = parentX - parentWidth / 2;
+                modY = parentY + parentHeight / 2 - (distanceAlongPerimeter - 2 * parentWidth - parentHeight);
+            }
+            
+            const modNode: NodeDefinition = {
+                data: {
+                    id: `mod_${inst.dbId}_${modifiedResidue.dbId}`,
+                    reactomeId: modifiedResidue.dbId,
+                    displayName: label,
+                    width: modNodeSize,
+                    height: modNodeSize,
+                    nodeReactomeId: parentNode.data('reactomeId'), // Store the parent node reactomeId for later use
+                },
+                position: {
+                    x: modX,
+                    y: modY
+                }
+            };
+            
+            const newModNode = cy.add(modNode)[0];
+            newModNode.addClass('Modification');
+        });
     }
 
     private generateRenderableName(displayName: string) {
