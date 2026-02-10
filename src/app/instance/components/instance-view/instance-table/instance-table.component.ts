@@ -254,27 +254,33 @@ export class InstanceTableComponent implements PostEditListener {
     this.finishEdit(attributeValue.attribute.name, attributeValue.value);
   }
 
-  // Map the index of the attribute value in the source instance.
-  // Handles single values, arrays, and cases where there is no value.
+  /**
+   * Map the index of the attribute value in the source instance.
+   * Handles single values, arrays, and cases where there is no value.
+   * @param attributeValue 
+   * @returns 
+   */
   private mapppingIndexInSourceInstance(attributeValue: AttributeValue): AttributeValue {
     // If there is no value, just return the attributeValue as is
     if (!attributeValue || attributeValue.value === undefined) {
       return attributeValue;
     }
+ 
     const sourceValues = this._instance!.source!.attributes.get(attributeValue.attribute.name);
-
+ 
     // If sourceValues is undefined, just return the attributeValue as is
-    if (!sourceValues) {
+    // If the attribute is single-valued, nothing is needed to do.
+    if (!sourceValues || attributeValue.attribute.cardinality === '1') {
       return attributeValue;
     }
-
-    if (Array.isArray(sourceValues) && attributeValue.value?.dbId !== undefined) {
-      const index = sourceValues.findIndex((val: any) => val?.dbId === attributeValue.value?.dbId);
-      if (index !== -1) {
-        return { ...attributeValue, index };
-      }
-    }
-    return attributeValue;
+ 
+    // Handle array value
+    // Find the index of the first matching value in sourceValues
+    // Here we just check the dbId. Array.isArray() should not be necessary here.
+    const srcIndex = sourceValues.findIndex((srcVal: any) => srcVal?.dbId === attributeValue.value.dbId);
+    // Regardless we will return a clone of the original one even though we cannot find
+    // a match. 
+    return { ...attributeValue, index: srcIndex };
   }
 
   private addInstanceViaSelect(attributeValue: AttributeValue, replace: boolean) {
