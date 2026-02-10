@@ -287,15 +287,18 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     // Resize the compartment for resizing nodes
     this.diagram.cy.on('drag', 'node', (e: any) => {
       let node = e.target;
+      // If a node that had resize enabled is being moved, disable its resize mode
+      if (this.resizingNodes.includes(node)) {
+        this.diagramUtils.disableResizeCompartment(node, this.diagram);
+        const idx = this.resizingNodes.indexOf(node);
+        if (idx >= 0) this.resizingNodes.splice(idx, 1);
+      }
+
       if (node.hasClass('Modification') && !e.target.hasClass('resizing')) 
         return; // Modification nodes are handled in moveModifications. No need to handle here.
       if (node.hasClass('resizing')) {
         // This may be used for both compartment and PE node
-        let resizedNode = this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);
-        // To be updated.
-        // if (resizedNode && resizedNode.hasClass('PhysicalEntity')) {    
-        //   this.diagramUtils.moveModifications(resizedNode, e, this.previousDragPos);
-        // }
+        this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);        
       }
       else if (node.hasClass('Protein') || node.hasClass('RNA') || node.hasClass('Gene')) {
         // Handle Modification move only for the above three types of nodes.

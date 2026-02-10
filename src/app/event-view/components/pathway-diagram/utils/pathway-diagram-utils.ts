@@ -424,30 +424,90 @@ export class PathwayDiagramUtilService {
         const compartmentId = node.data('compartment');
         const compartment = e.cy.$('#' + compartmentId);
         if (compartment !== undefined && compartment.length > 0) {
-            const comp_pos = compartment.position();
+            // store previous bounds
+            const oldPos = compartment.position();
+            const oldW = compartment.data('width');
+            const oldH = compartment.data('height');
+
             const new_pos = {
-                x: comp_pos.x + deltaX / 2.0,
-                y: comp_pos.y + deltaY / 2.0
+                x: oldPos.x + deltaX / 2.0,
+                y: oldPos.y + deltaY / 2.0
             };
+            // apply position update first
             compartment.position(new_pos);
+
             if (nodeId.endsWith('_sw') || nodeId.endsWith('_se')) {
                 deltaY = -deltaY; // Flip the direction: negative for reduce the height. But the position should be right.
             }
             if (nodeId.endsWith('_ne') || nodeId.endsWith('_se')) {
                 deltaX = -deltaX; // Flip the direction: negative for redue the width
             }
-            compartment.data('width', compartment.data('width') - deltaX);
-            compartment.data('height', compartment.data('height') - deltaY);
-            
-            // TODO: Somehow the background of the selected image y location cannot be updated
-            // Need to fix this bug.
-            // compartment.style('background-position-y', compartment.style('height'));
+
+            const newW = oldW - deltaX;
+            const newH = oldH - deltaY;
+            compartment.data('width', newW);
+            compartment.data('height', newH);
+
+            // Move modification nodes attached to this compartment that sit on edges
+            this.moveModificationNodesOnResize(compartment, oldPos, oldW, oldH, new_pos, newW, newH, e.cy);
 
             this.updateResizeNodesPosition(compartment, nodeId, e.cy);
             this.ensureTwoLayerCompartment(compartment, nodeId, e.cy);
-            return compartment;
         }
-        return undefined;
+    }
+
+    /**
+     * Move modification nodes attached to a compartment when the compartment is resized.
+     * If a modification node sits on an edge (within tolerance), snap it to the new edge position.
+     */
+    private moveModificationNodesOnResize(compartment: any,
+        oldPos: Position, oldW: number, oldH: number,
+        newPos: Position, newW: number, newH: number,
+        cy: Core) {
+        const reactomeId = compartment.data('reactomeId');
+        if (!reactomeId) return;
+        const mods = cy.nodes().filter((n: any) => n.data('nodeReactomeId') === reactomeId && n.hasClass('Modification') && !n.hasClass('resizing'));
+        if (!mods || mods.length === 0) return;
+
+        const tol = 8; // tolerance in pixels to consider alignment
+
+        const oldLeft = oldPos.x - oldW / 2.0;
+        const oldRight = oldPos.x + oldW / 2.0;
+        const oldTop = oldPos.y + oldH / 2.0;
+        const oldBottom = oldPos.y - oldH / 2.0;
+
+        const newLeft = newPos.x - newW / 2.0;
+        const newRight = newPos.x + newW / 2.0;
+        const newTop = newPos.y + newH / 2.0;
+        const newBottom = newPos.y - newH / 2.0;
+
+        for (let mod of mods) {
+            const mPos = mod.position();
+            let moved = false;
+            const newMPos = { x: mPos.x, y: mPos.y };
+
+            // east/west: compare x to oldRight/oldLeft
+            if (Math.abs(mPos.x - oldRight) <= tol) {
+                newMPos.x = newRight;
+                moved = true;
+            } else if (Math.abs(mPos.x - oldLeft) <= tol) {
+                newMPos.x = newLeft;
+                moved = true;
+            }
+
+            // north/south: compare y to oldTop/oldBottom
+            if (Math.abs(mPos.y - oldTop) <= tol) {
+                newMPos.y = newTop;
+                moved = true;
+            } else if (Math.abs(mPos.y - oldBottom) <= tol) {
+                newMPos.y = newBottom;
+                moved = true;
+            }
+
+            if (moved) {
+                mod.position(newMPos);
+            }
+        }
     }
 
     /**
