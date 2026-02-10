@@ -283,7 +283,7 @@ export class InstanceTableComponent implements PostEditListener {
     }
 
     // Handle array value
-    if (attributeValue.attribute.cardinality !== '+') {
+    if (attributeValue.attribute.cardinality === '+') {
       // Find the index of the first matching value in sourceValues
       for (let val of attributeValue.value) {
         const index = Array.isArray(sourceValues)
