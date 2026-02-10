@@ -261,42 +261,19 @@ export class InstanceTableComponent implements PostEditListener {
     if (!attributeValue || attributeValue.value === undefined) {
       return attributeValue;
     }
-
     const sourceValues = this._instance!.source!.attributes.get(attributeValue.attribute.name);
-    const targetValues = this._instance!.attributes.get(attributeValue.attribute.name);
 
     // If sourceValues is undefined, just return the attributeValue as is
     if (!sourceValues) {
       return attributeValue;
     }
 
-    // Handle single value (not array)
-    if (attributeValue.attribute.cardinality === '1') {
-      // Find the index of the value in the sourceValues array
-      const index = Array.isArray(sourceValues)
-        ? sourceValues.findIndex((val: any) => val?.dbId === attributeValue.value?.dbId)
-        : -1;
+    if (Array.isArray(sourceValues) && attributeValue.value?.dbId !== undefined) {
+      const index = sourceValues.findIndex((val: any) => val?.dbId === attributeValue.value?.dbId);
       if (index !== -1) {
         return { ...attributeValue, index };
       }
-      return attributeValue;
     }
-
-    // Handle array value
-    if (attributeValue.attribute.cardinality === '+') {
-      // Find the index of the first matching value in sourceValues
-      for (let val of attributeValue.value) {
-        const index = Array.isArray(sourceValues)
-          ? sourceValues.findIndex((srcVal: any) => srcVal?.dbId === val?.dbId)
-          : -1;
-        if (index !== -1) {
-          return { ...attributeValue, index };
-        }
-      }
-      return attributeValue;
-    }
-
-    // Fallback
     return attributeValue;
   }
 
@@ -530,9 +507,9 @@ export class InstanceTableComponent implements PostEditListener {
       value: attributeValue.value
     };
     this.attributeEditService.resetAttributeValue(this._instance, attributeValueClone);
-    this.finishEdit(attributeValue.attribute.name, 
-                    attributeValue.value, 
-                    this._instance.dbId === this._referenceInstance.dbId);
+    this.finishEdit(attributeValue.attribute.name,
+      attributeValue.value,
+      this._instance.dbId === this._referenceInstance.dbId);
   }
 
   private filterAttributeValueForDeletion(attributeValue: AttributeValue): any {
