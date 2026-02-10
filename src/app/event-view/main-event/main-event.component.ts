@@ -128,9 +128,12 @@ export class MainEventComponent {
   handleDiagramSelection(event: any) {
     if (event.type !== ReactomeEventTypes.select)
       return;
+    // Escape the action if event.details.element's edgeType is flowLine.
+    if (event.detail.element && event.detail.element.length > 0 && event.detail.element[0].data('edgeType') === 'flowLine')
+      return;
     // Get the dbId from the selected elements
     let reactomeIds = event.detail.element.map((el: any) => el.data('reactomeId')).filter((id : any) => (id !== undefined && id !== null))
-
+    
     // Make sure reactomeIds don't contain duplicated element
     const uniqueSet = new Set(reactomeIds);
     reactomeIds = Array.from(uniqueSet).sort();
@@ -142,6 +145,9 @@ export class MainEventComponent {
         reactomeIds.every((value: number, index: number) => value === this.selectedIdsInDiagram[index]))
       return; // They are the same
     this.selectedIdsInDiagram = reactomeIds;
+    // Make sure the first selected element is valid
+    if (reactomeIds[0].toString().includes('-'))
+      return;
     this.instanceView?.loadInstance(reactomeIds[0], false, true);
     this.eventTree?.selectNodesForDiagram(reactomeIds[0]);
   }

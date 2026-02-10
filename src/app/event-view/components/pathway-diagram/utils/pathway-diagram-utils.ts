@@ -396,6 +396,10 @@ export class PathwayDiagramUtilService {
         });
         if (!modificationNodes || modificationNodes.length === 0)
             return;
+        // If node and any modification nodes are selected together, we will bypass.
+        if (modificationNodes.some((modNode: any) => modNode.selected() && node.selected())) {
+            return;
+        }
         const pos = node.position();
         let deltaX = pos.x - previousDragPos.x;
         let deltaY = pos.y - previousDragPos.y;
@@ -441,7 +445,9 @@ export class PathwayDiagramUtilService {
 
             this.updateResizeNodesPosition(compartment, nodeId, e.cy);
             this.ensureTwoLayerCompartment(compartment, nodeId, e.cy);
+            return compartment;
         }
+        return undefined;
     }
 
     /**
@@ -752,6 +758,7 @@ export class PathwayDiagramUtilService {
     enableEditing(diagram: DiagramComponent) {
         // Enable node dragging first
         diagram.cy.nodes().grabify().unpanify();
+        
         // But not compartment: In the editing mode, the user can move compartment too
         // apparently moving compartments is not good. Disable for now.
         diagram.cy.nodes('.Compartment').panify();

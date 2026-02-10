@@ -222,15 +222,15 @@ export class InstanceConverter {
             const edge = this.createEdge(inhibitorNode, reactionNode, instance, 'INHIBITOR', utils.diagramService!, cy);
             hyperEdge.registerObject(edge);
         }
-        // const newNodes = [...inputStoichiometry.keys(), ...outputStoichiometry.keys(), 
-        //     ...catalystNodes, 
-        //     ...activatorNodes,
-        //     ...inhibitorNodes,
-        //     reactionNode]
+        const newNodes = [...inputStoichiometry.keys(), ...outputStoichiometry.keys(), 
+            ...catalystNodes, 
+            ...activatorNodes,
+            ...inhibitorNodes,
+            reactionNode]
         // Here I just want to select edge related nodes, including reaction node.
         // Otherwise, modification nodes added will be subject to draggin for unknown reason.
         // This is a temporary solution. We can find a better way to handle this in the future.
-        const newNodes = [reactionNode]
+        // const newNodes = [reactionNode]
         if (inputHubNode !== undefined)
             newNodes.push(inputHubNode);
         if (outputHubNode !== undefined)

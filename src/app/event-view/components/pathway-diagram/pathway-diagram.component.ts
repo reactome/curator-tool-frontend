@@ -265,6 +265,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     this.diagram.cy.on('mousedown', (e: any) => {
       // Make sure isNode is defined as a function to avoid an error
       if (e.target !== undefined && typeof e.target.isNode === 'function') {
+        if (e.target.hasClass('Modification') && !e.target.hasClass('resizing')) {
+          return;
+        }
         // Since we cannot get the mouse position during dragging
         // we use the target's position for the relative changes.
         const pos = e.target.position();
@@ -284,16 +287,18 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     // Resize the compartment for resizing nodes
     this.diagram.cy.on('drag', 'node', (e: any) => {
       let node = e.target;
+      if (node.hasClass('Modification') && !e.target.hasClass('resizing')) 
+        return; // Modification nodes are handled in moveModifications. No need to handle here.
       if (node.hasClass('resizing')) {
-        this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);
+        // This may be used for both compartment and PE node
+        let resizedNode = this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);
+        // To be updated.
+        // if (resizedNode && resizedNode.hasClass('PhysicalEntity')) {    
+        //   this.diagramUtils.moveModifications(resizedNode, e, this.previousDragPos);
+        // }
       }
       else if (node.hasClass('Protein') || node.hasClass('RNA') || node.hasClass('Gene')) {
         // Handle Modification move only for the above three types of nodes.
-        this.diagramUtils.moveModifications(node, e, this.previousDragPos);
-      }
-      else if (this.resizingNodes.includes(node)) {
-        // For protein, RNA and Gene, the same code that is used to move modification
-        // should handle moving resizing widgets
         this.diagramUtils.moveModifications(node, e, this.previousDragPos);
       }
       // Always update previousDragPos to track the current position
@@ -638,9 +643,26 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     });
     const averageX = totalX / selectedNodes.length;
     
-    // Move all nodes to the average x position
+    // Move all nodes to the average x position and their modification nodes
     selectedNodes.forEach((node: any) => {
+      const oldX = node.position('x');
+      const deltaX = averageX - oldX;
+      
       node.position('x', averageX);
+      
+      // Move associated modification nodes
+      const reactomeId = node.data('reactomeId');
+      const modificationNodes = this.diagram.cy.nodes().filter((modNode: any) => {
+        return modNode.data('nodeReactomeId') === reactomeId && modNode.hasClass('Modification');
+      });
+      
+      modificationNodes.forEach((modNode: any) => {
+        const modPos = modNode.position();
+        modNode.position({
+          x: modPos.x + deltaX,
+          y: modPos.y
+        });
+      });
     });
   }
 
@@ -659,9 +681,26 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     });
     const averageY = totalY / selectedNodes.length;
     
-    // Move all nodes to the average y position
+    // Move all nodes to the average y position and their modification nodes
     selectedNodes.forEach((node: any) => {
+      const oldY = node.position('y');
+      const deltaY = averageY - oldY;
+      
       node.position('y', averageY);
+      
+      // Move associated modification nodes
+      const reactomeId = node.data('reactomeId');
+      const modificationNodes = this.diagram.cy.nodes().filter((modNode: any) => {
+        return modNode.data('nodeReactomeId') === reactomeId && modNode.hasClass('Modification');
+      });
+      
+      modificationNodes.forEach((modNode: any) => {
+        const modPos = modNode.position();
+        modNode.position({
+          x: modPos.x,
+          y: modPos.y + deltaY
+        });
+      });
     });
   }
 

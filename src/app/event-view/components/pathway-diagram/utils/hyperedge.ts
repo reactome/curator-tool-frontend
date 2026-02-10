@@ -52,6 +52,16 @@ export class HyperEdge {
                 // don't delete it (this may be changed in the future)
                 if (connectedEdges && connectedEdges.length > 0)
                     return;
+                
+                // Remove associated modification nodes before removing the PE node
+                const reactomeId = value.data('reactomeId');
+                const modificationNodes = this.cy.nodes().filter((modNode: any) => {
+                    return modNode.hasClass('Modification') && modNode.data('nodeReactomeId') === reactomeId;
+                });
+                modificationNodes.forEach((modNode: any) => {
+                    this.cy.remove(modNode);
+                    this.id2object.delete(modNode.id());
+                });
             }
             // Otherwise can be removed safely
             this.cy.remove(value);
