@@ -11,7 +11,7 @@
       <ng-container *ngIf="element.value !== undefined; else noValue">
         <!-- Disable drag and drop for no manual edit attributes -->
         <ng-container *ngIf="element.attribute.category === AttributeCategory.NOMANUALEDIT; else dragDropEnabled">
-          <app-instance-table-row-element *ngFor="let object of element.value; let i = index" class="instance-box"
+          <app-instance-table-row-element [disable]="isInstanceDeleted()" *ngFor="let object of element.value; let i = index" class="instance-box"
             [attribute]="element.attribute" [value]="object" [index]="i" [blockRoute]="blockRouter">
           </app-instance-table-row-element>
         </ng-container>
@@ -30,6 +30,7 @@
     <!-- Add an empty row for non-instance type slot-->
     <ng-container *ngIf="element.attribute.type !== DATA_TYPES.INSTANCE && element.attribute.cardinality === '+'">
       <app-instance-table-row-element [attribute]="element.attribute" [dragDropStatus]="dragDropStatus"
+        [disable]="isInstanceDeleted()"
         (newValueEvent)="onNoInstanceAttributeEdit($event)"
         (editAction)="onInstanceAttributeEdit($event)" />
     </ng-container>
@@ -38,7 +39,7 @@
       <ng-container *ngIf="element.attribute.type === DATA_TYPES.INSTANCE">
         <app-instance-table-row-element [attribute]="element.attribute" [dragDropStatus]="dragDropStatus"
           (newValueEvent)="onNoInstanceAttributeEdit($event)"
-          (editAction)="onInstanceAttributeEdit($event)" />
+          (editAction)="onInstanceAttributeEdit($event)" [disable]="isInstanceDeleted()" />
       </ng-container>
     </ng-template>
   </ng-template>

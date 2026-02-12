@@ -16,7 +16,6 @@ import { AttributeCategory, AttributeDataType, SchemaAttribute } from 'src/app/c
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { AttributeValue, EDIT_ACTION, Instance } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
-import { ViewOnlyService } from "../../../../../core/services/view-only.service";
 import { DragDropService } from "../../../../../schema-view/instance-bookmark/drag-drop.service";
 import { DragDropStatus } from '../instance-table.model';
 import { MatDialog } from "@angular/material/dialog";
@@ -79,12 +78,9 @@ export class InstanceTableRowElementComponent implements OnInit {
     private _ngZone: NgZone,
     private dataService: DataService,
     private route: ActivatedRoute,
-    public viewOnly: ViewOnlyService,
     public dragDropService: DragDropService,
     private instanceUtilities: InstanceUtilities,
     private dialog: MatDialog) {
-    if (viewOnly.enabled)
-      this.control.disable();
   }
 
   @ViewChild('autosize') autosize: CdkTextareaAutosize | undefined;

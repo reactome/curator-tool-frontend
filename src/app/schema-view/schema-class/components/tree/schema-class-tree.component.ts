@@ -12,6 +12,7 @@ import { Instance } from "src/app/core/models/reactome-instance.model";
 import { deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { combineLatest } from "rxjs";
 import { EDIT_ACTION } from "src/app/instance/components/instance-view/instance-table/instance-table-comparison.model";
+import { Data_testService } from "src/app/core/services/data_test.service";
 
 /** Tree node with expandable and level information */
 interface SchemaClassNode {
@@ -73,7 +74,8 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
   constructor(private service: DataService,
     private router: Router,
     private store: Store,
-    private instUtils: InstanceUtilities) {
+    private instUtils: InstanceUtilities,
+    private service_test: Data_testService,) {
   }
 
   // When the component change from hidden to show, this method will be called
@@ -127,6 +129,10 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
       let dbId = instance.dbId.toString();
       this.router.navigate(["/schema_view/instance/" + dbId]);
     });
+  }
+
+  testAllSchemaClasses() {
+    this.service_test.createAndCommitAllConcreteSchemaClasses();
   }
 
   private setUpLocalCount(deleted: Instance[], created: Instance[], updated: Instance[], root: SchemaClass) {

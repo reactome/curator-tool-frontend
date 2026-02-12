@@ -50,14 +50,15 @@
           [ngClass]="{dragging: dragging, red: !color, green: color}">
           <!-- TODO: Also need to determine if it is required or disabled-->
           <ng-container *ngIf="value !== undefined; else elseblock">
-            <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
-              [cdkContextMenuTriggerFor]="row_menu" class="padding span-menu-trigger"
-              style="cursor: pointer; text-decoration: underline;">
-              {{value.displayName}}
-              [{{value.dbId}}]</a><br>
+              <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
+                [cdkContextMenuTriggerFor]="row_menu" class="padding span-menu-trigger"
+                style="cursor: pointer; text-decoration: underline;">
+                {{value.displayName}}
+                [{{value.dbId}}]
+              </a>
           </ng-container>
           <!-- Add this empty space so that we can pop up the context menu to handle action.
-        For the time being, the popup works for instance type only. -->
+          For the time being, the popup works for instance type only. -->
           <ng-template #elseblock>
             <ng-container>
               <!-- Use a customized class to force the empty span to show the menu.-->

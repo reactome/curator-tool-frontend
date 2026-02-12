@@ -17,13 +17,12 @@
 - "((1,6)-alpha-glucosyl)poly((1,4)-alpha-glucosyl)glycogenin => poly{(1,4)-alpha-glucosyl} glycogenin + alpha-D-glucose" search field for this complicated
     display name cannot be parsed because of symbols
 - Refresh of updated list (occured after resetting deleted insts) 
-- Bug: Open http://localhost:4200/schema_view/instance/9947940, delete an Input (e.g. the second one), and then open its summation (DB_ID: 9947864). Check its reference should show this reaction at least. However, no reference is shown. This doesn't happen if the edit is reset.
-- Bug: Open http://localhost:4200/schema_view/instance/874079. Open its input and then delete this input in the view. There are two bugs: 1). the input itself should not be editable since it is deleted. Yes for attributes having values. But for empty attributes (e.g. reactionType), editing is still enabled; 2). Deleting this input results a passive editing to both reviewStatus and previousReviewStatus. However, these two attributes are recorded as active edited attributes.
+
 - Map the source instance index to the local instance, and check this will work for DnD
-- Bug: http://localhost:4200/schema_view/instance/9008456. This BlackBoxEvent has a regulationReference, which has a very long displayName and displayed at more than one line. Put your mouse onto this regulation reference instance. Only the first line is highlighted with a block. It is supposed to have all lines blocked (wrapped by a rectangle defined by CSS).
-- TODO: Write a script or manually try to create an object for each concrete class and then upload them. This is to test if all new instances can be saved.
+
 - TODO: During the comparison model, if the code finds a modified attribute is not changed (e.g. _displayName after reset), remove this attribute from the modified array.
 - Bug: The referrer dialog should not have the structural change warning (red text) when the referrers are shown not for deletion (low priority). However, if the user just wants to see the instance's referrers, why do we need to check structural changes? This may have some perfornace overhead.
+- bug: http://localhost:4200/schema_view/instance/844615. One of this pathway's hasEvent get its _displayName changed due to an active edit. this should be a passiveEditedAttribute, currently here is no indication of editing 
 
 #### TODO:
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.

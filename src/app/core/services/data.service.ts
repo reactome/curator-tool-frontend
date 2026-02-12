@@ -12,6 +12,7 @@ import {
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
 import { QAReport } from "../models/qa-report.model";
+import { NewInstanceActions } from "src/app/instance/state/instance.actions";
 
 
 @Injectable({
@@ -27,8 +28,6 @@ export class DataService {
   // This map is used to make schema class traversal easy. The SchemaClass in this map
   // is not loaded, i.e., without attributes
   private name2SimpleClass: Map<string, SchemaClass> = new Map<string, SchemaClass>();
-  // Marking dbIds that will indicate a structural change upon deletion of a reference
-  private structuralChangeOnDeletionDbIds: Map<{ attributeName: string, instance: Instance }, Array<number>> = new Map<{ attributeName: string, instance: Instance }, Array<number>>();
   // Cache fetched instances
   // List of URLs
   private id2instance: Map<number, Instance> = new Map<number, Instance>();
@@ -451,56 +450,57 @@ export class DataService {
     );
   }
 
+
   /**
    * Create a new instance from an existing instance.
    */
-  cloneInstance(instance: Instance): Observable<Instance> {
-    return this.createNewInstance(instance.schemaClassName).pipe(
-      concatMap((newInst: Instance) => {
-        return this.fetchInstance(instance.dbId).pipe(
-          map((inst: Instance) => {
-            const uneditableAtts: Array<string> = this.getAttributeNamesNotClonable();
-            const allAttributes: Map<string, any> = inst.attributes;
+  cloneInstance(instance: Instance): Observable < Instance > {
+      return this.createNewInstance(instance.schemaClassName).pipe(
+        concatMap((newInst: Instance) => {
+          return this.fetchInstance(instance.dbId).pipe(
+            map((inst: Instance) => {
+              const uneditableAtts: Array<string> = this.getAttributeNamesNotClonable();
+              const allAttributes: Map<string, any> = inst.attributes;
 
-            for (let attribute of newInst.schemaClass!.attributes!) {
-              if (attribute.category === AttributeCategory.NOMANUALEDIT) {
-                continue;
-              }
-              if (uneditableAtts.includes(attribute.name)) {
-                continue;
-              }
-              let value = allAttributes.get(attribute.name);
-              if (!value) continue
+              for (let attribute of newInst.schemaClass!.attributes!) {
+                if (attribute.category === AttributeCategory.NOMANUALEDIT) {
+                  continue;
+                }
+                if (uneditableAtts.includes(attribute.name)) {
+                  continue;
+                }
+                let value = allAttributes.get(attribute.name);
+                if (!value) continue
 
-              // Clone the value if it's an array to prevent mutation issues
-              if (Array.isArray(value)) {
-                value = [...value];
+                // Clone the value if it's an array to prevent mutation issues
+                if (Array.isArray(value)) {
+                  value = [...value];
+                }
+                newInst.attributes.set(attribute.name, value);
               }
-              newInst.attributes.set(attribute.name, value);
-            }
-            // Set displayName last
-            newInst.attributes.set('displayName', 'Clone of ' + instance.displayName);
-            newInst.displayName = 'Clone of ' + instance.displayName;
-            return newInst;
-          }),
-          catchError((err: Error) => {
-            return this.handleErrorMessage(err);
-          })
-        );
-      })
-    );
-  }
+              // Set displayName last
+              newInst.attributes.set('displayName', 'Clone of ' + instance.displayName);
+              newInst.displayName = 'Clone of ' + instance.displayName;
+              return newInst;
+            }),
+            catchError((err: Error) => {
+              return this.handleErrorMessage(err);
+            })
+          );
+        })
+      );
+    }
 
-  getAttributeNamesNotClonable(): Array<string> {
-    return ['authored', 'edited', 'reviewed', 'revised', '_doRelease', 'releaseStatus', 'releaseDate', 'doi']
-  }
+  getAttributeNamesNotClonable(): Array < string > {
+      return ['authored', 'edited', 'reviewed', 'revised', '_doRelease', 'releaseStatus', 'releaseDate', 'doi']
+    }
 
   /**
    * Register a new instance to the cache.
    */
   registerInstance(instance: Instance): void {
-    // Make sure map is used
-    if (instance.attributes && !(instance.attributes instanceof Map)) {
+      // Make sure map is used
+      if(instance.attributes && !(instance.attributes instanceof Map)) {
       this.handleInstanceAttributes(instance);
     }
     this.id2instance.set(instance.dbId, instance);
@@ -950,7 +950,8 @@ export class DataService {
     return candidateClasses.sort();
   }
 
-  private grepConcreteClasses(schemaClass: SchemaClass, concreteClsNames: Set<String>): void {
+  // Was private, changed to public for testing purposes. This method is recursive and will populate the provided set with the names of all concrete classes in the subtree rooted at schemaClass.
+  grepConcreteClasses(schemaClass: SchemaClass, concreteClsNames: Set<String>): void {
     if (!schemaClass.abstract)
       concreteClsNames.add(schemaClass.name);
     if (schemaClass.children) {

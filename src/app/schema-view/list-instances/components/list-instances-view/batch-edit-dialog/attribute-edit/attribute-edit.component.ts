@@ -17,10 +17,8 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { MatDialog } from "@angular/material/dialog";
 import { AttributeValue, EDIT_ACTION, Instance } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
-import { ViewOnlyService } from "src/app/core/services/view-only.service";
 import { DragDropStatus } from "src/app/instance/components/instance-view/instance-table/instance-table.model";
 import { DragDropService } from "src/app/schema-view/instance-bookmark/drag-drop.service";
-import { MatSlideToggle } from "@angular/material/slide-toggle";
 /**
  * Used to display a single value of an Instance object.
  */
@@ -81,12 +79,9 @@ export class AttributeEditComponent implements OnInit {
     private _ngZone: NgZone,
     private dataService: DataService,
     private route: ActivatedRoute,
-    public viewOnly: ViewOnlyService,
     public dragDropService: DragDropService,
     private instanceUtilities: InstanceUtilities,
     private dialog: MatDialog) {
-    if (viewOnly.enabled)
-      this.control.disable();
   }
 
   @ViewChild('autosize') autosize: CdkTextareaAutosize | undefined;

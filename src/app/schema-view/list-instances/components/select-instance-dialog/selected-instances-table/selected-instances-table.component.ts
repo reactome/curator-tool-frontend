@@ -1,7 +1,6 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {MatTableDataSource} from "@angular/material/table";
 import {Instance} from "../../../../../core/models/reactome-instance.model";
-import { ViewOnlyService } from 'src/app/core/services/view-only.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ActionButton } from '../../list-instances-view/instance-list-table/instance-list-table.component';
 
