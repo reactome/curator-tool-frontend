@@ -165,10 +165,10 @@ export class InstanceUtilities {
     grepReactomeParticipantIds(reaction: Instance): number[] {
         let dbIds = new Set<number>();
         const participantAtts = ['input', 'output', 'catalyst', 'activator', 'inhibitor'];
-        for (let att of participantAtts) {  
+        for (let att of participantAtts) {
             const attValue = reaction.attributes.get(att);
             if (!attValue) continue;
-            attValue.forEach((element: any) => {dbIds.add(element.dbId)});    
+            attValue.forEach((element: any) => { dbIds.add(element.dbId) });
         }
         return Array.from(dbIds);
     }
@@ -176,10 +176,10 @@ export class InstanceUtilities {
     private grepReactomeParticipants(reaction: Instance): Instance[] {
         let particiapnts = new Set<Instance>();
         const participantAtts = ['input', 'output', 'catalyst', 'activator', 'inhibitor'];
-        for (let att of participantAtts) {  
+        for (let att of participantAtts) {
             const attValue = reaction.attributes.get(att);
             if (!attValue) continue;
-            attValue.forEach((element: any) => {particiapnts.add(element)});    
+            attValue.forEach((element: any) => { particiapnts.add(element) });
         }
         return Array.from(particiapnts);
     }
@@ -604,16 +604,20 @@ export class InstanceUtilities {
         if (!inst) return;
         if (!inst.passiveModifiedAttributes)
             inst.passiveModifiedAttributes = [];
-        if (!inst.passiveModifiedAttributes.includes(att))
-            inst.passiveModifiedAttributes.push(att);
+        if (!inst.passiveModifiedAttributes.includes(att)) {
+            // Create a new array to avoid modifying a frozen/non-extensible array
+            inst.passiveModifiedAttributes = [...inst.passiveModifiedAttributes, att];
+        }
     }
 
     addToModifiedAttributes(att: string, inst: Instance | undefined) {
         if (!inst) return;
         if (!inst.modifiedAttributes)
             inst.modifiedAttributes = [];
-        if (!inst.modifiedAttributes.includes(att))
-            inst.modifiedAttributes.push(att);
+        if (!inst.modifiedAttributes.includes(att)) {
+            // Create a new array to avoid modifying a frozen/non-extensible array
+            inst.modifiedAttributes = [...inst.modifiedAttributes, att];
+        }
     }
 
     mergeLocalChangesToEventTree(rootEvent: Instance, id2instance: Map<number, Instance>) {

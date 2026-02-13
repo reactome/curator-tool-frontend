@@ -42,6 +42,7 @@ export class DisplayNameViewFilter implements InstanceViewFilter {
         )
     }
 
+    // only check the modified attributes slot, not necessary to check all attributes 
     validateReferenceDisplayName(inst: Instance, 
                                  updatedInsts: Instance[], 
                                  nameGenerator: InstanceNameGenerator,
@@ -75,6 +76,8 @@ export class DisplayNameViewFilter implements InstanceViewFilter {
                     if (!apply) return true;
                     instanceAttributeNameChanged = true;
                     attValue.displayName = currentName;
+                    inst.attributes.set(att, attValue); // Update the attribute with new display name
+                    this.utils.addToPassiveModifiedAttributes(attValue, inst);
                 }
             }
         }
