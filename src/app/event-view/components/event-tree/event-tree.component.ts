@@ -142,8 +142,16 @@ export class EventTreeComponent implements OnDestroy {
       this.handleInstanceDeletion(dbId);
     });
     this.subscriptions.add(sub);
+
+    sub = this.instUtils.resetInst$.subscribe(data => {
+      this.handleResetEvent(data.dbId, data.modifiedAttributes);
+    });
+    this.subscriptions.add(sub);
   }
 
+  // Only when this tree is removed from the DOM. Currently the tree is controlled
+  // by hidden so that this function will not be called when the tree is hidden. This 
+  // is important to keep the state of the tree to be synchronized with edit.
   ngOnDestroy() {
     this.subscriptions.unsubscribe();
   }
@@ -198,6 +206,42 @@ export class EventTreeComponent implements OnDestroy {
       }
       this.cdr.detectChanges();
     }
+  }
+
+  private handleResetEvent(dbId: number, modifiedAttributes: string[] | undefined) {
+    if (!this.treeControl || !this.treeControl.dataNodes)
+      return; // Do nothing if there is nothing to do.
+    const treeNodes = this.dbId2node.get(dbId);
+    if (!treeNodes)
+      return;
+    const attToBeChanged = modifiedAttributes?.filter(att => att === 'displayName' || att === 'hasEvent' || att === 'doRelease') || [];
+    if (attToBeChanged.length === 0)
+      return;
+    this.dataService.fetchInstance(dbId).subscribe((event: Instance) => {
+      for (let treeNode of treeNodes) {
+        // Compare name
+        if (attToBeChanged.includes('displayName') && treeNode.name !== event.displayName)
+          treeNode.name = event.displayName ?? '';
+        // Compare doRelease
+        let eventDoRelease = (event.attributes && event.attributes.get('doRelease')) ?? false;
+        if (attToBeChanged.includes('doRelease') && treeNode.doRelease !== eventDoRelease) {
+          treeNode.doRelease = eventDoRelease;
+          this.cdr.detectChanges();
+        }
+        if (attToBeChanged.includes('hasEvent')) {
+          // Compare hasEvent and node's children
+          const hasEventDbIds = event.attributes?.get('hasEvent')?.map((child: Instance) => child.dbId) || [];
+          const treeNodeChildrenDbIds = treeNode.children?.map(child => child.dbId) || [];
+
+          const arraysAreEqual = hasEventDbIds.length === treeNodeChildrenDbIds.length &&
+            hasEventDbIds.every((dbId: number, index: number) => dbId === treeNodeChildrenDbIds[index]);
+
+          if (!arraysAreEqual) {
+            this.handleHasEventEdit(event);
+          }
+        }
+      }
+    });
   }
 
   private handleHasEventEdit(event: Instance) {
