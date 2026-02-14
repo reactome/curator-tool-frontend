@@ -68,7 +68,7 @@ export class EventTreeComponent implements OnDestroy {
       dbId: node.dbId,
       className: node.schemaClassName,
       // TO be updated after the database is updated for the curation database
-      doRelease: node.attributes && node.attributes["releaseDate"] !== undefined,
+      doRelease: node.attributes && node.attributes["doRelease"] !== undefined,
       hilite: false,
       hasDiagram: node.attributes?.['hasDiagram'] ?? false,
       rootNode: node.displayName === "TopLevelPathway" ? true : false,
@@ -187,6 +187,16 @@ export class EventTreeComponent implements OnDestroy {
     }
     else if (attribute == 'hasEvent') {
       this.handleHasEventEdit(event);
+    }
+    else if (attribute === 'doRelease') {
+      const treeNodes = this.dbId2node.get(event.dbId);
+      if (!treeNodes)
+        return;
+      for (let treeNode of treeNodes) {
+        // false should be the defaut.
+        treeNode.doRelease = (event.attributes && event.attributes.get('doRelease')) ?? false;
+      }
+      this.cdr.detectChanges();
     }
   }
 

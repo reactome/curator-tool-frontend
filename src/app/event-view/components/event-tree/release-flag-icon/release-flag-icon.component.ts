@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, Input, OnInit, OnChanges, SimpleChanges} from '@angular/core';
 
 @Component({
   selector: 'release-flag-icon',
@@ -6,7 +6,7 @@ import {Component, Input, OnInit} from '@angular/core';
   styleUrls: ['./release-flag-icon.component.scss']
 })
 
-export class ReleaseFlagComponent implements OnInit{
+export class ReleaseFlagComponent implements OnInit, OnChanges{
   width = '15px';
   height = '15px';
   icon1Image = '';
@@ -16,6 +16,12 @@ export class ReleaseFlagComponent implements OnInit{
 
   ngOnInit() {
     this.getImage();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['doRelease']) {
+      this.getImage();
+    }
   }
 
   getImage() {

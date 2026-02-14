@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { Attribute, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
@@ -12,7 +12,6 @@ import {
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
 import { QAReport } from "../models/qa-report.model";
-import { NewInstanceActions } from "src/app/instance/state/instance.actions";
 
 
 @Injectable({
@@ -491,7 +490,7 @@ export class DataService {
       );
     }
 
-  getAttributeNamesNotClonable(): Array < string > {
+  private getAttributeNamesNotClonable(): Array < string > {
       return ['authored', 'edited', 'reviewed', 'revised', '_doRelease', 'releaseStatus', 'releaseDate', 'doi']
     }
 
