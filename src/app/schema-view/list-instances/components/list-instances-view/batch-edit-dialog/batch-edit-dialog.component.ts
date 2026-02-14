@@ -470,32 +470,9 @@ export class BatchEditDialogComponent implements PostEditListener {
     this.postEdit(attName, instance);
     // Need to call this before registerUpdatedInstance
     // in case the instance is used somewhere via the ngrx statement management system
-    this.addModifiedAttribute(attName, value, instance);
+    this.instUtil.addToModifiedAttributes(attName, instance);
     // Register the updated instances
-    this.registerUpdatedInstance(attName, instance);
-  }
-
-  private addModifiedAttribute(attributeName: string, attributeVal: any, instance: Instance) {
-    // Do nothing if there is no instance
-    if (instance === undefined) return;
-    if (instance.modifiedAttributes === undefined) {
-      instance.modifiedAttributes = [];
-    }
-    if (!instance.modifiedAttributes.includes(attributeName))
-      instance.modifiedAttributes.push(attributeName);
-  }
-
-  private registerUpdatedInstance(attName: string, instance: Instance): void {
-
-    let cloned: Instance = this.instUtil.makeShell(instance);
-    if (instance!.dbId > 0) {
-      // Have to make a clone to avoid any change to the current _instance!
-      this.store.dispatch(UpdateInstanceActions.register_updated_instance(cloned));
-    } else {
-      // Force the state to update if needed
-      this.store.dispatch(NewInstanceActions.register_new_instance(cloned));
-    }
-    this.store.dispatch(UpdateInstanceActions.last_updated_instance({ attribute: attName, instance: cloned }));
+    this.instUtil.registerUpdatedInstance(attName, instance);
   }
 
   isDeleted(row: Instance): boolean {

@@ -27,11 +27,11 @@ export class ReleaseFlagComponent implements OnInit, OnChanges{
   getImage() {
     if (this.doRelease) {
       this.icon1Image = 'assets/images/Selected.png';
-      this.tooltip = 'released';
+      this.tooltip = 'released. click to unrelease. shift + click to unrelease all under this event';
     } 
     else {
       this.icon1Image = 'assets/images/Unselected.png';
-      this.tooltip = 'not released';
+      this.tooltip = 'not released. click to release. shift + click to release all under this event';
     }
   }
 }

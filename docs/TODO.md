@@ -24,6 +24,9 @@
 - Bug: The referrer dialog should not have the structural change warning (red text) when the referrers are shown not for deletion (low priority). However, if the user just wants to see the instance's referrers, why do we need to check structural changes? This may have some perfornace overhead.
 - bug: http://localhost:4200/schema_view/instance/844615. One of this pathway's hasEvent get its _displayName changed due to an active edit. this should be a passiveEditedAttribute, currently here is no indication of editing 
 bug: http://localhost:4200/schema_view/instance/844619 delete the second literature reference to create a passive edit. Then drag and drop the frist and third reference to change the order. Reset the deleted reference and it cannot be added back correctly. 
+- TODO (important): Make sure the height is well used in the local instance list panel. e.g. When there are quite a lot of updated instances, make sure the middle updated instances list can be expand and take as much space as possible (i.e. use some height assigned to Deleted instances, which should have a small list.)
+- Bug: Change the text in the "Confirm Delete" dialog for new instances. The note should not be there since a new instance is not in the database yet. Also there is no committment to say about new instances.
+- Bug: in the instance list, the list of buttons is higher than the cells for dbId and display name. 
 
 #### TODO:
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.

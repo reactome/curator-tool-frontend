@@ -68,7 +68,7 @@ export class EventTreeComponent implements OnDestroy {
       dbId: node.dbId,
       className: node.schemaClassName,
       // TO be updated after the database is updated for the curation database
-      doRelease: node.attributes && node.attributes["doRelease"] !== undefined,
+      doRelease: (node.attributes && node.attributes["doRelease"]) ?? false,
       hilite: false,
       hasDiagram: node.attributes?.['hasDiagram'] ?? false,
       rootNode: node.displayName === "TopLevelPathway" ? true : false,
@@ -107,7 +107,7 @@ export class EventTreeComponent implements OnDestroy {
 
   constructor(
     private cdr: ChangeDetectorRef,
-    private service: DataService,
+    private dataService: DataService,
     private route: ActivatedRoute,
     private instUtils: InstanceUtilities,
     private router: Router) {
@@ -116,10 +116,10 @@ export class EventTreeComponent implements OnDestroy {
     let sub = this.route.params.pipe(take(1)).subscribe(params => {
       console.debug('handling route param in event tree: ', params);
       forkJoin({
-        eventTree: service.fetchEventTree(false, 'all'),
+        eventTree: this.dataService.fetchEventTree(false, 'all'),
         // Need to load schema class tree so that we can use it
         // to handle something like isReaction check in display name generator.
-        schemaTree: service.fetchSchemaClassTree(false)
+        schemaTree: this.dataService.fetchSchemaClassTree(false)
       }).subscribe({
         next: ({ eventTree, schemaTree }) => {
           this.processEventTreeData(eventTree, params['id']);
@@ -174,7 +174,7 @@ export class EventTreeComponent implements OnDestroy {
   private handleEventEdit(attribute: string, event: Instance) {
     if (!this.treeControl || !this.treeControl.dataNodes)
       return; // Do nothing if there is nothing to do.
-    if (attribute === 'name') {
+    if (attribute === 'name' || attribute === 'displayName') {
       // Name can be updated automatically without making data update
       const treeNodes = this.dbId2node.get(event.dbId);
       if (!treeNodes)
@@ -658,6 +658,24 @@ export class EventTreeComponent implements OnDestroy {
     }
     // Default should be displayed
     return false;
+  }
+
+  toggleRelease(node: EventNode, event: MouseEvent) {
+    if (event.shiftKey) {
+      console.log('Shift key detected during toggleRelease');
+      // Handle shift key behavior here if needed
+    }
+    node.doRelease = !node.doRelease;
+    if (!node.instance.attributes)
+      node.instance.attributes = {};  
+    node.instance.attributes['doRelease'] = node.doRelease;
+    // Note: There is no need to unscribe for this type http-based calling.
+    this.dataService.fetchInstance(node.instance.dbId).subscribe((instance: Instance) => {
+      instance.attributes?.set('doRelease', node.doRelease);
+      this.instUtils.addToModifiedAttributes('doRelease', instance);
+      this.instUtils.registerUpdatedInstance('doRelease', instance);
+    });
+    this.cdr.detectChanges();
   }
 
 }

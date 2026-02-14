@@ -375,15 +375,7 @@ export class InstanceTableComponent implements PostEditListener {
   private registerUpdatedInstance(attName: string): void {
     if (this.preventEvent)
       return;
-    let cloned: Instance = this.instUtil.makeShell(this._instance!);
-    if (this._instance!.dbId > 0) {
-      // Have to make a clone to avoid any change to the current _instance!
-      this.store.dispatch(UpdateInstanceActions.register_updated_instance(cloned));
-    } else {
-      // Force the state to update if needed
-      this.store.dispatch(NewInstanceActions.register_new_instance(cloned));
-    }
-    this.store.dispatch(UpdateInstanceActions.last_updated_instance({ attribute: attName, instance: cloned }));
+    this.instUtil.registerUpdatedInstance(attName, this._instance!);
   }
 
   private removeModifiedAttribute(attributeName: string) {
