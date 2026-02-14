@@ -46,7 +46,7 @@ export class MainEventComponent implements  OnInit, OnDestroy {
     });
     this.subscriptions.add(sub);    
     sub = this.instanceUtilities.lastUpdatedInstance$.subscribe(data => {
-      if (data.instance) {
+      if (data.instance && this.instanceView?.instance && data.instance.dbId === this.instanceView.instance.dbId) {
         this.instanceView?.loadInstance(data.instance.dbId, false, false, true, false);
       }
     });

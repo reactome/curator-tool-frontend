@@ -705,13 +705,26 @@ export class EventTreeComponent implements OnDestroy {
   }
 
   toggleRelease(node: EventNode, event: MouseEvent) {
+    const currentDoRelease = node.doRelease;
     if (event.shiftKey) {
       console.log('Shift key detected during toggleRelease');
       // Handle shift key behavior here if needed
+      // To through the current node and all its descendants to set doRelease to the same value
+      const toBeToggled = new Set<EventNode>();
+      this.grepDescendenants(node, toBeToggled);
+      toBeToggled.forEach(n => this._toggleRelease(n, !currentDoRelease));  
     }
-    node.doRelease = !node.doRelease;
+    else 
+      this._toggleRelease(node, !currentDoRelease);
+    this.cdr.detectChanges();
+  }
+
+  private _toggleRelease(node: EventNode, doRelease: boolean) {
+    if (node.doRelease === doRelease)
+      return; // Nothing to do
+    node.doRelease = doRelease;
     if (!node.instance.attributes)
-      node.instance.attributes = {};  
+      node.instance.attributes = {};
     node.instance.attributes['doRelease'] = node.doRelease;
     // Note: There is no need to unscribe for this type http-based calling.
     this.dataService.fetchInstance(node.instance.dbId).subscribe((instance: Instance) => {
@@ -719,7 +732,5 @@ export class EventTreeComponent implements OnDestroy {
       this.instUtils.addToModifiedAttributes('doRelease', instance);
       this.instUtils.registerUpdatedInstance('doRelease', instance);
     });
-    this.cdr.detectChanges();
   }
-
 }
