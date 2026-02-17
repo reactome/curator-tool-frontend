@@ -10,6 +10,8 @@ import { ListInstancesDialogService } from "../schema-view/list-instances/compon
 import { DefaultPersonActions } from "../instance/state/instance.actions";
 import { DataService } from "../core/services/data.service";
 import { Subscription } from "rxjs";
+import { combineLatest } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-status',
@@ -22,16 +24,16 @@ export class StatusComponent implements OnInit, OnDestroy {
   updatedInstances: Instance[] = [];
   newInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
-  bookmarkedInstances: Instance[] =  [];
-  defaultPerson: Instance|undefined = undefined;
+  bookmarkedInstances: Instance[] = [];
+  defaultPerson: Instance | undefined = undefined;
 
   private subscriptions: Subscription = new Subscription();
 
   constructor(private store: Store,
-              private userInstancesService: UserInstancesService,
-              private instanceSelectionService: ListInstancesDialogService,
-              private router: Router,
-            private dataService: DataService) {
+    private userInstancesService: UserInstancesService,
+    private instanceSelectionService: ListInstancesDialogService,
+    private router: Router,
+    private dataService: DataService) {
   }
 
   private _snackBar = inject(MatSnackBar);
@@ -44,7 +46,7 @@ export class StatusComponent implements OnInit, OnDestroy {
     let sub = this.store.select(updatedInstances()).subscribe((instances) => {
       instances ? this.updatedInstances = instances : this.updatedInstances = [];
     });
-    this.subscriptions.add(sub);  
+    this.subscriptions.add(sub);
 
     sub = this.store.select(newInstances()).subscribe((instances) => {
       instances ? this.newInstances = instances : this.newInstances = [];
@@ -54,7 +56,27 @@ export class StatusComponent implements OnInit, OnDestroy {
     sub = this.store.select(deleteInstances()).subscribe((instances) => {
       instances ? this.deletedInstances = instances : this.deletedInstances = [];
     });
-    this.subscriptions.add(sub);  
+    this.subscriptions.add(sub);
+
+    // Combine deleted, new, and updated instances into a single array using concatMap
+
+    sub = combineLatest([
+      this.store.select(deleteInstances()),
+      this.store.select(newInstances()),
+      this.store.select(updatedInstances())
+    ]).pipe(
+      map(([deleted, created, updated]) => [
+        ...(deleted || []),
+        ...(created || []),
+        ...(updated || [])
+      ])
+    ).subscribe((allInstances) => {
+      // When the new, updated, and deleted Instances count total exceeds 10, show a warning message to encourage users to persist their changes.
+      if (allInstances.length > 100) {
+        this.openSnackBar(`You have ${allInstances.length} unsaved changes. Please persist your changes to avoid losing them.`, 'Close');
+      }
+    })
+    this.subscriptions.add(sub);
 
     sub = this.store.select(bookmarkedInstances()).subscribe((instances) => {
       instances ? this.bookmarkedInstances = instances : this.bookmarkedInstances = [];
@@ -77,7 +99,7 @@ export class StatusComponent implements OnInit, OnDestroy {
         }
         else if (message.message)
           this.openSnackBar(message.message, 'Close');
-        else 
+        else
           this.openSnackBar("There is an error: " + message.name, 'Close');
     });
     this.subscriptions.add(sub);
@@ -99,7 +121,7 @@ export class StatusComponent implements OnInit, OnDestroy {
 
   setDefaultPerson(): void {
     // Set or change the default person instance
-    const matDialogRef = this.instanceSelectionService.openDialog({schemaClass: {name: 'Person'}, title: 'Select default person'});
+    const matDialogRef = this.instanceSelectionService.openDialog({ schemaClass: { name: 'Person' }, title: 'Select default person' });
     matDialogRef.afterClosed().subscribe((result) => {
       if (result)
         this.store.dispatch(DefaultPersonActions.set_default_person(result as Instance))
@@ -111,7 +133,7 @@ export class StatusComponent implements OnInit, OnDestroy {
     this.router.navigate(["/login"]);
   }
 
-  navigateHome(){
+  navigateHome() {
     this.router.navigate(["/home"]);
   }
 
