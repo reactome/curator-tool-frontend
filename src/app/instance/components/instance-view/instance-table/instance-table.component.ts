@@ -424,8 +424,50 @@ export class InstanceTableComponent implements PostEditListener {
       );
     }
     console.debug('value', this._instance);
-    if (this._instance?.source)
-      this._instance?.source?.attributes?.set(value.name, event.container.data);
+
+    // If there is a source instance, map the indices to the source attribute array
+    if (this._instance?.source) {
+      const sourceAttrArray = this._instance.source.attributes.get(value.name);
+      if (Array.isArray(sourceAttrArray)) {
+        // Map previousIndex and currentIndex to source indices
+        const prevValue = this.mapppingIndexInSourceInstance({
+          attribute: value,
+          value: event.previousContainer.data[event.previousIndex],
+        });
+        const currValue: AttributeValue = this.mapppingIndexInSourceInstance({
+          attribute: value,
+          value: event.container.data[event.currentIndex],
+        });
+
+        if (event.previousContainer === event.container) {
+          // Move within the same array in source
+          if (prevValue.index !== -1 && currValue.index !== -1) {
+            moveItemInArray(sourceAttrArray, prevValue.index!, currValue.index!);
+          }
+        } else {
+          // Transfer between arrays in source
+          if (prevValue.index !== -1 && currValue.index !== -1) {
+            transferArrayItem(
+              event.previousContainer.data,
+              event.container.data,
+              event.previousIndex,
+              event.currentIndex
+            );
+            transferArrayItem(
+              sourceAttrArray,
+              sourceAttrArray,
+              prevValue.index!,
+              currValue.index!
+            );
+          }
+        }
+        this._instance.source.attributes.set(value.name, sourceAttrArray);
+      } else {
+        // If not array, just set as is
+        this._instance.source.attributes.set(value.name, event.container.data);
+      }
+    }
+
     this._instance?.attributes?.set(value.name, event.container.data);
     this.finishEdit(value.name, event.container.data);
   }
