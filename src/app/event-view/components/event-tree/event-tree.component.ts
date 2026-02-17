@@ -68,7 +68,7 @@ export class EventTreeComponent implements OnDestroy {
       dbId: node.dbId,
       className: node.schemaClassName,
       // TO be updated after the database is updated for the curation database
-      doRelease: node.attributes && node.attributes["releaseDate"] !== undefined,
+      doRelease: (node.attributes && node.attributes["doRelease"]) ?? false,
       hilite: false,
       hasDiagram: node.attributes?.['hasDiagram'] ?? false,
       rootNode: node.displayName === "TopLevelPathway" ? true : false,
@@ -107,7 +107,7 @@ export class EventTreeComponent implements OnDestroy {
 
   constructor(
     private cdr: ChangeDetectorRef,
-    private service: DataService,
+    private dataService: DataService,
     private route: ActivatedRoute,
     private instUtils: InstanceUtilities,
     private router: Router) {
@@ -116,10 +116,10 @@ export class EventTreeComponent implements OnDestroy {
     let sub = this.route.params.pipe(take(1)).subscribe(params => {
       console.debug('handling route param in event tree: ', params);
       forkJoin({
-        eventTree: service.fetchEventTree(false, 'all'),
+        eventTree: this.dataService.fetchEventTree(false, 'all'),
         // Need to load schema class tree so that we can use it
         // to handle something like isReaction check in display name generator.
-        schemaTree: service.fetchSchemaClassTree(false)
+        schemaTree: this.dataService.fetchSchemaClassTree(false)
       }).subscribe({
         next: ({ eventTree, schemaTree }) => {
           this.processEventTreeData(eventTree, params['id']);
@@ -142,8 +142,16 @@ export class EventTreeComponent implements OnDestroy {
       this.handleInstanceDeletion(dbId);
     });
     this.subscriptions.add(sub);
+
+    sub = this.instUtils.resetInst$.subscribe(data => {
+      this.handleResetEvent(data.dbId, data.modifiedAttributes);
+    });
+    this.subscriptions.add(sub);
   }
 
+  // Only when this tree is removed from the DOM. Currently the tree is controlled
+  // by hidden so that this function will not be called when the tree is hidden. This 
+  // is important to keep the state of the tree to be synchronized with edit.
   ngOnDestroy() {
     this.subscriptions.unsubscribe();
   }
@@ -174,7 +182,7 @@ export class EventTreeComponent implements OnDestroy {
   private handleEventEdit(attribute: string, event: Instance) {
     if (!this.treeControl || !this.treeControl.dataNodes)
       return; // Do nothing if there is nothing to do.
-    if (attribute === 'name') {
+    if (attribute === 'name' || attribute === 'displayName') {
       // Name can be updated automatically without making data update
       const treeNodes = this.dbId2node.get(event.dbId);
       if (!treeNodes)
@@ -188,6 +196,52 @@ export class EventTreeComponent implements OnDestroy {
     else if (attribute == 'hasEvent') {
       this.handleHasEventEdit(event);
     }
+    else if (attribute === 'doRelease') {
+      const treeNodes = this.dbId2node.get(event.dbId);
+      if (!treeNodes)
+        return;
+      for (let treeNode of treeNodes) {
+        // false should be the defaut.
+        treeNode.doRelease = (event.attributes && event.attributes.get('doRelease')) ?? false;
+      }
+      this.cdr.detectChanges();
+    }
+  }
+
+  private handleResetEvent(dbId: number, modifiedAttributes: string[] | undefined) {
+    if (!this.treeControl || !this.treeControl.dataNodes)
+      return; // Do nothing if there is nothing to do.
+    const treeNodes = this.dbId2node.get(dbId);
+    if (!treeNodes)
+      return;
+    const attToBeChanged = modifiedAttributes?.filter(att => att === 'displayName' || att === 'hasEvent' || att === 'doRelease') || [];
+    if (attToBeChanged.length === 0)
+      return;
+    this.dataService.fetchInstance(dbId).subscribe((event: Instance) => {
+      for (let treeNode of treeNodes) {
+        // Compare name
+        if (attToBeChanged.includes('displayName') && treeNode.name !== event.displayName)
+          treeNode.name = event.displayName ?? '';
+        // Compare doRelease
+        let eventDoRelease = (event.attributes && event.attributes.get('doRelease')) ?? false;
+        if (attToBeChanged.includes('doRelease') && treeNode.doRelease !== eventDoRelease) {
+          treeNode.doRelease = eventDoRelease;
+          this.cdr.detectChanges();
+        }
+        if (attToBeChanged.includes('hasEvent')) {
+          // Compare hasEvent and node's children
+          const hasEventDbIds = event.attributes?.get('hasEvent')?.map((child: Instance) => child.dbId) || [];
+          const treeNodeChildrenDbIds = treeNode.children?.map(child => child.dbId) || [];
+
+          const arraysAreEqual = hasEventDbIds.length === treeNodeChildrenDbIds.length &&
+            hasEventDbIds.every((dbId: number, index: number) => dbId === treeNodeChildrenDbIds[index]);
+
+          if (!arraysAreEqual) {
+            this.handleHasEventEdit(event);
+          }
+        }
+      }
+    });
   }
 
   private handleHasEventEdit(event: Instance) {
@@ -650,4 +704,33 @@ export class EventTreeComponent implements OnDestroy {
     return false;
   }
 
+  toggleRelease(node: EventNode, event: MouseEvent) {
+    const currentDoRelease = node.doRelease;
+    if (event.shiftKey) {
+      console.log('Shift key detected during toggleRelease');
+      // Handle shift key behavior here if needed
+      // To through the current node and all its descendants to set doRelease to the same value
+      const toBeToggled = new Set<EventNode>();
+      this.grepDescendenants(node, toBeToggled);
+      toBeToggled.forEach(n => this._toggleRelease(n, !currentDoRelease));  
+    }
+    else 
+      this._toggleRelease(node, !currentDoRelease);
+    this.cdr.detectChanges();
+  }
+
+  private _toggleRelease(node: EventNode, doRelease: boolean) {
+    if (node.doRelease === doRelease)
+      return; // Nothing to do
+    node.doRelease = doRelease;
+    if (!node.instance.attributes)
+      node.instance.attributes = {};
+    node.instance.attributes['doRelease'] = node.doRelease;
+    // Note: There is no need to unscribe for this type http-based calling.
+    this.dataService.fetchInstance(node.instance.dbId).subscribe((instance: Instance) => {
+      instance.attributes?.set('doRelease', node.doRelease);
+      this.instUtils.addToModifiedAttributes('doRelease', instance);
+      this.instUtils.registerUpdatedInstance('doRelease', instance);
+    });
+  }
 }

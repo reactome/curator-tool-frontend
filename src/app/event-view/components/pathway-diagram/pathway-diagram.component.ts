@@ -156,7 +156,17 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       }
       // Otherwise, handle it in the old way to load the diagrams converted from XML.
       else {
-        this.diagram.loadDiagram();
+        try {
+          this.diagram.loadDiagram();
+        } catch (error) {
+          console.error('Error loading diagram:', error);
+          this.dialog.open(InfoDialogComponent, {
+            data: {
+              title: 'Error',
+              message: 'Failed to load diagram. The diagram may not exist or is invalid.'
+            }
+          });
+        }
       }
     });
   }

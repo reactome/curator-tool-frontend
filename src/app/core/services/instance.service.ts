@@ -82,6 +82,18 @@ export class InstanceUtilities {
         this.setRefreshViewDbId(instance.dbId);
     }
 
+    registerUpdatedInstance(attName: string, inst: Instance): void {
+        let cloned: Instance = this.makeShell(inst);
+        if (inst.dbId > 0) {
+            // Have to make a clone to avoid any change to the current _instance!
+            this.store.dispatch(UpdateInstanceActions.register_updated_instance(cloned));
+        } else {
+            // Force the state to update if needed
+            this.store.dispatch(NewInstanceActions.register_new_instance(cloned));
+        }
+        this.store.dispatch(UpdateInstanceActions.last_updated_instance({ attribute: attName, instance: cloned }));
+    }
+
     setLastUpdatedInstance(attribute: string, instance: Instance) {
         this.lastUpdatedInstance.next({
             attribute: attribute,

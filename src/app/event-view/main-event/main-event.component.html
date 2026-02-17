@@ -4,13 +4,14 @@
                  [style.width]="treeWidth  + 'px'">
       <!--Technically it would be nicer to create a new component having both filter and tree. Put it here since the main event view
       is not that complicated now. -->
+      <!-- We will use hidden instead of *ngIf to avoid destroying and recreating the components -->
       <event-filter (speciesChanged)="handleSpeciesSelection($event)"
-                    (filterTextChanged)="handleEventFilterTextChanged($event)" *ngIf="!showChanged"></event-filter>
+                    (filterTextChanged)="handleEventFilterTextChanged($event)" [hidden]="showChanged"></event-filter>
       <app-event-tree (addToDiagram)="addEventToDiagram($event)" (eventClicked)="handleEventClicked($event)"
                        (createEmptyDiagramEvent)="createEmptyDiagram($event)"
-                      #eventTree *ngIf="!showChanged"></app-event-tree>
+                      #eventTree [hidden]="showChanged"></app-event-tree>
       <!-- calling classAction will close this list since it should be true. -->
-      <app-local-instance-list *ngIf="showChanged" (closeAction)="showUpdatedInstances(false)" [blockRoute]="true"></app-local-instance-list>
+      <app-local-instance-list [hidden]="!showChanged" (closeAction)="showUpdatedInstances(false)" [blockRoute]="true"></app-local-instance-list>
         
       <div class="resize-container-vertical" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
            (cdkDragStarted)="resizingVertical = true" (cdkDragReleased)="resizingVertical = false"

@@ -1,5 +1,5 @@
 import { CdkDragMove } from "@angular/cdk/drag-drop";
-import { Component, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatSidenav } from "@angular/material/sidenav";
 import { ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
@@ -7,13 +7,14 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
 import { EventTreeComponent } from '../components/event-tree/event-tree.component';
 import { PathwayDiagramComponent } from '../components/pathway-diagram/pathway-diagram.component';
+import { Subscription } from "rxjs";
 
 @Component({
   selector: 'app-main-schema-view-event-view',
   templateUrl: './main-event.component.html',
   styleUrls: ['./main-event.component.scss'],
 })
-export class MainEventComponent {
+export class MainEventComponent implements  OnInit, OnDestroy {
   // TODO: calculate window/screden size and make the table a ratio. 
   treeWidth = 400;
   diagramHeight = window.innerHeight * 0.67;
@@ -31,29 +32,46 @@ export class MainEventComponent {
   // Track diagram selection ids to avoid unncessary update
   private selectedIdsInDiagram: number[] = [];
 
+  private subscriptions: Subscription = new Subscription();
+
   constructor(private instanceUtilities: InstanceUtilities) {
-    this.instanceUtilities.lastClickedDbId$.subscribe(dbId => {
+    let sub = this.instanceUtilities.lastClickedDbId$.subscribe(dbId => {
       // Avoid using ngrx to avoid the complicated implementation
       this.instanceView?.loadInstance(parseInt(dbId + ''));
     });
-    this.instanceUtilities.lastClickedDbIdForComparison$.subscribe((dbId: number) => {
+    this.subscriptions.add(sub);
+    sub = this.instanceUtilities.lastClickedDbIdForComparison$.subscribe((dbId: number) => {
       // Avoid using ngrx to avoid the complicated implementation
       this.instanceView?.loadInstance(dbId, true);
     });
+    this.subscriptions.add(sub);    
+    sub = this.instanceUtilities.lastUpdatedInstance$.subscribe(data => {
+      if (data.instance && this.instanceView?.instance && data.instance.dbId === this.instanceView.instance.dbId) {
+        this.instanceView?.loadInstance(data.instance.dbId, false, false, true, false);
+      }
+    });
+    this.subscriptions.add(sub);
   }
 
   ngAfterViewInit(): void {
     // Here we use a quite direct approach instead of using Angular output pattern
     // to make it easier
-    this.diagramView?.diagram.reactomeEvents$.subscribe(event => {
+    let sub = this.diagramView?.diagram.reactomeEvents$.subscribe(event => {
       this.handleDiagramSelection(event);
     });
+    if (sub) {
+      this.subscriptions.add(sub);
+    } 
   }
 
   ngOnInit(): void {
     // Restore the state from localStorage
     const savedState = sessionStorage.getItem('statusPaneInEventView');
     this.showChanged = savedState === 'shown' ? true : false;
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   openSidenav() {

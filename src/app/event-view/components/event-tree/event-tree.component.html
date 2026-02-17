@@ -64,7 +64,7 @@ cdkDropListSortingDisabled
   matTooltip="Click to create an empty diagram" [matTooltipShowDelay]="1000" (click)="createEmptyDiagram(node)">
     <mat-icon>schema</mat-icon>
   </button>
-  <release-flag-icon [doRelease]="node.doRelease"></release-flag-icon>
+  <release-flag-icon [doRelease]="node.doRelease" (click)="toggleRelease(node, $event)"></release-flag-icon>
   <class-name-icon [className]="node.className"></class-name-icon>
   <button mat-button 
   [ngClass]="[(node.hilite === true ? 'event_text_hilite' : 'event_text_non_hilite'), 
