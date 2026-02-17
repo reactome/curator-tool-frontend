@@ -145,17 +145,19 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
           this.loadInstance(dbId, false, false, true);
       }
       else if (this.instUtils.isReferrer(dbId, this.instance!)) {
-        this.loadInstance(this.instance!.dbId, false, false, true, false);
+        this.loadInstance(this.instance!.dbId, false, false, true);
       }
     });
     this.subscriptions.add(subscription);
     subscription = this.instUtils.resetInst$.subscribe(data => {
       // These two cases work for reset an updated instances
       if (this.instance && this.instance.dbId === data.dbId) {
-        this.loadInstance(data.dbId, false, false, true, true);
+        this.loadInstance(data.dbId, false, false, true);
       }
-      else if (this.instUtils.isReferrer(data.dbId, this.instance!))
-        this.loadInstance(this.instance!.dbId, false, false, true, false);
+      else if (this.instUtils.isReferrer(data.dbId, this.instance!)) {
+        this.loadInstance(this.instance!.dbId, false, false, true);
+
+      }
     });
     this.subscriptions.add(subscription);
     // In case the deleted instance is referred by the current instance
@@ -414,7 +416,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     let newUrl = currentPathRoot[0] + "/instance/" + this.instance!.dbId.toString();
     // Apparently there is a bug in Angular that confuses the configured router for list_instances
     // and instance view. Therefore, give it something more here.
-    if(this.showReferenceColumn)
+    if (this.showReferenceColumn)
       this.router.navigate([newUrl, "comparison", this.instance!.dbId.toString()]);
     else
       this.router.navigate([newUrl]);

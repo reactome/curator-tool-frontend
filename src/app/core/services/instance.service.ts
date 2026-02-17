@@ -117,6 +117,9 @@ export class InstanceUtilities {
     setResetInstance(modifiedAtts: string[] | undefined, inst: Instance) {
         // Call this first in case the name is needed
         this.dbId2displayName.set(inst.dbId, inst.displayName);
+        const shell = this.shellInstances.get(inst.dbId);
+        if (shell)
+            shell.displayName = inst.displayName;
         this.resetInst.next({ modifiedAttributes: modifiedAtts, dbId: inst.dbId });
     }
 

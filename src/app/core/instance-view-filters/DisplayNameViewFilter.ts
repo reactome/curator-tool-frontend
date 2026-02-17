@@ -67,6 +67,7 @@ export class DisplayNameViewFilter implements InstanceViewFilter {
                         if (!apply) return true; // Just return true if there is no need to apply the change
                         instanceAttributeNameChanged = true;
                         attValue1.displayName = currentName;
+                        this.utils.addToPassiveModifiedAttributes(att, inst);
                     }
                 }
             }
