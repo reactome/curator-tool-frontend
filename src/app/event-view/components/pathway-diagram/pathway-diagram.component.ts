@@ -556,12 +556,43 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       });
       return;
     }
+    const wasEditing = this.isEditing;
     // Make sure disable diagram first
-    if (this.isEditing)
+    if (wasEditing)
       this.diagramUtils.disableEditing(this.diagram);
     // cy refers to itself. This creates a circular structure.
     // Need to do a little bit of workaround here.
     // Get rid of any circular structure by doing the following fixes
+    const networkJson = this.generateNetworkJson();
+
+    // Use pathwayDiagramId, instead of pathwayId for uploading
+    this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.pathwayDiagramId, networkJson).subscribe({
+      next: (success) => {
+        const dialogConfig = {
+          data: {
+            title: success ? 'Information' : 'Error',
+            message: success ? 'The diagram has been uploaded successfully.' : 'The diagram has not been uploaded successfully.'
+          }
+        };
+        this.dialog.open(InfoDialogComponent, dialogConfig);
+        if (wasEditing)
+          this.enableEditing();
+      },
+      error: (error: Error) => {
+        // There is no need to show the error message. the Data service should handle it already.
+        // this.dialog.open(InfoDialogComponent, {
+        //   data: {
+        //     title: 'Error',
+        //     message: error?.message || 'Failed to upload the diagram.'
+        //   }
+        // });
+        if (wasEditing)
+          this.enableEditing();
+      }
+    });
+  }
+
+  private generateNetworkJson() {
     const nodes = this.diagram.cy.nodes().jsons();
     const edges = this.diagram.cy.edges().jsons();
     const elements = {
@@ -576,22 +607,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     //   style: this.diagram.cy.style().json()
     // };
     const networkJson = {
-      elements: elements,
+      elements: elements
       // metadata: metadata
     };
-
-    // Use pathwayDiagramId, instead of pathwayId for uploading
-    this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.pathwayDiagramId, networkJson).subscribe((success) => {
-      const dialogConfig = {
-        data: {
-          title: success ? 'Information' : 'Error',
-          message: success ? 'The diagram has been uploaded successfully.' : 'The diagram has not been uploaded successfully.'
-        }
-      };
-      this.dialog.open(InfoDialogComponent, dialogConfig);
-      if (this.isEditing)
-        this.enableEditing();
-    });
+    return networkJson;
   }
 
   private disableResize() {

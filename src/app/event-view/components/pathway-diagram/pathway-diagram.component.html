@@ -7,7 +7,7 @@
   <div *ngIf="showMenu" [ngStyle]="{ 'position': 'absolute', 'top': menuPositionY, 'left': menuPositionX }">
     <app-editor-actions (action)="onAction($event)" [isDiagramEditing]="isEditing" [elmType]="elementTypeForPopup"
       [isFlowLineAddable]="isFlowLineAddable" [isPathwayDeletable]="isPathwayDeletable"
-      [isNodeResizing]="isNodeResizing()" [isEdgeEditable]="isEdgeEditable">
+      [isNodeResizing]="isNodeResizing()" [isEdgeEditable]="isEdgeEditable" [isDiagramEdited]="isEdited">
     </app-editor-actions>
   </div>
 </div>

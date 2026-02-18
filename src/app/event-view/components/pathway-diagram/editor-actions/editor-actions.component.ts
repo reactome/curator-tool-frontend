@@ -17,6 +17,8 @@ export class EditorActionsComponent {
   @Input() isFlowLineAddable: boolean = false;
   // Use to flag the whole diagram
   @Input() isDiagramEditing: boolean = false;
+  // Flag this diagram has been edited but not saved yet
+  @Input() isDiagramEdited: boolean = false;
   // Default is cytoscape
   @Input() elmType: ElementType = ElementType.CYTOSCAPE; 
   // Check if a clicked pathway is deletable
