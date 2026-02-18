@@ -705,7 +705,6 @@ export class DataService {
     );
   }
 
-
   private cloneUserInstances(userInstances: UserInstances): UserInstances {
     const newInstances = userInstances.newInstances.map(i => this.utils.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
     const updatedInstances = userInstances.updatedInstances.map(i => this.utils.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
@@ -727,14 +726,25 @@ export class DataService {
 
   uploadCytoscapeNetwork(pathwayDiagramId: any, network: any): Observable<boolean> {
     // console.debug('Uploading cytoscape network for ' + pathwayDiagramId + ": ", network);
-    return this.http.post<boolean>(this.uploadCyNetworkUrl + pathwayDiagramId, network).pipe(
-      // tap(() => {
-      //   console.debug('Cytoscape network for ' + pathwayDiagramId + ' uploaded.');
-      // }),
-      // Since there is nothing needed to be done for the returned value (just true or false),
-      // We don't need to do anything here!
-      catchError(error => {
-        return this.handleErrorMessage(error);
+    return this.store.select(defaultPerson()).pipe(
+      take(1),
+      concatMap((person: Instance[]) => {
+        if (!person || person.length === 0) {
+          return this.handleErrorMessage(new Error('Cannot find the default person! Cannot upload the cytoscape network without the default person!'));
+        }
+        const networkToUpload = network && typeof network === 'object'
+          ? { ...network, defaultPersonId: person[0].dbId }
+          : network;
+        return this.http.post<boolean>(this.uploadCyNetworkUrl + pathwayDiagramId, networkToUpload).pipe(
+          // tap(() => {
+          //   console.debug('Cytoscape network for ' + pathwayDiagramId + ' uploaded.');
+          // }),
+          // Since there is nothing needed to be done for the returned value (just true or false),
+          // We don't need to do anything here!
+          catchError(error => {
+            return this.handleErrorMessage(error);
+          })
+        );
       })
     );
   }
