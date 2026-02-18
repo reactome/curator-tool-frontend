@@ -409,6 +409,7 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   drop(event: CdkDragDrop<string[]>, value: SchemaAttribute) {
+    const arrayCopy = [...(event.container.data as any[])];
     if (event.previousContainer === event.container) {
       moveItemInArray(
         event.container.data,
@@ -432,11 +433,11 @@ export class InstanceTableComponent implements PostEditListener {
         // Map previousIndex and currentIndex to source indices
         const prevValue = this.mapppingIndexInSourceInstance({
           attribute: value,
-          value: event.previousContainer.data[event.previousIndex],
+          value: arrayCopy[event.previousIndex],
         });
         const currValue: AttributeValue = this.mapppingIndexInSourceInstance({
           attribute: value,
-          value: event.container.data[event.currentIndex],
+          value: arrayCopy[event.currentIndex],
         });
 
         if (event.previousContainer === event.container) {
@@ -461,14 +462,12 @@ export class InstanceTableComponent implements PostEditListener {
             );
           }
         }
-        this._instance.source.attributes.set(value.name, sourceAttrArray);
       } else {
         // If not array, just set as is
         this._instance.source.attributes.set(value.name, event.container.data);
       }
     }
 
-    this._instance?.attributes?.set(value.name, event.container.data);
     this.finishEdit(value.name, event.container.data);
   }
 

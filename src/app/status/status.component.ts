@@ -72,7 +72,7 @@ export class StatusComponent implements OnInit, OnDestroy {
       ])
     ).subscribe((allInstances) => {
       // When the new, updated, and deleted Instances count total exceeds 10, show a warning message to encourage users to persist their changes.
-      if (allInstances.length > 100) {
+      if (allInstances.length > 100 ) {
         this.openSnackBar(`You have ${allInstances.length} unsaved changes. Please persist your changes to avoid losing them.`, 'Close');
       }
     })
