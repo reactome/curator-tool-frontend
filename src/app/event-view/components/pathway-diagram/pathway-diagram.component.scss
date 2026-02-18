@@ -8,4 +8,20 @@
     height: 100%; /* Ensure full height */
     position: relative; /* Required for proper positioning */
   }
-  
+
+/* Updated diagram-label style to handle dynamic color based on isEdited state */
+.diagram-label {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  font-size: 16px;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  margin: 8px 0 8px 8px; /* Top, right, bottom, left margins */
+}

@@ -1,15 +1,13 @@
 <!-- Apparently it is quite difficult, if not impossible, to add DnD feature to cytoscape.js from outside. 
  Therefore, for the time being, we will add a button in the event tree to add an Event to the diagram view. -->
+<div class="diagram-label" [style.color]="isEdited ? 'red' : 'black'">{{ diagramLabel }}</div>
 <div class="cytoscape-container">
-    <cr-diagram #diagramComponent (reactomeEvents$)="handleReactomeEvent($event)" [usedbId]="true" [blockRouterChange]="true"></cr-diagram>
-    <div *ngIf="showMenu" [ngStyle]="{ 'position': 'absolute', 'top': menuPositionY, 'left': menuPositionX }">
-      <app-editor-actions (action)="onAction($event)" 
-      [isDiagramEditing]="isEditing" 
-      [elmType]="elementTypeForPopup" 
-      [isFlowLineAddable]="isFlowLineAddable"
-      [isPathwayDeletable]="isPathwayDeletable"
-      [isNodeResizing]="isNodeResizing()"
-      [isEdgeEditable]="isEdgeEditable">
+  <cr-diagram #diagramComponent (reactomeEvents$)="handleReactomeEvent($event)" [usedbId]="true"
+    [blockRouterChange]="true"></cr-diagram>
+  <div *ngIf="showMenu" [ngStyle]="{ 'position': 'absolute', 'top': menuPositionY, 'left': menuPositionX }">
+    <app-editor-actions (action)="onAction($event)" [isDiagramEditing]="isEditing" [elmType]="elementTypeForPopup"
+      [isFlowLineAddable]="isFlowLineAddable" [isPathwayDeletable]="isPathwayDeletable"
+      [isNodeResizing]="isNodeResizing()" [isEdgeEditable]="isEdgeEditable">
     </app-editor-actions>
-    </div>
+  </div>
 </div>

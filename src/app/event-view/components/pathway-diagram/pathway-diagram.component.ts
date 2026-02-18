@@ -53,8 +53,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   // The current node or edge under the mouse
   elementUnderMouse: any;
   elementTypeForPopup: ElementType = ElementType.CYTOSCAPE; // Default always
-  // Tracking the diting status
+  // Tracking the editing status
   isEditing: boolean = false;
+  // A flag to track if there is any editing. Anything just edited
+  isEdited: boolean = false;
   // Flag is the edge under the mouse is edtiable
   // If the element under the mouse is not an edge, this flag should be false
   isEdgeEditable: boolean = false;
@@ -71,6 +73,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   private lastLoadedNetworkId: string = '';
   // To show information
   readonly dialog = inject(MatDialog);
+  // To show the label for the diagram displayed
+  diagramLabel: string = 'Pathway Diagram';
 
   constructor(private route: ActivatedRoute,
     private router: Router,
@@ -152,12 +156,14 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       if (exists) {
         this.diagramUtils.getDataService().getCytoscapeNetwork(this.diagram.diagramId).subscribe((cytoscapeJson: any) => {
           this.diagram.displayNetwork(cytoscapeJson.elements);
+          this.setDiagramLabel(); // This is an async call. We don't care if it is displayed at the same time at the diagram.
         });
       }
       // Otherwise, handle it in the old way to load the diagrams converted from XML.
       else {
         try {
           this.diagram.loadDiagram();
+          this.setDiagramLabel(); // This is an async call. We don't care if it is displayed at the same time at the diagram.
         } catch (error) {
           console.error('Error loading diagram:', error);
           this.dialog.open(InfoDialogComponent, {
@@ -167,6 +173,14 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
             }
           });
         }
+      }
+    });
+  }
+
+  private setDiagramLabel() {
+    this.diagramUtils.getDataService().fetchInstance(parseInt(this.diagram.diagramId)).subscribe((instance: Instance) => {
+      if (instance) {
+        this.diagramLabel = `${instance.schemaClassName}: ${instance.displayName}` || 'Pathway Diagram';
       }
     });
   }
@@ -296,6 +310,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     });
     // Resize the compartment for resizing nodes
     this.diagram.cy.on('drag', 'node', (e: any) => {
+      this.isEdited = true;
       let node = e.target;
       // If a node that had resize enabled is being moved, disable its resize mode
       if (this.resizingNodes.includes(node)) {
