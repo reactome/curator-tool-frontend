@@ -62,6 +62,7 @@ import { BatchEditDialogComponent } from './components/list-instances-view/batch
     MatTableModule,
     CdkAccordion,
     MatExpansionPanel,
+    SharedModule
 ],
 })
 export class ListInstancesModule {

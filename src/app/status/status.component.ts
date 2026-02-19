@@ -1,7 +1,7 @@
 import { Component, EventEmitter, HostListener, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { Router } from "@angular/router";
 import { Store } from '@ngrx/store';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { Instance, MAX_STAGED_INSTANCES } from 'src/app/core/models/reactome-instance.model';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { bookmarkedInstances } from "../schema-view/instance-bookmark/state/bookmark.selectors";
 import { MatSnackBar } from "@angular/material/snack-bar";
@@ -26,6 +26,7 @@ export class StatusComponent implements OnInit, OnDestroy {
   deletedInstances: Instance[] = [];
   bookmarkedInstances: Instance[] = [];
   defaultPerson: Instance | undefined = undefined;
+  saveChangesInProgress: boolean = false;
 
   private subscriptions: Subscription = new Subscription();
 
@@ -71,10 +72,11 @@ export class StatusComponent implements OnInit, OnDestroy {
         ...(updated || [])
       ])
     ).subscribe((allInstances) => {
-      // When the new, updated, and deleted Instances count total exceeds 10, show a warning message to encourage users to persist their changes.
-      if (allInstances.length > 100 ) {
-        this.openSnackBar(`You have ${allInstances.length} unsaved changes. Please persist your changes to avoid losing them.`, 'Close');
+      // When the new, updated, and deleted Instances count total exceeds 100, show a warning message to encourage users to persist their changes.
+      if (allInstances.length > MAX_STAGED_INSTANCES ) {
+        this.saveChangesInProgress = true;
       }
+      else this.saveChangesInProgress = false;
     })
     this.subscriptions.add(sub);
 

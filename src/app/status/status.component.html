@@ -24,6 +24,11 @@
                                 Defined'}}
                         </button>
                 </span>
+                <ng-container *ngIf="saveChangesInProgress">
+                        <span matTooltip="You have unsaved changes. Please commit your changes to avoid losing them." style="color: red; font-weight: bold; margin-left: 20px;">
+                                Commit Staged Changes!
+                        </span>
+                </ng-container>
         </section>
 
         <!--TODO: To be implemented soon.-->

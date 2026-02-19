@@ -1,6 +1,6 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { PageEvent } from "@angular/material/paginator";
-import { SearchCriterium, Instance, InstanceList, SelectedInstancesList } from "../../../../core/models/reactome-instance.model";
+import { SearchCriterium, Instance, InstanceList, SelectedInstancesList, MAX_STAGED_INSTANCES } from "../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../core/services/data.service";
 import { ActivatedRoute, Params, Router } from "@angular/router";
 import { ReferrersDialogService } from "../../../../instance/components/referrers-dialog/referrers-dialog.service";
@@ -15,6 +15,8 @@ import { BatchEditDialogService } from './batch-edit-dialog/batch-edit-dialog-se
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { combineLatest, map, Observable, Subscription, take } from 'rxjs';
 import { DeleteBulkDialogService } from '../delete-bulk-dialog/delete-bulk-dialog.service';
+import { MatDialog } from '@angular/material/dialog';
+import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 
 @Component({
   selector: 'app-instance-list-view',
@@ -73,6 +75,9 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       this.loadSchemaClassAttributes();
     }); // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
   }
+
+  // To show information
+  readonly dialog = inject(MatDialog);
 
   // So that we can remove subscription
   private subscription: Subscription = new Subscription();
@@ -322,7 +327,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
             title: "Compare " + actionEvent.instance.displayName + " to"
           });
         matDialogRef.afterClosed().subscribe((result) => {
-          if(result)
+          if (result)
             this.router.navigate(["/schema_view/instance/" + actionEvent.instance.dbId.toString() + "/comparison/" + result?.dbId.toString()]);
         });
         ;
@@ -616,7 +621,32 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   // TODO: need to clean this: either remove take one or update each time 
   // use combine latest to sync 
   handleBatchEdit() {
-    if (this.needAdvancedSearch)
+    combineLatest([
+      this.store.select(deleteInstances()),
+      this.store.select(newInstances()),
+      this.store.select(updatedInstances())
+    ]).pipe(
+      map(([deleted, created, updated]) => [
+        ...(deleted || []),
+        ...(created || []),
+        ...(updated || [])
+      ])
+    ).subscribe((allInstances) => {
+      // When the new, updated, and deleted Instances count total exceeds the allowed limit, show a warning message to encourage users to persist their changes.
+      if (allInstances.length > MAX_STAGED_INSTANCES) {
+        this.showBatchEdit = false;
+        this.dialog.open(InfoDialogComponent, {
+          data: {
+            title: 'Too many changes',
+            message: 'The number of changes exceeds the allowed limit. Please commit your changes before doing batch edit.',
+            instanceInfo: ''
+          }
+        }).afterClosed().subscribe(() => {
+          return;
+        });
+      }
+      else {
+            if (this.needAdvancedSearch)
       this.doAdvancedSearch(0);
     else
       this.doBasicSearch(0);
@@ -645,6 +675,9 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       );
       this.batchEditDialogService.openDialog(this.selectedInstances.length > 0 ? this.selectedInstances : filteredData);
     }
+      }
+    })
+
   }
 
   onSelectionChange(instance: Instance) {
