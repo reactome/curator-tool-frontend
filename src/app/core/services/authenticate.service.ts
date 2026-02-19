@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { catchError, Observable, tap, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { JwtHelperService } from '@auth0/angular-jwt';
-import {CanActivateFn, Router} from "@angular/router";
+import { CanActivateFn, Router } from "@angular/router";
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
 
 @Injectable({
@@ -12,16 +12,16 @@ import { UserInstancesService } from 'src/app/auth/login/user-instances.service'
 export class AuthenticateService {
 
   constructor(private http: HttpClient,
-              private jwtHelper: JwtHelperService) {}
+    private jwtHelper: JwtHelperService) { }
 
-  login(data: {username: string, password: string}): Observable<string> {
+  login(data: { username: string, password: string }): Observable<string> {
     return this.http.post<any>(`${environment.authURL}`, data).pipe(
       tap((data: string) => data),
       catchError(err => throwError(() => err))
     )
   }
 
-  register(data: {username: string, password: string}): Observable<any> {
+  register(data: { username: string, password: string }): Observable<any> {
     return this.http.post<any>(`${environment.authURL}/register`, data).pipe(
       tap((data: any) => data),
       catchError(err => throwError(() => err))
@@ -30,12 +30,13 @@ export class AuthenticateService {
 
   isAuthenticated(): boolean {
     const token = localStorage.getItem('token');
+    console.debug(this.jwtHelper.getTokenExpirationDate(token!));
     if (token && !this.jwtHelper.isTokenExpired(token))
       return true;
-    return false;
+    return false; 
   }
 
-  getUser(): string|undefined {
+  getUser(): string | undefined {
     const token = localStorage.getItem('token');
     if (token) {
       return this.jwtHelper.decodeToken(token).sub;

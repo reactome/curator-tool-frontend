@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
@@ -12,6 +12,7 @@ import {
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
 import { QAReport } from "../models/qa-report.model";
+import { Router } from "@angular/router";
 
 
 @Injectable({
@@ -74,7 +75,8 @@ export class DataService {
   constructor(private http: HttpClient,
     private utils: InstanceUtilities,
     private store: Store,
-  ) {
+    private router: Router)  
+   {
   }
 
   /**
@@ -1135,6 +1137,10 @@ export class DataService {
 
   handleErrorMessage(err: Error) {
     console.log("The resource could not be loaded: \n" + err.message);
+    // If the error message contains a 401 or authentication error, redirect to the login page
+    if (err.message && err.message.includes('401')) {
+        this.router.navigate(['/login']);
+    }
     this.errorMessage.next(err);
     return throwError(() => err);
   };
