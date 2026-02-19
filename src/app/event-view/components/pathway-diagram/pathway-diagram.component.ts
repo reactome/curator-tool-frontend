@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, EventEmitter, inject, OnInit, Output, ViewChild } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
-import { filter, map } from 'rxjs';
+import { combineLatest, filter, map, Observable, take } from 'rxjs';
 import { EditorActionsComponent, ElementType } from './editor-actions/editor-actions.component';
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
@@ -15,6 +15,9 @@ import { EDGE_POINT_CLASS, Instance } from 'src/app/core/models/reactome-instanc
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
+import { Store } from '@ngrx/store';
+import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
+import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -78,6 +81,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
   constructor(private route: ActivatedRoute,
     private router: Router,
+    private store: Store,
     private diagramUtils: PathwayDiagramUtilService,
     private instUtil: InstanceUtilities
   ) {
@@ -202,7 +206,45 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     this.isEditing = false;
   }
 
+  private canEdit(): Observable<boolean> {
+    return combineLatest([
+      this.store.select(newInstances()).pipe(take(1)),
+      this.store.select(updatedInstances()).pipe(take(1)),
+      this.store.select(deleteInstances()).pipe(take(1))
+    ]).pipe(
+      map(([newInsts, updatedInsts, deletedInsts]) => {
+        const pendingInstances = [...newInsts, ...updatedInsts, ...deletedInsts];
+        const hasBlockingInstances = pendingInstances.some(inst => this.isBlockingClassForPathwayDiagramEdit(inst));
+        if (hasBlockingInstances) {
+          this.dialog.open(InfoDialogComponent, {
+            data: {
+              title: 'Information',
+              message: 'Please commit local Event, PhysicalEntity, Regulation, CatalystActivity, and PathwayDiagram changes manually before editing a pathway diagram.'
+            }
+          });
+          return false;
+        }
+        return true;
+      })
+    );
+  }
+
+  private isBlockingClassForPathwayDiagramEdit(instance: Instance): boolean {
+    const dataService = this.diagramUtils.getDataService();
+    const schemaClassName = instance.schemaClassName;
+    if (dataService.isEventClass(schemaClassName) || 
+        dataService.isPhysicalEntityClass(schemaClassName) ||
+        dataService.isRegulationClass(schemaClassName))
+      return true;
+    if (schemaClassName === 'PathwayDiagram' || schemaClassName === 'CatalystActivity')
+      return true;
+    return false;
+  }
+
   private enableEditing() {
+    this.canEdit().subscribe((canEdit: boolean) => {
+      if (!canEdit)
+        return;
     if (this.pathwayDiagramId && this.pathwayDiagramId.length > 0) {
       // Already have a PathwayDiagram id for editing
       this.isEditing = true;
@@ -228,6 +270,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           }
         });
       }
+    });
     });
   }
 
@@ -511,18 +554,19 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         break;
 
       case 'editPathwayDiagram':
-        this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe((pathwayDiagram: Instance) => {
-          if (pathwayDiagram) {
-            this.openPathwayDiagramEvent.emit(pathwayDiagram.dbId);
-          }
-          else {
-            this.dialog.open(InfoDialogComponent, {
-              data: {
-                title: 'Error',
-                message: 'No PathwayDiagram instance is associated with this pathway: ',
-                instanceInfo: this.pathwayId
-              }
-            });
+        this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe({
+          next: (pathwayDiagram: Instance) => {
+            if (pathwayDiagram) {
+              this.openPathwayDiagramEvent.emit(pathwayDiagram.dbId);
+            }
+            else {
+              // Create a new PathwayDiagram instance when none exists
+              this.createAndOpenNewPathwayDiagram();
+            }
+          },
+          error: (error: Error) => {
+            // Create a new PathwayDiagram instance on fetch error
+            this.createAndOpenNewPathwayDiagram();
           }
         });
         break;
@@ -611,6 +655,26 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       // metadata: metadata
     };
     return networkJson;
+  }
+
+  private createAndOpenNewPathwayDiagram() {
+    const dataService = this.diagramUtils.getDataService();
+    dataService.fetchInstance(parseInt(this.pathwayId)).subscribe((pathwayInstance: Instance) => {
+      if (!pathwayInstance)
+        return;
+      dataService.createNewInstance('PathwayDiagram').subscribe((newPathwayDiagram: Instance) => {
+        if (newPathwayDiagram && newPathwayDiagram.attributes) {
+          const pathwayShell = this.instUtil.makeShell(pathwayInstance);
+          newPathwayDiagram.attributes.set('representedPathway', [pathwayShell]);
+          // This is based on InstanceNameGenerator. Better to call that function!
+          newPathwayDiagram.displayName = 'Diagram of ' + pathwayInstance.displayName;
+          // Register the new instance so it can be referenced
+          dataService.registerInstance(newPathwayDiagram);
+          this.store.dispatch(NewInstanceActions.register_new_instance(this.instUtil.makeShell(newPathwayDiagram)));
+          this.openPathwayDiagramEvent.emit(newPathwayDiagram.dbId);
+        }
+      });
+    });
   }
 
   private disableResize() {

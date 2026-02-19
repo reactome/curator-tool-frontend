@@ -257,6 +257,11 @@ export class DataService {
     return this.utils._isSchemaClass(clsName, schemaClass);
   }
 
+  isRegulationClass(clsName: string): boolean {
+    let schemaClass = this.getSchemaClass('Regulation');
+    return this.utils._isSchemaClass(clsName, schemaClass);
+  }
+
   /**
    * A helper function to convert a JSON array into a SchemaClass so that it is easier to model.
    * @param data
@@ -271,11 +276,34 @@ export class DataService {
    * @returns 
    */
   fetchPathwayDiagram(pathwayId: any): Observable<Instance> {
+    const pathwayDbId = parseInt(pathwayId);
+    const cachedPathwayDiagram = this.getCachedPathwayDiagram(pathwayDbId);
+    if (cachedPathwayDiagram)
+      return of(cachedPathwayDiagram);
+
     return this.http.get<Instance>(this.fetchPathwayDiagramUrl + `${pathwayId}`)
-      .pipe(map((data: Instance) => data), // Nothing needs to be done.
+      .pipe(map((data: Instance) => {
+        this.registerInstance(data);
+        return data;
+      }),
         catchError((err: Error) => {
-          return this.handleErrorMessage(err);
+          return throwError(() => err);
         }));
+  }
+
+  private getCachedPathwayDiagram(pathwayDbId: number): Instance | undefined {
+    for (const instance of this.id2instance.values()) {
+      if (instance.schemaClassName !== 'PathwayDiagram' || !instance.attributes)
+        continue;
+      const representedPathway = instance.attributes instanceof Map
+        ? instance.attributes.get('representedPathway')
+        : instance.attributes['representedPathway'];
+      if (!representedPathway || !Array.isArray(representedPathway))
+        continue;
+      if (representedPathway.some((pathway: Instance) => pathway?.dbId === pathwayDbId))
+        return instance;
+    }
+    return undefined;
   }
 
   /**
@@ -501,7 +529,7 @@ export class DataService {
    */
   registerInstance(instance: Instance): void {
       // Make sure map is used
-      if(instance.attributes && !(instance.attributes instanceof Map)) {
+    if(instance.attributes && !(instance.attributes instanceof Map)) {
       this.handleInstanceAttributes(instance);
     }
     this.id2instance.set(instance.dbId, instance);
