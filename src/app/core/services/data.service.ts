@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { inject, Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
-import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, throwError } from 'rxjs';
+import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, tap, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
 import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
@@ -768,9 +768,11 @@ export class DataService {
           ? { ...network, defaultPersonId: person[0].dbId }
           : network;
         return this.http.post<boolean>(this.uploadCyNetworkUrl + pathwayDiagramId, networkToUpload).pipe(
-          // tap(() => {
-          //   console.debug('Cytoscape network for ' + pathwayDiagramId + ' uploaded.');
-          // }),
+          tap(() => {
+            // console.debug('Cytoscape network for ' + pathwayDiagramId + ' uploaded.');
+            // It is expected to reset the cache of PathwayDiagram
+            this.removeInstanceInCache(parseInt(pathwayDiagramId)); // Remove the cached pathway diagram so that it can be reloaded with the new network
+          }),
           // Since there is nothing needed to be done for the returned value (just true or false),
           // We don't need to do anything here!
           catchError(error => {

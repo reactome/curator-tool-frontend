@@ -219,7 +219,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           this.dialog.open(InfoDialogComponent, {
             data: {
               title: 'Information',
-              message: 'Please commit local Event, PhysicalEntity, Regulation, CatalystActivity, and PathwayDiagram changes manually before editing a pathway diagram.'
+              message: 'Commit staged Event, PhysicalEntity, Regulation, CatalystActivity, and PathwayDiagram before editing a pathway diagram.'
             }
           });
           return false;
