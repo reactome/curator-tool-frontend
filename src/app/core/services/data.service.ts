@@ -285,7 +285,9 @@ export class DataService {
 
     return this.http.get<Instance>(this.fetchPathwayDiagramUrl + `${pathwayId}`)
       .pipe(map((data: Instance) => {
-        this.registerInstance(data);
+        // Don't register it since this is just an shell instance to get dbId
+        // for late loading.
+        // this.registerInstance(data);
         return data;
       }),
         catchError((err: Error) => {
