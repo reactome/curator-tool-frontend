@@ -3,7 +3,7 @@
  * in cytoscape.
  */
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, EventEmitter, inject, OnInit, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, HostListener, inject, OnInit, Output, ViewChild } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
 import { combineLatest, filter, map, Observable, take } from 'rxjs';
@@ -14,6 +14,7 @@ import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
 import { EDGE_POINT_CLASS, Instance } from 'src/app/core/models/reactome-instance.model';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
+import { UnsavedUploadDialogComponent } from 'src/app/shared/components/unsaved-upload-dialog/unsaved-upload-dialog.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Store } from '@ngrx/store';
 import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
@@ -104,13 +105,22 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       const id = params['id'];
       // Do nothing if nothing is loaded
       if (!id || id === '0') return;
-      this.pathwayId = id;
-      this.diagram.diagramId = this.pathwayId;
-      this.select = queryParams['select'] ?? '';
-      // Always not in the editing mode when loading via URL
-      this.isEditing = false;
-      this.loadPathwayDiagram();
-      this.pathwayDiagramId = ''; // reset any previous PathwayDiagram id
+      const loadNewDiagram = () => {
+        this.pathwayId = id;
+        this.diagram.diagramId = this.pathwayId;
+        this.select = queryParams['select'] ?? '';
+        // Always not in the editing mode when loading via URL
+        this.isEditing = false;
+        this.isEdited = false;
+        this.loadPathwayDiagram();
+        this.pathwayDiagramId = ''; // reset any previous PathwayDiagram id
+      };
+      const isSwitchingDiagram = this.pathwayId.length > 0 && this.pathwayId !== id;
+      if (isSwitchingDiagram) {
+        this.promptUploadBeforeDiscard('loading another diagram', loadNewDiagram);
+        return;
+      }
+      loadNewDiagram();
     });
     // Do any post processing after the network is displayed.
     // Use this method to avoid threading issue and any arbitray delay.
@@ -138,6 +148,34 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       const currentSelected = queryParams['select'];
       this.select = currentSelected;
       this.selectObjectsInDiagram(currentSelected);
+    });
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  handleBeforeUnload(event: BeforeUnloadEvent) {
+    if (!this.isEdited)
+      return;
+    event.preventDefault();
+    event.returnValue = 'You have unsaved pathway diagram changes. Upload them before closing or reloading this page.';
+  }
+
+  private promptUploadBeforeDiscard(action: string, proceed: () => void) {
+    if (!this.isEdited) {
+      proceed();
+      return;
+    }
+    const dialogRef = this.dialog.open(UnsavedUploadDialogComponent, {
+      data: {
+        title: 'Unsaved Changes',
+        message: `This diagram has unsaved changes. Upload before ${action}?`
+      },
+      disableClose: true
+    });
+    dialogRef.afterClosed().pipe(take(1)).subscribe((shouldUpload: boolean | null) => {
+      if (shouldUpload === true)
+        this.uploadDiagram(false, proceed);
+      else if (shouldUpload === false)
+        proceed();
     });
   }
 
@@ -488,14 +526,17 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           y: parseInt(this.menuPositionY) - this.MENU_POSITION_BUFFER
         };
         this.diagramUtils.addPoint(mousePosition, this.elementUnderMouse);
+        this.isEdited = true;
         break;
 
       case 'removePoint':
         this.diagramUtils.removePoint(this.elementUnderMouse);
+        this.isEdited = true;
         break;
 
       case 'delete':
         this.diagramUtils.deleteHyperEdge(this.elementUnderMouse);
+        this.isEdited = true;
         break;
 
       case 'resizeCompartment':
@@ -513,14 +554,17 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
       case 'addFlowLine':
         this.diagramUtils.addFlowLine(this.elementUnderMouse, this);
+        this.isEdited = true;
         break;
 
       case 'goToPathway':
         const reactomeId = this.elementUnderMouse?.data('reactomeId');
         if (reactomeId) {
-          // this.router.navigate(['/event_view/instance/' + reactomeId]);
-          // We will let the event tree to handle the router etc to show the diagram
-          this.goToPathwayEvent.emit(reactomeId);
+          this.promptUploadBeforeDiscard('loading another diagram', () => {
+            // this.router.navigate(['/event_view/instance/' + reactomeId]);
+            // We will let the event tree to handle the router etc to show the diagram
+            this.goToPathwayEvent.emit(reactomeId);
+          });
         }
         break;
 
@@ -529,6 +573,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           this.disableResize();
         }
         this.diagramUtils.deletePathwayNode(this.elementUnderMouse, this.diagram);
+        this.isEdited = true;
         break;
 
       case 'deleteCompartment':
@@ -536,10 +581,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           this.disableResize();
         }
         this.diagramUtils.deleteCompartment(this.elementUnderMouse, this.diagram);
+        this.isEdited = true;
         break;
 
       case 'insertCompartment':
         this.diagramUtils.insertCompartment(this.diagram);
+        this.isEdited = true; 
         break;
 
       case 'upload':
@@ -547,10 +594,13 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         break;
 
       case 'reload':
-        this.diagram.diagramId = this.pathwayId
-        // Disable editing first
-        this.isEditing = false;
-        this.loadPathwayDiagram();
+        this.promptUploadBeforeDiscard('reloading this diagram', () => {
+          this.diagram.diagramId = this.pathwayId
+          // Disable editing first
+          this.isEditing = false;
+          this.isEdited = false;
+          this.loadPathwayDiagram();
+        });
         break;
 
       case 'editPathwayDiagram':
@@ -573,10 +623,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
       case 'alignCentersVertically':
         this.alignNodesVertically();
+        this.isEdited = true;
         break;
 
       case 'alignCentersHorizontally':
         this.alignNodesHorizontally();
+        this.isEdited = true;
         break;
 
       default:
@@ -588,7 +640,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     this.showMenu = false;
   }
 
-  private uploadDiagram() {
+  private uploadDiagram(restoreEditing: boolean = true, onComplete?: () => void) {
     // Check if PathwayDiagram is being edited. If PathwayDiagram is not being edited,
     // tell the user nothing to be uploaded.
     if (this.pathwayDiagramId !== undefined && this.pathwayDiagramId.length === 0) {
@@ -598,6 +650,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           message: 'The diagram is not being edited. Nothing to be uploaded.'
         }
       });
+      if (onComplete)
+        onComplete();
       return;
     }
     const wasEditing = this.isEditing;
@@ -619,8 +673,14 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           }
         };
         this.dialog.open(InfoDialogComponent, dialogConfig);
-        if (wasEditing)
+        if (success) {
+          // After uploading, we can consider the diagram is not edited anymore. So reset the flag.
+          this.isEdited = false;
+        }
+        if (wasEditing && restoreEditing)
           this.enableEditing();
+        if (onComplete)
+          onComplete();
       },
       error: (error: Error) => {
         // There is no need to show the error message. the Data service should handle it already.
@@ -630,8 +690,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         //     message: error?.message || 'Failed to upload the diagram.'
         //   }
         // });
-        if (wasEditing)
+        if (wasEditing && restoreEditing)
           this.enableEditing();
+        if (onComplete)
+          onComplete();
       }
     });
   }
@@ -737,6 +799,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       return;
     }
     this.diagramUtils.addNewEvent(event, this.diagram.cy);
+    this.isEdited = true;
   }
 
   private alignNodesVertically() {
