@@ -24,11 +24,13 @@
 - Bug: The referrer dialog should not have the structural change warning (red text) when the referrers are shown not for deletion (low priority). However, if the user just wants to see the instance's referrers, why do we need to check structural changes? This may have some perfornace overhead.
 - bug: http://localhost:4200/schema_view/instance/844615. One of this pathway's hasEvent get its _displayName changed due to an active edit. this should be a passiveEditedAttribute, currently here is no indication of editing 
 bug: http://localhost:4200/schema_view/instance/844619 delete the second literature reference to create a passive edit. Then drag and drop the frist and third reference to change the order. Reset the deleted reference and it cannot be added back correctly. 
+Test: http://localhost:4200/schema_view/instance/110133 delete a middle literature reference. Move the top reference with the bottom and the bottom reference to the top. Reset the deleted instance and the order will be incorrect, however these can still be re-ordered. 
 - TODO (important): Make sure the height is well used in the local instance list panel. e.g. When there are quite a lot of updated instances, make sure the middle updated instances list can be expand and take as much space as possible (i.e. use some height assigned to Deleted instances, which should have a small list.)
 - Bug: Change the text in the "Confirm Delete" dialog for new instances. The note should not be there since a new instance is not in the database yet. Also there is no committment to say about new instances.
 - Bug: in the instance list, the list of buttons is higher than the cells for dbId and display name. 
+JWT: 1) clear token in multiple browsers. 2.) store previous url before login and after login use the stored previous url to navigate to last page, if no url then redirect to the home page. 3.) add a thrid attribute to the jwt stored in session storage: reloadUserInstances to check if these instances should be reloaded (reload if the user is fresh login, do not if this token is just reloaded).
 
-#### TODO:
+#### TODO:jbv
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.
 - TODO: Set the color of icons in the event tree for dark mode. Right now, they are all black, which cannot be seen in the dark mode.
 - For Figure instance: add a customized view to display the figure

@@ -1,43 +1,87 @@
 .buttons-pane {
-    display: flex;
-    flex-direction: row-reverse;
-    padding-top: 8px;
-    position: relative;
+  display: flex;
+  flex-direction: row-reverse;
+  padding-top: 8px;
+  position: relative;
 }
 
 .toolbar {
-    position: absolute;
-    top: 0;
-    right: 0;
-    padding: 8px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 8px;
 }
 
 .title {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: nowrap;
-    flex-direction: row;
-    overflow: hidden;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  overflow: hidden;
 }
-  
+
 .ellipsis {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .scroll-list {
-  max-height: 250px; // Adjust based on your row height (e.g., 5 rows x 50px)
+  max-height: 100vh; // Adjust based on your row height (e.g., 5 rows x 50px)
+  min-height: 0; // Allow it to shrink if there are fewer items
   overflow-y: auto;
-    border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  // margin-bottom: 16px;
   padding-bottom: 8px;
 }
+
 .scroll-list:last-of-type {
   border-bottom: none;
+}
+
+.resize-container {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  transform: none !important;
+  opacity: 0;
+  margin-right: -4px;
+
+  .resize-bar {
+    position: absolute;
+    inset: 0 2px;
+    background-color: var(--tertiary);
+    cursor: col-resize;
+    box-shadow: 0 0 2px var(--tertiary);
+    z-index: 1;
+  }
+
+  &:hover,
+  &.resizing {
+    opacity: 1;
+  }
+}
+
+.resizable-divider {
+  height: 1px;
+  background-color: lightgray;
+  cursor: row-resize;
+  user-select: none;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
+
+  &:hover,
+  &:active,
+  &.resizing {
+    height: 3px;
+    background-color: var(--tertiary);
+    opacity: 1;
+  }
 }
 
 .action-buttons-row {
@@ -53,4 +97,3 @@
   padding: 0 !important;
   margin: 0, 2px !important;
 }
-  

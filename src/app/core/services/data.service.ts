@@ -12,7 +12,7 @@ import {
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
 import { QAReport } from "../models/qa-report.model";
-import { Router } from "@angular/router";
+import { Route, Router } from "@angular/router";
 
 
 @Injectable({
@@ -71,6 +71,8 @@ export class DataService {
   private errorMessage = new Subject<Error>();
   errorMessage$ = this.errorMessage.asObservable();
   componentRefreshSubject: any;
+
+  // Cache the user's url if they are forced to login due to 401 error so that they can be redirected back after login
 
   constructor(private http: HttpClient,
     private utils: InstanceUtilities,
@@ -1167,6 +1169,8 @@ export class DataService {
     console.log("The resource could not be loaded: \n" + err.message);
     // If the error message contains a 401 or authentication error, redirect to the login page
     if (err.message && err.message.includes('401')) {
+        //this.route.getCurrentNavigation()?.extras.state?.from && this.route.getCurrentNavigation()?.extras.state?.from !== '/login'
+        // Also ensure to save the route when the token is expired
         this.router.navigate(['/login']);
     }
     this.errorMessage.next(err);

@@ -45,6 +45,10 @@ export class UpdatedInstanceListComponent implements OnInit {
 
   readonly SelectedInstancesList = SelectedInstancesList; // To use in the html file
 
+  private resizing = false;
+  private resizeIndex = -1;
+  sectionFlexes = [3, 3, 2]; // Initial flex values for new, updated, deleted
+
   constructor(private router: Router,
     private route: ActivatedRoute,
     private store: Store,
@@ -316,7 +320,43 @@ export class UpdatedInstanceListComponent implements OnInit {
         this.showCheck = false;
       }
     });
-
   }
 
+  startResize(event: MouseEvent, dividerIndex: number): void {
+    this.resizing = true;
+    this.resizeIndex = dividerIndex;
+    event.preventDefault();
+
+    const startY = event.clientY;
+    const startFlexes = [...this.sectionFlexes];
+
+    const mouseMoveListener = (moveEvent: MouseEvent) => {
+      if (!this.resizing) return;
+
+      const deltaY = moveEvent.clientY - startY;
+      const threshold = 50; // Minimum height for each section
+
+      // Update flex values based on mouse movement
+      if (this.resizeIndex === 0) {
+        // Resizing between new and updated sections
+        this.sectionFlexes[0] = Math.max(1, startFlexes[0] + deltaY / 50);
+        this.sectionFlexes[1] = Math.max(1, startFlexes[1] - deltaY / 50);
+      } else if (this.resizeIndex === 1) {
+        // Resizing between updated and deleted sections
+        this.sectionFlexes[1] = Math.max(1, startFlexes[1] + deltaY / 50);
+        this.sectionFlexes[2] = Math.max(1, startFlexes[2] - deltaY / 50);
+      }
+    };
+
+    const mouseUpListener = () => {
+      this.resizing = false;
+      document.removeEventListener('mousemove', mouseMoveListener);
+      document.removeEventListener('mouseup', mouseUpListener);
+    };
+
+
+    document.addEventListener('mousemove', mouseMoveListener);
+    document.addEventListener('mouseup', mouseUpListener);
+  
+  }
 }

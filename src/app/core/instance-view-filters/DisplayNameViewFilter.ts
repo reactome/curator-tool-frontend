@@ -16,7 +16,7 @@ export class DisplayNameViewFilter implements InstanceViewFilter {
     constructor(private dataService: DataService,
         private utils: InstanceUtilities,
         private store: Store) {
-            this.nameGenerator = new InstanceNameGenerator(this.dataService, this.utils);
+        this.nameGenerator = new InstanceNameGenerator(this.dataService, this.utils);
     }
 
     filter(instance: Instance): Observable<Instance> {
@@ -43,10 +43,10 @@ export class DisplayNameViewFilter implements InstanceViewFilter {
     }
 
     // only check the modified attributes slot, not necessary to check all attributes 
-    validateReferenceDisplayName(inst: Instance, 
-                                 updatedInsts: Instance[], 
-                                 nameGenerator: InstanceNameGenerator,
-                                 apply: boolean = true): boolean {
+    validateReferenceDisplayName(inst: Instance,
+        updatedInsts: Instance[],
+        nameGenerator: InstanceNameGenerator,
+        apply: boolean = true): boolean {
         if (!inst.attributes)
             return false; // No attributes, nothing to validate
         // For the time being, this is just one layer check. In the future, we may need to
@@ -90,13 +90,13 @@ export class DisplayNameViewFilter implements InstanceViewFilter {
         let currentName = inst.displayName;
         // The supposed new display name due to attribute change
         let newDisplayName = nameGenerator.generateDisplayName(inst);
-        if (newDisplayName !== 'unknown' && currentName !== newDisplayName) {   
+        if (newDisplayName !== 'unknown' && currentName !== newDisplayName) {
             if (!apply) return true;
             inst.displayName = newDisplayName;
             if (inst.attributes)
                 inst.attributes.set('displayName', newDisplayName);
             this.utils.registerDisplayNameChange(inst);
-            instanceAttributeNameChanged = true;    
+            instanceAttributeNameChanged = true;
         }
         return instanceAttributeNameChanged;
     }

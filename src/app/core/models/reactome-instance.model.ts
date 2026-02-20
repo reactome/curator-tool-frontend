@@ -100,7 +100,7 @@ export interface UserInstances {
 /**
  * Use to limit the number of instances that can be staged before commit. This is to avoid overwhelming the client and encourage users to persist their changes.
  */
-export const MAX_STAGED_INSTANCES = 100;
+export const MAX_STAGED_INSTANCES = 10;
 
 /**
  * Use to flag a node that is added as a control point for a rounded curve segment.
