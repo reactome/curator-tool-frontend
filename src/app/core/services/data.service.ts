@@ -12,7 +12,7 @@ import {
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
 import { QAReport } from "../models/qa-report.model";
-import { Route, Router } from "@angular/router";
+import { ActivatedRoute, Route, Router } from "@angular/router";
 
 
 @Injectable({
@@ -77,7 +77,8 @@ export class DataService {
   constructor(private http: HttpClient,
     private utils: InstanceUtilities,
     private store: Store,
-    private router: Router)  
+    private router: Router,
+    private activatedRoute: ActivatedRoute)  
    {
   }
 
@@ -1173,6 +1174,7 @@ export class DataService {
     if (err.message && err.message.includes('401')) {
         //this.route.getCurrentNavigation()?.extras.state?.from && this.route.getCurrentNavigation()?.extras.state?.from !== '/login'
         // Also ensure to save the route when the token is expired
+        const currentUrl = window.location.pathname + window.location.search + window.location.hash;
         this.router.navigate(['/login']);
     }
     this.errorMessage.next(err);

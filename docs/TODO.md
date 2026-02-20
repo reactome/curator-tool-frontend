@@ -29,6 +29,8 @@ Test: http://localhost:4200/schema_view/instance/110133 delete a middle literatu
 - Bug: Change the text in the "Confirm Delete" dialog for new instances. The note should not be there since a new instance is not in the database yet. Also there is no committment to say about new instances.
 - Bug: in the instance list, the list of buttons is higher than the cells for dbId and display name. 
 JWT: 1) clear token in multiple browsers. 2.) store previous url before login and after login use the stored previous url to navigate to last page, if no url then redirect to the home page. 3.) add a thrid attribute to the jwt stored in session storage: reloadUserInstances to check if these instances should be reloaded (reload if the user is fresh login, do not if this token is just reloaded).
+- Add a check for user inactivity (10 minutes) so that there is automatic log-out; don't clear storage, just cause expiration 
+- Add current url to the authentication service. For each tab, 1. cache current url, 2. reomve jwt token, all other windows will listen to this change, create central panel for logged-out status and button to re-login, 3. reload all browsers, 4. push a red warning to status panel to inform of logged out status. 
 
 #### TODO:jbv
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.
