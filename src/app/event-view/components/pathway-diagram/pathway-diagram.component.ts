@@ -192,29 +192,38 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   private loadPathwayDiagram() {
     this.storeViewport();
     // Check if we have cytoscape network. If yes, load it.
-    this.diagramUtils.getDataService().hasCytoscapeNetwork(this.diagram.diagramId).subscribe((exists: boolean) => {
+    this.diagramUtils.getDataService().hasCytoscapeNetwork(this.diagram.diagramId).subscribe((hasCyNetwork: boolean) => {
       // this.diagram.resetState(); 
       this.diagramUtils.clearSelection(this.diagram);
-      if (exists) {
+      if (hasCyNetwork) {
         this.diagramUtils.getDataService().getCytoscapeNetwork(this.diagram.diagramId).subscribe((cytoscapeJson: any) => {
           this.diagram.displayNetwork(cytoscapeJson.elements);
           this.setDiagramLabel(); // This is an async call. We don't care if it is displayed at the same time at the diagram.
         });
       }
-      // Otherwise, handle it in the old way to load the diagrams converted from XML.
+      // Otherwise, check for XML-based diagram
       else {
-        try {
-          this.diagram.loadDiagram();
-          this.setDiagramLabel(); // This is an async call. We don't care if it is displayed at the same time at the diagram.
-        } catch (error) {
-          console.error('Error loading diagram:', error);
-          this.dialog.open(InfoDialogComponent, {
-            data: {
-              title: 'Error',
-              message: 'Failed to load diagram. The diagram may not exist or is invalid.'
+        this.diagramUtils.getDataService().hasDiagram(this.diagram.diagramId).subscribe((hasDiagramJson: boolean) => {
+          if (hasDiagramJson) {
+            try {
+              this.diagram.loadDiagram();
+              this.setDiagramLabel(); // This is an async call. We don't care if it is displayed at the same time at the diagram.
+            } catch (error) {
+              console.error('Error loading diagram:', error);
+              this.dialog.open(InfoDialogComponent, {
+                data: {
+                  title: 'Error',
+                  message: 'Failed to load diagram. The diagram may not exist or is invalid.'
+                }
+              });
             }
-          });
-        }
+          }
+          // If no diagram exists at all, create an empty one
+          else {
+            this.createEmptyDiagram(parseInt(this.diagram.diagramId));
+            this.setDiagramLabel();
+          }
+        });
       }
     });
   }
@@ -291,24 +300,33 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       return;
     }
     // Switch to PathwayDiagram 
-    this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe((pathwayDiagram: Instance) => {
-      if (pathwayDiagram) {
-        this.isEditing = true;
-        this.diagram.diagramId = pathwayDiagram.dbId.toString();
-        // Let the event handler for "network_displayed" to handle the rest
-        this.loadPathwayDiagram();
-        this.pathwayDiagramId = pathwayDiagram.dbId.toString(); // Store it for future use
-      }
-      else {
-        this.dialog.open(InfoDialogComponent, {
-          data: {
-            title: 'Error',
-            message: 'No PathwayDiagram instance is associated with this pathway: ',
-            instanceInfo: this.pathwayId
-          }
-        });
+    this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe({
+      next: (pathwayDiagram: Instance) => {
+        if (pathwayDiagram) {
+          this.isEditing = true;
+          this.diagram.diagramId = pathwayDiagram.dbId.toString();
+          // Let the event handler for "network_displayed" to handle the rest
+          this.loadPathwayDiagram();
+          this.pathwayDiagramId = pathwayDiagram.dbId.toString(); // Store it for future use
+        }
+        else {
+          this.showNoPathwayDiagramDialog();
+        }
+      },
+      error: () => {
+        this.showNoPathwayDiagramDialog();
       }
     });
+    });
+  }
+
+  private showNoPathwayDiagramDialog() {
+    this.dialog.open(InfoDialogComponent, {
+      data: {
+        title: 'Information',
+        message: 'No PathwayDiagram instance was found. Create a PathwayDiagram first and commit it before editing.',
+        instanceInfo: `Pathway dbId: ${this.pathwayId}`
+      }
     });
   }
 
@@ -730,6 +748,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           newPathwayDiagram.attributes.set('representedPathway', [pathwayShell]);
           // This is based on InstanceNameGenerator. Better to call that function!
           newPathwayDiagram.displayName = 'Diagram of ' + pathwayInstance.displayName;
+          newPathwayDiagram.attributes.set('displayName', newPathwayDiagram.displayName);
           // Register the new instance so it can be referenced
           dataService.registerInstance(newPathwayDiagram);
           this.store.dispatch(NewInstanceActions.register_new_instance(this.instUtil.makeShell(newPathwayDiagram)));

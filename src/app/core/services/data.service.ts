@@ -1,5 +1,5 @@
 import { HttpClient } from "@angular/common/http";
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, tap, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
@@ -12,8 +12,7 @@ import {
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
 import { QAReport } from "../models/qa-report.model";
-import { ActivatedRoute, Route, Router } from "@angular/router";
-
+import { ActivatedRoute, Router } from "@angular/router";
 
 @Injectable({
   providedIn: 'root'
@@ -40,15 +39,14 @@ export class DataService {
   private findInstanceByDisplayNameUrl = `${environment.ApiRoot}/findByDisplayName`;
   private commitInstanceUrl = `${environment.ApiRoot}/commit/`;
   private fillReferenceUrl = `${environment.ApiRoot}/fillReference/`;
-  private eventPlotDataUrl = `${environment.ApiRoot}/getEventPlotData/`;
   private testQACheckReportUrl = `${environment.ApiRoot}/getTestQACheckReport/`;
   private loadInstancesUrl = `${environment.ApiRoot}/loadInstances/`;
   private persistInstancesUrl = `${environment.ApiRoot}/persistInstances/`;
   private deletePersistedInstancesUrl = `${environment.ApiRoot}/deletePersistedInstances/`;
-  private fetchReactionParticipantsUrl = `${environment.ApiRoot}/fetchReactionWithParticipants/`;
   private getReferrersUrl = `${environment.ApiRoot}/getReferrers/`;
   private uploadCyNetworkUrl = `${environment.ApiRoot}/uploadCyNetwork/`;
   private hasCyNetworkUrl = `${environment.ApiRoot}/hasCyNetwork/`;
+  private hasDiagramUrl = `${environment.ApiRoot}/hasDiagram/`;
   private getCyNetworkUrl = `${environment.ApiRoot}/getCyNetwork/`;
   private deleteInstaneUrl = `${environment.ApiRoot}/delete/`;
   private fetchQAReportUrl = `${environment.ApiRoot}/qaReport/`;
@@ -77,8 +75,7 @@ export class DataService {
   constructor(private http: HttpClient,
     private utils: InstanceUtilities,
     private store: Store,
-    private router: Router,
-    private activatedRoute: ActivatedRoute)  
+    private router: Router)  
    {
   }
 
@@ -794,6 +791,13 @@ export class DataService {
     );
   }
 
+  hasDiagram(pathwayId: any): Observable<boolean> {
+    return this.http.get<boolean>(this.hasDiagramUrl + pathwayId).pipe(
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    );
+  }
 
   getCytoscapeNetwork(pathwayId: any): Observable<any> {
     return this.http.get<any>(this.getCyNetworkUrl + pathwayId).pipe(
