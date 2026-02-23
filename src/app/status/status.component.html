@@ -1,31 +1,32 @@
 <mat-toolbar class="status" color="secondary">
-        <section *ngIf="!hideInstanceStatus">
+        <section *ngIf="!hideInstanceStatus" style="display: flex; align-items: center;">
                 <span>New instances:
                         <button mat-button style="border: 0px;" (click)="showUpdated()"
-                                [disabled]="newInstances.length === 0">{{newInstances.length}}
+                                        [disabled]="newInstances.length === 0">{{newInstances.length}}
                         </button>
                 </span>
 
                 <span>Updated instances:
                         <button mat-button style="border: 0px;" (click)="showUpdated()"
-                                [disabled]="updatedInstances.length === 0">{{updatedInstances.length}}
+                                        [disabled]="updatedInstances.length === 0">{{updatedInstances.length}}
                         </button>
                 </span>
 
                 <span>Deleted instances:
                         <button mat-button style="border: 0px;" (click)="showUpdated()"
-                                [disabled]="deletedInstances.length === 0">{{deletedInstances.length}}
+                                        [disabled]="deletedInstances.length === 0">{{deletedInstances.length}}
                         </button>
                 </span>
 
                 <span>Default person:
                         <button mat-button style="border: 0px;" (click)="setDefaultPerson()">
-                                {{defaultPerson ? (defaultPerson.displayName + ' [' + defaultPerson.dbId + ']') : 'Not
-                                Defined'}}
+                                {{defaultPerson ? (defaultPerson.displayName + ' [' + defaultPerson.dbId + ']') : 'Not Defined'}}
                         </button>
                 </span>
                 <ng-container *ngIf="saveChangesInProgress">
-                        <span matTooltip="You have unsaved changes. Please commit your changes to avoid losing them." style="color: red; font-weight: bold; margin-left: 20px;">
+                        <span matTooltip="You have unsaved changes. Please commit your changes to avoid losing them."
+                                style="color: red; font-weight: bold; position: absolute; right: 500px;"
+                                class="flashing-warning">
                                 Commit Staged Changes!
                         </span>
                 </ng-container>

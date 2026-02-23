@@ -1,19 +1,19 @@
 .status {
-    font-size: 14px;
-    height: var(--status-height, 30px);
-    font-weight: normal;
-    align-items: center;
-    position: absolute;
-    bottom: 4px;
+  font-size: 14px;
+  height: var(--status-height, 30px);
+  font-weight: normal;
+  align-items: center;
+  position: absolute;
+  bottom: 4px;
 }
 
 .mat-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    color: var(--primary);
-  }
-  
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--primary);
+}
+
 .mat-icon-button {
   // flex-direction: row-reverse;
   position: absolute;
@@ -31,6 +31,24 @@
 
 .toolbar-buttons {
   position: absolute;
-  right: 16px; /* Adjust the distance from the right edge */
-  gap: 16px; /* Add spacing between buttons */
+  right: 16px;
+  /* Adjust the distance from the right edge */
+  gap: 16px;
+  /* Add spacing between buttons */
+}
+
+.flashing-warning {
+  animation: flash 1s linear infinite;
+}
+
+@keyframes flash {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.2;
+  }
 }
