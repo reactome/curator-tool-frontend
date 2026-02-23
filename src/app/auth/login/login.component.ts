@@ -33,7 +33,10 @@ export class LoginComponent{
       })
     ).subscribe(token => {
       if (token) {
+        
         localStorage.setItem('token', token);
+        let url: string = sessionStorage.getItem('currentUrl') ?? '/home';
+        localStorage.removeItem('currentUrl'); // Clear the saved URL after using it
         
         // Initialize schema classes if they haven't been loaded yet
         if (!this.dataService.isSchemaClassesLoaded()) {
@@ -41,17 +44,17 @@ export class LoginComponent{
           this.dataService.initialize().then(() => {
             console.debug('DataService initialized successfully after login');
             this.userInstancesService.loadUserInstances();
-            this.router.navigate(['/home']);
+            this.router.navigateByUrl(url);
           }).catch(error => {
             console.warn('Failed to initialize DataService after login:', error);
             // Continue anyway - schema classes will be loaded on-demand
             this.userInstancesService.loadUserInstances();
-            this.router.navigate(['/home']);
+            this.router.navigateByUrl(url);
           });
         } else {
           // Schema classes already loaded, proceed normally
           this.userInstancesService.loadUserInstances();
-          this.router.navigate(['/home']);
+          this.router.navigateByUrl(url);
         }
       }
     });

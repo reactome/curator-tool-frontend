@@ -1178,9 +1178,11 @@ export class DataService {
     console.log("The resource could not be loaded: \n" + err.message);
     // If the error message contains a 401 or authentication error, redirect to the login page
     if (err.message && err.message.includes('401')) {
-        //this.route.getCurrentNavigation()?.extras.state?.from && this.route.getCurrentNavigation()?.extras.state?.from !== '/login'
         // Also ensure to save the route when the token is expired
         const currentUrl = window.location.pathname + window.location.search + window.location.hash;
+            // Save the state to localStorage
+        if(currentUrl !== '/login') 
+          sessionStorage.setItem('currentUrl', currentUrl);
         this.router.navigate(['/login']);
     }
     this.errorMessage.next(err);
