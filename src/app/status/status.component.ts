@@ -59,7 +59,7 @@ export class StatusComponent implements OnInit, OnDestroy {
     });
     this.subscriptions.add(sub);
 
-    // Combine deleted, new, and updated instances into a single array using concatMap
+    // Combine deleted, new, and updated instances into a single array.
 
     sub = combineLatest([
       this.store.select(deleteInstances()),
@@ -72,11 +72,7 @@ export class StatusComponent implements OnInit, OnDestroy {
         ...(updated || [])
       ])
     ).subscribe((allInstances) => {
-      // When the new, updated, and deleted Instances count total exceeds 100, show a warning message to encourage users to persist their changes.
-      if (allInstances.length > MAX_STAGED_INSTANCES ) {
-        this.saveChangesInProgress = true;
-      }
-      else this.saveChangesInProgress = false;
+      this.saveChangesInProgress = allInstances.length > MAX_STAGED_INSTANCES;
     })
     this.subscriptions.add(sub);
 
