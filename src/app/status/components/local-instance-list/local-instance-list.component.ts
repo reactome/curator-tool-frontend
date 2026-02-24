@@ -47,7 +47,7 @@ export class UpdatedInstanceListComponent implements OnInit {
 
   private resizing = false;
   private resizeIndex = -1;
-  sectionFlexes = [3, 3, 2]; // Initial flex values for new, updated, deleted
+  sectionFlexes = [4, 4, 2]; // Initial flex values for new, updated, deleted
 
   constructor(private router: Router,
     private route: ActivatedRoute,

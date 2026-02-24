@@ -13,7 +13,9 @@
   transform: translateX(-50%);
   color: red;
   font-weight: bold;
-  animation: staged-warning-flash 1s steps(2, start) infinite;
+  animation: staged-warning-flash 3s steps(2, start) infinite;
+  z-index: 3;
+  background-color: white;
 }
 
 @keyframes staged-warning-flash {
@@ -53,11 +55,10 @@
 }
 
 .flashing-warning {
-  animation: flash 1s linear infinite;
+  animation: flash 2s linear infinite;
 }
 
 @keyframes flash {
-
   0%,
   100% {
     opacity: 1;

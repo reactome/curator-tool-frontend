@@ -36,7 +36,9 @@ export class LoginComponent{
         
         localStorage.setItem('token', token);
         let url: string = sessionStorage.getItem('currentUrl') ?? '/home';
-        localStorage.removeItem('currentUrl'); // Clear the saved URL after using it
+        // todo: check login here. 
+        
+        sessionStorage.removeItem('currentUrl'); // Clear the saved URL after using it
         
         // Initialize schema classes if they haven't been loaded yet
         if (!this.dataService.isSchemaClassesLoaded()) {
