@@ -18,8 +18,6 @@
     display name cannot be parsed because of symbols
 - Refresh of updated list (occured after resetting deleted insts) 
 
-- Map the source instance index to the local instance, and check this will work for DnD
-
 - TODO: During the comparison model, if the code finds a modified attribute is not changed (e.g. _displayName after reset), remove this attribute from the modified array.
 - Bug: The referrer dialog should not have the structural change warning (red text) when the referrers are shown not for deletion (low priority). However, if the user just wants to see the instance's referrers, why do we need to check structural changes? This may have some perfornace overhead.
 - bug: http://localhost:4200/schema_view/instance/844615. One of this pathway's hasEvent get its _displayName changed due to an active edit. this should be a passiveEditedAttribute, currently here is no indication of editing 
