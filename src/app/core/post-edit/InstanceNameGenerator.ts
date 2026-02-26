@@ -106,7 +106,7 @@ export class InstanceNameGenerator implements PostEditOperation {
       return this.generateNegativePrecedingEventName(instance);
     if (this.isSchemaClass(instance, '_Deleted'))
       return this.generateDeletedName(instance);
-    if (this.isSchemaClass(instance, '_DeletedInstance'))
+    if (this.isSchemaClass(instance, 'DeletedInstance'))
       return this.generateDeletedInstanceName(instance);
     if (instance.attributes?.has('name')) {
       let names: string[] = instance.attributes.get('name');
@@ -319,19 +319,23 @@ export class InstanceNameGenerator implements PostEditOperation {
   private generateDeletedInstanceName(instance: Instance) {
     let displayName = [];
     displayName.push("Deleted Instance - [");
-    let clsName = instance.attributes?.get('class');
-    displayName.push(clsName + ": ");
+    let clsName = instance.attributes?.get('clazz');
+    if (clsName === undefined)
+      displayName.push("Class unknown: ");
+    else
+      displayName.push(clsName + ": ");
     let name = instance.attributes?.get('name');
     displayName.push(name + " (");
-    let dbId = instance.attributes?.get('deletedInstanceDB_ID');
+    let dbId = instance.attributes?.get('deletedInstanceDbId');
     displayName.push(dbId + ")");
     // Sometimes we may don't have species
+    // It is returned as an array.
     let species = instance.attributes?.get('species');
-    if (species === undefined)
-      displayName.push("]");
+    if (species === undefined || species.length === 0)
+      displayName.push(" Species N/A]");
     else {
-      displayName.push(" - ");
-      displayName.push(species.displayName + "]");
+      displayName.push(" - [Species: " + species[0].dbId + "] ");
+      displayName.push(species[0].displayName + "]");
     }
     return displayName.join("");
   }
@@ -456,11 +460,12 @@ export class InstanceNameGenerator implements PostEditOperation {
           buffer.push(", ");
       }
     }
-    values = instance.attributes?.get("dateTime");
-    if (values !== undefined && values.length > 0) {
+    // This should be a single-valued slot
+    let dateTime = instance.attributes?.get("dateTime");
+    if (dateTime !== undefined && dateTime.length > 0) {
       buffer.push(", ");
-      let dateTime = values[0].toString();
-      let pattern = /^(\\d){4}-(\\d){2}-(\\d){2}/;
+      // Match e.g. 2012-07-26 20:26:13
+      let pattern = /^\d{4}-\d{2}-\d{2}/;
       let matcher = dateTime.match(pattern);
       if (matcher !== null) {
         buffer.push(matcher[0]);

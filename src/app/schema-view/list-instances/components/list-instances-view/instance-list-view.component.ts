@@ -163,7 +163,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         });
       }
       else {
-        console.debug(this.searchKey);
+        // console.debug(this.searchKey);
         this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
           .subscribe((instancesList) => {
             this.displayInstances(instancesList);
