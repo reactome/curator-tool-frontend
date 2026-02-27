@@ -138,24 +138,26 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     // then check if the displayname is contianed in the modified attributes and if so, reolad the dipslayed instance 
     // first check if modified att has displayname change and if so check referrers and resfresh their view as well 
     subscription = this.instUtils.refreshViewDbId$.subscribe(dbId => {
-      if (this.instance && (this.instance.dbId === dbId)) {
+      if (!this.instance) return;
+      if (this.instance.dbId === dbId) {
         if (this.instanceTable.inEditing)
           this.updateTitle(this.instance);
         else
           this.loadInstance(dbId, false, false, true);
       }
-      else if (this.instUtils.isReferrer(dbId, this.instance!)) {
-        this.loadInstance(this.instance!.dbId, false, false, true);
+      else if (this.instUtils.isReferrer(dbId, this.instance)) {
+        this.loadInstance(this.instance.dbId, false, false, true);
       }
     });
     this.subscriptions.add(subscription);
     subscription = this.instUtils.resetInst$.subscribe(data => {
+      if (!this.instance) return;
       // These two cases work for reset an updated instances
       if (this.instance && this.instance.dbId === data.dbId) {
         this.loadInstance(data.dbId, false, false, true);
       }
-      else if (this.instUtils.isReferrer(data.dbId, this.instance!)) {
-        this.loadInstance(this.instance!.dbId, false, false, true);
+      else if (this.instUtils.isReferrer(data.dbId, this.instance)) {
+        this.loadInstance(this.instance.dbId, false, false, true);
 
       }
     });
