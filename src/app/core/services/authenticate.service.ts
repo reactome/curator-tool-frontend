@@ -14,21 +14,23 @@ export class AuthenticateService {
     private jwtHelper: JwtHelperService) { }
 
   login(data: { username: string, password: string }): Observable<string> {
-    return this.http.post<any>(`${environment.authURL}`, data, { withCredentials: true }).pipe(
+    return this.http.post<any>(`${environment.authURL}/login`, data, { withCredentials: true }).pipe(
       tap((token: string) => token),
       catchError(err => throwError(() => err))
     )
   }
 
-  register(data: { username: string, password: string }): Observable<any> {
-    return this.http.post<any>(`api/register`, data).pipe(
-      tap((data: any) => data),
-      catchError(err => throwError(() => err))
-    )
-  }
+  // register(data: { username: string, password: string }): Observable<any> {
+  //   return this.http.post<any>(`${environment.authURL}/register`, data).pipe(
+  //     tap((data: any) => data),
+  //     catchError(err => throwError(() => err))
+  //   )
+  // }
 
   isAuthenticated(): boolean {
     const token = localStorage.getItem('token');
+    if (!token)
+      return false;
     console.debug(this.jwtHelper.getTokenExpirationDate(token!));
     if (token && !this.jwtHelper.isTokenExpired(token))
       return true;

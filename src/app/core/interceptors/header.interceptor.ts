@@ -8,7 +8,7 @@ import { environment } from 'src/environments/environment.dev';
 export class HeaderInterceptor implements HttpInterceptor {
   private isRefreshing = false;
   private refreshTokenSubject = new BehaviorSubject<string | null | false>(null);
-  private readonly refreshUrl = environment.refreshURL;
+  private readonly refreshUrl = environment.authURL + '/refresh';
   private readonly httpWithoutInterceptor: HttpClient;
 
   constructor(private httpBackend: HttpBackend,
@@ -61,11 +61,13 @@ export class HeaderInterceptor implements HttpInterceptor {
 
     return this.requestTokenRefresh().pipe(
       switchMap(newToken => {
+        if (!newToken) {
+          return this.handleRefreshFailure(new HttpErrorResponse({ status: 401, statusText: 'Token refresh failed' }));
+        }
         localStorage.setItem('token', newToken);
         this.refreshTokenSubject.next(newToken);
         return next.handle(this.addAuthHeader(request, newToken));
-      })
-      ,
+      }),
       finalize(() => {
         this.isRefreshing = false;
       })
@@ -95,7 +97,7 @@ export class HeaderInterceptor implements HttpInterceptor {
   }
 
   private isAuthRequest(url: string): boolean {
-    return url.includes(environment.authURL) || url.includes('api/authenticate');
+    return url.includes(environment.authURL);
   }
 
   private isProtectedApiRequest(url: string): boolean {
