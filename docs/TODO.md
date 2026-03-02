@@ -22,8 +22,6 @@
 - Bug: The referrer dialog should not have the structural change warning (red text) when the referrers are shown not for deletion (low priority). However, if the user just wants to see the instance's referrers, why do we need to check structural changes? This may have some perfornace overhead.
 - bug: http://localhost:4200/schema_view/instance/844615. One of this pathway's hasEvent get its _displayName changed due to an active edit. this should be a passiveEditedAttribute, currently here is no indication of editing 
 
-
-- Bug: Change the text in the "Confirm Delete" dialog for new instances. The note should not be there since a new instance is not in the database yet. Also there is no committment to say about new instances.
 - Bug: in the instance list, the list of buttons is higher than the cells for dbId and display name. 
 JWT: 1) clear token in multiple browsers. 2.) store previous url before login and after login use the stored previous url to navigate to last page, if no url then redirect to the home page. 3.) add a thrid attribute to the jwt stored in session storage: reloadUserInstances to check if these instances should be reloaded (reload if the user is fresh login, do not if this token is just reloaded).
 - Add a check for user inactivity (10 minutes) so that there is automatic log-out; don't clear storage, just cause expiration, "host browser action" to catch user action 
@@ -32,7 +30,12 @@ JWT: 1) clear token in multiple browsers. 2.) store previous url before login an
 - TODO (important): Make sure the height is well used in the local instance list panel. e.g. When there are quite a lot of updated instances, make sure the middle updated instances list can be expand and take as much space as possible (i.e. use some height assigned to Deleted instances, which should have a small list.)
     give top icons more margin. make these icons center aligned (now they are higher than text)
 -add reference check to deletion of new instance. 
+
 - hybrid of short and long term tokens but also base expiration time on user inactivity.
+
+- test: click each class in the schema tree, select any instance, and look at the display name shown in the list and the display name displayed in the instance view. Apparently some classes don't have good display name, e.g. DeletedInstance: http://localhost:4200/schema_view/instance/9849965. This is due to display name generator class. Right now all instances need to go over display name validation due to filtering. So bugs in that class may be exposed.
+
+-bug: List InstanceEdit, enter 2025 in the search box. Nothing is returned. However, use advanced search for DisplayName contains 2025. Instances returned.
 
 #### TODO:jbv
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.
