@@ -30,6 +30,8 @@ import { StatusModule } from './status/status.module';
 import { GeneLlmModule } from './gene-llm/gene-llm.module';
 import { DeletionCommitModule } from './instance/deletion-commit/deletion-commit.module';
 
+// Function to get the token from local storage for JwtModule configuration
+// This is important and don't delete it!!!
 export function tokenGetter() {
   return localStorage.getItem("token");
 }

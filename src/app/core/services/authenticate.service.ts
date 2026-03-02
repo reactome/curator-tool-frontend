@@ -4,8 +4,6 @@ import { catchError, Observable, tap, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { CanActivateFn, Router } from "@angular/router";
-import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
-import log from 'vectorious/dist/core/log';
 
 @Injectable({
   providedIn: 'root'
@@ -16,28 +14,23 @@ export class AuthenticateService {
     private jwtHelper: JwtHelperService) { }
 
   login(data: { username: string, password: string }): Observable<string> {
-    // Generate a unique user ID if it doesn't exist and store it in localStorage
-    let userId = localStorage.getItem('userId');
-    if (!userId) {
-      userId = crypto.randomUUID();
-      localStorage.setItem('userId', userId);
-    }
-    let loginData: { username: string, password: string, id: string} = {...data, id: userId }; // Include the user ID in the login request
-    return this.http.post<any>(`${environment.authURL}`, loginData).pipe(
-      tap((loginData: string) => loginData),
+    return this.http.post<any>(`${environment.authURL}/login`, data, { withCredentials: true }).pipe(
+      tap((token: string) => token),
       catchError(err => throwError(() => err))
     )
   }
 
-  register(data: { username: string, password: string }): Observable<any> {
-    return this.http.post<any>(`${environment.authURL}/register`, data).pipe(
-      tap((data: any) => data),
-      catchError(err => throwError(() => err))
-    )
-  }
+  // register(data: { username: string, password: string }): Observable<any> {
+  //   return this.http.post<any>(`${environment.authURL}/register`, data).pipe(
+  //     tap((data: any) => data),
+  //     catchError(err => throwError(() => err))
+  //   )
+  // }
 
   isAuthenticated(): boolean {
     const token = localStorage.getItem('token');
+    if (!token)
+      return false;
     console.debug(this.jwtHelper.getTokenExpirationDate(token!));
     if (token && !this.jwtHelper.isTokenExpired(token))
       return true;
