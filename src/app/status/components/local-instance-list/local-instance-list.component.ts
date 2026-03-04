@@ -12,6 +12,7 @@ import { Observable, from, concatMap, tap, map, EMPTY } from 'rxjs';
 import { DeletionService } from 'src/app/instance/deletion-commit/utils/deletion.service';
 import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/instance-list-table/instance-list-table.component';
 import { DeleteBulkDialogService } from 'src/app/schema-view/list-instances/components/delete-bulk-dialog/delete-bulk-dialog.service';
+import { DeletionDialogService } from 'src/app/instance/components/deletion-dialog/deletion-dialog.service';
 
 
 @Component({
@@ -55,7 +56,8 @@ export class UpdatedInstanceListComponent implements OnInit {
     private dataService: DataService,
     private instanceUtilities: InstanceUtilities,
     private deletionService: DeletionService,
-    private deleteBulkDialogService: DeleteBulkDialogService
+    private deleteBulkDialogService: DeleteBulkDialogService,
+    private deletionDialogService: DeletionDialogService
   ) {
   }
 
@@ -102,7 +104,7 @@ export class UpdatedInstanceListComponent implements OnInit {
       }
 
       case "delete": {
-        this.deletionService.processDeletion([actionButton.instance]);
+        this.deletionDialogService.openDialog(actionButton.instance);
         break;
       }
 
@@ -357,6 +359,6 @@ export class UpdatedInstanceListComponent implements OnInit {
 
     document.addEventListener('mousemove', mouseMoveListener);
     document.addEventListener('mouseup', mouseUpListener);
-  
+
   }
 }
