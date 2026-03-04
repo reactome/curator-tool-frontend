@@ -359,16 +359,14 @@ export class InstanceNameGenerator implements PostEditOperation {
         builder.push('unknown');
     }
     else if (this.isSchemaClass(instance, 'MarkerReference')) {
-      let markers = instance.attributes?.get('marker');
-      if (markers === undefined || markers.length == 0)
+      // marker is single-valued slot.
+      // If is exists, it should be an Instance.
+      let marker = instance.attributes?.get('marker');
+      if (marker === undefined)
         builder.push("Marker unknown");
-      else if (markers.length === 1) {
-        let markerName = markers[0].displayName;
-        builder.push(markerName ?? 'unknown');
-      }
       else {
-        let markerName = markers[0].displayName;
-        builder.push(markerName + "...");
+        let markerName = marker.displayName;
+        builder.push(markerName ?? 'Marker unknown');
       }
     }
     let reference = instance.attributes?.get('literatureReference');
