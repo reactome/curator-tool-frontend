@@ -88,6 +88,8 @@
   display: flex;
   align-items: flex-end;
   gap: 2px; // or use column-gap: 2px;
+  line-height: normal;
+  margin-top: 12px;
 }
 
 .mini-btn {
@@ -95,5 +97,5 @@
   width: 28px !important;
   height: 28px !important;
   padding: 0 !important;
-  margin: 0, 2px !important;
+  margin: 0 2px !important;
 }

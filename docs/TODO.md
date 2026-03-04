@@ -16,26 +16,32 @@
 -Bug: tooltip in event view for switching to the schema view is wrong
 - "((1,6)-alpha-glucosyl)poly((1,4)-alpha-glucosyl)glycogenin => poly{(1,4)-alpha-glucosyl} glycogenin + alpha-D-glucose" search field for this complicated
     display name cannot be parsed because of symbols
+
 - Refresh of updated list (occured after resetting deleted insts) 
 
 - TODO: During the comparison model, if the code finds a modified attribute is not changed (e.g. _displayName after reset), remove this attribute from the modified array.
+
 - Bug: The referrer dialog should not have the structural change warning (red text) when the referrers are shown not for deletion (low priority). However, if the user just wants to see the instance's referrers, why do we need to check structural changes? This may have some perfornace overhead.
-- bug: http://localhost:4200/schema_view/instance/844615. One of this pathway's hasEvent get its _displayName changed due to an active edit. this should be a passiveEditedAttribute, currently here is no indication of editing 
 
-- Bug: in the instance list, the list of buttons is higher than the cells for dbId and display name. 
-JWT: 1) clear token in multiple browsers. 2.) store previous url before login and after login use the stored previous url to navigate to last page, if no url then redirect to the home page. 3.) add a thrid attribute to the jwt stored in session storage: reloadUserInstances to check if these instances should be reloaded (reload if the user is fresh login, do not if this token is just reloaded).
-- Add a check for user inactivity (10 minutes) so that there is automatic log-out; don't clear storage, just cause expiration, "host browser action" to catch user action 
-- Add current url to the authentication service. For each tab, 1. cache current url, 2. reomve jwt token, all other windows will listen to this change, create central panel for logged-out status and button to re-login, 3. reload all browsers, 4. push a red warning to status panel to inform of logged out status. 
-    (lower priority)
-- TODO (important): Make sure the height is well used in the local instance list panel. e.g. When there are quite a lot of updated instances, make sure the middle updated instances list can be expand and take as much space as possible (i.e. use some height assigned to Deleted instances, which should have a small list.)
-    give top icons more margin. make these icons center aligned (now they are higher than text)
 -add reference check to deletion of new instance. 
-
-- hybrid of short and long term tokens but also base expiration time on user inactivity.
 
 - test: click each class in the schema tree, select any instance, and look at the display name shown in the list and the display name displayed in the instance view. Apparently some classes don't have good display name, e.g. DeletedInstance: http://localhost:4200/schema_view/instance/9849965. This is due to display name generator class. Right now all instances need to go over display name validation due to filtering. So bugs in that class may be exposed.
 
--bug: List InstanceEdit, enter 2025 in the search box. Nothing is returned. However, use advanced search for DisplayName contains 2025. Instances returned.
+-TODO: http://localhost:4200/schema_view/instance/912440 sometimes this displayname is not displaying as a passively edited attribute. 
+
+-ModifiedNucleotide: ListView display name and InstanceView display name do not match.
+-MarkerReference: Error thrown in front-end; undefined displayName
+-NegativePrecedingEvent: ListView display name and InstanceView display name do not match.
+-ReferenceDNASequence: ListView display name and InstanceView display name do not match.
+-ReferenceGeneProduct: ListView display name and InstanceView display name do not match. Also Unknown added in the list view.
+-ReferenceIsoform: ListView display name and InstanceView display name do not match. Also Unknown added in the list view.
+-ReferenceRNASequence: ListView display name and InstanceView display name do not match. Also Unknown added in the list view.
+-NegativeRegulation: ListView display name and InstanceView display name do not match.
+-NegativeGeneExpressionRegulation: ListView display name and InstanceView display name do not match.
+-PositiveRegulation: ListView display name and InstanceView display name do not match.
+-PositiveGeneExpressionRegulation: ListView display name and InstanceView display name do not match.
+
+-bug: List InstanceEdit, enter 2025 in the search box. Nothing is returned. However, use advanced search for DisplayName contains 2025. Instances returned. (Too difficult to fix now; lower priority)
 
 #### TODO:jbv
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.

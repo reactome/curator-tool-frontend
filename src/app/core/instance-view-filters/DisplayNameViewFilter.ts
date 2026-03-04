@@ -97,6 +97,7 @@ export class DisplayNameViewFilter implements InstanceViewFilter {
             if (inst.attributes)
                 inst.attributes.set('displayName', newDisplayName);
             this.utils.registerDisplayNameChange(inst);
+            this.utils.addToPassiveModifiedAttributes('displayName', inst);
             instanceAttributeNameChanged = true;
         }
         return instanceAttributeNameChanged;

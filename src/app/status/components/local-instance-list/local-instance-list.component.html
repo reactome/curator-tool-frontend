@@ -7,7 +7,7 @@
     </div>
   </mat-toolbar>
 
-        <!-- New Instances Section -->
+  <!-- New Instances Section -->
   <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%;">
     <div style="display: flex; flex-direction: column; align-items: flex-start;">
       <span>New Instances: {{newInstances.length}} ({{selectedNewInstances.length}})</span>
@@ -40,7 +40,7 @@
   </div>
   <div class="resizable-divider" (mousedown)="startResize($event, 0)"></div>
 
-    <!-- Updated Instances Section -->
+  <!-- Updated Instances Section -->
   <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%;">
     <div style="display: flex; flex-direction: column; align-items: flex-start;">
       <span>Updated Instances: {{updatedInstances.length}} ({{selectedUpdatedInstances.length}})</span>
@@ -75,7 +75,7 @@
   </div>
   <div class="resizable-divider" (mousedown)="startResize($event, 1)"></div>
 
-    <!-- Deleted Instances Section -->
+  <!-- Deleted Instances Section -->
   <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%;">
     <div style="display: flex; flex-direction: column; align-items: flex-start;">
       <span>Deleted Instances: {{deletedInstances.length}} ({{selectedDeletedInstances.length}})</span>
