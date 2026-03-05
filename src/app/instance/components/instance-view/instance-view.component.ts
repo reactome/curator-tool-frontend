@@ -67,7 +67,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   private deletedInstances: Instance[] = [];
 
   readonly dialog = inject(MatDialog);
-
+  // block sync view to avoid re-loading the instance for handling URL change
+  private blockSyncViewCount: number = 0;
 
   constructor(private router: Router,
     private route: ActivatedRoute,
@@ -91,6 +92,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     // Handle the loading of instance directly here without using ngrx's effect, which is just
     // too complicated and not necessary here.
     let subscription = this.route.params.subscribe((params) => {
+      this.blockSyncView();
       if (params['mode'] && params['mode'] === 'comparison') {
         this.showReferenceColumn = (params['mode'] === 'comparison');
         if (params['dbId']) {
@@ -99,6 +101,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
           dbId = parseInt(dbId);
           // This is the case for the default event_view landing page: event_view/instance/0
           if (dbId === 0) {
+            this.unblockSyncView();
             return;
           }
           if (params['dbId2']) {
@@ -107,17 +110,21 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
             dbId2 = parseInt(dbId2);
 
             if (dbId === dbId2) {
-              this.loadInstance(dbId, true)
+              this.loadInstance(dbId, true, false, false, false, true)
             }
             else {
-              this.loadTwoInstances(dbId, dbId2);
+              this.loadTwoInstances(dbId, dbId2, true);
             }
+          } else {
+            this.unblockSyncView();
           }
           //}
           // If no dbId2, the comparison is between the frontend and the database copy
           // else {
           //   this.loadReferenceInstance(dbId);
           // }
+        } else {
+          this.unblockSyncView();
         }
       }
       else {
@@ -127,9 +134,12 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
           dbId = parseInt(dbId);
           // This is the case for the default event_view landing page: event_view/instance/0
           if (dbId === 0) {
+            this.unblockSyncView();
             return;
           }
-          this.loadInstance(dbId);
+          this.loadInstance(dbId, false, false, false, false, true);
+        } else {
+          this.unblockSyncView();
         }
       }
     })
@@ -138,6 +148,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     // then check if the displayname is contianed in the modified attributes and if so, reolad the dipslayed instance 
     // first check if modified att has displayname change and if so check referrers and resfresh their view as well 
     subscription = this.instUtils.refreshViewDbId$.subscribe(dbId => {
+      if (this.isSyncViewBlocked()) return;
       if (!this.instance) return;
       if (this.instance.dbId === dbId) {
         if (this.instanceTable.inEditing)
@@ -151,6 +162,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     });
     this.subscriptions.add(subscription);
     subscription = this.instUtils.resetInst$.subscribe(data => {
+      if (this.isSyncViewBlocked()) return;
       if (!this.instance) return;
       // These two cases work for reset an updated instances
       if (this.instance && this.instance.dbId === data.dbId) {
@@ -164,6 +176,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.subscriptions.add(subscription);
     // In case the deleted instance is referred by the current instance
     subscription = this.instUtils.markDeletionDbId$.subscribe(dbId => {
+      if (this.isSyncViewBlocked()) return;
       if (this.instance && this.instUtils.isReferrer(dbId, this.instance)) {
         this.loadInstance(this.instance.dbId, false, false, true, false);
       }
@@ -171,6 +184,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.subscriptions.add(subscription);
     // When a deletion is committed. 
     subscription = this.instUtils.deletedDbId$.subscribe(dbId => {
+      if (this.isSyncViewBlocked()) return;
       if (this.instance && this.instance.dbId === dbId) {
         this.instUtils.removeInstInArray(this.instance, this.viewHistory);
         if (this.viewHistory.length > 0) {
@@ -185,6 +199,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     });
     this.subscriptions.add(subscription);
     subscription = this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
+      if (this.isSyncViewBlocked()) return;
       if (!this.instance || this.instance.dbId !== oldDbId)
         return;
       if (this.commitNewHere) {
@@ -197,6 +212,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.subscriptions.add(subscription);
     // To mark an instance is deleted
     subscription = this.store.select(deleteInstances()).subscribe(deletedInstances => {
+      if (this.isSyncViewBlocked()) return;
       if (!this.instance) {
         // When this view first starts, the instance is not loaded yet
         // but we still need to track the deleted instances for display and other things
@@ -232,11 +248,29 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
+  private blockSyncView() {
+    this.blockSyncViewCount++;
+  }
+
+  private unblockSyncView() {
+    if (this.blockSyncViewCount > 0)
+      this.blockSyncViewCount--;
+  }
+
+  private isSyncViewBlocked(): boolean {
+    return this.blockSyncViewCount > 0;
+  }
+
   loadTwoInstances(dbId1: number,
-    dbId2: number) {
+    dbId2: number,
+    releaseSyncBlockOnComplete: boolean = false) {
     // avoid to do anything if both dbIds are empty
     // Must always reload due to the combineLatest reaction, ie always loading both instances together
-    if (!dbId1 && !dbId2) return;
+    if (!dbId1 && !dbId2) {
+      if (releaseSyncBlockOnComplete)
+        this.unblockSyncView();
+      return;
+    }
     combineLatest([this.dataService.fetchInstance(dbId1).pipe(take(1)), this.dataService.fetchInstance(dbId2).pipe(take(1))])
       .subscribe(([firstInstance, secondInstance]) => {
 
@@ -255,7 +289,17 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
           this.changeTable(firstInstance);
           this.showReferenceColumn = true;
           this.showProgressSpinner = false;
+          if (releaseSyncBlockOnComplete)
+            this.unblockSyncView();
+        }, () => {
+          this.showProgressSpinner = false;
+          if (releaseSyncBlockOnComplete)
+            this.unblockSyncView();
         });
+      }, () => {
+        this.showProgressSpinner = false;
+        if (releaseSyncBlockOnComplete)
+          this.unblockSyncView();
       })
   }
 
@@ -263,12 +307,20 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     needComparsion: boolean = false,
     resetHistory: boolean = false,
     forceReload: boolean = false,
-    resetCache: boolean = false) {
+    resetCache: boolean = false,
+    releaseSyncBlockOnComplete: boolean = false) {
     // avoid to do anything if nothing there
-    if (!dbId) return;
-    // Avoid reloading if it has been loaded already
-    if (dbId && this.instance && !forceReload && dbId === this.instance.dbId && (!needComparsion || (needComparsion && this.dbInstance)))
+    if (!dbId) {
+      if (releaseSyncBlockOnComplete)
+        this.unblockSyncView();
       return;
+    }
+    // Avoid reloading if it has been loaded already
+    if (dbId && this.instance && !forceReload && dbId === this.instance.dbId && (!needComparsion || (needComparsion && this.dbInstance))) {
+      if (releaseSyncBlockOnComplete)
+        this.unblockSyncView();
+      return;
+    }
     setTimeout(() => {
       this.showProgressSpinner = true;
       if (resetCache && dbId >= 0) // TODO: Make sure this does not have any side effect.
@@ -276,17 +328,29 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.dataService.fetchInstance(dbId).subscribe((instance) => {
         if (instance.schemaClass)
           // Turn off the comparison first
-          this._loadIntance(instance, resetHistory, needComparsion, dbId);
+          this._loadIntance(instance, resetHistory, needComparsion, dbId, releaseSyncBlockOnComplete);
         else {
           this.dataService.handleSchemaClassForInstance(instance).subscribe(inst => {
-            this._loadIntance(inst, resetHistory, needComparsion, dbId);
+            this._loadIntance(inst, resetHistory, needComparsion, dbId, releaseSyncBlockOnComplete);
+          }, () => {
+            this.showProgressSpinner = false;
+            if (releaseSyncBlockOnComplete)
+              this.unblockSyncView();
           })
         }
+      }, () => {
+        this.showProgressSpinner = false;
+        if (releaseSyncBlockOnComplete)
+          this.unblockSyncView();
       })
     });
   }
 
-  private _loadIntance(instance: Instance, resetHistory: boolean, needComparsion: boolean, dbId: number) {
+  private _loadIntance(instance: Instance,
+    resetHistory: boolean,
+    needComparsion: boolean,
+    dbId: number,
+    releaseSyncBlockOnComplete: boolean = false) {
     this.runInstanceViewFilters(instance).subscribe(filteredInstance => {
       // Due to the switch of the bound instance identify, the table will be reloaded automatically.
       // Therefore, nothing needs to be done here.
@@ -305,8 +369,20 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(instance => {
           this.dbInstance = instance;
           this.showReferenceColumn = true;
+          if (releaseSyncBlockOnComplete)
+            this.unblockSyncView();
+        }, () => {
+          this.showProgressSpinner = false;
+          if (releaseSyncBlockOnComplete)
+            this.unblockSyncView();
         });
+      } else if (releaseSyncBlockOnComplete) {
+        this.unblockSyncView();
       }
+    }, () => {
+      this.showProgressSpinner = false;
+      if (releaseSyncBlockOnComplete)
+        this.unblockSyncView();
     });
   }
 
