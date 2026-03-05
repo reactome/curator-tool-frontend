@@ -23,25 +23,10 @@
 
 - Bug: The referrer dialog should not have the structural change warning (red text) when the referrers are shown not for deletion (low priority). However, if the user just wants to see the instance's referrers, why do we need to check structural changes? This may have some perfornace overhead.
 
--add reference check to deletion of new instance. 
-
-- test: click each class in the schema tree, select any instance, and look at the display name shown in the list and the display name displayed in the instance view. Apparently some classes don't have good display name, e.g. DeletedInstance: http://localhost:4200/schema_view/instance/9849965. This is due to display name generator class. Right now all instances need to go over display name validation due to filtering. So bugs in that class may be exposed.
-
--TODO: http://localhost:4200/schema_view/instance/912440 sometimes this displayname is not displaying as a passively edited attribute. 
-
--ModifiedNucleotide: ListView display name and InstanceView display name do not match.
--MarkerReference: Error thrown in front-end; undefined displayName
--NegativePrecedingEvent: ListView display name and InstanceView display name do not match.
--ReferenceDNASequence: ListView display name and InstanceView display name do not match.
--ReferenceGeneProduct: ListView display name and InstanceView display name do not match. Also Unknown added in the list view.
--ReferenceIsoform: ListView display name and InstanceView display name do not match. Also Unknown added in the list view.
--ReferenceRNASequence: ListView display name and InstanceView display name do not match. Also Unknown added in the list view.
--NegativeRegulation: ListView display name and InstanceView display name do not match.
--NegativeGeneExpressionRegulation: ListView display name and InstanceView display name do not match.
--PositiveRegulation: ListView display name and InstanceView display name do not match.
--PositiveGeneExpressionRegulation: ListView display name and InstanceView display name do not match.
 
 -bug: List InstanceEdit, enter 2025 in the search box. Nothing is returned. However, use advanced search for DisplayName contains 2025. Instances returned. (Too difficult to fix now; lower priority)
+
+- TODO: save the user's edits after amount of inactivity 
 
 #### TODO:jbv
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.

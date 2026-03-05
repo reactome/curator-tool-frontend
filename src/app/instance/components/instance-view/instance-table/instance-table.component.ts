@@ -265,15 +265,15 @@ export class InstanceTableComponent implements PostEditListener {
     if (!attributeValue || attributeValue.value === undefined) {
       return attributeValue;
     }
- 
+
     const sourceValues = this._instance!.source!.attributes.get(attributeValue.attribute.name);
- 
+
     // If sourceValues is undefined, just return the attributeValue as is
     // If the attribute is single-valued, nothing is needed to do.
     if (!sourceValues || attributeValue.attribute.cardinality === '1') {
       return attributeValue;
     }
- 
+
     // Handle array value
     // Find the index of the first matching value in sourceValues
     // Here we just check the dbId. Array.isArray() should not be necessary here.
@@ -298,12 +298,10 @@ export class InstanceTableComponent implements PostEditListener {
 
   // Note: the value parameter is not used here, but kept for future extension
   finishEdit(attName: string, value: any, removeModifiedAttribute: boolean = false) {
-    this.inEditing = true;
-    //Only add attribute name if value was added
-    this.postEdit(attName);
-    //TODO: Add a new value may reset the scroll position. This needs to be changed!
-    this.updateTableContent();
-    // Need to call this before registerUpdatedInstance
+    // Need to get the displayName before postEdit because postEdit may change the display name and we want to compare with the original one to decide whether to remove the modified attribute or not
+    this.attributeEditService.removeDisplayNameModifiedAttribute(this._instance);
+    this.attributeEditService.removeDisplayNameModifiedAttribute(this._instance?.source);
+        // Need to call this before registerUpdatedInstance
     // in case the instance is used somewhere via the ngrx state management system
     if (!removeModifiedAttribute) {
       this.attributeEditService.addModifiedAttribute(this._instance, attName);
@@ -311,6 +309,11 @@ export class InstanceTableComponent implements PostEditListener {
     } else {
       this.removeModifiedAttribute(attName);
     }
+    this.inEditing = true;
+    //Only add attribute name if value was added
+    this.postEdit(attName);
+    //TODO: Add a new value may reset the scroll position. This needs to be changed!
+    this.updateTableContent();
     // Register the updated instances
     this.registerUpdatedInstance(attName);
     // Fire an event for other components to update their display (e.g. display name)

@@ -21,13 +21,15 @@ export class InstanceNameGenerator implements PostEditOperation {
 
   updateDisplayName(instance: Instance) {
     let displayName = this.generateDisplayName(instance);
-    if (displayName === instance.displayName)
+    if (displayName === instance.displayName) {
       return;
+    }
     instance.displayName = displayName;
     if (instance.attributes === undefined)
       instance.attributes = new Map();
     instance.attributes.set('displayName', instance.displayName);
-    this.instanceUtilities.addToModifiedAttributes('displayName', instance);
+    if(instance.modifiedAttributes && instance.modifiedAttributes.length > 0)
+      this.instanceUtilities.addToModifiedAttributes('displayName', instance);
     this.instanceUtilities.registerDisplayNameChange(instance);
   }
 

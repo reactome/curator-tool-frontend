@@ -635,6 +635,16 @@ export class InstanceUtilities {
         }
     }
 
+    removeModifiedAttribute(attributeName: string, instance: Instance | undefined) {
+        if (!instance ||
+            !instance.modifiedAttributes ||
+            instance.modifiedAttributes.length === 0
+        ) return; // Do nothing if there is no modified attributes
+        let index = instance.modifiedAttributes.indexOf(attributeName);
+        if (index > -1)
+            instance.modifiedAttributes!.splice(index, 1);
+    }
+
     mergeLocalChangesToEventTree(rootEvent: Instance, id2instance: Map<number, Instance>) {
         // For quick search 
         const id2event = new Map<number, Instance>();

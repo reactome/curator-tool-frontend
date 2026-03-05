@@ -193,7 +193,7 @@ export class AttributeEditService {
     addModifiedAttribute(instance: Instance | undefined, attributeName: string) {
         this.instUtil.addToModifiedAttributes(attributeName, instance);
     }
-    
+
     removeModifiedAttribute(instance: Instance | undefined, attributeName: string) {
         if (!instance ||
             !instance.modifiedAttributes ||
@@ -202,6 +202,11 @@ export class AttributeEditService {
         let index = instance.modifiedAttributes.indexOf(attributeName);
         if (index > -1)
             instance.modifiedAttributes!.splice(index, 1);
+
+    }
+
+    removeDisplayNameModifiedAttribute(instance: Instance | undefined) {
+        this.removeModifiedAttribute(instance, 'displayName');
     }
 
     resetAttributeValue(instance: Instance | undefined, attributeValue: AttributeValue) {
@@ -219,7 +224,7 @@ export class AttributeEditService {
                     [...refValue]
                 );
             }
-        } 
+        }
         else {
             // Use delete for the map!
             instance.attributes.delete(attributeValue.attribute.name);
