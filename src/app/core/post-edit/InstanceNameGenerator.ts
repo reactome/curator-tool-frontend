@@ -619,6 +619,7 @@ export class InstanceNameGenerator implements PostEditOperation {
     }
     let name: string | undefined = undefined;
     if (instance.attributes?.has("geneName")) {
+      // In JS, [][0] is undefined, not throwing exception, so we can just do it without checking the length of the array.
       name = instance.attributes?.get("geneName")[0] ?? 'unknown';
     } else if (instance.attributes?.has("name")) {
       name = instance.attributes?.get("name")[0] ?? 'unknown';

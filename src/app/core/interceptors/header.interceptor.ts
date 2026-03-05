@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpInterceptor, HttpEvent, HttpRequest, HttpHandler, HttpErrorResponse, HttpClient, HttpBackend } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, catchError, filter, finalize, map, switchMap, take, tap, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, filter, finalize, map, of, switchMap, take, tap, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 
 @Injectable()
@@ -85,7 +85,7 @@ export class HeaderInterceptor implements HttpInterceptor {
       );
   }
 
-  private handleRefreshFailure(error: HttpErrorResponse): Observable<never> {
+  private handleRefreshFailure(error: HttpErrorResponse): Observable<any> {
     this.refreshTokenSubject.next(false);
     localStorage.removeItem('token');
     const currentUrl = window.location.pathname + window.location.search + window.location.hash;
@@ -93,7 +93,10 @@ export class HeaderInterceptor implements HttpInterceptor {
       sessionStorage.setItem('currentUrl', currentUrl);
     }
     this.router.navigate(['/login']);
-    return throwError(() => error);
+    // The error is handled by redirecting to the login page, so we return an empty observable 
+    // to complete the stream without emitting an error
+    return of(undefined);
+    // return throwError(() => error);
   }
 
   private isAuthRequest(url: string): boolean {
