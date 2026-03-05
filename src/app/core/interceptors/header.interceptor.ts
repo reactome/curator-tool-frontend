@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpInterceptor, HttpEvent, HttpRequest, HttpHandler, HttpErrorResponse, HttpClient, HttpBackend } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, catchError, filter, finalize, map, of, switchMap, take, tap, throwError } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable, catchError, filter, finalize, map, of, switchMap, take, tap, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 
 @Injectable()
@@ -48,7 +48,7 @@ export class HeaderInterceptor implements HttpInterceptor {
         take(1),
         switchMap(token => {
           if (token === false) {
-            return throwError(() => new Error('Token refresh failed'));
+            return EMPTY;
           }
           return next.handle(this.addAuthHeader(request, token));
         })
