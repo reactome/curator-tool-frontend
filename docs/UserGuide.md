@@ -2,6 +2,14 @@
 
 This guide explains how to use the Curator Tool frontend for daily curation tasks.
 
+## Quick links
+
+- [Jump to Attribute Editing Quick Reference](#attribute-editing-quick-reference)
+- [Jump to Schema View](#5-schema-view)
+- [Jump to Event View](#6-event-view)
+- [Jump to Gene2Path App](#7-gene2path-app)
+- [Jump to Common Workflows](#8-common-workflows)
+
 ## 1) What this site includes
 
 After login, the home page gives access to three major areas:
@@ -153,7 +161,38 @@ List-level tools:
 - If specific rows are selected, batch edit applies to selected rows; otherwise it applies to the current list scope.
 - If staged changes exceed the configured limit, batch edit is blocked until you commit.
 
-Batch-edit dialog supports editing by attribute type (instance, text, boolean), including replace/add/delete style operations depending on attribute/cardinality.
+Batch-edit dialog supports editing by attribute type (instance, text, boolean) with the following actions.
+
+##### Batch edit actions by attribute type
+
+**Instance attributes**
+
+- **Single-valued**:
+	- **Set via Creation**
+	- **Set via Selection**
+	- **Delete**
+- **Multi-valued**:
+	- **Add via Creation**
+	- **Add via Selection**
+	- **Replace via Creation**
+	- **Replace via Selection**
+	- **Delete**
+
+**Text attributes**
+
+- **Single-valued**:
+	- **Replace Text**
+	- **Delete**
+- **Multi-valued**:
+	- **Add New Text**
+	- **Replace Text**
+	- **Delete**
+
+**Boolean attributes**
+
+- Use the toggle to set the new value across selected rows.
+
+When using replacement/deletion in batch mode, the dialog can prompt for aggregated existing values so you can target which values are replaced/removed.
 
 ### 5.4 Instance view/editor
 
@@ -172,6 +211,65 @@ Additional behaviors:
 - Edited/deleted instances are visually highlighted.
 - Instance table below the toolbar is where attribute edits are made.
 - Breadcrumb/history appears when enabled by parent view.
+
+#### Attribute editing actions (instance table)
+
+The instance table supports different edit actions depending on attribute type and cardinality.
+
+##### Attribute Editing Quick Reference
+
+| Attribute Type | Cardinality | Instance Editor Actions | Batch Edit Actions |
+|---|---|---|---|
+| Instance | Single-valued | Set via Creation; Set via Selection; Delete; drag bookmark to set value | Set via Creation; Set via Selection; Delete |
+| Instance | Multi-valued | Add via Creation; Add via Selection; Replace via Creation; Replace via Selection; Delete; drag bookmark to add; reorder values | Add via Creation; Add via Selection; Replace via Creation; Replace via Selection; Delete |
+| Text/String | Single-valued | Edit text directly; Text Editor (find/replace); undo per attribute | Replace Text; Delete |
+| Text/String | Multi-valued | Edit existing entries; add empty row value; undo per attribute | Add New Text; Replace Text; Delete |
+| Integer / Float | Single-valued | Edit numeric value directly; undo per attribute | Replace value via attribute editor |
+| Integer / Float | Multi-valued | Edit numeric entries directly; add empty row value; undo per attribute | Replace value via attribute editor; Delete targeted values |
+| Boolean | Single-valued | Toggle true/false; undo per attribute | Toggle/set selected rows |
+| Boolean | Multi-valued | N/A in typical schema usage | Toggle/set selected rows |
+
+##### Direct value editing
+
+- **String**: edit in textarea; commit on change (or with `Ctrl+Enter`).
+- **Integer/Float**: edit in numeric input.
+- **Boolean**: toggle on/off.
+- **NoManualEdit attributes**: read-only.
+
+##### Instance-valued slot action menu
+
+Right-click/context-click on an instance-valued field to open the action menu.
+
+- **Single-valued**:
+	- **Set via Creation**
+	- **Set via Selection**
+	- **Delete**
+- **Multi-valued**:
+	- **Add via Creation**
+	- **Add via Selection**
+	- **Replace via Creation**
+	- **Replace via Selection**
+	- **Delete**
+
+##### Bookmark drag-and-drop
+
+- Drag a bookmarked instance onto a compatible instance-valued slot to add/set that value.
+- Multi-valued instance slots also support drag-drop ordering of existing values.
+
+##### Reset/undo per attribute
+
+- For actively edited attributes, an **undo** icon appears in the value row (when comparison/reference column is visible).
+- Undo resets the current attribute to the database/right-side reference value.
+
+##### Text editor dialog (for `text` attribute)
+
+The text editor includes find/replace tools:
+
+- Search and highlight matches
+- Navigate previous/next match
+- Replace current match
+- Replace all matches
+- Clear current search highlights
 
 ### 5.5 Staged changes panel
 
@@ -309,4 +407,4 @@ Depending on results, the page can show:
 
 ---
 
-If your team wants role-based short guides (for example, “new curator quick start” vs “advanced curator workflows”), this document can be split into focused variants.
+Later can create role-based short guides (for example, “new curator quick start” vs “advanced curator workflows”), this document can be split into focused variants.
