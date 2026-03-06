@@ -2,8 +2,7 @@
   <ng-template #valueColTemplate let-element>
     <ng-container *ngIf="element.attribute.cardinality === '1'">
       <app-instance-table-row-element [disable]="isInstanceDeleted()" [attribute]="element.attribute"
-        [value]="element.value" [dragDropStatus]="dragDropStatus"
-        (newValueEvent)="onNoInstanceAttributeEdit($event)"
+        [value]="element.value" [dragDropStatus]="dragDropStatus" (newValueEvent)="onNoInstanceAttributeEdit($event)"
         (editAction)="onInstanceAttributeEdit($event)" [blockRoute]="blockRouter" />
     </ng-container>
     <ng-container *ngIf="element.attribute.cardinality === '+'">
@@ -11,8 +10,9 @@
       <ng-container *ngIf="element.value !== undefined; else noValue">
         <!-- Disable drag and drop for no manual edit attributes -->
         <ng-container *ngIf="element.attribute.category === AttributeCategory.NOMANUALEDIT; else dragDropEnabled">
-          <app-instance-table-row-element [disable]="isInstanceDeleted()" *ngFor="let object of element.value; let i = index" class="instance-box"
-            [attribute]="element.attribute" [value]="object" [index]="i" [blockRoute]="blockRouter">
+          <app-instance-table-row-element [disable]="isInstanceDeleted()"
+            *ngFor="let object of element.value; let i = index" class="instance-box" [attribute]="element.attribute"
+            [value]="object" [index]="i" [blockRoute]="blockRouter">
           </app-instance-table-row-element>
         </ng-container>
         <ng-template #dragDropEnabled>
@@ -30,16 +30,15 @@
     <!-- Add an empty row for non-instance type slot-->
     <ng-container *ngIf="element.attribute.type !== DATA_TYPES.INSTANCE && element.attribute.cardinality === '+'">
       <app-instance-table-row-element [attribute]="element.attribute" [dragDropStatus]="dragDropStatus"
-        [disable]="isInstanceDeleted()"
-        (newValueEvent)="onNoInstanceAttributeEdit($event)"
+        [disable]="isInstanceDeleted()" (newValueEvent)="onNoInstanceAttributeEdit($event)"
         (editAction)="onInstanceAttributeEdit($event)" />
     </ng-container>
 
     <ng-template #noValue>
       <ng-container *ngIf="element.attribute.type === DATA_TYPES.INSTANCE">
         <app-instance-table-row-element [attribute]="element.attribute" [dragDropStatus]="dragDropStatus"
-          (newValueEvent)="onNoInstanceAttributeEdit($event)"
-          (editAction)="onInstanceAttributeEdit($event)" [disable]="isInstanceDeleted()" />
+          (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)"
+          [disable]="isInstanceDeleted()" />
       </ng-container>
     </ng-template>
   </ng-template>
@@ -87,7 +86,9 @@
                       active_edit: isActiveEdited(element.attribute.name),
                       passive_edit: isPassiveEdited(element.attribute.name),
                       active_and_passive_edit: activeAndPassiveEdit(element.attribute.name)
-                    }">
+                    }"
+          [matTooltip]="getAttributeTooltip(element.attribute)" matTooltipPosition="above">
+
           <div>
             <ng-container *ngIf="element.attribute.category === AttributeCategory.MANDATORY">
               <img ngSrc="assets/images/Mandatory.gif" alt="Mandatory" width="16" height="16" priority>
@@ -133,7 +134,8 @@
               <ng-container *ngTemplateOutlet="valueColTemplate; context: {$implicit: element}"></ng-container>
             </div>
             <!-- reset button for active edits only -->
-            <div *ngIf="isActiveEdited(element.attribute.name) && element.attribute.category !== AttributeCategory.NOMANUALEDIT && showReferenceColumn"
+            <div
+              *ngIf="isActiveEdited(element.attribute.name) && element.attribute.category !== AttributeCategory.NOMANUALEDIT && showReferenceColumn"
               style="height: 24px; width: 35px; float: right; z-index: 3; bottom: 10px;">
               <button style="bottom: 7px; right: 5px;" mat-icon-button (click)="resetEdit(element)"
                 [matTooltip]="_instance?.dbId === _referenceInstance?.dbId ? 'reset to the db value' : 'set to the right value'">

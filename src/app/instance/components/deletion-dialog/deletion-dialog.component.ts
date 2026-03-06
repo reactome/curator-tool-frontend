@@ -3,7 +3,6 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Instance, Referrer, ReviewStatus } from 'src/app/core/models/reactome-instance.model';
 import { ConfirmDeleteDialogService } from "./confirm-delete-dialog/confirm-delete-dialog.service";
 import { DataService } from 'src/app/core/services/data.service';
-import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
 import { CLASSES_AFFECTING_STRUCTURE } from 'src/app/core/models/reactome-schema.model';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 

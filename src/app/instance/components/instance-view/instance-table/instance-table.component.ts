@@ -301,7 +301,7 @@ export class InstanceTableComponent implements PostEditListener {
     // Need to get the displayName before postEdit because postEdit may change the display name and we want to compare with the original one to decide whether to remove the modified attribute or not
     this.attributeEditService.removeDisplayNameModifiedAttribute(this._instance);
     this.attributeEditService.removeDisplayNameModifiedAttribute(this._instance?.source);
-        // Need to call this before registerUpdatedInstance
+    // Need to call this before registerUpdatedInstance
     // in case the instance is used somewhere via the ngrx state management system
     if (!removeModifiedAttribute) {
       this.attributeEditService.addModifiedAttribute(this._instance, attName);
@@ -624,4 +624,23 @@ export class InstanceTableComponent implements PostEditListener {
     return this._instance?.passiveModifiedAttributes?.includes(attName) || false;
   }
 
+  getAttributeTooltip(attribute: SchemaAttribute): string {
+    let tooltip = '';
+    if (this.isRequired({ attribute } as AttributeValue)) {
+      tooltip +=  attribute.name + ' is required. It is recommended to have a value.';
+    }
+    if (this.isMandatory({ attribute } as AttributeValue)) {
+      tooltip += ' ' + attribute.name + ' is mandatory. It should not be empty.';
+    }
+    if(this.isActiveEdited(attribute.name) && this.isPassiveEdited(attribute.name)) {
+      tooltip += ' ' + attribute.name + ' has both active and passive edits.';
+    }
+    if(this.isActiveEdited(attribute.name)) {
+      tooltip += ' ' + attribute.name + ' has been actively edited.';
+    }
+    if(this.isPassiveEdited(attribute.name)) {
+      tooltip += ' ' + attribute.name + ' has been passively edited.';
+    }
+    return tooltip;
+  }
 }

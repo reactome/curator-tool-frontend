@@ -10,7 +10,7 @@
   </ng-template>
 
   <ng-container *ngIf="showReferrersDialog">
-    <app-referrers-table [instance]="instance" (numberOfRefs)="setNumberOfRefs($event)"></app-referrers-table>
+    <app-referrers-table [instance]="instance" [deletion]="true" (numberOfRefs)="setNumberOfRefs($event)"></app-referrers-table>
   </ng-container>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

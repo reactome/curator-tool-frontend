@@ -21,6 +21,7 @@ export class ReferrersTableComponent {
   showProgressSpinner: boolean = false;
   totalCount: number = 0;
   instance2ReviewStatusChange: Array<Instance> = new Array<Instance>();
+  @Input() deletion: boolean = false; // Whether the referrers are shown for a deletion action. If true, the structural change check will be based on the change of review status. Otherwise, it will be based on the change of display name. This is because for deletion, the display name will not be changed and the review status change is more likely to be caused by structural change. For other editing actions, the display name change is more likely to be caused by structural change.
   @Input() instance: Instance | undefined;
   @Output() numberOfRefs = new EventEmitter<number>();
 
@@ -74,7 +75,10 @@ export class ReferrersTableComponent {
   // For each referrer, check if changing the attribute would cause review status change
   // This structural change will apply to all instances contained by the attribute
   isStructuralChange(inst: Instance): boolean {
+    if (!this.deletion) {
+      return false; // For non-deletion action do not warn about structural change 
+    }
     return this.instance2ReviewStatusChange.some(i => i.dbId === inst.dbId);
-  }
 
+  }
 }
