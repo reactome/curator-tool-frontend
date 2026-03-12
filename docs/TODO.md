@@ -19,11 +19,6 @@
 
 - Refresh of updated list (occured after resetting deleted insts) 
 
-- TODO: During the comparison model, if the code finds a modified attribute is not changed (e.g. _displayName after reset), remove this attribute from the modified array.
-
-- Bug: The referrer dialog should not have the structural change warning (red text) when the referrers are shown not for deletion (low priority). However, if the user just wants to see the instance's referrers, why do we need to check structural changes? This may have some perfornace overhead.
-
-
 -bug: List InstanceEdit, enter 2025 in the search box. Nothing is returned. However, use advanced search for DisplayName contains 2025. Instances returned. (Too difficult to fix now; lower priority)
 
 - TODO: save the user's edits after amount of inactivity 

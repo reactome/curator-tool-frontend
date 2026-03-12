@@ -595,10 +595,9 @@ export class DataService {
     limit: number,
     searchKey: string | undefined) {
     let url = this.listInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
-    if (searchKey)
-      searchKey = searchKey.trim(); // Just to make sure no space there
-    if (searchKey && searchKey.length > 0) {
-      url += '?query=' + searchKey;
+    if (searchKey && searchKey.trim().length > 0) {
+      const regexLiteralQuery = this.convertToRegexLiteral(searchKey);
+      url += '?query=' + encodeURIComponent(regexLiteralQuery);
     }
     return this.http.get<InstanceList>(url).pipe(
       // First concatMap: Fetch schema class hierarchy
@@ -616,6 +615,17 @@ export class DataService {
         return this.handleErrorMessage(err);
       })
     );
+  }
+
+  /**
+   * Wrap user-entered search text as a Java-style regex literal so special
+   * characters are matched exactly in backend regex-based queries.
+   */
+  private convertToRegexLiteral(searchKey: string): string {
+    const trimmed = searchKey.trim();
+    // Escape any embedded \E so the quoted block is not prematurely terminated.
+    const escaped = trimmed.replace(/\\E/g, '\\E\\\\E\\Q');
+    return `\\Q${escaped}\\E`;
   }
 
   /**
@@ -639,9 +649,17 @@ export class DataService {
     let url = this.searchInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
 
     if (selectedAttributes !== undefined && selectedOperands !== undefined && searchKeys !== undefined) {
-      url += '?attributes=' + encodeURI(selectedAttributes.toString())
-        + '&operands=' + encodeURI(selectedOperands.toString())
-        + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'"));
+      const regexWrappedSearchKeys = searchKeys.map((key, index) => {
+        const operand = selectedOperands[index] ?? '';
+        if (operand.toLowerCase().includes('null')) {
+          return key;
+        }
+        return this.convertToRegexLiteral(key ?? '');
+      });
+
+      url += '?attributes=' + encodeURIComponent(selectedAttributes.toString())
+        + '&operands=' + encodeURIComponent(selectedOperands.toString())
+        + '&searchKeys=' + encodeURIComponent(regexWrappedSearchKeys.toString());
     }
     console.debug('search instances url: ' + url);
     return this.http.get<InstanceList>(url)
