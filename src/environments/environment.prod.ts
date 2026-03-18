@@ -1,6 +1,6 @@
 export const environment = {
     production: true,
     ApiRoot: "/api/curation",
-    authURL: "/api/authenticate",
+    authURL: "/api/auth",
     llmURL: "/llm"
   };
