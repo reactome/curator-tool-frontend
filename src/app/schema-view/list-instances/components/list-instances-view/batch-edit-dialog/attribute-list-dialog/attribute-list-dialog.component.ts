@@ -15,7 +15,7 @@ export class AttributeListDialogComponent {
   DATA_TYPES = AttributeDataType;
   attributeSelected: AttributeValue[] = [];
   // Using constructor to correctly initialize values
-  constructor(@Inject(MAT_DIALOG_DATA) public data: any[],
+  constructor(@Inject(MAT_DIALOG_DATA) public data: { attributeSelected: string, values: any[] },
       public dialogRef: MatDialogRef<AttributeListDialogComponent>,
   ) {}
 

@@ -28,7 +28,7 @@ export class EditMenuComponent {
 
   onClick(editAction: EDIT_ACTION) {
     this.actionItem.emit(editAction);
-    this.hidePanel = true;
+    // this.hidePanel = true;
   }
 
 }

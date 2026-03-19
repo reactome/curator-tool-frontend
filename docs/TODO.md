@@ -23,6 +23,10 @@
 
 - TODO: save the user's edits after amount of inactivity 
 
+- Batch editing is broken
+- bug when adding golgi apparatus to the inst 
+- Deleted instance generated displayname 
+
 #### TODO:jbv
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.
 - TODO: Set the color of icons in the event tree for dark mode. Right now, they are all black, which cannot be seen in the dark mode.

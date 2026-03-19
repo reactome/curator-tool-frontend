@@ -16,11 +16,11 @@ export class AttributeListDialogService {
 
   constructor(private dialog: MatDialog) { }
 
-  openDialog(data: any[]): MatDialogRef<AttributeListDialogComponent, any[]> {
+  openDialog(selectedAttribute: string, values: any[]): MatDialogRef<AttributeListDialogComponent, any[]> {
     const dialogRef = this.dialog.open(AttributeListDialogComponent, {
       width: '1100px',
       height: '500px',
-      data: data
+      data: { selectedAttribute, values }
     });
     return dialogRef;
   }
