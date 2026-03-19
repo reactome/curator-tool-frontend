@@ -27,8 +27,8 @@ export const DefaultPersonActions = createActionGroup({
   source: "default_person_actions",
   events: {
     // Default person to be used to create InstanceEdit
-    set_default_person: props<Instance>(),
-    ls_set_default_person: props<Instance>(),
+    set_default_person: props<Instance|undefined>(),
+    ls_set_default_person: props<Instance|undefined>(),
   }
 })
 

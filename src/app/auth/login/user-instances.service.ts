@@ -55,14 +55,24 @@ export class UserInstancesService {
             this.checkLocalStorage(userInstances);
             if (userInstances.newInstances && userInstances.newInstances.length > 0)
                 this.store.dispatch(NewInstanceActions.set_new_instances({ instances: this.makeShell(userInstances.newInstances) }));
+            else
+                this.store.dispatch(NewInstanceActions.set_new_instances({ instances: [] }));
             if (userInstances.updatedInstances && userInstances.updatedInstances.length > 0)
                 this.store.dispatch(UpdateInstanceActions.set_updated_instances({ instances: this.makeShell(userInstances.updatedInstances) }));
+            else
+                this.store.dispatch(UpdateInstanceActions.set_updated_instances({ instances: [] }));
             if (userInstances.deletedInstances && userInstances.deletedInstances.length > 0)
                 this.store.dispatch(DeleteInstanceActions.set_deleted_instances({ instances: this.makeShell(userInstances.deletedInstances) }));
+            else
+                this.store.dispatch(DeleteInstanceActions.set_deleted_instances({ instances: [] }));    
             if (userInstances.bookmarks && userInstances.bookmarks.length > 0)
                 this.store.dispatch(BookmarkActions.set_bookmarks({ instances: userInstances.bookmarks }));
+            else
+                this.store.dispatch(BookmarkActions.set_bookmarks({ instances: [] }));
             if (userInstances.defaultPerson)
                 this.store.dispatch(DefaultPersonActions.set_default_person(userInstances.defaultPerson));
+            else
+                this.store.dispatch(DefaultPersonActions.set_default_person(undefined));
         });
     }
 
