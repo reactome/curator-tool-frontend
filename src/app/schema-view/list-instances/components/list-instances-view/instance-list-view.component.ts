@@ -50,6 +50,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   selectedInstances: Instance[] = [];
   deletedDBIds: number[] = [];
   updatedDBIds: number[] = [];
+  hasExecutedSearch: boolean = false;
 
   @Input() isLocal: boolean = false;
   @Input() showBatchEdit: boolean = true;
@@ -268,6 +269,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
   doBasicSearch(skip: number) {
     this.skip = skip;
+    this.hasExecutedSearch = this.isBasicSearchActive();
     if (this.useRoute) {
       let url = this.getListInstancesURL();
       if (this.searchKey && this.searchKey.trim().length > 0)
@@ -428,19 +430,14 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
    * Perform advance search.
    */
   doAdvancedSearch(skip: number) {
-    if (this.searchCriteria.length === 0)
+    if (this.searchCriteria.length === 0) {
+      this.hasExecutedSearch = false;
       return; // Just in case
+    }
     this.skip = skip;
+    this.hasExecutedSearch = true;
     // Need attributes, operands and keys separate
-    let attributes: string[] = [];
-    let operands: string[] = [];
-    let searchKeys: string[] = [];
-    this.searchCriteria.forEach(criterium => {
-      attributes.push(criterium.attributeName);
-      operands.push(criterium.operand);
-      if (criterium.searchKey)
-        searchKeys.push(criterium.searchKey.trim());
-    });
+    const { attributes, operands, searchKeys } = this.getAdvancedSearchParams();
 
     if (this.useRoute) {
       let url = this.getListInstancesURL();
@@ -718,7 +715,41 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     this.instUtils.clearSelectedInstances(SelectedInstancesList.mainInstanceList);
   }
 
+  downloadSearchResults() {
+    if (this.isLocal || !this.hasExecutedSearch || this.instanceCount === 0) {
+      return;
+    }
+
+    const suggestedName = `${this.className || 'instances'}-search-results.csv`;
+    const providedName = window.prompt('Enter a file name for the CSV download.', suggestedName);
+    if (providedName === null) {
+      return;
+    }
+
+    const trimmedName = providedName.trim();
+    const fileName = (trimmedName.length > 0 ? trimmedName : suggestedName).endsWith('.csv')
+      ? (trimmedName.length > 0 ? trimmedName : suggestedName)
+      : `${trimmedName.length > 0 ? trimmedName : suggestedName}.csv`;
+
+    this.showProgressSpinner = true;
+    const request = this.needAdvancedSearch && this.searchCriteria.length > 0
+      ? this.fetchAllAdvancedSearchResults()
+      : this.dataService.listInstances(this.className, 0, this.instanceCount, this.searchKey);
+
+    request.subscribe({
+      next: (instanceList) => {
+        const csvContent = this.buildCsv(instanceList.instances);
+        this.triggerCsvDownload(fileName, csvContent);
+        this.showProgressSpinner = false;
+      },
+      error: () => {
+        this.showProgressSpinner = false;
+      }
+    });
+  }
+
   private handleRoute(params: Params, queryParams: Params) {
+    this.hasExecutedSearch = false;
     if (this.router.url.includes('local_list_instances')) {
       this.isLocal = true;
     } else {
@@ -731,6 +762,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     if (queryParams['query']) {
       console.debug('query: ' + queryParams['query']);
       this.searchKey = queryParams['query'];
+      this.hasExecutedSearch = true;
     }
     // Give it a little bit delay to avoid ng0100 error.
     this.className = params['className'];
@@ -752,6 +784,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         this.addSearchCriterium(criterium);
       }
       this.needAdvancedSearch = true;
+      this.hasExecutedSearch = true;
       // disable use route for the time being
       const useRoute = this.useRoute;
       this.useRoute = false; // Regardless the original value, we need to turn it off
@@ -770,5 +803,52 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
   compareInstances() {
     this.router.navigate(["/schema_view/instance/" + this.selectedInstances[0].dbId.toString() + "/comparison/" + this.selectedInstances[1].dbId.toString()]);
+  }
+
+  private isBasicSearchActive(): boolean {
+    return !!this.searchKey && this.searchKey.trim().length > 0;
+  }
+
+  private getAdvancedSearchParams(): { attributes: string[]; operands: string[]; searchKeys: string[] } {
+    let attributes: string[] = [];
+    let operands: string[] = [];
+    let searchKeys: string[] = [];
+    this.searchCriteria.forEach(criterium => {
+      attributes.push(criterium.attributeName);
+      operands.push(criterium.operand);
+      if (criterium.searchKey)
+        searchKeys.push(criterium.searchKey.trim());
+    });
+    return { attributes, operands, searchKeys };
+  }
+
+  private fetchAllAdvancedSearchResults(): Observable<InstanceList> {
+    const { attributes, operands, searchKeys } = this.getAdvancedSearchParams();
+    return this.dataService.searchInstances(this.className, 0, this.instanceCount, attributes, operands, searchKeys);
+  }
+
+  private buildCsv(instances: Instance[]): string {
+    const header = 'dbId,displayName,schemaClass';
+    const rows = instances.map(instance => {
+      const displayName = this.escapeCsvValue(instance.displayName ?? '');
+      const schemaClass = this.escapeCsvValue(instance.schemaClassName ?? '');
+      return `${instance.dbId},${displayName},${schemaClass}`;
+    });
+    return [header, ...rows].join('\n');
+  }
+
+  private escapeCsvValue(value: string): string {
+    const escaped = value.replace(/"/g, '""');
+    return `"${escaped}"`;
+  }
+
+  private triggerCsvDownload(fileName: string, csvContent: string) {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+    window.URL.revokeObjectURL(url);
   }
 }
