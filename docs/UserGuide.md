@@ -310,12 +310,20 @@ Layout:
 - **Right edge**: bookmarks panel
 - **Bottom**: status toolbar
 
-### Event filter
+### 6.1 Layout and panel controls
+
+- The left tree panel can be resized horizontally.
+- The diagram and instance editor split can be resized vertically.
+- The **BOOKMARKS** strip can be expanded/collapsed and dragged along the right edge.
+- The status toolbar can switch the left panel between the event tree and the staged-changes list.
+
+### 6.2 Event filter
 
 - Species dropdown (default **All**) with supported species options.
 - Text filter input (press Enter) for event name/dbId filtering.
+- Event View filtering is simple text/dbId filtering only; use Schema View for advanced attribute search.
 
-### Event tree actions
+### 6.3 Event tree actions
 
 For each event node you can:
 
@@ -323,10 +331,53 @@ For each event node you can:
 - Focus/unfocus node
 - Add event to diagram
 - Create empty diagram (when available)
-- Toggle release flag
-- Open/click event to load details
+- Toggle release flag for the selected event.
+- Shift+click the release flag to toggle release/unrelease for that event and all children under it.
+- Open/click event to load details into the instance editor
 
-### Diagram + instance flow
+Additional visual cues in the tree:
+
+- Events can be highlighted by the current tree filter.
+- Events with diagrams are visually distinguished from events without diagrams.
+- The currently focused event is visually marked.
+
+### 6.4 Pathway diagram features
+
+- Selecting an event in the tree can highlight/select its objects in the diagram.
+- Selecting objects in the diagram loads the corresponding instance in the lower editor.
+- The diagram label changes color when there are unsaved diagram edits.
+- A context action menu is available in the diagram for editing and navigation actions.
+
+Diagram action menu includes, depending on selection and edit mode:
+
+- Enable or disable diagram editing
+- Enable or disable reaction edge editing
+- Add or remove edge points
+- Add or remove flow lines
+- Resize compartments and pathway nodes
+- Insert or delete compartments
+- Remove reactions
+- Delete pathway nodes when allowed
+- Align multiple selected nodes vertically or horizontally
+- Toggle diagram color theme
+- Upload diagram changes
+- Reload the current pathway diagram
+- Open or create the related `PathwayDiagram` instance
+- Go to a nested pathway from the diagram
+
+### 6.5 Instance editor behavior in Event View
+
+- The lower instance editor uses the same attribute editing tools as Schema View.
+- Selecting from either the tree or the diagram updates the instance editor.
+- Comparison/history support is available in the Event View instance editor.
+
+### 6.6 Staged changes and bookmarks
+
+- The status toolbar works the same as in Schema View for new, updated, deleted, and default-person tracking.
+- In Event View, the status toggle can replace the tree with the staged-changes list in the left panel.
+- Bookmarks remain available from the right-side bookmark strip while working in the tree, diagram, and instance editor.
+
+### 6.7 Diagram + instance flow
 
 Typical workflow:
 
@@ -393,6 +444,16 @@ Depending on results, the page can show:
 1. Open class tree.
 2. Click `(localCount)` next to class.
 3. Work in `@Staged` list to review only changed/new/deleted instances for that class.
+
+### E) Work in Event View with tree, diagram, and editor together
+
+1. Open **Event View**.
+2. Use the species dropdown and filter box to narrow the event tree.
+3. Click an event in the tree to load it into the instance editor.
+4. Use the tree action buttons to focus the event, add it to the diagram, or create an empty diagram when needed.
+5. Select objects in the pathway diagram to load related instances into the lower editor.
+6. If diagram editing is needed, use the diagram context menu to enable editing and apply diagram changes.
+7. Upload diagram changes when ready, then use the status toolbar to review and commit staged instance changes.
 
 ## 9) Tips and troubleshooting
 
