@@ -87,18 +87,21 @@ export class StatusComponent implements OnInit, OnDestroy {
     });
     this.subscriptions.add(sub);
 
-    sub = this.dataService.errorMessage$.subscribe((message: any) => {
-      if (message)
-        if (message.error) {
-          if (message.error.message)
-            this.openSnackBar(message.error.message, 'Close');
-          else
-            this.openSnackBar(message.error, 'Close');
+    sub = this.dataService.errorMessage$.subscribe((message: Error) => {
+      if (message) {
+        // Filter out refresh token expired errors
+        const messageString = (message.message || '').toLowerCase();
+        
+        if (messageString.includes('refresh token') || messageString.includes('token expired')) {
+          return; // Skip displaying refresh token errors
         }
-        else if (message.message)
+        
+        if (message.message) {
           this.openSnackBar(message.message, 'Close');
-        else
+        } else {
           this.openSnackBar("There is an error: " + message.name, 'Close');
+        }
+      }
     });
     this.subscriptions.add(sub);
   }

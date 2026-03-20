@@ -300,7 +300,7 @@ This is the main place to review and commit or undo staged work in bulk.
 
 ## 6) Event View
 
-Event View combines tree navigation, diagram work, and instance editing.
+Event View combines tree navigation, diagram viewing and editing, and instance editing.
 
 Layout:
 

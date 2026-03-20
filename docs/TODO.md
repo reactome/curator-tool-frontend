@@ -1,4 +1,4 @@
-#### Bugs:
+#### Bugs
 - The autoscroll for the instance view in the event view scroll the whole instance view. But we need to scroll the table content only just like in the schemw view. (some fixed, but not fully ideal)
 - go to pathway in the diagram sometimes has weird selection: the pathway selected is stuck in the URL!
 - resizing the nodes cannot change the height of the background for selection. However, sometimes it does work!
@@ -28,7 +28,8 @@
 - Deleted instance generated displayname 
 - disable the collapsable feature in schema tree.
 
-#### TODO:jbv
+#### TODO
+- comments from Eliot and others during a demo on March 16, 2026: https://docs.google.com/document/d/1zlj3KKDwRQYUBCGIi4P3uqsb5X3JRfk8WoOqj2BXssI/edit?tab=t.0#heading=h.y6ik0la1wydu.
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.
 - TODO: Set the color of icons in the event tree for dark mode. Right now, they are all black, which cannot be seen in the dark mode.
 - For Figure instance: add a customized view to display the figure
