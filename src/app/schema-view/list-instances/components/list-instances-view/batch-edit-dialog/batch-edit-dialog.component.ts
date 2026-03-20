@@ -366,11 +366,13 @@ export class BatchEditDialogComponent implements PostEditListener {
     this.addAttributes([attributeValue], result, replace);
   }
 
+  // TODO: keep instances that have been updated as a batch instead of one by one 
   private addAttributes(attributeValues: AttributeValue[], result: any, replace: boolean) {
     if (!attributeValues || attributeValues.length === 0) {
       return;
     }
 
+    // TODO: check if take one is necessary, just one observable 
     this.getInstancesForEdit().pipe(take(1)).subscribe((instances: Instance[]) => {
       const isInstanceAttribute = attributeValues[0].attribute.type === this.DATA_TYPES.INSTANCE;
 

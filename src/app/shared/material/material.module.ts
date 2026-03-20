@@ -21,6 +21,7 @@ import {MatCheckboxModule} from "@angular/material/checkbox";
 import {MatTreeModule} from "@angular/material/tree";
 import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
+import { MatStepperModule } from '@angular/material/stepper';
 
 @NgModule({
   declarations: [],
@@ -48,6 +49,7 @@ import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
     MatTreeModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
+    MatStepperModule,
     MatCardModule,
     MatDialogModule
   ],
@@ -74,6 +76,7 @@ import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
     MatTreeModule,
     MatPaginatorModule,
     MatProgressSpinnerModule,
+    MatStepperModule,
     MatCardModule,
     MatDialogModule
   ]

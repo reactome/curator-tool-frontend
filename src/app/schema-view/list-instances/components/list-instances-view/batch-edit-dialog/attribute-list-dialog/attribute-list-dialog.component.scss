@@ -1,0 +1,117 @@
+.dialog_title {
+  text-align: left;
+  font-weight: bold;
+  font-size: 20px;
+  color: white;
+  //color: var(--primary);
+  background-color: var(--primary);
+
+}
+
+.instance-list-table {
+  width: 100%;
+  position: relative;
+}
+
+.instance-list-table-row-is-clicked {
+  font-weight: bold;
+}
+
+.mat-mdc-row {
+  height: 30px;
+}
+
+.mat-mdc-row:hover .mat-mdc-cell {
+  border-color: currentColor;
+  //border-bottom: 1px currentColor;
+  border-top: 1px currentColor;
+  background-color: var(--surface-variant);
+  cursor: pointer;
+}
+
+selected {
+  background-color: #8a9296;
+}
+
+th {
+  background: var(--primary-container) !important;
+  color: var(--on-primary-container) !important;
+  //height: var(--bread-crumb-height, 40px) !important;
+}
+
+.table-container {
+  // height: calc(100vh - var(--bread-crumb-height) - var(--filter-height) - 2 * var(--body-margin));
+  overflow: auto;
+  border: none;
+}
+
+.buttons-pane {
+  display: flex;
+  align-items: flex-end;
+  padding: 0;
+}
+
+.title {
+  // width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+.shrinkable {
+  flex: 1 1 auto;
+  width: 200px;
+  // overflow-wrap: break-word;
+  // word-wrap: break-word;
+  // text-overflow: ellipsis;
+}
+
+.wrap-text-cell {
+  white-space: normal !important;
+  word-break: break-word;
+}
+
+.td {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.rowBackground {
+  // background: var(--primary-container);
+  // color: var(--on-primary-container);
+  // width: 200px;
+  // min-width: 100px;
+
+  &.deleteHighlight {
+    text-decoration: line-through;
+    color: #f28b82;
+    text-decoration-thickness: 2px;
+  }
+  &.updateHighlight {
+    text-decoration: wavy underline;
+    color: #81c995;
+  }
+  &.highlightRow{
+    color: red;
+  } 
+}
+
+.action-buttons-row {
+  display: flex;
+  justify-content: flex-end;
+  min-width: max-content;
+  align-items: end;
+  gap: 0px; // or use column-gap: 2px;
+
+};
+
+.mini-btn {
+  min-width: 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  margin: 0, 1px !important;
+}

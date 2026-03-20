@@ -1,28 +1,66 @@
 <mat-dialog-content>
-    <h2 mat-dialog-title>Batch Edit Attributes</h2>
-    <p>Values of {{data.attributeSelected}}:</p>
+    <h2 class="dialog_title" mat-dialog-title>Values of '{{data.selectedAttribute}}' for selected instances:</h2>
 
-    <ng-container *ngIf="data.values[0]?.dbId; else elseTemplate">
-        <mat-selection-list #attributes>
-            @for (attribute of data.values; track attribute) {
-            <mat-list-option (selectedChange)="onAttributeSelected(attribute)">{{attribute.dbId}} {{attribute.displayName}}</mat-list-option>
-            }
-        </mat-selection-list>
-        <p>
-            Options selected: {{attributes.selectedOptions.selected.length}}
-        </p>
-    </ng-container>
+    <div style="flex-direction: column;">
+        <ng-container *ngIf="data.values[0]?.dbId; else elseTemplate">
+            <app-instance-list-table [dataSource]="data.values" [showCheckMark]="true"
+                (actionEvent)="handleAction($event)" (selectionEvent)="onRowClick($event)">
+            </app-instance-list-table>
 
-    <ng-template #elseTemplate>
-        <mat-selection-list #attributes>
-            @for (attribute of data.values; track attribute) {
-            <mat-list-option (selectedChange)="onAttributeSelected(attribute)">{{attribute}}</mat-list-option>
-            }
-        </mat-selection-list>
-        <p>
+        </ng-container>
+
+
+        <ng-template #elseTemplate>
+            <table style="width: 500px" mat-table [dataSource]="data.values"
+                class="mat-elevation-z0 instance-list-table">
+                <div class="ellipsis title">
+
+                    <!-- Display Name Column -->
+                    <ng-container matColumnDef="displayName">
+                        <th mat-header-cell *matHeaderCellDef>Display Name</th>
+                        <td mat-cell *matCellDef="let value" class="wrap-text-cell">
+                            {{value}}
+                        </td>
+                        <br>
+                    </ng-container>
+
+                    <!-- Action Buttons Column -->
+                    <ng-container matColumnDef="actionButtons" class="buttons-pane" stickyEnd>
+                        <th mat-header-cell *matHeaderCellDef style="width: 150px; min-width: 150px; max-width: 270px;">
+                        </th>
+                        <td mat-cell *matCellDef="let element"
+                            style="width: 150px; min-width: 150px; max-width: 270px;">
+                            <button color="primary" mat-icon-button class="mini-btn" (click)="addCheckBox(element)">
+                                <mat-icon>check_box_outline_blank</mat-icon>
+                            </button>
+                        </td>
+
+                    </ng-container>
+                </div>
+
+                <ng-container>
+                    <div>
+                        <tr mat-header-row *matHeaderRowDef="['displayName', 'actionButtons']; sticky: false"></tr>
+                    </div>
+                </ng-container>
+
+                <ng-container>
+                    <tr class="rowBackground" mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                </ng-container>
+            </table>
+            <!-- <p>
             Options selected: {{attributes.selectedOptions.selected.length}}
-        </p>
-    </ng-template>
+        </p> -->
+        </ng-template>
+
+
+
+        <mat-label>Selected Attributes: </mat-label>
+        <section class="scroll_panel" style="margin-top: 10px; max-height: 300px; overflow: auto; width: 100%;">
+            <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="selectedAttributes"
+             (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
+        </section>
+    </div>
 
 
 </mat-dialog-content>

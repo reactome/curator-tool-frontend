@@ -11,6 +11,10 @@
   height: 30px;
 }
 
+.mat-mdc-cell {
+  align-items: center;
+}
+
 .mat-mdc-row:hover .mat-mdc-cell {
   border-color: currentColor;
   //border-bottom: 1px currentColor;
@@ -39,6 +43,7 @@ th {
   display: flex;
   align-items: flex-end;
   padding: 0;
+  line-height: 0.5;
 }
 
 .title {
@@ -92,10 +97,10 @@ th {
 .action-buttons-row {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   min-width: max-content;
-  align-items: end;
   gap: 0px; // or use column-gap: 2px;
-
+  margin-top: 8px;
 };
 
 .mini-btn {

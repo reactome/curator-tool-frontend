@@ -48,3 +48,13 @@
   color: var(--primary);
   vertical-align: middle;
 }
+
+.dialog_title {
+  text-align: left;
+  font-weight: bold;
+  font-size: 20px;
+  color: white;
+  //color: var(--primary);
+  background-color: var(--primary);
+
+}
