@@ -1185,7 +1185,10 @@ export class DataService {
           sessionStorage.setItem('currentUrl', currentUrl);
         this.router.navigate(['/login']);
     }
-    this.errorMessage.next(err);
+    // Block to show refresh token failure message. This is hard-coded and should be changed in the future.
+    if (!err.message.includes('refresh token')) {
+      this.errorMessage.next(err);
+    }
     return throwError(() => err);
   };
 
