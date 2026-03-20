@@ -128,6 +128,15 @@ The list header indicates source:
 - **Advanced search**: click manage-search icon to switch modes, then build conditions in the filter panel.
 - In advanced mode, you can undo the last added condition.
 
+#### Download search results
+
+- After running a search on an `@Database` list, a **Download search results** icon appears in the search bar.
+- Click the icon to export the full current search result set, not just the visible page.
+- You will be prompted to enter a file name before the download starts.
+- The downloaded file is a CSV with these columns:
+	`dbId`, `displayName`, `schemaClass`
+- This download action is only available after a search and is not shown for `@Staged` lists.
+
 Supported advanced operands:
 
 - `Contains`
