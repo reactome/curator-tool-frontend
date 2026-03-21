@@ -21,7 +21,9 @@
           [isSingledValued]="selectedAttribute?.cardinality === '1'"></app-edit-menu>
       </ng-container>
       <ng-template #nonStringStep>
-        <div style="padding: 10px;">This step is available for string attributes only.</div>
+        <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onScalarAttributeEdit($event)"
+          (editAction)="onInstanceAttributeEdit($event)">
+        </app-attribute-edit>
       </ng-template>
       <div>
         <button mat-button matStepperPrevious>Back</button>
@@ -31,12 +33,12 @@
     </mat-step>
 
     <mat-step label="Replacement Value">
-      <ng-container *ngIf="selectedAttribute?.type === DATA_TYPES.STRING && selectedAction === EDIT_ACTION.REPLACE_NEW; else noReplacementNeeded">
+      <ng-container *ngIf="selectedAttribute?.type === DATA_TYPES.STRING && (selectedAction === EDIT_ACTION.REPLACE_NEW || selectedAction === EDIT_ACTION.ADD_NEW); else noReplacementNeeded">
         <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onEditAction($event)">
         </app-attribute-edit>
       </ng-container>
       <ng-template #noReplacementNeeded>
-        <div style="padding: 10px;">Replacement value is only required when the selected action is Replace.</div>
+        <div style="padding: 10px;">No additional value entry is required for the selected action.</div>
       </ng-template>
       <div>
         <button mat-button matStepperPrevious>Back</button>
@@ -52,8 +54,8 @@
     </section>
     <mat-label>Removed Instances: </mat-label>
     <section class="scroll_panel" style="margin-top: 10px; max-height: 300px; overflow: auto; width: 100%;">
-      <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="removedInstances" [actionButtons]="actionButtons"
-        (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
+      <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="removedInstances" [actionButtons]="removedActionButtons"
+        (actionEvent)="handleRemovedTableAction($event)"></app-instance-list-table>
     </section>
   </div>
 </mat-dialog-content>

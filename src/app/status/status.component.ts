@@ -9,8 +9,7 @@ import { UserInstancesService } from "../auth/login/user-instances.service";
 import { ListInstancesDialogService } from "../schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service";
 import { DefaultPersonActions } from "../instance/state/instance.actions";
 import { DataService } from "../core/services/data.service";
-import { Subscription } from "rxjs";
-import { combineLatest } from 'rxjs';
+import { Subscription, combineLatest, debounceTime, skip } from "rxjs";
 import { map } from 'rxjs/operators';
 
 @Component({
@@ -84,6 +83,21 @@ export class StatusComponent implements OnInit, OnDestroy {
     sub = this.store.select(defaultPerson()).subscribe((instances) => {
       // There should be only one default person
       instances && instances.length > 0 ? this.defaultPerson = instances[0] : this.defaultPerson = undefined
+    });
+    this.subscriptions.add(sub);
+
+    // Auto-persist after 5 minutes of no edit activity across all tracked state
+    sub = combineLatest([
+      this.store.select(updatedInstances()),
+      this.store.select(newInstances()),
+      this.store.select(deleteInstances()),
+      this.store.select(defaultPerson()),
+    ]).pipe(
+      skip(1), // ignore the initial emission on subscription
+      debounceTime(5 * 60 * 1000)
+    ).subscribe(() => {
+      console.debug('StatusComponent: no edit activity for 5 minutes, auto-persisting...');
+      this.userInstancesService.persistInstances();
     });
     this.subscriptions.add(sub);
 

@@ -623,6 +623,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       this.store.select(newInstances()),
       this.store.select(updatedInstances())
     ]).pipe(
+      take(1),
       map(([deleted, created, updated]) => [
         ...(deleted || []),
         ...(created || []),
@@ -643,35 +644,23 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         });
       }
       else {
-            if (this.needAdvancedSearch)
-      this.doAdvancedSearch(0);
-    else
-      this.doBasicSearch(0);
+        const sourceData = this.selectedInstances.length > 0 ? this.selectedInstances : this.data;
+        if (this.isLocal) {
+          this.batchEditDialogService.openDialog(sourceData);
+          return;
+        }
 
-    if (this.isLocal) {
-      this.batchEditDialogService.openDialog(this.selectedInstances.length > 0 ? this.selectedInstances : this.data);
-    }
-
-    else {
-      this.store.select(deleteInstances()).pipe(
-        take(1),
-        map((instances) => {
-          this.deletedDBIds = instances.map(inst => inst.dbId);
-        })
-      )
-
-      this.store.select(updatedInstances()).pipe(
-        take(1),
-        map((instances) => {
-          this.updatedDBIds = instances.map(inst => inst.dbId);
-        })
-      )
-
-      const filteredData = this.data.filter(
-        inst => !this.deletedDBIds.includes(inst.dbId) && !this.updatedDBIds.includes(inst.dbId)
-      );
-      this.batchEditDialogService.openDialog(this.selectedInstances.length > 0 ? this.selectedInstances : filteredData);
-    }
+        combineLatest([
+          this.store.select(deleteInstances()),
+          this.store.select(updatedInstances())
+        ]).pipe(take(1)).subscribe(([deleted, updated]) => {
+          const deletedDbIds = new Set((deleted || []).map(inst => inst.dbId));
+          const updatedDbIds = new Set((updated || []).map(inst => inst.dbId));
+          const filteredData = sourceData.filter(
+            inst => !deletedDbIds.has(inst.dbId) && !updatedDbIds.has(inst.dbId)
+          );
+          this.batchEditDialogService.openDialog(filteredData);
+        });
       }
     })
 
