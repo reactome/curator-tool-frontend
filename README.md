@@ -24,7 +24,7 @@ Run `ng generate component component-name` to generate a new component. You can 
 
 Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
 
-**Note**: For the time being, this app is deployed at curator.reactome.org: ~/GKB/website/html/curatortool. Try to add the following argument after build: `ng build --base-href=/curatortool/` (check this is in the head of index.html: <base href="/curatortool/">). Make sure the spelling is correct! After building, tar and scp to that folder. Don't delete and re-create it. Just copy over it to avoid apache restart. Note: Make sure .htaccess is in that folder.
+**Note**: For the time being, this app is deployed at curator.reactome.org: ~/GKB/website/html/curatortool. Try to add the following argument after build: `ng build --base-href=/curatortool/` (check this is in the head of index.html: <base href="/curatortool/">). Make sure the spelling is correct! After building, tar and scp to that folder. Don't delete and re-create it. Just copy over it to avoid apache restart. Note: Make sure .htaccess is in that folder. To unzip it after copying into that folder, use this command `tar --strip-components=1 -xvf curator-tool-frontend.tgz`.
 
 **Note**: The backend springboot app for the time being is deployed as a standalone, runnable jar by running `mvn clean package -DskipTests` directly. The generated jar file should be copied. Before build, make sure configuration in applications.properties is correct for curator.reactome.org, mainly the password for neo4j and the local file names. To start it:
 

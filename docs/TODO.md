@@ -7,6 +7,7 @@
 - Bug: inner shapes are not updated when resizing nodes.
 - Bug (fixed. Kept for future test): When a PE is used as both input and catalyst, enable/disable editing in pathway diagram cannot recovers the original diagram (input or catalyst may get lost, e.g. http://localhost:4200/event_view/instance/453279?select=8848436) - Bug: LLM geneates text for ALDOB having the original template [PMID: 123456] that is not replaced. See Peter's email on Nov 13, 2024.
 - NOTE: for deletion confirmation we need to get the referrers for an instance before determining if the first dialog should show or the second. Therefore, we have decided to keep the first dialog with "no referrers to show" to avoid performing this action before necessary as getting referrers is a heavy transaction. 10/24/25
+- bug: special character (e.g. !, $, etc) cannot work in the password.
 
 #### Deidre
 - TODO: Use the new set of Reactome icons at Figma, designed by the EBI team. Need to check with Eliott.
