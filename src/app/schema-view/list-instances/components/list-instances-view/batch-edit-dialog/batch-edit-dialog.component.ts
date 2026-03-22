@@ -24,7 +24,7 @@ import { ActionButton } from '../instance-list-table/instance-list-table.compone
   templateUrl: './batch-edit-dialog.component.html',
   styleUrls: ['./batch-edit-dialog.component.scss']
 })
-export class BatchEditDialogComponent implements PostEditListener {
+export class BatchEditDialogComponent {
   selectedAttribute: SchemaAttribute | undefined;
   selectedAction: EDIT_ACTION | undefined;
   selected: string = '';
@@ -34,6 +34,7 @@ export class BatchEditDialogComponent implements PostEditListener {
   isSingleValued: boolean = false;
   attributeSchemaClass: string = '';
   actionButtons: Array<ActionButton> = [ACTION_BUTTONS.CLOSE];
+  removedActionButtons: Array<ActionButton> = [ACTION_BUTTONS.UNDO];
   attributeSelected: boolean = false;
   batchEditOptions: string[] = ['Add', 'Set', 'Remove'];
   removedInstances: Instance[] = [];
@@ -54,7 +55,7 @@ export class BatchEditDialogComponent implements PostEditListener {
 
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public data: Instance[],
-    public dialogRef: MatDialogRef<BatchEditDialogComponent>,
+    public dialogRef: MatDialogRef<BatchEditDialogComponent, void>,
     private dataService: DataService,
     private newInstanceDialogService: NewInstanceDialogService,
     private selectInstanceDialogService: SelectInstanceDialogService,
@@ -82,11 +83,22 @@ export class BatchEditDialogComponent implements PostEditListener {
     switch (actionButton.action) {
       // To remove an instance from the batch edit list
       case "close": {
-        this.removedInstances.push(actionButton.instance);
-        this.removedInstances = [...this.removedInstances];
+        if (!this.removedInstances.some(inst => inst.dbId === actionButton.instance.dbId)) {
+          this.removedInstances.push(actionButton.instance);
+          this.removedInstances = [...this.removedInstances];
+        }
         this.data = this.data.filter(inst => inst.dbId !== actionButton.instance.dbId);
         break;
       }
+    }
+  }
+
+  handleRemovedTableAction(actionButton: { instance: Instance, action: string }) {
+    if (actionButton.action !== ACTION_BUTTONS.UNDO.name)
+      return;
+    this.removedInstances = this.removedInstances.filter(inst => inst.dbId !== actionButton.instance.dbId);
+    if (!this.data.some(inst => inst.dbId === actionButton.instance.dbId)) {
+      this.data = [...this.data, actionButton.instance];
     }
   }
 
@@ -133,8 +145,7 @@ export class BatchEditDialogComponent implements PostEditListener {
       const nameFrequency = new Map<string, number>();
 
       attributeArrays.forEach(arr => {
-        if (arr === undefined || arr.length === 0) {
-          attributeArrays.splice(attributeArrays.indexOf(arr), 1);
+        if (!arr || arr.length === 0) {
           console.warn('Empty or undefined attribute array found, skipping...');
           return;
         }
@@ -148,8 +159,12 @@ export class BatchEditDialogComponent implements PostEditListener {
 
       // Only keep attributes present in all arrays
       this.candidateAttributes = [];
+      const nonEmptyArrayCount = attributeArrays.filter(arr => arr && arr.length > 0).length;
+      if (nonEmptyArrayCount === 0) {
+        return;
+      }
       for (let attr of nameFrequency) {
-        if (attr[1] === attributeArrays.length) {
+        if (attr[1] === nonEmptyArrayCount) {
           this.candidateAttributes.push(nameCount.get(attr[0])!);
         }
       }
@@ -247,6 +262,11 @@ export class BatchEditDialogComponent implements PostEditListener {
 
   onBooleanAttributeEdit(attributeValue: AttributeValue) {
 
+    this.addAttribute(attributeValue, attributeValue.value, true);
+  }
+
+  // Used for non-instance attribute edits in the dialog body (boolean/integer/float/string replacement).
+  onScalarAttributeEdit(attributeValue: AttributeValue) {
     this.addAttribute(attributeValue, attributeValue.value, true);
   }
 

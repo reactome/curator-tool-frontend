@@ -142,7 +142,7 @@ export class UserInstancesService {
                 const token = localStorage.getItem('token');
                 localStorage.clear();
                 if (token)
-                    localStorage.setItem('token', token); //TODO: Need to revisit how to persist token for a certain time
+                    localStorage.setItem('token', token);
                 const instances = [...newInstances, 
                                    ...updatedInstances,  
                                    ...deletedInstances, 

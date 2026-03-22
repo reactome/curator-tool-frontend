@@ -17,6 +17,13 @@
 
     <mat-step label="Edit Action" [completed]="selectedAction !== undefined">
         <app-edit-menu (actionItem)="onSelectTextAction($event)"
+          [isSingledValued]="selectedAttribute?.cardinality === '1'"></app-edit-menu>
+      </ng-container>
+      <ng-template #nonStringStep>
+        <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onScalarAttributeEdit($event)"
+          (editAction)="onInstanceAttributeEdit($event)">
+        </app-attribute-edit>
+      </ng-template>
           [isSingledValued]="selectedAttribute?.cardinality === '1'"
           [isInstanceType]="selectedAttribute?.type === DATA_TYPES.INSTANCE"></app-edit-menu>
       <div>
@@ -27,8 +34,13 @@
     </mat-step>
 
     <mat-step label="Replacement Value">
+      <ng-container *ngIf="selectedAttribute?.type === DATA_TYPES.STRING && selectedAction === EDIT_ACTION.REPLACE_NEW; else noReplacementNeeded">
         <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onEditAction($event)">
         </app-attribute-edit>
+      </ng-container>
+      <ng-template #noReplacementNeeded>
+        <div style="padding: 10px;">Replacement value is only required when the selected action is Replace.</div>
+      </ng-template>
       <div>
         <button mat-button matStepperPrevious>Back</button>
       </div>
@@ -43,8 +55,8 @@
     </section>
     <mat-label>Removed Instances: </mat-label>
     <section class="scroll_panel" style="margin-top: 10px; max-height: 300px; overflow: auto; width: 100%;">
-      <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="removedInstances" [actionButtons]="actionButtons"
-        (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
+      <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="removedInstances" [actionButtons]="removedActionButtons"
+        (actionEvent)="handleRemovedTableAction($event)"></app-instance-list-table>
     </section>
   </div>
 </mat-dialog-content>

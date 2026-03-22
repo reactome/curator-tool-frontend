@@ -9,8 +9,7 @@ import { UserInstancesService } from "../auth/login/user-instances.service";
 import { ListInstancesDialogService } from "../schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service";
 import { DefaultPersonActions } from "../instance/state/instance.actions";
 import { DataService } from "../core/services/data.service";
-import { Subscription } from "rxjs";
-import { combineLatest } from 'rxjs';
+import { Subscription, combineLatest, debounceTime, skip } from "rxjs";
 import { map } from 'rxjs/operators';
 
 @Component({
@@ -87,18 +86,36 @@ export class StatusComponent implements OnInit, OnDestroy {
     });
     this.subscriptions.add(sub);
 
-    sub = this.dataService.errorMessage$.subscribe((message: any) => {
-      if (message)
-        if (message.error) {
-          if (message.error.message)
-            this.openSnackBar(message.error.message, 'Close');
-          else
-            this.openSnackBar(message.error, 'Close');
+    // Auto-persist after 5 minutes of no edit activity across all tracked state
+    sub = combineLatest([
+      this.store.select(updatedInstances()),
+      this.store.select(newInstances()),
+      this.store.select(deleteInstances()),
+      this.store.select(defaultPerson()),
+    ]).pipe(
+      skip(1), // ignore the initial emission on subscription
+      debounceTime(5 * 60 * 1000)
+    ).subscribe(() => {
+      console.debug('StatusComponent: no edit activity for 5 minutes, auto-persisting...');
+      this.userInstancesService.persistInstances();
+    });
+    this.subscriptions.add(sub);
+
+    sub = this.dataService.errorMessage$.subscribe((message: Error) => {
+      if (message) {
+        // Filter out refresh token expired errors
+        const messageString = (message.message || '').toLowerCase();
+        
+        if (messageString.includes('refresh token') || messageString.includes('token expired')) {
+          return; // Skip displaying refresh token errors
         }
-        else if (message.message)
+        
+        if (message.message) {
           this.openSnackBar(message.message, 'Close');
-        else
+        } else {
           this.openSnackBar("There is an error: " + message.name, 'Close');
+        }
+      }
     });
     this.subscriptions.add(sub);
   }

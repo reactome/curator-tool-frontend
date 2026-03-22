@@ -18,7 +18,7 @@ export class BatchEditDialogService {
 
   }
 
-  openDialog(data: Instance[]): MatDialogRef<BatchEditDialogComponent, Instance[]> {
+  openDialog(data: Instance[]): MatDialogRef<BatchEditDialogComponent, void> {
     const dialogRef = this.dialog.open(BatchEditDialogComponent, {
       width: '1200px',
       height: '700px',
