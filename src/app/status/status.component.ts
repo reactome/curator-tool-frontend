@@ -106,7 +106,9 @@ export class StatusComponent implements OnInit, OnDestroy {
         // Filter out refresh token expired errors
         const messageString = (message.message || '').toLowerCase();
         
-        if (messageString.includes('refresh token') || messageString.includes('token expired')) {
+        if (messageString.includes('refresh token') || 
+            messageString.includes('token expired') || 
+            messageString.includes('api/auth')) { // Don't show any error related to login/refresh.
           return; // Skip displaying refresh token errors
         }
         

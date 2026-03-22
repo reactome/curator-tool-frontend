@@ -1,6 +1,6 @@
 <h2 class="dialog_title" mat-dialog-title cdkdraghandle>Instances in batch:</h2>
-<mat-dialog-content style="width: 100%; height: 100%;">
-  <mat-stepper style="width: 100%;" #batchEditStepper>
+<mat-dialog-content class="etched-content" style="height: 100%;">
+  <mat-stepper class="etched-section" style="width: 100%; margin-top: 4px;" #batchEditStepper>
     <mat-step label="Attribute">
       <div style="display:flex; flex-direction: row; width: max-content; min-width: 300px; padding: 10px;">
         <mat-select class="drop_down" placeholder="Select an Attribute to Edit" #val [(value)]="selected"
@@ -48,18 +48,30 @@
 
 
   <div style="flex-direction: column;">
-    <section class="scroll_panel" style="margin-top: 10px; max-height: 300px; overflow: auto; width: 100%;">
-      <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="data" [actionButtons]="actionButtons"
-        (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
-    </section>
-    <mat-label>Removed Instances: </mat-label>
-    <section class="scroll_panel" style="margin-top: 10px; max-height: 300px; overflow: auto; width: 100%;">
-      <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="removedInstances" [actionButtons]="removedActionButtons"
-        (actionEvent)="handleRemovedTableAction($event)"></app-instance-list-table>
-    </section>
+    <div class="list-group">
+      <mat-label class="list-label">Selected Instances:</mat-label>
+      <section class="scroll_panel etched-section" style="padding-top: 0px; margin-top: 4px; max-height: 300px; overflow: auto; width: 100%;">
+        <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="data" [actionButtons]="actionButtons"
+          (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
+      </section>
+    </div>
+
+    <div class="list-group">
+      <mat-label class="list-label">Removed Instances:</mat-label>
+      <section class="scroll_panel etched-section" style="padding-top: 0px; margin-top: 4px; max-height: 300px; overflow: auto; width: 100%;">
+        <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="removedInstances" [actionButtons]="removedActionButtons"
+          (actionEvent)="handleRemovedTableAction($event)"></app-instance-list-table>
+      </section>
+    </div>
   </div>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button mat-button (click)="onOK()" cdkFocusInitial>OK</button>
-  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-button (click)="onOK()" cdkFocusInitial>
+    <mat-icon>check</mat-icon>
+    OK
+  </button>
+  <button mat-button (click)="onCancel()">
+    <mat-icon>close</mat-icon>
+    Cancel
+  </button>
 </mat-dialog-actions>
