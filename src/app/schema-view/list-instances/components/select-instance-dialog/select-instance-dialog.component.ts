@@ -1,7 +1,8 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { AttributeValue, Instance } from 'src/app/core/models/reactome-instance.model';
-import { SchemaClass } from "../../../../core/models/reactome-schema.model";
+import { ACTION_BUTTONS, SchemaClass } from "../../../../core/models/reactome-schema.model";
+import { ActionButton } from '../list-instances-view/instance-list-table/instance-list-table.component';
 
 /**
  * A dialog component that is used to create a new Instance object.
@@ -22,6 +23,10 @@ export class SelectInstanceDialogComponent {
   selectedInstances: Instance[] = [];
   isSingleValued: boolean = false;
   attributeSchemaClass: string = '';
+
+  // Customized buttons
+  actionButtons: Array<ActionButton> = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.LIST];
+  
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public attributeValue: AttributeValue,
     public dialogRef: MatDialogRef<SelectInstanceDialogComponent>) {
