@@ -13,19 +13,19 @@
       <span>New Instances: {{newInstances.length}} ({{selectedNewInstances.length}})</span>
     </div>
     <div class="action-buttons-row">
-      <button class="mini-btn" (click)="setSelectedInstances(SelectedInstancesList.newInstanceList, newInstances)"
+      <button class="mini-icon-btn" (click)="setSelectedInstances(SelectedInstancesList.newInstanceList, newInstances)"
         color="primary" mat-icon-button matTooltip="select all">
         <mat-icon>select_all</mat-icon>
       </button>
-      <button class="mini-btn" (click)="clearSelectedInstances(SelectedInstancesList.newInstanceList)" color="primary"
+      <button class="mini-icon-btn" (click)="clearSelectedInstances(SelectedInstancesList.newInstanceList)" color="primary"
         mat-icon-button matTooltip="deselect all">
         <mat-icon>deselect_all</mat-icon>
       </button>
-      <button (click)="deleteAllSelectedNewInstances()" [disabled]="selectedNewInstances.length === 0" class="mini-btn"
+      <button (click)="deleteAllSelectedNewInstances()" [disabled]="selectedNewInstances.length === 0" class="mini-icon-btn"
         color="primary" mat-icon-button matTooltip="delete all selected new instances">
         <mat-icon>delete</mat-icon>
       </button>
-      <button [disabled]="selectedNewInstances.length === 0" class="mini-btn" color="primary" mat-icon-button
+      <button [disabled]="selectedNewInstances.length === 0" class="mini-icon-btn" color="primary" mat-icon-button
         matTooltip="commit all selected" (click)="commitNewInstances()">
         <mat-icon>upload</mat-icon>
       </button>
@@ -46,20 +46,20 @@
       <span>Updated Instances: {{updatedInstances.length}} ({{selectedUpdatedInstances.length}})</span>
     </div>
     <div class="action-buttons-row">
-      <button class="mini-btn"
+      <button class="mini-icon-btn"
         (click)="setSelectedInstances(SelectedInstancesList.updatedInstanceList, updatedInstances)" color="primary"
         mat-icon-button matTooltip="select all">
         <mat-icon>select_all</mat-icon>
       </button>
-      <button class="mini-btn" (click)="clearSelectedInstances(SelectedInstancesList.updatedInstanceList)"
+      <button class="mini-icon-btn" (click)="clearSelectedInstances(SelectedInstancesList.updatedInstanceList)"
         color="primary" mat-icon-button matTooltip="deselect all">
         <mat-icon>deselect_all</mat-icon>
       </button>
       <button (click)="resetSelectedUpdatedInstances()" [disabled]="selectedUpdatedInstances.length === 0"
-        class="mini-btn" color="primary" mat-icon-button matTooltip="undo all changes for selected updated instances">
+        class="mini-icon-btn" color="primary" mat-icon-button matTooltip="undo all changes for selected updated instances">
         <mat-icon>undo</mat-icon>
       </button>
-      <button [disabled]="selectedUpdatedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button
+      <button [disabled]="selectedUpdatedInstances.length === 0" class="mini-icon-btn" color="primary" mat-icon-button
         matTooltip="commit all selected" (click)="commitUpdatedInstances()">
         <mat-icon>upload</mat-icon>
       </button>
@@ -81,20 +81,20 @@
       <span>Deleted Instances: {{deletedInstances.length}} ({{selectedDeletedInstances.length}})</span>
     </div>
     <div class="action-buttons-row">
-      <button class="mini-btn"
+      <button class="mini-icon-btn"
         (click)="setSelectedInstances(SelectedInstancesList.deletedInstanceList, deletedInstances)" color="primary"
         mat-icon-button matTooltip="select all">
         <mat-icon>select_all</mat-icon>
       </button>
-      <button class="mini-btn" (click)="clearSelectedInstances(SelectedInstancesList.deletedInstanceList)"
+      <button class="mini-icon-btn" (click)="clearSelectedInstances(SelectedInstancesList.deletedInstanceList)"
         color="primary" mat-icon-button matTooltip="deselect all">
         <mat-icon>deselect_all</mat-icon>
       </button>
       <button (click)="resetSelectedDeletedInstances()" [disabled]="selectedDeletedInstances.length === 0"
-        class="mini-btn" color="primary" mat-icon-button matTooltip="restore all selected deleted instances">
+        class="mini-icon-btn" color="primary" mat-icon-button matTooltip="restore all selected deleted instances">
         <mat-icon>undo</mat-icon>
       </button>
-      <button [disabled]="selectedDeletedInstances.length === 0" class="mini-btn" color="primary" mat-icon-button
+      <button [disabled]="selectedDeletedInstances.length === 0" class="mini-icon-btn" color="primary" mat-icon-button
         matTooltip="commit all selected" (click)="handleDeletion()">
         <mat-icon>upload</mat-icon>
       </button>

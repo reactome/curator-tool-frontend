@@ -86,16 +86,46 @@
 
 .action-buttons-row {
   display: flex;
-  align-items: flex-end;
-  gap: 2px; // or use column-gap: 2px;
-  line-height: normal;
-  margin-top: 12px;
+  align-items: center;
+  gap: 2px;
+  line-height: 1;
+  margin-top: 6px;
 }
 
-.mini-btn {
-  min-width: 28px !important;
-  width: 28px !important;
-  height: 28px !important;
-  padding: 0 !important;
-  margin: 0 2px !important;
+.mini-icon-btn {
+  flex-direction: row-reverse;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin: 0;
+  border-radius: 50%;
+}
+
+.action-buttons-row .mini-icon-btn.mat-mdc-icon-button {
+  --mdc-icon-button-state-layer-size: 28px;
+  --mat-mdc-button-persistent-ripple-size: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  line-height: 28px;
+  align-self: center;
+}
+
+.action-buttons-row .mini-icon-btn .mat-icon {
+  margin: 0;
+  display: block;
+}
+
+.mini-icon-btn:hover {
+  background-color: var(--hover);
 }
