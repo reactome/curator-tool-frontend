@@ -18,6 +18,16 @@
   background-color: var(--hover);
 }
 
+.action-button.selected-option {
+  background-color: var(--surface-variant);
+  color: var(--on-surface);
+  font-weight: 600;
+}
+
+.action-button.selected-option .mat-icon {
+  color: var(--primary);
+}
+
 .mat-icon {
   font-size: 12px;
   width: 12px;

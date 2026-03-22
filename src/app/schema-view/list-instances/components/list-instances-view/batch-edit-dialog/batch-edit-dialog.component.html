@@ -16,28 +16,19 @@
     </mat-step>
 
     <mat-step label="Edit Action" [completed]="selectedAction !== undefined">
-      <ng-container *ngIf="selectedAttribute?.type === DATA_TYPES.STRING; else nonStringStep">
         <app-edit-menu (actionItem)="onSelectTextAction($event)"
-          [isSingledValued]="selectedAttribute?.cardinality === '1'"></app-edit-menu>
-      </ng-container>
-      <ng-template #nonStringStep>
-        <div style="padding: 10px;">This step is available for string attributes only.</div>
-      </ng-template>
+          [isSingledValued]="selectedAttribute?.cardinality === '1'"
+          [isInstanceType]="selectedAttribute?.type === DATA_TYPES.INSTANCE"></app-edit-menu>
       <div>
         <button mat-button matStepperPrevious>Back</button>
         <button mat-button matStepperNext
-          [disabled]="selectedAttribute?.type !== DATA_TYPES.STRING || selectedAction === undefined">Next</button>
+          [disabled]="selectedAction === undefined">Next</button>
       </div>
     </mat-step>
 
     <mat-step label="Replacement Value">
-      <ng-container *ngIf="selectedAttribute?.type === DATA_TYPES.STRING && selectedAction === EDIT_ACTION.REPLACE_NEW; else noReplacementNeeded">
         <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onEditAction($event)">
         </app-attribute-edit>
-      </ng-container>
-      <ng-template #noReplacementNeeded>
-        <div style="padding: 10px;">Replacement value is only required when the selected action is Replace.</div>
-      </ng-template>
       <div>
         <button mat-button matStepperPrevious>Back</button>
       </div>

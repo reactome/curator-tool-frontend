@@ -22,11 +22,13 @@ export class EditMenuComponent {
   @Output() actionItem = new EventEmitter<EDIT_ACTION>();
   EDIT_ACTION = EDIT_ACTION;
   hidePanel: boolean = false;
+  selectedAction: EDIT_ACTION | undefined;
 
   constructor() {
   }
 
   onClick(editAction: EDIT_ACTION) {
+    this.selectedAction = editAction;
     this.actionItem.emit(editAction);
     // this.hidePanel = true;
   }

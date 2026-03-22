@@ -27,6 +27,8 @@
 - bug when adding golgi apparatus to the inst 
 - Deleted instance generated displayname 
 - disable the collapsable feature in schema tree.
+-Can StructureModified attributes be flagged in events when the StructureModified date is more recent that the Reviewed or internalReviewed?
+-Maybe add curatorComments and replacement instance options directly on the deletion confirmation modal to encourage populating those fields?
 
 #### TODO:jbv
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.
