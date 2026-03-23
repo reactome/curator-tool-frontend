@@ -620,6 +620,17 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   // TODO: need to clean this: either remove take one or update each time 
   // use combine latest to sync 
   handleBatchEdit() {
+    if (!this.selectedInstances || this.selectedInstances.length === 0) {
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'No instances selected',
+          message: 'Select one or more instances from the list to use in batch edit.',
+          instanceInfo: ''
+        }
+      });
+      return;
+    }
+
     combineLatest([
       this.store.select(deleteInstances()),
       this.store.select(newInstances()),
@@ -646,7 +657,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         });
       }
       else {
-        const sourceData = this.selectedInstances.length > 0 ? this.selectedInstances : this.data;
+        const sourceData = this.selectedInstances;
         if (this.isLocal) {
           this.batchEditDialogService.openDialog(sourceData);
           return;
@@ -658,8 +669,9 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         ]).pipe(take(1)).subscribe(([deleted, updated]) => {
           const deletedDbIds = new Set((deleted || []).map(inst => inst.dbId));
           const updatedDbIds = new Set((updated || []).map(inst => inst.dbId));
+          // Only filter out deleted instances, updated instances should still be included in batch edit and the latest changes will be shown in the dialog.
           const filteredData = sourceData.filter(
-            inst => !deletedDbIds.has(inst.dbId) && !updatedDbIds.has(inst.dbId)
+            inst => !deletedDbIds.has(inst.dbId)
           );
           this.batchEditDialogService.openDialog(filteredData);
         });
