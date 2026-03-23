@@ -6,8 +6,7 @@ import { BatchEditDialogComponent } from "./batch-edit-dialog.component";
 /**
  * Use a dialog service to hide the actual implementation of this dialog component from
  * other components using this dialog.
- * Note: This should be considered a good design though we may open the dialog for NewInstanceDialogComponent
- * directly in other places.
+ * Note: This should be considered a good design.
  */
 @Injectable({
   providedIn: 'root'

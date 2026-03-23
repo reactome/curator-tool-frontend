@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Inject } from '@angular/core';
+import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { AttributeValue, EDIT_ACTION, Instance } from 'src/app/core/models/reactome-instance.model';
 import { ACTION_BUTTONS, AttributeCategory, AttributeDataType, SchemaAttribute, SchemaClass } from 'src/app/core/models/reactome-schema.model';
@@ -9,13 +9,10 @@ import { AttributeEditService } from 'src/app/core/services/attribute-edit.servi
 import { NewInstanceDialogService } from 'src/app/instance/components/new-instance-dialog/new-instance-dialog.service';
 import { PostEditListener } from 'src/app/core/post-edit/PostEditOperation';
 import { PostEditService } from 'src/app/core/services/post-edit.service';
-import { UpdateInstanceActions, NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
-import { Store } from '@ngrx/store';
 import { AttributeListDialogService } from './attribute-list-dialog/attribute-list-dialog.service';
 import { MatSelect } from '@angular/material/select';
 import { take, map, of } from 'rxjs';
-import { deleteInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { SelectInstanceDialogService } from '../../select-instance-dialog/select-instance-dialog.service';
 import { ActionButton } from '../instance-list-table/instance-list-table.component';
 
@@ -24,12 +21,11 @@ import { ActionButton } from '../instance-list-table/instance-list-table.compone
   templateUrl: './batch-edit-dialog.component.html',
   styleUrls: ['./batch-edit-dialog.component.scss']
 })
-export class BatchEditDialogComponent {
+export class BatchEditDialogComponent implements PostEditListener {
   selectedAttribute: SchemaAttribute | undefined;
   selectedAction: EDIT_ACTION | undefined;
   selected: string = '';
   candidateAttributes: SchemaAttribute[] = [];
-  instance: Instance | undefined;
   selectedInstances: Instance[] = [];
   isSingleValued: boolean = false;
   attributeSchemaClass: string = '';
@@ -38,10 +34,6 @@ export class BatchEditDialogComponent {
   attributeSelected: boolean = false;
   batchEditOptions: string[] = ['Add', 'Set', 'Remove'];
   removedInstances: Instance[] = [];
-  element: any;
-  dragDropStatus: any;
-  blockRouter: any;
-  tempInstance: Instance | undefined;
   _instances: Instance[] | undefined;
   textAttributeValue: AttributeValue | undefined;
   selectedAggregatedValues: Set<any> = new Set();
@@ -62,7 +54,6 @@ export class BatchEditDialogComponent {
     private attributeEditService: AttributeEditService,
     private postEditService: PostEditService,
     private instUtil: InstanceUtilities,
-    private store: Store,
     private attributeListDialogService: AttributeListDialogService,
 
   ) {
@@ -71,12 +62,16 @@ export class BatchEditDialogComponent {
 
   }
 
-  onCancel() {
+  // Note: The behavor of the bach edit is different from the Java version. In the java version, the batch edit
+  // actually is carried out after the dialog is closed. In this TS version, the edit is carried out after the value is
+  // committed, similar behavior to the instance edit in the view. This may be good here since the user may make multiple
+  // batch edits at the same time. 
+  onClose() {
     this.dialogRef.close();
   }
 
-  onOK() {
-    this.dialogRef.close();
+  openInNewTab(instance: Instance) {
+    window.open(`/schema_view/instance/${instance.dbId}`, '_blank');
   }
 
   handleListTableAction(actionButton: { instance: Instance, action: string }) {
@@ -111,14 +106,9 @@ export class BatchEditDialogComponent {
     console.debug('selected', this.selectedAttribute);
   }
 
-  setCandidateAttributes() {
+  private setCandidateAttributes() {
     // unique list of the schema classes found in the data list 
     let schemaClasses: Set<string> = new Set(this.data.map(inst => inst.schemaClassName));
-    this.grepAttributes(schemaClasses);
-  }
-
-  // Find the common attributes among the given schema classes
-  private grepAttributes(schemaClasses: Set<string>): void {
     let attributeArrays: SchemaAttribute[][] = [];
     let fetches: Array<Observable<SchemaClass>> = [];
 
@@ -292,8 +282,7 @@ export class BatchEditDialogComponent {
     });
   }
 
-  private addNewInstanceAttribute(attributeValue: AttributeValue, replace: boolean = false
-  ): void {
+  private addNewInstanceAttribute(attributeValue: AttributeValue, replace: boolean = false): void {
     // if replacing then populate the attributeValue with the selected value from 
     // the aggregated attributes dialog 
     if (replace) {
@@ -503,7 +492,7 @@ export class BatchEditDialogComponent {
   }
 
   finishEdit(attName: string, value: any, instance: Instance) {
-    //Only add attribute name if value was added
+    // Only add attribute name if value was added
     this.postEdit(attName, instance);
     // Need to call this before registerUpdatedInstance
     // in case the instance is used somewhere via the ngrx statement management system
@@ -533,6 +522,8 @@ export class BatchEditDialogComponent {
   /**
    * Implementation of PostEditListener interface.
    * Called after post-edit operations.
+   * TODO: This has not been finished yet. How to update the display name here if it is really needed?
+   * // There should be no need to do this here. The edit will be done after the dialog is closed.
    */
   donePostEdit(instance: Instance, editedAttributeName: string | undefined): boolean {
     // You can add custom logic here if needed

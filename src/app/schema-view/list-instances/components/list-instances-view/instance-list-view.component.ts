@@ -41,8 +41,9 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   showProgressSpinner: boolean = true;
   // To be displayed in instance list table
   data: Instance[] = [];
-  actionButtons: Array<ActionButton> = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.DELETE, ACTION_BUTTONS.LIST];
-  secondaryActionButtons: Array<ActionButton> = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
+  @Input() actionButtons: Array<ActionButton> = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.DELETE, ACTION_BUTTONS.LIST];
+  @Input() needSecondaryActions: boolean = true;
+  secondaryActionButtons: Array<ActionButton> = [];
   // Used to popup attributes for advanced search (i.e. SearchFilterComponent)
   schemaClassAttributes: string[] = [];
   // Flag to indicate if the advanced search component should be displayed
@@ -171,11 +172,12 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
             this.showProgressSpinner = false;
           });
       }
-
-    if (this.dataService.isEventClass(this.className))
-      this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES, ACTION_BUTTONS.SHOW_TREE];
-    else {
-      this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
+    if (this.needSecondaryActions) {
+      if (this.dataService.isEventClass(this.className))
+        this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES, ACTION_BUTTONS.SHOW_TREE];
+      else {
+        this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
+      }
     }
   }
 
