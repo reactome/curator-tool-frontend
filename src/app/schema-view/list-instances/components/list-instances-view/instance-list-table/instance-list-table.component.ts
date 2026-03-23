@@ -40,6 +40,8 @@ export class InstanceListTableComponent implements OnInit, OnDestroy {
   // @Input() instanceURL: string | undefined; 
   @Output() urlClickEvent = new EventEmitter<Instance>();
   @Output() selectionChangeEvent = new EventEmitter<Instance[]>();
+  @Output() checkedEvent = new EventEmitter<Instance>();
+  @Output() uncheckedEvent = new EventEmitter<Instance>();
   readonly newDisplayName: string = NEW_DISPLAY_NAME;
   routerNavigationUrl: string = ''
   showSecondaryButtons: boolean = false;
@@ -79,10 +81,12 @@ export class InstanceListTableComponent implements OnInit, OnDestroy {
 
   addCheckBox(instance: Instance) {
     this.instUtils.addSelectedInstance(this.selectedInstanceListName, instance);
+    this.checkedEvent.emit(instance);
   }
 
   removeCheckBox(instance: Instance) {
     this.instUtils.removeSelectedInstance(this.selectedInstanceListName, instance);
+    this.uncheckedEvent.emit(instance);
 
   }
 

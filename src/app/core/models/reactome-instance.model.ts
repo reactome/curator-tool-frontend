@@ -58,6 +58,7 @@ export enum SelectedInstancesList {
   newInstanceList = 'newInstanceList',
   updatedInstanceList = 'updatedInstanceList',
   deletedInstanceList = 'deletedInstanceList',
+  batchEditSelectedInstanceList = 'batchEditSelectedInstanceList'
 }
 
 
