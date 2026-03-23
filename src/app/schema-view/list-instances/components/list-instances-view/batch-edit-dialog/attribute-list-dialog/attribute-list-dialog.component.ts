@@ -48,15 +48,16 @@ export class AttributeListDialogComponent {
   }
 
   addCheckBox(element: any) {
-    this._selectedAttributes.subscribe(selected => {
-      if (selected.includes(element)) {
-        this.attributeSelected = this.attributeSelected.filter(attr => attr !== element)
-        this._selectedAttributes = of(this.attributeSelected);
-      } else {
-        this.attributeSelected.push(element);
-        this._selectedAttributes = of(this.attributeSelected);
+      if (this.selectedAttributes.some(att => att === element)) {
+        return;
       }
-    }).unsubscribe();
+
+      this.selectedAttributes.push(element);
+      this.selectedAttributes = [...this.selectedAttributes];
+  }
+
+  removeCheckBox(element: any) {
+    this.selectedAttributes = this.selectedAttributes.filter(att => att !== element);
   }
 
 }

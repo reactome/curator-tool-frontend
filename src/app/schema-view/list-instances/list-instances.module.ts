@@ -23,6 +23,7 @@ import { InstanceListTableComponent } from './components/list-instances-view/ins
 import { EditMenuComponent } from './components/list-instances-view/batch-edit-dialog/attribute-edit/action-menu/action-menu.component';
 import { AttributeEditComponent } from './components/list-instances-view/batch-edit-dialog/attribute-edit/attribute-edit.component';
 import { AttributeListDialogComponent } from './components/list-instances-view/batch-edit-dialog/attribute-list-dialog/attribute-list-dialog.component';
+import { AttributeListValuesTableComponent } from './components/list-instances-view/batch-edit-dialog/attribute-list-dialog/attribute-list-values-table/attribute-list-values-table.component';
 import { BatchEditDialogComponent } from './components/list-instances-view/batch-edit-dialog/batch-edit-dialog.component';
 
 
@@ -34,6 +35,7 @@ import { BatchEditDialogComponent } from './components/list-instances-view/batch
     ListInstancesDialogComponent,
     BatchEditDialogComponent,
     AttributeListDialogComponent,
+    AttributeListValuesTableComponent,
     EditMenuComponent,
     AttributeEditComponent,
     DeleteBulkDialogComponent,

@@ -1,0 +1,65 @@
+.instance-list-table {
+  width: 100%;
+  position: relative;
+}
+
+.mat-mdc-row {
+  height: 30px;
+}
+
+.mat-mdc-row:hover .mat-mdc-cell {
+  border-color: currentColor;
+  border-top: 1px currentColor;
+  background-color: var(--surface-variant);
+  cursor: pointer;
+}
+
+th {
+  background: var(--primary-container) !important;
+  color: var(--on-primary-container) !important;
+}
+
+.buttons-pane {
+  display: flex;
+  align-items: flex-end;
+  padding: 0;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+.wrap-text-cell {
+  white-space: normal !important;
+  word-break: break-word;
+}
+
+.rowBackground {
+  &.deleteHighlight {
+    text-decoration: line-through;
+    color: #f28b82;
+    text-decoration-thickness: 2px;
+  }
+
+  &.updateHighlight {
+    text-decoration: wavy underline;
+    color: #81c995;
+  }
+
+  &.highlightRow {
+    color: red;
+  }
+}
+
+.mini-btn {
+  min-width: 28px !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  margin: 0, 1px !important;
+}
