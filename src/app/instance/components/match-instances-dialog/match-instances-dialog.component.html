@@ -1,0 +1,18 @@
+<h2 class="dialog_title" mat-dialog-title cdkdraghandle>{{data.title}}</h2>
+<mat-dialog-content>
+  <section class="scroll_panel">
+    <app-instance-list-table [dataSource]="data.instances" [isSelection]="true" [showBookmark]="false"
+      [showCheckMark]="false" [actionButtons]="[]" [secondaryActionButtons]="[]"
+      (selectionEvent)="onSelectRow($event)"></app-instance-list-table>
+  </section>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onOK()" cdkFocusInitial [disabled]="!selectedInstance">
+    <mat-icon>check</mat-icon>
+    OK
+  </button>
+  <button mat-button (click)="onCancel()">
+    <mat-icon>close</mat-icon>
+    Cancel
+  </button>
+</mat-dialog-actions>

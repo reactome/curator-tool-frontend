@@ -53,6 +53,7 @@ export class DataService {
   private fetchInstancesInBatchUrl = `${environment.ApiRoot}/findByDbIds/`;
   private fetchPathwayDiagramUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
   private deleteByDeletedUrl = `${environment.ApiRoot}/deleteByDeleted/`;
+  private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
 
 
   // Track the negative dbId to be used
@@ -973,6 +974,23 @@ export class DataService {
         return this.handleErrorMessage(error);
       })
     )
+  }
+
+  /**
+   * Match an in-memory instance against database instances with the same defined attributes.
+   */
+  matchInstances(instance: Instance): Observable<Instance[]> {
+    const copy = this.utils.cloneInstanceForCommit(instance);
+    return this.http.post<Instance[] | InstanceList>(this.matchInstancesUrl, copy).pipe(
+      map((data: Instance[] | InstanceList) => {
+        if (Array.isArray(data))
+          return data;
+        return data?.instances ? data.instances : [];
+      }),
+      catchError((err: Error) => {
+        return this.handleErrorMessage(err);
+      })
+    );
   }
 
   // TODO: Create a separate service for instance/attribute logic

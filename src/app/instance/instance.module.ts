@@ -40,6 +40,7 @@ import { TextEditorDialogComponent } from "./components/instance-view/instance-t
 import { HttpClientModule } from "@angular/common/http";
 import { AngularEditorModule } from "@kolkov/angular-editor";
 import { DeletionCommitModule } from "./deletion-commit/deletion-commit.module";
+import { MatchInstancesDialogComponent } from './components/match-instances-dialog/match-instances-dialog.component';
 
 @NgModule({
     declarations: [
@@ -58,6 +59,7 @@ import { DeletionCommitModule } from "./deletion-commit/deletion-commit.module";
         ConfirmDeleteDialogComponent,
         QAReportTable,
         TextEditorDialogComponent,
+        MatchInstancesDialogComponent,
     ],
   imports: [
     CommonModule,

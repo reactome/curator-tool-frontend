@@ -22,6 +22,7 @@ import { DisplayNameViewFilter } from 'src/app/core/instance-view-filters/Displa
 import { InstanceViewFilter } from 'src/app/core/instance-view-filters/InstanceViewFilter';
 import { ReviewStatusUpdateFilter } from 'src/app/core/instance-view-filters/ReviewStatusUpdateFilter';
 import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
+import { MatchInstancesDialogService } from '../match-instances-dialog/match-instances-dialog.service';
 
 @Component({
   selector: 'app-instance-view',
@@ -80,6 +81,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     private instUtils: InstanceUtilities,
     private deletionDialogService: DeletionDialogService,
     private listInstancesDialogService: ListInstancesDialogService,
+    private matchInstancesDialogService: MatchInstancesDialogService,
     private deletionService: DeletionService,
     private reviewStatusCheck: ReviewStatusCheck
   ) {
@@ -590,6 +592,31 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.store.dispatch(NewInstanceActions.register_new_instance(this.instUtils.makeShell(instance)));
       let dbId = instance.dbId.toString();
       this.router.navigate(["/schema_view/instance/" + dbId.toString()]);
+    });
+  }
+
+  matchNewInstance() {
+    if (!this.instance || this.instance.dbId >= 0)
+      return;
+    this.dataService.matchInstances(this.instance).pipe(take(1)).subscribe(matches => {
+      if (!matches || matches.length === 0) {
+        this.dialog.open(InfoDialogComponent, {
+          data: {
+            title: 'Information',
+            message: 'No matched instances at the database',
+          }
+        });
+        return;
+      }
+
+      const matDialogRef = this.matchInstancesDialogService.openDialog({
+        title: 'Matched instances for ' + this.instance!.displayName,
+        instances: matches
+      });
+      matDialogRef.afterClosed().subscribe((result) => {
+        if (result)
+          this.router.navigate(["/schema_view/instance/" + result.dbId.toString()]);
+      });
     });
   }
 
