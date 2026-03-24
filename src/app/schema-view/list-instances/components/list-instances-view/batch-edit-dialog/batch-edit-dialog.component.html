@@ -1,50 +1,63 @@
 <h2 class="dialog_title" mat-dialog-title cdkdraghandle>Instances in batch:</h2>
 <mat-dialog-content class="etched-content" style="height: 100%;">
-  <mat-stepper class="etched-section" style="width: 100%; margin-top: 4px;" #batchEditStepper>
-    <mat-step label="Attribute">
-      <div style="display:flex; flex-direction: row; width: max-content; min-width: 300px; padding: 10px;">
-        <mat-select class="drop_down" placeholder="Select an Attribute to Edit" #val [(value)]="selected"
-          (selectionChange)="handleAttributeSelectionChange(val)">
-          <mat-option class="action-button" *ngFor="let value of candidateAttributes" [value]="value">
-            {{value.name}}
-          </mat-option>
-        </mat-select>
-      </div>
-      <div>
-        <button mat-button matStepperNext [disabled]="selectedAttribute === undefined">Next</button>
-      </div>
-    </mat-step>
+  <div class="etched-section" style="width: 100%; margin-top: 4px; padding: 10px; overflow-x: auto;">
+    <div style="display: flex; flex-direction: column; gap: 12px; min-width: max-content;">
+      <div style="display: flex; gap: 12px; align-items: stretch;">
+        <section class="etched-section" style="min-width: 320px; min-height: 100px; padding: 10px; display: flex; flex-direction: column;">
+          <mat-label style="font-weight: 600;">Attribute</mat-label>
+          <div style="display:flex; flex-direction: row; width: max-content; min-width: 300px; padding-top: 10px;">
+            <mat-select class="drop_down" placeholder="Select an Attribute to Edit" #val [(value)]="selected"
+              (selectionChange)="handleAttributeSelectionChange(val)">
+              <mat-option class="action-button" *ngFor="let value of candidateAttributes" [value]="value">
+                {{value.name}}
+              </mat-option>
+            </mat-select>
+          </div>
+        </section>
 
-    <mat-step label="Edit Action" [completed]="selectedAction !== undefined">
-      <ng-container *ngIf="selectedAttribute?.type === DATA_TYPES.STRING; else nonStringStep">
-        <app-edit-menu (actionItem)="onSelectTextAction($event)"
-          [isSingledValued]="selectedAttribute?.cardinality === '1'"></app-edit-menu>
-      </ng-container>
-      <ng-template #nonStringStep>
-        <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onScalarAttributeEdit($event)"
-          (editAction)="onInstanceAttributeEdit($event)">
-        </app-attribute-edit>
-      </ng-template>
-      <div>
-        <button mat-button matStepperPrevious>Back</button>
-        <button mat-button matStepperNext
-          [disabled]="selectedAttribute?.type !== DATA_TYPES.STRING || selectedAction === undefined">Next</button>
-      </div>
-    </mat-step>
+        <section *ngIf="selectedAttribute" class="etched-section" style="min-width: 420px; min-height: 100px; padding: 10px; display: flex; flex-direction: column;">
+          <mat-label style="font-weight: 600;">Edit Action</mat-label>
+          <ng-container *ngIf="selectedAttribute.type === DATA_TYPES.STRING; else nonStringStep">
+            <div style="display: flex; gap: 12px; align-items: flex-start; width: 100%; padding-top: 10px;">
+              <div style="flex: 1 1 auto; min-width: 300px;">
+                <app-edit-menu (actionItem)="onSelectTextAction($event)"
+                  [isSingledValued]="selectedAttribute.cardinality === '1'"></app-edit-menu>
+              </div>
 
-    <mat-step label="Replacement Value">
-      <ng-container *ngIf="selectedAttribute?.type === DATA_TYPES.STRING && (selectedAction === EDIT_ACTION.REPLACE_NEW || selectedAction === EDIT_ACTION.ADD_NEW); else noReplacementNeeded">
-        <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onEditAction($event)">
-        </app-attribute-edit>
-      </ng-container>
-      <ng-template #noReplacementNeeded>
-        <div style="padding: 10px;">No additional value entry is required for the selected action.</div>
-      </ng-template>
-      <div>
-        <button mat-button matStepperPrevious>Back</button>
+              <section *ngIf="selectedAction === EDIT_ACTION.REPLACE_NEW && selectedValuesForReplace.length > 0"
+                class="etched-section" style="flex: 0 0 300px; max-height: 220px; overflow: auto; padding: 8px;">
+                <mat-label style="font-weight: 600;">Selected {{selectedAttribute.name}} to replace</mat-label>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 6px;">
+                  <tbody>
+                    <tr *ngFor="let value of selectedValuesForReplace">
+                      <td style="padding: 4px 0; border-top: 1px solid var(--surface-variant);">{{formatReplaceValue(value)}}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </section>
+            </div>
+          </ng-container>
+          <ng-template #nonStringStep>
+            <div style="padding-top: 10px;">
+              <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onScalarAttributeEdit($event)"
+                (editAction)="onInstanceAttributeEdit($event)">
+              </app-attribute-edit>
+            </div>
+          </ng-template>
+        </section>
       </div>
-    </mat-step>
-  </mat-stepper>
+
+      <section
+        *ngIf="selectedAttribute?.type === DATA_TYPES.STRING && (selectedAction === EDIT_ACTION.REPLACE_NEW || selectedAction === EDIT_ACTION.ADD_NEW)"
+        class="etched-section" style="min-width: 320px; max-width: 740px; padding: 10px; align-self: center;">
+        <mat-label style="font-weight: 600;">Replacement Value</mat-label>
+        <div style="padding-top: 10px;">
+          <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onEditAction($event)">
+          </app-attribute-edit>
+        </div>
+      </section>
+    </div>
+  </div>
 
 
   <div style="flex-direction: column;">
@@ -68,12 +81,8 @@
   </div>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button mat-button (click)="onOK()" cdkFocusInitial>
+  <button mat-button (click)="onClose()" cdkFocusInitial>
     <mat-icon>check</mat-icon>
     OK
-  </button>
-  <button mat-button (click)="onCancel()">
-    <mat-icon>close</mat-icon>
-    Cancel
   </button>
 </mat-dialog-actions>

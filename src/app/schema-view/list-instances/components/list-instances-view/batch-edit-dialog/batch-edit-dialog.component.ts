@@ -16,12 +16,6 @@ import { take, map, of } from 'rxjs';
 import { SelectInstanceDialogService } from '../../select-instance-dialog/select-instance-dialog.service';
 import { ActionButton } from '../instance-list-table/instance-list-table.component';
 
-/** A single deferred edit operation, applied when the dialog closes. */
-interface PendingEdit {
-  description: string;
-  apply: (instances: Instance[]) => void;
-}
-
 @Component({
   selector: 'app-batch-edit-dialog',
   templateUrl: './batch-edit-dialog.component.html',
@@ -46,7 +40,6 @@ export class BatchEditDialogComponent implements PostEditListener {
   storeAggregatedAttributes: Set<any> = new Set();
   deletedDBIds: number[] = [];
   updatedDBIds: number[] = [];
-  pendingEdits: PendingEdit[] = [];
 
   // So that we can use it in the template
   DATA_TYPES = AttributeDataType;
@@ -69,23 +62,22 @@ export class BatchEditDialogComponent implements PostEditListener {
 
   }
 
-  onOK() {
-    if (this.pendingEdits.length === 0) {
-      this.dialogRef.close();
-      return;
-    }
-    this.getInstancesForEdit().pipe(take(1)).subscribe((instances: Instance[]) => {
-      for (const edit of this.pendingEdits) {
-        edit.apply(instances);
-      }
-      this.pendingEdits = [];
-      this.dialogRef.close();
-    });
+  onClose() {
+    this.dialogRef.close();
   }
 
-  onCancel() {
-    this.pendingEdits = [];
-    this.dialogRef.close();
+  get selectedValuesForReplace(): any[] {
+    return Array.from(this.selectedAggregatedValues).map((value) => value?.value);
+  }
+
+  formatReplaceValue(value: any): string {
+    if (value === undefined || value === null) {
+      return '';
+    }
+    if (value?.displayName) {
+      return value.displayName;
+    }
+    return value.toString?.() ?? String(value);
   }
 
   openInNewTab(instance: Instance) {
@@ -398,31 +390,26 @@ export class BatchEditDialogComponent implements PostEditListener {
       return;
     }
 
-    const clonedAttributeValues = attributeValues.map(av => ({ ...av }));
-    const results = result;
-    const isInstanceAttribute = clonedAttributeValues[0].attribute.type === this.DATA_TYPES.INSTANCE;
-    const description = `${replace ? 'Replace' : 'Add'} on attribute '${clonedAttributeValues[0].attribute.name}'`;
+    this.getInstancesForEdit().pipe(take(1)).subscribe((instances: Instance[]) => {
+      const isInstanceAttribute = attributeValues[0].attribute.type === this.DATA_TYPES.INSTANCE;
 
-    this.pendingEdits.push({
-      description,
-      apply: (instances: Instance[]) => {
-        for (const instance of instances) {
-          for (const attributeValue of clonedAttributeValues) {
-            if (replace && !this.matchesReplaceTarget(instance, attributeValue)) {
-              continue;
-            }
-
-            if (isInstanceAttribute) {
-              if (results?.dbId < 0)
-                this.attributeEditService.addValueToAttribute(attributeValue, results, instance, replace);
-              else
-                this.attributeEditService.addInstanceViaSelect(attributeValue, results, instance, replace);
-            } else {
-              this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, results, instance, replace);
-            }
-
-            this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+      for (let instance of instances) {
+        for (let attributeValue of attributeValues) {
+          if (replace && !this.matchesReplaceTarget(instance, attributeValue)) {
+            continue;
           }
+
+          if (isInstanceAttribute) {
+            if (result?.dbId < 0)
+              this.attributeEditService.addValueToAttribute(attributeValue, result, instance, replace);
+            else
+              this.attributeEditService.addInstanceViaSelect(attributeValue, result, instance, replace);
+          }
+          else {
+            this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, result, instance, replace);
+          }
+
+          this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
         }
       }
     });
@@ -483,31 +470,28 @@ export class BatchEditDialogComponent implements PostEditListener {
           this.selectedAggregatedValues.add(att);
         });
 
-        const snapshotAggregated = Array.from(this.selectedAggregatedValues).map(v => ({ ...v }));
-        const attName = attributeValue.attribute.name;
-        this.pendingEdits.push({
-          description: `Delete values from attribute '${attName}'`,
-          apply: (instances: Instance[]) => {
-            for (const values of snapshotAggregated) {
-              for (const instance of instances) {
-                const att = instance.attributes.get(attName);
-                if (att !== undefined) {
-                  if (Array.isArray(att)) {
-                    if (att.includes(values.value)) {
-                      values.index = att.indexOf(values.value);
-                      this.attributeEditService.deleteInstanceAttribute(values, instance);
-                      this.finishEdit(attName, attributeValue, instance);
-                    }
-                  } else {
-                    if (att === values.value) {
-                      this.attributeEditService.deleteInstanceAttribute(values, instance);
-                      this.finishEdit(attName, attributeValue, instance);
-                    }
+        this.getInstancesForEdit().pipe(take(1)).subscribe((instances: Instance[]) => {
+          this.selectedAggregatedValues.forEach((values) => {
+            for (let instance of instances) {
+              let att = instance.attributes.get(attributeValue.attribute.name);
+              if (att !== undefined) {
+                if (Array.isArray(att)) {
+                  if (att.includes(values.value)) {
+                    let index = att.indexOf(values.value);
+                    values.index = index;
+                    this.attributeEditService.deleteInstanceAttribute(values, instance);
+                    this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+                  }
+                }
+                else {
+                  if (att === values.value) {
+                    this.attributeEditService.deleteInstanceAttribute(values, instance);
+                    this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
                   }
                 }
               }
             }
-          }
+          });
         });
 
       });
@@ -516,6 +500,7 @@ export class BatchEditDialogComponent implements PostEditListener {
   }
 
   finishEdit(attName: string, value: any, instance: Instance) {
+    this.refreshDisplayedInstance(instance);
     // Only add attribute name if value was added
     this.postEdit(attName, instance);
     // Need to call this before registerUpdatedInstance
@@ -550,8 +535,26 @@ export class BatchEditDialogComponent implements PostEditListener {
    * // There should be no need to do this here. The edit will be done after the dialog is closed.
    */
   donePostEdit(instance: Instance, editedAttributeName: string | undefined): boolean {
-    // You can add custom logic here if needed
-    this.data = [...this.data]; // Trigger change detection
+    this.refreshDisplayedInstance(instance);
     return true;
+  }
+
+  private refreshDisplayedInstance(updatedInstance: Instance) {
+    const syncDisplayName = (instances: Instance[]) => instances.map(instance =>
+      instance.dbId === updatedInstance.dbId
+        ? { ...instance, displayName: updatedInstance.displayName }
+        : instance
+    );
+
+    this.data = syncDisplayName(this.data);
+    this.removedInstances = syncDisplayName(this.removedInstances);
+
+    if (this._instances) {
+      this._instances = this._instances.map(instance =>
+        instance.dbId === updatedInstance.dbId
+          ? { ...instance, displayName: updatedInstance.displayName }
+          : instance
+      );
+    }
   }
 }
