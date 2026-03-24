@@ -500,14 +500,15 @@ export class BatchEditDialogComponent implements PostEditListener {
   }
 
   finishEdit(attName: string, value: any, instance: Instance) {
-    this.refreshDisplayedInstance(instance);
     // Only add attribute name if value was added
     this.postEdit(attName, instance);
     // Need to call this before registerUpdatedInstance
     // in case the instance is used somewhere via the ngrx statement management system
     this.instUtil.addToModifiedAttributes(attName, instance);
-    // Register the updated instances
+    // Register the updated instances in the instance utility so that the changes can be tracked and reflected in the UI
     this.instUtil.registerUpdatedInstance(attName, instance);
+    this.refreshDisplayedInstance(instance);
+
   }
 
   isDeleted(row: Instance): boolean {
@@ -540,21 +541,28 @@ export class BatchEditDialogComponent implements PostEditListener {
   }
 
   private refreshDisplayedInstance(updatedInstance: Instance) {
-    const syncDisplayName = (instances: Instance[]) => instances.map(instance =>
+    if (!updatedInstance || updatedInstance.dbId < 1) {
+      this.syncDisplayedInstance(updatedInstance);
+      return;
+    }
+
+    this.dataService.fetchInstance(updatedInstance.dbId).pipe(take(1)).subscribe((fetchedInstance: Instance) => {
+      this.syncDisplayedInstance(fetchedInstance);
+    });
+  }
+
+  private syncDisplayedInstance(updatedInstance: Instance) {
+    const syncInstance = (instances: Instance[]) => instances.map(instance =>
       instance.dbId === updatedInstance.dbId
         ? { ...instance, displayName: updatedInstance.displayName }
         : instance
     );
 
-    this.data = syncDisplayName(this.data);
-    this.removedInstances = syncDisplayName(this.removedInstances);
+    this.data = syncInstance(this.data);
+    this.removedInstances = syncInstance(this.removedInstances);
 
     if (this._instances) {
-      this._instances = this._instances.map(instance =>
-        instance.dbId === updatedInstance.dbId
-          ? { ...instance, displayName: updatedInstance.displayName }
-          : instance
-      );
+      this._instances = syncInstance(this._instances);
     }
   }
 }
