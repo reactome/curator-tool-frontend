@@ -3,7 +3,8 @@
   <div class="etched-section" style="width: 100%; margin-top: 4px; padding: 10px; overflow-x: auto;">
     <div style="display: flex; flex-direction: column; gap: 12px; min-width: max-content;">
       <div style="display: flex; gap: 12px; align-items: stretch;">
-        <section class="etched-section" style="min-width: 320px; min-height: 100px; padding: 10px; display: flex; flex-direction: column;">
+        <section class="etched-section"
+          style="min-width: 320px; min-height: 100px; padding: 10px; display: flex; flex-direction: column;">
           <mat-label style="font-weight: 600;">Attribute</mat-label>
           <div style="display:flex; flex-direction: row; width: max-content; min-width: 300px; padding-top: 10px;">
             <mat-select class="drop_down" placeholder="Select an Attribute to Edit" #val [(value)]="selected"
@@ -15,7 +16,8 @@
           </div>
         </section>
 
-        <section *ngIf="selectedAttribute" class="etched-section" style="min-width: 420px; min-height: 100px; padding: 10px; display: flex; flex-direction: column;">
+        <section *ngIf="selectedAttribute" class="etched-section"
+          style="min-width: 320px; min-height: 100px; padding: 10px; display: flex; flex-direction: column;">
           <mat-label style="font-weight: 600;">Edit Action</mat-label>
           <ng-container *ngIf="selectedAttribute.type === DATA_TYPES.STRING; else nonStringStep">
             <div style="display: flex; gap: 12px; align-items: flex-start; width: 100%; padding-top: 10px;">
@@ -23,18 +25,6 @@
                 <app-edit-menu (actionItem)="onSelectTextAction($event)"
                   [isSingledValued]="selectedAttribute.cardinality === '1'"></app-edit-menu>
               </div>
-
-              <section *ngIf="selectedAction === EDIT_ACTION.REPLACE_NEW && selectedValuesForReplace.length > 0"
-                class="etched-section" style="flex: 0 0 300px; max-height: 220px; overflow: auto; padding: 8px;">
-                <mat-label style="font-weight: 600;">Selected {{selectedAttribute.name}} to replace</mat-label>
-                <table style="width: 100%; border-collapse: collapse; margin-top: 6px;">
-                  <tbody>
-                    <tr *ngFor="let value of selectedValuesForReplace">
-                      <td style="padding: 4px 0; border-top: 1px solid var(--surface-variant);">{{formatReplaceValue(value)}}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </section>
             </div>
           </ng-container>
           <ng-template #nonStringStep>
@@ -45,11 +35,24 @@
             </div>
           </ng-template>
         </section>
+
+        <section *ngIf="selectedAction === EDIT_ACTION.REPLACE_NEW && selectedValuesForReplace.length > 0"
+          class="etched-section" style="min-width: 320px; min-height: 100px; padding: 10px; display: flex; flex-direction: column;">
+          <mat-label style="font-weight: 600;">Selected {{selectedAttribute?.name}} to replace</mat-label>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 6px;">
+            <tbody>
+              <tr *ngFor="let value of selectedValuesForReplace">
+                <td style="padding: 4px 0; border-top: 1px solid var(--surface-variant);">{{formatReplaceValue(value)}}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
       </div>
 
       <section
         *ngIf="selectedAttribute?.type === DATA_TYPES.STRING && (selectedAction === EDIT_ACTION.REPLACE_NEW || selectedAction === EDIT_ACTION.ADD_NEW)"
-        class="etched-section" style="min-width: 320px; max-width: 740px; padding: 10px; align-self: center;">
+        class="etched-section" style=" width: 100%; padding: 10px; align-self: center;">
         <mat-label style="font-weight: 600;">Replacement Value</mat-label>
         <div style="padding-top: 10px;">
           <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onEditAction($event)">
@@ -63,18 +66,20 @@
   <div style="flex-direction: column;">
     <div class="list-group">
       <mat-label class="list-label">Selected Instances:</mat-label>
-      <section class="scroll_panel etched-section" style="padding-top: 0px; margin-top: 4px; max-height: 300px; overflow: auto; width: 100%;">
-        <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="data" [actionButtons]="actionButtons"
-          [blockRoute]="true" (urlClickEvent)="openInNewTab($event)"
+      <section class="scroll_panel etched-section"
+        style="padding-top: 0px; margin-top: 4px; max-height: 300px; overflow: auto; width: 100%;">
+        <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="data"
+          [actionButtons]="actionButtons" [blockRoute]="true" (urlClickEvent)="openInNewTab($event)"
           (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
       </section>
     </div>
 
     <div class="list-group">
       <mat-label class="list-label">Removed Instances:</mat-label>
-      <section class="scroll_panel etched-section" style="padding-top: 0px; margin-top: 4px; max-height: 300px; overflow: auto; width: 100%;">
-        <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="removedInstances" [actionButtons]="removedActionButtons"
-          [blockRoute]="true" (urlClickEvent)="openInNewTab($event)"
+      <section class="scroll_panel etched-section"
+        style="padding-top: 0px; margin-top: 4px; max-height: 300px; overflow: auto; width: 100%;">
+        <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="removedInstances"
+          [actionButtons]="removedActionButtons" [blockRoute]="true" (urlClickEvent)="openInNewTab($event)"
           (actionEvent)="handleRemovedTableAction($event)"></app-instance-list-table>
       </section>
     </div>
