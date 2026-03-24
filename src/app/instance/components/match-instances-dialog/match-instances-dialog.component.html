@@ -2,8 +2,8 @@
 <mat-dialog-content>
   <section class="scroll_panel">
     <app-instance-list-table [dataSource]="data.instances" [isSelection]="true" [showBookmark]="false"
-      [showCheckMark]="false" [actionButtons]="[]" [secondaryActionButtons]="[]"
-      (selectionEvent)="onSelectRow($event)"></app-instance-list-table>
+      [showCheckMark]="false" [actionButtons]="actionButtons" [secondaryActionButtons]="[]"
+      (selectionEvent)="onSelectRow($event)" (actionEvent)="handleAction($event)"></app-instance-list-table>
   </section>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

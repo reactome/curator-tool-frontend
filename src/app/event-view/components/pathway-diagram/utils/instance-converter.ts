@@ -23,9 +23,15 @@ export class InstanceConverter {
         const nodeId = this.getCompartmentNodeId(compartment.dbId, cy);
         if (compartment.displayName?.endsWith('membrane')) {
             const compartmentNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId);
+            compartmentNode.addClass('outer');
             // Need to expand the node width
             compartmentNode.data('width', compartmentNode.data('width') * 10);
             compartmentNode.data('height', compartmentNode.data('height') * 10);
+            // Put the text at the center for the time being
+            compartmentNode.data('textX', -compartmentNode.data('width') / 2);
+            compartmentNode.data('textY', -compartmentNode.data('height') / 2);
+            //TODO: The txt cannot be selected when the compartment is created first.
+            compartmentNode.style('z-index', 0); // Give it a smaller z-index so that we can select the text.
             newNodes.push(compartmentNode);
         }
         else {
