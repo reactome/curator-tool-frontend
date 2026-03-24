@@ -249,9 +249,14 @@ export class PathwayDiagramUtilService {
      */
     deleteCompartment(compartment: any, diagram: DiagramComponent) {
         let { isInner, other } = this.getSiblingCompartment(compartment, diagram.cy);
+        this.removeCompartmentLabels(compartment, diagram.cy);
+        this.disableResizeCompartment(compartment, diagram);
         diagram.cy.remove(compartment);
-        if (other)
+        if (other) {
+            this.removeCompartmentLabels(other, diagram.cy);
+            this.disableResizeCompartment(other, diagram);
             diagram.cy.remove(other);
+        }
     }
 
     /**
@@ -641,6 +646,16 @@ export class PathwayDiagramUtilService {
         let otherId = tokens[0] + '-' + (isInner ? 'outer' : 'inner');
         let other = cy.$('#' + otherId);
         return { isInner, other };
+    }
+
+    private removeCompartmentLabels(compartment: any, cy: Core) {
+        if (!compartment || compartment.length === 0)
+            return;
+        const labelNodes = cy.nodes().filter((node: any) =>
+            node.hasClass(LABEL_CLASS) && node.data('compartmentId') === compartment.id()
+        );
+        if (labelNodes.length > 0)
+            cy.remove(labelNodes);
     }
 
     private updateResizeNodesPosition(compartment: any,
