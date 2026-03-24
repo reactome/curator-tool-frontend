@@ -12,7 +12,7 @@ export class MatchInstancesDialogService {
   openDialog(data: MatchInstancesDialogData): MatDialogRef<MatchInstancesDialogComponent, Instance> {
     return this.dialog.open(MatchInstancesDialogComponent, {
       width: '1100px',
-      height: '650px',
+      height: '450px',
       data
     });
   }

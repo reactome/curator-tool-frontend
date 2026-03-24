@@ -247,10 +247,14 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
    * overlaying etc.
    */
   private disableEditing() {
-    this.diagramUtils.disableEditing(this.diagram);
-    this.resizingNodes.forEach(node => this.diagramUtils.disableResizeCompartment(node, this.diagram));
-    this.resizingNodes.length = 0; // reset to empty
-    this.isEditing = false;
+    const doDisable = () => {
+      this.diagramUtils.disableEditing(this.diagram);
+      this.resizingNodes.forEach(node => this.diagramUtils.disableResizeCompartment(node, this.diagram));
+      this.resizingNodes.length = 0; // reset to empty
+      this.isEditing = false;
+      this.isEdited = false;
+    };
+    this.promptUploadBeforeDiscard('disabling editing', doDisable);
   }
 
   private canEdit(): Observable<boolean> {
