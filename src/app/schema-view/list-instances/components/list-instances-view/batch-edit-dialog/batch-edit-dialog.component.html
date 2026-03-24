@@ -68,8 +68,12 @@
   </div>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button mat-button (click)="onClose()" cdkFocusInitial>
+  <button mat-button (click)="onOK()" cdkFocusInitial>
     <mat-icon>check</mat-icon>
-    Close
+    OK
+  </button>
+  <button mat-button (click)="onCancel()">
+    <mat-icon>close</mat-icon>
+    Cancel
   </button>
 </mat-dialog-actions>

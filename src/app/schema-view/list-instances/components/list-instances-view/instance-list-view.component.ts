@@ -667,7 +667,21 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         });
       }
       else {
-        const sourceData = this.selectedInstances;
+        const stagedDisplayNameMap = new Map<number, string | undefined>();
+        allInstances.forEach(inst => stagedDisplayNameMap.set(inst.dbId, inst.displayName));
+
+        const sourceData = this.selectedInstances.map(selectedInst => {
+          const currentDataInst = this.data.find(inst => inst.dbId === selectedInst.dbId);
+          const displayName = stagedDisplayNameMap.get(selectedInst.dbId)
+            ?? currentDataInst?.displayName
+            ?? selectedInst.displayName;
+
+          return {
+            ...selectedInst,
+            displayName
+          };
+        });
+
         if (this.isLocal) {
           this.batchEditDialogService.openDialog(sourceData);
           return;
