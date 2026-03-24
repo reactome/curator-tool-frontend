@@ -123,46 +123,13 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     // Make sure className is set!
     if (this.className && this.className.length > 0)
       if (this.isLocal) {
-        combineLatest([
-          this.store.select(updatedInstances()).pipe(take(1)),
-          this.store.select(newInstances()).pipe(take(1)),
-          this.store.select(deleteInstances()).pipe(take(1))
-        ]).subscribe(([updated, newlyCreated, deleted]) => {
-          // Only include instances with matching className
-          const filteredUpdated = updated.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
-          const filteredNew = newlyCreated.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
-          const filteredDeleted = deleted.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
-
-          // Optionally filter by displayName if searchKey is set
-          const filterBySearchKey = (arr: Instance[]) => {
-            if (this.searchKey && this.searchKey.trim().length > 0) {
-              const key = this.searchKey.trim().toLowerCase();
-              return arr.filter(inst => inst.displayName && inst.displayName.toLowerCase().includes(key));
-            }
-            return arr;
-          };
-
-          const filteredUpdatedByKey = filterBySearchKey(filteredUpdated);
-          const filteredNewByKey = filterBySearchKey(filteredNew);
-          const filteredDeletedByKey = filterBySearchKey(filteredDeleted);
-
-          // Combine: updated, new, and deleted instances, ensuring uniqueness by dbId
-          const instanceMap = new Map<number, Instance>();
-          [...filteredUpdatedByKey, ...filteredNewByKey, ...filteredDeletedByKey].forEach(inst => {
-            instanceMap.set(inst.dbId, inst);
-          });
-          const combined = Array.from(instanceMap.values());
-
-          // Apply skip and limit
-          const paged = combined.slice(this.skip, this.skip + this.pageSize);
-
-          const localInstList: InstanceList = {
-            instances: paged,
-            totalCount: combined.length
-          };
-          this.displayInstances(localInstList);
-          this.showProgressSpinner = false;
-        });
+        const loadInstanceSubject = this.dataService.getLoadInstanceSubject();
+        if (loadInstanceSubject) {
+          loadInstanceSubject.pipe(take(1)).subscribe(() => this.loadLocalInstancesFromStore());
+        }
+        else {
+          this.loadLocalInstancesFromStore();
+        }
       }
       else {
         // console.debug(this.searchKey);
@@ -179,6 +146,49 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
       }
     }
+  }
+
+  private loadLocalInstancesFromStore() {
+    combineLatest([
+      this.store.select(updatedInstances()).pipe(take(1)),
+      this.store.select(newInstances()).pipe(take(1)),
+      this.store.select(deleteInstances()).pipe(take(1))
+    ]).subscribe(([updated, newlyCreated, deleted]) => {
+      // Only include instances with matching className
+      const filteredUpdated = updated.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
+      const filteredNew = newlyCreated.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
+      const filteredDeleted = deleted.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
+
+      // Optionally filter by displayName if searchKey is set
+      const filterBySearchKey = (arr: Instance[]) => {
+        if (this.searchKey && this.searchKey.trim().length > 0) {
+          const key = this.searchKey.trim().toLowerCase();
+          return arr.filter(inst => inst.displayName && inst.displayName.toLowerCase().includes(key));
+        }
+        return arr;
+      };
+
+      const filteredUpdatedByKey = filterBySearchKey(filteredUpdated);
+      const filteredNewByKey = filterBySearchKey(filteredNew);
+      const filteredDeletedByKey = filterBySearchKey(filteredDeleted);
+
+      // Combine: updated, new, and deleted instances, ensuring uniqueness by dbId
+      const instanceMap = new Map<number, Instance>();
+      [...filteredUpdatedByKey, ...filteredNewByKey, ...filteredDeletedByKey].forEach(inst => {
+        instanceMap.set(inst.dbId, inst);
+      });
+      const combined = Array.from(instanceMap.values());
+
+      // Apply skip and limit
+      const paged = combined.slice(this.skip, this.skip + this.pageSize);
+
+      const localInstList: InstanceList = {
+        instances: paged,
+        totalCount: combined.length
+      };
+      this.displayInstances(localInstList);
+      this.showProgressSpinner = false;
+    });
   }
 
   private displayInstances(instancesList: InstanceList) {
