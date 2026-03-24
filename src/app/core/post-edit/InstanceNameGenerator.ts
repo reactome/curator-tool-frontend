@@ -502,7 +502,7 @@ export class InstanceNameGenerator implements PostEditOperation {
 
   private generateSummationName(instance: Instance): string {
     // This is a single-valued slot
-    let text = instance.attributes?.get("text").trim();
+    let text = instance.attributes?.get("text")?.trim();
     if (text && text.length > 0) {
       if (text.length > 60)
         return text.substring(0, 60) + "...";
