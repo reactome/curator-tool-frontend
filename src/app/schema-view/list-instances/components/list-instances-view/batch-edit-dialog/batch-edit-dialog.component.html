@@ -53,7 +53,7 @@
       <section
         *ngIf="selectedAttribute?.type === DATA_TYPES.STRING && (selectedAction === EDIT_ACTION.REPLACE_NEW || selectedAction === EDIT_ACTION.ADD_NEW)"
         class="etched-section" style=" width: 100%; padding: 10px; align-self: center;">
-        <mat-label style="font-weight: 600;">Replacement Value</mat-label>
+        <mat-label style="font-weight: 600;">{{selectedAction === EDIT_ACTION.ADD_NEW ? 'New Value' : 'Replaced Value'}}</mat-label>
         <div style="padding-top: 10px;">
           <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onEditAction($event)">
           </app-attribute-edit>

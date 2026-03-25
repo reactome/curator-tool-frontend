@@ -29,6 +29,7 @@
 - bug when adding golgi apparatus to the inst 
 - Deleted instance generated displayname 
 - disable the collapsable feature in schema tree.
+
 -Can StructureModified attributes be flagged in events when the StructureModified date is more recent that the Reviewed or internalReviewed?
 -Maybe add curatorComments and replacement instance options directly on the deletion confirmation modal to encourage populating those fields?
 

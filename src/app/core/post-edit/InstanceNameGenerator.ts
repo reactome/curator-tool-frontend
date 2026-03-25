@@ -98,15 +98,15 @@ export class InstanceNameGenerator implements PostEditOperation {
     if (this.isSchemaClass(instance, 'ControlReference')) {
       return this.generateControlReferenceName(instance);
     }
-    if (this.isSchemaClass(instance, '_UpdateTracker')) {
+    if (this.isSchemaClass(instance, 'UpdateTracker')) {
       return this.generateUpdateTrackerName(instance);
     }
-    if (this.isSchemaClass(instance, '_Release')) {
+    if (this.isSchemaClass(instance, 'Release')) {
       return this.generateReleaseName(instance);
     }
     if (this.isSchemaClass(instance, 'NegativePrecedingEvent'))
       return this.generateNegativePrecedingEventName(instance);
-    if (this.isSchemaClass(instance, '_Deleted'))
+    if (this.isSchemaClass(instance, 'Deleted'))
       return this.generateDeletedName(instance);
     if (this.isSchemaClass(instance, 'DeletedInstance'))
       return this.generateDeletedInstanceName(instance);
@@ -308,7 +308,7 @@ export class InstanceNameGenerator implements PostEditOperation {
 
   // TODO: Need to test this code
   private generateDeletedName(instance: Instance) {
-    let deletedIds = instance.attributes?.get('deletedInstanceDB_ID');
+    let deletedIds = instance.attributes?.get('deletedInstanceDbId');
     let displayName = undefined;
     if (!deletedIds || deletedIds.length === 0)
       displayName = "Deletion of instance: unknown";

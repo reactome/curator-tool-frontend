@@ -77,6 +77,9 @@ export class AttributeEditService {
                 instance?.attributes?.set(attributeValue.attribute.name, result);
             }
             else {
+                // TODO: add logic here to ensure if the attribute value contains the result already, if so, do not add again. This is to avoid duplicate values in the list. This is important for attributes with cardinality > 1, especially for those with polyneer repeated unit (e.g. hasComponent, input, output) where the same instance can be added multiple times as different attribute value but with the same reference instance.
+                // If class has a stoichiometry attribute (input, output, hasComponent) maybe polyneer repeated unit 
+                // Use the warning dialog to tell the user if a value is being repeated 
                 const deleteCount = replace ? 1 : 0;
                 value.splice(attributeValue.index, deleteCount, result);
             }
