@@ -40,12 +40,12 @@
           [disabled]="!isUploadable()">
           <mat-icon>upload</mat-icon>
         </button>
-        <button mat-icon-button color="primary" class="v-center" (click)="addBookmark()" matTooltip="Add Bookmark">
-          <mat-icon>bookmark</mat-icon>
-        </button>
         <button *ngIf="instance.dbId < 0" mat-icon-button color="primary" class="v-center"
           (click)="matchNewInstance()" matTooltip="Match new instance in database">
           <mat-icon>manage_search</mat-icon>
+        </button>
+        <button mat-icon-button color="primary" class="v-center" (click)="addBookmark()" matTooltip="Add Bookmark">
+          <mat-icon>bookmark</mat-icon>
         </button>
         <!-- Hide buttons unless expanded -->
         <ng-container *ngIf="showSecondaryButtons">

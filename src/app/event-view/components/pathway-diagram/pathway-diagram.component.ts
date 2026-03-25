@@ -12,9 +12,10 @@ import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
 import { EDGE_POINT_CLASS, Instance } from 'src/app/core/models/reactome-instance.model';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { UnsavedUploadDialogComponent } from 'src/app/shared/components/unsaved-upload-dialog/unsaved-upload-dialog.component';
+import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Store } from '@ngrx/store';
 import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
@@ -77,6 +78,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   private lastLoadedNetworkId: string = '';
   // To show information
   readonly dialog = inject(MatDialog);
+  private commitWaitDialogRef?: MatDialogRef<CommitWaitDialogComponent>;
+  private isUploadInProgress: boolean = false;
   // To show the label for the diagram displayed
   diagramLabel: string = 'Pathway Diagram';
 
@@ -680,6 +683,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   }
 
   private uploadDiagram(restoreEditing: boolean = true, onComplete?: () => void) {
+    if (this.isUploadInProgress)
+      return;
     // Check if PathwayDiagram is being edited. If PathwayDiagram is not being edited,
     // tell the user nothing to be uploaded.
     if (this.pathwayDiagramId !== undefined && this.pathwayDiagramId.length === 0) {
@@ -701,10 +706,20 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     // Need to do a little bit of workaround here.
     // Get rid of any circular structure by doing the following fixes
     const networkJson = this.generateNetworkJson();
+    this.isUploadInProgress = true;
+    this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
+      disableClose: true,
+      hasBackdrop: true,
+      autoFocus: false,
+      restoreFocus: false
+    });
 
     // Use pathwayDiagramId, instead of pathwayId for uploading
     this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.pathwayDiagramId, networkJson).subscribe({
       next: (success) => {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
+        this.isUploadInProgress = false;
         const dialogConfig = {
           data: {
             title: success ? 'Information' : 'Error',
@@ -722,6 +737,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           onComplete();
       },
       error: (error: Error) => {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
+        this.isUploadInProgress = false;
         // There is no need to show the error message. the Data service should handle it already.
         // this.dialog.open(InfoDialogComponent, {
         //   data: {
