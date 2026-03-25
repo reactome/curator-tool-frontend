@@ -428,6 +428,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         // This may be used for both compartment and PE node
         this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);        
       }
+      else if (node.hasClass('Compartment')) {
+        // Handle compartment dragging - move both inner and outer layers together
+        this.diagramUtils.moveCompartmentLayers(node, e, this.previousDragPos);
+      }
       else if (node.hasClass('Protein') || node.hasClass('RNA') || node.hasClass('Gene')) {
         // Handle Modification move only for the above three types of nodes.
         this.diagramUtils.moveModifications(node, e, this.previousDragPos);
