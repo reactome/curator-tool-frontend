@@ -62,6 +62,12 @@
     </div>
   </div>
 
+  <section *ngIf="lastEditSummary" class="etched-section"
+    style="width: 100%; margin-top: 8px; padding: 10px; background-color: var(--surface-variant);">
+    <mat-label style="font-weight: 600;">Latest edit summary</mat-label>
+    <div style="margin-top: 4px;">{{lastEditSummary}}</div>
+  </section>
+
 
   <div style="flex-direction: column;">
     <div class="list-group">

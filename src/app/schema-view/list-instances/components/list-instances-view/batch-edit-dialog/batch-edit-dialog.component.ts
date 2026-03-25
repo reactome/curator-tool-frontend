@@ -24,6 +24,7 @@ import { ActionButton } from '../instance-list-table/instance-list-table.compone
 export class BatchEditDialogComponent implements PostEditListener {
   selectedAttribute: SchemaAttribute | undefined;
   selectedAction: EDIT_ACTION | undefined;
+  lastEditSummary: string = '';
   selected: string = '';
   candidateAttributes: SchemaAttribute[] = [];
   selectedInstances: Instance[] = [];
@@ -78,6 +79,43 @@ export class BatchEditDialogComponent implements PostEditListener {
       return value.displayName;
     }
     return value.toString?.() ?? String(value);
+  }
+
+  private formatSummaryValue(value: any): string {
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return 'no value';
+      }
+      if (value.length === 1) {
+        return this.formatSummaryValue(value[0]);
+      }
+      return `${value.length} values`;
+    }
+
+    const formatted = this.formatReplaceValue(value);
+    return formatted ? `'${formatted}'` : 'blank value';
+  }
+
+  private setEditSummary(action: EDIT_ACTION, attributeName: string, value: any, affectedInstanceCount: number) {
+    const instanceText = `${affectedInstanceCount} instance${affectedInstanceCount === 1 ? '' : 's'}`;
+    const valueText = this.formatSummaryValue(value);
+
+    switch (action) {
+      case EDIT_ACTION.ADD_NEW:
+      case EDIT_ACTION.ADD_VIA_SELECT:
+        this.lastEditSummary = `${valueText} added to '${attributeName}' for ${instanceText}.`;
+        break;
+      case EDIT_ACTION.REPLACE_NEW:
+      case EDIT_ACTION.REPLACE_VIA_SELECT:
+        this.lastEditSummary = `${valueText} set in '${attributeName}' for ${instanceText}.`;
+        break;
+      case EDIT_ACTION.DELETE:
+        this.lastEditSummary = `Selected values deleted from '${attributeName}' for ${instanceText}.`;
+        break;
+      default:
+        this.lastEditSummary = `Updated '${attributeName}' for ${instanceText}.`;
+        break;
+    }
   }
 
   openInNewTab(instance: Instance) {
@@ -392,6 +430,7 @@ export class BatchEditDialogComponent implements PostEditListener {
 
     this.getInstancesForEdit().pipe(take(1)).subscribe((instances: Instance[]) => {
       const isInstanceAttribute = attributeValues[0].attribute.type === this.DATA_TYPES.INSTANCE;
+      const affectedDbIds = new Set<number>();
 
       for (let instance of instances) {
         for (let attributeValue of attributeValues) {
@@ -409,9 +448,17 @@ export class BatchEditDialogComponent implements PostEditListener {
             this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, result, instance, replace);
           }
 
+          affectedDbIds.add(instance.dbId);
           this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
         }
       }
+
+      this.setEditSummary(
+        replace ? (isInstanceAttribute && Array.isArray(result) ? EDIT_ACTION.REPLACE_VIA_SELECT : EDIT_ACTION.REPLACE_NEW) : (isInstanceAttribute && Array.isArray(result) ? EDIT_ACTION.ADD_VIA_SELECT : EDIT_ACTION.ADD_NEW),
+        attributeValues[0].attribute.name,
+        result,
+        affectedDbIds.size,
+      );
     });
   }
 
@@ -471,6 +518,7 @@ export class BatchEditDialogComponent implements PostEditListener {
         });
 
         this.getInstancesForEdit().pipe(take(1)).subscribe((instances: Instance[]) => {
+            const affectedDbIds = new Set<number>();
           this.selectedAggregatedValues.forEach((values) => {
             for (let instance of instances) {
               let att = instance.attributes.get(attributeValue.attribute.name);
@@ -480,18 +528,27 @@ export class BatchEditDialogComponent implements PostEditListener {
                     let index = att.indexOf(values.value);
                     values.index = index;
                     this.attributeEditService.deleteInstanceAttribute(values, instance);
+                      affectedDbIds.add(instance.dbId);
                     this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
                   }
                 }
                 else {
                   if (att === values.value) {
                     this.attributeEditService.deleteInstanceAttribute(values, instance);
+                      affectedDbIds.add(instance.dbId);
                     this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
                   }
                 }
               }
             }
           });
+
+            this.setEditSummary(
+              EDIT_ACTION.DELETE,
+              attributeValue.attribute.name,
+              Array.from(this.selectedAggregatedValues).map(value => value.value),
+              affectedDbIds.size,
+            );
         });
 
       });
