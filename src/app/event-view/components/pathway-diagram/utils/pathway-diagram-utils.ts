@@ -268,7 +268,7 @@ export class PathwayDiagramUtilService {
         this.dataService.fetchSchemaClass('Pathway').subscribe(pathway => {
             let compartmentAtt = pathway.attributes?.filter(att => att.name === 'compartment')[0] || undefined;
             if (!compartmentAtt) {
-                console.log('Cannot find the compartment attribute in Paathway for insertCompartment')
+                console.log('Cannot find the compartment attribute in Pathway for insertCompartment')
                 return;
             }
             // Make a copy so that we can limit it to a single value selection
@@ -523,18 +523,24 @@ export class PathwayDiagramUtilService {
      * @param previousDragPos The previous position before dragging
      */
     moveCompartmentLayers(compartment: any, event: any, previousDragPos: Position) {
-        let { isInner, other } = this.getSiblingCompartment(compartment, event.cy);
-        
-        // If there's a sibling layer, move it along with the current compartment
+        const deltaX = compartment.position().x - previousDragPos.x;
+        const deltaY = compartment.position().y - previousDragPos.y;
+
+        // Move the sibling layer by the same delta
+        let {isInner, other } = this.getSiblingCompartment(compartment, event.cy);
         if (other && other.length > 0) {
-            const deltaX = compartment.position().x - previousDragPos.x;
-            const deltaY = compartment.position().y - previousDragPos.y;
             const otherPos = other.position();
-            other.position({
-                x: otherPos.x + deltaX,
-                y: otherPos.y + deltaY
-            });
+            other.position({ x: otherPos.x + deltaX, y: otherPos.y + deltaY });
         }
+
+        // Move any label nodes associated with this compartment (or its sibling)
+        const ids = [compartment.id(), ...(other && other.length > 0 ? [other.id()] : [])];
+        event.cy.nodes().filter((node: any) =>
+            node.hasClass(LABEL_CLASS) && ids.includes(node.data('compartmentId'))
+        ).forEach((label: any) => {
+            const p = label.position();
+            label.position({ x: p.x + deltaX, y: p.y + deltaY });
+        });
     }
 
     /**

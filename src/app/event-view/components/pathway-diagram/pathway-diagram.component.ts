@@ -371,6 +371,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     if (!this.pathwayId || this.pathwayId.length == 0)
       return;
     this.diagramUtils.diagramService = this.diagram.getDiagramService();
+    this.normalizeCompartmentZIndex();
     // When the diagram is loaded first, disable node dragging to avoid
     // change the coordinates
     this.diagram.cy.nodes().grabify().panify();
@@ -447,6 +448,18 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       this.diagramUtils.enableEditing(this.diagram);
     }
     this.restoreViewport();
+  }
+
+  private normalizeCompartmentZIndex() {
+    if (!this.diagram?.cy)
+      return;
+    const compartments = this.diagram.cy.nodes('.Compartment');
+    compartments.forEach((node: any) => {
+      if (node.hasClass('inner'))
+        node.style('z-index', 10);
+      else if (node.hasClass('outer'))
+        node.style('z-index', 0);
+    });
   }
 
   private restoreViewport() {
