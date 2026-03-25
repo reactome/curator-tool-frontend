@@ -10,6 +10,7 @@ import { LiteratureReferenceFiller } from '../post-edit/LiteratureReferenceFille
 import { Store } from '@ngrx/store';
 import { InstanceUtilities } from './instance.service';
 import { ReviewStatusCheck } from '../post-edit/ReviewStatusCheck';
+import { MatDialog } from '@angular/material/dialog';
 
 @Injectable({
   providedIn: 'root',
@@ -17,12 +18,13 @@ import { ReviewStatusCheck } from '../post-edit/ReviewStatusCheck';
 export class PostEditService {
   private postEditOperations: PostEditOperation[] = [];
 
-  constructor(private dataService: DataService, private store: Store, private utilities: InstanceUtilities) {
+  constructor(private dataService: DataService, private store: Store, private utilities: InstanceUtilities, private dialog: MatDialog) {
     // auto filling for reference
     const lrFiller: LiteratureReferenceFiller = new LiteratureReferenceFiller(
       this.dataService,
       this.store,
-      this.utilities
+      this.utilities,
+      this.dialog
     );
     this.postEditOperations.push(lrFiller);
     // Make sure display name generation service is at the bottom
