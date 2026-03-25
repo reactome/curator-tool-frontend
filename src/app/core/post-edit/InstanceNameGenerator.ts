@@ -115,8 +115,9 @@ export class InstanceNameGenerator implements PostEditOperation {
       if (names && names.length > 0)
         return names[0]; // Get the first name
     }
-    // Should not get here
-    return this.unknown;
+    // In case it is not implemented, we will return whatever the original
+    // name there or just unknown.
+    return instance.displayName ? instance.displayName : this.unknown;
   }
 
   private generateCrosslinkedResidueName(instance: Instance): string {
@@ -317,7 +318,6 @@ export class InstanceNameGenerator implements PostEditOperation {
     return displayName;
   }
 
-  // TODO: Need to test this code
   private generateDeletedInstanceName(instance: Instance) {
     let displayName = [];
     displayName.push("Deleted Instance - [");
@@ -326,7 +326,7 @@ export class InstanceNameGenerator implements PostEditOperation {
       displayName.push("Class unknown: ");
     else
       displayName.push(clsName + ": ");
-    let name = instance.attributes?.get('name');
+    let name = instance.attributes?.get('name') ?? "unknown";
     displayName.push(name + " (");
     let dbId = instance.attributes?.get('deletedInstanceDbId');
     displayName.push(dbId + ")");
@@ -334,9 +334,9 @@ export class InstanceNameGenerator implements PostEditOperation {
     // It is returned as an array.
     let species = instance.attributes?.get('species');
     if (species === undefined || species.length === 0)
-      displayName.push(" Species N/A]");
+      displayName.push("]");
     else {
-      displayName.push(" - [Species: " + species[0].dbId + "] ");
+      displayName.push(" - ");
       displayName.push(species[0].displayName + "]");
     }
     return displayName.join("");
