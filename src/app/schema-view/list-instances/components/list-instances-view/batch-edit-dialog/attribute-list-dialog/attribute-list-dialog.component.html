@@ -1,45 +1,51 @@
-<mat-dialog-content>
+<mat-dialog-content class="dialog-content-etched">
     <h2 class="dialog_title" mat-dialog-title>Values of '{{data.selectedAttribute}}' for selected instances:</h2>
 
-    <div style="flex-direction: column;">
-        <ng-container *ngIf="data.values[0]?.dbId; else valuesTemplate">
-            <app-instance-list-table [dataSource]="data.values" [showBookmark]="false"
-                [selectedInstanceListName]="SelectedInstancesList.batchEditSelectedInstanceList" [isSelection]="false"
-                [showCheckMark]="true" [actionButtons]="actionButtons" (actionEvent)="handleAction($event)"
-                (checkedEvent)="addCheckBox($event)" (uncheckedEvent)="removeCheckBox($event)">
-            </app-instance-list-table>
-        </ng-container>
+    <div class="section-stack">
+        <section class="etched-section">
+            <div class="section-label">Values to be selected:</div>
+            <ng-container *ngIf="data.values[0]?.dbId; else valuesTemplate">
+                <app-instance-list-table [dataSource]="data.values" [showBookmark]="false"
+                    [selectedInstanceListName]="SelectedInstancesList.batchEditSelectedInstanceList" [isSelection]="false"
+                    [showCheckMark]="true" [actionButtons]="actionButtons" (actionEvent)="handleAction($event)"
+                    (checkedEvent)="addCheckBox($event)" (uncheckedEvent)="removeCheckBox($event)">
+                </app-instance-list-table>
+            </ng-container>
 
-
-        <ng-template #valuesTemplate>
-            <app-attribute-list-values-table [values]="data.values" [selectedValues]="selectedAttributes"
-                (selectValue)="addCheckBox($event)" (deselectValue)="removeCheckBox($event)">
-            </app-attribute-list-values-table>
-        </ng-template>
-
-
-
-        <mat-label>Selected Attributes: </mat-label>
-        <ng-container *ngIf="data.values[0]?.dbId; else selectedValuesTemplate">
-            <app-instance-list-table [dataSource]="selectedAttributes" [showBookmark]="false"
-                [selectedInstanceListName]="SelectedInstancesList.batchEditSelectedInstanceList" [isSelection]="false"
-                [showCheckMark]="true" [actionButtons]="actionButtons" (actionEvent)="handleAction($event)"
-                (checkedEvent)="addCheckBox($event)" (uncheckedEvent)="removeCheckBox($event)">
-            </app-instance-list-table>
-        </ng-container>
-
-        <ng-template #selectedValuesTemplate>
-            <section class="scroll_panel" style="margin-top: 10px; max-height: 300px; overflow: auto; width: 100%;">
-                <app-attribute-list-values-table [values]="selectedAttributes" [selectedValues]="selectedAttributes"
-                    (deselectValue)="removeCheckBox($event)">
+            <ng-template #valuesTemplate>
+                <app-attribute-list-values-table [values]="data.values" [selectedValues]="selectedAttributes"
+                    (selectValue)="addCheckBox($event)" (deselectValue)="removeCheckBox($event)">
                 </app-attribute-list-values-table>
-            </section>
-        </ng-template>
+            </ng-template>
+        </section>
+
+        <section class="etched-section">
+            <div class="section-label">Selected values:</div>
+            <ng-container *ngIf="data.values[0]?.dbId; else selectedValuesTemplate">
+                <app-instance-list-table [dataSource]="selectedAttributes" [showBookmark]="false"
+                    [selectedInstanceListName]="SelectedInstancesList.batchEditSelectedInstanceList" [isSelection]="false"
+                    [showCheckMark]="true" [actionButtons]="actionButtons" (actionEvent)="handleAction($event)"
+                    (checkedEvent)="addCheckBox($event)" (uncheckedEvent)="removeCheckBox($event)">
+                </app-instance-list-table>
+            </ng-container>
+
+            <ng-template #selectedValuesTemplate>
+                <section class="scroll_panel" style="margin-top: 10px; max-height: 300px; overflow: auto; width: 100%;">
+                    <app-attribute-list-values-table [values]="selectedAttributes" [selectedValues]="selectedAttributes"
+                        (deselectValue)="removeCheckBox($event)">
+                    </app-attribute-list-values-table>
+                </section>
+            </ng-template>
+        </section>
     </div>
-
-
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-    <button mat-button (click)="onOK()" cdkFocusInitial>OK</button>
-    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-button (click)="onOK()" cdkFocusInitial>
+        <mat-icon class="dialog-action-icon">check</mat-icon>
+        OK
+    </button>
+    <button mat-button (click)="onCancel()">
+        <mat-icon class="dialog-action-icon">close</mat-icon>
+        Cancel
+    </button>
 </mat-dialog-actions>
