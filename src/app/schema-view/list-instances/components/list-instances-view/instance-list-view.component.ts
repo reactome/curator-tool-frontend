@@ -1,6 +1,6 @@
 import { Component, EventEmitter, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { PageEvent } from "@angular/material/paginator";
-import { SearchCriterium, Instance, InstanceList, SelectedInstancesList, MAX_STAGED_INSTANCES } from "../../../../core/models/reactome-instance.model";
+import { SearchCriterium, Instance, InstanceList, MAX_STAGED_INSTANCES } from "../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../core/services/data.service";
 import { ActivatedRoute, Params, Router } from "@angular/router";
 import { ReferrersDialogService } from "../../../../instance/components/referrers-dialog/referrers-dialog.service";
@@ -97,6 +97,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.clearSelectedInstances();
     this.subscription.unsubscribe();
   }
 
@@ -110,7 +111,6 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       })
     }
     this.loadInstances();
-    this.getSelectedInstances();
     this.checkStoreData();
 
   }
@@ -705,41 +705,46 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   }
 
   onSelectionChange(instance: Instance) {
-    if (this.instUtils.isInstanceSelected(SelectedInstancesList.mainInstanceList, instance)) {
-      this.instUtils.removeSelectedInstance(SelectedInstancesList.mainInstanceList, instance);
-    } else {
-      this.instUtils.addSelectedInstance(SelectedInstancesList.mainInstanceList, instance);
+    if (this.isInstanceSelected(instance)) {
+      this.selectedInstances = this.selectedInstances.filter(selected => selected.dbId !== instance.dbId);
+      return;
     }
+    this.selectedInstances = [...this.selectedInstances, instance];
+  }
+
+  onRowChecked(instance: Instance) {
+    if (this.isInstanceSelected(instance)) {
+      return;
+    }
+    this.selectedInstances = [...this.selectedInstances, instance];
+  }
+
+  onRowUnchecked(instance: Instance) {
+    this.selectedInstances = this.selectedInstances.filter(selected => selected.dbId !== instance.dbId);
   }
 
   handleDeleteSelected() {
-    this.instUtils.getSelectedInstances(SelectedInstancesList.mainInstanceList).pipe(take(1)).subscribe(selectedInstances => {
-      if (selectedInstances.length === 0) return;
-      this.deleteBulkDialogService.openDialog(selectedInstances);
-      this.instUtils.clearSelectedInstances(SelectedInstancesList.mainInstanceList);
-      if (this.needAdvancedSearch)
-        this.doAdvancedSearch(0);
-      else
-        this.doBasicSearch(0);
-    });
+    if (this.selectedInstances.length === 0) return;
+    this.deleteBulkDialogService.openDialog(this.selectedInstances);
+    this.clearSelectedInstances();
+    if (this.needAdvancedSearch)
+      this.doAdvancedSearch(0);
+    else
+      this.doBasicSearch(0);
   }
 
   isInstanceSelected(instance: Instance): boolean {
-    return this.instUtils.isInstanceSelected(SelectedInstancesList.mainInstanceList, instance);
-  }
-
-  getSelectedInstances() {
-    this.instUtils.getSelectedInstances(SelectedInstancesList.mainInstanceList).subscribe(selectedInstances => {
-      this.selectedInstances = selectedInstances;
-    });
+    return this.selectedInstances.some(selected => selected.dbId === instance.dbId);
   }
 
   setSelectedInstances() {
-    this.instUtils.addSelectedInstances(SelectedInstancesList.mainInstanceList, this.data);
+    const selectedDbIds = new Set(this.selectedInstances.map(instance => instance.dbId));
+    const instancesToAdd = this.data.filter(instance => !selectedDbIds.has(instance.dbId));
+    this.selectedInstances = [...this.selectedInstances, ...instancesToAdd];
   }
 
   clearSelectedInstances() {
-    this.instUtils.clearSelectedInstances(SelectedInstancesList.mainInstanceList);
+    this.selectedInstances = [];
   }
 
   downloadSearchResults() {
@@ -823,7 +828,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     if (isChangedChanged) {
       this.loadSchemaClassAttributes();
       // Clear out selected instances when class changes
-      this.instUtils.clearSelectedInstances(SelectedInstancesList.mainInstanceList);
+      this.clearSelectedInstances();
     } // Need to force to reload attributes there.
 
   }

@@ -21,6 +21,7 @@ export interface ActionButton {
 
 export class InstanceListTableComponent implements OnInit, OnDestroy {
   @Input() dataSource: Instance[] = [];
+  @Input() selectedInstances: Instance[] | null = null;
   @Input() actionButtons: Array<ActionButton> = [];
   @Input() secondaryActionButtons: Array<ActionButton> = [];
   @Input() isSelection: boolean = false;
@@ -80,17 +81,28 @@ export class InstanceListTableComponent implements OnInit, OnDestroy {
   }
 
   addCheckBox(instance: Instance) {
+    if (this.selectedInstances !== null) {
+      this.checkedEvent.emit(instance);
+      return;
+    }
     this.instUtils.addSelectedInstance(this.selectedInstanceListName, instance);
     this.checkedEvent.emit(instance);
   }
 
   removeCheckBox(instance: Instance) {
+    if (this.selectedInstances !== null) {
+      this.uncheckedEvent.emit(instance);
+      return;
+    }
     this.instUtils.removeSelectedInstance(this.selectedInstanceListName, instance);
     this.uncheckedEvent.emit(instance);
 
   }
 
   isChecked(instance: Instance): boolean {
+    if (this.selectedInstances !== null) {
+      return this.selectedInstances.some(selected => selected.dbId === instance.dbId);
+    }
     return this.instUtils.isInstanceSelected(this.selectedInstanceListName, instance);
   }
 
