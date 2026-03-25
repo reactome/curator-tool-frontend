@@ -516,6 +516,28 @@ export class PathwayDiagramUtilService {
     }
 
     /**
+     * Move a compartment and its sibling layer (if it exists) together.
+     * This ensures both inner and outer layers of a compartment move as one unit.
+     * @param compartment The compartment node being dragged
+     * @param event The drag event
+     * @param previousDragPos The previous position before dragging
+     */
+    moveCompartmentLayers(compartment: any, event: any, previousDragPos: Position) {
+        let { isInner, other } = this.getSiblingCompartment(compartment, event.cy);
+        
+        // If there's a sibling layer, move it along with the current compartment
+        if (other && other.length > 0) {
+            const deltaX = compartment.position().x - previousDragPos.x;
+            const deltaY = compartment.position().y - previousDragPos.y;
+            const otherPos = other.position();
+            other.position({
+                x: otherPos.x + deltaX,
+                y: otherPos.y + deltaY
+            });
+        }
+    }
+
+    /**
      * Make sure the two layers of compartment are in correct order: i.g. the outter layer is always 
      * out and the inner layer is alway in.
      * @param compartment
@@ -834,9 +856,8 @@ export class PathwayDiagramUtilService {
         // Enable node dragging first
         diagram.cy.nodes().grabify().unpanify();
         
-        // But not compartment: In the editing mode, the user can move compartment too
-        // apparently moving compartments is not good. Disable for now.
-        diagram.cy.nodes('.Compartment').panify();
+        // Keep compartments draggable in edit mode.
+        diagram.cy.nodes('.Compartment').grabify().unpanify();
         diagram.cy.nodes('.Compartment').forEach((compartment: any) => {
             this.enableCompartmentEditing(compartment, diagram.cy);
         });
