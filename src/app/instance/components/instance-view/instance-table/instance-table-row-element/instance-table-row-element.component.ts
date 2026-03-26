@@ -182,6 +182,41 @@ export class InstanceTableRowElementComponent implements OnInit {
     }
   }
 
+  preventNonIntegerInput(event: KeyboardEvent) {
+    const allowedControlKeys = new Set([
+      'Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'
+    ]);
+    if (allowedControlKeys.has(event.key) || event.ctrlKey || event.metaKey) {
+      return;
+    }
+
+    const isDigit = /^\d$/.test(event.key);
+    const input = event.target as HTMLInputElement;
+    const isNegativeSign = event.key === '-' && input.selectionStart === 0 && !input.value.includes('-');
+
+    if (!isDigit && !isNegativeSign) {
+      event.preventDefault();
+    }
+  }
+
+  preventNonFloatInput(event: KeyboardEvent) {
+    const allowedControlKeys = new Set([
+      'Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'
+    ]);
+    if (allowedControlKeys.has(event.key) || event.ctrlKey || event.metaKey) {
+      return;
+    }
+
+    const isDigit = /^\d$/.test(event.key);
+    const input = event.target as HTMLInputElement;
+    const isNegativeSign = event.key === '-' && input.selectionStart === 0 && !input.value.includes('-');
+    const isDecimalPoint = event.key === '.' && !input.value.includes('.');
+
+    if (!isDigit && !isNegativeSign && !isDecimalPoint) {
+      event.preventDefault();
+    }
+  }
+
   onInstanceLinkClicked(instance: Instance) {
     this.instanceUtilities.setLastClickedDbId(instance.dbId);
   }

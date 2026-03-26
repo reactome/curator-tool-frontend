@@ -23,14 +23,16 @@
     </ng-template>
 
     <ng-template [ngSwitchCase]="DATA_TYPES.INTEGER">
-      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="input-style">
-        <input [formControl]="control" matInput type="number" (change)="onChange()">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field">
+        <input [formControl]="control" matInput type="number" step="1" (keydown)="preventNonIntegerInput($event)"
+          (wheel)="$event.preventDefault()" (change)="onChange()">
       </mat-form-field>
     </ng-template>
 
     <ng-template [ngSwitchCase]="DATA_TYPES.FLOAT">
-      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="input-style">
-        <input [formControl]="control" matInput type="number" (change)="onChange()">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field ">
+        <input [formControl]="control" matInput type="number" step="any" (keydown)="preventNonFloatInput($event)"
+          (wheel)="$event.preventDefault()" (change)="onChange()">
       </mat-form-field>
     </ng-template>
 
