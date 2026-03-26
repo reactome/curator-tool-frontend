@@ -179,7 +179,19 @@ export class InstanceTableRowElementComponent implements OnInit {
     }
 
     if (event.ctrlKey || event.metaKey) {
-      return; // Ctrl+Enter/Cmd+Enter keeps default behavior: insert a newline
+      event.preventDefault();
+      const textarea = event.target as HTMLTextAreaElement;
+      const value = this.control.value ?? '';
+      const start = textarea.selectionStart ?? value.length;
+      const end = textarea.selectionEnd ?? value.length;
+      const newValue = `${value.slice(0, start)}\n${value.slice(end)}`;
+      this.control.setValue(newValue);
+      setTimeout(() => {
+        textarea.selectionStart = start + 1;
+        textarea.selectionEnd = start + 1;
+      });
+      this.triggerResize();
+      return;
     }
 
     event.preventDefault();
