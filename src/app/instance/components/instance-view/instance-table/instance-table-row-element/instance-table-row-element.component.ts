@@ -173,13 +173,17 @@ export class InstanceTableRowElementComponent implements OnInit {
     this.editAction.emit(attributeValue);
   }
 
-  onKeyDown(e: any) {
-    //ctrl and enter key
-    // TODO: need to implement the following behavior
-    // enter without control to commit and enter with control to enter a new line
-    if (e.ctrlKey && e.key === 'Enter') {
-      this.onChange();
+  onKeyDown(event: KeyboardEvent) {
+    if (event.key !== 'Enter') {
+      return;
     }
+
+    if (event.ctrlKey) {
+      return; // Ctrl+Enter keeps default behavior: insert a newline
+    }
+
+    event.preventDefault();
+    this.onChange(); // Enter commits the edit
   }
 
   preventNonIntegerInput(event: KeyboardEvent) {
