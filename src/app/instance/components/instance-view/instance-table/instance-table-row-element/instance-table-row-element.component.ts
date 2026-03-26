@@ -178,8 +178,8 @@ export class InstanceTableRowElementComponent implements OnInit {
       return;
     }
 
-    if (event.ctrlKey) {
-      return; // Ctrl+Enter keeps default behavior: insert a newline
+    if (event.ctrlKey || event.metaKey) {
+      return; // Ctrl+Enter/Cmd+Enter keeps default behavior: insert a newline
     }
 
     event.preventDefault();
