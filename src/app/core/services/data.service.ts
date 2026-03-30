@@ -762,7 +762,7 @@ export class DataService {
     return this.store.select(defaultPerson()).pipe(
       take(1),
       concatMap((person: Instance[]) => {
-        if (!person || person.length === 0) {
+        if (!person || person.length === 0 || person[0].dbId === undefined) {
           return this.handleErrorMessage(new Error('Cannot find the default person! Cannot upload the cytoscape network without the default person!'));
         }
         const networkToUpload = network && typeof network === 'object'
@@ -896,7 +896,7 @@ export class DataService {
     return this.store.select(defaultPerson()).pipe(
       take(1),
       concatMap((person: Instance[]) => {
-        if (!person || person.length == 0) {
+        if (!person || person.length == 0 || person[0].dbId === undefined) {
           return this.handleErrorMessage(new Error('Cannot find the default person!'));
         }
 
@@ -1056,7 +1056,7 @@ export class DataService {
     return this.store.select(defaultPerson()).pipe(
       take(1),
       concatMap((person: Instance[]) => {
-        if (!person || person.length == 0) {
+        if (!person || person.length == 0 || person[0].dbId === undefined) {
           return this.handleErrorMessage(new Error('Cannot find the default person!'));
         }
         instanceToBeCommitted.defaultPersonId = person[0].dbId;
@@ -1080,7 +1080,7 @@ export class DataService {
     return this.store.select(defaultPerson()).pipe(
       take(1),
       concatMap((person: Instance[]) => {
-        if (!person || person.length == 0) {
+        if (!person || person.length == 0 || person[0].dbId === undefined) {
           return this.handleErrorMessage(new Error('Cannot find the default person!'));
         }
         deletedToBeCommitted.defaultPersonId = person[0].dbId;
