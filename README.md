@@ -26,7 +26,7 @@ Run `npm run build` to build the project, create a tarball, and deploy to the re
 
 The build script automatically:
 1. Builds the Angular app with `ng build --base-href='/curatortool/'`
-2. Creates a tarball: `tar czvf curator-tool-frontend.tgz dist/`
+2. Creates a tarball: `tar czvf curator-tool-frontend.tgz curator-tool-frontend/`
 3. Deploys to remote: `scp curator-tool-frontend.tgz aws_curator:~/`
 
 **Note**: For the time being, this app is deployed at curator.reactome.org: ~/GKB/website/html/curatortool. Check that `<base href="/curatortool/">` is in the head of index.html. Make sure the spelling is correct! After deploying, don't delete and re-create the folder. Just copy over it to avoid apache restart. Note: Make sure .htaccess is in that folder. To unzip it after copying into that folder, use this command `tar --strip-components=1 -xvf curator-tool-frontend.tgz`.

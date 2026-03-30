@@ -156,11 +156,7 @@ export class AttributeEditService {
     }
 
     private allowsDuplicateInstanceValue(attributeName: string, candidate: any): boolean {
-        return STOICHIOMETRY_RELATIONSHIP_TYPES.includes(attributeName) && this.isInstanceLikeValue(candidate);
-    }
-
-    private isInstanceLikeValue(value: any): boolean {
-        return !!value && typeof value === 'object' && 'dbId' in value;
+        return STOICHIOMETRY_RELATIONSHIP_TYPES.includes(attributeName) && this.instUtil.isInstance(candidate);
     }
 
     private isSameValue(left: any, right: any): boolean {

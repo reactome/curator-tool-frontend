@@ -79,15 +79,10 @@ export const REACTION_DIAGRAM_ATTRIBUTES = [
 
 // Relationship types with stoichiometry information. This is used to determine if duplicates are allowed
 export const STOICHIOMETRY_RELATIONSHIP_TYPES = [
-  'hasMember', 
-  'hasCandidate', 
   'hasComponent', 
-  'hasComponentForComplex', 
-  'hasModifiedResidue', 
   'input', 
-  'inputForReactionLikeEvent', 
-  'repeatedUnit', 
-  'repeatedUnitForPhysicalEntity'
+  'output', 
+  'repeatedUnit'
 ];
 
 // Centralizing the material icons used for action buttons and associated tool-tips
