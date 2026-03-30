@@ -1,7 +1,10 @@
 import { Injectable } from "@angular/core";
+import { MatDialog } from "@angular/material/dialog";
 import { AttributeValue, Instance } from "../models/reactome-instance.model";
 import { InstanceUtilities } from "./instance.service";
 import { DataService } from "./data.service";
+import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
+import { STOICHIOMETRY_RELATIONSHIP_TYPES } from "../models/reactome-schema.model";
 
 @Injectable({
     providedIn: 'root'
@@ -16,7 +19,8 @@ import { DataService } from "./data.service";
 export class AttributeEditService {
 
     public constructor(private instUtil: InstanceUtilities,
-        private dataService: DataService
+        private dataService: DataService,
+        private dialog: MatDialog
         // Initialize any other properties if needed
     ) {
     }
@@ -77,9 +81,11 @@ export class AttributeEditService {
                 instance?.attributes?.set(attributeValue.attribute.name, result);
             }
             else {
-                // TODO: add logic here to ensure if the attribute value contains the result already, if so, do not add again. This is to avoid duplicate values in the list. This is important for attributes with cardinality > 1, especially for those with polyneer repeated unit (e.g. hasComponent, input, output) where the same instance can be added multiple times as different attribute value but with the same reference instance.
-                // If class has a stoichiometry attribute (input, output, hasComponent) maybe polyneer repeated unit 
-                // Use the warning dialog to tell the user if a value is being repeated 
+                const ignoreIndex = replace ? attributeValue.index : undefined;
+                if (this.containsValue(attributeValue.attribute.name, value, result, ignoreIndex)) {
+                    this.showDuplicateValueDialog(result);
+                    return;
+                }
                 const deleteCount = replace ? 1 : 0;
                 value.splice(attributeValue.index, deleteCount, result);
             }
@@ -89,7 +95,7 @@ export class AttributeEditService {
     public addInstanceViaSelect(attributeValue: AttributeValue, result: any, instance: Instance, replace: boolean = false) {
         // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
         // Add the new value
-        if (result === undefined || !result || result[0].dbId === undefined) return; // Do nothing if this is undefined or resolve to false (e.g. nothing there)
+        if (result === undefined || !result || result.length === 0 || result[0].dbId === undefined) return; // Do nothing if this is undefined or resolve to false (e.g. nothing there)
         // Check if there is any value
         //this.addValueToAttribute(attributeValue, result);
         result = result.map((inst: Instance) => this.instUtil.getShellInstance(inst));
@@ -118,10 +124,82 @@ export class AttributeEditService {
                     result.length > 0 ? result[0] : undefined
                 );
             } else {
+                const ignoreIndex = replace ? attributeValue.index : undefined;
+                const duplicateValues = result.filter((candidate: any) => this.containsValue(attributeValue.attribute.name, value, candidate, ignoreIndex));
+                const uniqueValues = result.filter((candidate: any) => !this.containsValue(attributeValue.attribute.name, value, candidate, ignoreIndex));
+
+                if (duplicateValues.length > 0) {
+                    this.showDuplicateValueDialog(duplicateValues.length === 1 ? duplicateValues[0] : duplicateValues);
+                }
+
+                if (uniqueValues.length === 0) {
+                    return;
+                }
+
                 const deleteCount = replace ? 1 : 0;
-                value.splice(attributeValue.index, deleteCount, ...result);
+                value.splice(attributeValue.index, deleteCount, ...uniqueValues);
             }
         }
+    }
+
+    private containsValue(attributeName: string, values: any[], candidate: any, ignoreIndex?: number): boolean {
+        if (this.allowsDuplicateInstanceValue(attributeName, candidate)) {
+            return false;
+        }
+
+        return values.some((value, index) => {
+            if (ignoreIndex !== undefined && index === ignoreIndex) {
+                return false;
+            }
+            return this.isSameValue(value, candidate);
+        });
+    }
+
+    private allowsDuplicateInstanceValue(attributeName: string, candidate: any): boolean {
+        return STOICHIOMETRY_RELATIONSHIP_TYPES.includes(attributeName) && this.isInstanceLikeValue(candidate);
+    }
+
+    private isInstanceLikeValue(value: any): boolean {
+        return !!value && typeof value === 'object' && 'dbId' in value;
+    }
+
+    private isSameValue(left: any, right: any): boolean {
+        if (left === right) {
+            return true;
+        }
+
+        if (left && right && typeof left === 'object' && typeof right === 'object' && 'dbId' in left && 'dbId' in right) {
+            return left.dbId === right.dbId;
+        }
+
+        return JSON.stringify(left) === JSON.stringify(right);
+    }
+
+    private showDuplicateValueDialog(value: any) {
+        this.dialog.open(InfoDialogComponent, {
+            data: {
+                title: 'Duplicate value',
+                message: 'This value already exists and was not added.',
+                instanceInfo: this.formatDuplicateValue(value)
+            }
+        });
+    }
+
+    private formatDuplicateValue(value: any): string {
+        if (Array.isArray(value)) {
+            return value.map(item => this.formatDuplicateValue(item)).join(', ');
+        }
+
+        if (value && typeof value === 'object') {
+            if ('displayName' in value && value.displayName) {
+                return String(value.displayName);
+            }
+            if ('dbId' in value) {
+                return String(value.dbId);
+            }
+        }
+
+        return String(value ?? '');
     }
 
     public onNoInstanceAttributeEdit(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean) {
@@ -137,6 +215,11 @@ export class AttributeEditService {
                 if (valueList === undefined) {
                     instance?.attributes?.set(attributeValue.attribute.name, [result]);
                 } else {
+                    const ignoreIndex = attributeValue.index! >= 0 ? attributeValue.index : undefined;
+                    if (this.containsValue(attributeValue.attribute.name, valueList, result, ignoreIndex)) {
+                        this.showDuplicateValueDialog(result);
+                        return;
+                    }
                     if (attributeValue.index! < 0) {
                         value.push(result);
                     } else {

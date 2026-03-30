@@ -193,7 +193,6 @@ export class InstanceTableRowElementComponent implements OnInit {
       this.triggerResize();
       return;
     }
-
     event.preventDefault();
     this.onChange(); // Enter commits the edit
   }

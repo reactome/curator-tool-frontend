@@ -25,13 +25,13 @@
 
 - TODO: save the user's edits after amount of inactivity 
 
-- Batch editing is broken
 - bug when adding golgi apparatus to the inst 
 - Deleted instance generated displayname 
-- disable the collapsable feature in schema tree.
 
--Can StructureModified attributes be flagged in events when the StructureModified date is more recent that the Reviewed or internalReviewed?
--Maybe add curatorComments and replacement instance options directly on the deletion confirmation modal to encourage populating those fields?
+- Can StructureModified attributes be flagged in events when the StructureModified date is more recent that the Reviewed or internalReviewed?
+- Maybe add curatorComments and replacement instance options directly on the deletion confirmation modal to encourage populating those fields?
+HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidue, Input, InputForReactionLikeEvent, RepeatedUnit, RepeatedUnitForPhysicalEntity
+
 
 #### TODO
 - comments from Eliot and others during a demo on March 16, 2026: https://docs.google.com/document/d/1zlj3KKDwRQYUBCGIi4P3uqsb5X3JRfk8WoOqj2BXssI/edit?tab=t.0#heading=h.y6ik0la1wydu.
