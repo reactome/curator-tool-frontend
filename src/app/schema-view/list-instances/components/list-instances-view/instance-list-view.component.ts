@@ -56,6 +56,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   @Input() isLocal: boolean = false;
   @Input() showBatchEdit: boolean = true;
   @Input() showDeletion: boolean = true;
+  @Input() showBatchEditActions: boolean = true; // This is used to control the visibility of batch edit actions, which is only shown when there are selected instances. It is set to true by default, but can be turned off in the batch edit dialog.
 
   // A flag to use route to load
   @Input() useRoute: boolean = true;

@@ -25,10 +25,17 @@
 }
 
 .options-panel {
+  max-height: 50vh;
+  overflow: scroll;
+  border: solid;
+  min-height: 5vh;
 }
 
 .selected-instances-panel {
-  min-height: 0;
+  min-height: 20vh;
+  max-height: 50vh;
+  overflow: scroll;
+  border: solid;
 }
 
 .etched-content {

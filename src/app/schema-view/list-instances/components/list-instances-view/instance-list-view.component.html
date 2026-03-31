@@ -46,7 +46,7 @@
     </app-instance-list-table>
 
     <div class="paginator-container" style="display: flex; justify-content: flex-end; width: 100%">
-      <div style="background-color: white; width: 40%;">
+      <div *ngIf="showBatchEditActions" style="background-color: white; width: 40%;">
         <span style="background-color: white; width: 400%; line-height: 60px;">
           &nbsp;Selected Instances: {{selectedInstances.length}} &nbsp;</span>
         <mat-icon color="primary" style="line-height: 36px;" (click)="setSelectedInstances()"
