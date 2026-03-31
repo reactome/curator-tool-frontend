@@ -19,7 +19,7 @@ export class SelectInstanceDialogService {
   openDialog(attributeValue: AttributeValue): MatDialogRef<SelectInstanceDialogComponent, Instance[]> {
     const dialogRef = this.dialog.open(SelectInstanceDialogComponent, {
       width: '1100px',
-      height: '900px',
+      height: '1500px',
       data: attributeValue
     });
     return dialogRef;

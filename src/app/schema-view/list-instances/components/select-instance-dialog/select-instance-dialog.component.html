@@ -32,7 +32,7 @@
   <ng-container *ngIf="isSingleValued">
     <h4>*Only one value may be selected for {{attributeValue.attribute.name}}.</h4>
   </ng-container>
-  <section class="scroll_panel selected-instances-panel" [style.max-height]="selectedPanelMaxHeight">
+  <section class="selected-instances-panel" [style.max-height]="selectedPanelMaxHeight">
     <app-selected-instances-table *ngIf="this.selectedInstances.length > 0" [dataSource]="selectedInstances"
       (removeEvent)="onRemoveEvent($event)"></app-selected-instances-table>
   </section>

@@ -1,6 +1,6 @@
 import { Component, EventEmitter, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { PageEvent } from "@angular/material/paginator";
-import { SearchCriterium, Instance, InstanceList, MAX_STAGED_INSTANCES } from "../../../../core/models/reactome-instance.model";
+import { SearchCriterium, Instance, InstanceList, MAX_STAGED_INSTANCES, SelectedInstancesList } from "../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../core/services/data.service";
 import { ActivatedRoute, Params, Router } from "@angular/router";
 import { ReferrersDialogService } from "../../../../instance/components/referrers-dialog/referrers-dialog.service";
@@ -13,7 +13,7 @@ import { ActionButton } from './instance-list-table/instance-list-table.componen
 import { ListInstancesDialogService } from '../list-instances-dialog/list-instances-dialog.service';
 import { BatchEditDialogService } from './batch-edit-dialog/batch-edit-dialog-service';
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
-import { combineLatest, map, Observable, Subscription, take } from 'rxjs';
+import { combineLatest, concatMap, EMPTY, from, map, Observable, Subscription, take, tap } from 'rxjs';
 import { DeleteBulkDialogService } from '../delete-bulk-dialog/delete-bulk-dialog.service';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
@@ -884,4 +884,46 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     anchor.click();
     window.URL.revokeObjectURL(url);
   }
+
+    /**
+  * Save a list of instances via REST API (sequentially).
+  * The server may persist related objects automatically.
+  */
+    commitNewInstances() {
+      if (!this.selectedInstances || this.selectedInstances.length === 0) {
+        return;
+      }
+      let shells = this.selectedInstances.map(inst => this.instUtils.getShellInstance(inst));
+  
+      from(shells).pipe(
+        // filter(inst =>inst.dbId && inst.dbId > 0}), // only save new instances
+        concatMap(inst => {
+          if (inst.dbId && inst.dbId > 0) {
+            // already persisted for this iteration; emit an empty result to continue the sequence
+            return EMPTY;
+          }
+          return this.saveOne(inst);
+        })
+      ).subscribe({
+        error: err => console.error('Error committing new instances', err),
+        complete: () => {
+          // clear selection and UI flags when done
+          this.selectedInstances = [];
+          this.instUtils.clearSelectedInstances(SelectedInstancesList.newInstanceList);
+        }
+      });
+    }
+
+      /**
+    * Save a single object via the REST API.
+    * Backend may persist related objects and return all saved ones.
+    */
+      private saveOne(inst: Instance): Observable<Instance[]> {
+        return this.dataService.commit(inst).pipe(
+          tap(rtn => {
+            this.instUtils.processCommit(inst, rtn, this.dataService);
+          }),
+          map(saved => Array.isArray(saved) ? saved : [saved])
+        );
+      }
 }

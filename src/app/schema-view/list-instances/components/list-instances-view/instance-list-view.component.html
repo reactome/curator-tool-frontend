@@ -9,8 +9,8 @@
     <!-- <mat-icon *ngIf="showDeletion" class="undo-icon" matTooltip="Delete Selected" matSuffix>delete</mat-icon> -->
     <mat-icon *ngIf="showBatchEdit" class="undo-icon" matTooltip="Batch Edit" (click)="handleBatchEdit()"
       matSuffix>edit_square</mat-icon>
-    <mat-icon *ngIf="!isLocal && hasExecutedSearch && instanceCount > 0" class="undo-icon" matTooltip="Download search results" (click)="downloadSearchResults()"
-      matSuffix>download</mat-icon>
+    <mat-icon *ngIf="!isLocal && hasExecutedSearch && instanceCount > 0" class="undo-icon"
+      matTooltip="Download search results" (click)="downloadSearchResults()" matSuffix>download</mat-icon>
     <mat-icon class="custom-search-icon" matTooltip="Advanced Search" (click)="toggleSearchMode()"
       matSuffix>manage_search</mat-icon>
   </mat-form-field>
@@ -23,8 +23,8 @@
     <mat-icon class="undo-icon" matTooltip="Undo last" (click)="removeSearchCriterium()" matSuffix>undo</mat-icon>
     <mat-icon *ngIf="showBatchEdit" class="undo-icon" matTooltip="Batch Edit" (click)="handleBatchEdit()"
       matSuffix>edit_square</mat-icon>
-    <mat-icon *ngIf="!isLocal && hasExecutedSearch && instanceCount > 0" class="undo-icon" matTooltip="Download search results" (click)="downloadSearchResults()"
-      matSuffix>download</mat-icon>
+    <mat-icon *ngIf="!isLocal && hasExecutedSearch && instanceCount > 0" class="undo-icon"
+      matTooltip="Download search results" (click)="downloadSearchResults()" matSuffix>download</mat-icon>
     <mat-icon class="custom-search-icon" matTooltip="Simple Search" (click)="toggleSearchMode()"
       matSuffix>manage_search</mat-icon>
   </mat-form-field>
@@ -41,8 +41,9 @@
   <ng-container *ngIf="!showProgressSpinner">
     <app-instance-list-table [dataSource]="data" [isSelection]="isSelection" [actionButtons]="actionButtons"
       [secondaryActionButtons]="secondaryActionButtons" [showCheckMark]="!isSelection" [isLocal]="isLocal"
-      [selectedInstances]="selectedInstances" (checkedEvent)="onRowChecked($event)" (uncheckedEvent)="onRowUnchecked($event)"
-      (actionEvent)="handleAction($event)" (selectionEvent)="onRowClick($event)" (urlClickEvent)="navigateUrl($event)">
+      [selectedInstances]="selectedInstances" (checkedEvent)="onRowChecked($event)"
+      (uncheckedEvent)="onRowUnchecked($event)" (actionEvent)="handleAction($event)"
+      (selectionEvent)="onRowClick($event)" (urlClickEvent)="navigateUrl($event)">
     </app-instance-list-table>
 
     <div class="paginator-container" style="display: flex; justify-content: flex-end; width: 100%">
@@ -57,8 +58,12 @@
           (click)="clearSelectedInstances()" matSuffix>deselect_all</mat-icon>
         <mat-icon color="primary" style="line-height: 36px;" matTooltip="Delete selected" matSuffix
           (click)="handleDeleteSelected()">delete</mat-icon>
-        <mat-icon *ngIf="selectedInstances.length === 2" color="primary" style="line-height: 36px;" (click)="compareInstances()"
-          matTooltip="Compare instances" matSuffix>compare_arrows</mat-icon>
+        <mat-icon *ngIf="selectedInstances.length === 2" color="primary" style="line-height: 36px;"
+          (click)="compareInstances()" matTooltip="Compare instances" matSuffix>compare_arrows</mat-icon>
+        <ng-container *ngIf="this.isLocal">
+          <mat-icon *ngIf="selectedInstances.length > 0" color="primary" style="line-height: 36px;"
+            (click)="commitNewInstances()" matTooltip="commit all selected" matSuffix>upload</mat-icon>
+        </ng-container>
       </div>
       <mat-paginator style="width: 100%" (page)="onPageChange($event)" [length]="instanceCount"
         [pageSizeOptions]=pageSizeOptions [pageSize]="pageSize" [pageIndex]="pageIndex" showFirstLastButtons
