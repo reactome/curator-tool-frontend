@@ -186,13 +186,29 @@ export class AttributeEditComponent implements OnInit {
     this.editAction.emit(attributeValue);
   }
 
-  onKeyDown(e: any) {
-    //ctrl and enter key
-    // TODO: need to implement the following behavior
-    // enter without control to commit and enter with control to enter a new line
-    if (e.ctrlKey && e.key === 'Enter') {
-      this.onChange();
+  onKeyDown(event: KeyboardEvent) {
+    if (event.key !== 'Enter') {
+      return;
     }
+
+    if (event.ctrlKey || event.metaKey) {
+      event.preventDefault();
+      const textarea = event.target as HTMLTextAreaElement;
+      const value = this.control.value ?? '';
+      const start = textarea.selectionStart ?? value.length;
+      const end = textarea.selectionEnd ?? value.length;
+      const newValue = `${value.slice(0, start)}\n${value.slice(end)}`;
+      this.control.setValue(newValue);
+      setTimeout(() => {
+        textarea.selectionStart = start + 1;
+        textarea.selectionEnd = start + 1;
+      });
+      this.triggerResize();
+      return;
+    }
+
+    event.preventDefault();
+    this.onChange();
   }
 
   onInstanceLinkClicked(instance: Instance) {
