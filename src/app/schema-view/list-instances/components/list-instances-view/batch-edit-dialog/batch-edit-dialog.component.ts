@@ -440,12 +440,12 @@ export class BatchEditDialogComponent implements PostEditListener {
 
           if (isInstanceAttribute) {
             if (result?.dbId < 0)
-              this.attributeEditService.addValueToAttribute(attributeValue, result, instance, replace);
+              this.attributeEditService.addValueToAttribute(attributeValue, result, instance, replace, false);
             else
-              this.attributeEditService.addInstanceViaSelect(attributeValue, result, instance, replace);
+              this.attributeEditService.addInstanceViaSelect(attributeValue, result, instance, replace, false);
           }
           else {
-            this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, result, instance, replace);
+            this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, result, instance, replace, false);
           }
 
           affectedDbIds.add(instance.dbId);

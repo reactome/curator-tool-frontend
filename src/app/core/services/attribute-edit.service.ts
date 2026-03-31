@@ -1,9 +1,8 @@
 import { Injectable } from "@angular/core";
-import { MatDialog } from "@angular/material/dialog";
+import { MatSnackBar } from "@angular/material/snack-bar";
 import { AttributeValue, Instance } from "../models/reactome-instance.model";
 import { InstanceUtilities } from "./instance.service";
 import { DataService } from "./data.service";
-import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
 import { STOICHIOMETRY_RELATIONSHIP_TYPES } from "../models/reactome-schema.model";
 
 @Injectable({
@@ -20,7 +19,7 @@ export class AttributeEditService {
 
     public constructor(private instUtil: InstanceUtilities,
         private dataService: DataService,
-        private dialog: MatDialog
+        private snackBar: MatSnackBar
         // Initialize any other properties if needed
     ) {
     }
@@ -62,7 +61,7 @@ export class AttributeEditService {
         // }
     }
 
-    public addValueToAttribute(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean,) {
+    public addValueToAttribute(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean, showDuplicateNotification: boolean = true) {
         if (result === undefined || result === null) { return; } // Do nothing if this is undefined or resolve to false (e.g. nothing there)
         let value = instance?.attributes?.get(attributeValue.attribute.name);
         if (value === undefined) {
@@ -83,7 +82,8 @@ export class AttributeEditService {
             else {
                 const ignoreIndex = replace ? attributeValue.index : undefined;
                 if (this.containsValue(attributeValue.attribute.name, value, result, ignoreIndex)) {
-                    this.showDuplicateValueDialog(result);
+                    if (showDuplicateNotification)
+                        this.showDuplicateValueNotification(result);
                     return;
                 }
                 const deleteCount = replace ? 1 : 0;
@@ -92,7 +92,7 @@ export class AttributeEditService {
         }
     }
 
-    public addInstanceViaSelect(attributeValue: AttributeValue, result: any, instance: Instance, replace: boolean = false) {
+    public addInstanceViaSelect(attributeValue: AttributeValue, result: any, instance: Instance, replace: boolean = false, showDuplicateNotification: boolean = true) {
         // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
         // Add the new value
         if (result === undefined || !result || result.length === 0 || result[0].dbId === undefined) return; // Do nothing if this is undefined or resolve to false (e.g. nothing there)
@@ -128,8 +128,8 @@ export class AttributeEditService {
                 const duplicateValues = result.filter((candidate: any) => this.containsValue(attributeValue.attribute.name, value, candidate, ignoreIndex));
                 const uniqueValues = result.filter((candidate: any) => !this.containsValue(attributeValue.attribute.name, value, candidate, ignoreIndex));
 
-                if (duplicateValues.length > 0) {
-                    this.showDuplicateValueDialog(duplicateValues.length === 1 ? duplicateValues[0] : duplicateValues);
+                if (showDuplicateNotification && duplicateValues.length > 0) {
+                    this.showDuplicateValueNotification(duplicateValues.length === 1 ? duplicateValues[0] : duplicateValues);
                 }
 
                 if (uniqueValues.length === 0) {
@@ -171,13 +171,13 @@ export class AttributeEditService {
         return JSON.stringify(left) === JSON.stringify(right);
     }
 
-    private showDuplicateValueDialog(value: any) {
-        this.dialog.open(InfoDialogComponent, {
-            data: {
-                title: 'Duplicate value',
-                message: 'This value already exists and was not added.',
-                instanceInfo: this.formatDuplicateValue(value)
-            }
+    private showDuplicateValueNotification(value: any) {
+        const formattedValue = this.formatDuplicateValue(value);
+        const message = formattedValue
+            ? `This value already exists and was not added: ${formattedValue}`
+            : 'This value already exists and was not added.';
+        this.snackBar.open(message, 'OK', {
+            duration: 5000
         });
     }
 
@@ -198,7 +198,7 @@ export class AttributeEditService {
         return String(value ?? '');
     }
 
-    public onNoInstanceAttributeEdit(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean) {
+    public onNoInstanceAttributeEdit(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean, showDuplicateNotification: boolean = true) {
         let value = instance?.attributes?.get(attributeValue.attribute.name);
         if (attributeValue.attribute.cardinality === '1') {
             instance?.attributes?.set(attributeValue.attribute.name, result);
@@ -213,7 +213,8 @@ export class AttributeEditService {
                 } else {
                     const ignoreIndex = attributeValue.index! >= 0 ? attributeValue.index : undefined;
                     if (this.containsValue(attributeValue.attribute.name, valueList, result, ignoreIndex)) {
-                        this.showDuplicateValueDialog(result);
+                        if (showDuplicateNotification)
+                            this.showDuplicateValueNotification(result);
                         return;
                     }
                     if (attributeValue.index! < 0) {
