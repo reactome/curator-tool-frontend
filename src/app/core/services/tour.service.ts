@@ -115,6 +115,110 @@ const SCHEMA_TOUR: TourStep[] = [
   },
 ];
 
+const EVENT_VIEW_TOUR: TourStep[] = [
+  {
+    id: 'event-welcome',
+    title: 'Event View Tour',
+    content:
+      'Welcome to Event View. This tour covers the event tree, pathway diagram, and instance editor panels.',
+    position: 'center',
+  },
+  {
+    id: 'event-filter',
+    title: 'Species & Event Filter',
+    content:
+      'Use the species dropdown at the top of the left panel to filter events by species. Type in the text filter and press Enter to search by event name or dbId.',
+    targetSelector: 'app-event-filter, .event-filter',
+    position: 'right',
+  },
+  {
+    id: 'event-tree',
+    title: 'Event Tree',
+    content:
+      'The tree lists all events hierarchically. Expand nodes with the arrow. Click an event to load it in the instance editor. Use the action icons to add an event to the diagram, create a new diagram, or toggle the release flag. Shift+click the release flag to apply it to an entire subtree.',
+    targetSelector: 'app-event-tree, .event-tree, mat-tree',
+    position: 'right',
+  },
+  {
+    id: 'event-diagram',
+    title: 'Pathway Diagram',
+    content:
+      'The upper-right panel shows the pathway diagram. Selecting an event in the tree highlights its objects here. Click a diagram object to load the related instance in the editor below. Right-click anywhere to open the diagram context menu for editing, alignment, and upload actions.',
+    targetSelector: 'app-diagram, .diagram-container, ngx-reactome-diagram',
+    position: 'left',
+  },
+  {
+    id: 'event-instance-editor',
+    title: 'Instance Editor',
+    content:
+      'The lower-right panel is the instance editor — the same editor used in Schema View. Edit attribute values directly, use the toolbar for QA, referrers, compare, and upload.',
+    targetSelector: 'app-instance-view, .instance-view',
+    position: 'left',
+  },
+  {
+    id: 'event-bookmarks',
+    title: 'Bookmarks Strip',
+    content:
+      'The right edge strip holds your bookmarked instances. Expand or collapse it by clicking the BOOKMARKS label. Drag a bookmarked instance onto a compatible attribute slot in the editor to assign it as a value.',
+    targetSelector: 'app-instance-bookmark, .bookmark-panel',
+    position: 'left',
+  },
+  {
+    id: 'event-staged',
+    title: 'Staged Changes',
+    content:
+      'The status toolbar at the bottom works the same as in Schema View. Click any staged-count button to switch the left panel to the staged-changes list where you can commit or reset your work.',
+    targetSelector: 'app-status',
+    position: 'top',
+  },
+];
+
+const GENE2PATH_TOUR: TourStep[] = [
+  {
+    id: 'gene2path-welcome',
+    title: 'Gene2Path App Tour',
+    content:
+      'Welcome to Gene2Path. This tool uses an LLM service to generate pathway annotation support for a gene. This tour walks you through submitting a query and reviewing results.',
+    position: 'center',
+  },
+  {
+    id: 'gene2path-input',
+    title: 'Gene Symbol Input',
+    content:
+      'Type a gene symbol into the input field. A default example gene is pre-filled to get you started quickly.',
+    targetSelector: 'mat-form-field input, .gene-input',
+    position: 'bottom',
+  },
+  {
+    id: 'gene2path-settings',
+    title: 'Settings',
+    content:
+      'Click the gear icon to open the Settings panel before submitting. Here you can change LLM model configuration options.',
+    position: 'center',
+  },
+  {
+    id: 'gene2path-submit',
+    title: 'Submit',
+    content:
+      'Click the Submit (publish) icon to run the query. A progress bar appears while the LLM processes the gene against Reactome pathway data.',
+    position: 'center',
+  },
+  {
+    id: 'gene2path-results',
+    title: 'Results',
+    content:
+      'Results are grouped into: Annotated Pathways (confirmed associations), Predicted Pathways (LLM suggestions to review), and protein-protein interaction tables. Use the side navigation menu to jump between sections.',
+    position: 'center',
+  },
+  {
+    id: 'gene2path-caution',
+    title: 'Review Before Curating',
+    content:
+      'Generated content is curation assistance — not ground truth. Always review pathway links and PubMed citations before adding data to Reactome.',
+    position: 'center',
+  },
+];
+
 @Injectable({ providedIn: 'root' })
 export class TourService {
   private readonly initialState: TourState = {
@@ -141,6 +245,14 @@ export class TourService {
 
   startSchemaTour(): void {
     this.startTour(SCHEMA_TOUR);
+  }
+
+  startEventViewTour(): void {
+    this.startTour(EVENT_VIEW_TOUR);
+  }
+
+  startGene2PathTour(): void {
+    this.startTour(GENE2PATH_TOUR);
   }
 
   startTour(steps: TourStep[]): void {

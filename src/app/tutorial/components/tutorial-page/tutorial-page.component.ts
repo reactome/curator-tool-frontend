@@ -112,4 +112,14 @@ export class TutorialPageComponent {
     this.tourService.startSchemaTour();
     this.router.navigate(['/schema_view']);
   }
+
+  startEventViewTour(): void {
+    this.tourService.startEventViewTour();
+    this.router.navigate(['/event_view']);
+  }
+
+  startGene2PathTour(): void {
+    this.tourService.startGene2PathTour();
+    this.router.navigate(['/gene2path']);
+  }
 }
