@@ -22,6 +22,7 @@ import { ActionButton } from '../instance-list-table/instance-list-table.compone
   styleUrls: ['./batch-edit-dialog.component.scss']
 })
 export class BatchEditDialogComponent implements PostEditListener {
+
   selectedAttribute: SchemaAttribute | undefined;
   selectedAction: EDIT_ACTION | undefined;
   lastEditSummary: string = '';
@@ -518,7 +519,7 @@ export class BatchEditDialogComponent implements PostEditListener {
         });
 
         this.getInstancesForEdit().pipe(take(1)).subscribe((instances: Instance[]) => {
-            const affectedDbIds = new Set<number>();
+          const affectedDbIds = new Set<number>();
           this.selectedAggregatedValues.forEach((values) => {
             for (let instance of instances) {
               let att = instance.attributes.get(attributeValue.attribute.name);
@@ -528,14 +529,14 @@ export class BatchEditDialogComponent implements PostEditListener {
                     let index = att.indexOf(values.value);
                     values.index = index;
                     this.attributeEditService.deleteInstanceAttribute(values, instance);
-                      affectedDbIds.add(instance.dbId);
+                    affectedDbIds.add(instance.dbId);
                     this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
                   }
                 }
                 else {
                   if (att === values.value) {
                     this.attributeEditService.deleteInstanceAttribute(values, instance);
-                      affectedDbIds.add(instance.dbId);
+                    affectedDbIds.add(instance.dbId);
                     this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
                   }
                 }
@@ -543,12 +544,12 @@ export class BatchEditDialogComponent implements PostEditListener {
             }
           });
 
-            this.setEditSummary(
-              EDIT_ACTION.DELETE,
-              attributeValue.attribute.name,
-              Array.from(this.selectedAggregatedValues).map(value => value.value),
-              affectedDbIds.size,
-            );
+          this.setEditSummary(
+            EDIT_ACTION.DELETE,
+            attributeValue.attribute.name,
+            Array.from(this.selectedAggregatedValues).map(value => value.value),
+            affectedDbIds.size,
+          );
         });
 
       });
@@ -621,5 +622,8 @@ export class BatchEditDialogComponent implements PostEditListener {
     if (this._instances) {
       this._instances = syncInstance(this._instances);
     }
+  }
+
+  onBooleanChange() {
   }
 }

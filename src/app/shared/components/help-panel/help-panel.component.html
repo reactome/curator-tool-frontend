@@ -1,0 +1,39 @@
+<!-- Floating help button -->
+<button
+  mat-mini-fab
+  color="primary"
+  class="help-fab"
+  (click)="toggle()"
+  [matTooltip]="isOpen ? 'Close help' : 'Open help'"
+  matTooltipPosition="left"
+  aria-label="Toggle help panel"
+>
+  <mat-icon>{{ isOpen ? 'close' : 'help_outline' }}</mat-icon>
+</button>
+
+<!-- Help drawer (slides in from right) -->
+<div class="help-drawer" [class.help-drawer--open]="isOpen">
+  <div class="help-drawer-header">
+    <mat-icon color="primary">help_outline</mat-icon>
+    <span class="help-drawer-title">{{ context.title }}</span>
+    <button mat-icon-button (click)="close()" aria-label="Close help">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="help-drawer-content">
+    <ng-container *ngFor="let section of context.sections">
+      <h4 class="help-section-heading">{{ section.heading }}</h4>
+      <ul class="help-section-list">
+        <li *ngFor="let item of section.items">{{ item }}</li>
+      </ul>
+    </ng-container>
+
+    <mat-divider class="help-divider"></mat-divider>
+
+    <a routerLink="/tutorial" class="help-tutorial-link" (click)="close()">
+      <mat-icon>school</mat-icon>
+      Open full Tutorial page
+    </a>
+  </div>
+</div>

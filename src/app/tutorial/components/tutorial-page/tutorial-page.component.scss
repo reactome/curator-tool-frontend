@@ -1,0 +1,190 @@
+.tutorial-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+
+/* ── Page header ────────────────────────────────────────── */
+.tutorial-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.tutorial-header-icon {
+  font-size: 48px;
+  height: 48px;
+  width: 48px;
+  color: #1976d2;
+  flex-shrink: 0;
+}
+
+.tutorial-title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.tutorial-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+/* ── Tour launch bar ───────────────────────────────────── */
+.tour-launch-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #e3f2fd;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+
+  .tour-launch-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1565c0;
+
+    mat-icon {
+      font-size: 20px;
+      height: 20px;
+      width: 20px;
+    }
+  }
+}
+
+/* ── Tabs ───────────────────────────────────────────────── */
+.tutorial-tabs {
+  .tab-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+}
+
+.tab-content {
+  padding: 20px 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Cards ──────────────────────────────────────────────── */
+.tutorial-card {
+  mat-card-header {
+    margin-bottom: 8px;
+  }
+
+  mat-card-content {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.6;
+
+    h4 {
+      margin: 12px 0 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1976d2;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+
+      &:first-child {
+        margin-top: 0;
+      }
+    }
+
+    ul, ol {
+      margin: 0 0 8px;
+      padding-left: 20px;
+
+      li {
+        margin-bottom: 4px;
+      }
+    }
+
+    p { margin: 0 0 8px; }
+  }
+}
+
+.tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  background: #fff8e1;
+  border-left: 3px solid #f9a825;
+  border-radius: 0 4px 4px 0;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #5d4037;
+
+  .tip-icon {
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+    color: #f9a825;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+}
+
+/* ── Tables ─────────────────────────────────────────────── */
+.shortcuts-table,
+.batch-actions-table {
+  width: 100%;
+  margin-top: 8px;
+
+  kbd {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-family: monospace;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .mat-mdc-header-cell {
+    font-weight: 600;
+    font-size: 12px;
+    color: #666;
+  }
+
+  .mat-mdc-cell {
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+}
+
+code {
+  background: #f5f5f5;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 13px;
+  font-family: monospace;
+}
+
+/* ── Workflows ──────────────────────────────────────────── */
+.workflow-card {
+  .workflow-avatar {
+    background: #1976d2;
+    color: white;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+}

@@ -1,0 +1,457 @@
+<div class="tutorial-container">
+
+  <!-- Page header -->
+  <div class="tutorial-header">
+    <mat-icon class="tutorial-header-icon">school</mat-icon>
+    <div>
+      <h1 class="tutorial-title">Reactome Curation WebBench — Tutorial</h1>
+      <p class="tutorial-subtitle">
+        Use the tabs below to explore each area of the application, or launch an interactive guided tour.
+      </p>
+    </div>
+  </div>
+
+  <!-- Quick-launch tour buttons -->
+  <div class="tour-launch-bar">
+    <span class="tour-launch-label">
+      <mat-icon>play_circle_outline</mat-icon>
+      Launch interactive tour:
+    </span>
+    <button mat-raised-button color="primary" (click)="startHomeTour()">
+      <mat-icon>home</mat-icon>
+      Home Page Tour
+    </button>
+    <button mat-raised-button color="accent" (click)="startSchemaTour()">
+      <mat-icon>account_tree</mat-icon>
+      Schema View Tour
+    </button>
+  </div>
+
+  <!-- Tabbed sections -->
+  <mat-tab-group animationDuration="200ms" class="tutorial-tabs">
+
+    <!-- ── Getting Started ─────────────────────────────────── -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">rocket_launch</mat-icon>
+        Getting Started
+      </ng-template>
+
+      <div class="tab-content">
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">login</mat-icon>
+            <mat-card-title>Sign In</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ol>
+              <li>Navigate to <code>/login</code>.</li>
+              <li>Enter your <strong>Username</strong> and <strong>Password</strong> and click <strong>OK</strong>.</li>
+              <li>If you were redirected from a protected page, you will be returned there automatically.</li>
+            </ol>
+            <p class="tip"><mat-icon class="tip-icon">info</mat-icon>
+              Special characters (!, $, etc.) in passwords are not yet supported — use alphanumeric passwords.
+            </p>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">home</mat-icon>
+            <mat-card-title>Home Page</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p>After signing in, the home page gives you three launch cards:</p>
+            <ul>
+              <li><strong>Schema View</strong> — browse classes, list/edit instances, manage staged changes.</li>
+              <li><strong>Event View</strong> — combine event tree, pathway diagram, and instance editor.</li>
+              <li><strong>Gene2Path</strong> — LLM-assisted pathway annotation for a gene.</li>
+            </ul>
+            <p>The <strong>Status Toolbar</strong> at the bottom shows staged change counts and quick actions.</p>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">save</mat-icon>
+            <mat-card-title>Staged Changes &amp; Commit Model</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p>
+              The Curator WebBench uses a <strong>local staging</strong> model.
+              All edits are saved locally in your browser first, then committed to the database when you're ready.
+            </p>
+            <ol>
+              <li>Make edits — instance creates, updates, or deletes are staged.</li>
+              <li>Review staged changes by clicking any counter in the status toolbar.</li>
+              <li>Select items in the staged-changes panel and click the upload icon to commit.</li>
+              <li>Use the reset buttons to undo staged changes without committing.</li>
+            </ol>
+            <p class="tip">
+              <mat-icon class="tip-icon">warning</mat-icon>
+              If you see a "too many staged instances" warning, commit your work soon to avoid data loss on browser close.
+            </p>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- ── Schema View ─────────────────────────────────────── -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">account_tree</mat-icon>
+        Schema View
+      </ng-template>
+
+      <div class="tab-content">
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">park</mat-icon>
+            <mat-card-title>Class Tree</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ul>
+              <li>Click a <strong>class name</strong> to view its attribute definitions (allowed types, cardinality, origin).</li>
+              <li>Click the <strong>[count]</strong> badge next to a class to list instances from the database for that class.</li>
+              <li>Click the <strong>(count)</strong> badge to list only your staged/local instances for that class.</li>
+              <li>Click the <strong>+</strong> icon to create a new instance of that class.</li>
+            </ul>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">list</mat-icon>
+            <mat-card-title>Instance List</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <h4>Search</h4>
+            <ul>
+              <li>Type in the search box and press <kbd>Enter</kbd> for a quick text/dbId search.</li>
+              <li>Click the filter icon to switch to <strong>Advanced Search</strong> — add conditions using Contains, Equal, Not Equal, IS NULL, IS NOT NULL.</li>
+              <li>Click the undo icon to remove the last advanced condition.</li>
+              <li>After a search, click the <strong>Download</strong> icon to export the full result set as CSV (dbId, displayName, schemaClass).</li>
+            </ul>
+            <h4>Row Actions</h4>
+            <ul>
+              <li>Click a row to open the instance editor.</li>
+              <li>Right-click or use the row action menu for: delete, show referrers, copy/clone, compare, show tree.</li>
+              <li>Select rows with the checkbox column for bulk actions.</li>
+            </ul>
+            <h4>List-Level Actions</h4>
+            <ul>
+              <li><strong>Select All on Page</strong> / <strong>Deselect All</strong></li>
+              <li><strong>Delete Selected</strong></li>
+              <li><strong>Compare Selected</strong> (when exactly 2 rows are selected)</li>
+              <li><strong>Batch Edit</strong> (see Batch Edit section)</li>
+            </ul>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">edit</mat-icon>
+            <mat-card-title>Instance Editor</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <h4>Toolbar</h4>
+            <ul>
+              <li><strong>QA</strong> icon — run quality checks on this instance.</li>
+              <li><strong>Referrers</strong> icon — list all instances that reference this one.</li>
+              <li><strong>Compare</strong> icon — diff current state against the database version.</li>
+              <li><strong>Delete</strong> icon — stage this instance for deletion.</li>
+              <li><strong>Upload</strong> icon — commit this single instance.</li>
+              <li><strong>Bookmark</strong> icon — add to your bookmarks strip.</li>
+            </ul>
+            <h4>Attribute Types</h4>
+            <ul>
+              <li><strong>String</strong>: edit in the textarea. Press <kbd>Enter</kbd> to commit. Press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (or <kbd>⌘</kbd>+<kbd>Enter</kbd>) to insert a newline.</li>
+              <li><strong>Integer / Float</strong>: numeric input only (no spinner arrows). Press <kbd>Enter</kbd> to commit.</li>
+              <li><strong>Boolean</strong>: radio buttons for True / False.</li>
+              <li><strong>Instance-type</strong>: use the action menu (Set, Add, Replace, Delete). Drag a bookmark onto a compatible slot to assign its value.</li>
+            </ul>
+            <h4>Multi-Valued Attributes</h4>
+            <p>
+              For multi-valued instance slots you can also reorder values by dragging. Adding a value that
+              already exists will be blocked and you will see a notification — except for stoichiometry
+              attributes (HasComponent, Input, Output, etc.) which allow repeats.
+            </p>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">edit_note</mat-icon>
+            <mat-card-title>Batch Edit</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ol>
+              <li>Select rows from the instance list (optional — if none selected, batch edit applies to the full list scope).</li>
+              <li>Click the <strong>Batch Edit</strong> icon in the search bar.</li>
+              <li>Choose an attribute and an action.</li>
+              <li>Fill in the value and confirm.</li>
+            </ol>
+            <h4>Available Actions by Type</h4>
+            <mat-table [dataSource]="batchEditActions" class="batch-actions-table">
+              <ng-container matColumnDef="type">
+                <mat-header-cell *matHeaderCellDef>Attribute Type</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.type }}</mat-cell>
+              </ng-container>
+              <ng-container matColumnDef="cardinality">
+                <mat-header-cell *matHeaderCellDef>Cardinality</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.cardinality }}</mat-cell>
+              </ng-container>
+              <ng-container matColumnDef="actions">
+                <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.actions }}</mat-cell>
+              </ng-container>
+              <mat-header-row *matHeaderRowDef="['type', 'cardinality', 'actions']"></mat-header-row>
+              <mat-row *matRowDef="let row; columns: ['type', 'cardinality', 'actions']"></mat-row>
+            </mat-table>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- ── Event View ─────────────────────────────────────── -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">timeline</mat-icon>
+        Event View
+      </ng-template>
+
+      <div class="tab-content">
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">account_tree</mat-icon>
+            <mat-card-title>Layout</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ul>
+              <li><strong>Left panel</strong>: species filter + event tree (can switch to staged-changes panel with the status toggle).</li>
+              <li><strong>Upper right</strong>: pathway diagram.</li>
+              <li><strong>Lower right</strong>: instance editor (same editing tools as Schema View).</li>
+              <li><strong>Right edge</strong>: bookmarks strip (expandable/collapsible, draggable).</li>
+              <li><strong>Bottom</strong>: status toolbar.</li>
+            </ul>
+            <p>All panels are resizable by dragging their dividers.</p>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">filter_list</mat-icon>
+            <mat-card-title>Event Tree &amp; Filter</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ul>
+              <li>Use the <strong>species dropdown</strong> to filter the tree by species.</li>
+              <li>Type in the text filter and press <kbd>Enter</kbd> to highlight/filter events by name or dbId.</li>
+              <li>Expand/collapse hierarchy by clicking the tree node arrows.</li>
+              <li>Click an event to load it in the instance editor below.</li>
+              <li>Use the tree action icons to: add the event to the diagram, create an empty diagram, or toggle the release flag.</li>
+              <li><kbd>Shift</kbd>+click the release flag to toggle it for the event and all its children.</li>
+            </ul>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">schema</mat-icon>
+            <mat-card-title>Pathway Diagram</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ul>
+              <li>Selecting an event in the tree highlights its objects in the diagram.</li>
+              <li>Clicking a diagram object loads the related instance in the lower editor.</li>
+              <li><strong>Right-click</strong> the diagram to open the context menu.</li>
+            </ul>
+            <h4>Diagram Context Menu Options</h4>
+            <ul>
+              <li>Enable / disable diagram editing</li>
+              <li>Enable / disable reaction edge editing</li>
+              <li>Add / remove edge points and flow lines</li>
+              <li>Resize compartments and pathway nodes</li>
+              <li>Insert / delete compartments</li>
+              <li>Align multiple selected nodes vertically or horizontally</li>
+              <li>Toggle color theme</li>
+              <li>Upload diagram changes</li>
+              <li>Reload the current pathway diagram</li>
+              <li>Open or create the related PathwayDiagram instance</li>
+              <li>Navigate to a nested pathway</li>
+            </ul>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- ── Gene2Path ──────────────────────────────────────── -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">psychology</mat-icon>
+        Gene2Path
+      </ng-template>
+
+      <div class="tab-content">
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">science</mat-icon>
+            <mat-card-title>Overview</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p>
+              Gene2Path uses an LLM service to generate pathway annotation support for a gene.
+              Results include annotated pathways, predicted pathways, and protein-protein interaction tables.
+            </p>
+            <p class="tip">
+              <mat-icon class="tip-icon">info</mat-icon>
+              The Gene2Path route does not require authentication and can be shared via URL.
+            </p>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">play_arrow</mat-icon>
+            <mat-card-title>Usage</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ol>
+              <li>Navigate to <strong>Gene2Path</strong> from the home page.</li>
+              <li>Enter a <strong>gene symbol</strong> in the input field.</li>
+              <li>Optionally click the <strong>gear icon</strong> to adjust LLM configuration settings.</li>
+              <li>Click the <strong>Submit</strong> (publish) icon.</li>
+              <li>A progress bar shows while the query runs.</li>
+            </ol>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">find_in_page</mat-icon>
+            <mat-card-title>Reviewing Results</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ul>
+              <li>Use the <strong>side navigation menu</strong> to jump between generated sections.</li>
+              <li><strong>Annotated Pathways</strong>: confirmed pathway associations with evidence.</li>
+              <li><strong>Predicted Pathways</strong>: LLM-suggested pathway associations to review.</li>
+              <li><strong>Interaction tables</strong>: protein-protein interaction data supporting the annotations.</li>
+              <li>Generated text includes links to Reactome pathways and PubMed where available.</li>
+            </ul>
+            <p class="tip">
+              <mat-icon class="tip-icon">warning</mat-icon>
+              Generated content is curation <em>assistance</em> — always review before adding to Reactome.
+            </p>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- ── Keyboard Shortcuts ─────────────────────────────── -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">keyboard</mat-icon>
+        Keyboard Shortcuts
+      </ng-template>
+
+      <div class="tab-content">
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">edit</mat-icon>
+            <mat-card-title>Attribute Editing</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-table [dataSource]="shortcutsEditing" class="shortcuts-table">
+              <ng-container matColumnDef="shortcut">
+                <mat-header-cell *matHeaderCellDef>Shortcut</mat-header-cell>
+                <mat-cell *matCellDef="let row"><kbd>{{ row.shortcut }}</kbd></mat-cell>
+              </ng-container>
+              <ng-container matColumnDef="context">
+                <mat-header-cell *matHeaderCellDef>Context</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.context }}</mat-cell>
+              </ng-container>
+              <ng-container matColumnDef="action">
+                <mat-header-cell *matHeaderCellDef>Action</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.action }}</mat-cell>
+              </ng-container>
+              <mat-header-row *matHeaderRowDef="['shortcut', 'context', 'action']"></mat-header-row>
+              <mat-row *matRowDef="let row; columns: ['shortcut', 'context', 'action']"></mat-row>
+            </mat-table>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">tour</mat-icon>
+            <mat-card-title>Guided Tour Navigation</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-table [dataSource]="shortcutsTour" class="shortcuts-table">
+              <ng-container matColumnDef="shortcut">
+                <mat-header-cell *matHeaderCellDef>Shortcut</mat-header-cell>
+                <mat-cell *matCellDef="let row"><kbd>{{ row.shortcut }}</kbd></mat-cell>
+              </ng-container>
+              <ng-container matColumnDef="action">
+                <mat-header-cell *matHeaderCellDef>Action</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.action }}</mat-cell>
+              </ng-container>
+              <mat-header-row *matHeaderRowDef="['shortcut', 'action']"></mat-header-row>
+              <mat-row *matRowDef="let row; columns: ['shortcut', 'action']"></mat-row>
+            </mat-table>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">filter_list</mat-icon>
+            <mat-card-title>Search &amp; List</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <mat-table [dataSource]="shortcutsSearch" class="shortcuts-table">
+              <ng-container matColumnDef="shortcut">
+                <mat-header-cell *matHeaderCellDef>Shortcut</mat-header-cell>
+                <mat-cell *matCellDef="let row"><kbd>{{ row.shortcut }}</kbd></mat-cell>
+              </ng-container>
+              <ng-container matColumnDef="context">
+                <mat-header-cell *matHeaderCellDef>Context</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.context }}</mat-cell>
+              </ng-container>
+              <ng-container matColumnDef="action">
+                <mat-header-cell *matHeaderCellDef>Action</mat-header-cell>
+                <mat-cell *matCellDef="let row">{{ row.action }}</mat-cell>
+              </ng-container>
+              <mat-header-row *matHeaderRowDef="['shortcut', 'context', 'action']"></mat-header-row>
+              <mat-row *matRowDef="let row; columns: ['shortcut', 'context', 'action']"></mat-row>
+            </mat-table>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- ── Common Workflows ──────────────────────────────── -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">checklist</mat-icon>
+        Workflows
+      </ng-template>
+
+      <div class="tab-content">
+
+        <mat-card class="tutorial-card workflow-card" *ngFor="let wf of workflows; let i = index">
+          <mat-card-header>
+            <div mat-card-avatar class="workflow-avatar">{{ i + 1 }}</div>
+            <mat-card-title>{{ wf.title }}</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ol>
+              <li *ngFor="let step of wf.steps">{{ step }}</li>
+            </ol>
+          </mat-card-content>
+        </mat-card>
+
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</div>

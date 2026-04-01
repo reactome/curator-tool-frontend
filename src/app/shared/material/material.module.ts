@@ -22,6 +22,8 @@ import {MatTreeModule} from "@angular/material/tree";
 import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 import { MatStepperModule } from '@angular/material/stepper';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @NgModule({
   declarations: [],
@@ -51,7 +53,9 @@ import { MatStepperModule } from '@angular/material/stepper';
     MatProgressSpinnerModule,
     MatStepperModule,
     MatCardModule,
-    MatDialogModule
+    MatDialogModule,
+    MatDividerModule,
+    MatTooltipModule,
   ],
   exports: [
     MatTableModule,
@@ -78,7 +82,9 @@ import { MatStepperModule } from '@angular/material/stepper';
     MatProgressSpinnerModule,
     MatStepperModule,
     MatCardModule,
-    MatDialogModule
+    MatDialogModule,
+    MatDividerModule,
+    MatTooltipModule,
   ]
 })
 export class MaterialModule { }

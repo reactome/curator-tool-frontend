@@ -1,0 +1,60 @@
+<ng-container *ngIf="state.active && currentStep">
+  <!-- Dark backdrop -->
+  <div class="tour-backdrop" (click)="end()"></div>
+
+  <!-- Highlight box (optional, shown when targetSelector found) -->
+  <div
+    *ngIf="highlightRect"
+    class="tour-highlight"
+    [style.top.px]="highlightRect.top - 4"
+    [style.left.px]="highlightRect.left - 4"
+    [style.width.px]="highlightRect.width + 8"
+    [style.height.px]="highlightRect.height + 8"
+  ></div>
+
+  <!-- Floating step card (bottom-right) -->
+  <div class="tour-panel mat-elevation-z8">
+    <!-- Step counter -->
+    <div class="tour-header">
+      <span class="tour-step-count">Step {{ state.currentIndex + 1 }} / {{ state.steps.length }}</span>
+      <button mat-icon-button class="tour-close-btn" (click)="end()" matTooltip="End tour">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="tour-progress-track">
+      <div class="tour-progress-fill" [style.width.%]="progressPercent"></div>
+    </div>
+
+    <!-- Content -->
+    <div class="tour-body">
+      <h3 class="tour-title">{{ currentStep.title }}</h3>
+      <p class="tour-content">{{ currentStep.content }}</p>
+    </div>
+
+    <!-- Navigation dots -->
+    <div class="tour-dots">
+      <span
+        *ngFor="let step of state.steps; let i = index"
+        class="tour-dot"
+        [class.tour-dot--active]="i === state.currentIndex"
+        (click)="i < state.currentIndex ? prev() : next()"
+      ></span>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="tour-actions">
+      <button mat-button [disabled]="isFirst" (click)="prev()">
+        <mat-icon>arrow_back</mat-icon> Back
+      </button>
+      <button mat-raised-button color="primary" (click)="next()">
+        {{ isLast ? 'Finish' : 'Next' }}
+        <mat-icon *ngIf="!isLast">arrow_forward</mat-icon>
+        <mat-icon *ngIf="isLast">check</mat-icon>
+      </button>
+    </div>
+
+    <p class="tour-hint">Tip: use ← → arrow keys to navigate, Esc to exit.</p>
+  </div>
+</ng-container>

@@ -10,12 +10,17 @@ import {
 import {MatTooltip} from "@angular/material/tooltip";
 import { InfoDialogComponent } from './components/info-dialog/info-dialog.component';
 import { MatDialogModule } from '@angular/material/dialog';
+import { TourOverlayComponent } from './components/tour-overlay/tour-overlay.component';
+import { HelpPanelComponent } from './components/help-panel/help-panel.component';
+import { RouterModule } from '@angular/router';
 
 @NgModule({
   declarations: [
     SafePipe,
     SearchInstanceComponent,
-    AttributeConditionComponent
+    AttributeConditionComponent,
+    TourOverlayComponent,
+    HelpPanelComponent,
   ],
   imports: [
     CommonModule,
@@ -27,14 +32,16 @@ import { MatDialogModule } from '@angular/material/dialog';
     MatTooltip,
     InfoDialogComponent,
     MatDialogModule,
-    
+    RouterModule,
   ],
     exports: [
       MaterialModule,
       SafePipe,
       SearchInstanceComponent,
       AttributeConditionComponent,
-      InfoDialogComponent
+      InfoDialogComponent,
+      TourOverlayComponent,
+      HelpPanelComponent,
     ]
 })
 export class SharedModule {

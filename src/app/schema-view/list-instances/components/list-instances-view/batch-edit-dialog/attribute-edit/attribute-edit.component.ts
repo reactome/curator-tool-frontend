@@ -53,6 +53,7 @@ export class AttributeEditComponent implements OnInit {
 
   // @Output() canDropEvent = new EventEmitter<string>();
   @Output() newValueEvent = new EventEmitter<AttributeValue>();
+  @Output() booleanChange = new EventEmitter<AttributeValue>();
   // Edit action
   @Output() editAction = new EventEmitter<AttributeValue>();
 
@@ -121,7 +122,7 @@ export class AttributeEditComponent implements OnInit {
       attribute: this.attribute!,
       value: this.isBooleanDisabled ? undefined : this.control.value,
     }
-    this.newValueEvent.emit(attributeValue);
+    this.booleanChange.emit(attributeValue);
     this.triggerResize();
   }
 
@@ -138,10 +139,10 @@ export class AttributeEditComponent implements OnInit {
 
   triggerResize() {
     // Wait for changes to be applied, then trigger textarea resize.
-    this._ngZone.onStable.pipe(take(1)).subscribe(() => {
-      if (this.autosize) // Somehow this.autosize! cannot work!
-        this.autosize.resizeToFitContent(true)
-    });
+    // this._ngZone.onStable.pipe(take(1)).subscribe(() => {
+    //   if (this.autosize) // Somehow this.autosize! cannot work!
+    //     this.autosize.resizeToFitContent(true)
+    // });
   }
 
   canDrop(draggedInstance: Instance | undefined) {

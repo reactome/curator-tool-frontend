@@ -125,10 +125,10 @@ export class InstanceTableRowElementComponent implements OnInit {
 
   triggerResize() {
     // Wait for changes to be applied, then trigger textarea resize.
-    this._ngZone.onStable.pipe(take(1)).subscribe(() => {
-      if (this.autosize) // Somehow this.autosize! cannot work!
-        this.autosize.resizeToFitContent(true)
-    });
+    // this._ngZone.onStable.pipe(take(1)).subscribe(() => {
+    //   if (this.autosize) // Somehow this.autosize! cannot work!
+    //     this.autosize.resizeToFitContent(true)
+    // });
   }
 
   canDrop(draggedInstance: Instance | undefined) {

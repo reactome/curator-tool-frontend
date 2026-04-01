@@ -76,6 +76,7 @@
         style="padding-top: 0px; margin-top: 4px; max-height: 300px; overflow: auto; width: 100%;">
         <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="data"
           [actionButtons]="actionButtons" [blockRoute]="true" (urlClickEvent)="openInNewTab($event)"
+          (onBooleanChange)="onBooleanChange()"
           (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
       </section>
     </div>
