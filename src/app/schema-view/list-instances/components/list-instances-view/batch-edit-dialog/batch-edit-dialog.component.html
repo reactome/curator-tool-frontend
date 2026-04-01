@@ -29,15 +29,22 @@
           </ng-container>
           <ng-template #nonStringStep>
             <div style="padding-top: 10px;">
-              <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onScalarAttributeEdit($event)"
-                (editAction)="onInstanceAttributeEdit($event)">
+              <app-attribute-edit [attribute]="selectedAttribute" (booleanChange)="onBooleanChange($event)"
+                (newValueEvent)="onScalarAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)">
               </app-attribute-edit>
             </div>
           </ng-template>
+          <button *ngIf="selectedAttribute.type === DATA_TYPES.BOOLEAN" mat-raised-button color="primary"
+            [disabled]="!pendingBooleanValue"
+            (click)="setBooleanValue()"
+            matTooltip="Select True or False first">
+            Set
+          </button>
         </section>
 
         <section *ngIf="selectedAction === EDIT_ACTION.REPLACE_NEW && selectedValuesForReplace.length > 0"
-          class="etched-section" style="min-width: 320px; min-height: 100px; padding: 10px; display: flex; flex-direction: column;">
+          class="etched-section"
+          style="min-width: 320px; min-height: 100px; padding: 10px; display: flex; flex-direction: column;">
           <mat-label style="font-weight: 600;">Selected {{selectedAttribute?.name}} to replace</mat-label>
           <table style="width: 100%; border-collapse: collapse; margin-top: 6px;">
             <tbody>
@@ -53,7 +60,8 @@
       <section
         *ngIf="selectedAttribute?.type === DATA_TYPES.STRING && (selectedAction === EDIT_ACTION.REPLACE_NEW || selectedAction === EDIT_ACTION.ADD_NEW)"
         class="etched-section" style=" width: 100%; padding: 10px; align-self: center;">
-        <mat-label style="font-weight: 600;">{{selectedAction === EDIT_ACTION.ADD_NEW ? 'New Value' : 'Replaced Value'}}</mat-label>
+        <mat-label style="font-weight: 600;">{{selectedAction === EDIT_ACTION.ADD_NEW ? 'New Value' : 'Replaced
+          Value'}}</mat-label>
         <div style="padding-top: 10px;">
           <app-attribute-edit [attribute]="selectedAttribute" (newValueEvent)="onEditAction($event)">
           </app-attribute-edit>
@@ -76,7 +84,6 @@
         style="padding-top: 0px; margin-top: 4px; max-height: 300px; overflow: auto; width: 100%;">
         <app-instance-list-table [showBookmark]="false" [showCheckMark]="false" [dataSource]="data"
           [actionButtons]="actionButtons" [blockRoute]="true" (urlClickEvent)="openInNewTab($event)"
-          (onBooleanChange)="onBooleanChange()"
           (actionEvent)="handleListTableAction($event)"></app-instance-list-table>
       </section>
     </div>

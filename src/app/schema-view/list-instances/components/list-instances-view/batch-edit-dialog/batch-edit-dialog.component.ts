@@ -42,6 +42,7 @@ export class BatchEditDialogComponent implements PostEditListener {
   storeAggregatedAttributes: Set<any> = new Set();
   deletedDBIds: number[] = [];
   updatedDBIds: number[] = [];
+  pendingBooleanValue: AttributeValue | undefined = undefined;
 
   // So that we can use it in the template
   DATA_TYPES = AttributeDataType;
@@ -150,6 +151,7 @@ export class BatchEditDialogComponent implements PostEditListener {
     this.selectedAttribute = undefined;
     this.attributeSelected = true;
     this.selectedAggregatedValues.clear();
+    this.pendingBooleanValue = undefined;
     this.selectedAttribute = this.candidateAttributes.find(attr => attr === selection.value);
     this.aggregateAttributes();
     console.debug('selected', this.selectedAttribute);
@@ -624,6 +626,24 @@ export class BatchEditDialogComponent implements PostEditListener {
     }
   }
 
-  onBooleanChange() {
+  onBooleanChange(attributeValue: AttributeValue) {
+    // Store the value — it is applied only when the user clicks Set.
+    this.pendingBooleanValue = attributeValue;
+  }
+
+  setBooleanValue() {
+    if (!this.pendingBooleanValue || !this.selectedAttribute) return;
+    const attributeValue = this.pendingBooleanValue;
+    // Boolean attributes have three states: null/undefined (treated as false), false, and true.
+    // We always want to set the new value on every selected instance unconditionally, so bypass
+    // matchesReplaceTarget (which compares the new value against the existing value and would
+    // skip instances where null/undefined !== true, or false !== true, etc.).
+    this.getInstancesForEdit().pipe(take(1)).subscribe((instances: Instance[]) => {
+      for (const instance of instances) {
+        this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, attributeValue.value, instance, true, false);
+        this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+      }
+      this.setEditSummary(EDIT_ACTION.REPLACE_NEW, attributeValue.attribute.name, attributeValue.value, instances.length);
+    });
   }
 }

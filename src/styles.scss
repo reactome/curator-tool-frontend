@@ -289,3 +289,22 @@ mat-icon {
   margin:0 auto;
   height: 100%;
 }
+
+/* ── Global dialog button alignment: always bottom-right ── */
+.mat-mdc-dialog-surface {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+mat-dialog-content,
+.mat-mdc-dialog-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+mat-dialog-actions,
+.mat-mdc-dialog-actions {
+  flex-shrink: 0 !important;
+  justify-content: flex-end !important;
+  margin-top: auto !important;
+}
