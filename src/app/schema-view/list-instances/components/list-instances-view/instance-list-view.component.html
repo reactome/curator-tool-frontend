@@ -7,8 +7,6 @@
     <mat-label>Search</mat-label>
     <input matInput (keydown.enter)="doBasicSearch(0)" #input [(ngModel)]="searchKey">
     <!-- <mat-icon *ngIf="showDeletion" class="undo-icon" matTooltip="Delete Selected" matSuffix>delete</mat-icon> -->
-    <mat-icon *ngIf="showBatchEdit" class="undo-icon" matTooltip="Batch Edit" (click)="handleBatchEdit()"
-      matSuffix>edit_square</mat-icon>
     <mat-icon *ngIf="!isLocal && hasExecutedSearch && instanceCount > 0" class="undo-icon"
       matTooltip="Download search results" (click)="downloadSearchResults()" matSuffix>download</mat-icon>
     <mat-icon class="custom-search-icon" matTooltip="Advanced Search" (click)="toggleSearchMode()"
@@ -47,7 +45,7 @@
     </app-instance-list-table>
 
     <div class="paginator-container" style="display: flex; justify-content: flex-end; width: 100%">
-      <div *ngIf="showBatchEditActions" style="background-color: white; width: 40%;">
+      <div *ngIf="showBatchEditActions; else borderTemplate" style="background-color: white; width: 40%;">
         <span style="background-color: white; width: 400%; line-height: 60px;">
           &nbsp;Selected Instances: {{selectedInstances.length}} &nbsp;</span>
         <mat-icon color="primary" style="line-height: 36px;" (click)="setSelectedInstances()"
@@ -60,11 +58,16 @@
           (click)="handleDeleteSelected()">delete</mat-icon>
         <mat-icon *ngIf="selectedInstances.length === 2" color="primary" style="line-height: 36px;"
           (click)="compareInstances()" matTooltip="Compare instances" matSuffix>compare_arrows</mat-icon>
+        <mat-icon *ngIf="showBatchEdit && selectedInstances.length > 0" color="primary" style="line-height: 36px;" matTooltip="Batch Edit" (click)="handleBatchEdit()"
+          matSuffix>edit_square</mat-icon>
         <ng-container *ngIf="this.isLocal">
           <mat-icon *ngIf="selectedInstances.length > 0" color="primary" style="line-height: 36px;"
             (click)="commitNewInstances()" matTooltip="commit all selected" matSuffix>upload</mat-icon>
         </ng-container>
       </div>
+      <ng-template #borderTemplate>
+        <span style="line-height: 60px;">&nbsp;</span>
+      </ng-template>
       <mat-paginator style="width: 100%" (page)="onPageChange($event)" [length]="instanceCount"
         [pageSizeOptions]=pageSizeOptions [pageSize]="pageSize" [pageIndex]="pageIndex" showFirstLastButtons
         aria-label="Select page of users">

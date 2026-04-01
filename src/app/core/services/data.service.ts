@@ -524,7 +524,8 @@ export class DataService {
     }
 
   private getAttributeNamesNotClonable(): Array < string > {
-      return ['authored', 'edited', 'reviewed', 'revised', '_doRelease', 'releaseStatus', 'releaseDate', 'doi']
+      return ['authored', 'edited', 'reviewed', 'revised', '_doRelease', 'releaseStatus', 
+        'releaseDate', 'created', 'modified', 'doi', 'internalReviewed', 'reviewStatus', 'previousReviewStatus'];
     }
 
   /**

@@ -1,12 +1,10 @@
 <ng-container *ngIf="showField">
   <ng-container [ngSwitch]="attribute?.type">
     <ng-template [ngSwitchCase]="DATA_TYPES.BOOLEAN">
-      <!-- <mat-checkbox (change)="isBooleanDisabled = !isBooleanDisabled" 
-      [formControl]="control" color="primary" class="padding">Set {{attribute?.name}} as undefined
-      </mat-checkbox> -->
-      <mat-slide-toggle (change)="onChange()" [formControl]="control" color="primary" class="padding">
-      </mat-slide-toggle>
-      <!-- <button mat-button (click)="onBooleanChange()">Set Value</button> -->
+      <mat-radio-group [formControl]="control" (change)="onChange()" color="primary" class="padding boolean-radio-group">
+        <mat-radio-button [value]="true">True</mat-radio-button>
+        <mat-radio-button [value]="false">False</mat-radio-button>
+      </mat-radio-group>
     </ng-template>
 
     <!-- Hide the tooltip. It is quite annoying. matTooltip="control+enter to commit the change" -->

@@ -15,6 +15,12 @@
   padding: 0 16px;
 }
 
+.boolean-radio-group {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+}
+
 :host {
   --mdc-shape-small: 0;
 }
