@@ -237,8 +237,8 @@ export class InstanceTableComponent implements PostEditListener {
       // Check if there is any value
       // Use cached shell instance
       if (this._instance!.source)
-        this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!.source, replace);
-      this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!, replace);
+        this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!.source, replace, true, !replace);
+      this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!, replace, true, !replace);
       this.finishEdit(attributeValue.attribute.name, attributeValue.value);
       this.cdr.detectChanges();
     });
@@ -289,8 +289,8 @@ export class InstanceTableComponent implements PostEditListener {
     matDialogRef.afterClosed().subscribe((result) => {
       if (result === undefined || result.length === 0) return; // Do nothing
       if (this._instance!.source)
-        this.attributeEditService.addInstanceViaSelect(attributeValue, result, this._instance!.source, replace);
-      this.attributeEditService.addInstanceViaSelect(attributeValue, result, this._instance!, replace);
+        this.attributeEditService.addInstanceViaSelect(attributeValue, result, this._instance!.source, replace, true, !replace);
+      this.attributeEditService.addInstanceViaSelect(attributeValue, result, this._instance!, replace, true, !replace);
       this.finishEdit(attributeValue.attribute.name, attributeValue.value);
       this.cdr.detectChanges();
     });
@@ -329,8 +329,8 @@ export class InstanceTableComponent implements PostEditListener {
     let result = attributeValue.value; //Only one value emitted at once
 
     if (this._instance!.source)
-      this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!.source);
-    this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!);
+      this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!.source, false, true, true);
+    this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!, false, true, true);
     this.finishEdit(attributeValue.attribute.name, attributeValue.value);
     this.cdr.detectChanges();
   }

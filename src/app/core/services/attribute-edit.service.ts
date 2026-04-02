@@ -61,7 +61,7 @@ export class AttributeEditService {
         // }
     }
 
-    public addValueToAttribute(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean, showDuplicateNotification: boolean = true) {
+    public addValueToAttribute(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean, showDuplicateNotification: boolean = true, insertAtIndex: boolean = false) {
         if (result === undefined || result === null) { return; } // Do nothing if this is undefined or resolve to false (e.g. nothing there)
         let value = instance?.attributes?.get(attributeValue.attribute.name);
         if (value === undefined) {
@@ -88,6 +88,8 @@ export class AttributeEditService {
                 }
                 if (replace) {
                     value.splice(attributeValue.index, 1, result);
+                } else if (insertAtIndex && attributeValue.index !== undefined && attributeValue.index >= 0) {
+                    value.splice(attributeValue.index, 0, result);
                 } else {
                     value.push(result);
                 }
@@ -95,7 +97,7 @@ export class AttributeEditService {
         }
     }
 
-    public addInstanceViaSelect(attributeValue: AttributeValue, result: any, instance: Instance, replace: boolean = false, showDuplicateNotification: boolean = true) {
+    public addInstanceViaSelect(attributeValue: AttributeValue, result: any, instance: Instance, replace: boolean = false, showDuplicateNotification: boolean = true, insertAtIndex: boolean = false) {
         // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
         // Add the new value
         if (result === undefined || !result || result.length === 0 || result[0].dbId === undefined) return; // Do nothing if this is undefined or resolve to false (e.g. nothing there)
@@ -141,6 +143,8 @@ export class AttributeEditService {
 
                 if (replace) {
                     value.splice(attributeValue.index, 1, ...uniqueValues);
+                } else if (insertAtIndex && attributeValue.index !== undefined && attributeValue.index >= 0) {
+                    value.splice(attributeValue.index, 0, ...uniqueValues);
                 } else {
                     value.push(...uniqueValues);
                 }
