@@ -86,8 +86,11 @@ export class AttributeEditService {
                         this.showDuplicateValueNotification(result);
                     return;
                 }
-                const deleteCount = replace ? 1 : 0;
-                value.splice(attributeValue.index, deleteCount, result);
+                if (replace) {
+                    value.splice(attributeValue.index, 1, result);
+                } else {
+                    value.push(result);
+                }
             }
         }
     }
@@ -136,8 +139,11 @@ export class AttributeEditService {
                     return;
                 }
 
-                const deleteCount = replace ? 1 : 0;
-                value.splice(attributeValue.index, deleteCount, ...uniqueValues);
+                if (replace) {
+                    value.splice(attributeValue.index, 1, ...uniqueValues);
+                } else {
+                    value.push(...uniqueValues);
+                }
             }
         }
     }
@@ -200,6 +206,11 @@ export class AttributeEditService {
 
     public onNoInstanceAttributeEdit(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean, showDuplicateNotification: boolean = true) {
         let value = instance?.attributes?.get(attributeValue.attribute.name);
+        if (attributeValue.value === value) {
+            // If the value is the same as the current value, do not update
+            // This is to avoid unnecessary updates
+            return;
+        }
         if (attributeValue.attribute.cardinality === '1') {
             instance?.attributes?.set(attributeValue.attribute.name, result);
         } else {
@@ -224,11 +235,6 @@ export class AttributeEditService {
                     }
                 }
             }
-        }
-        if (attributeValue.value === value) {
-            // If the value is the same as the current value, do not update
-            // This is to avoid unnecessary updates
-            return;
         }
     }
 
