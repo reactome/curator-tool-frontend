@@ -23,6 +23,7 @@ import { InstanceViewFilter } from 'src/app/core/instance-view-filters/InstanceV
 import { ReviewStatusUpdateFilter } from 'src/app/core/instance-view-filters/ReviewStatusUpdateFilter';
 import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
 import { MatchInstancesDialogService } from '../match-instances-dialog/match-instances-dialog.service';
+import { CommitResultDialogService } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
 
 @Component({
   selector: 'app-instance-view',
@@ -83,7 +84,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     private listInstancesDialogService: ListInstancesDialogService,
     private matchInstancesDialogService: MatchInstancesDialogService,
     private deletionService: DeletionService,
-    private reviewStatusCheck: ReviewStatusCheck
+    private reviewStatusCheck: ReviewStatusCheck,
+    private commitResultDialogService: CommitResultDialogService
   ) {
     this.instanceViewFilters = this.setUpInstanceViewFilters();
 
@@ -546,6 +548,10 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         this.instUtils.removeInstInArray(this.instance!, this.viewHistory);
         this.changeTable(storedInst);
       }
+      this.commitResultDialogService.openDialog([{
+        displayName: this.instance!.displayName ?? String(storedInst.dbId),
+        dbId: storedInst.dbId
+      }]);
     });
   }
 

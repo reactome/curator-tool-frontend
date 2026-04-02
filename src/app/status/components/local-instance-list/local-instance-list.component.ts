@@ -8,11 +8,12 @@ import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from
 import { DataService } from 'src/app/core/services/data.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
-import { Observable, from, concatMap, tap, map, EMPTY } from 'rxjs';
+import { Observable, from, concatMap, tap, map, EMPTY, forkJoin } from 'rxjs';
 import { DeletionService } from 'src/app/instance/deletion-commit/utils/deletion.service';
 import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/instance-list-table/instance-list-table.component';
 import { DeleteBulkDialogService } from 'src/app/schema-view/list-instances/components/delete-bulk-dialog/delete-bulk-dialog.service';
 import { DeletionDialogService } from 'src/app/instance/components/deletion-dialog/deletion-dialog.service';
+import { CommitResultDialogService, CommitResult } from './commit-result-dialog/commit-result-dialog.service';
 
 
 @Component({
@@ -57,7 +58,8 @@ export class UpdatedInstanceListComponent implements OnInit {
     private instanceUtilities: InstanceUtilities,
     private deletionService: DeletionService,
     private deleteBulkDialogService: DeleteBulkDialogService,
-    private deletionDialogService: DeletionDialogService
+    private deletionDialogService: DeletionDialogService,
+    private commitResultDialogService: CommitResultDialogService
   ) {
   }
 
@@ -136,6 +138,7 @@ export class UpdatedInstanceListComponent implements OnInit {
     else if (this.updatedInstances.includes(instance)) {
       this.dataService.commit(instance).subscribe(rtn => {
         this.instanceUtilities.processCommit(instance, rtn, this.dataService);
+        this.commitResultDialogService.openDialog([{ displayName: instance.displayName ?? String(rtn.dbId), dbId: rtn.dbId }]);
       });
     }
     else if (this.newInstances.includes(instance)) {
@@ -146,20 +149,29 @@ export class UpdatedInstanceListComponent implements OnInit {
         if (updated) {
           updated.dbId = rtn['dbId'];
         }
+        this.commitResultDialogService.openDialog([{ displayName: instance.displayName ?? String(rtn.dbId), dbId: rtn.dbId }]);
       });
     }
   }
 
   commitUpdatedInstances() {
-    this.selectedUpdatedInstances.forEach(instance => {
-      this.dataService.commit(instance).subscribe(rtn => {
-        this.instanceUtilities.processCommit(instance, rtn, this.dataService);
-      });
+    if (!this.selectedUpdatedInstances || this.selectedUpdatedInstances.length === 0) return;
+
+    const instancesToCommit = [...this.selectedUpdatedInstances];
+    const commits = instancesToCommit.map(instance =>
+      this.dataService.commit(instance).pipe(
+        tap(rtn => this.instanceUtilities.processCommit(instance, rtn, this.dataService)),
+        map(rtn => ({ displayName: instance.displayName ?? String(rtn.dbId), dbId: rtn.dbId } as CommitResult))
+      )
+    );
+
+    forkJoin(commits).subscribe(results => {
+      this.commitResultDialogService.openDialog(results);
     });
+
     this.selectedUpdatedInstances = [];
     this.showCheck = false;
     this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.updatedInstanceList);
-
   }
 
   handleDeletion() {
@@ -191,24 +203,27 @@ export class UpdatedInstanceListComponent implements OnInit {
     if (!this.selectedNewInstances || this.selectedNewInstances.length === 0) {
       return;
     }
-    let shells = this.selectedNewInstances.map(inst => this.instanceUtilities.getShellInstance(inst));
+    const shells = this.selectedNewInstances.map(inst => this.instanceUtilities.getShellInstance(inst));
+    const results: CommitResult[] = [];
 
     from(shells).pipe(
-      // filter(inst =>inst.dbId && inst.dbId > 0}), // only save new instances
       concatMap(inst => {
         if (inst.dbId && inst.dbId > 0) {
-          // already persisted for this iteration; emit an empty result to continue the sequence
           return EMPTY;
         }
-        return this.saveOne(inst);
+        return this.dataService.commit(inst).pipe(
+          tap(rtn => this.instanceUtilities.processCommit(inst, rtn, this.dataService)),
+          map(rtn => ({ displayName: inst.displayName ?? String(rtn.dbId), dbId: rtn.dbId } as CommitResult))
+        );
       })
     ).subscribe({
+      next: result => results.push(result),
       error: err => console.error('Error committing new instances', err),
       complete: () => {
-        // clear selection and UI flags when done
         this.selectedNewInstances = [];
         this.showCheck = false;
         this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.newInstanceList);
+        if (results.length > 0) this.commitResultDialogService.openDialog(results);
       }
     });
   }

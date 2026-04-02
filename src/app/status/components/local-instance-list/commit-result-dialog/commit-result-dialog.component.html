@@ -1,0 +1,24 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+
+<mat-dialog-content>
+    <table mat-table [dataSource]="data.results" class="commit-result-table mat-elevation-z0 instance-list-table">
+
+
+        <ng-container matColumnDef="dbId">
+            <th mat-header-cell *matHeaderCellDef>dbId</th>
+            <td mat-cell *matCellDef="let row">{{ row.dbId }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="displayName">
+            <th mat-header-cell *matHeaderCellDef>Display Name</th>
+            <td mat-cell *matCellDef="let row">{{ row.displayName }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="['dbId', 'displayName']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['dbId', 'displayName'];"></tr>
+    </table>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+    <button mat-button (click)="onClose()">Close</button>
+</mat-dialog-actions>

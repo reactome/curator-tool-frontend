@@ -17,6 +17,7 @@ import { combineLatest, concatMap, EMPTY, from, map, Observable, Subscription, t
 import { DeleteBulkDialogService } from '../delete-bulk-dialog/delete-bulk-dialog.service';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
+import { CommitResultDialogService, CommitResult } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
 
 @Component({
   selector: 'app-instance-list-view',
@@ -81,6 +82,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
   // To show information
   readonly dialog = inject(MatDialog);
+  readonly commitResultDialogService = inject(CommitResultDialogService);
 
   // So that we can remove subscription
   private subscription: Subscription = new Subscription();
@@ -893,23 +895,26 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       if (!this.selectedInstances || this.selectedInstances.length === 0) {
         return;
       }
-      let shells = this.selectedInstances.map(inst => this.instUtils.getShellInstance(inst));
-  
+      const shells = this.selectedInstances.map(inst => this.instUtils.getShellInstance(inst));
+      const results: CommitResult[] = [];
+
       from(shells).pipe(
-        // filter(inst =>inst.dbId && inst.dbId > 0}), // only save new instances
         concatMap(inst => {
           if (inst.dbId && inst.dbId > 0) {
-            // already persisted for this iteration; emit an empty result to continue the sequence
             return EMPTY;
           }
-          return this.saveOne(inst);
+          return this.dataService.commit(inst).pipe(
+            tap(rtn => this.instUtils.processCommit(inst, rtn, this.dataService)),
+            map(rtn => ({ displayName: inst.displayName ?? String(rtn.dbId), dbId: rtn.dbId } as CommitResult))
+          );
         })
       ).subscribe({
+        next: result => results.push(result),
         error: err => console.error('Error committing new instances', err),
         complete: () => {
-          // clear selection and UI flags when done
           this.selectedInstances = [];
           this.instUtils.clearSelectedInstances(SelectedInstancesList.newInstanceList);
+          if (results.length > 0) this.commitResultDialogService.openDialog(results);
         }
       });
     }

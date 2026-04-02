@@ -9,6 +9,7 @@ import { CreateDeletedDialogService } from "../components/deleted-object-creatio
 import { CommitDeletedDialogService } from "../components/deleted-object-creation-option-dialog/deleted-object-creation-option-dialog.service";
 import { Injectable } from "@angular/core";
 import { DeleteBulkDialogService } from "src/app/schema-view/list-instances/components/delete-bulk-dialog/delete-bulk-dialog.service";
+import { CommitResultDialogService, CommitResult } from "src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service";
 
 // TODO: Referrers of deleted instances need to have the referred slot modified and an instanceEdit added to modifiedList 
 @Injectable({
@@ -22,7 +23,8 @@ export class DeletionService {
         private instanceUtilities: InstanceUtilities,
         private createDeletedDialogService: CreateDeletedDialogService,
         private commitDeletedDialogService: CommitDeletedDialogService,
-        private deleteBulkDialogService: DeleteBulkDialogService
+        private deleteBulkDialogService: DeleteBulkDialogService,
+        private commitResultDialogService: CommitResultDialogService
     ) {
     }
 
@@ -68,21 +70,31 @@ export class DeletionService {
 
     commitWithoutDeletedInstance(instancesToDelete: Instance[]) {
         // Just commit the deleted instances without creating Deleted instance
-        instancesToDelete.forEach(instance => {
-            if (instance.dbId < 0) {
-                this.store.dispatch(NewInstanceActions.remove_new_instance(this.instanceUtilities.makeShell(instance)));
-                this.instanceUtilities.setDeletedDbId(instance.dbId); // Commit right away
-            }
-            else {
-                this.dataService.delete(instance).subscribe(rtn => {
-                    this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
-                    this.store.dispatch(DeleteInstanceActions.commit_deleted_instance(instance));
-                    this.instanceUtilities.setDeletedDbId(instance.dbId);
-                    this.dataService.flagSchemaTreeForReload();
-                });
-            }
+        const existingInstances = instancesToDelete.filter(i => i.dbId >= 0);
+        const newInstancesToRemove = instancesToDelete.filter(i => i.dbId < 0);
+
+        newInstancesToRemove.forEach(instance => {
+            this.store.dispatch(NewInstanceActions.remove_new_instance(this.instanceUtilities.makeShell(instance)));
+            this.instanceUtilities.setDeletedDbId(instance.dbId);
         });
 
+        if (existingInstances.length === 0) return;
+
+        const results: CommitResult[] = [];
+        let completed = 0;
+        existingInstances.forEach(instance => {
+            this.dataService.delete(instance).subscribe(rtn => {
+                this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
+                this.store.dispatch(DeleteInstanceActions.commit_deleted_instance(instance));
+                this.instanceUtilities.setDeletedDbId(instance.dbId);
+                this.dataService.flagSchemaTreeForReload();
+                results.push({ displayName: instance.displayName ?? String(instance.dbId), dbId: instance.dbId });
+                completed++;
+                if (completed === existingInstances.length) {
+                    this.commitResultDialogService.openDialog(results, 'Deleted Instances');
+                }
+            });
+        });
     }
     createDeletedObject(instanceToDelete: Instance[]) {
         this.createDeletedDialogService.openDialog(instanceToDelete).afterClosed().subscribe(deletedObject => {
@@ -97,6 +109,12 @@ export class DeletionService {
                     });
 
                     this.dataService.flagSchemaTreeForReload();
+
+                    const results: CommitResult[] = instanceToDelete.map(instance => ({
+                        displayName: instance.displayName ?? String(instance.dbId),
+                        dbId: instance.dbId
+                    }));
+                    this.commitResultDialogService.openDialog(results, 'Deleted Instances');
                 });
             }
 
