@@ -41,10 +41,17 @@ side-nav {
   --filter-height: 80px;
   --status-height: 5vh;
   --text-curation-height: 4vh;
-  border: 1px solid var(--outline-variant);
+  // border: 1px solid var(--outline-variant);
   border-left-width: 0;
   //overflow: visible;
   //width: 60vw;
+}
+
+.status {
+  position: fixed;
+  bottom: 15px;
+  width: 100%;
+  height: var(--status-height);
 }
 
 

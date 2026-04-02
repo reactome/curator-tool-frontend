@@ -4,7 +4,8 @@
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true"
       [style.width]="sideWidth + 'px'">
       <app-schema-class-tree *ngIf="!showChanged"></app-schema-class-tree>
-      <app-local-instance-list *ngIf="showChanged" (closeAction)="showUpdatedInstances(false)"></app-local-instance-list>
+      <app-local-instance-list *ngIf="showChanged"
+        (closeAction)="showUpdatedInstances(false)"></app-local-instance-list>
       <div class="resize-container" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
         (cdkDragStarted)="resizing = true" (cdkDragReleased)="resizing = false" [class.resizing]="resizing">
         <div class="resize-bar"></div>
@@ -14,6 +15,8 @@
       <router-outlet></router-outlet>
     </mat-sidenav-content>
   </mat-sidenav-container>
+  <app-status class="status" (showUpdatedEvent)="showUpdatedInstances($event)"></app-status>
+
   <div id="bookmark-boundary">
     <!-- Remove [style.height]="container.clientHeight + 'px'" in the following div to avoid expression changed after checked NG0100 Error
     TODO: fix the dragging after the SAB-->
@@ -33,5 +36,4 @@
       </div>
     </div>
   </div>
-  <app-status (showUpdatedEvent)="showUpdatedInstances($event)"></app-status>
 </div>
