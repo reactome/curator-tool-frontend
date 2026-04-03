@@ -16,10 +16,12 @@
 
         <ng-container matColumnDef="launch">
             <th mat-header-cell *matHeaderCellDef></th>
-            <td mat-cell *matCellDef="let row">
-                <button class="mini-btn" color="primary" mat-icon-button matTooltip="Open in new window" (click)="openInstance(row.dbId)">
-                    <mat-icon>open_in_new</mat-icon>
-                </button>
+            <td mat-cell *matCellDef="let row" class="launch-cell">
+                <ng-container *ngIf="!isDeletedDialog()">
+                    <button class="mini-btn" color="primary" mat-icon-button (click)="openInstance(row.dbId)">
+                        <mat-icon>open_in_new</mat-icon>
+                    </button>
+                </ng-container>
             </td>
         </ng-container>
 

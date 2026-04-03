@@ -35,6 +35,10 @@ export class CommitResultDialogComponent {
     public dialogRef: MatDialogRef<CommitResultDialogComponent>
   ) {}
 
+  isDeletedDialog(): boolean {
+    return this.data.title === 'Deleted Instances';
+  }
+
   onClose() {
     this.dialogRef.close();
   }

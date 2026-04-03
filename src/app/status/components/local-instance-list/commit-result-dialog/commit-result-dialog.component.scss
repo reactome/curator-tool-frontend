@@ -25,6 +25,10 @@
   //border-bottom: 1px currentColor;
   border-top: 1px currentColor;
   background-color: var(--surface-variant);
+  cursor: default;
+}
+
+.mat-mdc-row:hover .launch-cell .mini-btn {
   cursor: pointer;
 }
 
@@ -113,5 +117,7 @@ th {
   width: 28px !important;
   height: 28px !important;
   padding: 0 !important;
-  margin: 0, 1px !important;
+  margin: 0 !important;
+  cursor: pointer;
 }
+
