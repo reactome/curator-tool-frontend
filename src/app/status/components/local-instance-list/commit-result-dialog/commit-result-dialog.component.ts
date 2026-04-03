@@ -9,6 +9,8 @@ import {
 } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 export interface CommitResult {
   displayName: string;
@@ -25,7 +27,7 @@ export interface CommitResultDialogData {
   templateUrl: './commit-result-dialog.component.html',
   styleUrls: ['./commit-result-dialog.component.scss'],
   standalone: true,
-  imports: [CommonModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatButtonModule, MatTableModule]
+  imports: [CommonModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatButtonModule, MatTableModule, MatIconModule, MatTooltipModule]
 })
 export class CommitResultDialogComponent {
   constructor(
@@ -35,5 +37,9 @@ export class CommitResultDialogComponent {
 
   onClose() {
     this.dialogRef.close();
+  }
+
+  openInstance(dbId: number) {
+    window.open(`schema_view/instance/${dbId}`, '_blank');
   }
 }
