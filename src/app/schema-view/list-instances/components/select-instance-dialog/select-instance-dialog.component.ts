@@ -17,17 +17,13 @@ import { ActionButton } from '../list-instances-view/instance-list-table/instanc
 })
 
 export class SelectInstanceDialogComponent {
-  private readonly panelHeightBudgetVh: number = 50;
-  private readonly panelHalfVh: number = this.panelHeightBudgetVh / 2;
-  private readonly selectedBaseVh: number = 12;
-  private readonly selectedStepVh: number = 1.5;
+
 
   selected: string = '';
   candidateClasses: string[] = [];
   instance: Instance | undefined;
   selectedInstances: Instance[] = [];
-  optionsPanelMaxHeight: string = `${this.panelHeightBudgetVh}vh`;
-  selectedPanelMaxHeight: string = '0vh';
+  selectedPanelMaxHeight: string = '50vh';
   isSingleValued: boolean = false;
   attributeSchemaClass: string = '';
 
@@ -89,19 +85,19 @@ export class SelectInstanceDialogComponent {
 
   private updatePanelHeights() {
     if (this.selectedInstances.length === 0) {
-      this.optionsPanelMaxHeight = `${this.panelHeightBudgetVh}vh`;
-      this.selectedPanelMaxHeight = '0vh';
+      // this.optionsPanelMaxHeight = `${this.panelHeightBudgetVh}vh`;
+      this.selectedPanelMaxHeight = '50vh';
       return;
     }
 
-    const selectedHeight = Math.min(
-      this.panelHalfVh,
-      this.selectedBaseVh + (this.selectedInstances.length - 1) * this.selectedStepVh
-    );
-    const optionsHeight = Math.max(this.panelHalfVh, this.panelHeightBudgetVh - selectedHeight);
+    // const selectedHeight = Math.min(
+    //   this.panelHalfVh,
+    //   this.selectedBaseVh + (this.selectedInstances.length - 1) * this.selectedStepVh
+    // );
+    // const optionsHeight = Math.max(this.panelHalfVh, this.panelHeightBudgetVh - selectedHeight);
 
-    this.optionsPanelMaxHeight = `${optionsHeight}vh`;
-    this.selectedPanelMaxHeight = `${selectedHeight}vh`;
+    // this.optionsPanelMaxHeight = `${optionsHeight}vh`;
+    // this.selectedPanelMaxHeight = `${selectedHeight}vh`;
   }
 
   setCandidateClasses(attributeValue: AttributeValue) {

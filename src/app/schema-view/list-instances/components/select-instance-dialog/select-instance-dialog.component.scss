@@ -7,10 +7,10 @@
 
 }
 
-.dialog_area {
-  width: 1200px;
-  height: 2000px;
-}
+// .dialog_area {
+//   width: 1200px;
+//   height: 2000px;
+// }
 
 .drop_down {
   max-width: 300px;
@@ -19,19 +19,23 @@
 
 .scroll_panel {
   height: auto;
-  max-height: 50vh;
+  max-height: 30vh;
   overflow: scroll;
   border: solid;
 }
 
 .options-panel {
   border: solid;
-  min-height: 10px;
+  min-height: 100px;
+  height: 40vh;
+  max-height: 50vh;
 }
 
 .selected-instances-panel {
   overflow: scroll;
   border: solid;
+  min-height: 15vh;
+  max-height: 30vh;
 }
 
 .etched-content {
@@ -39,14 +43,15 @@
   border-radius: 6px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 0 rgba(0, 0, 0, 0.06);
   box-sizing: border-box;
-  padding: 10px;
-  margin: 0 8px;
+  // padding: 10px;
+  // margin: 0 8px;
 }
 
 /* dialog.component.css */
 mat-dialog-content {
-  overflow: auto; /* Makes content scrollable if it exceeds dialog height */
-  max-height: calc(100vh - 150px); /* Adjusts the height of content dynamically */
+  // overflow: auto; /* Makes content scrollable if it exceeds dialog height */
+  max-height: 80vh; /* Adjusts the height of content dynamically */
+  height: 80vh;
 }
 
 mat-dialog-actions {

@@ -10,24 +10,22 @@
     </ng-container>
   </mat-select>
 
-  <mat-tab-group>
+  <mat-tab-group style="height: 50vh;">
     <mat-tab label="Database Instances">
-      <section class="scroll_panel options-panel" [style.max-height]="optionsPanelMaxHeight">
+      <section class="scroll_panel options-panel">
         <!-- For this list, we use a pagesize = 20 as the default for easy check: users are expected to do searching here. -->
         <app-instance-list-view [useRoute]="false" [showDeletion]="false" [showBatchEdit]="false" [setClassName]="this.selected" [isSelection]="true" [pageSize]="20"
           (clickEvent)="onSelectRow($event)" [actionButtons]="actionButtons" [needSecondaryActions]="false" [showBatchEditActions]="false"></app-instance-list-view>
       </section>
     </mat-tab>
     <mat-tab label="New and Updated Instances">
-      <section class="scroll_panel options-panel" [style.max-height]="optionsPanelMaxHeight">
+      <section class="scroll_panel options-panel">
         <!-- For this list, we use a pagesize = 20 as the default for easy check: users are expected to do searching here. -->
         <app-instance-list-view [useRoute]="false" [showDeletion]="false" [showBatchEdit]="false" [isLocal]="true" [setClassName]="this.selected" [isSelection]="true" [pageSize]="20"
           (clickEvent)="onSelectRow($event)" [actionButtons]="actionButtons" [needSecondaryActions]="false"></app-instance-list-view>
       </section>
     </mat-tab>
   </mat-tab-group>
-
-  <br>
   <mat-label>Selected Instances: </mat-label>
   <ng-container *ngIf="isSingleValued">
     <h4>*Only one value may be selected for {{attributeValue.attribute.name}}.</h4>
