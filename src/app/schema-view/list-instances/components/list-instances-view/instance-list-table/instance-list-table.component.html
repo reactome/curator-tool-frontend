@@ -84,7 +84,7 @@
               (click)="click(element, button.name)" matTooltip="{{button.tooltip}}" matTooltipPosition="above">
               <mat-icon>{{button.name}}</mat-icon>
             </button>
-            <button *ngIf="showBookmark" color="primary" mat-icon-button class="mini-btn" (click)="addBookmark(element)"
+            <button *ngIf="showBookmark" [disabled]="isDeleted(element)" color="primary" mat-icon-button class="mini-btn" (click)="addBookmark(element)"
               matTooltip="add bookmark" matTooltipPosition="above">
               <mat-icon>bookmark</mat-icon>
             </button>

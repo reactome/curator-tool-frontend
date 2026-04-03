@@ -114,8 +114,8 @@ export class TutorialPageComponent {
   }
 
   startEventViewTour(): void {
+    this.router.navigate(['/event_view/instance/5693567']);
     this.tourService.startEventViewTour();
-    this.router.navigate(['/event_view']);
   }
 
   startGene2PathTour(): void {
