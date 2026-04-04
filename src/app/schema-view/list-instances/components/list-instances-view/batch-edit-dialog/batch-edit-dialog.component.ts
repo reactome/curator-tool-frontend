@@ -121,7 +121,7 @@ export class BatchEditDialogComponent implements PostEditListener {
   }
 
   openInNewTab(instance: Instance) {
-    window.open(`/schema_view/instance/${instance.dbId}`, '_blank');
+    window.open(`schema_view/instance/${instance.dbId}`, '_blank');
   }
 
   handleListTableAction(actionButton: { instance: Instance, action: string }) {
