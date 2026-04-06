@@ -95,7 +95,7 @@ export class BatchEditDialogComponent implements PostEditListener {
     }
 
     const formatted = this.formatReplaceValue(value);
-    return formatted ? `'${formatted}'` : 'blank value';
+    return formatted ? `'${formatted}'` : 'value deleted';
   }
 
   private setEditSummary(action: EDIT_ACTION, attributeName: string, value: any, affectedInstanceCount: number) {
@@ -434,6 +434,7 @@ export class BatchEditDialogComponent implements PostEditListener {
     this.getInstancesForEdit().pipe(take(1)).subscribe((instances: Instance[]) => {
       const isInstanceAttribute = attributeValues[0].attribute.type === this.DATA_TYPES.INSTANCE;
       const affectedDbIds = new Set<number>();
+      const skippedDbIds = new Set<number>();
 
       for (let instance of instances) {
         for (let attributeValue of attributeValues) {
@@ -441,18 +442,23 @@ export class BatchEditDialogComponent implements PostEditListener {
             continue;
           }
 
+          let edited: boolean;
           if (isInstanceAttribute) {
             if (result?.dbId < 0)
-              this.attributeEditService.addValueToAttribute(attributeValue, result, instance, replace, false);
+              edited = this.attributeEditService.addValueToAttribute(attributeValue, result, instance, replace, false);
             else
-              this.attributeEditService.addInstanceViaSelect(attributeValue, result, instance, replace, false);
+              edited = this.attributeEditService.addInstanceViaSelect(attributeValue, result, instance, replace, false);
           }
           else {
-            this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, result, instance, replace, false);
+            edited = this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, result, instance, replace, false);
           }
 
-          affectedDbIds.add(instance.dbId);
-          this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+          if (edited) {
+            affectedDbIds.add(instance.dbId);
+            this.finishEdit(attributeValue.attribute.name, attributeValue, instance);
+          } else {
+            skippedDbIds.add(instance.dbId);
+          }
         }
       }
 
@@ -462,6 +468,10 @@ export class BatchEditDialogComponent implements PostEditListener {
         result,
         affectedDbIds.size,
       );
+      if (skippedDbIds.size > 0) {
+        const skippedText = `${skippedDbIds.size} instance${skippedDbIds.size === 1 ? '' : 's'}`;
+        this.lastEditSummary += ` ${skippedText} had duplicate values that were not added.`;
+      }
     });
   }
 

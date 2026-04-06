@@ -61,8 +61,8 @@ export class AttributeEditService {
         // }
     }
 
-    public addValueToAttribute(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean, showDuplicateNotification: boolean = true, insertAtIndex: boolean = false) {
-        if (result === undefined || result === null) { return; } // Do nothing if this is undefined or resolve to false (e.g. nothing there)
+    public addValueToAttribute(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean, showDuplicateNotification: boolean = true, insertAtIndex: boolean = false): boolean {
+        if (result === undefined || result === null) { return false; } // Do nothing if this is undefined or resolve to false (e.g. nothing there)
         let value = instance?.attributes?.get(attributeValue.attribute.name);
         if (value === undefined) {
             // It should be the first
@@ -84,7 +84,7 @@ export class AttributeEditService {
                 if (this.containsValue(attributeValue.attribute.name, value, result, ignoreIndex)) {
                     if (showDuplicateNotification)
                         this.showDuplicateValueNotification(result);
-                    return;
+                    return false;
                 }
                 if (replace) {
                     value.splice(attributeValue.index, 1, result);
@@ -95,12 +95,13 @@ export class AttributeEditService {
                 }
             }
         }
+        return true;
     }
 
-    public addInstanceViaSelect(attributeValue: AttributeValue, result: any, instance: Instance, replace: boolean = false, showDuplicateNotification: boolean = true, insertAtIndex: boolean = false) {
+    public addInstanceViaSelect(attributeValue: AttributeValue, result: any, instance: Instance, replace: boolean = false, showDuplicateNotification: boolean = true, insertAtIndex: boolean = false): boolean {
         // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
         // Add the new value
-        if (result === undefined || !result || result.length === 0 || result[0].dbId === undefined) return; // Do nothing if this is undefined or resolve to false (e.g. nothing there)
+        if (result === undefined || !result || result.length === 0 || result[0].dbId === undefined) return false; // Do nothing if this is undefined or resolve to false (e.g. nothing there)
         // Check if there is any value
         //this.addValueToAttribute(attributeValue, result);
         result = result.map((inst: Instance) => this.instUtil.getShellInstance(inst));
@@ -138,7 +139,7 @@ export class AttributeEditService {
                 }
 
                 if (uniqueValues.length === 0) {
-                    return;
+                    return false;
                 }
 
                 if (replace) {
@@ -150,6 +151,7 @@ export class AttributeEditService {
                 }
             }
         }
+        return true;
     }
 
     private containsValue(attributeName: string, values: any[], candidate: any, ignoreIndex?: number): boolean {
@@ -208,12 +210,12 @@ export class AttributeEditService {
         return String(value ?? '');
     }
 
-    public onNoInstanceAttributeEdit(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean, showDuplicateNotification: boolean = true) {
+    public onNoInstanceAttributeEdit(attributeValue: AttributeValue, result: any, instance: Instance, replace?: boolean, showDuplicateNotification: boolean = true): boolean {
         let value = instance?.attributes?.get(attributeValue.attribute.name);
         if (attributeValue.value === value) {
             // If the value is the same as the current value, do not update
             // This is to avoid unnecessary updates
-            return;
+            return false;
         }
         if (attributeValue.attribute.cardinality === '1') {
             instance?.attributes?.set(attributeValue.attribute.name, result);
@@ -230,7 +232,7 @@ export class AttributeEditService {
                     if (this.containsValue(attributeValue.attribute.name, valueList, result, ignoreIndex)) {
                         if (showDuplicateNotification)
                             this.showDuplicateValueNotification(result);
-                        return;
+                        return false;
                     }
                     if (attributeValue.index! < 0) {
                         value.push(result);
@@ -240,6 +242,7 @@ export class AttributeEditService {
                 }
             }
         }
+        return true;
     }
 
     /**
