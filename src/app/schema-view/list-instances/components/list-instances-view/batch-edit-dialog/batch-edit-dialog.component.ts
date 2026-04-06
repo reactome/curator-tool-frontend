@@ -264,6 +264,9 @@ export class BatchEditDialogComponent implements PostEditListener {
         const matDialogRef = this.attributeListDialogService.openDialog(this.selectedAttribute!.name, Array.from(this.storeAggregatedAttributes));
         matDialogRef.afterClosed().subscribe((values) => {
           values = values || [];
+          if (values.length === 0) {
+            return;
+          }
           this.selectedAggregatedValues.clear();
           values.forEach((val) => {
             let att: AttributeValue = {
@@ -340,7 +343,9 @@ export class BatchEditDialogComponent implements PostEditListener {
       if (this.storeAggregatedAttributes && this.storeAggregatedAttributes.size !== 0) {
         const matDialogRef = this.attributeListDialogService.openDialog(this.selectedAttribute!.name, Array.from(this.storeAggregatedAttributes));
         matDialogRef.afterClosed().subscribe((values) => {
-          values = values || [];
+          if(values === undefined || values.length === 0) {
+            return;
+          }
           this.selectedAggregatedValues.clear();
           values.forEach((val) => {
             let att: AttributeValue = {
@@ -469,8 +474,9 @@ export class BatchEditDialogComponent implements PostEditListener {
         affectedDbIds.size,
       );
       if (skippedDbIds.size > 0) {
+        let value = attributeValues[0].value;
         const skippedText = `${skippedDbIds.size} instance${skippedDbIds.size === 1 ? '' : 's'}`;
-        this.lastEditSummary += ` ${skippedText} had duplicate values that were not added.`;
+        this.lastEditSummary += ` ${skippedText} already have the value '${value}' and were not modified.`;
       }
     });
   }
