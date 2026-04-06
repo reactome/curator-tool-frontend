@@ -60,6 +60,8 @@
           (click)="compareInstances()" matTooltip="Compare instances" matSuffix>compare_arrows</mat-icon>
         <mat-icon *ngIf="showBatchEdit && selectedInstances.length > 0" color="primary" style="line-height: 36px;" matTooltip="Batch Edit" (click)="handleBatchEdit()"
           matSuffix>edit_square</mat-icon>
+        <mat-icon *ngIf="selectedInstances.length > 0" color="primary" style="line-height: 36px;"
+          matTooltip="Download selected" (click)="downloadSelectedInstances()" matSuffix>download</mat-icon>
         <ng-container *ngIf="this.isLocal">
           <mat-icon *ngIf="selectedInstances.length > 0" color="primary" style="line-height: 36px;"
             (click)="commitNewInstances()" matTooltip="commit all selected" matSuffix>upload</mat-icon>

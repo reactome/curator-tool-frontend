@@ -750,6 +750,22 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     this.selectedInstances = [];
   }
 
+  downloadSelectedInstances() {
+    if (!this.selectedInstances || this.selectedInstances.length === 0) return;
+
+    const suggestedName = `${this.className || 'instances'}-selected.csv`;
+    const providedName = window.prompt('Enter a file name for the CSV download.', suggestedName);
+    if (providedName === null) return;
+
+    const trimmedName = providedName.trim();
+    const fileName = (trimmedName.length > 0 ? trimmedName : suggestedName).endsWith('.csv')
+      ? (trimmedName.length > 0 ? trimmedName : suggestedName)
+      : `${trimmedName.length > 0 ? trimmedName : suggestedName}.csv`;
+
+    const csvContent = this.buildCsv(this.selectedInstances);
+    this.triggerCsvDownload(fileName, csvContent);
+  }
+
   downloadSearchResults() {
     if (this.isLocal || !this.hasExecutedSearch || this.instanceCount === 0) {
       return;
