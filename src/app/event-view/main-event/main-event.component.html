@@ -5,8 +5,10 @@
       <!--Technically it would be nicer to create a new component having both filter and tree. Put it here since the main event view
       is not that complicated now. -->
       <!-- We will use hidden instead of *ngIf to avoid destroying and recreating the components -->
-      <event-filter (speciesChanged)="handleSpeciesSelection($event)"
-                    (filterTextChanged)="handleEventFilterTextChanged($event)" [hidden]="showChanged"></event-filter>
+      <div id="event-filter-tour-target" style="overflow: hidden;" [hidden]="showChanged">
+        <event-filter (speciesChanged)="handleSpeciesSelection($event)"
+                      (filterTextChanged)="handleEventFilterTextChanged($event)"></event-filter>
+      </div>
       <app-event-tree (addToDiagram)="addEventToDiagram($event)" (eventClicked)="handleEventClicked($event)"
                        (createEmptyDiagramEvent)="createEmptyDiagram($event)"
                       #eventTree [hidden]="showChanged"></app-event-tree>

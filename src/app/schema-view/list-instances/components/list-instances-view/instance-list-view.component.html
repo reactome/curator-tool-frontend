@@ -19,7 +19,7 @@
     <mat-label>Search</mat-label>
     <input matInput (keydown.enter)="doAdvancedSearch(0)" #input readonly="true" [(ngModel)]="advancedSearchKey">
     <mat-icon class="undo-icon" matTooltip="Undo last" (click)="removeSearchCriterium()" matSuffix>undo</mat-icon>
-    <mat-icon *ngIf="showBatchEdit" class="undo-icon" matTooltip="Batch Edit" (click)="handleBatchEdit()"
+    <mat-icon *ngIf="showBatchEdit" id="batch-edit-tour-target" class="undo-icon" matTooltip="Batch Edit" (click)="handleBatchEdit()"
       matSuffix>edit_square</mat-icon>
     <mat-icon *ngIf="!isLocal && hasExecutedSearch && instanceCount > 0" class="undo-icon"
       matTooltip="Download search results" (click)="downloadSearchResults()" matSuffix>download</mat-icon>

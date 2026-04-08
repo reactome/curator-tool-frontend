@@ -101,7 +101,7 @@ export class TutorialPageComponent {
   constructor(
     private tourService: TourService,
     private router: Router,
-  ) {}
+  ) { }
 
   startHomeTour(): void {
     this.tourService.startHomeTour();
@@ -110,11 +110,11 @@ export class TutorialPageComponent {
 
   startSchemaTour(): void {
     this.tourService.startSchemaTour();
-    this.router.navigate(['/schema_view']);
+    this.router.navigate(['/schema_view/list_instances/Event']);
   }
 
   startEventViewTour(): void {
-    this.router.navigate(['/event_view/instance/5693567']);
+    this.router.navigate(['/event_view/instance/69620']);
     this.tourService.startEventViewTour();
   }
 

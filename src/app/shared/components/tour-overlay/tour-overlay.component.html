@@ -1,6 +1,6 @@
 <ng-container *ngIf="state.active && currentStep">
-  <!-- Dark backdrop -->
-  <div class="tour-backdrop" (click)="end()"></div>
+  <!-- Dark backdrop: only shown for centered steps with no target element -->
+  <div class="tour-backdrop" *ngIf="!highlightRect" (click)="end()"></div>
 
   <!-- Highlight box (optional, shown when targetSelector found) -->
   <div
