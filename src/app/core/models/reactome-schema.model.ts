@@ -100,6 +100,7 @@ export const ACTION_BUTTONS = {
   SHOW_TREE: { name: 'account_tree', tooltip: 'view in tree' },
   CHECK_BOX: { name: 'check_box', tooltip: 'unselect' },
   CHECK_BOX_OUTLINE: { name: 'check_box_outline_blank', tooltip: 'select' },
+  TIMELINE: { name: 'timeline', tooltip: 'open event view' },
 }
 
 export const CLASSES_AFFECTING_STRUCTURE = [

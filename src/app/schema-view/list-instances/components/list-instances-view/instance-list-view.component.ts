@@ -144,7 +144,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       }
     if (this.needSecondaryActions) {
       if (this.dataService.isEventClass(this.className))
-        this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES, ACTION_BUTTONS.SHOW_TREE];
+        this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES, ACTION_BUTTONS.TIMELINE];
       else {
         this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
       }
@@ -351,7 +351,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         break;
       }
 
-      case ACTION_BUTTONS.SHOW_TREE.name: {
+      case ACTION_BUTTONS.TIMELINE.name: {
         if (actionEvent.instance.schemaClassName)
           this.router.navigate(["/event_view/instance/" + actionEvent.instance.dbId]);
         break;
