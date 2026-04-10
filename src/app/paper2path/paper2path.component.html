@@ -1,0 +1,351 @@
+<div class="paper2path-container">
+
+  <!-- ─── App Banner ──────────────────────────────────────────────────────── -->
+  <div class="app-banner">
+    <div class="app-banner-left">
+      <mat-icon class="app-banner-icon">route</mat-icon>
+      <div>
+        <div class="app-banner-title">Paper2Path</div>
+        <div class="app-banner-subtitle">Multi-Agent Literature Annotation &nbsp;·&nbsp; Powered by CrewAI</div>
+      </div>
+    </div>
+    <button mat-button class="app-banner-btn" (click)="toggleConfiguration()">
+      <mat-icon>{{ showConfiguration ? 'expand_less' : 'tune' }}</mat-icon>
+      {{ showConfiguration ? 'Hide Config' : 'Configure' }}
+    </button>
+  </div>
+
+  <!-- ─── Configuration Section ──────────────────────────────────────────── -->
+  <div class="p2p-section" *ngIf="showConfiguration">
+    <div class="p2p-section-header">
+      <mat-icon>settings</mat-icon>
+      <span>Annotation Configuration</span>
+    </div>
+    <div class="p2p-section-body">
+      <form [formGroup]="configForm" class="config-form">
+
+        <mat-form-field appearance="outline">
+          <mat-label>Max Papers</mat-label>
+          <input matInput type="number" formControlName="numberOfPubmed" min="1" max="20">
+          <mat-hint>Maximum number of papers to process (1–20)</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Quality Threshold</mat-label>
+          <input matInput type="number" formControlName="qualityThreshold" min="0" max="1" step="0.1">
+          <mat-hint>Minimum quality score for annotations (0–1)</mat-hint>
+        </mat-form-field>
+
+        <div class="checkbox-group">
+          <mat-checkbox formControlName="enableFullText">
+            Enable Full Text Analysis
+            <mat-icon matTooltip="Process full PDF content instead of just abstracts">help_outline</mat-icon>
+          </mat-checkbox>
+          <mat-checkbox formControlName="enableLiteratureSearch">
+            Enable Literature Search
+            <mat-icon matTooltip="Search PubMed for additional papers">help_outline</mat-icon>
+          </mat-checkbox>
+        </div>
+
+        <!-- Agent Dashboard Controls -->
+        <div class="dashboard-config" *ngIf="dashboardConfig">
+          <div class="dashboard-header">
+            <mat-icon class="dashboard-header-icon">dashboard</mat-icon>
+            <div>
+              <div class="dashboard-title">Agent Dashboard Controls</div>
+              <div class="dashboard-subtitle">Enable or disable phases, agents, and tools to customize execution</div>
+            </div>
+          </div>
+          <div class="dashboard-sections">
+            <div class="dashboard-section">
+              <div class="dashboard-section-header">
+                <mat-icon>timeline</mat-icon>
+                <span>Execution Phases</span>
+              </div>
+              <div class="dashboard-chips">
+                <div class="dashboard-chip" *ngFor="let phase of dashboardConfig.phases"
+                  [class.chip-disabled]="!dashboardSelection.enabledPhases[phase.id]">
+                  <mat-checkbox
+                    [checked]="dashboardSelection.enabledPhases[phase.id]"
+                    (change)="dashboardSelection.enabledPhases[phase.id] = $event.checked">
+                    {{ phase.label }}
+                  </mat-checkbox>
+                </div>
+              </div>
+            </div>
+            <div class="dashboard-section">
+              <div class="dashboard-section-header">
+                <mat-icon>smart_toy</mat-icon>
+                <span>Agents &amp; Tools</span>
+              </div>
+              <div class="agent-cards">
+                <div class="agent-card" *ngFor="let agent of dashboardConfig.agents"
+                  [class.agent-disabled]="!dashboardSelection.enabledAgents[agent.id]">
+                  <div class="agent-card-header">
+                    <mat-icon class="agent-icon">{{ dashboardSelection.enabledAgents[agent.id] ? 'person' : 'person_off' }}</mat-icon>
+                    <mat-checkbox class="agent-checkbox"
+                      [checked]="dashboardSelection.enabledAgents[agent.id]"
+                      (change)="toggleAgent(agent.id, $event.checked)">
+                      <span class="agent-name">{{ agent.label }}</span>
+                    </mat-checkbox>
+                  </div>
+                  <div class="agent-tools">
+                    <div class="tool-chip"
+                      *ngFor="let tool of dashboardConfig.toolsByAgent[agent.id] || []"
+                      [class.tool-chip-disabled]="!isToolEnabled(agent.id, tool.id) || !dashboardSelection.enabledAgents[agent.id]">
+                      <mat-checkbox
+                        [checked]="isToolEnabled(agent.id, tool.id)"
+                        [disabled]="!dashboardSelection.enabledAgents[agent.id]"
+                        (change)="setToolEnabled(agent.id, tool.id, $event.checked)">
+                        <mat-icon class="tool-icon">build</mat-icon>
+                        {{ tool.label }}
+                      </mat-checkbox>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ─── Annotation Inputs & Workflow ──────────────────────────────────────── -->
+  <div class="p2p-section">
+    <div class="p2p-section-header">
+      <mat-icon>science</mat-icon>
+      <span>Annotation</span>
+    </div>
+
+    <!-- Gene input bar -->
+    <div class="gene-bar">
+      <mat-form-field appearance="outline" class="gene-field">
+        <mat-label>Target Gene</mat-label>
+        <mat-icon matPrefix>biotech</mat-icon>
+        <input matInput [formControl]="$any(configForm.get('targetGene'))" placeholder="e.g., NTN1, BRCA1, TP53">
+      </mat-form-field>
+      <span class="gene-hint">Annotate by gene alone, or combine with papers below</span>
+    </div>
+
+    <!-- Papers tab group -->
+    <mat-tab-group [(selectedIndex)]="selectedTab" (selectedIndexChange)="onTabChange($event)" class="paper-tabs">
+
+      <!-- Upload Papers Tab -->
+      <mat-tab label="Enter Papers">
+        <div class="tab-content two-col">
+
+          <div class="p2p-subsection">
+            <div class="p2p-subsection-header">
+              <mat-icon>tag</mat-icon>
+              PMIDs
+            </div>
+            <div class="p2p-subsection-body">
+              <form [formGroup]="paperForm" class="pmid-form">
+                <div formArrayName="pmids">
+                  <div *ngFor="let pmidControl of pmidsArray.controls; let i = index" class="pmid-row">
+                    <mat-form-field appearance="outline" class="pmid-field">
+                      <mat-label>PMID {{ i + 1 }}</mat-label>
+                      <input matInput [formControlName]="i" placeholder="e.g., 35484101">
+                      <mat-error *ngIf="pmidControl.invalid && pmidControl.touched">
+                        Please enter a valid PMID
+                      </mat-error>
+                    </mat-form-field>
+                    <button mat-icon-button (click)="removePmidField(i)" [disabled]="pmidsArray.length <= 1">
+                      <mat-icon>remove_circle</mat-icon>
+                    </button>
+                  </div>
+                </div>
+                <button mat-stroked-button type="button" (click)="addPmidField()">
+                  <mat-icon>add</mat-icon>
+                  Add PMID
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div class="p2p-subsection">
+            <div class="p2p-subsection-header">
+              <mat-icon>cloud_upload</mat-icon>
+              PDF Upload
+            </div>
+            <div class="p2p-subsection-body">
+              <p class="subsection-desc">Upload a paper named <code>PMID.pdf</code></p>
+              <input type="file" #fileInput (change)="onFileSelected($event)" accept=".pdf" style="display: none;">
+              <button mat-raised-button color="primary" (click)="fileInput.click()">
+                <mat-icon>upload_file</mat-icon>
+                Select PDF File
+              </button>
+              <div *ngIf="paperForm.get('uploadFile')?.value" class="file-info">
+                <mat-icon>description</mat-icon>
+                {{ paperForm.get('uploadFile')?.value?.name }}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </mat-tab>
+
+      <!-- Select from Available Papers Tab -->
+      <mat-tab label="Preloaded Papers">
+        <div class="tab-content">
+          <div class="p2p-subsection">
+            <div class="p2p-subsection-header">
+              <mat-icon>list_alt</mat-icon>
+              Available Papers
+            </div>
+            <div class="p2p-subsection-body">
+              <p class="subsection-desc">Select from papers already uploaded to the system</p>
+              <mat-selection-list class="paper-list">
+                <mat-list-option
+                  *ngFor="let paper of preloadedPapers"
+                  [selected]="paper.selected"
+                  (click)="togglePaperSelection(paper)">
+                  <div class="paper-item">
+                    <div class="paper-info">
+                      <strong>PMID: {{ paper.pmid }}</strong>
+                      <span class="paper-size" *ngIf="paper.sizeBytes">{{ (paper.sizeBytes / 1048576) | number:'1.1-1' }} MB</span>
+                      <div class="paper-title" *ngIf="paper.title">{{ paper.title }}</div>
+                    </div>
+                    <mat-icon *ngIf="paper.exists" class="status-icon exists" matTooltip="PDF available">check_circle</mat-icon>
+                    <mat-icon *ngIf="!paper.exists" class="status-icon missing" matTooltip="PDF not found">error</mat-icon>
+                  </div>
+                </mat-list-option>
+              </mat-selection-list>
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- Results Tab -->
+      <mat-tab label="Results" [disabled]="!annotationResult && !currentJob">
+        <div class="tab-content">
+
+          <!-- Processing -->
+          <div class="p2p-subsection" *ngIf="isProcessing">
+            <div class="p2p-subsection-header running">
+              <mat-icon>hourglass_top</mat-icon>
+              Processing Annotation…
+            </div>
+            <div class="p2p-subsection-body">
+              <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+              <div *ngIf="currentJob" class="job-status">
+                <div class="status-row">
+                  <mat-icon>tag</mat-icon>
+                  <span><strong>Job ID:</strong> {{ currentJob.job_id }}</span>
+                </div>
+                <div class="status-row">
+                  <mat-icon>sync</mat-icon>
+                  <span><strong>Status:</strong> {{ currentJob.status }}</span>
+                </div>
+                <div class="status-row" *ngIf="currentJob.gene">
+                  <mat-icon>biotech</mat-icon>
+                  <span><strong>Gene:</strong> {{ currentJob.gene }}</span>
+                </div>
+                <div class="status-row">
+                  <mat-icon>timeline</mat-icon>
+                  <span><strong>Current Phase:</strong> <span class="current-phase">{{ getCurrentPhase() }}</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Runtime Logs -->
+          <div class="p2p-subsection" *ngIf="logs.length > 0">
+            <div class="p2p-subsection-header">
+              <mat-icon>terminal</mat-icon>
+              CrewAI Runtime Logs
+            </div>
+            <div class="log-scroll" #logsContainer>
+              <div class="log-row" *ngFor="let logEntry of logs">
+                <span class="log-ts">{{ formatLogTime(logEntry.ts) }}</span>
+                <span class="log-tag" [ngClass]="logTagClass(logEntry)">{{ logTag(logEntry) }}</span>
+                <div class="log-body">
+                  <div class="log-phase" *ngIf="logEntry.phase">{{ formatPhase(logEntry.phase) }}</div>
+                  <div class="log-summary">{{ formatLogSummary(logEntry) }}</div>
+                  <div class="log-details" *ngIf="formatLogDetails(logEntry)">{{ formatLogDetails(logEntry) }}</div>
+                  <div class="log-extra" *ngIf="formatExtraDetails(logEntry)">{{ formatExtraDetails(logEntry) }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Error -->
+          <div class="p2p-subsection" *ngIf="error">
+            <div class="p2p-subsection-header error">
+              <mat-icon>error_outline</mat-icon>
+              Annotation Failed
+            </div>
+            <div class="p2p-subsection-body">
+              <p class="error-message">{{ error }}</p>
+              <div class="result-actions">
+                <button mat-raised-button color="primary" (click)="resetAnnotation()">
+                  <mat-icon>refresh</mat-icon>
+                  Try Again
+                </button>
+                <button mat-stroked-button (click)="dismissError()">
+                  <mat-icon>close</mat-icon>
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div class="p2p-subsection" *ngIf="annotationResult">
+            <div class="p2p-subsection-header success">
+              <mat-icon>check_circle</mat-icon>
+              Annotation Complete
+            </div>
+            <div class="p2p-subsection-body">
+              <pre class="result-pre">{{ annotationResult | json }}</pre>
+              <div class="result-actions">
+                <button mat-raised-button color="primary" (click)="downloadResults()">
+                  <mat-icon>download</mat-icon>
+                  Download Results
+                </button>
+                <button mat-raised-button color="accent" (click)="pushInstancesToStore()"
+                        *ngIf="!instancesPushed"
+                        matTooltip="Register annotated entities, reactions and pathways as new instances in the schema view">
+                  <mat-icon>add_circle</mat-icon>
+                  Add to Schema View
+                </button>
+                <span *ngIf="instancesPushed" class="instances-pushed-badge">
+                  <mat-icon>check_circle</mat-icon> Added to schema view
+                </span>
+                <button mat-stroked-button (click)="resetAnnotation()">
+                  <mat-icon>refresh</mat-icon>
+                  New Annotation
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </mat-tab>
+
+    </mat-tab-group>
+
+    <!-- Section footer action bar -->
+    <div class="section-footer" *ngIf="selectedTab < 2">
+      <div class="validation-notice" *ngIf="isSubmitDisabled() && !isProcessing">
+        <mat-icon>info_outline</mat-icon>
+        Please provide at least one PMID, select a paper, or enter a target gene to start annotation.
+      </div>
+      <div class="footer-actions">
+        <button mat-raised-button color="primary" (click)="submitAnnotation()" [disabled]="isSubmitDisabled()">
+          <mat-icon *ngIf="!isProcessing">send</mat-icon>
+          <mat-spinner *ngIf="isProcessing" diameter="20"></mat-spinner>
+          {{ isProcessing ? 'Processing…' : 'Start Annotation' }}
+        </button>
+        <button mat-stroked-button (click)="resetAnnotation()" *ngIf="currentJob || annotationResult">
+          <mat-icon>clear</mat-icon>
+          Clear
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</div>

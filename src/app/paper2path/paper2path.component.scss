@@ -1,0 +1,607 @@
+// ─── Design tokens ──────────────────────────────────────────────────────────
+$primary:           #1565c0;
+$primary-dark:      #0d47a1;
+$primary-medium:    #1976d2;
+$primary-light:     #e8f0fe;
+$section-bg:        #eef3fb;
+$section-border:    #dde5f0;
+$card-bg:           #ffffff;
+$page-bg:           #f4f7fb;
+$text-primary:      #1a2740;
+$text-secondary:    #546e7a;
+$success:           #2e7d32;
+$success-light:     #e8f5e9;
+$success-border:    #a5d6a7;
+$error-color:       #c62828;
+$error-light:       #ffebee;
+$error-border:      #ef9a9a;
+$warning-light:     #fff8e1;
+$warning-border:    #ffe082;
+$warning-text:      #6d4c00;
+
+// ─── Page container ─────────────────────────────────────────────────────────
+.paper2path-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: $page-bg;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// ─── App Banner ─────────────────────────────────────────────────────────────
+.app-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-radius: 10px;
+  background: linear-gradient(100deg, $primary-dark 0%, $primary-medium 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(13, 71, 161, 0.25);
+
+  .app-banner-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .app-banner-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    opacity: 0.9;
+  }
+
+  .app-banner-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .app-banner-subtitle {
+    font-size: 13px;
+    opacity: 0.78;
+    margin-top: 3px;
+  }
+
+  .app-banner-btn {
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 6px;
+    font-size: 13px;
+    padding: 4px 14px;
+
+    mat-icon { margin-right: 6px; vertical-align: middle; }
+
+    &:hover { background: rgba(255, 255, 255, 0.12); }
+  }
+}
+
+// ─── Section card ───────────────────────────────────────────────────────────
+.p2p-section {
+  background: $card-bg;
+  border-radius: 8px;
+  border: 1px solid $section-border;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(21, 101, 192, 0.07);
+}
+
+.p2p-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: $section-bg;
+  border-bottom: 1px solid $section-border;
+  font-size: 14px;
+  font-weight: 600;
+  color: $primary;
+
+  mat-icon {
+    font-size: 19px;
+    width: 19px;
+    height: 19px;
+  }
+}
+
+.p2p-section-body {
+  padding: 20px;
+}
+
+// ─── Gene input bar (inside annotation section) ────────────────────────────
+.gene-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  border-bottom: 1px solid $section-border;
+  background: #fafcff;
+
+  .gene-field {
+    width: 100%;
+    max-width: 380px;
+    flex-shrink: 0;
+    // Remove the reserved space Angular Material adds below fields for hints/errors
+    margin-bottom: -1.34375em;
+  }
+
+  .gene-hint {
+    font-size: 13px;
+    color: $text-secondary;
+    line-height: 1.4;
+    padding-bottom: 1.34375em; // align with field baseline after cancelling its margin
+  }
+}
+
+// ─── Configuration form ─────────────────────────────────────────────────────
+.config-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+
+  .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    justify-content: center;
+
+    mat-checkbox {
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+        margin-left: 6px;
+        opacity: 0.55;
+        vertical-align: middle;
+      }
+    }
+  }
+}
+
+// ─── Agent Dashboard Controls (design matches section pattern) ───────────────
+.dashboard-config {
+  grid-column: 1 / -1;
+  margin-top: 16px;
+  border-radius: 8px;
+  border: 1px solid $section-border;
+  background: #f8fafd;
+  overflow: hidden;
+
+  .dashboard-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: linear-gradient(90deg, $primary-dark 0%, $primary-medium 100%);
+    color: #fff;
+
+    .dashboard-header-icon { font-size: 22px; width: 22px; height: 22px; opacity: 0.95; }
+    .dashboard-title       { font-size: 15px; font-weight: 600; letter-spacing: 0.3px; }
+    .dashboard-subtitle    { font-size: 12px; opacity: 0.82; margin-top: 2px; }
+  }
+
+  .dashboard-sections {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .dashboard-section {
+    background: $card-bg;
+    border-radius: 6px;
+    border: 1px solid $section-border;
+    overflow: hidden;
+
+    .dashboard-section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: $section-bg;
+      font-size: 13px;
+      font-weight: 600;
+      color: $primary;
+      border-bottom: 1px solid $section-border;
+
+      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    }
+  }
+
+  .dashboard-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 14px;
+
+    .dashboard-chip {
+      display: flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid #90b4e8;
+      background: $primary-light;
+      font-size: 13px;
+      transition: background 0.15s, border-color 0.15s;
+
+      &.chip-disabled { background: #f2f2f2; border-color: #cacaca; color: #999; }
+      mat-checkbox { font-size: 13px; }
+    }
+  }
+
+  .agent-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .agent-card {
+    border-radius: 6px;
+    border: 1px solid #90b4e8;
+    background: #f0f5ff;
+    overflow: hidden;
+    transition: border-color 0.15s, background 0.15s;
+
+    &.agent-disabled {
+      background: #f7f7f7;
+      border-color: #d0d0d0;
+
+      .agent-card-header {
+        background: #efefef;
+        color: #999;
+        border-bottom-color: #e0e0e0;
+        .agent-icon { color: #bbb; }
+      }
+    }
+
+    .agent-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #dce8ff;
+      border-bottom: 1px solid #b8d0f8;
+
+      .agent-icon    { font-size: 18px; width: 18px; height: 18px; color: $primary; }
+      .agent-checkbox { flex: 1; }
+      .agent-name    { font-size: 13px; font-weight: 600; color: #1b3a6e; }
+    }
+
+    .agent-tools {
+      display: flex;
+      flex-direction: column;
+
+      .tool-chip {
+        display: flex;
+        align-items: center;
+        padding: 5px 12px;
+        font-size: 12px;
+        border-bottom: 1px solid #e8eef8;
+        background: #f8faff;
+        transition: background 0.12s;
+
+        &:last-child { border-bottom: none; }
+        &.tool-chip-disabled { background: #f5f5f5; color: #aaa; }
+
+        .tool-icon {
+          font-size: 13px; width: 13px; height: 13px;
+          margin-right: 4px; color: #5c85c4; vertical-align: middle;
+        }
+
+        mat-checkbox { font-size: 12px; display: flex; align-items: center; }
+      }
+    }
+  }
+}
+
+// ─── Tab group ───────────────────────────────────────────────────────────────
+.paper-tabs {
+  .mat-mdc-tab-body-wrapper { min-height: 0; }
+}
+
+// ─── Tab content ─────────────────────────────────────────────────────────────
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+
+  &.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: start;
+  }
+}
+
+// ─── Subsection ──────────────────────────────────────────────────────────────
+.p2p-subsection {
+  border-radius: 6px;
+  border: 1px solid $section-border;
+  overflow: hidden;
+}
+
+.p2p-subsection-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: #f3f7fe;
+  border-bottom: 1px solid $section-border;
+  font-size: 13px;
+  font-weight: 600;
+  color: $primary;
+
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+
+  &.running {
+    background: #e3f2fd;
+    color: #0277bd;
+    border-bottom-color: #b3e0f7;
+  }
+
+  &.success {
+    background: $success-light;
+    color: $success;
+    border-bottom-color: $success-border;
+  }
+
+  &.error {
+    background: $error-light;
+    color: $error-color;
+    border-bottom-color: $error-border;
+  }
+}
+
+.p2p-subsection-body {
+  padding: 16px;
+}
+
+.subsection-desc {
+  font-size: 13px;
+  color: $text-secondary;
+  margin: 0 0 14px;
+}
+
+// ─── PMID form ───────────────────────────────────────────────────────────────
+.pmid-form {
+  .pmid-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+
+    .pmid-field { flex: 1; }
+  }
+}
+
+// ─── File info ───────────────────────────────────────────────────────────────
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: $primary-light;
+  border: 1px solid #b0c8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: $primary;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+// ─── Paper list ──────────────────────────────────────────────────────────────
+.paper-list {
+  max-height: 420px;
+  overflow-y: auto;
+
+  .paper-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+
+    .paper-info {
+      flex: 1;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      .paper-size  { font-size: 0.82em; color: $text-secondary; white-space: nowrap; }
+      .paper-title { font-size: 0.88em; color: $text-secondary; margin-top: 3px; }
+    }
+
+    .status-icon {
+      &.exists  { color: #388e3c; }
+      &.missing { color: #d32f2f; }
+    }
+  }
+}
+
+// ─── Job status panel ────────────────────────────────────────────────────────
+.job-status {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-family: Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+    color: $text-primary;
+
+    mat-icon { font-size: 16px; width: 16px; height: 16px; color: $primary-medium; }
+    strong { color: $primary; }
+    .current-phase { color: $primary-dark; font-weight: 600; }
+  }
+}
+
+// ─── Runtime logs (terminal) ─────────────────────────────────────────────────
+.log-scroll {
+  background: #0b0b0b;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 12px 14px;
+
+  .log-row {
+    display: grid;
+    grid-template-columns: 96px 130px 1fr;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid #1f1f1f;
+    font-family: Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+    font-size: 12px;
+  }
+
+  .log-ts  { color: #9aa0a6; }
+  .log-tag { font-weight: 700; letter-spacing: 0.02em; }
+
+  .tag-default { color: #d0d0d0; }
+  .tag-running { color: #9ecbff; }
+  .tag-success { color: #7ee787; }
+  .tag-warning { color: #fdd663; }
+  .tag-error   { color: #ff8a80; }
+
+  .log-body { min-width: 0; }
+
+  .log-summary { color: #f8f8f8; white-space: pre-wrap; word-break: break-word; }
+
+  .log-phase {
+    display: inline-block;
+    background: #1f3b5c;
+    color: #cfe7ff;
+    border-radius: 10px;
+    padding: 2px 8px;
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+
+  .log-details { color: #a7a7a7; margin-top: 2px; }
+  .log-extra   { color: #7f8a94; margin-top: 2px; white-space: pre-wrap; word-break: break-word; }
+}
+
+// ─── Error message ───────────────────────────────────────────────────────────
+.error-message {
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: $error-color;
+  font-family: Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  background: $error-light;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+// ─── Results pre ─────────────────────────────────────────────────────────────
+.result-pre {
+  background: #f4f7fb;
+  border: 1px solid $section-border;
+  padding: 14px;
+  border-radius: 6px;
+  overflow-x: auto;
+  max-height: 500px;
+  overflow-y: auto;
+  font-size: 12px;
+  font-family: Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  margin: 0 0 16px;
+}
+
+.result-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  button { mat-icon { margin-right: 8px; } }
+}
+
+.instances-pushed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: #388e3c;
+  font-weight: 500;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+// ─── Section footer action bar ───────────────────────────────────────────────
+.section-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-top: 1px solid $section-border;
+  background: #fafcff;
+
+  .validation-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    background: $warning-light;
+    border: 1px solid $warning-border;
+    border-radius: 6px;
+    color: $warning-text;
+    font-size: 13px;
+    flex: 1;
+
+    mat-icon { font-size: 17px; width: 17px; height: 17px; }
+  }
+
+  .footer-actions {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+    button {
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
+      mat-icon, mat-spinner { margin-right: 6px; flex-shrink: 0; }
+    }
+  }
+}
+
+// ─── Responsive ──────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .paper2path-container { padding: 10px; gap: 12px; }
+
+  .app-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    .app-banner-btn { align-self: stretch; justify-content: center; }
+  }
+
+  .config-form { grid-template-columns: 1fr; }
+
+  .tab-content.two-col { grid-template-columns: 1fr; }
+
+  .pmid-form .pmid-row { flex-direction: column; align-items: stretch; }
+
+  .log-scroll .log-row { grid-template-columns: 1fr; }
+
+  .section-footer {
+    flex-direction: column;
+    align-items: stretch;
+    .footer-actions {
+      margin-left: 0;
+      flex-direction: column;
+      button { width: 100%; }
+    }
+  }
+}
+
+// ─── Material snackbar overrides ─────────────────────────────────────────────
+.success-snackbar { background-color: #4caf50 !important; color: white !important; }
+.error-snackbar   { background-color: #f44336 !important; color: white !important; }
+
+

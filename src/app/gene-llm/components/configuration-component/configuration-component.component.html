@@ -45,7 +45,7 @@
             <mat-label>Pathway Similarity Cutoff: </mat-label>
             <input class="label" [(ngModel)]=configuration.cosineSimilarityCutoff
                 matInput matTooltip="Used to choose abstracts with high similarity to target pathways"
-                placeholder="0.38" min="0" max="0.9" step="0.01" type="number" #pathwaySimilarityCutoffInput>
+                placeholder="0.20" min="0" max="0.9" step="0.01" type="number" #pathwaySimilarityCutoffInput>
         </mat-form-field>
         <mat-form-field class="form-field">
             <mat-label>LLM Score Cutoff: </mat-label>

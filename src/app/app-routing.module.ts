@@ -38,6 +38,12 @@ export const routes: Routes = [
     // canActivate: [authGuard], // Protect the route
   },
   {
+    path: "paper2path",
+    loadChildren: () =>
+      import("./paper2path/paper2path.module").then((m) => m.Paper2pathModule),
+    canActivate: [authGuard], // Protect the route
+  },
+  {
     path: "tutorial",
     loadChildren: () =>
       import("./tutorial/tutorial.module").then((m) => m.TutorialModule),

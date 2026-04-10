@@ -25,7 +25,9 @@ export const DEFAULT_LLM_CONFIG : Configuration = {
   fiScoreCutoff: 0.8,
   numberOfPubmed: 8,
   //maxQueryLength: "1000",
-  cosineSimilarityCutoff: 0.38,
+  // cosine similarity cutoff for filtering the retrieved documents
+  // Change from 0.38 to 0.20 to include more documents, which may help in improving the LLM performance
+  cosineSimilarityCutoff: 0.20,
   llmScoreCutoff: 3,
   numberOfPathways: 8,
   fdrCutoff: 0.01,
