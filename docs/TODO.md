@@ -32,6 +32,8 @@
 - Maybe add curatorComments and replacement instance options directly on the deletion confirmation modal to encourage populating those fields?
 HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidue, Input, InputForReactionLikeEvent, RepeatedUnit, RepeatedUnitForPhysicalEntity
 
+-BUG: Empty reactions cannot be deleted or edited in the pathway diagram.
+
 
 #### TODO
 - comments from Eliot and others during a demo on March 16, 2026: https://docs.google.com/document/d/1zlj3KKDwRQYUBCGIi4P3uqsb5X3JRfk8WoOqj2BXssI/edit?tab=t.0#heading=h.y6ik0la1wydu.
