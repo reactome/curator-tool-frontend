@@ -80,6 +80,22 @@ $warning-text:      #6d4c00;
   }
 }
 
+// ─── Experimental warning ───────────────────────────────────────────────────
+.experimental-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 6px;
+  color: #5d4037;
+  font-size: 13px;
+  line-height: 1.4;
+
+  mat-icon { color: #f9a825; font-size: 20px; width: 20px; height: 20px; flex-shrink: 0; }
+}
+
 // ─── Section card ───────────────────────────────────────────────────────────
 .p2p-section {
   background: $card-bg;
