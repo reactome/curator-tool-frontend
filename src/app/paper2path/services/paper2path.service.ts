@@ -94,6 +94,7 @@ export interface PreloadedPaper {
 })
 export class Paper2pathService {
   private LLM_HOST = environment.llmURL;
+  private MOCK_RESULT_URL = 'assets/paper2path/tanc1_3973163_crewai_result.json';
   private CREWAI_ANNOTATE_URL = `${this.LLM_HOST}/crewai/annotate`;
   private CREWAI_RESULT_URL = `${this.LLM_HOST}/crewai/result`;
   private CREWAI_LOGS_URL = `${this.LLM_HOST}/crewai/logs`;
@@ -155,6 +156,12 @@ export class Paper2pathService {
   getPreloadedPapers(): Observable<PreloadedPaper[]> {
     return this.http.get<{ papers: { pmid: string; exists: boolean; size_bytes?: number }[] }>(this.FULLTEXT_LIST_URL).pipe(
       map(resp => resp.papers.map(p => ({ pmid: p.pmid, exists: p.exists, sizeBytes: p.size_bytes }))),
+      catchError(err => this.handleError(err))
+    );
+  }
+
+  getMockAnnotationResult(): Observable<any> {
+    return this.http.get<any>(this.MOCK_RESULT_URL).pipe(
       catchError(err => this.handleError(err))
     );
   }

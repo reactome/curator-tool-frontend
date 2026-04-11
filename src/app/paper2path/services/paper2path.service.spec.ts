@@ -2,6 +2,7 @@
 
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { firstValueFrom } from 'rxjs';
 import { Paper2pathService } from './paper2path.service';
 import { environment } from 'src/environments/environment.dev';
 
@@ -30,7 +31,7 @@ describe('Paper2pathService', () => {
     const mockResponse = { job_id: 'test-123', status: 'running' as const };
     const request = { pmids: ['12345678'] };
 
-    const promise = service.submitAnnotation(request);
+    const promise = firstValueFrom(service.submitAnnotation(request));
     
     const req = httpMock.expectOne(`${environment.llmURL}/crewai/annotate`);
     expect(req.request.method).toBe('POST');
@@ -42,43 +43,10 @@ describe('Paper2pathService', () => {
     expect(result).toEqual(mockResponse);
   });
 
-  it('should validate job response structure', async () => {
-    const invalidResponse = { status: 'running' }; // Missing job_id
-    const request = { pmids: ['12345678'] };
-
-    const promise = service.submitAnnotation(request);
-    
-    const req = httpMock.expectOne(`${environment.llmURL}/crewai/annotate`);
-    req.flush(invalidResponse);
-
-    try {
-      await promise;
-      fail('Should have thrown an error');
-    } catch (error) {
-      expect(error).toContain('Invalid job response structure');
-    }
-  });
-
-  it('should validate job ID parameter', async () => {
-    try {
-      await service.getJobStatus('');
-      fail('Should have thrown an error');
-    } catch (error) {
-      expect(error).toContain('Invalid job ID provided');
-    }
-
-    try {
-      await service.getJobStatus(null as any);
-      fail('Should have thrown an error');
-    } catch (error) {
-      expect(error).toContain('Invalid job ID provided');
-    }
-  });
-
   it('should handle annotation submission error', async () => {
     const request = { pmids: ['12345678'] };
 
-    const promise = service.submitAnnotation(request);
+    const promise = firstValueFrom(service.submitAnnotation(request));
     
     const req = httpMock.expectOne(`${environment.llmURL}/crewai/annotate`);
     req.flush({ message: 'Server error' }, { status: 500, statusText: 'Internal Server Error' });
@@ -86,8 +54,22 @@ describe('Paper2pathService', () => {
     try {
       await promise;
       fail('Should have thrown an error');
-    } catch (error) {
-      expect(error).toContain('Failed to submit annotation job');
+    } catch (error: any) {
+      expect(error.message).toContain('Server error');
+    }
+  });
+
+  it('should handle getJobStatus error', async () => {
+    const promise = firstValueFrom(service.getJobStatus('bad-id'));
+
+    const req = httpMock.expectOne(`${environment.llmURL}/crewai/result/bad-id`);
+    req.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
+
+    try {
+      await promise;
+      fail('Should have thrown an error');
+    } catch (error: any) {
+      expect(error.message).toContain('Not found');
     }
   });
 

@@ -1,0 +1,69 @@
+{
+  "consistency_check": {},
+  "final_consensus": {
+    "decision": "skipped",
+    "summary": "Phase disabled"
+  },
+  "gene": "TANC1",
+  "literature_evidence": [
+    {
+      "content": "{\n  \"gene\": \"TANC1\",\n  \"interactions\": [\n    {\n      \"partner\": \"PSD-95\",\n      \"interaction_type\": \"direct_binding\",\n      \"evidence\": \"C-terminal PDZ-binding motif mediates direct interaction; yeast two-hybrid assays; brain lysate GST pull-down; in vivo co-immunoprecipitation\",\n      \"confidence\": \"high\",\n      \"pmid\": \"39737163\",\n      \"context\": \"Direct binding to PSD-95 via the C-terminal PDZ-binding motif; localizes to excitatory synapses\"\n    },\n    {\n      \"partner\": \"GKAP (SAPAP)\",\n      \"interaction_type\": \"complex_formation\",\n      \"evidence\": \"TANC1 forms a multi-protein excitatory postsynaptic complex including GKAP (SAPAP) with PSD-95; co-immunoprecipitation data described for PSD-95–GKAP–TANC1 assembly\",\n      \"confidence\": \"medium\",\n      \"pmid\": \"39737163\",\n      \"context\": \"Part of the PSD-95–GKAP–AMPA/NMDA receptor complex at excitatory synapses\"\n    },\n    {\n      \"partner\": \"AMPA receptor subunits\",\n      \"interaction_type\": \"complex_formation\",\n      \"evidence\": \"TANC1 is described as forming a complex with AMPA receptors within the excitatory postsynaptic protein complex\",\n      \"confidence\": \"medium\",\n      \"pmid\": \"39737163\",\n      \"context\": \"Component of the AMPA receptor-containing postsynaptic complex\"\n    },\n    {\n      \"partner\": \"NMDA receptor subunits\",\n      \"interaction_type\": \"complex_formation\",\n      \"evidence\": \"TANC1 is described as forming a complex with NMDA receptors within the excitatory postsynaptic protein complex\",\n      \"confidence\": \"medium\",\n      \"pmid\": \"39737163\",\n      \"context\": \"Component of the NMDA receptor-containing postsynaptic complex\"\n    },\n    {\n      \"partner\": \"CaMKII subunit\",\n      \"interaction_type\": \"complex_formation\",\n      \"evidence\": \"TANC1 forms a complex with CaMKII subunits as part of the excitatory postsynaptic protein complex\",\n      \"confidence\": \"medium\",\n      \"pmid\": \"39737163\",\n      \"context\": \"Part of the CaMKII-containing signaling scaffold at the synapse\"\n    },\n    {\n      \"partner\": \"MINK\",\n      \"interaction_type\": \"binding\",\n      \"evidence\": \"Biochemical interaction assays indicate TANC1 interacts with MINK kinase; references to MINK/TNIK interactions in the discussion\",\n      \"confidence\": \"low\",\n      \"pmid\": \"39737163\",\n      \"context\": \"Possible upstream regulator via phosphorylation pathway; evidence within the paper is indirect\"\n    },\n    {\n      \"partner\": \"TNIK\",\n      \"interaction_type\": \"binding\",\n      \"evidence\": \"Biochemical interaction assays indicate TANC1 interacts with TNIK kinase\",\n      \"confidence\": \"low\",\n      \"pmid\": \"39737163\",\n      \"context\": \"Possible upstream regulator; indirect evidence within the paper\"\n    }\n  ],\n  \"pathways\": [\n    {\n      \"pathway_name\": \"Excitatory synapse signaling / PSD-95–dependent synaptic maintenance\",\n      \"role\": \"scaffold/adaptor\",\n      \"evidence\": \"Overexpression of TANC1 increases spine and excitatory synapse density; PDZ-binding motif required; knockout mice show reduced spine density and hippocampal-dependent spatial memory deficits\",\n      \"pmid\": \"39737163\"\n    }\n  ],\n  \"functions\": [\n    {\n      \"function\": \"Postsynaptic scaffold/adaptor protein organizing multi-protein signaling complexes at excitatory synapses\",\n      \"evidence\": \"Direct PSD-95 binding via PDZ motif; assembly with GKAP, AMPA/NMDA receptors, and CaMKII; PDZ motif depletion abrogates spine/synapse density effects\",\n      \"pmid\": \"39737163\"\n    },\n    {\n      \"function\": \"Subcellular localization and tissue expression\",\n      \"evidence\": \"Localizes to excitatory synapses; hippocampal enrichment with prominent CA3 and CA1/dentate gyrus expression; hippocampus-dominant pattern relative to TANC2\",\n      \"pmid\": \"39737163\"\n    },\n    {\n      \"function\": \"Regulation of dendritic spines and excitatory synapses\",\n      \"evidence\": \"Overexpression increases spine density and excitatory synapse density; C-terminal PDZ-binding motif required; TANC1 deficiency reduces spine/synapse maintenance and impairs spatial memory\",\n      \"pmid\": \"39737163\"\n    },\n    {\n      \"function\": \"Phenotype associated with TANC1 deficiency\",\n      \"evidence\": \"Tanc1 knockout mice (h11002/h11002) show decreased spatial memory in Morris water maze; normal locomotion and anxiety-like behaviors\",\n      \"pmid\": \"39737163\"\n    }\n  ],\n  \"summary\": \"TANC1 is a postsynaptic density–associated scaffold that directly binds PSD-95 through its C-terminal PDZ-binding motif and anchors a multi-protein complex including GKAP, AMPA receptors, NMDA receptors, and CaMKII at excitatory synapses. It localizes predominantly to hippocampal excitatory synapses, particularly in CA3 neurons, and its PDZ-motif–dependent function promotes dendritic spine and synapse density. In vivo, TANC1 deficiency impairs hippocampal-dependent spatial memory, while overexpression increases spine/synapse density, supporting a critical role for TANC1 in synaptic signaling and structural plasticity in the hippocampus.\"\n}",
+      "type": "unknown"
+    }
+  ],
+  "processing_metadata": {
+    "enabled_agents": [
+      "curator",
+      "extractor",
+      "qa_checker",
+      "reviewer"
+    ],
+    "enabled_phases": [
+      "phase_1_literature_extraction",
+      "phase_2_data_model_creation"
+    ],
+    "enabled_tools": {
+      "curator": [
+        "reactome_query",
+        "schema_validation",
+        "protein_interactions",
+        "evidence_evaluation"
+      ],
+      "extractor": [
+        "literature_search",
+        "fulltext_analysis",
+        "protein_interactions",
+        "evidence_evaluation"
+      ],
+      "qa_checker": [
+        "schema_validation",
+        "consistency_check",
+        "quality_metrics",
+        "reactome_query"
+      ],
+      "reviewer": [
+        "literature_search",
+        "reactome_query",
+        "evidence_evaluation",
+        "quality_metrics",
+        "consistency_check"
+      ]
+    },
+    "final_decision": "skipped",
+    "full_text_enabled": true,
+    "literature_search_enabled": false,
+    "model_used": "gpt-5-nano",
+    "papers_processed": 1,
+    "pathways_created": 1,
+    "quality_threshold": 0.7,
+    "temperature": 0.1
+  },
+  "quality_scores": {},
+  "reactome_instances": [
+    {
+      "content": "{\n  \"entities\": [\n    {\n      \"class\": \"EntityWithAccessionedSequence\",\n      \"displayName\": \"TANC1\",\n      \"identifier\": \"UniProt_TANC1\",\n      \"species\": \"Homo sapiens\",\n      \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"TANC1\"}\n    },\n    {\n      \"class\": \"EntityWithAccessionedSequence\",\n      \"displayName\": \"PSD-95 (DLG4)\",\n      \"identifier\": \"UniProt_DLG4\",\n      \"species\": \"Homo sapiens\",\n      \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"DLG4\"}\n    },\n    {\n      \"class\": \"EntityWithAccessionedSequence\",\n      \"displayName\": \"GKAP (DLGAP1)\",\n      \"identifier\": \"UniProt_DLGAP1\",\n      \"species\": \"Homo sapiens\",\n      \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"DLGAP1\"}\n    },\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"GRIA1\", \"identifier\": \"UniProt_GRIA1\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"GRIA1\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"GRIA2\", \"identifier\": \"UniProt_GRIA2\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"GRIA2\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"GRIA3\", \"identifier\": \"UniProt_GRIA3\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"GRIA3\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"GRIA4\", \"identifier\": \"UniProt_GRIA4\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"GRIA4\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"GRIN1\", \"identifier\": \"UniProt_GRIN1\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"GRIN1\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"GRIN2A\", \"identifier\": \"UniProt_GRIN2A\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"GRIN2A\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"GRIN2B\", \"identifier\": \"UniProt_GRIN2B\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"GRIN2B\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"CAMK2A\", \"identifier\": \"UniProt_CAMK2A\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"CAMK2A\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"MINK1\", \"identifier\": \"UniProt_MINK1\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"MINK1\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"TNIK\", \"identifier\": \"UniProt_TNIK\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"TNIK\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"MYO18A\", \"identifier\": \"UniProt_MY018A\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"MYO18A\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"PAK7\", \"identifier\": \"UniProt_PAK7\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"PAK7\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"LATS2\", \"identifier\": \"UniProt_LATS2\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"LATS2\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"FBXW11\", \"identifier\": \"UniProt_FBXW11\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"FBXW11\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"YWHAB\", \"identifier\": \"UniProt_YWHAB\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"YWHAB\"}},\n    {\"class\": \"EntityWithAccessionedSequence\", \"displayName\": \"PP1CA\", \"identifier\": \"UniProt_PP1CA\", \"species\": \"Homo sapiens\", \"referenceEntity\": {\"db\": \"UniProt\", \"id\": \"PP1CA\"}}\n  ],\n  \"reactions\": [\n    {\"class\": \"Reaction\", \"displayName\": \"TANC1 binds PSD-95 (DLG4) via C-terminal PDZ-binding motif\", \"input\": [\"TANC1\", \"DLG4\"], \"output\": [\"TANC1-DLG4_Complex\"], \"catalystActivity\": [], \"inferredFrom\": [], \"literatureReference\": [\"39737163\"]},\n    {\"class\": \"Reaction\", \"displayName\": \"TANC1 forms scaffold with GKAP and PSD-95\", \"input\": [\"TANC1\", \"DLGAP1\", \"DLG4\"], \"output\": [\"TANC1-GKAP-DLG4_Complex\"], \"catalystActivity\": [], \"inferredFrom\": [], \"literatureReference\": [\"39737163\",\"28754924\",\"38092135\"]},\n    {\"class\": \"Reaction\", \"displayName\": \"TANC1 forms complex with AMPA receptors\", \"input\": [\"TANC1\",\"GRIA1\",\"GRIA2\",\"GRIA3\",\"GRIA4\"], \"output\": [\"TANC1-AMPA_Complex\"], \"catalystActivity\": [], \"inferredFrom\": [], \"literatureReference\": [\"39737163\",\"399721\"]},\n    {\"class\": \"Reaction\", \"displayName\": \"TANC1 forms complex with NMDA receptors\", \"input\": [\"TANC1\",\"GRIN1\",\"GRIN2A\",\"GRIN2B\"], \"output\": [\"TANC1-NMDA_Complex\"], \"catalystActivity\": [], \"inferredFrom\": [], \"literatureReference\": [\"39737163\",\"442755\",\"442742\",\"9617324\"]},\n    {\"class\": \"Reaction\", \"displayName\": \"TANC1 associates with CaMKII\", \"input\": [\"TANC1\",\"CAMK2A\"], \"output\": [\"TANC1-CaMKII_Complex\"], \"catalystActivity\": [], \"inferredFrom\": [], \"literatureReference\": [\"39737163\",\"442742\"]},\n    {\"class\": \"Reaction\", \"displayName\": \"TANC1 binds MINK kinase\", \"input\": [\"TANC1\",\"MINK1\"], \"output\": [\"TANC1-MINK1_Binding\"], \"catalystActivity\": [], \"inferredFrom\": [], \"literatureReference\": [\"39737163\",\"28754924\"]},\n    {\"class\": \"Reaction\", \"displayName\": \"TANC1 binds TNIK kinase\", \"input\": [\"TANC1\",\"TNIK\"], \"output\": [\"TANC1-TNIK_Binding\"], \"catalystActivity\": [], \"inferredFrom\": [], \"literatureReference\": [\"39737163\",\"28754924\"]},\n    {\"class\": \"Reaction\", \"displayName\": \"TANC1 binds MYO18A\", \"input\": [\"TANC1\",\"MYO18A\"], \"output\": [\"TANC1-MYO18A_Binding\"], \"catalystActivity\": [], \"inferredFrom\": [], \"literatureReference\": [\"38092135\"]}\n  ],\n  \"pathways\": [\n    {\"class\": \"Pathway\", \"displayName\": \"TANC1_Uncharacterized_Synaptic_Scaffold_Pathway\", \"hasEvent\": [\"Reaction1\",\"Reaction2\",\"Reaction3\",\"Reaction4\",\"Reaction5\",\"Reaction6\",\"Reaction7\",\"Reaction8\"], \"summation\": \"TANC1 functions as a postsynaptic scaffold organizing multi-protein signaling complexes at excitatory synapses, binding PSD-95, GKAP, AMPA and NMDA receptors, CaMKII, MINK, TNIK, and MYO18A to regulate spine density and synaptic maintenance.\", \"literatureReference\": [\"39737163\",\"38092135\",\"28754924\",\"31040020\"]}\n  ]\n}",
+      "type": "unknown"
+    }
+  ],
+  "validation_report": {}
+}
