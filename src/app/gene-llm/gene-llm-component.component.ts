@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, concatMap, of, throwError } from 'rxjs';
+import { catchError, concatMap, interval, of, Subscription, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { Configuration, DEFAULT_LLM_CONFIG } from "./components/configuration-component/configuration-component.component";
 import { NavigationData } from './components/navigation-menu/navigation-menu.component';
@@ -14,8 +14,10 @@ export class GeneLlmComponentComponent {
 
   //private LLM_HOST = "http://127.0.0.1:5000/"
   private LLM_HOST = environment.llmURL;
+  private AUTH_REFRESH_URL = `${environment.authURL}/refresh`;
   private LLM_ANNOTATE_GENE_URL = this.LLM_HOST + "/annotate"
   private LLM_FULLTEXT_ANALYSIS_URL = this.LLM_HOST + '/fulltext/'
+  private tokenKeepAliveSub: Subscription | null = null;
 
   content: string | undefined;
   details: Interacting_Pathway_Detail[] | undefined;
@@ -37,6 +39,32 @@ export class GeneLlmComponentComponent {
   ppiTableData: AbstractTableData[] | undefined;
 
   constructor(private http: HttpClient) {
+  }
+
+  ngOnDestroy(): void {
+    this.stopTokenKeepAlive();
+  }
+
+  private startTokenKeepAlive(): void {
+    if (this.tokenKeepAliveSub) return;
+    this.tokenKeepAliveSub = interval(60_000).subscribe(() => {
+      this.http.post<any>(this.AUTH_REFRESH_URL, {}, { withCredentials: true }).subscribe({
+        next: (resp: any) => {
+          const token = typeof resp === 'string' ? resp : (resp?.token || resp?.accessToken || resp?.jwt);
+          if (token) {
+            localStorage.setItem('token', token);
+          }
+        },
+        error: () => {
+          // Keep polling job unaffected; regular auth flow handles failures when needed.
+        }
+      });
+    });
+  }
+
+  private stopTokenKeepAlive(): void {
+    this.tokenKeepAliveSub?.unsubscribe();
+    this.tokenKeepAliveSub = null;
   }
 
   changeShowConfiguration() {
@@ -63,6 +91,7 @@ export class GeneLlmComponentComponent {
     console.debug('Form data:');
     const url = this.LLM_ANNOTATE_GENE_URL;
     this.during_query = true;
+    this.startTokenKeepAlive();
     this.configuration.queryGene = this.gene;
     console.debug('Configuration:', this.configuration);
     return this.http.post<LLM_Result>(url, this.configuration).pipe(
@@ -73,6 +102,7 @@ export class GeneLlmComponentComponent {
         });
         this.failure = err.message;
         this.during_query = false;
+        this.stopTokenKeepAlive();
         return throwError(() => err);
       })
     ).subscribe(result => {
@@ -80,6 +110,7 @@ export class GeneLlmComponentComponent {
       if (result.failure) {
         this.failure = result.failure;
         this.during_query = false;
+        this.stopTokenKeepAlive();
         return;
       }
       this.annotated_pathway_content = result.annotated_pathways_content;
@@ -117,6 +148,7 @@ export class GeneLlmComponentComponent {
         });
       })
       this.during_query = false;
+      this.stopTokenKeepAlive();
     })
   }
 

@@ -38,11 +38,17 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   background: #e3f2fd;
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 24px;
+
+  > button {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 
   .tour-launch-label {
     display: flex;
@@ -51,6 +57,8 @@
     font-size: 14px;
     font-weight: 500;
     color: #1565c0;
+    white-space: nowrap;
+    flex-shrink: 0;
 
     mat-icon {
       font-size: 20px;

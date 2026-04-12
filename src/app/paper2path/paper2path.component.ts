@@ -1,4 +1,5 @@
 import { AfterViewChecked, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject, Subscription, takeUntil, interval, forkJoin, firstValueFrom } from 'rxjs';
@@ -16,6 +17,7 @@ import {
   PreloadedPaper,
   Paper2pathService
 } from 'src/app/paper2path/services/paper2path.service';
+import { environment } from 'src/environments/environment.dev';
 
 export interface PaperItem {
   pmid: string;
@@ -57,7 +59,9 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
 
   private destroy$ = new Subject<void>();
   private pollingSubscription: Subscription | null = null;
+  private tokenKeepAliveSub: Subscription | null = null;
   private pendingLogScroll = false;
+  private readonly AUTH_REFRESH_URL = `${environment.authURL}/refresh`;
   
   // Form management
   paperForm!: FormGroup;
@@ -90,6 +94,7 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
 
   constructor(
     private fb: FormBuilder,
+    private http: HttpClient,
     private paper2pathService: Paper2pathService,
     private snackBar: MatSnackBar,
     private store: Store,
@@ -103,8 +108,33 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
 
   ngOnDestroy() {
     this.stopPolling();
+    this.stopTokenKeepAlive();
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private startTokenKeepAlive(): void {
+    if (this.tokenKeepAliveSub) return;
+    this.tokenKeepAliveSub = interval(60_000)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.http.post<any>(this.AUTH_REFRESH_URL, {}, { withCredentials: true }).subscribe({
+          next: (resp: any) => {
+            const token = typeof resp === 'string' ? resp : (resp?.token || resp?.accessToken || resp?.jwt);
+            if (token) {
+              localStorage.setItem('token', token);
+            }
+          },
+          error: () => {
+            // Do not interrupt annotation flow; existing auth handling covers hard failures.
+          }
+        });
+      });
+  }
+
+  private stopTokenKeepAlive(): void {
+    this.tokenKeepAliveSub?.unsubscribe();
+    this.tokenKeepAliveSub = null;
   }
 
   ngAfterViewChecked() {
@@ -235,6 +265,7 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
       ...this.configuration
     }).subscribe({
       next: (job: AnnotationJobStatus) => {
+        this.startTokenKeepAlive();
         this.currentJob = job;
         this.selectedTab = 2;
         this.startPollingForResult();
@@ -243,6 +274,7 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
       error: (err: Error) => {
         this.showError(`Failed to submit annotation: ${err.message}`);
         this.isProcessing = false;
+        this.stopTokenKeepAlive();
       }
     });
   }
@@ -300,16 +332,19 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
               this.setAnnotationResult(status.result);
               this.isProcessing = false;
               this.stopPolling();
+              this.stopTokenKeepAlive();
               this.showSuccess('Annotation completed successfully!');
             } else if (status.status === 'error') {
               this.error = status.error || 'Unknown error occurred';
               this.isProcessing = false;
               this.stopPolling();
+              this.stopTokenKeepAlive();
               this.showError(`Annotation failed: ${this.error}`);
             } else if (status.status === 'not_found') {
               this.error = 'Annotation job not found on server.';
               this.isProcessing = false;
               this.stopPolling();
+              this.stopTokenKeepAlive();
               this.showError(this.error);
             }
             // 'running' — continue polling on next tick
@@ -318,6 +353,7 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
             this.error = `Failed to get job status: ${err.message}`;
             this.isProcessing = false;
             this.stopPolling();
+            this.stopTokenKeepAlive();
             this.showError(this.error);
           }
         });
@@ -525,6 +561,7 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
 
   resetAnnotation() {
     this.stopPolling();
+    this.stopTokenKeepAlive();
     this.currentJob = null;
     this.setAnnotationResult(null);
     this.error = null;
