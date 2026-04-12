@@ -388,7 +388,12 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
         // Notify store + view to refresh all attributes (displayName, title, journal, authors, etc.)
         this.instanceUtilities.registerUpdatedInstance('pubMedIdentifier', litRef);
         // Need to get the total Person instances that are created (i.e. with negative dbIds here)
-        const personCount = Array.from(litRef.attributes.get('author') || []).filter((a: unknown) => (a as Instance).schemaClassName === 'Person').length;
+        const personCount = Array.from(litRef.attributes.get('author') || [])
+          .filter((a: unknown) => {
+            const author = a as Instance;
+            return author.schemaClassName === 'Person' && (author.dbId ?? -1) < 0;
+          })
+          .length;
         count += personCount;
       }
 
