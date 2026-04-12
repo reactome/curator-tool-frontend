@@ -33,6 +33,10 @@
       <mat-icon>psychology</mat-icon>
       Gene2Path Tour
     </button>
+    <button mat-raised-button color="primary" (click)="startPaper2PathTour()">
+      <mat-icon>article</mat-icon>
+      Paper2Path Tour
+    </button>
   </div>
 
   <!-- Tabbed sections -->
@@ -350,6 +354,86 @@
             <p class="tip">
               <mat-icon class="tip-icon">warning</mat-icon>
               Generated content is curation <em>assistance</em> — always review before adding to Reactome.
+            </p>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- ── Paper2Path ────────────────────────────────────── -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon class="tab-icon">article</mat-icon>
+        Paper2Path
+      </ng-template>
+
+      <div class="tab-content">
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">description</mat-icon>
+            <mat-card-title>Overview</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p>
+              Paper2Path is a multi-agent literature annotation assistant. It accepts PMIDs, PDFs, and/or a target gene,
+              then generates candidate entities, reactions, pathways, and supporting evidence for curator review.
+            </p>
+            <p class="tip">
+              <mat-icon class="tip-icon">info</mat-icon>
+              Paper2Path is experimental. Treat results as drafting support and validate before commit.
+            </p>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">tune</mat-icon>
+            <mat-card-title>Configuration</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ul>
+              <li>Use <strong>Configure</strong> in the header to open advanced controls.</li>
+              <li><strong>Max Papers</strong>: limits number of papers processed.</li>
+              <li><strong>Quality Threshold</strong>: filters low-confidence annotation outputs.</li>
+              <li><strong>Enable Full Text Analysis</strong>: uses full PDF content when available.</li>
+              <li><strong>Enable Literature Search</strong>: expands inputs using PubMed search.</li>
+              <li><strong>Agent Dashboard Controls</strong>: enable or disable phases, agents, and tools for targeted runs.</li>
+            </ul>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">play_arrow</mat-icon>
+            <mat-card-title>Run an Annotation Job</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ol>
+              <li>Enter an optional <strong>Target Gene</strong>.</li>
+              <li>In <strong>Enter Papers</strong>, add one or more PMIDs and/or upload a PDF named as <code>PMID.pdf</code>.</li>
+              <li>Or switch to <strong>Preloaded Papers</strong> and select available uploaded papers.</li>
+              <li>Click <strong>Start Annotation</strong>.</li>
+              <li>Open the <strong>Results</strong> tab to monitor runtime logs, phase status, and job progress.</li>
+            </ol>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="tutorial-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar color="primary">fact_check</mat-icon>
+            <mat-card-title>Review Results and Push to Schema View</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <ul>
+              <li>Inspect formatted JSON output in the results panel.</li>
+              <li>Download the result payload for offline review or reproducibility.</li>
+              <li>Click <strong>Add to Schema View</strong> to stage generated instances locally.</li>
+              <li>Generated instances include literature references, entities, reactions, and pathways when present.</li>
+              <li>Open Schema View to validate attributes and relationships before commit.</li>
+            </ul>
+            <p class="tip">
+              <mat-icon class="tip-icon">warning</mat-icon>
+              Always verify provenance and biological correctness. LLM output can be incomplete or incorrect.
             </p>
           </mat-card-content>
         </mat-card>

@@ -135,6 +135,37 @@ const HELP_CONTENT: Record<string, HelpContext> = {
       },
     ],
   },
+  'paper2path': {
+    view: 'paper2path',
+    title: 'Paper2Path Help',
+    sections: [
+      {
+        heading: 'Inputs',
+        items: [
+          'Provide a target gene, PMIDs, uploaded PDFs, or any combination of these inputs.',
+          'Use Enter Papers for manual PMIDs/PDF upload, or Preloaded Papers to select server-hosted documents.',
+          'At least one PMID, selected preloaded paper, or target gene is required to start annotation.',
+        ],
+      },
+      {
+        heading: 'Configuration',
+        items: [
+          'Click Configure in the header to adjust max papers, quality threshold, and analysis toggles.',
+          'Enable or disable execution phases, agents, and tools in Agent Dashboard Controls for targeted runs.',
+          'Use Full Text Analysis only when PDFs are available and quality review is needed.',
+        ],
+      },
+      {
+        heading: 'Results and Curation',
+        items: [
+          'Open the Results tab to monitor runtime logs, status, and final JSON output.',
+          'Use Download Results to export the generated payload for review.',
+          'Click Add to Schema View to stage generated instances for curation, then validate in Schema View before commit.',
+          'Treat Paper2Path output as assistant-generated suggestions; always verify biological correctness and evidence.',
+        ],
+      },
+    ],
+  },
   'tutorial': {
     view: 'tutorial',
     title: 'Tutorial Page Help',

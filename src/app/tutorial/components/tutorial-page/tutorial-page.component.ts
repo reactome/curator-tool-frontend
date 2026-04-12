@@ -122,4 +122,9 @@ export class TutorialPageComponent {
     this.tourService.startGene2PathTour();
     this.router.navigate(['/gene2path']);
   }
+
+  startPaper2PathTour(): void {
+    this.tourService.startPaper2PathTour();
+    this.router.navigate(['/paper2path']);
+  }
 }

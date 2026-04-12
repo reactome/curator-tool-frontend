@@ -52,6 +52,7 @@ export class HelpPanelComponent implements OnInit, OnDestroy {
     if (url.includes('schema_view')) return 'schema-view';
     if (url.includes('event_view')) return 'event-view';
     if (url.includes('gene2path')) return 'gene2path';
+    if (url.includes('paper2path')) return 'paper2path';
     if (url.includes('tutorial')) return 'tutorial';
     return 'home';
   }

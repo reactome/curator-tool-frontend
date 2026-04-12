@@ -61,6 +61,14 @@ const HOME_TOUR: TourStep[] = [
     position: 'bottom',
   },
   {
+    id: 'paper2path',
+    title: 'Paper2Path',
+    content:
+      'Use Paper2Path to run a multi-agent literature annotation workflow from PMIDs, PDFs, and/or a target gene, then register generated instances into Schema View for review.',
+    targetSelector: '[routerLink="/paper2path"], a[href*="paper2path"]',
+    position: 'bottom',
+  },
+  {
     id: 'tutorial-card',
     title: 'Tutorial',
     content:
@@ -232,6 +240,63 @@ const GENE2PATH_TOUR: TourStep[] = [
   },
 ];
 
+const PAPER2PATH_TOUR: TourStep[] = [
+  {
+    id: 'paper2path-welcome',
+    title: 'Paper2Path App Tour',
+    content:
+      'Welcome to Paper2Path. This tool runs a multi-agent literature annotation workflow and can register generated entities, reactions, and pathways into Schema View.',
+    position: 'center',
+  },
+  {
+    id: 'paper2path-banner',
+    title: 'Header and Configuration',
+    content:
+      'Use the Configure button in the header to open annotation settings, including max papers, quality threshold, and dashboard toggles for phases, agents, and tools.',
+    targetSelector: '.app-banner',
+    position: 'bottom',
+  },
+  {
+    id: 'paper2path-gene',
+    title: 'Target Gene Input',
+    content:
+      'Provide a target gene symbol (for example TP53 or BRCA1). You can run annotation from a gene only, papers only, or both together.',
+    targetSelector: '.gene-bar',
+    position: 'bottom',
+  },
+  {
+    id: 'paper2path-papers',
+    title: 'Paper Sources',
+    content:
+      'Use Enter Papers to provide PMIDs or upload a PDF. Use Preloaded Papers to select documents already available on the server.',
+    targetSelector: '.paper-tabs',
+    position: 'bottom',
+  },
+  {
+    id: 'paper2path-submit',
+    title: 'Run Annotation',
+    content:
+      'Click Start Annotation to submit a job. Runtime logs and phase progress appear in the Results tab while the CrewAI pipeline executes.',
+    targetSelector: '.section-footer',
+    position: 'top',
+  },
+  {
+    id: 'paper2path-results',
+    title: 'Review and Register Results',
+    content:
+      'After completion, review the JSON output, download results, then click Add to Schema View to create and stage new instances for curation.',
+    targetSelector: '.paper-tabs',
+    position: 'top',
+  },
+  {
+    id: 'paper2path-caution',
+    title: 'Curation Reminder',
+    content:
+      'Paper2Path output is assistant-generated content. Always review evidence and instance relationships before committing staged changes.',
+    position: 'center',
+  },
+];
+
 @Injectable({ providedIn: 'root' })
 export class TourService {
   private readonly initialState: TourState = {
@@ -326,6 +391,10 @@ export class TourService {
 
   startGene2PathTour(): void {
     this.startTour(GENE2PATH_TOUR);
+  }
+
+  startPaper2PathTour(): void {
+    this.startTour(PAPER2PATH_TOUR);
   }
 
   startTour(steps: TourStep[]): void {

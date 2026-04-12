@@ -726,7 +726,6 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
 
   private showError(message: string) {
     this.snackBar.open(message, 'Close', {
-      duration: 7000,
       panelClass: ['error-snackbar']
     });
   }

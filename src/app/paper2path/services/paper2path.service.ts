@@ -106,6 +106,44 @@ export class Paper2pathService {
 
   constructor(private http: HttpClient) {}
 
+  private extractServerErrorMessage(payload: any): string | undefined {
+    if (!payload) return undefined;
+
+    if (typeof payload === 'string') {
+      const trimmed = payload.trim();
+      if (!trimmed) return undefined;
+      try {
+        return this.extractServerErrorMessage(JSON.parse(trimmed)) || trimmed;
+      } catch {
+        return trimmed;
+      }
+    }
+
+    if (Array.isArray(payload)) {
+      const messages = payload
+        .map((item) => this.extractServerErrorMessage(item))
+        .filter((msg): msg is string => !!msg);
+      return messages.length ? messages.join('; ') : undefined;
+    }
+
+    if (typeof payload === 'object') {
+      const direct = payload.message || payload.error || payload.detail || payload.reason;
+      if (typeof direct === 'string' && direct.trim()) {
+        return direct.trim();
+      }
+      if (typeof payload.error === 'object') {
+        const nested = this.extractServerErrorMessage(payload.error);
+        if (nested) return nested;
+      }
+      if (typeof payload.errors === 'object') {
+        const nested = this.extractServerErrorMessage(payload.errors);
+        if (nested) return nested;
+      }
+    }
+
+    return undefined;
+  }
+
   private handleError(error: HttpErrorResponse): Observable<never> {
     let message: string;
     if (error.error instanceof ErrorEvent) {
@@ -113,7 +151,9 @@ export class Paper2pathService {
     } else if (error.status === 0) {
       message = 'Unable to connect to server. Please check your connection.';
     } else {
-      message = error.error?.message || error.message || `HTTP ${error.status}: ${error.statusText}`;
+      message = this.extractServerErrorMessage(error.error)
+        || error.message
+        || `HTTP ${error.status}: ${error.statusText}`;
     }
     return throwError(() => new Error(message));
   }
