@@ -239,6 +239,13 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
       return;
     }
 
+    // Reset previous run state before submitting a new annotation
+    this.stopPolling();
+    this.stopTokenKeepAlive();
+    this.currentJob = null;
+    this.setAnnotationResult(null);
+    this.instancesPushed = false;
+
     this.isProcessing = true;
     this.error = null;
     this.logs = [];
@@ -390,6 +397,19 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
     this.error = null;
   }
 
+  private normalizePmid(raw: unknown): string | undefined {
+    const value = String(raw ?? '').trim();
+    if (!value) return undefined;
+
+    const prefixed = value.match(/^PMID\s*:\s*(\d+)$/i);
+    if (prefixed) return prefixed[1];
+
+    const digitsOnly = value.match(/^(\d+)$/);
+    if (digitsOnly) return digitsOnly[1];
+
+    return undefined;
+  }
+
   async pushInstancesToStore() {
     if (!this.annotationResult?.reactome_instances?.length) return;
 
@@ -411,7 +431,12 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
       // 0. Collect all unique PMIDs across reactions and pathways, create LiteratureReference instances
       const pmidToLitRef = new Map<string, Instance>();
       const allItems = [...(content.reactions || []), ...(content.pathways || [])];
-      const allPmids = new Set<string>(allItems.flatMap((r: any) => r.literatureReference || []));
+      const allPmids = new Set<string>(
+        allItems
+          .flatMap((r: any) => r.literatureReference || [])
+          .map((rawPmid: unknown) => this.normalizePmid(rawPmid))
+          .filter((pmid): pmid is string => !!pmid)
+      );
       for (const pmid of allPmids) {
         const litRef = await this.createAndRegisterInstance('LiteratureReference', pmid, {
           pubMedIdentifier: pmid
@@ -470,7 +495,11 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
         const inputShells  = (raw.input  || []).map((l: string) => labelToInst.get(l)).filter(Boolean).map(shell);
         const outputShells = (raw.output || []).map((l: string) => labelToInst.get(l)).filter(Boolean).map(shell);
 
-        const litRefShells = (raw.literatureReference || []).map((p: string) => pmidToLitRef.get(p)).filter(Boolean).map(shell);
+        const litRefShells = (raw.literatureReference || [])
+          .map((p: string) => this.normalizePmid(p))
+          .map((pmid: string | undefined) => pmid ? pmidToLitRef.get(pmid) : undefined)
+          .filter(Boolean)
+          .map(shell);
         const inst = await this.createAndRegisterInstance(
           raw.class || 'Reaction',
           raw.displayName,
@@ -493,7 +522,11 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
       for (const raw of pathways) {
         const eventShells = (raw.hasEvent || []).map((l: string) => labelToInst.get(l)).filter(Boolean).map(shell);
 
-        const pathwayLitRefShells = (raw.literatureReference || []).map((p: string) => pmidToLitRef.get(p)).filter(Boolean).map(shell);
+        const pathwayLitRefShells = (raw.literatureReference || [])
+          .map((p: string) => this.normalizePmid(p))
+          .map((pmid: string | undefined) => pmid ? pmidToLitRef.get(pmid) : undefined)
+          .filter(Boolean)
+          .map(shell);
         await this.createAndRegisterInstance(
           raw.class || 'Pathway',
           raw.displayName,

@@ -13,7 +13,7 @@ import { InstanceTableComponent } from './instance-table/instance-table.componen
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { combineLatest, Observable, of, Subscription, take, concatMap } from 'rxjs';
 import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service';
-import { deleteInstances } from '../../state/instance.selectors';
+import { deleteInstances, newInstances } from '../../state/instance.selectors';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { DeletionService } from '../../deletion-commit/utils/deletion.service';
@@ -235,6 +235,24 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         // reset a deleted instance from db. since we don't know if the instance has referred 
         // this the reset deletion, therefore, we just reload it.
         this.loadInstance(this.instance.dbId, false, false, true);
+      }
+    });
+    this.subscriptions.add(subscription);
+
+    // If a displayed new instance is removed from the staged new list, clear/switch view
+    // to avoid trying to reload a deleted local-only instance from the server.
+    subscription = this.store.select(newInstances()).subscribe((stagedNewInstances) => {
+      if (this.isSyncViewBlocked()) return;
+      if (!this.instance || this.instance.dbId >= 0) return;
+
+      const exists = (stagedNewInstances || []).some(inst => inst.dbId === this.instance!.dbId);
+      if (exists) return;
+
+      this.instUtils.removeInstInArray(this.instance, this.viewHistory);
+      if (this.viewHistory.length > 0) {
+        this.changeTable(this.viewHistory[0]);
+      } else {
+        this.showEmpty();
       }
     });
     this.subscriptions.add(subscription);
