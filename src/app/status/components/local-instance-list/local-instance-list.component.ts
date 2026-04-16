@@ -267,7 +267,7 @@ export class UpdatedInstanceListComponent implements OnInit {
   resetSelectedNewInstances() {
     for (let instance of this.selectedNewInstances) {
       this.store.dispatch(NewInstanceActions.remove_new_instance(this.instanceUtilities.makeShell(instance)));
-      this.instanceUtilities.setDeletedDbId(instance.dbId); // Commit right away
+      this.store.dispatch(DeleteInstanceActions.commit_deleted_instance(this.instanceUtilities.makeShell(instance)));
     }
     this.selectedNewInstances = [];
     this.showCheck = false;

@@ -75,7 +75,7 @@ export class DeletionService {
 
         newInstancesToRemove.forEach(instance => {
             this.store.dispatch(NewInstanceActions.remove_new_instance(this.instanceUtilities.makeShell(instance)));
-            this.instanceUtilities.setDeletedDbId(instance.dbId);
+            this.store.dispatch(DeleteInstanceActions.commit_deleted_instance(this.instanceUtilities.makeShell(instance)));
         });
 
         if (existingInstances.length === 0) return;

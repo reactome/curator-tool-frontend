@@ -64,6 +64,10 @@ export class InstanceUtilities {
     // Note: only shell instances referred are stored here
     private shellInstances = new Map<number, Instance>();
 
+    // Track local-only new instances that were explicitly deleted (not committed).
+    // This helps distinguish remove_new_instance caused by deletion vs commit transition.
+    private permanentlyRemovedNewDbIds = new Set<number>();
+
     // Tracking the instances that are selected
     private listName2selectedInstances = new Map<string, Instance[]>();
 
@@ -75,11 +79,19 @@ export class InstanceUtilities {
      * @param instance 
      */
     registerDisplayNameChange(instance: Instance) {
+        this.syncDisplayNameCache(instance);
+        this.setRefreshViewDbId(instance.dbId);
+    }
+
+    /**
+     * Synchronize display name cache and any existing shell instance display name.
+     * Use this when receiving updates from other tabs before forcing a view refresh.
+     */
+    syncDisplayNameCache(instance: Instance) {
         this.dbId2displayName.set(instance.dbId, instance.displayName);
         const shell = this.shellInstances.get(instance.dbId);
         if (shell)
             shell.displayName = instance.displayName;
-        this.setRefreshViewDbId(instance.dbId);
     }
 
     registerUpdatedInstance(attName: string, inst: Instance): void {
@@ -102,6 +114,7 @@ export class InstanceUtilities {
     }
 
     setCommittedNewInstDbId(oldDbId: number, newDbId: number) {
+        this.permanentlyRemovedNewDbIds.delete(oldDbId);
         this.updateNewInstanceRegistration(oldDbId, newDbId);
         this.committedNewInstDbId.next([oldDbId, newDbId]);
     }
@@ -116,10 +129,18 @@ export class InstanceUtilities {
     }
 
     setDeletedDbId(dbId: number) {
+        if (dbId < 0)
+            this.permanentlyRemovedNewDbIds.add(dbId);
         this.deletedDbId.next(dbId);
     }
     setResetDeletedDbId(dbId: number) {
+        if (dbId < 0)
+            this.permanentlyRemovedNewDbIds.delete(dbId);
         this.resetDeletedDbId.next(dbId);
+    }
+
+    isPermanentlyRemovedNewInstance(dbId: number): boolean {
+        return dbId < 0 && this.permanentlyRemovedNewDbIds.has(dbId);
     }
 
     setMarkDeletionDbId(dbId: number) {
@@ -128,10 +149,7 @@ export class InstanceUtilities {
 
     setResetInstance(modifiedAtts: string[] | undefined, inst: Instance) {
         // Call this first in case the name is needed
-        this.dbId2displayName.set(inst.dbId, inst.displayName);
-        const shell = this.shellInstances.get(inst.dbId);
-        if (shell)
-            shell.displayName = inst.displayName;
+        this.syncDisplayNameCache(inst);
         this.resetInst.next({ modifiedAttributes: modifiedAtts, dbId: inst.dbId });
     }
 
@@ -810,11 +828,11 @@ export class InstanceUtilities {
             this.store.dispatch(UpdateInstanceActions.remove_updated_instance(committedInst));
         }
         else if (committedInst.dbId < 0) { // This is a new instance
-            this.store.dispatch(NewInstanceActions.remove_new_instance(committedInst));
             this.store.dispatch(NewInstanceActions.commit_new_instance({
                 oldDbId: committedInst.dbId,
                 newDbId: rtnInst.dbId
             }));
+            this.store.dispatch(NewInstanceActions.remove_new_instance(committedInst));
             dataService.flagSchemaTreeForReload()
         }
         // Make sure new instances are updated if any
@@ -826,11 +844,11 @@ export class InstanceUtilities {
                 const newDbId: number = old2newId[oldId];
                 const shell = this.shellInstances.get(oldDbId);
                 if (shell) {
-                    this.store.dispatch(NewInstanceActions.remove_new_instance(shell));
                     this.store.dispatch(NewInstanceActions.commit_new_instance({
                         oldDbId: oldDbId,
                         newDbId: newDbId
                     }));
+                    this.store.dispatch(NewInstanceActions.remove_new_instance(shell));
                     // check that the store has updated the dbId, otherwise update it here so that the shell instances are synchronized
                     if (shell.dbId !== newDbId) {
                         this.updateNewInstanceRegistration(oldDbId, newDbId);

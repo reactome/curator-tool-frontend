@@ -40,7 +40,7 @@ export class ConfirmDeleteDialogComponent {
     }
     else {
       this.store.dispatch(NewInstanceActions.remove_new_instance(this.instance));
-      this.instUtil.setDeletedDbId(this.instance.dbId); // Commit right away
+      this.store.dispatch(DeleteInstanceActions.commit_deleted_instance(this.instUtil.makeShell(this.instance)));
     }
     this.dialogRef.close(this.instance);
     // this.router.navigate(["/schema_view"])

@@ -42,6 +42,8 @@ export class InstanceEffects {
         case NewInstanceActions.commit_new_instance.type:
           // Need to refresh the view if an instance is committed other place
           this.instUtils.setCommittedNewInstDbId(inst.oldDbId, inst.newDbId);
+          this.dataService.remapNewInstanceReferenceDbId(inst.oldDbId, inst.newDbId);
+          this.instUtils.setRefreshViewDbId(inst.oldDbId);
           break;
         case UpdateInstanceActions.register_updated_instance.type:
           // this.dataService.registerInstance(inst);
@@ -68,6 +70,7 @@ export class InstanceEffects {
           // to avoid threading race, causing the identity change of the 
           // displayed instance with unexpected effect.
           this.dataService.registerInstance(inst.instance);
+          this.instUtils.syncDisplayNameCache(inst.instance);
           // Need a shell to avoid locking the instance
           this.store.dispatch(UpdateInstanceActions.ls_last_updated_instance({
             attribute: inst.attribute,
@@ -142,6 +145,8 @@ export class InstanceEffects {
           this.setLocalStorageItem(action.type, JSON.stringify(obj));
           // call here so that we don't have any side effect in this tab
           this.instUtils.setCommittedNewInstDbId(action.oldDbId, action.newDbId);
+          this.dataService.remapNewInstanceReferenceDbId(action.oldDbId, action.newDbId);
+          this.instUtils.setRefreshViewDbId(action.oldDbId);
         })
       ),
     { dispatch: false }
@@ -188,6 +193,7 @@ export class InstanceEffects {
         ofType(UpdateInstanceActions.last_updated_instance),
         tap((action) => {
           this.dataService.fetchInstance(action.instance.dbId).subscribe(fullInst => {
+            this.instUtils.syncDisplayNameCache(fullInst);
             const clone = {
               attribute: action.attribute,
               instance: {
@@ -223,6 +229,9 @@ export class InstanceEffects {
             this.instUtils.setMarkDeletionDbId(action.dbId);
           else if( action.type === DeleteInstanceActions.reset_deleted_instance.type){
             this.instUtils.setResetDeletedDbId(action.dbId);
+          } else if (action.type === DeleteInstanceActions.commit_deleted_instance.type) {
+            this.dataService.removeInstanceInCache(action.dbId);
+            this.instUtils.setDeletedDbId(action.dbId);
           }
         })
       ),

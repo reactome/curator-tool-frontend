@@ -282,7 +282,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       if (!attValue) continue;
       const vals: any[] = Array.isArray(attValue) ? attValue : [attValue];
       for (const v of vals) {
-        if (v?.dbId !== undefined && v.dbId < 0 && !activeNewIds.has(v.dbId))
+        if (v?.dbId !== undefined && v.dbId < 0 && !activeNewIds.has(v.dbId)
+          && this.instUtils.isPermanentlyRemovedNewInstance(v.dbId))
           return true;
       }
     }

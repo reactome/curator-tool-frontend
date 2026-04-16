@@ -545,6 +545,39 @@ export class DataService {
   }
 
   /**
+   * Replace references to a committed local new instance id across cached instances.
+   * This keeps tabs in sync when a negative dbId is committed to a positive dbId.
+   */
+  remapNewInstanceReferenceDbId(oldDbId: number, newDbId: number): void {
+    if (!oldDbId || !newDbId || oldDbId === newDbId) return;
+
+    for (const inst of this.id2instance.values()) {
+      if (!inst.attributes) continue;
+      let changed = false;
+
+      for (const att of inst.attributes.keys()) {
+        const attValue = inst.attributes.get(att);
+        if (!attValue) continue;
+
+        if (Array.isArray(attValue)) {
+          for (const v of attValue) {
+            if (this.utils.isInstance(v) && v.dbId === oldDbId) {
+              v.dbId = newDbId;
+              changed = true;
+            }
+          }
+        } else if (this.utils.isInstance(attValue) && attValue.dbId === oldDbId) {
+          attValue.dbId = newDbId;
+          changed = true;
+        }
+      }
+
+      if (changed)
+        this.registerInstance(inst);
+    }
+  }
+
+  /**
    * Attributes returned from the server are kept as JavaScript object since JavaScript really
    * doesn't care about the type. Therefore, we need to do some converting here.
    * @param instance

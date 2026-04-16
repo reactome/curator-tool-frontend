@@ -22,7 +22,8 @@ export class DeletedInstanceAttributeFilter implements InstanceViewFilter {
         ]).pipe(
             map(([deletedInsts, newInsts]) => {
                 const activeNewIds = new Set((newInsts || []).map(i => i.dbId));
-                // Treat any negative-dbId attribute value no longer in staged new instances as deleted
+                // Treat missing negative-dbId refs as deleted only if they were explicitly deleted.
+                // This avoids removing refs during remove_new_instance -> commit_new_instance transitions.
                 const removedNewInsts = this.getRemovedNewInstanceRefs(instance, activeNewIds);
                 if (removedNewInsts.length > 0) {
                     // Removing local-only (negative dbId) instances should be a real modification,
@@ -63,7 +64,8 @@ export class DeletedInstanceAttributeFilter implements InstanceViewFilter {
             if (!attValue) continue;
             let vals: any[] = Array.isArray(attValue) ? attValue : [attValue];
             for (let v of vals) {
-                if (v?.dbId !== undefined && v.dbId < 0 && !activeNewIds.has(v.dbId))
+                if (v?.dbId !== undefined && v.dbId < 0 && !activeNewIds.has(v.dbId)
+                    && this.utils.isPermanentlyRemovedNewInstance(v.dbId))
                     seen.add(v.dbId);
             }
         }
