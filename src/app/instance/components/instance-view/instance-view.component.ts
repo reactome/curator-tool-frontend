@@ -199,19 +199,26 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         else {
           this.showEmpty();
         }
+      } else if (this.instance && this.instUtils.isReferrer(dbId, this.instance)) {
+        // A referred instance was deleted — reload to reflect the removal
+        this.loadInstance(this.instance.dbId, false, false, true);
       }
     });
     this.subscriptions.add(subscription);
     subscription = this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
       if (this.isSyncViewBlocked()) return;
-      if (!this.instance || this.instance.dbId !== oldDbId)
-        return;
-      if (this.commitNewHere) {
-        this.commitNewHere = false;
-        return;
+      if (!this.instance) return;
+      if (this.instance.dbId === oldDbId) {
+        if (this.commitNewHere) {
+          this.commitNewHere = false;
+          return;
+        }
+        this.instUtils.removeInstInArray(this.instance, this.viewHistory);
+        this.loadInstance(newDbId, false, false, true);
+      } else if (this.instUtils.isReferrer(oldDbId, this.instance)) {
+        // A referred new instance was committed — reload so the reference shows the new dbId
+        this.loadInstance(this.instance.dbId, false, false, true);
       }
-      this.instUtils.removeInstInArray(this.instance, this.viewHistory);
-      this.loadInstance(newDbId, false, false, true);
     });
     this.subscriptions.add(subscription);
     // To mark an instance is deleted
@@ -243,19 +250,43 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     // to avoid trying to reload a deleted local-only instance from the server.
     subscription = this.store.select(newInstances()).subscribe((stagedNewInstances) => {
       if (this.isSyncViewBlocked()) return;
-      if (!this.instance || this.instance.dbId >= 0) return;
+      if (!this.instance) return;
 
-      const exists = (stagedNewInstances || []).some(inst => inst.dbId === this.instance!.dbId);
-      if (exists) return;
+      if (this.instance.dbId < 0) {
+        // If the currently displayed new instance was removed, navigate away
+        const exists = (stagedNewInstances || []).some(inst => inst.dbId === this.instance!.dbId);
+        if (exists) return;
 
-      this.instUtils.removeInstInArray(this.instance, this.viewHistory);
-      if (this.viewHistory.length > 0) {
-        this.changeTable(this.viewHistory[0]);
+        this.instUtils.removeInstInArray(this.instance, this.viewHistory);
+        if (this.viewHistory.length > 0) {
+          this.changeTable(this.viewHistory[0]);
+        } else {
+          this.showEmpty();
+        }
       } else {
-        this.showEmpty();
+        // If a new instance referred to by this instance was removed, reload
+        // (handles cross-tab removal where deletedDbId$ is not fired)
+        const activeNewIds = new Set((stagedNewInstances || []).map(inst => inst.dbId));
+        if (this.hasRemovedNewInstanceRef(activeNewIds)) {
+          this.loadInstance(this.instance.dbId, false, false, true);
+        }
       }
     });
     this.subscriptions.add(subscription);
+  }
+
+  private hasRemovedNewInstanceRef(activeNewIds: Set<number>): boolean {
+    if (!this.instance?.attributes) return false;
+    for (const att of this.instance.attributes.keys()) {
+      const attValue = this.instance.attributes.get(att);
+      if (!attValue) continue;
+      const vals: any[] = Array.isArray(attValue) ? attValue : [attValue];
+      for (const v of vals) {
+        if (v?.dbId !== undefined && v.dbId < 0 && !activeNewIds.has(v.dbId))
+          return true;
+      }
+    }
+    return false;
   }
 
   isDeleted() {

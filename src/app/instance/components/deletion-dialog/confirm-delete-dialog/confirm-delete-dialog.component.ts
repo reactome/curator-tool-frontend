@@ -39,7 +39,7 @@ export class ConfirmDeleteDialogComponent {
         this.store.dispatch(UpdateInstanceActions.remove_updated_instance(this.instUtil.makeShell(this.instance)));
     }
     else {
-      this.store.dispatch(NewInstanceActions.remove_new_instance(this.instUtil.makeShell(this.instance)));
+      this.store.dispatch(NewInstanceActions.remove_new_instance(this.instance));
       this.instUtil.setDeletedDbId(this.instance.dbId); // Commit right away
     }
     this.dialogRef.close(this.instance);

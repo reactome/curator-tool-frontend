@@ -144,11 +144,11 @@ export class UpdatedInstanceListComponent implements OnInit {
     else if (this.newInstances.includes(instance)) {
       this.dataService.commit(instance).subscribe(rtn => {
         this.instanceUtilities.processCommit(instance, rtn, this.dataService);
-        const idx = this.updatedInstances.indexOf(instance);
-        const updated = this.updatedInstances.at(idx);
-        if (updated) {
-          updated.dbId = rtn['dbId'];
-        }
+        // const idx = this.updatedInstances.indexOf(instance);
+        // const updated = this.updatedInstances.at(idx);
+        // if (updated) {
+        //   updated.dbId = rtn['dbId'];
+        // }
         this.commitResultDialogService.openDialog([{ displayName: instance.displayName ?? String(rtn.dbId), dbId: rtn.dbId }]);
       });
     }
