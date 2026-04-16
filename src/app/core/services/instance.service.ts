@@ -510,7 +510,7 @@ export class InstanceUtilities {
             array.splice(index, 1);
     }
 
-    applyLocalDeletions(inst: Instance, deletedInsts: Instance[], apply: boolean = true): boolean {
+    applyLocalDeletions(inst: Instance, deletedInsts: Instance[], apply: boolean = true, asPassiveEdit: boolean = true): boolean {
         if (!deletedInsts || deletedInsts.length === 0 || !inst.attributes)
             return false;
         const dbIds = deletedInsts.map(inst => inst.dbId);
@@ -536,7 +536,13 @@ export class InstanceUtilities {
                             attValue.splice(i, 1);
                             i--;
                         }
-                        this.addToPassiveModifiedAttributes(att, inst);
+                        if (asPassiveEdit)
+                            this.addToPassiveModifiedAttributes(att, inst);
+                        else {
+                            this.addToModifiedAttributes(att, inst);
+                            if (inst.passiveModifiedAttributes)
+                                inst.passiveModifiedAttributes = inst.passiveModifiedAttributes.filter(a => a !== att);
+                        }
                         modified = true;
                     }
                 }
@@ -552,7 +558,13 @@ export class InstanceUtilities {
                     //     undefined
                     inst.attributes.delete(att);
 
-                    this.addToPassiveModifiedAttributes(att, inst);
+                    if (asPassiveEdit)
+                        this.addToPassiveModifiedAttributes(att, inst);
+                    else {
+                        this.addToModifiedAttributes(att, inst);
+                        if (inst.passiveModifiedAttributes)
+                            inst.passiveModifiedAttributes = inst.passiveModifiedAttributes.filter(a => a !== att);
+                    }
                     modified = true;
                 }
             }
