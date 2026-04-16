@@ -41,12 +41,13 @@ export class BookmarkListComponent implements OnInit {
     this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
       // This will change the dbId and display name
       const removed = this.bookmarks.filter(inst => inst.dbId === oldDbId);
-      if (removed.length > 0)
+      if (removed.length > 0) {
         this.store.dispatch(BookmarkActions.remove_bookmark(removed[0]));
-      // Add the new instance
-      this.dataService.fetchInstance(newDbId).subscribe(inst => {
-        this.store.dispatch(BookmarkActions.add_bookmark(this.instUtils.makeShell(inst)));
-      });
+        // Add the new instance
+        this.dataService.fetchInstance(newDbId).subscribe(inst => {
+          this.store.dispatch(BookmarkActions.add_bookmark(this.instUtils.makeShell(inst)));
+        });
+      }
     });
   }
 
