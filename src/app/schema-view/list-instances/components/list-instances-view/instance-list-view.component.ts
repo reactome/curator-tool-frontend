@@ -13,11 +13,12 @@ import { ActionButton } from './instance-list-table/instance-list-table.componen
 import { ListInstancesDialogService } from '../list-instances-dialog/list-instances-dialog.service';
 import { BatchEditDialogService } from './batch-edit-dialog/batch-edit-dialog-service';
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
-import { combineLatest, concatMap, EMPTY, from, map, Observable, Subscription, take, tap } from 'rxjs';
+import { combineLatest, concatMap, EMPTY, finalize, from, map, Observable, Subscription, take, tap } from 'rxjs';
 import { DeleteBulkDialogService } from '../delete-bulk-dialog/delete-bulk-dialog.service';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { CommitResultDialogService, CommitResult } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
+import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
 
 @Component({
   selector: 'app-instance-list-view',
@@ -86,6 +87,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
   // So that we can remove subscription
   private subscription: Subscription = new Subscription();
+  private commitWaitDialogRef?: MatDialogRef<CommitWaitDialogComponent>;
 
   constructor(private dataService: DataService,
     private router: Router,
@@ -903,48 +905,66 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     window.URL.revokeObjectURL(url);
   }
 
-    /**
-  * Save a list of instances via REST API (sequentially).
-  * The server may persist related objects automatically.
-  */
-    commitNewInstances() {
-      if (!this.selectedInstances || this.selectedInstances.length === 0) {
-        return;
-      }
-      const shells = this.selectedInstances.map(inst => this.instUtils.getShellInstance(inst));
-      const results: CommitResult[] = [];
-
-      from(shells).pipe(
-        concatMap(inst => {
-          if (inst.dbId && inst.dbId > 0) {
-            return EMPTY;
-          }
-          return this.dataService.commit(inst).pipe(
-            tap(rtn => this.instUtils.processCommit(inst, rtn, this.dataService)),
-            map(rtn => ({ displayName: inst.displayName ?? String(rtn.dbId), dbId: rtn.dbId } as CommitResult))
-          );
-        })
-      ).subscribe({
-        next: result => results.push(result),
-        error: err => console.error('Error committing new instances', err),
-        complete: () => {
-          this.selectedInstances = [];
-          this.instUtils.clearSelectedInstances(SelectedInstancesList.newInstanceList);
-          if (results.length > 0) this.commitResultDialogService.openDialog(results);
-        }
-      });
+  /**
+* Save a list of instances via REST API (sequentially).
+* The server may persist related objects automatically.
+*/
+  commitNewInstances() {
+    if (!this.selectedInstances || this.selectedInstances.length === 0) {
+      return;
     }
 
-      /**
-    * Save a single object via the REST API.
-    * Backend may persist related objects and return all saved ones.
-    */
-      private saveOne(inst: Instance): Observable<Instance[]> {
-        return this.dataService.commit(inst).pipe(
-          tap(rtn => {
-            this.instUtils.processCommit(inst, rtn, this.dataService);
-          }),
-          map(saved => Array.isArray(saved) ? saved : [saved])
-        );
+    this.commitWaitDialogRef?.close();
+    this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
+      disableClose: true,
+      hasBackdrop: true,
+      autoFocus: false,
+      restoreFocus: false,
+      data: {
+        title: 'Committing New Instances',
+        message: 'Please wait while selected new instances are committed one by one.'
       }
+    });
+
+    const shells = this.selectedInstances.map(inst => this.instUtils.getShellInstance(inst));
+    const results: CommitResult[] = [];
+
+    from(shells).pipe(
+      concatMap(inst => {
+        if (inst.dbId && inst.dbId > 0) {
+          return EMPTY;
+        }
+        return this.dataService.commit(inst).pipe(
+          tap(rtn => this.instUtils.processCommit(inst, rtn, this.dataService)),
+          map(rtn => ({ displayName: inst.displayName ?? String(rtn.dbId), dbId: rtn.dbId } as CommitResult))
+        );
+      })
+    ).pipe(
+      finalize(() => {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
+      })
+    ).subscribe({
+      next: result => results.push(result),
+      error: err => console.error('Error committing new instances', err),
+      complete: () => {
+        this.selectedInstances = [];
+        this.instUtils.clearSelectedInstances(SelectedInstancesList.newInstanceList);
+        if (results.length > 0) this.commitResultDialogService.openDialog(results);
+      }
+    });
+  }
+
+  /**
+* Save a single object via the REST API.
+* Backend may persist related objects and return all saved ones.
+*/
+  private saveOne(inst: Instance): Observable<Instance[]> {
+    return this.dataService.commit(inst).pipe(
+      tap(rtn => {
+        this.instUtils.processCommit(inst, rtn, this.dataService);
+      }),
+      map(saved => Array.isArray(saved) ? saved : [saved])
+    );
+  }
 }

@@ -828,14 +828,17 @@ export class InstanceUtilities {
             this.store.dispatch(UpdateInstanceActions.remove_updated_instance(committedInst));
         }
         else if (committedInst.dbId < 0) { // This is a new instance
+            // Make sure the remove_new_instance should be called first. The second dispatch will update the dbId in the store. 
+            this.store.dispatch(NewInstanceActions.remove_new_instance(committedInst));
             this.store.dispatch(NewInstanceActions.commit_new_instance({
                 oldDbId: committedInst.dbId,
                 newDbId: rtnInst.dbId
             }));
-            this.store.dispatch(NewInstanceActions.remove_new_instance(committedInst));
             dataService.flagSchemaTreeForReload()
         }
         // Make sure new instances are updated if any
+        // The following code is applied to shell instances that may be referred. This action
+        // is needed and is different from the above committedInst. 
         if (rtnInst.newInstOld2NewId) {
             // Have to use this temp variable to avoid type error
             let old2newId: any = rtnInst.newInstOld2NewId!;
@@ -844,16 +847,15 @@ export class InstanceUtilities {
                 const newDbId: number = old2newId[oldId];
                 const shell = this.shellInstances.get(oldDbId);
                 if (shell) {
+                    this.store.dispatch(NewInstanceActions.remove_new_instance(shell));
                     this.store.dispatch(NewInstanceActions.commit_new_instance({
                         oldDbId: oldDbId,
                         newDbId: newDbId
                     }));
-                    this.store.dispatch(NewInstanceActions.remove_new_instance(shell));
                     // check that the store has updated the dbId, otherwise update it here so that the shell instances are synchronized
                     if (shell.dbId !== newDbId) {
                         this.updateNewInstanceRegistration(oldDbId, newDbId);
                         this.setRefreshViewDbId(committedInst.dbId);
-
                     }
                 }
             });

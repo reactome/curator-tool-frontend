@@ -21,7 +21,7 @@ export class BookmarkListComponent implements OnInit {
   cachedBookmarks: any[] = [];
 
   private subscriptions: Subscription[] = [];
-
+  
   constructor(public dragDropService: DragDropService,
     public store: Store,
     private router: Router,
@@ -38,7 +38,7 @@ export class BookmarkListComponent implements OnInit {
         this.store.dispatch(BookmarkActions.remove_bookmark(found[0])); // There should be only one
     }));
     this.subscriptions.push(subscription);
-    this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
+    subscription = this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
       // This will change the dbId and display name
       const removed = this.bookmarks.filter(inst => inst.dbId === oldDbId);
       if (removed.length > 0) {
@@ -49,6 +49,7 @@ export class BookmarkListComponent implements OnInit {
         });
       }
     });
+    this.subscriptions.push(subscription);
   }
 
   ngOnInit() {
@@ -70,11 +71,12 @@ export class BookmarkListComponent implements OnInit {
     this.subscriptions.push(subscription);
 
     // Need to call the store when the instanceView has not changed. 
-    this.store.select(bookmarkedInstances()).subscribe((instances: Instance[] | undefined) => {
+    subscription = this.store.select(bookmarkedInstances()).subscribe((instances: Instance[] | undefined) => {
       if (instances !== undefined) {
         this.bookmarks = instances;
       }
-    })
+    });
+    this.subscriptions.push(subscription);
   }
 
   ngOnDestroy(): void {

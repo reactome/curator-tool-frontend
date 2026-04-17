@@ -2,18 +2,20 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Instance, SelectedInstancesList } from 'src/app/core/models/reactome-instance.model';
 import { Router, ActivatedRoute } from "@angular/router";
 import { Store } from "@ngrx/store";
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { deleteInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { newInstances } from 'src/app/instance/state/instance.selectors';
 import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from 'src/app/instance/state/instance.actions';
 import { DataService } from 'src/app/core/services/data.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
-import { Observable, from, concatMap, tap, map, EMPTY, forkJoin } from 'rxjs';
+import { Observable, from, concatMap, tap, map, EMPTY, forkJoin, finalize, Subscription } from 'rxjs';
 import { DeletionService } from 'src/app/instance/deletion-commit/utils/deletion.service';
 import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/instance-list-table/instance-list-table.component';
 import { DeleteBulkDialogService } from 'src/app/schema-view/list-instances/components/delete-bulk-dialog/delete-bulk-dialog.service';
 import { DeletionDialogService } from 'src/app/instance/components/deletion-dialog/deletion-dialog.service';
 import { CommitResultDialogService, CommitResult } from './commit-result-dialog/commit-result-dialog.service';
+import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
 
 
 @Component({
@@ -29,6 +31,7 @@ export class UpdatedInstanceListComponent implements OnInit {
   deletedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
   newInstanceActionButtons: Array<ActionButton> = [ACTION_BUTTONS.DELETE, ACTION_BUTTONS.COMMIT];
 
+  private subscriptions: Subscription[] = [];
 
   isSelection: boolean = false;
   newInstances: Instance[] = [];
@@ -50,12 +53,14 @@ export class UpdatedInstanceListComponent implements OnInit {
   private resizing = false;
   private resizeIndex = -1;
   sectionFlexes = [4, 4, 2]; // Initial flex values for new, updated, deleted
+  private commitWaitDialogRef?: MatDialogRef<CommitWaitDialogComponent>;
 
   constructor(private router: Router,
     private route: ActivatedRoute,
     private store: Store,
     private dataService: DataService,
     private instanceUtilities: InstanceUtilities,
+    private dialog: MatDialog,
     private deletionService: DeletionService,
     private deleteBulkDialogService: DeleteBulkDialogService,
     private deletionDialogService: DeletionDialogService,
@@ -65,11 +70,13 @@ export class UpdatedInstanceListComponent implements OnInit {
 
 
   ngOnInit(): void {
-    this.store.select(newInstances()).subscribe((instances) => {
+    let subscription = this.store.select(newInstances()).subscribe((instances) => {
       if (instances !== undefined)
         this.newInstances = instances;
-    })
-    this.store.select(updatedInstances()).subscribe((instances) => {
+    });
+    this.subscriptions.push(subscription);
+
+    subscription = this.store.select(updatedInstances()).subscribe((instances) => {
       if (instances !== undefined) {
         // Remove instances that are also in deletedInstances
         this.updatedInstances = instances.filter(
@@ -77,10 +84,13 @@ export class UpdatedInstanceListComponent implements OnInit {
         );
       }
     });
-    this.store.select(deleteInstances()).subscribe((instances) => {
+    this.subscriptions.push(subscription);
+
+    subscription = this.store.select(deleteInstances()).subscribe((instances) => {
       if (instances !== undefined)
         this.deletedInstances = instances;
     });
+    this.subscriptions.push(subscription);
     this.getSelectedInstances();
   }
 
@@ -136,19 +146,20 @@ export class UpdatedInstanceListComponent implements OnInit {
     }
 
     else if (this.updatedInstances.includes(instance)) {
-      this.dataService.commit(instance).subscribe(rtn => {
+      this.openCommitWaitDialog('Committing Updated Instance', 'Please wait while the selected updated instance is committed.');
+      this.dataService.commit(instance).pipe(
+        finalize(() => this.closeCommitWaitDialog())
+      ).subscribe(rtn => {
         this.instanceUtilities.processCommit(instance, rtn, this.dataService);
         this.commitResultDialogService.openDialog([{ displayName: instance.displayName ?? String(rtn.dbId), dbId: rtn.dbId }]);
       });
     }
     else if (this.newInstances.includes(instance)) {
-      this.dataService.commit(instance).subscribe(rtn => {
+      this.openCommitWaitDialog('Committing New Instance', 'Please wait while the selected new instance is committed.');
+      this.dataService.commit(instance).pipe(
+        finalize(() => this.closeCommitWaitDialog())
+      ).subscribe(rtn => {
         this.instanceUtilities.processCommit(instance, rtn, this.dataService);
-        // const idx = this.updatedInstances.indexOf(instance);
-        // const updated = this.updatedInstances.at(idx);
-        // if (updated) {
-        //   updated.dbId = rtn['dbId'];
-        // }
         this.commitResultDialogService.openDialog([{ displayName: instance.displayName ?? String(rtn.dbId), dbId: rtn.dbId }]);
       });
     }
@@ -156,6 +167,11 @@ export class UpdatedInstanceListComponent implements OnInit {
 
   commitUpdatedInstances() {
     if (!this.selectedUpdatedInstances || this.selectedUpdatedInstances.length === 0) return;
+
+    this.openCommitWaitDialog(
+      'Committing Updated Instances',
+      'Please wait while selected updated instances are committed.'
+    );
 
     const instancesToCommit = [...this.selectedUpdatedInstances];
     const commits = instancesToCommit.map(instance =>
@@ -165,7 +181,9 @@ export class UpdatedInstanceListComponent implements OnInit {
       )
     );
 
-    forkJoin(commits).subscribe(results => {
+    forkJoin(commits).pipe(
+      finalize(() => this.closeCommitWaitDialog())
+    ).subscribe(results => {
       this.commitResultDialogService.openDialog(results);
     });
 
@@ -181,6 +199,10 @@ export class UpdatedInstanceListComponent implements OnInit {
     this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.deletedInstanceList);
   }
 
+  ngOnDestroy(): void {
+    for (let subscription of this.subscriptions)
+      subscription.unsubscribe();
+  }
 
   /**
 * Save a single object via the REST API.
@@ -203,6 +225,12 @@ export class UpdatedInstanceListComponent implements OnInit {
     if (!this.selectedNewInstances || this.selectedNewInstances.length === 0) {
       return;
     }
+
+    this.openCommitWaitDialog(
+      'Committing New Instances',
+      'Please wait while selected new instances are committed one by one.'
+    );
+
     const shells = this.selectedNewInstances.map(inst => this.instanceUtilities.getShellInstance(inst));
     const results: CommitResult[] = [];
 
@@ -216,6 +244,8 @@ export class UpdatedInstanceListComponent implements OnInit {
           map(rtn => ({ displayName: inst.displayName ?? String(rtn.dbId), dbId: rtn.dbId } as CommitResult))
         );
       })
+    ).pipe(
+      finalize(() => this.closeCommitWaitDialog())
     ).subscribe({
       next: result => results.push(result),
       error: err => console.error('Error committing new instances', err),
@@ -226,6 +256,22 @@ export class UpdatedInstanceListComponent implements OnInit {
         if (results.length > 0) this.commitResultDialogService.openDialog(results);
       }
     });
+  }
+
+  private openCommitWaitDialog(title: string, message: string) {
+    this.closeCommitWaitDialog();
+    this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
+      disableClose: true,
+      hasBackdrop: true,
+      autoFocus: false,
+      restoreFocus: false,
+      data: { title, message }
+    });
+  }
+
+  private closeCommitWaitDialog() {
+    this.commitWaitDialogRef?.close();
+    this.commitWaitDialogRef = undefined;
   }
 
   private resetDeletedInstance(instance: Instance) {

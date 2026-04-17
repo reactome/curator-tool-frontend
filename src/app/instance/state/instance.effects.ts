@@ -130,6 +130,8 @@ export class InstanceEffects {
             this.dataService.removeInstanceInCache(action.dbId);
           }
           // TODO: Check if this is needed
+          // This may be a dangerous call due to the uncontrolled synchronization between ngrx state (new_instances) and
+          // the above removeInstanceInCache. 
           this.storeNewInstances();
         })
       ),
@@ -263,6 +265,8 @@ export class InstanceEffects {
       // We need the whole instance
       const dbIds = instances.map(i => i.dbId);
       this.dataService.fetchInstances(dbIds).pipe(defaultIfEmpty([])).subscribe(fullInsts => {
+        // There are some empty instance in fullInsts. Need to filter them out. 
+        fullInsts = fullInsts.filter(i => i && i.dbId);
         // Need this list so that we can persist it.
         this.setLocalStorageItem(NewInstanceActions.get_new_instances.type, this.instUtils.stringifyInstances(fullInsts));
       });

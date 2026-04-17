@@ -11,10 +11,10 @@ import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.serv
 import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
-import { combineLatest, Observable, of, Subscription, take, concatMap } from 'rxjs';
+import { combineLatest, Observable, of, Subscription, take, concatMap, finalize } from 'rxjs';
 import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service';
 import { deleteInstances, newInstances } from '../../state/instance.selectors';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { DeletionService } from '../../deletion-commit/utils/deletion.service';
 import { DeletedInstanceAttributeFilter } from 'src/app/core/instance-view-filters/DeletedInstanceAttributeFilter';
@@ -24,6 +24,7 @@ import { ReviewStatusUpdateFilter } from 'src/app/core/instance-view-filters/Rev
 import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
 import { MatchInstancesDialogService } from '../match-instances-dialog/match-instances-dialog.service';
 import { CommitResultDialogService } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
+import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
 
 @Component({
   selector: 'app-instance-view',
@@ -67,6 +68,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   // Track deleted instances
   private deletedInstances: Instance[] = [];
+  private commitWaitDialogRef?: MatDialogRef<CommitWaitDialogComponent>;
 
   readonly dialog = inject(MatDialog);
   // block sync view to avoid re-loading the instance for handling URL change
@@ -587,8 +589,25 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.deletionService.processDeletion([this.instance]);
       return;
     }
+    this.commitWaitDialogRef?.close();
+    this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
+      disableClose: true,
+      hasBackdrop: true,
+      autoFocus: false,
+      restoreFocus: false,
+      data: {
+        title: 'Committing Instance',
+        message: 'Please wait while this instance is committed.'
+      }
+    });
     // TODO: Need to present a confirmation dialog after it is done!
-    this.dataService.commit(this.instance).pipe(take(1)).subscribe(storedInst => {
+    this.dataService.commit(this.instance).pipe(
+      take(1),
+      finalize(() => {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
+      })
+    ).subscribe(storedInst => {
       console.debug('Returned dbId: ' + storedInst.dbId);
       if (this.instance!.dbId < 0) {
         this.commitNewHere = true;

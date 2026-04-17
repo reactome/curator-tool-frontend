@@ -10,6 +10,9 @@ import { CommitDeletedDialogService } from "../components/deleted-object-creatio
 import { Injectable } from "@angular/core";
 import { DeleteBulkDialogService } from "src/app/schema-view/list-instances/components/delete-bulk-dialog/delete-bulk-dialog.service";
 import { CommitResultDialogService, CommitResult } from "src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service";
+import { MatDialog, MatDialogRef } from "@angular/material/dialog";
+import { CommitWaitDialogComponent } from "src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component";
+import { concatMap, finalize, from, map, tap, toArray } from "rxjs";
 
 // TODO: Referrers of deleted instances need to have the referred slot modified and an instanceEdit added to modifiedList 
 @Injectable({
@@ -17,6 +20,7 @@ import { CommitResultDialogService, CommitResult } from "src/app/status/componen
 })
 
 export class DeletionService {
+    private commitWaitDialogRef?: MatDialogRef<CommitWaitDialogComponent>;
 
     constructor(private dataService: DataService,
         private store: Store,
@@ -24,7 +28,8 @@ export class DeletionService {
         private createDeletedDialogService: CreateDeletedDialogService,
         private commitDeletedDialogService: CommitDeletedDialogService,
         private deleteBulkDialogService: DeleteBulkDialogService,
-        private commitResultDialogService: CommitResultDialogService
+        private commitResultDialogService: CommitResultDialogService,
+        private dialog: MatDialog
     ) {
     }
 
@@ -80,27 +85,41 @@ export class DeletionService {
 
         if (existingInstances.length === 0) return;
 
-        const results: CommitResult[] = [];
-        let completed = 0;
-        existingInstances.forEach(instance => {
-            this.dataService.delete(instance).subscribe(rtn => {
-                this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
-                this.store.dispatch(DeleteInstanceActions.commit_deleted_instance(instance));
-                this.instanceUtilities.setDeletedDbId(instance.dbId);
-                this.dataService.flagSchemaTreeForReload();
-                results.push({ displayName: instance.displayName ?? String(instance.dbId), dbId: instance.dbId });
-                completed++;
-                if (completed === existingInstances.length) {
-                    this.commitResultDialogService.openDialog(results, 'Deleted Instances');
-                }
-            });
+        this.openCommitWaitDialog(
+            'Committing Deleted Instances',
+            'Please wait while selected deleted instances are committed one by one.'
+        );
+
+        from(existingInstances).pipe(
+            concatMap(instance =>
+                this.dataService.delete(instance).pipe(
+                    tap(() => {
+                        this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
+                        this.store.dispatch(DeleteInstanceActions.commit_deleted_instance(instance));
+                        this.instanceUtilities.setDeletedDbId(instance.dbId);
+                    }),
+                    map(() => ({ displayName: instance.displayName ?? String(instance.dbId), dbId: instance.dbId } as CommitResult))
+                )
+            ),
+            toArray(),
+            finalize(() => this.closeCommitWaitDialog())
+        ).subscribe(results => {
+            this.dataService.flagSchemaTreeForReload();
+            this.commitResultDialogService.openDialog(results, 'Deleted Instances');
         });
     }
     createDeletedObject(instanceToDelete: Instance[]) {
         this.createDeletedDialogService.openDialog(instanceToDelete).afterClosed().subscribe(deletedObject => {
             if (deletedObject) {
                 // Submit the Deleted instance, the selected instances are handled in this component
-                this.dataService.deleteByDeleted(deletedObject!).subscribe(rtn => {
+                this.openCommitWaitDialog(
+                    'Committing Deleted Instances',
+                    'Please wait while selected instances are committed as deleted.'
+                );
+
+                this.dataService.deleteByDeleted(deletedObject!).pipe(
+                    finalize(() => this.closeCommitWaitDialog())
+                ).subscribe(rtn => {
 
                     instanceToDelete.forEach(instance => {
                         this.store.dispatch(DeleteInstanceActions.remove_deleted_instance(instance));
@@ -119,6 +138,22 @@ export class DeletionService {
             }
 
         });
+    }
+
+    private openCommitWaitDialog(title: string, message: string) {
+        this.closeCommitWaitDialog();
+        this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
+            disableClose: true,
+            hasBackdrop: true,
+            autoFocus: false,
+            restoreFocus: false,
+            data: { title, message }
+        });
+    }
+
+    private closeCommitWaitDialog() {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
     }
 
     checkIsEventOrPE(instance: Instance): boolean {

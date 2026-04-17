@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
-import { catchError, combineLatest, concatMap, forkJoin, map, Observable, of, Subject, take, tap, throwError } from 'rxjs';
+import { catchError, combineLatest, concatMap, EMPTY, forkJoin, map, Observable, of, Subject, take, tap, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
 import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
@@ -422,6 +422,10 @@ export class DataService {
   }
 
   fetchInstanceFromDatabase(dbId: number, cache: boolean): Observable<Instance> {
+    // Negative dbId should not be fetched from the database.
+    if (dbId < 0) {
+      return of(EMPTY as unknown as Instance);
+    }
     // Fetch from the server
     return this.http.get<Instance>(this.entityDataUrl + `${dbId}`)
       .pipe(
