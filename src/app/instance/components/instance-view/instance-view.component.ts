@@ -217,7 +217,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         }
         this.instUtils.removeInstInArray(this.instance, this.viewHistory);
         this.loadInstance(newDbId, false, false, true);
-      } else if (this.instUtils.isReferrer(oldDbId, this.instance)) {
+      } 
+      else if (this.instUtils.isReferrer(oldDbId, this.instance)) {
         // A referred new instance was committed — reload so the reference shows the new dbId
         this.loadInstance(this.instance.dbId, false, false, true);
       }
@@ -382,6 +383,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       if (resetCache && dbId >= 0) // TODO: Make sure this does not have any side effect.
         this.dataService.removeInstanceInCache(dbId)
       this.dataService.fetchInstance(dbId).subscribe((instance) => {
+        if (!instance)
+          return; // Don't do anything if there is no instance. Due to the many subscriptions, this may occur. Need more time to figure out why and how to avoid it.
         if (instance.schemaClass)
           // Turn off the comparison first
           this._loadIntance(instance, resetHistory, needComparsion, dbId, releaseSyncBlockOnComplete);
@@ -509,7 +512,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   private showEmpty() {
     if (this.blockRoute) {
-      this.instance = undefined;
+      if (!this.commitNewHere) // Keep the original instance
+        this.instance = undefined;
     }
     else {
       let newUrl = this.getCurrentPathRoot();

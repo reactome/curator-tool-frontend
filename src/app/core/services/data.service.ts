@@ -424,7 +424,7 @@ export class DataService {
   fetchInstanceFromDatabase(dbId: number, cache: boolean): Observable<Instance> {
     // Negative dbId should not be fetched from the database.
     if (dbId < 0) {
-      return of(EMPTY as unknown as Instance);
+      return of(undefined as unknown as Instance);
     }
     // Fetch from the server
     return this.http.get<Instance>(this.entityDataUrl + `${dbId}`)

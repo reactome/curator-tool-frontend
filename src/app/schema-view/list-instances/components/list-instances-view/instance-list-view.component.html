@@ -7,9 +7,9 @@
     <mat-label>Search</mat-label>
     <input matInput (keydown.enter)="doBasicSearch(0)" #input [(ngModel)]="searchKey">
     <!-- <mat-icon *ngIf="showDeletion" class="undo-icon" matTooltip="Delete Selected" matSuffix>delete</mat-icon> -->
-    <mat-icon *ngIf="!isLocal && hasExecutedSearch && instanceCount > 0" class="undo-icon"
+    <mat-icon *ngIf="!isLocal && hasExecutedSearch && instanceCount > 0" class="undo-icon icon-buttonish"
       matTooltip="Download search results" (click)="downloadSearchResults()" matSuffix>download</mat-icon>
-    <mat-icon class="custom-search-icon" matTooltip="Advanced Search" (click)="toggleSearchMode()"
+    <mat-icon class="custom-search-icon icon-buttonish" matTooltip="Advanced Search" (click)="toggleSearchMode()"
       matSuffix>manage_search</mat-icon>
   </mat-form-field>
 </div>
@@ -18,12 +18,12 @@
   <mat-form-field style="float:left; width: 100%; position: sticky !important">
     <mat-label>Search</mat-label>
     <input matInput (keydown.enter)="doAdvancedSearch(0)" #input readonly="true" [(ngModel)]="advancedSearchKey">
-    <mat-icon class="undo-icon" matTooltip="Undo last" (click)="removeSearchCriterium()" matSuffix>undo</mat-icon>
-    <mat-icon *ngIf="showBatchEdit" id="batch-edit-tour-target" class="undo-icon" matTooltip="Batch Edit" (click)="handleBatchEdit()"
+    <mat-icon class="undo-icon icon-buttonish" matTooltip="Undo last" (click)="removeSearchCriterium()" matSuffix>undo</mat-icon>
+    <mat-icon *ngIf="showBatchEdit" id="batch-edit-tour-target" class="undo-icon icon-buttonish" matTooltip="Batch Edit" (click)="handleBatchEdit()"
       matSuffix>edit_square</mat-icon>
-    <mat-icon *ngIf="!isLocal && hasExecutedSearch && instanceCount > 0" class="undo-icon"
+    <mat-icon *ngIf="!isLocal && hasExecutedSearch && instanceCount > 0" class="undo-icon icon-buttonish"
       matTooltip="Download search results" (click)="downloadSearchResults()" matSuffix>download</mat-icon>
-    <mat-icon class="custom-search-icon" matTooltip="Simple Search" (click)="toggleSearchMode()"
+    <mat-icon class="custom-search-icon icon-buttonish" matTooltip="Simple Search" (click)="toggleSearchMode()"
       matSuffix>manage_search</mat-icon>
   </mat-form-field>
 </div>
@@ -48,22 +48,22 @@
       <div *ngIf="showBatchEditActions; else borderTemplate" style="background-color: white; width: 40%;">
         <span style="background-color: white; width: 400%; line-height: 60px;">
           &nbsp;Selected Instances: {{selectedInstances.length}} &nbsp;</span>
-        <mat-icon color="primary" style="line-height: 36px;" (click)="setSelectedInstances()"
+        <mat-icon color="primary" class="icon-buttonish" style="line-height: 36px;" (click)="setSelectedInstances()"
           matTooltip="Select all on page" matSuffix>check_box_outline</mat-icon>
         <!-- <mat-icon color="primary" style="line-height: 36px;" matTooltip="Select all {{this.instanceCount}} instances"
           matSuffix>select_all</mat-icon> -->
-        <mat-icon color="primary" style="line-height: 36px;" matTooltip="Deselect all"
+        <mat-icon color="primary" class="icon-buttonish" style="line-height: 36px;" matTooltip="Deselect all"
           (click)="clearSelectedInstances()" matSuffix>deselect_all</mat-icon>
-        <mat-icon color="primary" style="line-height: 36px;" matTooltip="Delete selected" matSuffix
+        <mat-icon color="primary" class="icon-buttonish" style="line-height: 36px;" matTooltip="Delete selected" matSuffix
           (click)="handleDeleteSelected()">delete</mat-icon>
-        <mat-icon *ngIf="selectedInstances.length === 2" color="primary" style="line-height: 36px;"
+        <mat-icon *ngIf="selectedInstances.length === 2" color="primary" class="icon-buttonish" style="line-height: 36px;"
           (click)="compareInstances()" matTooltip="Compare instances" matSuffix>compare_arrows</mat-icon>
-        <mat-icon *ngIf="showBatchEdit && selectedInstances.length > 0" color="primary" style="line-height: 36px;" matTooltip="Batch Edit" (click)="handleBatchEdit()"
+        <mat-icon *ngIf="showBatchEdit && selectedInstances.length > 0" color="primary" class="icon-buttonish" style="line-height: 36px;" matTooltip="Batch Edit" (click)="handleBatchEdit()"
           matSuffix>edit_square</mat-icon>
-        <mat-icon *ngIf="selectedInstances.length > 0" color="primary" style="line-height: 36px;"
+        <mat-icon *ngIf="selectedInstances.length > 0" color="primary" class="icon-buttonish" style="line-height: 36px;"
           matTooltip="Download selected" (click)="downloadSelectedInstances()" matSuffix>download</mat-icon>
         <ng-container *ngIf="this.isLocal">
-          <mat-icon *ngIf="selectedInstances.length > 0" color="primary" style="line-height: 36px;"
+          <mat-icon *ngIf="selectedInstances.length > 0" color="primary" class="icon-buttonish" style="line-height: 36px;"
             (click)="commitNewInstances()" matTooltip="commit all selected" matSuffix>upload</mat-icon>
         </ng-container>
       </div>

@@ -110,3 +110,11 @@ th {
   padding: 0 !important;
   margin: 0, 1px !important;
 }
+
+.mini-btn:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.mini-btn:active {
+  background-color: rgba(0, 0, 0, 0.14) !important;
+}

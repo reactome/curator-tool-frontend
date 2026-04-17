@@ -34,7 +34,9 @@ export class NewInstanceDialogComponent {
   }
 
   onSelectionChange(): void {
-    console.log('selected' + this.selected)
+    // console.log('selected' + this.selected);
+    // The following code will generate a new dbId even though we don't use that new instance. 
+    // This is a little bit wasteful but it is the simplest way to make sure the dbId is correctly generated and there is no need to handle the cache of new instance in the data service.
     this.dataService.createNewInstance(this.selected).subscribe(instance => {
         this.instance = instance;
       }
