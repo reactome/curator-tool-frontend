@@ -26,7 +26,7 @@
   </ng-container>
   <!-- The following actions are for editing only -->
   <ng-container *ngIf="isDiagramEditing">
-    <ng-container *ngIf="elmType === elmTypes.COMPARTMENT || elmType === elmTypes.PE_Node || elmType === elmTypes.PATHWAY_NODE">
+    <ng-container *ngIf="isNodeResizable">
       <button style="margin-bottom: 1px" (click)="onClick('resizeCompartment')" *ngIf="!isNodeResizing">Resize</button>
       <button style="margin-bottom: 1px" (click)="onClick('disableResize')" *ngIf="isNodeResizing">Disable Resizing</button>
     </ng-container>

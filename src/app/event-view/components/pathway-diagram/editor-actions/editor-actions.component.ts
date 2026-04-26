@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, input, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'app-editor-actions',
@@ -25,6 +25,8 @@ export class EditorActionsComponent {
   @Input() isPathwayDeletable: boolean = false;
   // Flag if a selected node is resizing
   @Input() isNodeResizing: boolean = false;
+  // Flag is a selected node is resizable
+  @Input() isNodeResizable: boolean = true;
   // Include this so that we can compare in the html template
   elmTypes = ElementType;
   

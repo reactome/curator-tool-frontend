@@ -11,7 +11,7 @@ import { EditorActionsComponent, ElementType } from './editor-actions/editor-act
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
-import { EDGE_POINT_CLASS, Instance } from 'src/app/core/models/reactome-instance.model';
+import { EDGE_POINT_CLASS, LABEL_CLASS, Instance } from 'src/app/core/models/reactome-instance.model';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { UnsavedUploadDialogComponent } from 'src/app/shared/components/unsaved-upload-dialog/unsaved-upload-dialog.component';
@@ -92,7 +92,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   }
 
   ngOnInit() {
-    this.instUtil.resetInst$.subscribe((data)=> {
+    this.instUtil.resetInst$.subscribe((data) => {
       this.diagramUtils.handleInstanceReset(data, this);
     });
     this.instUtil.lastUpdatedInstance$.subscribe(data => {
@@ -249,15 +249,18 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
    * upload the edited pathway diagram to the JSON text for the Pathway instance, which is post-processed at the server side for 
    * overlaying etc.
    */
+  // Disable editing will upload the content due to the current implementation since enable editing
+  // needs to fetch content from the server side. It is quite complicated and confusing to keep the editing
+  // content at the front end. 
   private disableEditing() {
-    const doDisable = () => {
+    // const doDisable = () => {
       this.diagramUtils.disableEditing(this.diagram);
       this.resizingNodes.forEach(node => this.diagramUtils.disableResizeCompartment(node, this.diagram));
       this.resizingNodes.length = 0; // reset to empty
       this.isEditing = false;
-      this.isEdited = false;
-    };
-    this.promptUploadBeforeDiscard('disabling editing', doDisable);
+    //   this.isEdited = false;
+    // };
+    // this.promptUploadBeforeDiscard('disabling editing', doDisable);
   }
 
   private canEdit(): Observable<boolean> {
@@ -286,9 +289,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   private isBlockingClassForPathwayDiagramEdit(instance: Instance): boolean {
     const dataService = this.diagramUtils.getDataService();
     const schemaClassName = instance.schemaClassName;
-    if (dataService.isEventClass(schemaClassName) || 
-        dataService.isPhysicalEntityClass(schemaClassName) ||
-        dataService.isRegulationClass(schemaClassName))
+    if (dataService.isEventClass(schemaClassName) ||
+      dataService.isPhysicalEntityClass(schemaClassName) ||
+      dataService.isRegulationClass(schemaClassName))
       return true;
     if (schemaClassName === 'PathwayDiagram' || schemaClassName === 'CatalystActivity')
       return true;
@@ -299,31 +302,37 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     this.canEdit().subscribe((canEdit: boolean) => {
       if (!canEdit)
         return;
-    if (this.pathwayDiagramId && this.pathwayDiagramId.length > 0) {
-      // Already have a PathwayDiagram id for editing
-      this.isEditing = true;
-      this.diagram.diagramId = this.pathwayDiagramId;
-      this.loadPathwayDiagram();
-      return;
-    }
-    // Switch to PathwayDiagram 
-    this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe({
-      next: (pathwayDiagram: Instance) => {
-        if (pathwayDiagram) {
-          this.isEditing = true;
-          this.diagram.diagramId = pathwayDiagram.dbId.toString();
-          // Let the event handler for "network_displayed" to handle the rest
-          this.loadPathwayDiagram();
-          this.pathwayDiagramId = pathwayDiagram.dbId.toString(); // Store it for future use
+      if (this.pathwayDiagramId && this.pathwayDiagramId.length > 0) {
+        this.isEditing = true;
+        this.diagram.diagramId = this.pathwayDiagramId;
+        // Just need to enable editing without reloading
+        // Otherwise, edited changes will be lost.
+        if (this.isEdited) {
+          this.diagramUtils.enableEditing(this.diagram);
         }
         else {
+          this.loadPathwayDiagram();
+        }
+        return;
+      }
+      // Switch to PathwayDiagram 
+      this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe({
+        next: (pathwayDiagram: Instance) => {
+          if (pathwayDiagram) {
+            this.isEditing = true;
+            this.diagram.diagramId = pathwayDiagram.dbId.toString();
+            // Let the event handler for "network_displayed" to handle the rest
+            this.loadPathwayDiagram();
+            this.pathwayDiagramId = pathwayDiagram.dbId.toString(); // Store it for future use
+          }
+          else {
+            this.showNoPathwayDiagramDialog();
+          }
+        },
+        error: () => {
           this.showNoPathwayDiagramDialog();
         }
-      },
-      error: () => {
-        this.showNoPathwayDiagramDialog();
-      }
-    });
+      });
     });
   }
 
@@ -420,19 +429,32 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       this.isEdited = true;
       let node = e.target;
       // If a node that had resize enabled is being moved, disable its resize mode
-      if (this.resizingNodes.includes(node)) {
+      if (node.hasClass('Compartment') && !node.hasClass(LABEL_CLASS)) {
         this.diagramUtils.disableResizeCompartment(node, this.diagram);
-        const idx = this.resizingNodes.indexOf(node);
+        let idx = this.resizingNodes.indexOf(node);
+        if (idx >= 0) this.resizingNodes.splice(idx, 1);
+        // Also need to make sure its sibling has no resizing
+        // Check sibling
+        let { isInner, other } = this.diagramUtils.getSiblingCompartment(node, this.diagram.cy);
+        if (other) {
+          this.diagramUtils.disableResizeCompartment(other, this.diagram);
+          idx = this.resizingNodes.indexOf(node);
+          if (idx >= 0) this.resizingNodes.splice(idx, 1);
+        }
+      }
+      else if (this.resizingNodes.includes(node)) {
+        this.diagramUtils.disableResizeCompartment(node, this.diagram);
+        let idx = this.resizingNodes.indexOf(node);
         if (idx >= 0) this.resizingNodes.splice(idx, 1);
       }
 
-      if (node.hasClass('Modification') && !e.target.hasClass('resizing')) 
+      if (node.hasClass('Modification') && !e.target.hasClass('resizing'))
         return; // Modification nodes are handled in moveModifications. No need to handle here.
       if (node.hasClass('resizing')) {
         // This may be used for both compartment and PE node
-        this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);        
+        this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);
       }
-      else if (node.hasClass('Compartment')) {
+      else if (node.hasClass('Compartment') && !node.hasClass(LABEL_CLASS)) {
         // Handle compartment dragging - move both inner and outer layers together
         this.diagramUtils.moveCompartmentLayers(node, e, this.previousDragPos);
       }
@@ -478,7 +500,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
   private showCyPopup(event: any) { // Use any to avoid any compiling error
     this.elementUnderMouse = event.target;
-    
+
     // Check for multiple selected nodes with reactomeId in editing mode first
     if (this.isEditing && this.diagram?.cy) {
       const selectedNodes = this.diagram.cy.$(':selected').nodes().filter((node: any) => {
@@ -494,7 +516,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         return;
       }
     }
-    
+
     if (this.elementUnderMouse === undefined ||
       this.elementUnderMouse === this.diagram!.cy) { // Should check for instanceof. But not sure how!
       this.elementTypeForPopup = ElementType.CYTOSCAPE; // As the default
@@ -506,7 +528,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         this.elementTypeForPopup = ElementType.EDGE;
     }
     else if (this.elementUnderMouse.isNode()) {
-      if (this.elementUnderMouse.hasClass("Compartment")) 
+      if (this.elementUnderMouse.hasClass("Compartment"))
         this.elementTypeForPopup = ElementType.COMPARTMENT;
       else if (this.elementUnderMouse.hasClass('PhysicalEntity')) {
         this.elementTypeForPopup = ElementType.PE_Node;
@@ -537,6 +559,18 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     if (!this.elementUnderMouse)
       return false;
     return this.resizingNodes.includes(this.elementUnderMouse);
+  }
+
+  isNodeResizable() {
+    if (!this.elementUnderMouse)
+      return false;
+    const elmType = this.elementTypeForPopup;
+    // A compartment label is compartment for deletion. But it should not be resized.
+    if ((elmType == ElementType.COMPARTMENT && !this.elementUnderMouse.hasClass(LABEL_CLASS)) ||
+      elmType === ElementType.PE_Node ||
+      elmType === ElementType.PATHWAY_NODE)
+      return true;
+    return false;
   }
 
   onAction(action: string) {
@@ -628,7 +662,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
       case 'insertCompartment':
         this.diagramUtils.insertCompartment(this.diagram);
-        this.isEdited = true; 
+        this.isEdited = true;
         break;
 
       case 'upload':
@@ -862,32 +896,32 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
   private alignNodesVertically() {
     if (!this.diagram?.cy) return;
-    
+
     const selectedNodes = this.diagram.cy.$(':selected').nodes().filter((node: any) => {
       return this.isNodeForAlignment(node);
     });
     if (selectedNodes.length < 2) return;
-    
+
     // Calculate the average x position (vertical center line)
     let totalX = 0;
     selectedNodes.forEach((node: any) => {
       totalX += node.position('x');
     });
     const averageX = totalX / selectedNodes.length;
-    
+
     // Move all nodes to the average x position and their modification nodes
     selectedNodes.forEach((node: any) => {
       const oldX = node.position('x');
       const deltaX = averageX - oldX;
-      
+
       node.position('x', averageX);
-      
+
       // Move associated modification nodes
       const reactomeId = node.data('reactomeId');
       const modificationNodes = this.diagram.cy.nodes().filter((modNode: any) => {
         return modNode.data('nodeReactomeId') === reactomeId && modNode.hasClass('Modification');
       });
-      
+
       modificationNodes.forEach((modNode: any) => {
         const modPos = modNode.position();
         modNode.position({
@@ -900,32 +934,32 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
   private alignNodesHorizontally() {
     if (!this.diagram?.cy) return;
-    
+
     const selectedNodes = this.diagram.cy.$(':selected').nodes().filter((node: any) => {
       return this.isNodeForAlignment(node);
     });
     if (selectedNodes.length < 2) return;
-    
+
     // Calculate the average y position (horizontal center line)
     let totalY = 0;
     selectedNodes.forEach((node: any) => {
       totalY += node.position('y');
     });
     const averageY = totalY / selectedNodes.length;
-    
+
     // Move all nodes to the average y position and their modification nodes
     selectedNodes.forEach((node: any) => {
       const oldY = node.position('y');
       const deltaY = averageY - oldY;
-      
+
       node.position('y', averageY);
-      
+
       // Move associated modification nodes
       const reactomeId = node.data('reactomeId');
       const modificationNodes = this.diagram.cy.nodes().filter((modNode: any) => {
         return modNode.data('nodeReactomeId') === reactomeId && modNode.hasClass('Modification');
       });
-      
+
       modificationNodes.forEach((modNode: any) => {
         const modPos = modNode.position();
         modNode.position({

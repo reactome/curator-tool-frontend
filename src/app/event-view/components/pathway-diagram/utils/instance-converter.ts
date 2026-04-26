@@ -22,11 +22,11 @@ export class InstanceConverter {
         const newNodes = [];
         const nodeId = this.getCompartmentNodeId(compartment.dbId, cy);
         if (compartment.displayName?.endsWith('membrane')) {
-            const compartmentNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId);
+            const compartmentNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId, false);
             compartmentNode.addClass('outer');
             // Need to expand the node width
-            compartmentNode.data('width', compartmentNode.data('width') * 10);
-            compartmentNode.data('height', compartmentNode.data('height') * 10);
+            compartmentNode.data('width', RENDERING_CONSTS.DEFAULT_COMPARTMENT_WIDTH);
+            compartmentNode.data('height', RENDERING_CONSTS.DEFAULT_COMPARTMENT_HEIGHT);
             // Put the text at the center for the time being
             compartmentNode.data('textX', -compartmentNode.data('width') / 2);
             compartmentNode.data('textY', -compartmentNode.data('height') / 2);
@@ -36,11 +36,11 @@ export class InstanceConverter {
         }
         else {
             // Make sure adding outerNode first so that we can select inner node
-            const outerNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId + '-outer');
+            const outerNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId + '-outer', false);
             outerNode.addClass('outer');
             // Need to expand the node width
-            outerNode.data('width', outerNode.data('width') * 10 + 2 * RENDERING_CONSTS.RECTANGLE_DIST);
-            outerNode.data('height', outerNode.data('height') * 10 + 2 * RENDERING_CONSTS.RECTANGLE_DIST);
+            outerNode.data('width', RENDERING_CONSTS.DEFAULT_COMPARTMENT_WIDTH + 2 * RENDERING_CONSTS.RECTANGLE_DIST);
+            outerNode.data('height', RENDERING_CONSTS.DEFAULT_COMPARTMENT_HEIGHT + 2 * RENDERING_CONSTS.RECTANGLE_DIST);
 
             // Put the text at the center for the time being
             outerNode.data('textX', -outerNode.data('width') / 2);
@@ -50,11 +50,11 @@ export class InstanceConverter {
 
             newNodes.push(outerNode);
 
-            const innerNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId + '-inner');
+            const innerNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId + '-inner', false);
             innerNode.addClass('inner');
             // Need to expand the node width
-            innerNode.data('width', innerNode.data('width') * 10);
-            innerNode.data('height', innerNode.data('height') * 10);
+            innerNode.data('width', RENDERING_CONSTS.DEFAULT_COMPARTMENT_WIDTH);
+            innerNode.data('height', RENDERING_CONSTS.DEFAULT_COMPARTMENT_HEIGHT);
             innerNode.style('z-index', 10); // To be selected first
             newNodes.push(innerNode);
         }
@@ -63,6 +63,7 @@ export class InstanceConverter {
         // De-select whatever
         cy.$(':selected').unselect();
         collection.select();
+        return collection;
     }
 
     private getCompartmentNodeId(reactomeId: number, cy: Core) {
@@ -307,7 +308,11 @@ export class InstanceConverter {
         return newNode;
     }
 
-    private createNodeForInstance(inst: Instance, cy: Core, service: DiagramService, id: string|undefined = undefined) {
+    private createNodeForInstance(inst: Instance, 
+                                  cy: Core, 
+                                  service: DiagramService, 
+                                  id: string|undefined = undefined,
+                                  needFormatLabel: boolean = true) {
         if (!id)
             id = inst.dbId + '';
         const node: NodeDefinition = {
@@ -329,12 +334,14 @@ export class InstanceConverter {
         };
         const newNode = cy.add(node)[0];
         const font = this.getFontStyle(newNode);
-        const { label, width, height } = this.getNodeLabelAndDimensions(inst,
-            font,
-            RENDERING_CONSTS.DEFAULT_NODE_WIDTH);
-        newNode.data('width', width);
-        newNode.data('height', height);
-        newNode.data('displayName', label);
+        if (needFormatLabel) {
+            const { label, width, height } = this.getNodeLabelAndDimensions(inst,
+                font,
+                RENDERING_CONSTS.DEFAULT_NODE_WIDTH);
+            newNode.data('width', width);
+            newNode.data('height', height);
+            newNode.data('displayName', label);
+        }
         // Apparent there is no compartment mapping
         if (inst.schemaClassName === 'Compartment')
             newNode.addClass('Compartment');

@@ -68,12 +68,18 @@ export class PathwayDiagramUtilService {
      * @returns 
      */
     private enableCompartmentEditing(node: any, cy: Core) {
+        // Use class to detemine node type always
         if (!node.isNode() || !node.hasClass('Compartment'))
-            return false;
+            return;
+        // Label is tied with outer layer if the compartment has two layers
+        // The second case should not occur. Put it here just in case.
+        // Always use class to determine node type.
+        if (node.hasClass('inner') || node.hasClass(LABEL_CLASS))
+            return;
         // Check the label's bounds
         const label = node.data('displayName');
         if (!label)
-            return; // This is an inner. No need to do anything
+            return; // Just in case
         const font = this.converter.getFontStyle(node);
         const labelWidth = this.converter.measureTextWidth(label, font);
         const labelHeight = this.converter.measureTextHeight(font);
@@ -91,7 +97,7 @@ export class PathwayDiagramUtilService {
             y: nodePos.y + node.height() / 2 + textY + labelHeight / 2 + 2 // For some reason, there is 2 px offset
         };
         
-        let nodeId = node.id() + '_label'
+        let nodeId = node.id() + '-label'
         const labelNode : NodeDefinition = {
             data: {
                 id: nodeId,
@@ -115,6 +121,7 @@ export class PathwayDiagramUtilService {
             {
                 'text-valign': 'center',
                 'text-halign': 'center',
+                'z-index': 20, // inner 10 and outer 0.
                 'background-opacity': 0,     // Hide the node's background
                 'border-width': 0 // Don't show border for the label node
             },
@@ -248,14 +255,39 @@ export class PathwayDiagramUtilService {
      * @param diagram 
      */
     deleteCompartment(compartment: any, diagram: DiagramComponent) {
-        let { isInner, other } = this.getSiblingCompartment(compartment, diagram.cy);
-        this.removeCompartmentLabels(compartment, diagram.cy);
-        this.disableResizeCompartment(compartment, diagram);
-        diagram.cy.remove(compartment);
-        if (other) {
-            this.removeCompartmentLabels(other, diagram.cy);
-            this.disableResizeCompartment(other, diagram);
-            diagram.cy.remove(other);
+        // Compartment may be referred by three types of nodes: inner, outer, and label
+        // To make it easy, we will delete it one by one
+        if (!compartment.hasClass('Compartment'))
+            return;
+        // Got id first
+        let compartmentId = compartment.id();
+        // The id has two parts: graph id and inner or outer
+        compartmentId = compartmentId.split('-')[0];
+        // Remove label if any: one layer compartment
+        let label = diagram.cy.$('#' + compartmentId + '-label');
+        if (label.length > 0) 
+            diagram.cy.remove(label);   
+        // Two-layered compartment
+        label = diagram.cy.$('#' + compartmentId + '-outer-label');
+        if (label.length > 0)
+            diagram.cy.remove(label);
+        let inner = diagram.cy.$('#' + compartmentId + '-inner');
+        if (inner.length > 0) {
+            this.disableResizeCompartment(inner, diagram);
+            diagram.cy.remove(inner);
+        }   
+        let outer = diagram.cy.$('#' + compartmentId + '-outer');
+        if (outer.length > 0) {
+            this.disableResizeCompartment(outer, diagram);
+            diagram.cy.remove(outer);
+        }
+        // Maybe just a one-layer compartment
+        // Note: one layer compartment (i.e. membrane) is added as outer-class node.
+        // However, regardless, keep the code here just in case.
+        let onelayer = diagram.cy.$('#' + compartmentId);
+        if (onelayer.length > 0) {
+            this.disableResizeCompartment(onelayer, diagram);
+            diagram.cy.remove(onelayer);
         }
     }
 
@@ -285,7 +317,11 @@ export class PathwayDiagramUtilService {
                 if (!compartment || (Array.isArray(compartment) && compartment.length === 0)) // Most likely the dialog is cancelled
                     return;
                 // Use the first compartment only
-                this.converter.convertCompartmentToNodes(compartment[0], this, diagram.cy);
+                const newNodes = this.converter.convertCompartmentToNodes(compartment[0], this, diagram.cy);
+                if (newNodes.length > 0) {
+                    // Default is editing for users to make any necessary changes.
+                    this.enableCompartmentEditing(newNodes[0], diagram.cy);
+                }
             });
         });
     }
@@ -666,7 +702,7 @@ export class PathwayDiagramUtilService {
      * Use this method to find the other one.
      * @param compartment 
      */
-    private getSiblingCompartment(compartment: any, cy: Core) {
+    getSiblingCompartment(compartment: any, cy: Core) {
         let compartmentId = compartment.id();
         // The id has two parts: graph id and inner or outer
         let tokens = compartmentId.split('-');
@@ -674,16 +710,6 @@ export class PathwayDiagramUtilService {
         let otherId = tokens[0] + '-' + (isInner ? 'outer' : 'inner');
         let other = cy.$('#' + otherId);
         return { isInner, other };
-    }
-
-    private removeCompartmentLabels(compartment: any, cy: Core) {
-        if (!compartment || compartment.length === 0)
-            return;
-        const labelNodes = cy.nodes().filter((node: any) =>
-            node.hasClass(LABEL_CLASS) && node.data('compartmentId') === compartment.id()
-        );
-        if (labelNodes.length > 0)
-            cy.remove(labelNodes);
     }
 
     private updateResizeNodesPosition(compartment: any,
@@ -835,14 +861,15 @@ export class PathwayDiagramUtilService {
     }
 
     disableEditing(diagram: DiagramComponent) {
-        if (this.id2hyperEdge === undefined || this.id2hyperEdge.size === 0)
-            return; // Nothing needs to be done
         // Disable node dragging
         diagram.cy.nodes().grabify().panify();
         diagram.cy.nodes('.Compartment').panify();
         diagram.cy.nodes().forEach((node: any) => {
             this.assignLabelToCompartment(node, diagram.cy);
         });
+
+        if (this.id2hyperEdge === undefined || this.id2hyperEdge.size === 0)
+            return; // Nothing needs to be done
         this.id2hyperEdge.forEach((hyperEdge, _) => {
             hyperEdge.enableRoundSegments();
         });

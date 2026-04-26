@@ -123,6 +123,9 @@ export const RENDERING_CONSTS = {
     WORD_WRAP_RE: /([\ /,:;-])/,
     // private readonly WORD_WRAP_RE_G = /([\ /,:;-])/g;
     DEFAULT_NODE_WIDTH: 130,
+    // We will use fixed compartment dimension
+    DEFAULT_COMPARTMENT_WIDTH: 1000,
+    DEFAULT_COMPARTMENT_HEIGHT: 600,
     MIN_NODE_WIDTH: 10,
     WIDTH_RATIO_OF_BOUNDS_TO_TEXT: 1.3,
     HEIGHT_RATIO_OF_BOUNDS_TO_TEXT: 1.5,
