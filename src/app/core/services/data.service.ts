@@ -1,4 +1,4 @@
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpResponse } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, EMPTY, forkJoin, map, Observable, of, Subject, take, tap, throwError } from 'rxjs';
@@ -54,6 +54,7 @@ export class DataService {
   private fetchPathwayDiagramUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
   private deleteByDeletedUrl = `${environment.ApiRoot}/deleteByDeleted/`;
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
+  private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
 
 
   // Track the negative dbId to be used
@@ -832,6 +833,17 @@ export class DataService {
 
   hasDiagram(pathwayId: any): Observable<boolean> {
     return this.http.get<boolean>(this.hasDiagramUrl + pathwayId).pipe(
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    );
+  }
+
+  exportEventDocx(dbId: number): Observable<HttpResponse<Blob>> {
+    return this.http.get(this.exportEventDocxUrl + dbId, {
+      observe: 'response',
+      responseType: 'blob'
+    }).pipe(
       catchError(error => {
         return this.handleErrorMessage(error);
       })
