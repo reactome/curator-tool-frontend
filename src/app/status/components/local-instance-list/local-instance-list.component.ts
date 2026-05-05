@@ -151,7 +151,7 @@ export class UpdatedInstanceListComponent implements OnInit {
         finalize(() => this.closeCommitWaitDialog())
       ).subscribe(rtn => {
         this.instanceUtilities.processCommit(instance, rtn, this.dataService);
-        this.commitResultDialogService.openDialog([{ displayName: instance.displayName ?? String(rtn.dbId), dbId: rtn.dbId }]);
+        this.commitResultDialogService.openDialog(this.instanceUtilities.buildCommitSummaryResults(instance, rtn));
       });
     }
     else if (this.newInstances.includes(instance)) {
@@ -160,7 +160,7 @@ export class UpdatedInstanceListComponent implements OnInit {
         finalize(() => this.closeCommitWaitDialog())
       ).subscribe(rtn => {
         this.instanceUtilities.processCommit(instance, rtn, this.dataService);
-        this.commitResultDialogService.openDialog([{ displayName: instance.displayName ?? String(rtn.dbId), dbId: rtn.dbId }]);
+        this.commitResultDialogService.openDialog(this.instanceUtilities.buildCommitSummaryResults(instance, rtn));
       });
     }
   }
@@ -177,13 +177,14 @@ export class UpdatedInstanceListComponent implements OnInit {
     const commits = instancesToCommit.map(instance =>
       this.dataService.commit(instance).pipe(
         tap(rtn => this.instanceUtilities.processCommit(instance, rtn, this.dataService)),
-        map(rtn => ({ displayName: instance.displayName ?? String(rtn.dbId), dbId: rtn.dbId } as CommitResult))
+        map(rtn => this.instanceUtilities.buildCommitSummaryResults(instance, rtn))
       )
     );
 
     forkJoin(commits).pipe(
       finalize(() => this.closeCommitWaitDialog())
-    ).subscribe(results => {
+    ).subscribe(resultGroups => {
+      const results: CommitResult[] = resultGroups.flat();
       this.commitResultDialogService.openDialog(results);
     });
 
@@ -241,13 +242,13 @@ export class UpdatedInstanceListComponent implements OnInit {
         }
         return this.dataService.commit(inst).pipe(
           tap(rtn => this.instanceUtilities.processCommit(inst, rtn, this.dataService)),
-          map(rtn => ({ displayName: inst.displayName ?? String(rtn.dbId), dbId: rtn.dbId } as CommitResult))
+          map(rtn => this.instanceUtilities.buildCommitSummaryResults(inst, rtn))
         );
       })
     ).pipe(
       finalize(() => this.closeCommitWaitDialog())
     ).subscribe({
-      next: result => results.push(result),
+      next: resultGroup => results.push(...resultGroup),
       error: err => console.error('Error committing new instances', err),
       complete: () => {
         this.selectedNewInstances = [];

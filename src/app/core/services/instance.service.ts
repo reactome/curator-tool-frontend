@@ -517,8 +517,77 @@ export class InstanceUtilities {
         if (!shell) {
             shell = this.makeShell(inst);
             this.shellInstances.set(inst.dbId, shell);
+        // } else if (!this.dbId2displayName.has(inst.dbId) && inst.displayName && inst.displayName !== shell.displayName) {
+        //     // No local override exists and the server returned a different display name —
+        //     // update the shell so referencing instances (e.g. the Event's stableIdentifier slot)
+        //     // show the correct, up-to-date display name.
+        //     shell.displayName = inst.displayName;
         }
         return shell;
+    }
+
+    private getDynamicAttributeValue(instance: any, attributeName: string): any {
+        if (!instance || !instance.attributes)
+            return undefined;
+        if (instance.attributes instanceof Map)
+            return instance.attributes.get(attributeName);
+        return instance.attributes[attributeName];
+    }
+
+    /**
+     * Build commit summary rows for the dialog by including the directly committed instance and
+     * any additional committed instances returned by the server.
+     *
+     * Supports both legacy mapping (newInstOld2NewId) and per-instance newInstOldId markers.
+     */
+    buildCommitSummaryResults(committedInst: Instance, rtnInst: Instance): { displayName: string, dbId: number }[] {
+        const results: { displayName: string, dbId: number }[] = [];
+        const seenDbIds = new Set<number>();
+
+        const addResult = (dbId: number | undefined, displayName?: string) => {
+            if (dbId === undefined || dbId === null)
+                return;
+            if (seenDbIds.has(dbId))
+                return;
+            seenDbIds.add(dbId);
+            results.push({
+                dbId,
+                displayName: displayName ?? String(dbId)
+            });
+        };
+
+        const committedName = committedInst.displayName ?? rtnInst.displayName;
+        addResult(rtnInst.dbId, committedName);
+
+        // Legacy payload support: map old local ids to newly persisted ids.
+        if (rtnInst.newInstOld2NewId) {
+            const old2newId: any = rtnInst.newInstOld2NewId;
+            Object.keys(old2newId).forEach((oldId) => {
+                const oldDbId = parseInt(oldId, 10);
+                const newDbId = old2newId[oldId];
+                const oldShell = this.shellInstances.get(oldDbId);
+                addResult(newDbId, oldShell?.displayName);
+            });
+        }
+
+        const rtnOldId = (rtnInst as any).newInstOldId ?? this.getDynamicAttributeValue(rtnInst, 'newInstOldId');
+        if (rtnOldId !== undefined && rtnOldId !== null) {
+            const oldShell = this.shellInstances.get(Number(rtnOldId));
+            addResult(rtnInst.dbId, rtnInst.displayName ?? oldShell?.displayName);
+        }
+
+        const returnedCommittedInstances = this.getDynamicAttributeValue(rtnInst, 'committedInstances');
+        if (Array.isArray(returnedCommittedInstances)) {
+            returnedCommittedInstances.forEach((returnedInst: any) => {
+                if (!returnedInst || returnedInst.dbId === undefined || returnedInst.dbId === null)
+                    return;
+                const oldId = returnedInst.newInstOldId ?? this.getDynamicAttributeValue(returnedInst, 'newInstOldId');
+                const oldShell = oldId !== undefined && oldId !== null ? this.shellInstances.get(Number(oldId)) : undefined;
+                addResult(returnedInst.dbId, returnedInst.displayName ?? oldShell?.displayName);
+            });
+        }
+
+        return results;
     }
 
     removeInstInArray(target: Instance, array: Instance[]) {

@@ -621,10 +621,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         this.instUtils.removeInstInArray(this.instance!, this.viewHistory);
         this.changeTable(storedInst);
       }
-      this.commitResultDialogService.openDialog([{
-        displayName: this.instance!.displayName ?? String(storedInst.dbId),
-        dbId: storedInst.dbId
-      }]);
+      this.commitResultDialogService.openDialog(this.instUtils.buildCommitSummaryResults(this.instance!, storedInst));
     });
   }
 

@@ -936,7 +936,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         }
         return this.dataService.commit(inst).pipe(
           tap(rtn => this.instUtils.processCommit(inst, rtn, this.dataService)),
-          map(rtn => ({ displayName: inst.displayName ?? String(rtn.dbId), dbId: rtn.dbId } as CommitResult))
+          map(rtn => this.instUtils.buildCommitSummaryResults(inst, rtn))
         );
       })
     ).pipe(
@@ -945,7 +945,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         this.commitWaitDialogRef = undefined;
       })
     ).subscribe({
-      next: result => results.push(result),
+      next: resultGroup => results.push(...resultGroup),
       error: err => console.error('Error committing new instances', err),
       complete: () => {
         this.selectedInstances = [];
