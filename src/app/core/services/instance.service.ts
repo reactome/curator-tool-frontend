@@ -517,11 +517,8 @@ export class InstanceUtilities {
         if (!shell) {
             shell = this.makeShell(inst);
             this.shellInstances.set(inst.dbId, shell);
-        // } else if (!this.dbId2displayName.has(inst.dbId) && inst.displayName && inst.displayName !== shell.displayName) {
-        //     // No local override exists and the server returned a different display name —
-        //     // update the shell so referencing instances (e.g. the Event's stableIdentifier slot)
-        //     // show the correct, up-to-date display name.
-        //     shell.displayName = inst.displayName;
+        } else if (!this.dbId2displayName.has(inst.dbId) && inst.displayName && inst.displayName !== shell.displayName) {
+            this.registerDisplayNameChange(inst);
         }
         return shell;
     }
@@ -552,7 +549,7 @@ export class InstanceUtilities {
             seenDbIds.add(dbId);
             results.push({
                 dbId,
-                displayName: displayName ?? String(dbId)
+                displayName: displayName ?? "To be generated"
             });
         };
 
@@ -928,6 +925,17 @@ export class InstanceUtilities {
                     }
                 }
             });
+        }
+        if (rtnInst.stableIdentifierModified) {
+            let stableIdentifierDbId = committedInst.attributes.get('stableIdentifier')?.dbId;
+            const shell = this.shellInstances.get(stableIdentifierDbId);
+            if (shell) {
+                this.store.dispatch(UpdateInstanceActions.ls_register_updated_instance(shell));
+                this.store.dispatch(UpdateInstanceActions.remove_updated_instance(shell));
+            }
+
+            this.setRefreshViewDbId(stableIdentifierDbId);
+            this.registerDisplayNameChange(stableIdentifierDbId);;
         }
     }
 

@@ -53,8 +53,9 @@
           <!-- TODO: Also need to determine if it is required or disabled-->
           <ng-container *ngIf="value !== undefined; else elseblock">
               <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
-                [cdkContextMenuTriggerFor]="row_menu" class="padding span-menu-trigger"
-                style="cursor: pointer; text-decoration: underline;">
+                #aTrigger="cdkContextMenuTriggerFor" [cdkContextMenuTriggerFor]="row_menu"
+                (contextmenu)="onContextMenu($event)" (cdkContextMenuOpened)="onMenuOpened(aTrigger)"
+                class="padding span-menu-trigger" style="cursor: pointer; text-decoration: underline;">
                 {{value.displayName}}
                 [{{value.dbId}}]
               </a>
@@ -64,7 +65,9 @@
           <ng-template #elseblock>
             <ng-container>
               <!-- Use a customized class to force the empty span to show the menu.-->
-              <span [cdkContextMenuTriggerFor]="row_menu" class="span-menu-trigger"></span>
+              <span #spanTrigger="cdkContextMenuTriggerFor" [cdkContextMenuTriggerFor]="row_menu"
+                (contextmenu)="onContextMenu($event)" (cdkContextMenuOpened)="onMenuOpened(spanTrigger)"
+                class="span-menu-trigger"></span>
             </ng-container>
           </ng-template>
         </div>

@@ -1,4 +1,5 @@
 import { CdkTextareaAutosize } from "@angular/cdk/text-field";
+import { CdkContextMenuTrigger } from "@angular/cdk/menu";
 import {
   Component,
   EventEmitter,
@@ -20,6 +21,7 @@ import { DragDropService } from "../../../../../schema-view/instance-bookmark/dr
 import { DragDropStatus } from '../instance-table.model';
 import { MatDialog } from "@angular/material/dialog";
 import { TextEditorDialogComponent } from "./text-editor-dialog/text-editor-dialog.component";
+import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
 /**
  * Used to display a single value of an Instance object.
  */
@@ -110,6 +112,32 @@ export class InstanceTableRowElementComponent implements OnInit {
     }
     this.newValueEvent.emit(attributeValue);
     this.triggerResize();
+  }
+
+  private lastContextMenuPosition = { x: 0, y: 0 };
+  private skipSpeciesWarning = false;
+
+  onContextMenu(event: MouseEvent) {
+    this.lastContextMenuPosition = { x: event.x, y: event.y };
+  }
+
+  onMenuOpened(trigger: CdkContextMenuTrigger) {
+    if (this.attribute?.name === 'species') {
+      if (this.skipSpeciesWarning) {
+        this.skipSpeciesWarning = false;
+        return;
+      }
+      const dialogRef = this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Warning',
+          message: 'Warning: editing the species may result in a change to the stId and the stableIdentifier',
+        }
+      });
+      dialogRef.afterClosed().subscribe(() => {
+        this.skipSpeciesWarning = true;
+        trigger.open(this.lastContextMenuPosition);
+      });
+    }
   }
 
   onEditAction(action: EDIT_ACTION) {
