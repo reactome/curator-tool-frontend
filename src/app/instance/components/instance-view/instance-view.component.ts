@@ -13,7 +13,7 @@ import { InstanceTableComponent } from './instance-table/instance-table.componen
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { combineLatest, Observable, of, Subscription, take, concatMap, finalize } from 'rxjs';
 import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service';
-import { deleteInstances, newInstances } from '../../state/instance.selectors';
+import { deleteInstances, newInstances, updatedInstances } from '../../state/instance.selectors';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { DeletionService } from '../../deletion-commit/utils/deletion.service';
@@ -51,6 +51,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   qaReportPassed?: boolean;
   qaReportToolTip: string = "Run QA Report";
   instanceViewFilters: InstanceViewFilter[] = [];
+  hasPendingStagedInstances: boolean = false;
 
   // Flag to indicate if this is in event view
   @Input() isInEventView: boolean = false;
@@ -149,6 +150,16 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         }
       }
     })
+    this.subscriptions.add(subscription);
+
+    subscription = combineLatest([
+      this.store.select(newInstances()),
+      this.store.select(updatedInstances()),
+      this.store.select(deleteInstances())
+    ]).subscribe(([stagedNewInstances, stagedUpdatedInstances, stagedDeletedInstances]) => {
+      this.hasPendingStagedInstances =
+        stagedNewInstances.length > 0 || stagedUpdatedInstances.length > 0 || stagedDeletedInstances.length > 0;
+    });
     this.subscriptions.add(subscription);
     // first check isReferrer and then load instances for the past dbId 
     // then check if the displayname is contianed in the modified attributes and if so, reolad the dipslayed instance 
@@ -623,6 +634,69 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       }
       this.commitResultDialogService.openDialog(this.instUtils.buildCommitSummaryResults(this.instance!, storedInst));
     });
+  }
+
+  exportEventDocx() {
+    if (!this.instance || this.instance.dbId <= 0 || !this.isEventClass())
+      return;
+    if (this.hasPendingStagedInstances) {
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Information',
+          message: 'Please commit all staged instances before exporting this event to DOCX.'
+        }
+      });
+      return;
+    }
+    this.commitWaitDialogRef?.close();
+    this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
+      disableClose: true,
+      hasBackdrop: true,
+      autoFocus: false,
+      restoreFocus: false,
+      data: {
+        title: 'Exporting DOCX',
+        message: 'Please wait while the server generates the DOCX file.'
+      }
+    });
+    const dbId = this.instance.dbId;
+    this.dataService.exportEventDocx(dbId).pipe(
+      take(1),
+      finalize(() => {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
+      })
+    ).subscribe({
+      next: response => {
+        const fileName = this.extractFileName(response.headers.get('content-disposition'))
+          || `event_${dbId}.docx`;
+        this.downloadBlobAsFile(response.body, fileName);
+      },
+      error: () => {
+        // Error dialog is handled by DataService.
+      }
+    });
+  }
+
+  private extractFileName(contentDisposition: string | null): string | null {
+    if (!contentDisposition)
+      return null;
+    const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utf8Match?.[1])
+      return decodeURIComponent(utf8Match[1]);
+    const asciiMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+    return asciiMatch?.[1] ?? null;
+  }
+
+  private downloadBlobAsFile(blob: Blob | null, fileName: string) {
+    if (!blob)
+      return;
+    const objectUrl = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = fileName;
+    anchor.click();
+    window.URL.revokeObjectURL(objectUrl);
   }
 
   onQAReportAction() {

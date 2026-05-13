@@ -39,6 +39,10 @@
           [disabled]="!isUploadable()">
           <mat-icon>upload</mat-icon>
         </button>
+        <button *ngIf="isEventClass() && instance.dbId > 0" mat-icon-button color="primary" class="v-center"
+          (click)="exportEventDocx()" matTooltip="Export event to DOCX" [disabled]="hasPendingStagedInstances">
+          <mat-icon>download</mat-icon>
+        </button>
         <button *ngIf="instance.dbId < 0" mat-icon-button color="primary" class="v-center"
           (click)="matchNewInstance()" matTooltip="Match new instance in database">
           <mat-icon>manage_search</mat-icon>

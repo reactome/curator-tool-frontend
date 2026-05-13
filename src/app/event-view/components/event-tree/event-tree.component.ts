@@ -1,12 +1,11 @@
 import { FlatTreeControl } from "@angular/cdk/tree";
 import { ChangeDetectorRef, Component, EventEmitter, inject, OnDestroy, Output } from '@angular/core';
-import { MatDialog, MatDialogRef } from "@angular/material/dialog";
+import { MatDialog } from "@angular/material/dialog";
 import { MatTreeFlatDataSource, MatTreeFlattener } from "@angular/material/tree";
 import { ActivatedRoute, Router } from "@angular/router";
-import { finalize, forkJoin, Subscription, take } from "rxjs";
+import { forkJoin, Subscription, take } from "rxjs";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
-import { CommitWaitDialogComponent } from "src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component";
 import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
 import { Instance } from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
@@ -103,7 +102,6 @@ export class EventTreeComponent implements OnDestroy {
 
   // To show information
   readonly dialog = inject(MatDialog);
-  private exportWaitDialogRef?: MatDialogRef<CommitWaitDialogComponent>;
 
   private subscriptions: Subscription = new Subscription();
 
@@ -567,58 +565,6 @@ export class EventTreeComponent implements OnDestroy {
       schemaClassName: node.className
     }
     this.addToDiagram.emit(instance);
-  }
-
-  exportEventDocx(node: EventNode) {
-    if (!node?.dbId || node.dbId <= 0)
-      return;
-    this.exportWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
-      disableClose: true,
-      hasBackdrop: true,
-      autoFocus: false,
-      restoreFocus: false,
-      data: {
-        title: 'Exporting DOCX',
-        message: 'Please wait while the server generates the DOCX file...'
-      }
-    });
-    const sub = this.dataService.exportEventDocx(node.dbId).pipe(
-      finalize(() => {
-        this.exportWaitDialogRef?.close();
-        this.exportWaitDialogRef = undefined;
-      })
-    ).subscribe({
-      next: (response) => {
-        const fileName = this.extractFileName(response.headers.get('content-disposition'))
-          || `event_${node.dbId}.docx`;
-        this.downloadBlobAsFile(response.body, fileName);
-      },
-      error: () => {
-        // Error message is handled by DataService.
-      }
-    });
-    this.subscriptions.add(sub);
-  }
-
-  private extractFileName(contentDisposition: string | null): string | null {
-    if (!contentDisposition)
-      return null;
-    const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
-    if (utf8Match?.[1])
-      return decodeURIComponent(utf8Match[1]);
-    const asciiMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
-    return asciiMatch?.[1] ?? null;
-  }
-
-  private downloadBlobAsFile(blob: Blob | null, fileName: string) {
-    if (!blob)
-      return;
-    const objectUrl = window.URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = objectUrl;
-    anchor.download = fileName;
-    anchor.click();
-    window.URL.revokeObjectURL(objectUrl);
   }
 
   private isContainedBy(childNode: EventNode, diagramNode: EventNode) {
