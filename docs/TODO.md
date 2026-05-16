@@ -10,9 +10,11 @@
 - bug: special character (e.g. !, $, etc) cannot work in the password.
 - bug: A a newly added compartment, the drag looks too fast potentially due to the wrong previous drag posititon.
 - bug: navigate to: http://localhost:4200/event_view/instance/397014 after enabling editing, the rounded edges will become square. The user must refresh the page to regain rounded edges.
-- bug: navigate to: http://localhost:4200/event_view/instance/6787011. The diagram will not appear right away. Once the user enables editing, the diagram will again show, but disappears again once editing is disabled. 
+- bug: navigate to: http://localhost:4200/event_view/instance/6787011. The diagram will not appear right away. Once the user enables editing, the diagram will again show, but disappears again once editing is disabled. (Looks like they are all rice pathways. Need to change the diagram converter so that it can run for all pathway diagrams during converting. In this specific pathway diagram, some reactions don't have inputs or outputs. During the converting the hanging ends were removed, and therefore, the backbone and the position points are not matched, resulting an error.)
 
 #### Deidre
+- bug: The numbers of instances at the new schema view (beta browser) are not updated when new instances are committed. It looks like the counts may be cached at the server app. However, the content of edited instances do get updated.
+- bug: Pick any pathway, add a new reaction in its hasEvent slot view creation, commit the pathway (in the updated list). The new reaction should be committed too (indeed). However, nothing to indicate this: the dialog doesn't show the dbId is updated for this reaction.
 - TODO: Use the new set of Reactome icons at Figma, designed by the EBI team. Need to check with Eliott.
 - Bug: In the event view, the mouse position is lowed when scroll up/down the instance view. (low priority)
 - TODO: Boolean sliders appear to be 'false' when they are 'true' and disabled due to the gray styling for disabled buttons.
