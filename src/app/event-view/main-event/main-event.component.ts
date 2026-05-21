@@ -2,6 +2,7 @@ import { CdkDragMove } from "@angular/cdk/drag-drop";
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatSidenav } from "@angular/material/sidenav";
 import { ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
+import { ActivatedRoute } from "@angular/router";
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
@@ -15,6 +16,7 @@ import { Subscription } from "rxjs";
   styleUrls: ['./main-event.component.scss'],
 })
 export class MainEventComponent implements  OnInit, OnDestroy {
+  hasInstanceId = false;
   // TODO: calculate window/screden size and make the table a ratio. 
   treeWidth = 400;
   diagramHeight = window.innerHeight * 0.67;
@@ -34,7 +36,10 @@ export class MainEventComponent implements  OnInit, OnDestroy {
 
   private subscriptions: Subscription = new Subscription();
 
-  constructor(private instanceUtilities: InstanceUtilities) {
+  constructor(
+    private instanceUtilities: InstanceUtilities,
+    private route: ActivatedRoute,
+  ) {
     let sub = this.instanceUtilities.lastClickedDbId$.subscribe(dbId => {
       // Avoid using ngrx to avoid the complicated implementation
       this.instanceView?.loadInstance(parseInt(dbId + ''));
@@ -68,6 +73,11 @@ export class MainEventComponent implements  OnInit, OnDestroy {
     // Restore the state from localStorage
     const savedState = sessionStorage.getItem('statusPaneInEventView');
     this.showChanged = savedState === 'shown' ? true : false;
+
+    const paramSub = this.route.paramMap.subscribe(params => {
+      this.hasInstanceId = params.has('id');
+    });
+    this.subscriptions.add(paramSub);
   }
 
   ngOnDestroy(): void {

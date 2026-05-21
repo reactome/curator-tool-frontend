@@ -1,47 +1,48 @@
 <div #container>
   <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true" style="height: 94vh;">
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true"
-                 [style.width]="treeWidth  + 'px'">
+      [style.width]="treeWidth  + 'px'">
       <!--Technically it would be nicer to create a new component having both filter and tree. Put it here since the main event view
       is not that complicated now. -->
       <!-- We will use hidden instead of *ngIf to avoid destroying and recreating the components -->
       <div id="event-filter-tour-target" style="overflow: hidden;" [hidden]="showChanged">
         <event-filter (speciesChanged)="handleSpeciesSelection($event)"
-                      (filterTextChanged)="handleEventFilterTextChanged($event)"></event-filter>
+          (filterTextChanged)="handleEventFilterTextChanged($event)"></event-filter>
       </div>
       <app-event-tree (addToDiagram)="addEventToDiagram($event)" (eventClicked)="handleEventClicked($event)"
-                       (createEmptyDiagramEvent)="createEmptyDiagram($event)"
-                      #eventTree [hidden]="showChanged"></app-event-tree>
+        (createEmptyDiagramEvent)="createEmptyDiagram($event)" #eventTree [hidden]="showChanged"></app-event-tree>
       <!-- calling classAction will close this list since it should be true. -->
-      <app-local-instance-list [hidden]="!showChanged" (closeAction)="showUpdatedInstances(false)" [blockRoute]="true"></app-local-instance-list>
-        
+      <app-local-instance-list [hidden]="!showChanged" (closeAction)="showUpdatedInstances(false)"
+        [blockRoute]="true"></app-local-instance-list>
+
       <div class="resize-container-vertical" (cdkDragMoved)="resizeLeft($event)" cdkDrag cdkDragLockAxis="x"
-           (cdkDragStarted)="resizingVertical = true" (cdkDragReleased)="resizingVertical = false"
-           [class.resizing]="resizingVertical">
+        (cdkDragStarted)="resizingVertical = true" (cdkDragReleased)="resizingVertical = false"
+        [class.resizing]="resizingVertical">
         <div class="resize-bar"></div>
       </div>
     </mat-sidenav>
-    <mat-sidenav-content style="background-color: white; overflow: hidden;">
+    <mat-sidenav-content *ngIf="hasInstanceId" style="background-color: white; overflow: hidden;">
       <div style="display: flex; flex-direction: column; height: 100%;;">
         <div style="flex: 2; overflow: hidden;">
           <div style="height: 100%; overflow-x: auto;">
-              <app-pathway-diagram #diagramView (goToPathwayEvent)="handleGoToPathEvent($event)" 
+            <app-pathway-diagram #diagramView (goToPathwayEvent)="handleGoToPathEvent($event)"
               (openPathwayDiagramEvent)="handleOpenPathwayDiagramEvent($event)"></app-pathway-diagram>
           </div>
         </div>
         <div [style.height]="window.innerHeight - 40 - diagramHeight + 'px'">
           <div class="resize-container-horizontal" (cdkDragMoved)="resizeDown($event)" cdkDrag cdkDragLockAxis="y"
-               (cdkDragStarted)="resizingHorizontal = true" (cdkDragReleased)="resizingHorizontal = false"
-               [class.resizing]="resizingHorizontal"
-               [style.bottom]="window.innerHeight - 45 - diagramHeight + 1 + 'px'">
+            (cdkDragStarted)="resizingHorizontal = true" (cdkDragReleased)="resizingHorizontal = false"
+            [class.resizing]="resizingHorizontal" [style.bottom]="window.innerHeight - 45 - diagramHeight + 1 + 'px'">
             <div class="resize-bar"></div>
           </div>
           <div class="instance-view-container" style="overflow: scroll;">
-            <app-instance-view #instanceView [isInEventView]="true" [needHistory]="true" [blockRoute]="true"></app-instance-view>
+            <app-instance-view #instanceView [isInEventView]="true" [needHistory]="true"
+              [blockRoute]="true"></app-instance-view>
           </div>
           <div id="bookmark-boundary">
-            <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="#bookmark-boundary" id="bookmark-container" [ngClass]="status"
-                 [style.height]="window.innerHeight - 300 - diagramHeight + 'px'" (cdkDragStarted)="onDrag()" (cdkDragEnded)="onDragEnd()">
+            <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="#bookmark-boundary" id="bookmark-container"
+              [ngClass]="status" [style.height]="window.innerHeight - 300 - diagramHeight + 'px'"
+              (cdkDragStarted)="onDrag()" (cdkDragEnded)="onDragEnd()">
               <button id="bookmark-handle" cdkDragHandle (click)="toggleBookmarks()">BOOKMARKS
               </button>
               <div id="bookmark" [style.height]="window.innerHeight - diagramHeight + 'px'">
@@ -52,7 +53,21 @@
         </div>
       </div>
     </mat-sidenav-content>
-
+    <mat-sidenav-content *ngIf="!hasInstanceId">
+      <div class="reactome-banner">
+        <div class="logo-container">
+          <img src="assets/images/reactome-logo.svg" alt="Reactome Logo" class="reactome-logo">
+        </div>
+        <div class="title-container">
+          <h1 class="banner-title">Reactome Curation WebBench: Event View</h1>
+        </div>
+            <ul style="text-align: left;">
+              <li>Selecting an event in the tree will open its related diagram.</li>
+              <li>Clicking a diagram object loads the related instance in the lower instance editor.</li>
+              <li>Right-click the diagram to open the context menu.</li>
+            </ul>
+      </div>
+    </mat-sidenav-content>
   </mat-sidenav-container>
   <app-status (showUpdatedEvent)="showUpdatedInstances($event)"></app-status>
 </div>

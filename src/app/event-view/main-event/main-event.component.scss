@@ -85,6 +85,38 @@ side-nav {
   width: calc(2 * var(--bookmark-width) + var(--handle-width));
   //top: 0;
   bottom: 100px;
+
+  .event-home-container {
+    min-height: 70vh;
+    padding: 3rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1rem;
+  }
+
+  .event-home-container h1 {
+    margin: 0;
+  }
+
+  .event-home-container p {
+    max-width: 640px;
+    margin: 0;
+    color: #4f4f4f;
+  }
+
+  .open-instance-link {
+    margin-top: 0.5rem;
+    color: #1565c0;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .open-instance-link:hover {
+    text-decoration: underline;
+  }
   z-index: 100;
 
   #bookmark {
@@ -150,4 +182,84 @@ side-nav {
   min-height: 100px;
   overflow: visible;
   height: 100%;
+}
+
+/* ── Cards ──────────────────────────────────────────────── */
+.tutorial-card {
+  mat-card-header {
+    margin-bottom: 8px;
+  }
+
+  mat-card-content {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.6;
+
+    h4 {
+      margin: 12px 0 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1976d2;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+
+      &:first-child {
+        margin-top: 0;
+      }
+    }
+
+    ul, ol {
+      margin: 0 0 8px;
+      padding-left: 20px;
+
+      li {
+        margin-bottom: 4px;
+      }
+    }
+
+    p { margin: 0 0 8px; }
+  }
+}
+
+.reactome-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 75vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo-container {
+  margin-bottom: 2rem;
+}
+
+.reactome-logo {
+  height: 120px;
+  width: auto;
+  max-width: 100%;
+}
+
+.title-container {
+  margin-top: 1rem;
+}
+
+.banner-title {
+  font-size: 1.8rem;
+  font-weight: 300;
+  color: #333;
+  margin: 0;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  .reactome-logo {
+    height: 80px;
+  }
+  
+  .banner-title {
+    font-size: 1.4rem;
+  }
 }
