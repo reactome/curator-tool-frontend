@@ -1,10 +1,10 @@
 import { HttpClient, HttpResponse } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
-import { catchError, combineLatest, concatMap, EMPTY, forkJoin, map, Observable, of, Subject, take, tap, throwError } from 'rxjs';
+import { catchError, combineLatest, concatMap, EMPTY, forkJoin, map, Observable, of, Subject, switchMap, take, tap, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
-import { Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
+import { DiagramLockInfo, Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
 import {
   AttributeCategory,
   SchemaAttribute,
@@ -55,6 +55,7 @@ export class DataService {
   private deleteByDeletedUrl = `${environment.ApiRoot}/deleteByDeleted/`;
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
+  private lockDiagramUrl = `${environment.ApiRoot}/lockDiagram/`;
 
 
   // Track the negative dbId to be used
@@ -77,8 +78,7 @@ export class DataService {
   constructor(private http: HttpClient,
     private utils: InstanceUtilities,
     private store: Store,
-    private router: Router)  
-   {
+    private router: Router) {
   }
 
   /**
@@ -491,54 +491,54 @@ export class DataService {
   /**
    * Create a new instance from an existing instance.
    */
-  cloneInstance(instance: Instance): Observable < Instance > {
-      return this.createNewInstance(instance.schemaClassName).pipe(
-        concatMap((newInst: Instance) => {
-          return this.fetchInstance(instance.dbId).pipe(
-            map((inst: Instance) => {
-              const uneditableAtts: Array<string> = this.getAttributeNamesNotClonable();
-              const allAttributes: Map<string, any> = inst.attributes;
+  cloneInstance(instance: Instance): Observable<Instance> {
+    return this.createNewInstance(instance.schemaClassName).pipe(
+      concatMap((newInst: Instance) => {
+        return this.fetchInstance(instance.dbId).pipe(
+          map((inst: Instance) => {
+            const uneditableAtts: Array<string> = this.getAttributeNamesNotClonable();
+            const allAttributes: Map<string, any> = inst.attributes;
 
-              for (let attribute of newInst.schemaClass!.attributes!) {
-                if (attribute.category === AttributeCategory.NOMANUALEDIT) {
-                  continue;
-                }
-                if (uneditableAtts.includes(attribute.name)) {
-                  continue;
-                }
-                let value = allAttributes.get(attribute.name);
-                if (!value) continue
-
-                // Clone the value if it's an array to prevent mutation issues
-                if (Array.isArray(value)) {
-                  value = [...value];
-                }
-                newInst.attributes.set(attribute.name, value);
+            for (let attribute of newInst.schemaClass!.attributes!) {
+              if (attribute.category === AttributeCategory.NOMANUALEDIT) {
+                continue;
               }
-              // Set displayName last
-              newInst.attributes.set('displayName', 'Clone of ' + instance.displayName);
-              newInst.displayName = 'Clone of ' + instance.displayName;
-              return newInst;
-            }),
-            catchError((err: Error) => {
-              return this.handleErrorMessage(err);
-            })
-          );
-        })
-      );
-    }
+              if (uneditableAtts.includes(attribute.name)) {
+                continue;
+              }
+              let value = allAttributes.get(attribute.name);
+              if (!value) continue
 
-  private getAttributeNamesNotClonable(): Array < string > {
-      return ['authored', 'edited', 'reviewed', 'revised', '_doRelease', 'releaseStatus', 
-        'releaseDate', 'created', 'modified', 'doi', 'internalReviewed', 'reviewStatus', 'previousReviewStatus'];
-    }
+              // Clone the value if it's an array to prevent mutation issues
+              if (Array.isArray(value)) {
+                value = [...value];
+              }
+              newInst.attributes.set(attribute.name, value);
+            }
+            // Set displayName last
+            newInst.attributes.set('displayName', 'Clone of ' + instance.displayName);
+            newInst.displayName = 'Clone of ' + instance.displayName;
+            return newInst;
+          }),
+          catchError((err: Error) => {
+            return this.handleErrorMessage(err);
+          })
+        );
+      })
+    );
+  }
+
+  private getAttributeNamesNotClonable(): Array<string> {
+    return ['authored', 'edited', 'reviewed', 'revised', '_doRelease', 'releaseStatus',
+      'releaseDate', 'created', 'modified', 'doi', 'internalReviewed', 'reviewStatus', 'previousReviewStatus'];
+  }
 
   /**
    * Register a new instance to the cache.
    */
   registerInstance(instance: Instance): void {
-      // Make sure map is used
-    if(instance.attributes && !(instance.attributes instanceof Map)) {
+    // Make sure map is used
+    if (instance.attributes && !(instance.attributes instanceof Map)) {
       this.handleInstanceAttributes(instance);
     }
     this.id2instance.set(instance.dbId, instance);
@@ -1246,12 +1246,12 @@ export class DataService {
     console.log("The resource could not be loaded: \n" + err.message);
     // If the error message contains a 401 or authentication error, redirect to the login page
     if (err.message && err.message.includes('401')) {
-        // Also ensure to save the route when the token is expired
-        const currentUrl = window.location.pathname + window.location.search + window.location.hash;
-            // Save the state to localStorage
-        if(currentUrl !== '/login') 
-          sessionStorage.setItem('currentUrl', currentUrl);
-        this.router.navigate(['/login']);
+      // Also ensure to save the route when the token is expired
+      const currentUrl = window.location.pathname + window.location.search + window.location.hash;
+      // Save the state to localStorage
+      if (currentUrl !== '/login')
+        sessionStorage.setItem('currentUrl', currentUrl);
+      this.router.navigate(['/login']);
     }
     // Block to show refresh token failure message. This is hard-coded and should be changed in the future.
     if (!err.message.includes('refresh token')) {
@@ -1329,4 +1329,51 @@ export class DataService {
     );
   }
 
+  /**
+ * Lock the diagram for editing to prevent concurrent modifications.
+ * @param instance
+ */
+  lockDiagram(dbId: number): Observable<DiagramLockInfo> {
+    // In case instance is just a shell, we need to use the cached instance
+    // which should be the full instance
+    let diagramLockInfo: DiagramLockInfo = {
+      diagramDbId: dbId,
+      username: '',
+      lockedAt: '',
+      locked: false
+    };
+    this.fetchPathwayDiagram(dbId).pipe(pathwayDiagram => {
+      if (!pathwayDiagram) {
+        this.handleErrorMessage(new Error('Cannot find the diagram to lock!'));
+        return of(diagramLockInfo);
+      }
+
+      // Need to add default person id to associate with the lock
+      return this.store.select(defaultPerson()).pipe(
+        take(1),
+        concatMap((person: Instance[]) => {
+          if (!person || person.length == 0 || person[0].dbId === undefined) {
+            this.handleErrorMessage(new Error('Cannot find the default person!'));
+            return of(diagramLockInfo);
+          }
+
+          pathwayDiagram.subscribe(instance => {
+            instance.defaultPersonId = person[0].dbId
+
+            return this.http.post<DiagramLockInfo>(this.lockDiagramUrl, instance).pipe(
+              map((lockInfo: DiagramLockInfo) => {
+                diagramLockInfo = lockInfo;
+              }),
+              catchError(error => {
+                this.handleErrorMessage(error);
+                return of(diagramLockInfo);
+              })
+            );
+          });
+          return of(diagramLockInfo);
+        })
+      );
+    });
+    return of(diagramLockInfo);
+  }
 }

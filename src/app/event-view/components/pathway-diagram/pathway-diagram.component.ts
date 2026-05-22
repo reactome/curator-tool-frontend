@@ -254,10 +254,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   // content at the front end. 
   private disableEditing() {
     // const doDisable = () => {
-      this.diagramUtils.disableEditing(this.diagram);
-      this.resizingNodes.forEach(node => this.diagramUtils.disableResizeCompartment(node, this.diagram));
-      this.resizingNodes.length = 0; // reset to empty
-      this.isEditing = false;
+    this.diagramUtils.disableEditing(this.diagram);
+    this.resizingNodes.forEach(node => this.diagramUtils.disableResizeCompartment(node, this.diagram));
+    this.resizingNodes.length = 0; // reset to empty
+    this.isEditing = false;
     //   this.isEdited = false;
     // };
     // this.promptUploadBeforeDiscard('disabling editing', doDisable);
@@ -302,9 +302,21 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     this.canEdit().subscribe((canEdit: boolean) => {
       if (!canEdit)
         return;
+
+      const lockPathwayDiagram = (pathwayDiagramId: string) => {
+        const id = parseInt(pathwayDiagramId);
+        if (Number.isNaN(id))
+          return;
+        this.diagramUtils.getDataService().lockDiagram(id).subscribe({
+          // Create a notification to alert users of locked pathway diagram
+        });
+      };
+
       if (this.pathwayDiagramId && this.pathwayDiagramId.length > 0) {
+
         this.isEditing = true;
         this.diagram.diagramId = this.pathwayDiagramId;
+        lockPathwayDiagram(this.pathwayDiagramId);
         // Just need to enable editing without reloading
         // Otherwise, edited changes will be lost.
         if (this.isEdited) {
@@ -313,6 +325,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         else {
           this.loadPathwayDiagram();
         }
+
         return;
       }
       // Switch to PathwayDiagram 
@@ -321,9 +334,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
           if (pathwayDiagram) {
             this.isEditing = true;
             this.diagram.diagramId = pathwayDiagram.dbId.toString();
+            this.pathwayDiagramId = pathwayDiagram.dbId.toString(); // Store it for future use
+            lockPathwayDiagram(this.pathwayDiagramId);
             // Let the event handler for "network_displayed" to handle the rest
             this.loadPathwayDiagram();
-            this.pathwayDiagramId = pathwayDiagram.dbId.toString(); // Store it for future use
           }
           else {
             this.showNoPathwayDiagramDialog();

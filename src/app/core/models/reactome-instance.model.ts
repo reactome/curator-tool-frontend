@@ -100,6 +100,14 @@ export interface UserInstances {
   defaultPerson?: Instance
 }
 
+export interface DiagramLockInfo {
+    diagramDbId: number;
+    username: string;
+    lockedAt: string; // ISO 8601 date string
+    locked: boolean; // "LOCKED" or "UNLOCKED"
+
+}
+
 /**
  * Use to limit the number of instances that can be staged before commit. This is to avoid overwhelming the client and encourage users to persist their changes.
  */
