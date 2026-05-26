@@ -4,7 +4,7 @@ import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, EMPTY, forkJoin, map, Observable, of, Subject, switchMap, take, tap, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
-import { DiagramLockInfo, Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
+import {  DiagramLock, Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
 import {
   AttributeCategory,
   SchemaAttribute,
@@ -1331,49 +1331,52 @@ export class DataService {
 
   /**
  * Lock the diagram for editing to prevent concurrent modifications.
- * @param instance
+   * @param dbId PathwayDiagram dbId
  */
-  lockDiagram(dbId: number): Observable<DiagramLockInfo> {
-    // In case instance is just a shell, we need to use the cached instance
-    // which should be the full instance
-    let diagramLockInfo: DiagramLockInfo = {
-      diagramDbId: dbId,
-      username: '',
-      lockedAt: '',
-      locked: false
-    };
-    this.fetchPathwayDiagram(dbId).pipe(pathwayDiagram => {
-      if (!pathwayDiagram) {
-        this.handleErrorMessage(new Error('Cannot find the diagram to lock!'));
-        return of(diagramLockInfo);
-      }
+  lockDiagram(instance: Instance): Observable<DiagramLock> {
 
-      // Need to add default person id to associate with the lock
-      return this.store.select(defaultPerson()).pipe(
-        take(1),
-        concatMap((person: Instance[]) => {
-          if (!person || person.length == 0 || person[0].dbId === undefined) {
-            this.handleErrorMessage(new Error('Cannot find the default person!'));
-            return of(diagramLockInfo);
-          }
-
-          pathwayDiagram.subscribe(instance => {
-            instance.defaultPersonId = person[0].dbId
-
-            return this.http.post<DiagramLockInfo>(this.lockDiagramUrl, instance).pipe(
-              map((lockInfo: DiagramLockInfo) => {
-                diagramLockInfo = lockInfo;
-              }),
-              catchError(error => {
-                this.handleErrorMessage(error);
-                return of(diagramLockInfo);
-              })
-            );
-          });
-          return of(diagramLockInfo);
-        })
-      );
-    });
-    return of(diagramLockInfo);
+    return this.http.post<DiagramLock>(this.lockDiagramUrl, instance).pipe(
+      map((lock: DiagramLock) => {
+        console.debug(`Diagram ${instance.dbId} lock status: ${lock.locked ? `Locked by ${lock.username} at ${lock.lockedAt}` : 'Not locked'}`);
+        return lock;
+      }),
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    );
   }
 }
+    // return this.fetchInstanceFromDatabase(dbId, true).pipe(
+    //   concatMap((pathwayDiagram: Instance) => {
+    //     if (!pathwayDiagram || pathwayDiagram.schemaClassName !== 'PathwayDiagram') {
+    //       return this.handleErrorMessage(new Error('Cannot find the PathwayDiagram to lock!'));
+    //     }
+
+
+    // this.store.select(defaultPerson()).pipe(
+    //   take(1),
+    //   concatMap((person: Instance[]) => {
+    //     if (!person || person.length === 0 || person[0].dbId === undefined) {
+    //       return this.handleErrorMessage(new Error('Cannot find the default person!'));
+    //     }
+
+    //     pathwayDiagram.defaultPersonId = person[0].dbId;
+    //     return this.http.post<DiagramLockInfo>(this.lockDiagramUrl, pathwayDiagram).pipe(
+    //       map((info: DiagramLockInfo) => {
+    //         if (info.locked) {
+    //           console.debug(`Diagram ${dbId} locked by ${info.username} at ${info.lockedAt}`);
+    //         } else {
+    //           console.debug(`Diagram ${dbId} is not locked.`);
+    //         }
+    //         return info;
+    //       }),
+    //       catchError(error => {
+    //         return this.handleErrorMessage(error);
+    //       })
+    //     );
+    //   }),
+    //   catchError((error: Error) => {
+    //     this.handleErrorMessage(error);
+    //     return of(diagramLockInfo);
+    //   })
+    // );

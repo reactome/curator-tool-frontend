@@ -4,3 +4,28 @@
     background-color: rgba(255, 255, 255, 0.5);
 }
 
+.lock-status {
+    margin-bottom: 6px;
+    padding: 4px 6px;
+    font-size: 12px;
+    border-radius: 4px;
+    background-color: #eceff1;
+    color: #37474f;
+}
+
+.lock-status-acquiring {
+    background-color: #fff8e1;
+    color: #8d6e63;
+}
+
+.lock-status-acquired {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.lock-status-blocked,
+.lock-status-error {
+    background-color: #ffebee;
+    color: #c62828;
+}
+

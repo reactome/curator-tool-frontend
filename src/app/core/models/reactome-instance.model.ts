@@ -100,7 +100,7 @@ export interface UserInstances {
   defaultPerson?: Instance
 }
 
-export interface DiagramLockInfo {
+export interface DiagramLock {
     diagramDbId: number;
     username: string;
     lockedAt: string; // ISO 8601 date string

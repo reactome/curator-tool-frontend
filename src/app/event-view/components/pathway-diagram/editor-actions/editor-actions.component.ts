@@ -27,6 +27,9 @@ export class EditorActionsComponent {
   @Input() isNodeResizing: boolean = false;
   // Flag is a selected node is resizable
   @Input() isNodeResizable: boolean = true;
+  // Lock status shown to users in the context action panel
+  @Input() lockStatus: string = 'idle';
+  @Input() lockStatusMessage: string = 'Lock not requested.';
   // Include this so that we can compare in the html template
   elmTypes = ElementType;
   
