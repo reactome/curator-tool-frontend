@@ -327,47 +327,20 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     const lockUser = (lockInfo.username || '').trim().toLowerCase();
     const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
 
-    // Exact username match from lock info and login identity should always be allowed.
+    // Exact username match should always grant ownership.
     if (lockUser.length > 0 && currentUser.length > 0 && lockUser === currentUser)
       return true;
-
-    const lockUserIds = this.buildUserIdentityVariants(lockInfo.username);
-    const currentUserIds = this.buildUserIdentityVariants(this.authService.getUser());
-    if (lockUserIds.size === 0 || currentUserIds.size === 0)
-      return false;
-    for (const id of currentUserIds) {
-      if (lockUserIds.has(id))
-        return true;
-    }
     return false;
   }
 
-  private buildUserIdentityVariants(username?: string): Set<string> {
-    const variants = new Set<string>();
-    const base = (username || '').trim().toLowerCase();
-    if (base.length === 0)
-      return variants;
-    variants.add(base);
-
-    const slashSeparated = base.split(/[\\/]/).filter(part => part.length > 0);
-    if (slashSeparated.length > 0)
-      variants.add(slashSeparated[slashSeparated.length - 1]);
-
-    if (base.includes('@')) {
-      const localPart = base.split('@')[0].trim();
-      if (localPart.length > 0)
-        variants.add(localPart);
-    }
-
-    return variants;
-  }
 
   private showDiagramLockedDialog(lockInfo: DiagramLock) {
     const owner = lockInfo.username && lockInfo.username.length > 0 ? lockInfo.username : 'another user';
+    const lockedAt = lockInfo.lockedAt && lockInfo.lockedAt.length > 0 ? `\nLocked at: ${lockInfo.lockedAt}` : '';
     this.dialog.open(InfoDialogComponent, {
       data: {
         title: 'Diagram Locked',
-        message: `This pathway diagram is currently locked by ${owner}. Try again later.`
+        message: `This pathway diagram is currently locked by ${owner}.${lockedAt}\nOpening diagram in read-only mode.`
       }
     });
   }
@@ -448,7 +421,29 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       // Switch to PathwayDiagram 
       this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe(pathwayDiagram => {
         if (pathwayDiagram) {
-          this.lockPathwayDiagram(pathwayDiagram);
+          this.diagramUtils.getDataService().getDiagramLockStatus(pathwayDiagram.dbId).subscribe({
+            next: (lockInfo: DiagramLock) => {
+              // If the diagram is already locked, use lock owner to determine access.
+              if (lockInfo && lockInfo.locked) {
+                this.updateLockStatus(lockInfo);
+                this.diagram.diagramId = pathwayDiagram.dbId.toString();
+                this.pathwayDiagramId = pathwayDiagram.dbId.toString();
+                if (this.isLockOwnedByCurrentUser(lockInfo)) {
+                  this.isEditing = true;
+                  this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
+                  return;
+                }
+                this.isEditing = false;
+                this.showDiagramLockedDialog(lockInfo);
+                this.loadPathwayDiagram();
+                return;
+              }
+              this.lockPathwayDiagram(pathwayDiagram);
+            },
+            error: () => {
+              this.lockPathwayDiagram(pathwayDiagram);
+            }
+          });
         }
         else {
           this.showNoPathwayDiagramDialog();

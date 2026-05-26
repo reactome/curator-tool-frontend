@@ -56,6 +56,7 @@ export class DataService {
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
   private lockDiagramUrl = `${environment.ApiRoot}/lockDiagram/`;
+  private getDiagramLockUrl = `${environment.ApiRoot}/getDiagramLock/`;
 
 
   // Track the negative dbId to be used
@@ -78,7 +79,7 @@ export class DataService {
   constructor(private http: HttpClient,
     private utils: InstanceUtilities,
     private store: Store,
-    private router: Router) {
+    private router: Router,) {
   }
 
   /**
@@ -1345,38 +1346,22 @@ export class DataService {
       })
     );
   }
+
+    /**
+   * Check if the diagram is locked for editing.
+   * @param dbId
+   */
+  getDiagramLockStatus(dbId: number): Observable<DiagramLock> {
+    if (dbId > 0) {
+      return this.http.get<DiagramLock>(this.getDiagramLockUrl + `${dbId}`).pipe(
+        map((data: DiagramLock) => {
+          return data ? data : { diagramDbId: dbId, locked: false, username: '', lockedAt: '' } as DiagramLock;
+        }),
+        // Nothing needs to be done.
+        catchError((err: Error) => {
+          return this.handleErrorMessage(err);
+        }));
+    }
+    return of({ diagramDbId: dbId, locked: false, username: '', lockedAt: '' } as DiagramLock);
+  }
 }
-    // return this.fetchInstanceFromDatabase(dbId, true).pipe(
-    //   concatMap((pathwayDiagram: Instance) => {
-    //     if (!pathwayDiagram || pathwayDiagram.schemaClassName !== 'PathwayDiagram') {
-    //       return this.handleErrorMessage(new Error('Cannot find the PathwayDiagram to lock!'));
-    //     }
-
-
-    // this.store.select(defaultPerson()).pipe(
-    //   take(1),
-    //   concatMap((person: Instance[]) => {
-    //     if (!person || person.length === 0 || person[0].dbId === undefined) {
-    //       return this.handleErrorMessage(new Error('Cannot find the default person!'));
-    //     }
-
-    //     pathwayDiagram.defaultPersonId = person[0].dbId;
-    //     return this.http.post<DiagramLockInfo>(this.lockDiagramUrl, pathwayDiagram).pipe(
-    //       map((info: DiagramLockInfo) => {
-    //         if (info.locked) {
-    //           console.debug(`Diagram ${dbId} locked by ${info.username} at ${info.lockedAt}`);
-    //         } else {
-    //           console.debug(`Diagram ${dbId} is not locked.`);
-    //         }
-    //         return info;
-    //       }),
-    //       catchError(error => {
-    //         return this.handleErrorMessage(error);
-    //       })
-    //     );
-    //   }),
-    //   catchError((error: Error) => {
-    //     this.handleErrorMessage(error);
-    //     return of(diagramLockInfo);
-    //   })
-    // );
