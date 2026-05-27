@@ -57,6 +57,7 @@ export class DataService {
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
   private lockDiagramUrl = `${environment.ApiRoot}/lockDiagram/`;
   private getDiagramLockUrl = `${environment.ApiRoot}/getDiagramLock/`;
+  private unlockDiagramUrl = `${environment.ApiRoot}/unlockDiagram/`;
 
 
   // Track the negative dbId to be used
@@ -1348,20 +1349,38 @@ export class DataService {
   }
 
     /**
-   * Check if the diagram is locked for editing.
-   * @param dbId
-   */
-  getDiagramLockStatus(dbId: number): Observable<DiagramLock> {
-    if (dbId > 0) {
-      return this.http.get<DiagramLock>(this.getDiagramLockUrl + `${dbId}`).pipe(
-        map((data: DiagramLock) => {
-          return data ? data : { diagramDbId: dbId, locked: false, username: '', lockedAt: '' } as DiagramLock;
-        }),
-        // Nothing needs to be done.
-        catchError((err: Error) => {
-          return this.handleErrorMessage(err);
-        }));
-    }
-    return of({ diagramDbId: dbId, locked: false, username: '', lockedAt: '' } as DiagramLock);
+ * Lock the diagram for editing to prevent concurrent modifications.
+   * @param dbId PathwayDiagram dbId
+ */
+  unlockDiagram(dbId: number): Observable<boolean> {
+
+    return this.http.post<boolean>(this.unlockDiagramUrl, dbId).pipe(
+      map((isLocked: boolean) => {
+        console.debug(`Diagram ${dbId} lock status: ${isLocked ? 'Locked' : 'Not locked'}`);
+        return !isLocked;
+
+      }),
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    );
   }
+
+  //   /**
+  //  * Check if the diagram is locked for editing.
+  //  * @param dbId
+  //  */
+  // getDiagramLockStatus(dbId: number): Observable<DiagramLock> {
+  //   if (dbId > 0) {
+  //     return this.http.get<DiagramLock>(this.getDiagramLockUrl + `${dbId}`).pipe(
+  //       map((data: DiagramLock) => {
+  //         return data ? data : { diagramDbId: dbId, locked: false, username: '', lockedAt: '' } as DiagramLock;
+  //       }),
+  //       // Nothing needs to be done.
+  //       catchError((err: Error) => {
+  //         return this.handleErrorMessage(err);
+  //       }));
+  //   }
+  //   return of({ diagramDbId: dbId, locked: false, username: '', lockedAt: '' } as DiagramLock);
+  // }
 }

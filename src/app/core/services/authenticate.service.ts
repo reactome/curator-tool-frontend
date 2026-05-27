@@ -45,6 +45,25 @@ export class AuthenticateService {
     return undefined;
   }
 
+  getUserCandidates(): string[] {
+    const token = localStorage.getItem('token');
+    const persistedLoginUsername = localStorage.getItem('login_username') || '';
+    const claims = token ? (this.jwtHelper.decodeToken(token) || {}) : {};
+    const candidates = [
+      claims.sub,
+      claims.preferred_username,
+      claims.username,
+      claims.user_name,
+      claims.email,
+      claims.upn,
+      persistedLoginUsername
+    ];
+    return candidates
+      .filter((v: unknown) => typeof v === 'string')
+      .map((v: string) => v.trim())
+      .filter((v: string) => v.length > 0);
+  }
+
 }
 
 export const authGuard: CanActivateFn = (route, state) => {

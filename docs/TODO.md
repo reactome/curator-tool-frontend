@@ -71,6 +71,7 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 
 - TODO: change input/output or other may cause structure change and demoted the review status. However, reset the change will not reset the changed review status. Also a structureChanged flag is stuck, which results a new structureEdit value. This may need to be udpated in the future.
 
+-TODO: a user may make pathway diagram edits without a lock, but they cannot commit these edits without a lock.
 
 # Deletion related document kept here for the time being
  * The following may need to be collected into some document for test cases in the doc folder:

@@ -34,6 +34,7 @@ export class LoginComponent{
     ).subscribe(token => {
       if (token) {
         localStorage.setItem('token', token);
+        localStorage.setItem('login_username', data.username);
         let url: string = sessionStorage.getItem('currentUrl') ?? '/home';
         // todo: check login here. 
         

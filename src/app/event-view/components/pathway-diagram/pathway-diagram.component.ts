@@ -46,6 +46,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   select: string = "";
   // PathwayDiagram id for editing
   pathwayDiagramId: string = "";
+  private requestedLockDiagramId: string = "";
 
   @ViewChild('diagramComponent')
   diagram!: DiagramComponent;
@@ -133,8 +134,6 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         this.pathwayId = id;
         this.diagram.diagramId = this.pathwayId;
         this.select = queryParams['select'] ?? '';
-        this.lockStatus = 'idle';
-        this.lockStatusMessage = 'Lock not requested.';
         // Always not in the editing mode when loading via URL
         this.isEditing = false;
         this.isEdited = false;
@@ -276,14 +275,35 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   // needs to fetch content from the server side. It is quite complicated and confusing to keep the editing
   // content at the front end. 
   private disableEditing() {
-    // const doDisable = () => {
-    this.diagramUtils.disableEditing(this.diagram);
-    this.resizingNodes.forEach(node => this.diagramUtils.disableResizeCompartment(node, this.diagram));
-    this.resizingNodes.length = 0; // reset to empty
-    this.isEditing = false;
-    //   this.isEdited = false;
-    // };
-    // this.promptUploadBeforeDiscard('disabling editing', doDisable);
+    const finishDisableEditing = () => {
+      this.diagramUtils.disableEditing(this.diagram);
+      this.resizingNodes.forEach(node => this.diagramUtils.disableResizeCompartment(node, this.diagram));
+      this.resizingNodes.length = 0; // reset to empty
+      this.isEditing = false;
+      this.pathwayDiagramId = '';
+      this.requestedLockDiagramId = '';
+      this.lockStatus = 'idle';
+      this.lockStatusMessage = 'Lock not requested.';
+    };
+
+    const lockDbIdText = this.pathwayDiagramId && this.pathwayDiagramId.length > 0
+      ? this.pathwayDiagramId
+      : this.diagram?.diagramId;
+    const lockDbId = parseInt(lockDbIdText || '');
+
+    if (Number.isNaN(lockDbId) || lockDbId <= 0) {
+      finishDisableEditing();
+      return;
+    }
+
+    this.diagramUtils.getDataService().unlockDiagram(lockDbId).subscribe({
+      next: () => {
+        finishDisableEditing();
+      },
+      error: () => {
+        finishDisableEditing();
+      }
+    });
   }
 
   private canEdit(): Observable<boolean> {
@@ -322,7 +342,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   }
 
   private isLockOwnedByCurrentUser(lockInfo: DiagramLock): boolean {
-    if (!lockInfo || !lockInfo.locked)
+    if (!lockInfo)
       return false;
     const lockUser = (lockInfo.username || '').trim().toLowerCase();
     const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
@@ -365,20 +385,22 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     const id = pathwayDiagram.dbId;
     if (id === undefined)
       return;
-    this.lockStatus = 'acquiring';
-    this.lockStatusMessage = 'Acquiring lock...';
+    // this.lockStatus = 'acquiring';
+    // this.lockStatusMessage = 'Acquiring lock...';
     this.diagramUtils.getDataService().lockDiagram(pathwayDiagram).subscribe({
       next: (diagramLockInfo) => {
         console.debug('Diagram lock info: ', diagramLockInfo);
-        this.updateLockStatus(diagramLockInfo);
-        if (this.isLockOwnedByCurrentUser(diagramLockInfo)) {
+         if (this.isLockOwnedByCurrentUser(diagramLockInfo)) {
+          this.isEdited = true;
           this.isEditing = true;
-          this.diagram.diagramId = pathwayDiagram.dbId.toString();
-          this.pathwayDiagramId = pathwayDiagram.dbId.toString(); // Store it for future use
-          this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
-          return;
-        }
-        this.showDiagramLockedDialog(diagramLockInfo);
+        //   this.diagram.diagramId = pathwayDiagram.dbId.toString();
+        //   this.pathwayDiagramId = pathwayDiagram.dbId.toString(); // Store it for future use
+           this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
+           this.updateLockStatus(diagramLockInfo);
+
+        //   return;
+       }
+       this.showDiagramLockedDialog(diagramLockInfo);
       },
       error: () => {
         this.lockStatus = 'error';
@@ -421,29 +443,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       // Switch to PathwayDiagram 
       this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe(pathwayDiagram => {
         if (pathwayDiagram) {
-          this.diagramUtils.getDataService().getDiagramLockStatus(pathwayDiagram.dbId).subscribe({
-            next: (lockInfo: DiagramLock) => {
-              // If the diagram is already locked, use lock owner to determine access.
-              if (lockInfo && lockInfo.locked) {
-                this.updateLockStatus(lockInfo);
-                this.diagram.diagramId = pathwayDiagram.dbId.toString();
-                this.pathwayDiagramId = pathwayDiagram.dbId.toString();
-                if (this.isLockOwnedByCurrentUser(lockInfo)) {
-                  this.isEditing = true;
-                  this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
-                  return;
-                }
-                this.isEditing = false;
-                this.showDiagramLockedDialog(lockInfo);
-                this.loadPathwayDiagram();
-                return;
-              }
               this.lockPathwayDiagram(pathwayDiagram);
-            },
-            error: () => {
-              this.lockPathwayDiagram(pathwayDiagram);
-            }
-          });
         }
         else {
           this.showNoPathwayDiagramDialog();
