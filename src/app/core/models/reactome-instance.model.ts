@@ -105,6 +105,7 @@ export interface DiagramLock {
     username: string;
     lockedAt: string; // ISO 8601 date string
     locked: boolean; // "LOCKED" or "UNLOCKED"
+    lockId: string; // Unique identifier for the lock, used for unlocking
 
 }
 

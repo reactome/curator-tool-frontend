@@ -1349,15 +1349,15 @@ export class DataService {
   }
 
     /**
- * Lock the diagram for editing to prevent concurrent modifications.
-   * @param dbId PathwayDiagram dbId
+ * Unlock the diagram once user is done editing.
+   * @param diagram DiagramLock object containing lock information
  */
-  unlockDiagram(dbId: number): Observable<boolean> {
+  unlockDiagram(diagram: DiagramLock): Observable<boolean> {
 
-    return this.http.post<boolean>(this.unlockDiagramUrl, dbId).pipe(
+    return this.http.post<boolean>(this.unlockDiagramUrl, diagram).pipe(
       map((isLocked: boolean) => {
-        console.debug(`Diagram ${dbId} lock status: ${isLocked ? 'Locked' : 'Not locked'}`);
-        return !isLocked;
+        console.debug(`Diagram ${diagram.diagramDbId} lock status: ${isLocked ? 'Locked' : 'Not locked'}`);
+        return isLocked;
 
       }),
       catchError(error => {
@@ -1365,22 +1365,4 @@ export class DataService {
       })
     );
   }
-
-  //   /**
-  //  * Check if the diagram is locked for editing.
-  //  * @param dbId
-  //  */
-  // getDiagramLockStatus(dbId: number): Observable<DiagramLock> {
-  //   if (dbId > 0) {
-  //     return this.http.get<DiagramLock>(this.getDiagramLockUrl + `${dbId}`).pipe(
-  //       map((data: DiagramLock) => {
-  //         return data ? data : { diagramDbId: dbId, locked: false, username: '', lockedAt: '' } as DiagramLock;
-  //       }),
-  //       // Nothing needs to be done.
-  //       catchError((err: Error) => {
-  //         return this.handleErrorMessage(err);
-  //       }));
-  //   }
-  //   return of({ diagramDbId: dbId, locked: false, username: '', lockedAt: '' } as DiagramLock);
-  // }
 }

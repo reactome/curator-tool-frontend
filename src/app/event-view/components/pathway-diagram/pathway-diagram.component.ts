@@ -83,6 +83,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   readonly dialog = inject(MatDialog);
   private commitWaitDialogRef?: MatDialogRef<CommitWaitDialogComponent>;
   private isUploadInProgress: boolean = false;
+  private diagramLockInfo: DiagramLock | null = null;
   // To show the label for the diagram displayed
   diagramLabel: string = 'Pathway Diagram';
   lockStatus: 'idle' | 'acquiring' | 'acquired' | 'blocked' | 'error' = 'idle';
@@ -284,6 +285,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       this.requestedLockDiagramId = '';
       this.lockStatus = 'idle';
       this.lockStatusMessage = 'Lock not requested.';
+      this.isEdited = true;
     };
 
     const lockDbIdText = this.pathwayDiagramId && this.pathwayDiagramId.length > 0
@@ -296,7 +298,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       return;
     }
 
-    this.diagramUtils.getDataService().unlockDiagram(lockDbId).subscribe({
+    this.diagramUtils.getDataService().unlockDiagram(this.diagramLockInfo!).subscribe({
       next: () => {
         finishDisableEditing();
       },
@@ -390,17 +392,15 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     this.diagramUtils.getDataService().lockDiagram(pathwayDiagram).subscribe({
       next: (diagramLockInfo) => {
         console.debug('Diagram lock info: ', diagramLockInfo);
-         if (this.isLockOwnedByCurrentUser(diagramLockInfo)) {
+        if (this.isLockOwnedByCurrentUser(diagramLockInfo)) {
+          this.diagramLockInfo = diagramLockInfo;
           this.isEdited = true;
           this.isEditing = true;
-        //   this.diagram.diagramId = pathwayDiagram.dbId.toString();
-        //   this.pathwayDiagramId = pathwayDiagram.dbId.toString(); // Store it for future use
-           this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
-           this.updateLockStatus(diagramLockInfo);
-
-        //   return;
-       }
-       this.showDiagramLockedDialog(diagramLockInfo);
+          this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
+          this.updateLockStatus(diagramLockInfo);
+          return;
+        }
+        this.showDiagramLockedDialog(diagramLockInfo);
       },
       error: () => {
         this.lockStatus = 'error';
@@ -443,7 +443,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       // Switch to PathwayDiagram 
       this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe(pathwayDiagram => {
         if (pathwayDiagram) {
-              this.lockPathwayDiagram(pathwayDiagram);
+          this.lockPathwayDiagram(pathwayDiagram);
         }
         else {
           this.showNoPathwayDiagramDialog();
