@@ -14,7 +14,8 @@
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 8px;
   flex-wrap: nowrap;
   flex-direction: row;
   font-size: 16px;
@@ -27,7 +28,7 @@
 }
 
 .diagram-label-text {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

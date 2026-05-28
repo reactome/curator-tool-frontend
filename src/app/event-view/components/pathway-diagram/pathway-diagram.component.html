@@ -1,11 +1,8 @@
 <!-- Apparently it is quite difficult, if not impossible, to add DnD feature to cytoscape.js from outside. 
  Therefore, for the time being, we will add a button in the event tree to add an Event to the diagram view. -->
-<div class="diagram-label" [style.color]="isEdited ? 'red' : 'black'">
+<div class="diagram-label" [style.color]="isEditing ? 'red' : 'black'">
   <span class="diagram-label-text" [title]="diagramLabel">{{ diagramLabel }}</span>
-  <mat-icon *ngIf="isDiagramLocked" class="diagram-locked-icon" [title]="lockIndicatorTooltip"
-    [attr.aria-label]="isLockOwnedByMe ? 'Diagram is locked by you' : 'Diagram is locked by another user'">
-    {{ isLockOwnedByMe ? 'lock_open' : 'lock' }}
-  </mat-icon>
+  <mat-icon *ngIf="isLockOwnedByMe" class="diagram-locked-icon" tooltip="Diagram is locked by you">lock</mat-icon>
 </div>
 <div class="cytoscape-container">
   <cr-diagram #diagramComponent (reactomeEvents$)="handleReactomeEvent($event)" [usedbId]="true"
@@ -13,8 +10,8 @@
   <div *ngIf="showMenu" [ngStyle]="{ 'position': 'absolute', 'top': menuPositionY, 'left': menuPositionX }">
     <app-editor-actions (action)="onAction($event)" [isDiagramEditing]="isEditing" [elmType]="elementTypeForPopup"
       [isFlowLineAddable]="isFlowLineAddable" [isPathwayDeletable]="isPathwayDeletable"
-      [isNodeResizing]="isNodeResizing()" [isNodeResizable]="isNodeResizable()" [isEdgeEditable]="isEdgeEditable" [isDiagramEdited]="isEdited"
-      [lockStatus]="lockStatus" [lockStatusMessage]="lockStatusMessage">
+      [isNodeResizing]="isNodeResizing()" [isNodeResizable]="isNodeResizable()" [isEdgeEditable]="isEdgeEditable"
+      [isDiagramEdited]="isEdited" [lockStatus]="lockStatus" [lockStatusMessage]="lockStatusMessage">
     </app-editor-actions>
   </div>
 </div>

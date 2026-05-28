@@ -3,7 +3,7 @@
  * in cytoscape.
  */
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, EventEmitter, HostListener, inject, OnInit, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, HostListener, inject, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
 import { combineLatest, filter, map, Observable, take } from 'rxjs';
@@ -31,7 +31,7 @@ import { deleteInstances, newInstances, updatedInstances } from 'src/app/instanc
   styleUrl: './pathway-diagram.component.scss',
   providers: [PathwayDiagramUtilService]
 })
-export class PathwayDiagramComponent implements AfterViewInit, OnInit {
+export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy {
   // Special case to navigate away from the current event
   @Output() goToPathwayEvent = new EventEmitter<number>();
   @Output() openPathwayDiagramEvent = new EventEmitter<any>();
@@ -88,6 +88,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
   diagramLabel: string = 'Pathway Diagram';
   lockStatus: 'idle' | 'acquiring' | 'acquired' | 'blocked' | 'error' = 'idle';
   lockStatusMessage: string = 'Lock not requested.';
+  private isUnlockingDiagram: boolean = false;
 
   get isDiagramLocked(): boolean {
     return this.lockStatus === 'acquired' || this.lockStatus === 'blocked';
@@ -132,6 +133,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       // Do nothing if nothing is loaded
       if (!id || id === '0') return;
       const loadNewDiagram = () => {
+        this.releaseOwnedDiagramLock();
         this.pathwayId = id;
         this.diagram.diagramId = this.pathwayId;
         this.select = queryParams['select'] ?? '';
@@ -177,12 +179,50 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.releaseOwnedDiagramLock();
+  }
+
   @HostListener('window:beforeunload', ['$event'])
   handleBeforeUnload(event: BeforeUnloadEvent) {
     if (!this.isEdited)
       return;
     event.preventDefault();
     event.returnValue = 'You have unsaved pathway diagram changes. Upload them before closing or reloading this page.';
+  }
+
+  @HostListener('document:visibilitychange')
+  handleVisibilityChange() {
+    if (!document.hidden)
+      return;
+    this.releaseOwnedDiagramLock();
+  }
+
+  private resetDiagramLockState() {
+    this.diagramLockInfo = null;
+    this.pathwayDiagramId = '';
+    this.requestedLockDiagramId = '';
+    this.lockStatus = 'idle';
+    this.lockStatusMessage = 'Lock not requested.';
+    this.isEditing = false;
+    if (this.diagram)
+      this.diagramUtils.disableEditing(this.diagram);
+  }
+
+  private releaseOwnedDiagramLock() {
+    if (!this.diagramLockInfo || !this.isLockOwnedByCurrentUser(this.diagramLockInfo) || this.isUnlockingDiagram)
+      return;
+    this.isUnlockingDiagram = true;
+    const lockToRelease = this.diagramLockInfo;
+    this.resetDiagramLockState();
+    this.diagramUtils.getDataService().unlockDiagram(lockToRelease).pipe(take(1)).subscribe({
+      next: () => {
+        this.isUnlockingDiagram = false;
+      },
+      error: () => {
+        this.isUnlockingDiagram = false;
+      }
+    });
   }
 
   private promptUploadBeforeDiscard(action: string, proceed: () => void) {
@@ -298,11 +338,22 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       return;
     }
 
+    if (!this.diagramLockInfo) {
+      finishDisableEditing();
+      return;
+    }
+
+    this.isUnlockingDiagram = true;
+
     this.diagramUtils.getDataService().unlockDiagram(this.diagramLockInfo!).subscribe({
       next: () => {
+        this.isUnlockingDiagram = false;
+        this.diagramLockInfo = null;
         finishDisableEditing();
       },
       error: () => {
+        this.isUnlockingDiagram = false;
+        this.diagramLockInfo = null;
         finishDisableEditing();
       }
     });
@@ -358,11 +409,15 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
 
   private showDiagramLockedDialog(lockInfo: DiagramLock) {
     const owner = lockInfo.username && lockInfo.username.length > 0 ? lockInfo.username : 'another user';
-    const lockedAt = lockInfo.lockedAt && lockInfo.lockedAt.length > 0 ? `\nLocked at: ${lockInfo.lockedAt}` : '';
+    const lockedAtLine = lockInfo.lockedAt && lockInfo.lockedAt.length > 0
+      ? `Locked at: ${lockInfo.lockedAt}`
+      : 'Locked at: unavailable';
     this.dialog.open(InfoDialogComponent, {
       data: {
         title: 'Diagram Locked',
-        message: `This pathway diagram is currently locked by ${owner}.${lockedAt}\nOpening diagram in read-only mode.`
+        message: `This pathway diagram is currently locked by user "${owner}".
+${lockedAtLine}
+Opening diagram in read-only mode.`
       }
     });
   }
@@ -824,6 +879,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
         this.isEdited = true;
         break;
 
+      case 'unlockDiagram':
+        this.disableEditing();
+        break;
+
       default:
         console.debug('Unknown action: ' + action);
         break;
@@ -838,6 +897,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit {
       return;
     // Check if PathwayDiagram is being edited. If PathwayDiagram is not being edited,
     // tell the user nothing to be uploaded.
+    this.pathwayDiagramId = this.diagramLockInfo?.diagramDbId ? this.diagramLockInfo.diagramDbId.toString() : this.pathwayDiagramId;
     if (this.pathwayDiagramId !== undefined && this.pathwayDiagramId.length === 0) {
       this.dialog.open(InfoDialogComponent, {
         data: {
