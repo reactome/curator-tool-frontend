@@ -31,7 +31,7 @@ export interface TourState {
 const HOME_TOUR: TourStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to Reactome Curation WebBench',
+    title: 'Welcome to Reactome WebBench',
     content:
       'This short tour shows you the key areas of the application. Use the Next button or press the right arrow key to continue. Press Escape to end at any time.',
     position: 'center',

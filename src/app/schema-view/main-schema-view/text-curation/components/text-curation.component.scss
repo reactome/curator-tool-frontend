@@ -59,6 +59,12 @@ input {
   line-height: 1.2;
 }
 
+.feature-list {
+  margin-top: 1.5rem;
+  text-align: left;
+  max-width: 760px;
+}
+
 @media (max-width: 768px) {
   .reactome-logo {
     height: 80px;
