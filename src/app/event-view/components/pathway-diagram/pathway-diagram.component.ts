@@ -23,6 +23,14 @@ import { Store } from '@ngrx/store';
 import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 
+interface PendingDiagramDraft {
+  pathwayId: string;
+  diagramLock: DiagramLock;
+  network: any;
+  username: string;
+  savedAt: string;
+}
+
 @Component({
   selector: 'app-pathway-diagram',
   standalone: true,
@@ -32,6 +40,7 @@ import { deleteInstances, newInstances, updatedInstances } from 'src/app/instanc
   providers: [PathwayDiagramUtilService]
 })
 export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy {
+  private readonly pendingDiagramDraftSessionKey = 'pendingPathwayDiagramDraft';
   // Special case to navigate away from the current event
   @Output() goToPathwayEvent = new EventEmitter<number>();
   @Output() openPathwayDiagramEvent = new EventEmitter<any>();
@@ -142,6 +151,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         this.isEdited = false;
         this.loadPathwayDiagram();
         this.pathwayDiagramId = ''; // reset any previous PathwayDiagram id
+        this.restorePendingDiagramDraft();
       };
       const isSwitchingDiagram = this.pathwayId.length > 0 && this.pathwayId !== id;
       if (isSwitchingDiagram) {
@@ -212,6 +222,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   private releaseOwnedDiagramLock() {
     if (!this.diagramLockInfo || !this.isLockOwnedByCurrentUser(this.diagramLockInfo) || this.isUnlockingDiagram)
       return;
+    if (this.isEdited)
+      this.persistDiagramDraftToSessionStorage(this.diagramLockInfo);
     this.isUnlockingDiagram = true;
     const lockToRelease = this.diagramLockInfo;
     this.resetDiagramLockState();
@@ -326,6 +338,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       this.lockStatus = 'idle';
       this.lockStatusMessage = 'Lock not requested.';
       this.isEdited = true;
+      this.clearDiagramDraftFromSessionStorage();
     };
 
     const lockDbIdText = this.pathwayDiagramId && this.pathwayDiagramId.length > 0
@@ -449,8 +462,10 @@ Opening diagram in read-only mode.`
         console.debug('Diagram lock info: ', diagramLockInfo);
         if (this.isLockOwnedByCurrentUser(diagramLockInfo)) {
           this.diagramLockInfo = diagramLockInfo;
+          this.pathwayDiagramId = diagramLockInfo.diagramDbId.toString();
           this.isEdited = true;
           this.isEditing = true;
+          this.persistDiagramDraftToSessionStorage(diagramLockInfo);
           this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
           this.updateLockStatus(diagramLockInfo);
           return;
@@ -595,6 +610,9 @@ Opening diagram in read-only mode.`
       // reset previous drag position
       this.previousDragPos.x = 0;
       this.previousDragPos.y = 0;
+      if (this.isEditing && this.diagramLockInfo && this.isEdited) {
+        this.persistDiagramDraftToSessionStorage(this.diagramLockInfo);
+      }
     });
     // Resize the compartment for resizing nodes
     this.diagram.cy.on('drag', 'node', (e: any) => {
@@ -774,17 +792,17 @@ Opening diagram in read-only mode.`
           y: parseInt(this.menuPositionY) - this.MENU_POSITION_BUFFER
         };
         this.diagramUtils.addPoint(mousePosition, this.elementUnderMouse);
-        this.isEdited = true;
+        this.markDiagramEdited();
         break;
 
       case 'removePoint':
         this.diagramUtils.removePoint(this.elementUnderMouse);
-        this.isEdited = true;
+        this.markDiagramEdited();
         break;
 
       case 'delete':
         this.diagramUtils.deleteHyperEdge(this.elementUnderMouse);
-        this.isEdited = true;
+        this.markDiagramEdited();
         break;
 
       case 'resizeCompartment':
@@ -802,7 +820,7 @@ Opening diagram in read-only mode.`
 
       case 'addFlowLine':
         this.diagramUtils.addFlowLine(this.elementUnderMouse, this);
-        this.isEdited = true;
+        this.markDiagramEdited();
         break;
 
       case 'goToPathway':
@@ -821,7 +839,7 @@ Opening diagram in read-only mode.`
           this.disableResize();
         }
         this.diagramUtils.deletePathwayNode(this.elementUnderMouse, this.diagram);
-        this.isEdited = true;
+        this.markDiagramEdited();
         break;
 
       case 'deleteCompartment':
@@ -829,16 +847,20 @@ Opening diagram in read-only mode.`
           this.disableResize();
         }
         this.diagramUtils.deleteCompartment(this.elementUnderMouse, this.diagram);
-        this.isEdited = true;
+        this.markDiagramEdited();
         break;
 
       case 'insertCompartment':
         this.diagramUtils.insertCompartment(this.diagram);
-        this.isEdited = true;
+        this.markDiagramEdited();
         break;
 
       case 'upload':
         this.uploadDiagram();
+        break;
+
+      case 'saveDiagramEdits':
+        this.saveDiagramEdits();
         break;
 
       case 'reload':
@@ -871,12 +893,12 @@ Opening diagram in read-only mode.`
 
       case 'alignCentersVertically':
         this.alignNodesVertically();
-        this.isEdited = true;
+        this.markDiagramEdited();
         break;
 
       case 'alignCentersHorizontally':
         this.alignNodesHorizontally();
-        this.isEdited = true;
+        this.markDiagramEdited();
         break;
 
       case 'unlockDiagram':
@@ -890,6 +912,56 @@ Opening diagram in read-only mode.`
 
     // Hide the menu after the action is processed
     this.showMenu = false;
+  }
+
+  private saveDiagramEdits() {
+    if (this.isUploadInProgress)
+      return;
+
+    if (!this.diagramLockInfo || !this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Information',
+          message: 'Enable editing and acquire a diagram lock before saving edits.'
+        }
+      });
+      return;
+    }
+
+    const networkJson = this.generateNetworkJson();
+  this.persistDiagramDraftToSessionStorage(this.diagramLockInfo, networkJson);
+    this.isUploadInProgress = true;
+    this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
+      disableClose: true,
+      hasBackdrop: true,
+      autoFocus: false,
+      restoreFocus: false
+    });
+
+    this.diagramUtils.getDataService().persistPathwayDiagram(this.diagramLockInfo, networkJson).subscribe({
+      next: (success) => {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
+        this.isUploadInProgress = false;
+
+        this.dialog.open(InfoDialogComponent, {
+          data: {
+            title: success ? 'Information' : 'Error',
+            message: success ? 'Diagram edits have been saved successfully.' : 'Diagram edits could not be saved.'
+          }
+        });
+
+        if (success)
+          this.isEdited = false;
+        if (success)
+          this.clearDiagramDraftFromSessionStorage();
+      },
+      error: () => {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
+        this.isUploadInProgress = false;
+      }
+    });
   }
 
   private uploadDiagram(restoreEditing: boolean = true, onComplete?: () => void) {
@@ -941,6 +1013,7 @@ Opening diagram in read-only mode.`
         if (success) {
           // After uploading, we can consider the diagram is not edited anymore. So reset the flag.
           this.isEdited = false;
+          this.clearDiagramDraftFromSessionStorage();
         }
         if (wasEditing && restoreEditing)
           this.enableEditing();
@@ -985,6 +1058,93 @@ Opening diagram in read-only mode.`
       // metadata: metadata
     };
     return networkJson;
+  }
+
+  private markDiagramEdited(persistDraft: boolean = true) {
+    this.isEdited = true;
+    if (persistDraft && this.diagramLockInfo)
+      this.persistDiagramDraftToSessionStorage(this.diagramLockInfo);
+  }
+
+  private persistDiagramDraftToSessionStorage(diagramLock: DiagramLock, networkJson?: any) {
+    if (!diagramLock || !this.isLockOwnedByCurrentUser(diagramLock) || !this.pathwayId || !this.diagram?.cy)
+      return;
+    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
+    if (currentUser.length === 0)
+      return;
+    const draft: PendingDiagramDraft = {
+      pathwayId: this.pathwayId,
+      diagramLock: diagramLock,
+      network: networkJson ?? this.generateNetworkJson(),
+      username: currentUser,
+      savedAt: new Date().toISOString()
+    };
+    sessionStorage.setItem(this.pendingDiagramDraftSessionKey, JSON.stringify(draft));
+  }
+
+  private getPendingDiagramDraftFromSessionStorage(): PendingDiagramDraft | null {
+    const rawDraft = sessionStorage.getItem(this.pendingDiagramDraftSessionKey);
+    if (!rawDraft)
+      return null;
+    try {
+      return JSON.parse(rawDraft) as PendingDiagramDraft;
+    }
+    catch (error) {
+      console.warn('Failed to parse pending diagram draft from session storage.', error);
+      this.clearDiagramDraftFromSessionStorage();
+      return null;
+    }
+  }
+
+  private clearDiagramDraftFromSessionStorage() {
+    sessionStorage.removeItem(this.pendingDiagramDraftSessionKey);
+  }
+
+  private restorePendingDiagramDraft() {
+    const pendingDraft = this.getPendingDiagramDraftFromSessionStorage();
+    if (!pendingDraft || pendingDraft.pathwayId !== this.pathwayId)
+      return;
+    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
+    if (currentUser.length === 0 || pendingDraft.username !== currentUser)
+      return;
+    if (!pendingDraft.diagramLock?.diagramDbId || !pendingDraft.network)
+      return;
+    if (this.isUploadInProgress)
+      return;
+
+    this.isUploadInProgress = true;
+    this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
+      disableClose: true,
+      hasBackdrop: true,
+      autoFocus: false,
+      restoreFocus: false
+    });
+
+    this.diagramUtils.getDataService().persistPathwayDiagram(pendingDraft.diagramLock, pendingDraft.network).subscribe({
+      next: (success) => {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
+        this.isUploadInProgress = false;
+        if (success) {
+          this.clearDiagramDraftFromSessionStorage();
+          this.isEdited = false;
+          this.diagramLockInfo = pendingDraft.diagramLock;
+          this.pathwayDiagramId = pendingDraft.diagramLock.diagramDbId.toString();
+          this.loadPathwayDiagram();
+          this.dialog.open(InfoDialogComponent, {
+            data: {
+              title: 'Information',
+              message: 'Recovered unsaved diagram edits from the previous session and saved them to the backend.'
+            }
+          });
+        }
+      },
+      error: () => {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
+        this.isUploadInProgress = false;
+      }
+    });
   }
 
   private createAndOpenNewPathwayDiagram() {
@@ -1068,7 +1228,7 @@ Opening diagram in read-only mode.`
       return;
     }
     this.diagramUtils.addNewEvent(event, this.diagram.cy);
-    this.isEdited = true;
+    this.markDiagramEdited();
   }
 
   private alignNodesVertically() {

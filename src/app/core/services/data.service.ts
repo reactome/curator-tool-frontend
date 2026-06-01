@@ -4,7 +4,7 @@ import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, EMPTY, forkJoin, map, Observable, of, Subject, switchMap, take, tap, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
-import {  DiagramLock, Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
+import { DiagramLock, Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
 import {
   AttributeCategory,
   SchemaAttribute,
@@ -48,7 +48,7 @@ export class DataService {
   private hasCyNetworkUrl = `${environment.ApiRoot}/hasCyNetwork/`;
   private hasDiagramUrl = `${environment.ApiRoot}/hasDiagram/`;
   private getCyNetworkUrl = `${environment.ApiRoot}/getCyNetwork/`;
-  private deleteInstaneUrl = `${environment.ApiRoot}/delete/`;
+  private deleteInstanceUrl = `${environment.ApiRoot}/delete/`;
   private fetchQAReportUrl = `${environment.ApiRoot}/qaReport/`;
   private fetchInstancesInBatchUrl = `${environment.ApiRoot}/findByDbIds/`;
   private fetchPathwayDiagramUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
@@ -56,8 +56,9 @@ export class DataService {
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
   private lockDiagramUrl = `${environment.ApiRoot}/lockDiagram/`;
-  private getDiagramLockUrl = `${environment.ApiRoot}/getDiagramLock/`;
   private unlockDiagramUrl = `${environment.ApiRoot}/unlockDiagram/`;
+  private persistPathwayDiagramUrl = `${environment.ApiRoot}/persistPathwayDiagram/`;
+  private loadPathwayDiagramUrl = `${environment.ApiRoot}/loadPathwayDiagrams/`;
 
 
   // Track the negative dbId to be used
@@ -137,6 +138,31 @@ export class DataService {
       .pipe(
         map((data: any) => {
           console.debug("fetchSchemaClass: " + className);
+          // convert data to schemaClass
+          let schemaCls = this.convertToSchemaClass(className, data);
+          this.name2SchemaClass.set(schemaCls.name, schemaCls);
+          return schemaCls;
+        }),
+        catchError((err: Error) => {
+          return this.handleErrorMessage(err);
+        }));
+  }
+
+  /**
+   * Fetch the instance data.
+   * @param className
+   * @returns
+   */
+  getPathwayDiagrams(className: string): Observable<SchemaClass> {
+    // Check cached results first
+    if (this.name2SchemaClass.has(className)) {
+      return of(this.name2SchemaClass.get(className)!);
+    }
+    // Otherwise call the restful API
+    return this.http.get<SchemaClass>(this.loadPathwayDiagramUrl + `${className}`)
+      .pipe(
+        map((data: any) => {
+          console.debug("getPathwayDiagrams: " + className);
           // convert data to schemaClass
           let schemaCls = this.convertToSchemaClass(className, data);
           this.name2SchemaClass.set(schemaCls.name, schemaCls);
@@ -790,7 +816,7 @@ export class DataService {
       newInstances: newInstances,
       updatedInstances: updatedInstances,
       deletedInstances: deletedInstances,
-      bookmarks: bookmarks
+      bookmarks: bookmarks,
     };
     if (userInstances.defaultPerson) {
       clone.defaultPerson = this.utils.makeShell(userInstances.defaultPerson);
@@ -814,6 +840,36 @@ export class DataService {
             // console.debug('Cytoscape network for ' + pathwayDiagramId + ' uploaded.');
             // It is expected to reset the cache of PathwayDiagram
             this.removeInstanceInCache(parseInt(pathwayDiagramId)); // Remove the cached pathway diagram so that it can be reloaded with the new network
+          }),
+          // Since there is nothing needed to be done for the returned value (just true or false),
+          // We don't need to do anything here!
+          catchError(error => {
+            return this.handleErrorMessage(error);
+          })
+        );
+      })
+    );
+  }
+
+  persistPathwayDiagram(diagramLock: DiagramLock, network: object): Observable<boolean> {
+    return this.store.select(defaultPerson()).pipe(
+      take(1),
+      concatMap((person: Instance[]) => {
+        if (!person || person.length === 0 || person[0].dbId === undefined) {
+          return this.handleErrorMessage(new Error('Cannot find the default person! Cannot persist pathway diagram edits without the default person!'));
+        }
+        const networkToPersist = network && typeof network === 'object'
+          ? { ...network, defaultPersonId: person[0].dbId }
+          : network;
+        const payload = {
+          network: networkToPersist,
+          diagramLock: diagramLock
+        }
+        return this.http.post<boolean>(this.persistPathwayDiagramUrl, payload).pipe(
+          tap(() => {
+            console.debug('Cytoscape network for ' + diagramLock.diagramDbId + ' uploaded.');
+            // It is expected to reset the cache of PathwayDiagram
+            this.removeInstanceInCache(diagramLock.diagramDbId); // Remove the cached pathway diagram so that it can be reloaded with the new network
           }),
           // Since there is nothing needed to be done for the returned value (just true or false),
           // We don't need to do anything here!
@@ -1112,7 +1168,7 @@ export class DataService {
           return this.handleErrorMessage(new Error('Cannot find the default person!'));
         }
         instanceToBeCommitted.defaultPersonId = person[0].dbId;
-        return this.http.post<boolean>(this.deleteInstaneUrl, instanceToBeCommitted).pipe(
+        return this.http.post<boolean>(this.deleteInstanceUrl, instanceToBeCommitted).pipe(
           map((data: boolean) => data),
           catchError(error => {
             return this.handleErrorMessage(error);
@@ -1348,10 +1404,10 @@ export class DataService {
     );
   }
 
-    /**
- * Unlock the diagram once user is done editing.
-   * @param diagram DiagramLock object containing lock information
- */
+  /**
+* Unlock the diagram once user is done editing.
+ * @param diagram DiagramLock object containing lock information
+*/
   unlockDiagram(diagram: DiagramLock): Observable<boolean> {
 
     return this.http.post<boolean>(this.unlockDiagramUrl, diagram).pipe(
