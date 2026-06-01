@@ -1,5 +1,5 @@
 import { Component, EventEmitter, HostListener, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { Router } from "@angular/router";
+import { NavigationEnd, Router } from "@angular/router";
 import { Store } from '@ngrx/store';
 import { Instance, MAX_STAGED_INSTANCES } from 'src/app/core/models/reactome-instance.model';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
@@ -26,6 +26,7 @@ export class StatusComponent implements OnInit, OnDestroy {
   bookmarkedInstances: Instance[] = [];
   defaultPerson: Instance | undefined = undefined;
   saveChangesInProgress: boolean = false;
+  currentUrl: string = '';
 
   private subscriptions: Subscription = new Subscription();
 
@@ -43,7 +44,16 @@ export class StatusComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    let sub = this.store.select(updatedInstances()).subscribe((instances) => {
+    this.currentUrl = this.router.url;
+
+    let sub = this.router.events.subscribe((event) => {
+      if (event instanceof NavigationEnd) {
+        this.currentUrl = event.urlAfterRedirects;
+      }
+    });
+    this.subscriptions.add(sub);
+
+    sub = this.store.select(updatedInstances()).subscribe((instances) => {
       instances ? this.updatedInstances = instances : this.updatedInstances = [];
     });
     this.subscriptions.add(sub);
@@ -152,6 +162,22 @@ export class StatusComponent implements OnInit, OnDestroy {
 
   navigateHome() {
     this.router.navigate(["/home"]);
+  }
+
+  navigateToSchemaView() {
+    this.router.navigate(["/schema_view"]);
+  }
+
+  navigateToEventView() {
+    this.router.navigate(["/event_view"]);
+  }
+
+  showSchemaViewButton(): boolean {
+    return this.currentUrl.includes('/event_view') || this.currentUrl.includes('/home');
+  }
+
+  showEventViewButton(): boolean {
+    return this.currentUrl.includes('/schema_view') || this.currentUrl.includes('/home');
   }
 
   reportBug() {

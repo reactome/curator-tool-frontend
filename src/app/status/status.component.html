@@ -40,6 +40,16 @@
         </span> -->
 
         <div class="toolbar-buttons">
+                <button *ngIf="showSchemaViewButton()" mat-icon-button (click)="navigateToSchemaView()"
+                        matTooltip="Go to schema view" matTooltipPosition="left" [matTooltipShowDelay]="500">
+                        <mat-icon color="primary">account_tree</mat-icon>
+                </button>
+
+                <button *ngIf="showEventViewButton()" mat-icon-button (click)="navigateToEventView()"
+                        matTooltip="Go to event view" matTooltipPosition="left" [matTooltipShowDelay]="500">
+                        <mat-icon color="primary">timeline</mat-icon>
+                </button>
+
                 <button mat-icon-button (click)="navigateHome()" matTooltip="Go to home page" matTooltipPosition="left"
                         [matTooltipShowDelay]="500">
                         <mat-icon color="primary">home</mat-icon>

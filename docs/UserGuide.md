@@ -1,4 +1,4 @@
-# Reactome Curation WebBench User Guide
+# Reactome WebBench User Guide
 
 This guide explains how to use the Curator Tool frontend for daily curation tasks.
 
