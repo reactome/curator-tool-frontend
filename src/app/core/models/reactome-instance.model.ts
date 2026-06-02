@@ -97,6 +97,7 @@ export interface UserInstances {
   updatedInstances: Instance[],
   deletedInstances: Instance[],
   bookmarks: Instance[],
+  pathwayDiagramObjects?: any[],
   defaultPerson?: Instance
 }
 

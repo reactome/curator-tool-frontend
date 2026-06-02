@@ -13,6 +13,7 @@ import {
 import { InstanceUtilities } from "./instance.service";
 import { QAReport } from "../models/qa-report.model";
 import { ActivatedRoute, Router } from "@angular/router";
+import { PathwayDiagramObject } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.model";
 
 @Injectable({
   providedIn: 'root'
@@ -149,28 +150,21 @@ export class DataService {
   }
 
   /**
-   * Fetch the instance data.
-   * @param className
-   * @returns
+   * Load persisted pathway diagram edits for a user.
    */
-  getPathwayDiagrams(className: string): Observable<SchemaClass> {
-    // Check cached results first
-    if (this.name2SchemaClass.has(className)) {
-      return of(this.name2SchemaClass.get(className)!);
-    }
-    // Otherwise call the restful API
-    return this.http.get<SchemaClass>(this.loadPathwayDiagramUrl + `${className}`)
+  getPathwayDiagrams(userName: string): Observable<PathwayDiagramObject[]> {
+    return this.http.get<any>(this.loadPathwayDiagramUrl + `${userName}`)
       .pipe(
-        map((data: any) => {
-          console.debug("getPathwayDiagrams: " + className);
-          // convert data to schemaClass
-          let schemaCls = this.convertToSchemaClass(className, data);
-          this.name2SchemaClass.set(schemaCls.name, schemaCls);
-          return schemaCls;
-        }),
+        map((data: any) => this.normalizePathwayDiagramObjects(data)),
         catchError((err: Error) => {
           return this.handleErrorMessage(err);
-        }));
+        })
+      );
+  }
+
+  // Backward-compatible alias for existing call sites.
+  getPathwayDiagrms(userName: string): Observable<PathwayDiagramObject[]> {
+    return this.getPathwayDiagrams(userName);
   }
 
   /**
@@ -861,22 +855,41 @@ export class DataService {
         const networkToPersist = network && typeof network === 'object'
           ? { ...network, defaultPersonId: person[0].dbId }
           : network;
-        const payload = {
+        const payload = [{
+          diagramLock: diagramLock,
           network: networkToPersist,
-          diagramLock: diagramLock
-        }
+        }];
         return this.http.post<boolean>(this.persistPathwayDiagramUrl, payload).pipe(
           tap(() => {
             console.debug('Cytoscape network for ' + diagramLock.diagramDbId + ' uploaded.');
-            // It is expected to reset the cache of PathwayDiagram
-            this.removeInstanceInCache(diagramLock.diagramDbId); // Remove the cached pathway diagram so that it can be reloaded with the new network
+            this.removeInstanceInCache(diagramLock.diagramDbId);
           }),
-          // Since there is nothing needed to be done for the returned value (just true or false),
-          // We don't need to do anything here!
           catchError(error => {
             return this.handleErrorMessage(error);
           })
         );
+      })
+    );
+  }
+
+  perisistPathwayDiagram(pathwayDiagramObjects: PathwayDiagramObject[]): Observable<boolean> {
+    const payload = this.normalizePathwayDiagramObjects(pathwayDiagramObjects).map((item: PathwayDiagramObject) => ({
+      diagramLock: item.diagramLock ?? {
+        diagramDbId: item.pathwayDiagramDbId ?? item.dbId,
+        username: '',
+        lockedAt: '',
+        locked: false,
+        lockId: ''
+      },
+      network: item.object
+    })).filter(item => !!item.diagramLock?.diagramDbId && !!item.network);
+
+    if (payload.length === 0)
+      return of(true);
+
+    return this.http.post<boolean>(this.persistPathwayDiagramUrl, payload).pipe(
+      catchError(error => {
+        return this.handleErrorMessage(error);
       })
     );
   }
@@ -1420,5 +1433,39 @@ export class DataService {
         return this.handleErrorMessage(error);
       })
     );
+  }
+
+  private normalizePathwayDiagramObjects(data: any): PathwayDiagramObject[] {
+    const pathwayDiagramObjects = Array.isArray(data)
+      ? data
+      : data?.pathwayDiagramObjects ?? data?.objects ?? data?.instances ?? [];
+
+    return pathwayDiagramObjects.map((item: any) => {
+      if (!item) return item;
+      const sourceObject = item.object ?? item.network ?? item;
+      const parsedObject = typeof sourceObject === 'string'
+        ? this.tryParseJson(sourceObject)
+        : sourceObject;
+      const diagramDbId = item.pathwayDiagramDbId ?? item.diagramLock?.diagramDbId ?? item.dbId;
+      return {
+        ...item,
+        dbId: diagramDbId,
+        pathwayDiagramDbId: diagramDbId,
+        object: parsedObject,
+        diagramLock: item.diagramLock,
+        nodeType: item.nodeType ?? item.type ?? 'object'
+      } as PathwayDiagramObject;
+    });
+  }
+
+  private tryParseJson(content: any): any {
+    if (typeof content !== 'string')
+      return content;
+    try {
+      return JSON.parse(content);
+    }
+    catch {
+      return content;
+    }
   }
 }

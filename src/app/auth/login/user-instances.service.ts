@@ -9,6 +9,9 @@ import { DefaultPersonActions, DeleteInstanceActions, NewInstanceActions, Update
 import { defaultPerson, deleteInstances, newInstances, updatedInstances, updatedInstanceState } from "src/app/instance/state/instance.selectors";
 import { BookmarkActions } from "src/app/schema-view/instance-bookmark/state/bookmark.actions";
 import { bookmarkedInstances } from "src/app/schema-view/instance-bookmark/state/bookmark.selectors";
+import { PathwayDiagramObjectActions } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.actions";
+import { pathwayDiagramObjects } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.selectors";
+import { PathwayDiagramObject } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.model";
 
 /**
  * Group a set of utility methods here for easy access to all other classes.
@@ -69,6 +72,7 @@ export class UserInstancesService {
                 this.store.dispatch(BookmarkActions.set_bookmarks({ instances: userInstances.bookmarks }));
             else
                 this.store.dispatch(BookmarkActions.set_bookmarks({ instances: [] }));
+            this.loadPathwayDiagramObjects(user, userInstances);
             if (userInstances.defaultPerson)
                 this.store.dispatch(DefaultPersonActions.set_default_person(userInstances.defaultPerson));
             else
@@ -112,6 +116,25 @@ export class UserInstancesService {
             const defaultPersonInst = JSON.parse(JSON.parse(defaultPerson).object);
             userInstances.defaultPerson = defaultPersonInst;
         }
+        const pathwayDiagramObjectsValue = localStorage.getItem(PathwayDiagramObjectActions.get_pathway_diagram_objects.type);
+        if (pathwayDiagramObjectsValue) {
+            const diagramObjects = JSON.parse(JSON.parse(pathwayDiagramObjectsValue).object);
+            userInstances.pathwayDiagramObjects = diagramObjects;
+        }
+    }
+
+    private loadPathwayDiagramObjects(userName: string, userInstances: UserInstances) {
+        if (userInstances.pathwayDiagramObjects && userInstances.pathwayDiagramObjects.length > 0) {
+            this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: userInstances.pathwayDiagramObjects as PathwayDiagramObject[] }));
+            return;
+        }
+        this.dataService.getPathwayDiagrams(userName).subscribe({
+            next: (diagramObjects: PathwayDiagramObject[]) => {
+                userInstances.pathwayDiagramObjects = diagramObjects as any[];
+                this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: diagramObjects }));
+            },
+            error: (error) => console.warn('Failed to load staged pathway diagram objects.', error)
+        });
     }
 
     persistInstances(removeToken: boolean = false): void {
@@ -126,17 +149,20 @@ export class UserInstancesService {
             this.store.select(newInstances()),
             this.store.select(deleteInstances()),
             this.store.select(bookmarkedInstances()),
-            this.store.select(defaultPerson())
+            this.store.select(defaultPerson()),
+            this.store.select(pathwayDiagramObjects())
         ])
             .pipe(take(1)) // Take only the first set of values and complete
-            .subscribe(([updated, newInst, deleted, bookmarked, defaultPerson]) => {
+            .subscribe(([updated, newInst, deleted, bookmarked, defaultPerson, diagramObjects]) => {
                 const updatedInstances = updated || [];
                 const newInstances = newInst || [];
                 const deletedInstances = deleted || [];
                 const bookmarkedInstances = bookmarked || [];
+                const pathwayDiagramObjects = diagramObjects || [];
                 // There should be only one instance for default person. However, we use
                 // an array to make the code simplier
                 const defaultPersonInstances = defaultPerson || [];
+                const hasDiagramObjects = pathwayDiagramObjects.length > 0;
                 // Clean up localStorage before returning
                 // Keep token so that the user doesn't need to re-enter for refresh
                 const token = localStorage.getItem('token');
@@ -148,7 +174,7 @@ export class UserInstancesService {
                                    ...deletedInstances, 
                                    ...bookmarkedInstances,
                                    ...defaultPersonInstances];
-                if (instances.length == 0) {
+                if (instances.length == 0 && !hasDiagramObjects) {
                     this.dataService.deletePersistedInstances(user).subscribe(() => {
                         console.debug('Delete any persisted instance at the server.');
                     });
@@ -166,10 +192,23 @@ export class UserInstancesService {
                 };
                 if (defaultPerson.length > 0)
                     userInstances.defaultPerson = defaultPerson[0];
+                const completePersist = () => {
+                    this.dataService.perisistPathwayDiagram(pathwayDiagramObjects as PathwayDiagramObject[]).subscribe(() => {
+                      console.debug('pathway diagram objects have been persisted at the server.');
+                      if (removeToken)
+                          localStorage.removeItem('token');
+                    });
+                };
+                if (instances.length == 0) {
+                    this.dataService.deletePersistedInstances(user).subscribe(() => {
+                        console.debug('Delete any persisted instance at the server.');
+                        completePersist();
+                    });
+                    return;
+                }
                 this.dataService.persitUserInstances(userInstances, user).subscribe(() => {
                     console.debug('userInstances have been persisted at the server.');
-                    if (removeToken)
-                        localStorage.removeItem('token');
+                    completePersist();
                 });
             });
     }

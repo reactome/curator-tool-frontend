@@ -107,4 +107,53 @@
       (urlClickEvent)="navigateUrl($event)">
     </app-instance-list-table>
   </div>
+
+  <!-- Pathway Diagram Objects Section -->
+  <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; margin-top: 8px;">
+    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+      <span>Pathway Diagram Objects: {{pathwayDiagramObjects.length}} ({{selectedPathwayDiagramObjects.length}})</span>
+    </div>
+    <div class="action-buttons-row">
+      <button class="mini-icon-btn" (click)="selectAllPathwayDiagramObjects()" color="primary" mat-icon-button matTooltip="select all">
+        <mat-icon>select_all</mat-icon>
+      </button>
+      <button class="mini-icon-btn" (click)="clearSelectedPathwayDiagramObjects()" color="primary" mat-icon-button matTooltip="deselect all">
+        <mat-icon>deselect_all</mat-icon>
+      </button>
+      <button (click)="removeSelectedPathwayDiagramObjects()" [disabled]="selectedPathwayDiagramObjects.length === 0" class="mini-icon-btn"
+        color="primary" mat-icon-button matTooltip="remove selected staged diagram objects">
+        <mat-icon>undo</mat-icon>
+      </button>
+      <button [disabled]="selectedPathwayDiagramObjects.length === 0" class="mini-icon-btn" color="primary" mat-icon-button
+        matTooltip="persist selected diagram objects" (click)="persistSelectedPathwayDiagramObjects()">
+        <mat-icon>upload</mat-icon>
+      </button>
+    </div>
+  </div>
+  <div class="scroll-list" style="flex: 2; min-height: 120px;">
+    <table class="instance-list-table" style="width: 100%;">
+      <thead>
+        <tr>
+          <th style="width: 32px;"></th>
+          <th>dbId</th>
+          <th>Display Name</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of pathwayDiagramObjects">
+          <td>
+            <input
+              type="checkbox"
+              [checked]="isPathwayDiagramObjectSelected(item)"
+              (change)="togglePathwayDiagramObjectSelection(item, $any($event.target).checked)"
+            />
+          </td>
+          <td>{{ item.dbId }}</td>
+          <td>{{ item.displayName || ('PathwayDiagram ' + item.pathwayDiagramDbId) }}</td>
+          <td>{{ item.nodeType }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>

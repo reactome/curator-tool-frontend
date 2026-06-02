@@ -4,6 +4,8 @@ import { Store } from '@ngrx/store';
 import { Instance, MAX_STAGED_INSTANCES } from 'src/app/core/models/reactome-instance.model';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { bookmarkedInstances } from "../schema-view/instance-bookmark/state/bookmark.selectors";
+import { pathwayDiagramObjects } from "../event-view/components/pathway-diagram/state/pathway-diagram-object.selectors";
+import { PathwayDiagramObject } from "../event-view/components/pathway-diagram/state/pathway-diagram-object.model";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { UserInstancesService } from "../auth/login/user-instances.service";
 import { ListInstancesDialogService } from "../schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service";
@@ -24,6 +26,7 @@ export class StatusComponent implements OnInit, OnDestroy {
   newInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
   bookmarkedInstances: Instance[] = [];
+  pathwayDiagramObjects: PathwayDiagramObject[] = [];
   defaultPerson: Instance | undefined = undefined;
   saveChangesInProgress: boolean = false;
   currentUrl: string = '';
@@ -73,12 +76,14 @@ export class StatusComponent implements OnInit, OnDestroy {
     sub = combineLatest([
       this.store.select(deleteInstances()),
       this.store.select(newInstances()),
-      this.store.select(updatedInstances())
+      this.store.select(updatedInstances()),
+      this.store.select(pathwayDiagramObjects())
     ]).pipe(
-      map(([deleted, created, updated]) => [
+      map(([deleted, created, updated, diagrams]) => [
         ...(deleted || []),
         ...(created || []),
-        ...(updated || [])
+        ...(updated || []),
+        ...(diagrams || [])
       ])
     ).subscribe((allInstances) => {
       this.saveChangesInProgress = allInstances.length > MAX_STAGED_INSTANCES;
@@ -96,12 +101,18 @@ export class StatusComponent implements OnInit, OnDestroy {
     });
     this.subscriptions.add(sub);
 
+    sub = this.store.select(pathwayDiagramObjects()).subscribe((instances) => {
+      instances ? this.pathwayDiagramObjects = instances : this.pathwayDiagramObjects = [];
+    });
+    this.subscriptions.add(sub);
+
     // Auto-persist after 5 minutes of no edit activity across all tracked state
     sub = combineLatest([
       this.store.select(updatedInstances()),
       this.store.select(newInstances()),
       this.store.select(deleteInstances()),
       this.store.select(defaultPerson()),
+      this.store.select(pathwayDiagramObjects()),
     ]).pipe(
       skip(1), // ignore the initial emission on subscription
       debounceTime(5 * 60 * 1000)

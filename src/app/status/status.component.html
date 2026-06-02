@@ -18,6 +18,12 @@
                         </button>
                 </span>
 
+                <span>Pathway diagram objects:
+                        <button mat-button style="border: 0px;" (click)="showUpdated()"
+                                        [disabled]="pathwayDiagramObjects.length === 0">{{pathwayDiagramObjects.length}}
+                        </button>
+                </span>
+
                 <span>Default person:
                         <button mat-button style="border: 0px;" (click)="setDefaultPerson()">
                                 {{defaultPerson ? (defaultPerson.displayName + ' [' + defaultPerson.dbId + ']') : 'Not Defined'}}

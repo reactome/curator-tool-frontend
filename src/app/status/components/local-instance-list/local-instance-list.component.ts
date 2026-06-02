@@ -16,6 +16,9 @@ import { DeleteBulkDialogService } from 'src/app/schema-view/list-instances/comp
 import { DeletionDialogService } from 'src/app/instance/components/deletion-dialog/deletion-dialog.service';
 import { CommitResultDialogService, CommitResult } from './commit-result-dialog/commit-result-dialog.service';
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
+import { pathwayDiagramObjects } from 'src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.selectors';
+import { PathwayDiagramObject } from 'src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.model';
+import { PathwayDiagramObjectActions } from 'src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.actions';
 
 
 @Component({
@@ -37,6 +40,7 @@ export class UpdatedInstanceListComponent implements OnInit {
   newInstances: Instance[] = [];
   updatedInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
+  pathwayDiagramObjects: PathwayDiagramObject[] = [];
   showHeader: boolean = false;
 
   // To notify the parent component to close this panel
@@ -45,6 +49,7 @@ export class UpdatedInstanceListComponent implements OnInit {
   selectedUpdatedInstances: Instance[] = [];
   selectedNewInstances: Instance[] = [];
   selectedDeletedInstances: Instance[] = [];
+  selectedPathwayDiagramObjects: PathwayDiagramObject[] = [];
 
   showCheck: boolean = false;
 
@@ -89,6 +94,13 @@ export class UpdatedInstanceListComponent implements OnInit {
     subscription = this.store.select(deleteInstances()).subscribe((instances) => {
       if (instances !== undefined)
         this.deletedInstances = instances;
+    });
+    this.subscriptions.push(subscription);
+
+    subscription = this.store.select(pathwayDiagramObjects()).subscribe((objects) => {
+      this.pathwayDiagramObjects = objects || [];
+      this.selectedPathwayDiagramObjects = this.selectedPathwayDiagramObjects
+        .filter(selected => this.pathwayDiagramObjects.some(item => item.dbId === selected.dbId));
     });
     this.subscriptions.push(subscription);
     this.getSelectedInstances();
@@ -198,6 +210,56 @@ export class UpdatedInstanceListComponent implements OnInit {
     this.selectedDeletedInstances = [];
     this.showCheck = false;
     this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.deletedInstanceList);
+  }
+
+  persistSelectedPathwayDiagramObjects() {
+    if (!this.selectedPathwayDiagramObjects || this.selectedPathwayDiagramObjects.length === 0)
+      return;
+
+    this.openCommitWaitDialog(
+      'Persisting Pathway Diagram Objects',
+      'Please wait while selected pathway diagram objects are persisted.'
+    );
+
+    this.dataService.perisistPathwayDiagram(this.selectedPathwayDiagramObjects).pipe(
+      finalize(() => this.closeCommitWaitDialog())
+    ).subscribe(() => {
+      const selectedDbIds = new Set(this.selectedPathwayDiagramObjects.map(i => i.dbId));
+      const remaining = this.pathwayDiagramObjects.filter(item => !selectedDbIds.has(item.dbId));
+      this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: remaining }));
+      this.selectedPathwayDiagramObjects = [];
+    });
+  }
+
+  removeSelectedPathwayDiagramObjects() {
+    if (!this.selectedPathwayDiagramObjects || this.selectedPathwayDiagramObjects.length === 0)
+      return;
+
+    const selectedDbIds = new Set(this.selectedPathwayDiagramObjects.map(i => i.dbId));
+    const remaining = this.pathwayDiagramObjects.filter(item => !selectedDbIds.has(item.dbId));
+    this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: remaining }));
+    this.selectedPathwayDiagramObjects = [];
+  }
+
+  selectAllPathwayDiagramObjects() {
+    this.selectedPathwayDiagramObjects = [...this.pathwayDiagramObjects];
+  }
+
+  clearSelectedPathwayDiagramObjects() {
+    this.selectedPathwayDiagramObjects = [];
+  }
+
+  isPathwayDiagramObjectSelected(item: PathwayDiagramObject): boolean {
+    return this.selectedPathwayDiagramObjects.some(selected => selected.dbId === item.dbId);
+  }
+
+  togglePathwayDiagramObjectSelection(item: PathwayDiagramObject, selected: boolean) {
+    if (selected) {
+      if (!this.isPathwayDiagramObjectSelected(item))
+        this.selectedPathwayDiagramObjects.push(item);
+      return;
+    }
+    this.selectedPathwayDiagramObjects = this.selectedPathwayDiagramObjects.filter(current => current.dbId !== item.dbId);
   }
 
   ngOnDestroy(): void {
