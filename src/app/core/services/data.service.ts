@@ -1446,7 +1446,11 @@ export class DataService {
       const parsedObject = typeof sourceObject === 'string'
         ? this.tryParseJson(sourceObject)
         : sourceObject;
-      const rawDiagramDbId = item.pathwayDiagramDbId ?? item.diagramLock?.diagramDbId ?? item.dbId;
+      const rawDiagramDbId = item.pathwayDiagramDbId
+        ?? item.diagramDbId
+        ?? item.diagramId
+        ?? item.diagramLock?.diagramDbId
+        ?? item.dbId;
       const normalizedDiagramDbId = Number(rawDiagramDbId);
       const diagramDbId = Number.isFinite(normalizedDiagramDbId)
         ? normalizedDiagramDbId
@@ -1459,12 +1463,17 @@ export class DataService {
             : item.diagramLock.diagramDbId
         }
         : undefined;
-      const normalizedPathwayDbId = Number(item.pathwayDbId);
+      const rawPathwayDbId = item.pathwayDbId
+        ?? item.pathwayId
+        ?? item.representedPathwayDbId
+        ?? item.pathway?.dbId
+        ?? item.representedPathway?.dbId;
+      const normalizedPathwayDbId = Number(rawPathwayDbId);
       return {
         ...item,
         dbId: diagramDbId,
         pathwayDiagramDbId: diagramDbId,
-        pathwayDbId: Number.isFinite(normalizedPathwayDbId) ? normalizedPathwayDbId : item.pathwayDbId,
+        pathwayDbId: Number.isFinite(normalizedPathwayDbId) ? normalizedPathwayDbId : rawPathwayDbId,
         object: parsedObject,
         diagramLock: normalizedDiagramLock,
         nodeType: item.nodeType ?? item.type ?? 'object'

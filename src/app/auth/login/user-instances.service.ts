@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Store } from "@ngrx/store";
-import { combineLatest, defaultIfEmpty, finalize, take } from "rxjs";
+import { combineLatest, defaultIfEmpty, finalize, forkJoin, of, take } from "rxjs";
+import { catchError } from "rxjs/operators";
 import { Instance, UserInstances } from "src/app/core/models/reactome-instance.model";
 import { AuthenticateService } from "src/app/core/services/authenticate.service";
 import { DataService } from "src/app/core/services/data.service";
@@ -128,8 +129,19 @@ export class UserInstancesService {
         if (localDiagramObjects && localDiagramObjects.length > 0)
             this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: localDiagramObjects }));
 
-        this.dataService.getPathwayDiagrams(userName).subscribe({
-            next: (diagramObjects: PathwayDiagramObject[]) => {
+        const candidateUserNames = Array.from(new Set([
+            userName,
+            ...this.authService.getUserCandidates()
+        ].filter((name: string | undefined): name is string => !!name && name.trim().length > 0)));
+
+        const requests = candidateUserNames.map((candidate: string) =>
+            this.dataService.getPathwayDiagrams(candidate).pipe(
+                catchError(() => of([] as PathwayDiagramObject[]))
+            )
+        );
+
+        forkJoin(requests).subscribe({
+            next: (diagramObjectGroups: PathwayDiagramObject[][]) => {
                 const localObjects = localDiagramObjects ?? [];
                 const mergedByDiagramDbId = new Map<number, PathwayDiagramObject>();
 
@@ -139,8 +151,8 @@ export class UserInstancesService {
                         mergedByDiagramDbId.set(diagramDbId, item);
                 });
 
-                // Backend is the source of truth at login, so let it override local snapshots.
-                (diagramObjects || []).forEach((item: PathwayDiagramObject) => {
+                // Backend is the source of truth at login, so let backend snapshots override local ones.
+                (diagramObjectGroups || []).flat().forEach((item: PathwayDiagramObject) => {
                     const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId ?? item?.dbId);
                     if (Number.isFinite(diagramDbId))
                         mergedByDiagramDbId.set(diagramDbId, item);
@@ -173,7 +185,22 @@ export class UserInstancesService {
         const clearLocalStateForLogout = () => {
             if (!removeToken)
                 return;
+            const preservedDiagramObjects = localStorage.getItem(PathwayDiagramObjectActions.get_pathway_diagram_objects.type);
+            const preservedDiagramLockRefs = localStorage.getItem('pathwayDiagramLockRefs');
+            const preservedExactSavedNetworks = localStorage.getItem('exactSavedDiagramNetworks');
             localStorage.clear();
+            // Restore diagram-only staging caches so edited diagrams can be restored after re-login.
+            if (preservedDiagramObjects)
+                localStorage.setItem(PathwayDiagramObjectActions.get_pathway_diagram_objects.type, preservedDiagramObjects);
+            if (preservedDiagramLockRefs)
+                localStorage.setItem('pathwayDiagramLockRefs', preservedDiagramLockRefs);
+            if (preservedExactSavedNetworks)
+                localStorage.setItem('exactSavedDiagramNetworks', preservedExactSavedNetworks);
+            // Ensure auth/session identity is removed.
+            localStorage.removeItem('token');
+            localStorage.removeItem('login_username');
+            // Clear diagram draft persisted in session storage so stale drafts are not auto-recovered after re-login.
+            sessionStorage.removeItem('pendingPathwayDiagramDraft');
         };
         combineLatest([
             this.store.select(updatedInstances()),
