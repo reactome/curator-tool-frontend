@@ -463,9 +463,7 @@ Opening diagram in read-only mode.`
         if (this.isLockOwnedByCurrentUser(diagramLockInfo)) {
           this.diagramLockInfo = diagramLockInfo;
           this.pathwayDiagramId = diagramLockInfo.diagramDbId.toString();
-          this.isEdited = true;
           this.isEditing = true;
-          this.persistDiagramDraftToSessionStorage(diagramLockInfo);
           this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
           this.updateLockStatus(diagramLockInfo);
           return;
