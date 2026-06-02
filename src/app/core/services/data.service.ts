@@ -1446,13 +1446,27 @@ export class DataService {
       const parsedObject = typeof sourceObject === 'string'
         ? this.tryParseJson(sourceObject)
         : sourceObject;
-      const diagramDbId = item.pathwayDiagramDbId ?? item.diagramLock?.diagramDbId ?? item.dbId;
+      const rawDiagramDbId = item.pathwayDiagramDbId ?? item.diagramLock?.diagramDbId ?? item.dbId;
+      const normalizedDiagramDbId = Number(rawDiagramDbId);
+      const diagramDbId = Number.isFinite(normalizedDiagramDbId)
+        ? normalizedDiagramDbId
+        : rawDiagramDbId;
+      const normalizedDiagramLock = item.diagramLock
+        ? {
+          ...item.diagramLock,
+          diagramDbId: Number.isFinite(Number(item.diagramLock.diagramDbId))
+            ? Number(item.diagramLock.diagramDbId)
+            : item.diagramLock.diagramDbId
+        }
+        : undefined;
+      const normalizedPathwayDbId = Number(item.pathwayDbId);
       return {
         ...item,
         dbId: diagramDbId,
         pathwayDiagramDbId: diagramDbId,
+        pathwayDbId: Number.isFinite(normalizedPathwayDbId) ? normalizedPathwayDbId : item.pathwayDbId,
         object: parsedObject,
-        diagramLock: item.diagramLock,
+        diagramLock: normalizedDiagramLock,
         nodeType: item.nodeType ?? item.type ?? 'object'
       } as PathwayDiagramObject;
     });
@@ -1461,11 +1475,16 @@ export class DataService {
   private tryParseJson(content: any): any {
     if (typeof content !== 'string')
       return content;
-    try {
-      return JSON.parse(content);
+    let parsed: any = content;
+    // Some responses can contain JSON strings nested more than once.
+    for (let i = 0; i < 3 && typeof parsed === 'string'; i++) {
+      try {
+        parsed = JSON.parse(parsed);
+      }
+      catch {
+        break;
+      }
     }
-    catch {
-      return content;
-    }
+    return parsed;
   }
 }

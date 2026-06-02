@@ -19,6 +19,7 @@ import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait
 import { pathwayDiagramObjects } from 'src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.selectors';
 import { PathwayDiagramObject } from 'src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.model';
 import { PathwayDiagramObjectActions } from 'src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.actions';
+import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 
 
 @Component({
@@ -260,6 +261,20 @@ export class UpdatedInstanceListComponent implements OnInit {
       return;
     }
     this.selectedPathwayDiagramObjects = this.selectedPathwayDiagramObjects.filter(current => current.dbId !== item.dbId);
+  }
+
+  openPathwayDiagramObject(item: PathwayDiagramObject) {
+    const pathwayDbId = Number(item?.pathwayDbId);
+    if (!Number.isFinite(pathwayDbId) || pathwayDbId <= 0) {
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Information',
+          message: 'This staged diagram does not have a linked pathway id yet, so it cannot be opened directly from the staged list.'
+        }
+      });
+      return;
+    }
+    this.router.navigate([`/event_view/instance/${pathwayDbId}`]);
   }
 
   ngOnDestroy(): void {

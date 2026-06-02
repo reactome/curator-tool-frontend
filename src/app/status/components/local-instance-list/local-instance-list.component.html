@@ -138,20 +138,31 @@
           <th>dbId</th>
           <th>Display Name</th>
           <th>Type</th>
+          <th style="width: 56px;">Open</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of pathwayDiagramObjects">
+        <tr *ngFor="let item of pathwayDiagramObjects" class="staged-diagram-row" (click)="openPathwayDiagramObject(item)">
           <td>
             <input
               type="checkbox"
               [checked]="isPathwayDiagramObjectSelected(item)"
+              (click)="$event.stopPropagation()"
               (change)="togglePathwayDiagramObjectSelection(item, $any($event.target).checked)"
             />
           </td>
           <td>{{ item.dbId }}</td>
           <td>{{ item.displayName || ('PathwayDiagram ' + item.pathwayDiagramDbId) }}</td>
           <td>{{ item.nodeType }}</td>
+          <td>
+            <button
+              mat-icon-button
+              color="primary"
+              matTooltip="Open staged diagram"
+              (click)="$event.stopPropagation(); openPathwayDiagramObject(item)">
+              <mat-icon>open_in_new</mat-icon>
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>

@@ -101,6 +101,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   lockStatus: 'idle' | 'acquiring' | 'acquired' | 'blocked' | 'error' = 'idle';
   lockStatusMessage: string = 'Lock not requested.';
   private isUnlockingDiagram: boolean = false;
+  private diagramLoadRequestId: number = 0;
 
   get isDiagramLocked(): boolean {
     return this.lockStatus === 'acquired' || this.lockStatus === 'blocked';
@@ -153,8 +154,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         this.isEditing = false;
         this.isEdited = false;
         this.pathwayDiagramId = ''; // Reset before load so referrer-based staged lookup can run.
-        this.loadPathwayDiagram();
-        this.restorePendingDiagramDraft();
+        const loadRequestId = this.loadPathwayDiagram();
+        this.restorePendingDiagramDraft(this.pathwayId, loadRequestId);
       };
       const isSwitchingDiagram = this.pathwayId.length > 0 && this.pathwayId !== id;
       if (isSwitchingDiagram) {
@@ -270,62 +271,145 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     }
   }
 
-  private loadPathwayDiagram() {
+  private loadPathwayDiagram(): number {
+    const loadRequestId = this.beginDiagramLoadRequest();
     this.storeViewport();
-    this.tryLoadStagedNetwork(() => this.loadPathwayDiagramFromBackend());
+    this.tryLoadStagedNetwork(() => this.loadPathwayDiagramFromBackend(loadRequestId), loadRequestId);
+    return loadRequestId;
   }
 
-  private tryLoadStagedNetwork(onMiss: () => void) {
-    this.store.select(pathwayDiagramObjects()).pipe(take(1)).subscribe((objects: PathwayDiagramObject[]) => {
-      if (!objects || objects.length === 0) {
-        const userName = this.authService.getUser();
-        if (!userName) {
-          onMiss();
-          return;
-        }
-        this.diagramUtils.getDataService().getPathwayDiagrams(userName).pipe(take(1)).subscribe({
-          next: (backendObjects: PathwayDiagramObject[]) => {
-            if (!backendObjects || backendObjects.length === 0) {
-              onMiss();
-              return;
-            }
-            this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: backendObjects }));
-            this.tryLoadStagedNetworkWithObjects(backendObjects, onMiss);
-          },
-          error: () => onMiss()
-        });
-        return;
-      }
+  private beginDiagramLoadRequest(): number {
+    this.diagramLoadRequestId += 1;
+    return this.diagramLoadRequestId;
+  }
 
-      this.tryLoadStagedNetworkWithObjects(objects, onMiss);
+  private isDiagramLoadRequestActive(loadRequestId: number): boolean {
+    return loadRequestId === this.diagramLoadRequestId;
+  }
+
+  private tryLoadStagedNetwork(onMiss: () => void, loadRequestId: number) {
+    this.store.select(pathwayDiagramObjects()).pipe(take(1)).subscribe((objects: PathwayDiagramObject[]) => {
+      if (!this.isDiagramLoadRequestActive(loadRequestId))
+        return;
+      this.tryLoadStagedNetworkWithObjects(objects ?? [], onMiss, true, loadRequestId);
     });
   }
 
-  private tryLoadStagedNetworkWithObjects(objects: PathwayDiagramObject[], onMiss: () => void) {
+  private tryLoadStagedNetworkWithObjects(objects: PathwayDiagramObject[], onMiss: () => void, allowBackendLookup: boolean = false, loadRequestId: number) {
+      if (!this.isDiagramLoadRequestActive(loadRequestId))
+        return;
+
       const currentDiagramId = parseInt(this.diagram.diagramId || '');
+
+      // Hard fallback: use same-pathway pending draft directly from session storage.
+      // This bypasses referrer/backend timing issues during rapid route navigation.
+      if (!this.isEditing && !this.pathwayDiagramId && !Number.isNaN(currentDiagramId) && currentDiagramId > 0) {
+        const pendingDraftNetwork = this.getPendingDraftNetworkForPathway(currentDiagramId);
+        if (pendingDraftNetwork) {
+          if (this.tryDisplayStagedNetwork(pendingDraftNetwork, loadRequestId))
+            return;
+        }
+      }
+
+      const onStagedMiss = () => {
+        if (!this.isDiagramLoadRequestActive(loadRequestId))
+          return;
+        if (allowBackendLookup)
+          this.tryLoadStagedNetworkFromBackend(objects, onMiss, loadRequestId);
+        else
+          onMiss();
+      };
+
       if (!Number.isNaN(currentDiagramId)) {
+        // Non-edit mode diagramId is pathway dbId. Prefer direct pathway-keyed staged drafts first.
+        if (!this.isEditing && !this.pathwayDiagramId) {
+          const stagedByPathway = this.findStagedPathwayDiagramObjectByPathwayId(objects, currentDiagramId);
+          const stagedPathwayNetwork = this.extractNetworkFromStagedObject(stagedByPathway);
+          if (stagedPathwayNetwork && this.tryDisplayStagedNetwork(stagedPathwayNetwork, loadRequestId)) {
+            return;
+          }
+        }
+
         const staged = this.findStagedPathwayDiagramObject(objects, currentDiagramId);
         const stagedNetwork = this.extractNetworkFromStagedObject(staged);
-        if (stagedNetwork) {
-          this.diagramUtils.clearSelection(this.diagram);
-          this.diagram.displayNetwork(stagedNetwork.elements);
-          this.setDiagramLabel();
+        if (stagedNetwork && this.tryDisplayStagedNetwork(stagedNetwork, loadRequestId)) {
           return;
         }
       }
 
       // In normal mode, diagramId is pathway/instance dbId. Resolve PathwayDiagram via referrers first.
       if (!this.isEditing && !this.pathwayDiagramId && !Number.isNaN(currentDiagramId) && currentDiagramId > 0) {
-        this.tryLoadStagedNetworkViaReferrers(objects, currentDiagramId, onMiss);
+        this.tryLoadStagedNetworkViaReferrers(objects, currentDiagramId, onStagedMiss, loadRequestId);
         return;
       }
 
-      onMiss();
+      onStagedMiss();
   }
 
-  private tryLoadStagedNetworkViaReferrers(objects: PathwayDiagramObject[], pathwayDbId: number, onMiss: () => void) {
+  private tryLoadStagedNetworkFromBackend(existingObjects: PathwayDiagramObject[], onMiss: () => void, loadRequestId: number) {
+    if (!this.isDiagramLoadRequestActive(loadRequestId))
+      return;
+
+    const userName = this.authService.getUser();
+    if (!userName) {
+      onMiss();
+      return;
+    }
+    this.diagramUtils.getDataService().getPathwayDiagrams(userName).pipe(take(1)).subscribe({
+      next: (backendObjects: PathwayDiagramObject[]) => {
+        if (!this.isDiagramLoadRequestActive(loadRequestId))
+          return;
+        if (!backendObjects || backendObjects.length === 0) {
+          onMiss();
+          return;
+        }
+        const mergedObjects = this.mergePathwayDiagramObjects(existingObjects, backendObjects);
+        this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: mergedObjects }));
+        this.tryLoadStagedNetworkWithObjects(mergedObjects, onMiss, false, loadRequestId);
+      },
+      error: () => {
+        if (!this.isDiagramLoadRequestActive(loadRequestId))
+          return;
+        onMiss();
+      }
+    });
+  }
+
+  private mergePathwayDiagramObjects(existingObjects: PathwayDiagramObject[], backendObjects: PathwayDiagramObject[]): PathwayDiagramObject[] {
+    const mergedByDbId = new Map<number, PathwayDiagramObject>();
+    const getDiagramDbId = (item: PathwayDiagramObject): number | undefined => {
+      const normalizedDbId = Number(item?.pathwayDiagramDbId ?? item?.dbId ?? item?.diagramLock?.diagramDbId);
+      return Number.isFinite(normalizedDbId) ? normalizedDbId : undefined;
+    };
+
+    backendObjects.forEach((item: PathwayDiagramObject) => {
+      if (!item)
+        return;
+      const diagramDbId = getDiagramDbId(item);
+      if (!diagramDbId)
+        return;
+      mergedByDbId.set(diagramDbId, item);
+    });
+
+    // Keep existing in-memory edits over backend snapshots for the same diagram.
+    existingObjects.forEach((item: PathwayDiagramObject) => {
+      if (!item)
+        return;
+      const diagramDbId = getDiagramDbId(item);
+      if (!diagramDbId)
+        return;
+      mergedByDbId.set(diagramDbId, item);
+    });
+
+    return Array.from(mergedByDbId.values());
+  }
+
+  private tryLoadStagedNetworkViaReferrers(objects: PathwayDiagramObject[], pathwayDbId: number, onMiss: () => void, loadRequestId: number) {
     this.diagramUtils.getDataService().getReferrers(pathwayDbId).pipe(take(1)).subscribe({
       next: (referrers: Referrer[]) => {
+        if (!this.isDiagramLoadRequestActive(loadRequestId))
+          return;
+
         const diagramDbIds = new Set<number>();
         referrers?.forEach((referrer: Referrer) => {
           referrer.referrers?.forEach((inst: Instance) => {
@@ -337,10 +421,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         for (const diagramDbId of diagramDbIds) {
           const staged = this.findStagedPathwayDiagramObject(objects, diagramDbId);
           const stagedNetwork = this.extractNetworkFromStagedObject(staged);
-          if (stagedNetwork) {
-            this.diagramUtils.clearSelection(this.diagram);
-            this.diagram.displayNetwork(stagedNetwork.elements);
-            this.setDiagramLabel();
+          if (stagedNetwork && this.tryDisplayStagedNetwork(stagedNetwork, loadRequestId)) {
             return;
           }
         }
@@ -348,57 +429,77 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         // Fallback for cases where referrers are incomplete/unavailable.
         this.diagramUtils.getDataService().fetchPathwayDiagram(pathwayDbId).pipe(take(1)).subscribe({
           next: (pathwayDiagram: Instance) => {
+            if (!this.isDiagramLoadRequestActive(loadRequestId))
+              return;
             const diagramDbId = pathwayDiagram?.dbId;
             const staged = diagramDbId ? this.findStagedPathwayDiagramObject(objects, diagramDbId) : undefined;
             const stagedNetwork = this.extractNetworkFromStagedObject(staged);
-            if (stagedNetwork) {
-              this.diagramUtils.clearSelection(this.diagram);
-              this.diagram.displayNetwork(stagedNetwork.elements);
-              this.setDiagramLabel();
+            if (stagedNetwork && this.tryDisplayStagedNetwork(stagedNetwork, loadRequestId)) {
               return;
             }
             onMiss();
           },
-          error: () => onMiss()
+          error: () => {
+            if (!this.isDiagramLoadRequestActive(loadRequestId))
+              return;
+            onMiss();
+          }
         });
       },
       error: () => {
+        if (!this.isDiagramLoadRequestActive(loadRequestId))
+          return;
+
         // Fallback for cases where referrers endpoint fails.
         this.diagramUtils.getDataService().fetchPathwayDiagram(pathwayDbId).pipe(take(1)).subscribe({
           next: (pathwayDiagram: Instance) => {
+            if (!this.isDiagramLoadRequestActive(loadRequestId))
+              return;
             const diagramDbId = pathwayDiagram?.dbId;
             const staged = diagramDbId ? this.findStagedPathwayDiagramObject(objects, diagramDbId) : undefined;
             const stagedNetwork = this.extractNetworkFromStagedObject(staged);
-            if (stagedNetwork) {
-              this.diagramUtils.clearSelection(this.diagram);
-              this.diagram.displayNetwork(stagedNetwork.elements);
-              this.setDiagramLabel();
+            if (stagedNetwork && this.tryDisplayStagedNetwork(stagedNetwork, loadRequestId)) {
               return;
             }
             onMiss();
           },
-          error: () => onMiss()
+          error: () => {
+            if (!this.isDiagramLoadRequestActive(loadRequestId))
+              return;
+            onMiss();
+          }
         });
       }
     });
   }
 
-  private loadPathwayDiagramFromBackend() {
+  private loadPathwayDiagramFromBackend(loadRequestId: number) {
+    if (!this.isDiagramLoadRequestActive(loadRequestId))
+      return;
+
+    const requestedDiagramId = this.diagram.diagramId;
+
     // Check if we have cytoscape network. If yes, load it.
-    this.diagramUtils.getDataService().hasCytoscapeNetwork(this.diagram.diagramId).subscribe((hasCyNetwork: boolean) => {
+    this.diagramUtils.getDataService().hasCytoscapeNetwork(requestedDiagramId).subscribe((hasCyNetwork: boolean) => {
+      if (!this.isDiagramLoadRequestActive(loadRequestId))
+        return;
       this.diagramUtils.clearSelection(this.diagram);
       if (hasCyNetwork) {
-        this.diagramUtils.getDataService().getCytoscapeNetwork(this.diagram.diagramId).subscribe((cytoscapeJson: any) => {
+        this.diagramUtils.getDataService().getCytoscapeNetwork(requestedDiagramId).subscribe((cytoscapeJson: any) => {
+          if (!this.isDiagramLoadRequestActive(loadRequestId))
+            return;
           this.diagram.displayNetwork(cytoscapeJson.elements);
-          this.setDiagramLabel();
+          this.setDiagramLabel(loadRequestId);
         });
       }
       else {
-        this.diagramUtils.getDataService().hasDiagram(this.diagram.diagramId).subscribe((hasDiagramJson: boolean) => {
+        this.diagramUtils.getDataService().hasDiagram(requestedDiagramId).subscribe((hasDiagramJson: boolean) => {
+          if (!this.isDiagramLoadRequestActive(loadRequestId))
+            return;
           if (hasDiagramJson) {
             try {
               this.diagram.loadDiagram();
-              this.setDiagramLabel();
+              this.setDiagramLabel(loadRequestId);
             } catch (error) {
               console.error('Error loading diagram:', error);
               this.dialog.open(InfoDialogComponent, {
@@ -410,8 +511,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
             }
           }
           else {
-            this.createEmptyDiagram(parseInt(this.diagram.diagramId));
-            this.setDiagramLabel();
+            this.createEmptyDiagram(parseInt(requestedDiagramId));
+            this.setDiagramLabel(loadRequestId);
           }
         });
       }
@@ -419,26 +520,71 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   }
 
   private findStagedPathwayDiagramObject(objects: PathwayDiagramObject[], diagramDbId: number): PathwayDiagramObject | undefined {
+    const requestedDiagramDbId = Number(diagramDbId);
     return objects.find(item =>
-      (item.pathwayDiagramDbId ?? item.dbId) === diagramDbId ||
-      item.dbId === diagramDbId ||
-      item.diagramLock?.diagramDbId === diagramDbId
+      Number(item.pathwayDiagramDbId ?? item.dbId) === requestedDiagramDbId ||
+      Number(item.dbId) === requestedDiagramDbId ||
+      Number(item.diagramLock?.diagramDbId) === requestedDiagramDbId
     );
+  }
+
+  private findStagedPathwayDiagramObjectByPathwayId(objects: PathwayDiagramObject[], pathwayDbId: number): PathwayDiagramObject | undefined {
+    const requestedPathwayDbId = Number(pathwayDbId);
+    return objects.find(item => Number(item.pathwayDbId) === requestedPathwayDbId);
   }
 
   private extractNetworkFromStagedObject(staged?: PathwayDiagramObject): any | undefined {
     if (!staged)
       return undefined;
-    const network = staged.object?.elements
-      ? staged.object
-      : staged.object?.network?.elements
-        ? staged.object.network
-        : undefined;
-    return network;
+    const normalizeNetwork = (candidate: any): any | undefined => {
+      let value = candidate;
+      // Handle one or more levels of string-encoded JSON payloads.
+      for (let i = 0; i < 3 && typeof value === 'string'; i++) {
+        try {
+          value = JSON.parse(value);
+        }
+        catch {
+          break;
+        }
+      }
+      if (!value)
+        return undefined;
+      if (value.elements)
+        return value;
+      if (value.network?.elements)
+        return value.network;
+      if (value.nodes || value.edges)
+        return { elements: { nodes: value.nodes ?? [], edges: value.edges ?? [] } };
+      if (value.network && (value.network.nodes || value.network.edges))
+        return { elements: { nodes: value.network.nodes ?? [], edges: value.network.edges ?? [] } };
+      return undefined;
+    };
+
+    return normalizeNetwork(staged.object) ?? normalizeNetwork(staged as any);
   }
 
-  private setDiagramLabel() {
-    this.diagramUtils.getDataService().fetchInstance(parseInt(this.diagram.diagramId)).subscribe((instance: Instance) => {
+  private tryDisplayStagedNetwork(network: any, loadRequestId: number): boolean {
+    if (!this.isDiagramLoadRequestActive(loadRequestId))
+      return false;
+    if (!network?.elements)
+      return false;
+    try {
+      this.diagramUtils.clearSelection(this.diagram);
+      this.diagram.displayNetwork(network.elements);
+      this.setDiagramLabel(loadRequestId);
+      return true;
+    }
+    catch (error) {
+      console.warn('Failed to display staged pathway diagram network. Falling back to backend load.', error);
+      return false;
+    }
+  }
+
+  private setDiagramLabel(loadRequestId?: number) {
+    const requestedDiagramId = parseInt(this.diagram.diagramId);
+    this.diagramUtils.getDataService().fetchInstance(requestedDiagramId).subscribe((instance: Instance) => {
+      if (loadRequestId !== undefined && !this.isDiagramLoadRequestActive(loadRequestId))
+        return;
       if (instance) {
         this.diagramLabel = `${instance.schemaClassName}: ${instance.displayName}` || 'Pathway Diagram';
       }
@@ -1046,7 +1192,7 @@ Opening diagram in read-only mode.`
     }
 
     const networkJson = this.generateNetworkJson();
-  this.persistDiagramDraftToSessionStorage(this.diagramLockInfo, networkJson);
+    this.persistDiagramDraftToSessionStorage(this.diagramLockInfo, networkJson);
     this.isUploadInProgress = true;
     this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
       disableClose: true,
@@ -1068,10 +1214,26 @@ Opening diagram in read-only mode.`
           }
         });
 
-        if (success)
+        if (success) {
+          // Keep the just-saved network as the local source-of-truth for immediate reopen.
+          this.stagePathwayDiagramObject(this.diagramLockInfo!, networkJson);
+          const userName = this.authService.getUser();
+          if (userName) {
+            this.store.select(pathwayDiagramObjects()).pipe(take(1)).subscribe((existingObjects: PathwayDiagramObject[]) => {
+              this.diagramUtils.getDataService().getPathwayDiagrams(userName).pipe(take(1)).subscribe({
+                next: (backendObjects: PathwayDiagramObject[]) => {
+                  const mergedObjects = this.mergePathwayDiagramObjects(existingObjects ?? [], backendObjects ?? []);
+                  this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: mergedObjects }));
+                },
+                error: () => {
+                  // Keep current staged objects if backend refresh fails.
+                }
+              });
+            });
+          }
           this.isEdited = false;
-        if (success)
           this.clearDiagramDraftFromSessionStorage();
+        }
       },
       error: () => {
         this.commitWaitDialogRef?.close();
@@ -1214,6 +1376,24 @@ Opening diagram in read-only mode.`
     }
   }
 
+  private getPendingDraftNetworkForPathway(pathwayDbId: number): any | undefined {
+    const pendingDraft = this.getPendingDiagramDraftFromSessionStorage();
+    if (!pendingDraft)
+      return undefined;
+    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
+    if (currentUser.length === 0 || pendingDraft.username !== currentUser)
+      return undefined;
+    const draftPathwayDbId = Number(pendingDraft.pathwayId);
+    if (!Number.isFinite(draftPathwayDbId) || draftPathwayDbId !== Number(pathwayDbId))
+      return undefined;
+    const network = pendingDraft.network?.elements
+      ? pendingDraft.network
+      : pendingDraft.network?.network?.elements
+        ? pendingDraft.network.network
+        : undefined;
+    return network;
+  }
+
   private clearDiagramDraftFromSessionStorage() {
     sessionStorage.removeItem(this.pendingDiagramDraftSessionKey);
   }
@@ -1225,6 +1405,7 @@ Opening diagram in read-only mode.`
     this.store.dispatch(PathwayDiagramObjectActions.register_pathway_diagram_object({
       dbId: diagramLock.diagramDbId,
       pathwayDiagramDbId: diagramLock.diagramDbId,
+      pathwayDbId: Number(this.pathwayId),
       nodeType: 'object',
       object: networkJson,
       displayName: `PathwayDiagram ${diagramLock.diagramDbId}`,
@@ -1232,9 +1413,12 @@ Opening diagram in read-only mode.`
     }));
   }
 
-  private restorePendingDiagramDraft() {
+  private restorePendingDiagramDraft(expectedPathwayId: string, loadRequestId: number) {
+    if (!this.isDiagramLoadRequestActive(loadRequestId) || this.pathwayId !== expectedPathwayId)
+      return;
+
     const pendingDraft = this.getPendingDiagramDraftFromSessionStorage();
-    if (!pendingDraft || pendingDraft.pathwayId !== this.pathwayId)
+    if (!pendingDraft || pendingDraft.pathwayId !== expectedPathwayId)
       return;
     const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
     if (currentUser.length === 0 || pendingDraft.username !== currentUser)
@@ -1254,6 +1438,12 @@ Opening diagram in read-only mode.`
 
     this.diagramUtils.getDataService().persistPathwayDiagram(pendingDraft.diagramLock, pendingDraft.network).subscribe({
       next: (success) => {
+        if (!this.isDiagramLoadRequestActive(loadRequestId) || this.pathwayId !== expectedPathwayId) {
+          this.commitWaitDialogRef?.close();
+          this.commitWaitDialogRef = undefined;
+          this.isUploadInProgress = false;
+          return;
+        }
         this.commitWaitDialogRef?.close();
         this.commitWaitDialogRef = undefined;
         this.isUploadInProgress = false;
@@ -1272,6 +1462,12 @@ Opening diagram in read-only mode.`
         }
       },
       error: () => {
+        if (!this.isDiagramLoadRequestActive(loadRequestId) || this.pathwayId !== expectedPathwayId) {
+          this.commitWaitDialogRef?.close();
+          this.commitWaitDialogRef = undefined;
+          this.isUploadInProgress = false;
+          return;
+        }
         this.commitWaitDialogRef?.close();
         this.commitWaitDialogRef = undefined;
         this.isUploadInProgress = false;

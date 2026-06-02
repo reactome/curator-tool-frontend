@@ -124,26 +124,57 @@ export class UserInstancesService {
     }
 
     private loadPathwayDiagramObjects(userName: string, userInstances: UserInstances) {
-        if (userInstances.pathwayDiagramObjects && userInstances.pathwayDiagramObjects.length > 0) {
-            this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: userInstances.pathwayDiagramObjects as PathwayDiagramObject[] }));
-            return;
-        }
+        const localDiagramObjects = userInstances.pathwayDiagramObjects as PathwayDiagramObject[] | undefined;
+        if (localDiagramObjects && localDiagramObjects.length > 0)
+            this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: localDiagramObjects }));
+
         this.dataService.getPathwayDiagrams(userName).subscribe({
             next: (diagramObjects: PathwayDiagramObject[]) => {
-                userInstances.pathwayDiagramObjects = diagramObjects as any[];
-                this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: diagramObjects }));
+                const localObjects = localDiagramObjects ?? [];
+                const mergedByDiagramDbId = new Map<number, PathwayDiagramObject>();
+
+                localObjects.forEach((item: PathwayDiagramObject) => {
+                    const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId ?? item?.dbId);
+                    if (Number.isFinite(diagramDbId))
+                        mergedByDiagramDbId.set(diagramDbId, item);
+                });
+
+                // Backend is the source of truth at login, so let it override local snapshots.
+                (diagramObjects || []).forEach((item: PathwayDiagramObject) => {
+                    const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId ?? item?.dbId);
+                    if (Number.isFinite(diagramDbId))
+                        mergedByDiagramDbId.set(diagramDbId, item);
+                });
+
+                const mergedObjects = Array.from(mergedByDiagramDbId.values());
+                userInstances.pathwayDiagramObjects = mergedObjects as any[];
+                this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: mergedObjects }));
             },
-            error: (error) => console.warn('Failed to load staged pathway diagram objects.', error)
+            error: (error) => {
+                console.warn('Failed to load staged pathway diagram objects.', error);
+                if (!localDiagramObjects)
+                    this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: [] }));
+            }
         });
     }
 
-    persistInstances(removeToken: boolean = false): void {
+    persistInstances(removeToken: boolean = false, onComplete?: () => void): void {
         console.debug('Calling persist instance before window closing...');
+        const done = () => {
+            if (onComplete)
+                onComplete();
+        };
         const user = this.authService.getUser();
         if (!user) {
             console.error('Cannot find a user to persistInstances');
+            done();
             return;
         }
+        const clearLocalStateForLogout = () => {
+            if (!removeToken)
+                return;
+            localStorage.clear();
+        };
         combineLatest([
             this.store.select(updatedInstances()),
             this.store.select(newInstances()),
@@ -163,23 +194,20 @@ export class UserInstancesService {
                 // an array to make the code simplier
                 const defaultPersonInstances = defaultPerson || [];
                 const hasDiagramObjects = pathwayDiagramObjects.length > 0;
-                // Clean up localStorage before returning
-                // Keep token so that the user doesn't need to re-enter for refresh
-                const token = localStorage.getItem('token');
-                localStorage.clear();
-                if (token)
-                    localStorage.setItem('token', token);
                 const instances = [...newInstances, 
                                    ...updatedInstances,  
                                    ...deletedInstances, 
                                    ...bookmarkedInstances,
                                    ...defaultPersonInstances];
                 if (instances.length == 0 && !hasDiagramObjects) {
-                    this.dataService.deletePersistedInstances(user).subscribe(() => {
-                        console.debug('Delete any persisted instance at the server.');
+                    this.dataService.deletePersistedInstances(user).subscribe({
+                        next: () => {
+                            console.debug('Delete any persisted instance at the server.');
+                            clearLocalStateForLogout();
+                            done();
+                        },
+                        error: () => done()
                     });
-                    if (removeToken)
-                        localStorage.removeItem('token');
                     return; // Do nothing
                 }
                 // Need to persist these instances
@@ -193,22 +221,31 @@ export class UserInstancesService {
                 if (defaultPerson.length > 0)
                     userInstances.defaultPerson = defaultPerson[0];
                 const completePersist = () => {
-                    this.dataService.perisistPathwayDiagram(pathwayDiagramObjects as PathwayDiagramObject[]).subscribe(() => {
-                      console.debug('pathway diagram objects have been persisted at the server.');
-                      if (removeToken)
-                          localStorage.removeItem('token');
+                    this.dataService.perisistPathwayDiagram(pathwayDiagramObjects as PathwayDiagramObject[]).subscribe({
+                      next: () => {
+                        console.debug('pathway diagram objects have been persisted at the server.');
+                        clearLocalStateForLogout();
+                        done();
+                      },
+                      error: () => done()
                     });
                 };
                 if (instances.length == 0) {
-                    this.dataService.deletePersistedInstances(user).subscribe(() => {
-                        console.debug('Delete any persisted instance at the server.');
-                        completePersist();
+                    this.dataService.deletePersistedInstances(user).subscribe({
+                        next: () => {
+                            console.debug('Delete any persisted instance at the server.');
+                            completePersist();
+                        },
+                        error: () => done()
                     });
                     return;
                 }
-                this.dataService.persitUserInstances(userInstances, user).subscribe(() => {
-                    console.debug('userInstances have been persisted at the server.');
-                    completePersist();
+                this.dataService.persitUserInstances(userInstances, user).subscribe({
+                    next: () => {
+                        console.debug('userInstances have been persisted at the server.');
+                        completePersist();
+                    },
+                    error: () => done()
                 });
             });
     }
