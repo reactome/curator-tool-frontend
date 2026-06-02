@@ -1,5 +1,5 @@
 import { CdkDragMove } from "@angular/cdk/drag-drop";
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewChecked, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatSidenav } from "@angular/material/sidenav";
 import { ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 import { ActivatedRoute } from "@angular/router";
@@ -15,7 +15,7 @@ import { Subscription } from "rxjs";
   templateUrl: './main-event.component.html',
   styleUrls: ['./main-event.component.scss'],
 })
-export class MainEventComponent implements  OnInit, OnDestroy {
+export class MainEventComponent implements OnInit, AfterViewChecked, OnDestroy {
   hasInstanceId = false;
   // TODO: calculate window/screden size and make the table a ratio. 
   treeWidth = 400;
@@ -33,6 +33,8 @@ export class MainEventComponent implements  OnInit, OnDestroy {
 
   // Track diagram selection ids to avoid unncessary update
   private selectedIdsInDiagram: number[] = [];
+  // Holds the instance ID to load once the instance view renders (first pathway selection)
+  private pendingInstanceId: number | null = null;
 
   private subscriptions: Subscription = new Subscription();
 
@@ -75,9 +77,27 @@ export class MainEventComponent implements  OnInit, OnDestroy {
     this.showChanged = savedState === 'shown' ? true : false;
 
     const paramSub = this.route.paramMap.subscribe(params => {
+      const wasInstanceId = this.hasInstanceId;
       this.hasInstanceId = params.has('id');
+      // When transitioning from no-id to has-id, the *ngIf renders the view asynchronously.
+      // Store the pending ID so ngAfterViewChecked can load it once instanceView is available.
+      if (!wasInstanceId && this.hasInstanceId) {
+        const id = params.get('id');
+        const selectId = this.route.snapshot.queryParams['select'];
+        this.pendingInstanceId = (selectId && !isNaN(parseInt(selectId)))
+          ? parseInt(selectId)
+          : (id ? parseInt(id) : null);
+      }
     });
     this.subscriptions.add(paramSub);
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.pendingInstanceId !== null && this.instanceView) {
+      const idToLoad = this.pendingInstanceId;
+      this.pendingInstanceId = null;
+      this.instanceView.loadInstance(idToLoad, false, true);
+    }
   }
 
   ngOnDestroy(): void {
