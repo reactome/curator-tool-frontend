@@ -58,6 +58,7 @@ export class DataService {
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
   private lockDiagramUrl = `${environment.ApiRoot}/lockDiagram/`;
   private unlockDiagramUrl = `${environment.ApiRoot}/unlockDiagram/`;
+  private deletePersistedPathwayDiagramUrl = `${environment.ApiRoot}/deletePersistedPathwayDiagram/`;
   private persistPathwayDiagramUrl = `${environment.ApiRoot}/persistPathwayDiagram/`;
   private loadPathwayDiagramUrl = `${environment.ApiRoot}/loadPathwayDiagrams/`;
 
@@ -1429,6 +1430,14 @@ export class DataService {
         return isLocked;
 
       }),
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    );
+  }
+
+  deletePersistedPathwayDiagram(diagram: DiagramLock): Observable<boolean> {
+    return this.http.post<boolean>(this.deletePersistedPathwayDiagramUrl, diagram).pipe(
       catchError(error => {
         return this.handleErrorMessage(error);
       })

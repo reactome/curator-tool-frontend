@@ -35,12 +35,16 @@ export class PathwayDiagramObjectEffects {
         ofType(
           PathwayDiagramObjectActions.register_pathway_diagram_object,
           PathwayDiagramObjectActions.remove_pathway_diagram_object,
+          PathwayDiagramObjectActions.reset_pathway_diagram_object,
           PathwayDiagramObjectActions.set_pathway_diagram_objects
         ),
         tap((action) => {
           if (action.type === PathwayDiagramObjectActions.set_pathway_diagram_objects.type) {
             const objects = (action.valueOf() as { instances: PathwayDiagramObject[] }).instances ?? [];
             localStorage.setItem(action.type, JSON.stringify({ object: JSON.stringify(objects), timestamp: Date.now() }));
+          }
+          else if (action.type === PathwayDiagramObjectActions.reset_pathway_diagram_object.type) {
+            localStorage.setItem(action.type, JSON.stringify({ object: JSON.stringify(action.valueOf()), timestamp: Date.now() }));
           }
           else {
             localStorage.setItem(action.type, JSON.stringify({ object: JSON.stringify(action.valueOf()), timestamp: Date.now() }));

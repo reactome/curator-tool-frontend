@@ -29,8 +29,8 @@
     <button style="margin-bottom: 1px" (click)="onClick('delete')">Remove Flow Line</button>
   </ng-container>
   <!-- The following actions are for editing only -->
+  <button style="margin-bottom: 1px" (click)="onClick('unlockDiagram')" *ngIf="isLockOwnedByMe">Unlock Diagram</button>
   <ng-container *ngIf="isDiagramEditing">
-    <button style="margin-bottom: 1px" (click)="onClick('unlockDiagram')">Unlock Diagram</button>
     <ng-container *ngIf="isNodeResizable">
       <button style="margin-bottom: 1px" (click)="onClick('resizeCompartment')" *ngIf="!isNodeResizing">Resize</button>
       <button style="margin-bottom: 1px" (click)="onClick('disableResize')" *ngIf="isNodeResizing">Disable

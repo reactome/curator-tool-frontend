@@ -7,7 +7,7 @@ import { AuthenticateService } from "src/app/core/services/authenticate.service"
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { DefaultPersonActions, DeleteInstanceActions, NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
-import { defaultPerson, deleteInstances, newInstances, updatedInstances, updatedInstanceState } from "src/app/instance/state/instance.selectors";
+import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { BookmarkActions } from "src/app/schema-view/instance-bookmark/state/bookmark.actions";
 import { bookmarkedInstances } from "src/app/schema-view/instance-bookmark/state/bookmark.selectors";
 import { PathwayDiagramObjectActions } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.actions";
@@ -21,6 +21,9 @@ import { PathwayDiagramObject } from "src/app/event-view/components/pathway-diag
     providedIn: 'root'
 })
 export class UserInstancesService {
+    private readonly pathwayDiagramLockRefsStorageKey = 'pathwayDiagramLockRefs';
+    private readonly exactSavedDiagramNetworksStorageKey = 'exactSavedDiagramNetworks';
+    private readonly pendingPathwayDiagramDraftSessionKey = 'pendingPathwayDiagramDraft';
 
     constructor(private instUtils: InstanceUtilities,
         private dataService: DataService,
@@ -185,22 +188,18 @@ export class UserInstancesService {
         const clearLocalStateForLogout = () => {
             if (!removeToken)
                 return;
-            const preservedDiagramObjects = localStorage.getItem(PathwayDiagramObjectActions.get_pathway_diagram_objects.type);
-            const preservedDiagramLockRefs = localStorage.getItem('pathwayDiagramLockRefs');
-            const preservedExactSavedNetworks = localStorage.getItem('exactSavedDiagramNetworks');
+            const preservedValues = this.captureLocalStorageValues([
+                PathwayDiagramObjectActions.get_pathway_diagram_objects.type,
+                this.pathwayDiagramLockRefsStorageKey,
+                this.exactSavedDiagramNetworksStorageKey
+            ]);
             localStorage.clear();
-            // Restore diagram-only staging caches so edited diagrams can be restored after re-login.
-            if (preservedDiagramObjects)
-                localStorage.setItem(PathwayDiagramObjectActions.get_pathway_diagram_objects.type, preservedDiagramObjects);
-            if (preservedDiagramLockRefs)
-                localStorage.setItem('pathwayDiagramLockRefs', preservedDiagramLockRefs);
-            if (preservedExactSavedNetworks)
-                localStorage.setItem('exactSavedDiagramNetworks', preservedExactSavedNetworks);
+            this.restoreLocalStorageValues(preservedValues);
             // Ensure auth/session identity is removed.
             localStorage.removeItem('token');
             localStorage.removeItem('login_username');
             // Clear diagram draft persisted in session storage so stale drafts are not auto-recovered after re-login.
-            sessionStorage.removeItem('pendingPathwayDiagramDraft');
+            sessionStorage.removeItem(this.pendingPathwayDiagramDraftSessionKey);
         };
         combineLatest([
             this.store.select(updatedInstances()),
@@ -275,6 +274,22 @@ export class UserInstancesService {
                     error: () => done()
                 });
             });
+    }
+
+    private captureLocalStorageValues(keys: string[]): Map<string, string> {
+        const captured = new Map<string, string>();
+        keys.forEach((key: string) => {
+            const value = localStorage.getItem(key);
+            if (value !== null)
+                captured.set(key, value);
+        });
+        return captured;
+    }
+
+    private restoreLocalStorageValues(values: Map<string, string>): void {
+        values.forEach((value: string, key: string) => {
+            localStorage.setItem(key, value);
+        });
     }
 
 }

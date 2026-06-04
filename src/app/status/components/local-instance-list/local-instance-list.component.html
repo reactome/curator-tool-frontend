@@ -131,40 +131,50 @@
     </div>
   </div>
   <div class="scroll-list" style="flex: 2; min-height: 120px;">
-    <table class="instance-list-table" style="width: 100%;">
-      <thead>
-        <tr>
-          <th style="width: 32px;"></th>
-          <th>dbId</th>
-          <th>Display Name</th>
-          <th>Type</th>
-          <th style="width: 56px;">Open</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of pathwayDiagramObjects" class="staged-diagram-row" (click)="openPathwayDiagramObject(item)">
-          <td>
-            <input
-              type="checkbox"
-              [checked]="isPathwayDiagramObjectSelected(item)"
-              (click)="$event.stopPropagation()"
-              (change)="togglePathwayDiagramObjectSelection(item, $any($event.target).checked)"
-            />
-          </td>
-          <td>{{ item.dbId }}</td>
-          <td>{{ item.displayName || ('PathwayDiagram ' + item.pathwayDiagramDbId) }}</td>
-          <td>{{ item.nodeType }}</td>
-          <td>
-            <button
-              mat-icon-button
-              color="primary"
-              matTooltip="Open staged diagram"
+    <table mat-table [dataSource]="pathwayDiagramObjects" class="mat-elevation-z0 instance-list-table" style="width:100%;">
+
+      <!-- dbId Column -->
+      <ng-container matColumnDef="dbId">
+        <th mat-header-cell *matHeaderCellDef style="width: 120px; min-width: 110px; max-width: 120px;">dbId</th>
+        <td mat-cell *matCellDef="let item" style="width: 120px; min-width: 110px; max-width: 120px;">{{ item.dbId }}</td>
+      </ng-container>
+
+      <!-- Display Name Column -->
+      <ng-container matColumnDef="displayName">
+        <th mat-header-cell *matHeaderCellDef>Display Name</th>
+        <td mat-cell *matCellDef="let item" class="wrap-text-cell">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <a (click)="$event.stopPropagation(); openPathwayDiagramObject(item)" style="text-decoration: underline; cursor: pointer;">
+              {{ getPathwayDisplayName(item) }}
+            </a>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Action Buttons Column -->
+      <ng-container matColumnDef="actionButtons" stickyEnd>
+        <th mat-header-cell *matHeaderCellDef style="width: 150px; min-width: 150px; max-width: 270px;"></th>
+        <td mat-cell *matCellDef="let item" style="width: 150px; min-width: 150px; max-width: 270px; position: relative;">
+          <div class="action-buttons-row">
+            <button color="primary" *ngIf="isPathwayDiagramObjectSelected(item)" mat-icon-button class="mini-btn"
+              (click)="$event.stopPropagation(); togglePathwayDiagramObjectSelection(item, false)">
+              <mat-icon>check_box</mat-icon>
+            </button>
+            <button color="primary" *ngIf="!isPathwayDiagramObjectSelected(item)" mat-icon-button class="mini-btn"
+              (click)="$event.stopPropagation(); togglePathwayDiagramObjectSelection(item, true)">
+              <mat-icon>check_box_outline_blank</mat-icon>
+            </button>
+
+            <button color="primary" mat-icon-button class="mini-btn" matTooltip="Open staged diagram"
               (click)="$event.stopPropagation(); openPathwayDiagramObject(item)">
               <mat-icon>open_in_new</mat-icon>
             </button>
-          </td>
-        </tr>
-      </tbody>
+          </div>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="['dbId','displayName','actionButtons']"></tr>
+      <tr mat-row *matRowDef="let row; columns: ['dbId','displayName','actionButtons'];" class="rowBackground"></tr>
     </table>
   </div>
 </div>
