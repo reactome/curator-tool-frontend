@@ -1468,19 +1468,8 @@ Opening diagram in read-only mode.`
   private saveDiagramEdits() {
     if (this.isUploadInProgress)
       return;
-
-    if (!this.diagramLockInfo || !this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
-      this.dialog.open(InfoDialogComponent, {
-        data: {
-          title: 'Information',
-          message: 'Enable editing and acquire a diagram lock before saving edits.'
-        }
-      });
-      return;
-    }
-
     const networkJson = this.generateNetworkJson();
-    this.persistDiagramDraftToSessionStorage(this.diagramLockInfo, networkJson);
+    // this.persistDiagramDraftToSessionStorage(this.pathwayDiagramId, networkJson);
     this.isUploadInProgress = true;
     this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
       disableClose: true,
@@ -1489,7 +1478,24 @@ Opening diagram in read-only mode.`
       restoreFocus: false
     });
 
-    this.diagramUtils.getDataService().persistPathwayDiagram(this.diagramLockInfo, networkJson).subscribe({
+    // Determine the pathwayDiagram db id to persist. Prefer explicit pathwayDiagramId stored
+    // on the component, then diagram component id. If not available, abort.
+    const diagramDbId = Number(this.diagramLockInfo?.diagramDbId ?? this.pathwayDiagramId ?? this.diagram?.diagramId);
+    if (!Number.isFinite(diagramDbId) || diagramDbId <= 0) {
+      this.commitWaitDialogRef?.close();
+      this.commitWaitDialogRef = undefined;
+      this.isUploadInProgress = false;
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Information',
+          message: 'Cannot determine PathwayDiagram dbId to save. Create or open a PathwayDiagram first.'
+        }
+      });
+      return;
+    }
+
+    const userName = this.authService.getUser();
+    this.diagramUtils.getDataService().persistPathwayDiagram(userName, diagramDbId, networkJson).subscribe({
       next: (success) => {
         this.commitWaitDialogRef?.close();
         this.commitWaitDialogRef = undefined;
@@ -1502,10 +1508,10 @@ Opening diagram in read-only mode.`
           }
         });
 
-        if (success) {
-          this.saveExactSavedNetwork(this.diagramLockInfo!, networkJson, this.pathwayId);
+          if (success) {
+          this.saveExactSavedNetwork(diagramDbId, networkJson, this.pathwayId);
           // Keep the just-saved network as the local source-of-truth for immediate reopen.
-          this.stagePathwayDiagramObject(this.diagramLockInfo!);
+          this.stagePathwayDiagramObject({ diagramDbId } as DiagramLock);
           // Persist into staged diagram backend storage immediately so login can restore staged list.
           // this.diagramUtils.getDataService().perisistPathwayDiagram([stagedDiagramObject]).pipe(take(1)).subscribe({
           //   next: () => {
@@ -1898,7 +1904,9 @@ Opening diagram in read-only mode.`
       restoreFocus: false
     });
 
-    this.diagramUtils.getDataService().persistPathwayDiagram(pendingDraft.diagramLock, pendingDraft.network).subscribe({
+    const userName = this.authService.getUser();
+    const pendingDiagramDbId = Number(pendingDraft.diagramLock?.diagramDbId);
+    this.diagramUtils.getDataService().persistPathwayDiagram(userName, pendingDiagramDbId, pendingDraft.network).subscribe({
       next: (success) => {
         if (!this.isDiagramLoadRequestActive(loadRequestId) || this.pathwayId !== expectedPathwayId) {
           this.commitWaitDialogRef?.close();
@@ -2120,9 +2128,9 @@ Opening diagram in read-only mode.`
     }
   }
 
-  private saveExactSavedNetwork(diagramLock: DiagramLock, networkJson: any, pathwayId: string | number) {
+  private saveExactSavedNetwork(diagramDbId: number, networkJson: any, pathwayId: string | number) {
     const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
-    const normalizedDiagramDbId = Number(diagramLock?.diagramDbId);
+    const normalizedDiagramDbId = Number(diagramDbId);
     const normalizedPathwayDbId = Number(pathwayId);
     if (currentUser.length === 0)
       return;

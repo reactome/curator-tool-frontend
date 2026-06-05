@@ -7,6 +7,7 @@ import { deleteInstances, updatedInstances } from 'src/app/instance/state/instan
 import { newInstances } from 'src/app/instance/state/instance.selectors';
 import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from 'src/app/instance/state/instance.actions';
 import { DataService } from 'src/app/core/services/data.service';
+import { AuthenticateService } from 'src/app/core/services/authenticate.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { Observable, from, concatMap, tap, map, EMPTY, forkJoin, finalize, Subscription } from 'rxjs';
@@ -67,6 +68,7 @@ export class UpdatedInstanceListComponent implements OnInit {
     private route: ActivatedRoute,
     private store: Store,
     private dataService: DataService,
+    private authService: AuthenticateService,
     private instanceUtilities: InstanceUtilities,
     private dialog: MatDialog,
     private deletionService: DeletionService,
@@ -255,7 +257,8 @@ export class UpdatedInstanceListComponent implements OnInit {
       'Please wait while selected pathway diagram objects are persisted.'
     );
 
-    this.dataService.perisistPathwayDiagram(this.selectedPathwayDiagramObjects).pipe(
+    const user = this.authService.getUser();
+    this.dataService.perisistPathwayDiagram(this.selectedPathwayDiagramObjects, user).pipe(
       finalize(() => this.closeCommitWaitDialog())
     ).subscribe(() => {
       const selectedDbIds = new Set(this.selectedPathwayDiagramObjects.map(i => i.pathwayDiagramDbId));
