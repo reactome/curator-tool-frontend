@@ -851,7 +851,7 @@ export class DataService {
       take(1),
       concatMap((person: Instance[]) => {
         if (!person || person.length === 0 || person[0].dbId === undefined) {
-          return this.handleErrorMessage(new Error('Cannot find the default person! Cannot persist pathway diagram edits without the default person!'));
+          // return this.handleErrorMessage(new Error('Cannot find the default person! Cannot persist pathway diagram edits without the default person!'));
         }
         const networkToPersist = network && typeof network === 'object'
           ? { ...network, defaultPersonId: person[0].dbId }
