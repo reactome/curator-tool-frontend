@@ -103,7 +103,7 @@ export class UpdatedInstanceListComponent implements OnInit {
     subscription = this.store.select(pathwayDiagramObjects()).subscribe((objects) => {
       this.pathwayDiagramObjects = objects || [];
       this.selectedPathwayDiagramObjects = this.selectedPathwayDiagramObjects
-        .filter(selected => this.pathwayDiagramObjects.some(item => item.dbId === selected.dbId));
+        .filter(selected => this.pathwayDiagramObjects.some(item => item.pathwayDiagramDbId === selected.pathwayDiagramDbId));
       this.preloadPathwayDisplayNames(this.pathwayDiagramObjects);
     });
     this.subscriptions.push(subscription);
@@ -113,7 +113,7 @@ export class UpdatedInstanceListComponent implements OnInit {
   getPathwayDisplayName(item: PathwayDiagramObject): string {
     const pathwayDbId = Number(item?.pathwayDbId);
     if (!Number.isFinite(pathwayDbId) || pathwayDbId <= 0)
-      return item?.displayName || `PathwayDiagram ${item?.dbId ?? ''}`;
+      return `PathwayDiagram ${item?.pathwayDiagramDbId ?? ''}`;
     return this.pathwayDisplayNames[pathwayDbId] || `Pathway ${pathwayDbId}`;
   }
 
@@ -258,8 +258,8 @@ export class UpdatedInstanceListComponent implements OnInit {
     this.dataService.perisistPathwayDiagram(this.selectedPathwayDiagramObjects).pipe(
       finalize(() => this.closeCommitWaitDialog())
     ).subscribe(() => {
-      const selectedDbIds = new Set(this.selectedPathwayDiagramObjects.map(i => i.dbId));
-      const remaining = this.pathwayDiagramObjects.filter(item => !selectedDbIds.has(item.dbId));
+      const selectedDbIds = new Set(this.selectedPathwayDiagramObjects.map(i => i.pathwayDiagramDbId));
+      const remaining = this.pathwayDiagramObjects.filter(item => !selectedDbIds.has(item.pathwayDiagramDbId));
       this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: remaining }));
       this.selectedPathwayDiagramObjects = [];
     });
@@ -269,8 +269,8 @@ export class UpdatedInstanceListComponent implements OnInit {
     if (!this.selectedPathwayDiagramObjects || this.selectedPathwayDiagramObjects.length === 0)
       return;
 
-    const selectedDbIds = new Set(this.selectedPathwayDiagramObjects.map(i => i.dbId));
-    const remaining = this.pathwayDiagramObjects.filter(item => !selectedDbIds.has(item.dbId));
+    const selectedDbIds = new Set(this.selectedPathwayDiagramObjects.map(i => i.pathwayDiagramDbId));
+    const remaining = this.pathwayDiagramObjects.filter(item => !selectedDbIds.has(item.pathwayDiagramDbId));
     this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: remaining }));
     this.selectedPathwayDiagramObjects = [];
   }
@@ -284,7 +284,7 @@ export class UpdatedInstanceListComponent implements OnInit {
   }
 
   isPathwayDiagramObjectSelected(item: PathwayDiagramObject): boolean {
-    return this.selectedPathwayDiagramObjects.some(selected => selected.dbId === item.dbId);
+    return this.selectedPathwayDiagramObjects.some(selected => selected.pathwayDiagramDbId === item.pathwayDiagramDbId);
   }
 
   togglePathwayDiagramObjectSelection(item: PathwayDiagramObject, selected: boolean) {
@@ -293,12 +293,12 @@ export class UpdatedInstanceListComponent implements OnInit {
         this.selectedPathwayDiagramObjects.push(item);
       return;
     }
-    this.selectedPathwayDiagramObjects = this.selectedPathwayDiagramObjects.filter(current => current.dbId !== item.dbId);
+    this.selectedPathwayDiagramObjects = this.selectedPathwayDiagramObjects.filter(current => current.pathwayDiagramDbId !== item.pathwayDiagramDbId);
   }
 
   openPathwayDiagramObject(item: PathwayDiagramObject) {
     const pathwayDbId = Number(item?.pathwayDbId);
-    const pathwayDiagramDbId = Number(item?.pathwayDiagramDbId ?? item?.dbId ?? item?.diagramLock?.diagramDbId);
+    const pathwayDiagramDbId = Number(item?.pathwayDiagramDbId ?? item?.pathwayDbId ?? item?.diagramLock?.diagramDbId);
     if (!Number.isFinite(pathwayDbId) || pathwayDbId <= 0) {
       this.dialog.open(InfoDialogComponent, {
         data: {

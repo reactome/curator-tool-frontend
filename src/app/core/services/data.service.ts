@@ -876,13 +876,13 @@ export class DataService {
   perisistPathwayDiagram(pathwayDiagramObjects: PathwayDiagramObject[]): Observable<boolean> {
     const payload = this.normalizePathwayDiagramObjects(pathwayDiagramObjects).map((item: PathwayDiagramObject) => ({
       diagramLock: item.diagramLock ?? {
-        diagramDbId: item.pathwayDiagramDbId ?? item.dbId,
+        diagramDbId: item.pathwayDiagramDbId ?? item.pathwayDiagramDbId,
         username: '',
         lockedAt: '',
         locked: false,
         lockId: ''
       },
-      network: item.object
+      network: item.network
     })).filter(item => !!item.diagramLock?.diagramDbId && !!item.network);
 
     if (payload.length === 0)

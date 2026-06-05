@@ -7,7 +7,7 @@ export interface PathwayDiagramObjectState extends EntityState<PathwayDiagramObj
 }
 
 export const pathwayDiagramObjectsAdaptor = createEntityAdapter<PathwayDiagramObject>({
-  selectId: pathwayDiagramObject => pathwayDiagramObject.dbId,
+  selectId: pathwayDiagramObject => pathwayDiagramObject.pathwayDiagramDbId!,
 });
 
 export const pathwayDiagramObjectsReducer = createReducer(
@@ -20,11 +20,11 @@ export const pathwayDiagramObjectsReducer = createReducer(
   on(
     PathwayDiagramObjectActions.remove_pathway_diagram_object,
     PathwayDiagramObjectActions.ls_remove_pathway_diagram_object,
-    (state, pathwayDiagramObject) => pathwayDiagramObjectsAdaptor.removeOne(pathwayDiagramObject.dbId, state)
+    (state, pathwayDiagramObject) => pathwayDiagramObjectsAdaptor.removeOne(pathwayDiagramObject.pathwayDiagramDbId!, state)
   ),
   on(
     PathwayDiagramObjectActions.reset_pathway_diagram_object,
-    (state, pathwayDiagramObject) => pathwayDiagramObjectsAdaptor.removeOne(pathwayDiagramObject.dbId, state)
+    (state, pathwayDiagramObject) => pathwayDiagramObjectsAdaptor.removeOne(pathwayDiagramObject.pathwayDiagramDbId!, state)
   ),
   on(
     PathwayDiagramObjectActions.set_pathway_diagram_objects,

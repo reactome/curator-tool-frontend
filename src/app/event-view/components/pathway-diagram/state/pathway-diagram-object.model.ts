@@ -1,13 +1,10 @@
 import { DiagramLock } from 'src/app/core/models/reactome-instance.model';
 
 export interface PathwayDiagramObject {
-  dbId: number;
-  pathwayDiagramDbId?: number;
-  pathwayDbId?: number;
-  nodeType: 'object' | string;
-  object: any;
-  displayName?: string;
-  diagramLock?: DiagramLock;
+  network: any;
+  pathwayDiagramDbId: number;
+  pathwayDbId: number;
+  diagramLock: DiagramLock;
 }
 
 export interface PathwayDiagramObjects {

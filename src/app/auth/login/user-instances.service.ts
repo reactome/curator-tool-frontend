@@ -149,14 +149,14 @@ export class UserInstancesService {
                 const mergedByDiagramDbId = new Map<number, PathwayDiagramObject>();
 
                 localObjects.forEach((item: PathwayDiagramObject) => {
-                    const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId ?? item?.dbId);
+                    const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId);
                     if (Number.isFinite(diagramDbId))
                         mergedByDiagramDbId.set(diagramDbId, item);
                 });
 
                 // Backend is the source of truth at login, so let backend snapshots override local ones.
                 (diagramObjectGroups || []).flat().forEach((item: PathwayDiagramObject) => {
-                    const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId ?? item?.dbId);
+                    const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId);
                     if (Number.isFinite(diagramDbId))
                         mergedByDiagramDbId.set(diagramDbId, item);
                 });
