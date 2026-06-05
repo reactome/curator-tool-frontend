@@ -153,14 +153,20 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       this.diagramUtils.handleInstanceEdit(data.attribute, data.instance, this);
     });
     this.store.select(pathwayDiagramObjects()).subscribe((objects: PathwayDiagramObject[]) => {
-      // Handle late-arriving staged diagrams (common right after login) without requiring manual re-navigation.
+      // Handle late-arriving staged diagrams (common right after login) and
+      // cross-tab updates. Skip when we don't have a pathway loaded or the
+      // user is actively editing or an upload is in progress.
       if (!this.pathwayId || this.pathwayId === '0' || this.isEditing || this.isUploadInProgress)
         return;
       if (!objects || objects.length === 0)
         return;
-      if (this.diagramLoadRequestId === 0)
-        return;
-      this.tryLoadStagedNetworkWithObjects(objects, () => { }, false, this.diagramLoadRequestId);
+
+      // If there's an active load request, reuse it, otherwise start a
+      // short-lived load request so the staged object can be resolved and
+      // displayed immediately. This ensures other tabs' storage events cause
+      // an update even when the initial navigation load has completed.
+      const loadRequestId = this.diagramLoadRequestId === 0 ? this.beginDiagramLoadRequest() : this.diagramLoadRequestId;
+      this.tryLoadStagedNetworkWithObjects(objects, () => { }, false, loadRequestId);
     });
   }
 
@@ -635,6 +641,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
           if (!this.isDiagramLoadRequestActive(loadRequestId))
             return;
           this.diagram.displayNetwork(cytoscapeJson.elements);
+          try { this.applyNetworkMetadata(cytoscapeJson); this.diagram.updateLegend?.(); this.normalizeLegendPosition(); } catch (e) { }
           this.setDiagramLabel(loadRequestId);
         });
       }
@@ -657,6 +664,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
                         if (!this.isDiagramLoadRequestActive(loadRequestId))
                           return;
                         this.diagram.displayNetwork(cytoscapeJson.elements);
+                        try { this.applyNetworkMetadata(cytoscapeJson); this.diagram.updateLegend?.(); this.normalizeLegendPosition(); } catch (e) { }
                         this.setDiagramLabel(loadRequestId);
                       },
                       error: () => this.loadStaticDiagramOrEmpty(requestedDiagramId, loadRequestId)
@@ -753,6 +761,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     try {
       this.diagramUtils.clearSelection(this.diagram);
       this.diagram.displayNetwork(network.elements);
+      try { this.applyNetworkMetadata(network); this.diagram.updateLegend?.(); this.normalizeLegendPosition(); } catch (e) { }
       this.setDiagramLabel(loadRequestId);
       this.debugDiagramReload(`Displayed staged network with nodes=${network.elements?.nodes?.length ?? 0}, edges=${network.elements?.edges?.length ?? 0}.`);
       return true;
@@ -836,6 +845,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
               }
               this.diagramUtils.clearSelection(this.diagram);
               this.diagram.displayNetwork(network.elements);
+              try { this.applyNetworkMetadata(network); this.diagram.updateLegend?.(); this.normalizeLegendPosition(); } catch (e) { }
               this.setDiagramLabel(loadRequestId);
               this.debugDiagramReload(`Displayed backend cytoscape network by diagramDbId=${diagramDbId}.`);
             },
@@ -1085,6 +1095,7 @@ Opening diagram in read-only mode.`
     this.diagramUtils.clearSelection(this.diagram);
     // Show nothing for this diagram
     this.diagram.displayNetwork([]);
+    try { this.applyNetworkMetadata({ metadata: { zoom: 1, pan: { x: 0, y: 0 } } }); this.diagram.updateLegend?.(); this.normalizeLegendPosition(); } catch (e) { }
   }
 
   private initDiagram() {
@@ -1197,6 +1208,24 @@ Opening diagram in read-only mode.`
       else if (node.hasClass('outer'))
         node.style('z-index', 0);
     });
+  }
+
+  private normalizeLegendPosition() {
+    try {
+      const cyt = (this.diagram as any)?.cytoscapeContainer?.nativeElement as HTMLElement | undefined;
+      if (!cyt) return;
+      const host = cyt.parentElement ?? cyt.closest('.variables');
+      const legendContainer = host?.querySelector('#legend-container') as HTMLElement | null;
+      if (!legendContainer) return;
+      // Reset any drag-induced inline positioning so the legend returns to boundary.
+      legendContainer.style.left = '';
+      legendContainer.style.right = '0px';
+      legendContainer.style.transform = 'none';
+      legendContainer.style.transition = 'none';
+    }
+    catch (e) {
+      // ignore
+    }
   }
 
   private restoreViewport() {
@@ -1690,18 +1719,51 @@ Opening diagram in read-only mode.`
       nodes: nodes,
       edges: edges
     };
-    // We will use the default style and avoid keeping style. This also reduce the size of
-    // the uploaded JSON.
-    // const metadata = {
-    //   zoom: this.diagram.cy.zoom(),
-    //   pan: this.diagram.cy.pan(),
-    //   style: this.diagram.cy.style().json()
-    // };
+    // Include minimal metadata (viewport and style) so staged snapshots render
+    // more like the server-provided diagrams when reloaded.
+    const metadata = {
+      zoom: this.diagram.cy.zoom(),
+      pan: this.diagram.cy.pan(),
+      style: undefined
+    };
+    try {
+      // style().json() can be expensive or large; include it conditionally.
+      metadata.style = this.diagram.cy.style().json();
+    }
+    catch (e) {
+      metadata.style = undefined;
+    }
+
     const networkJson = {
-      elements: elements
-      // metadata: metadata
+      elements: elements,
+      metadata: metadata
     };
     return networkJson;
+  }
+
+  private applyNetworkMetadata(network: any) {
+    try {
+      if (!network) return;
+      const metadata = network.metadata ?? network?.network?.metadata;
+      if (!metadata) return;
+      if (metadata.style && this.diagram?.cy?.style) {
+        try {
+          this.diagram.cy.style().fromJson(metadata.style);
+        }
+        catch (e) {
+          // ignore style application errors
+        }
+      }
+      if (metadata.zoom !== undefined && typeof metadata.zoom === 'number') {
+        try { this.diagram.cy.zoom(metadata.zoom); } catch (e) { }
+      }
+      if (metadata.pan && typeof metadata.pan === 'object') {
+        try { this.diagram.cy.pan(metadata.pan); } catch (e) { }
+      }
+    }
+    catch (e) {
+      // ignore
+    }
   }
 
   private markDiagramEdited() {
@@ -1795,6 +1857,14 @@ Opening diagram in read-only mode.`
     };
 
     this.store.dispatch(PathwayDiagramObjectActions.register_pathway_diagram_object(pathwayDiagramObject));
+    try {
+      // Write a per-action localStorage entry immediately so other tabs receive the storage event.
+      localStorage.setItem(PathwayDiagramObjectActions.register_pathway_diagram_object.type,
+        JSON.stringify({ object: JSON.stringify(pathwayDiagramObject), timestamp: Date.now() }));
+    }
+    catch (e) {
+      // ignore localStorage errors (e.g. in private mode)
+    }
   }
 
   private restorePendingDiagramDraft(expectedPathwayId: string, loadRequestId: number) {
