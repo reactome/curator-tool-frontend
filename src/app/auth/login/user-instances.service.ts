@@ -24,6 +24,9 @@ export class UserInstancesService {
     private readonly pathwayDiagramLockRefsStorageKey = 'pathwayDiagramLockRefs';
     private readonly exactSavedDiagramNetworksStorageKey = 'exactSavedDiagramNetworks';
     private readonly pendingPathwayDiagramDraftSessionKey = 'pendingPathwayDiagramDraft';
+    private readonly pathwayDiagramPersistIntervalMs = 2 * 60 * 1000;
+    private pathwayDiagramPersistTimer: ReturnType<typeof setInterval> | undefined;
+    private isPersistingPathwayDiagrams = false;
 
     constructor(private instUtils: InstanceUtilities,
         private dataService: DataService,
@@ -40,6 +43,7 @@ export class UserInstancesService {
             console.debug('Cannot find a user to loadUserInstances');
             return;
         }
+        this.startPathwayDiagramAutoPersist();
         // TODO: Make sure this is updated during deployment
         this.dataService.startLoadInstances();
         this.dataService.loadUserInstances(user).pipe(
@@ -188,6 +192,7 @@ export class UserInstancesService {
         const clearLocalStateForLogout = () => {
             if (!removeToken)
                 return;
+            this.stopPathwayDiagramAutoPersist();
             const preservedValues = this.captureLocalStorageValues([
                 PathwayDiagramObjectActions.get_pathway_diagram_objects.type,
                 this.pathwayDiagramLockRefsStorageKey,
@@ -247,7 +252,7 @@ export class UserInstancesService {
                 if (defaultPerson.length > 0)
                     userInstances.defaultPerson = defaultPerson[0];
                 const completePersist = () => {
-                    this.dataService.perisistPathwayDiagram(pathwayDiagramObjects as PathwayDiagramObject[]).subscribe({
+                                        this.dataService.perisistPathwayDiagram(pathwayDiagramObjects as PathwayDiagramObject[], user).subscribe({
                       next: () => {
                         console.debug('pathway diagram objects have been persisted at the server.');
                         clearLocalStateForLogout();
@@ -274,6 +279,45 @@ export class UserInstancesService {
                     error: () => done()
                 });
             });
+    }
+
+    private startPathwayDiagramAutoPersist(): void {
+        if (this.pathwayDiagramPersistTimer)
+            return;
+        this.pathwayDiagramPersistTimer = setInterval(() => {
+            this.flushPathwayDiagramsToBackend();
+        }, this.pathwayDiagramPersistIntervalMs);
+    }
+
+    private stopPathwayDiagramAutoPersist(): void {
+        if (!this.pathwayDiagramPersistTimer)
+            return;
+        clearInterval(this.pathwayDiagramPersistTimer);
+        this.pathwayDiagramPersistTimer = undefined;
+    }
+
+    private flushPathwayDiagramsToBackend(): void {
+        if (this.isPersistingPathwayDiagrams)
+            return;
+        const user = this.authService.getUser();
+        if (!user)
+            return;
+
+        this.store.select(pathwayDiagramObjects()).pipe(take(1)).subscribe((objects: PathwayDiagramObject[] | undefined) => {
+            const diagramObjects = objects || [];
+            if (diagramObjects.length === 0)
+                return;
+
+            this.isPersistingPathwayDiagrams = true;
+            this.dataService.perisistPathwayDiagram(diagramObjects, user).subscribe({
+                next: () => {
+                    this.isPersistingPathwayDiagrams = false;
+                },
+                error: () => {
+                    this.isPersistingPathwayDiagrams = false;
+                }
+            });
+        });
     }
 
     private captureLocalStorageValues(keys: string[]): Map<string, string> {

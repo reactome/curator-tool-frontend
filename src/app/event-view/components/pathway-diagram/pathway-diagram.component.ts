@@ -307,19 +307,19 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       return;
     }
     this.stagePathwayDiagramObject(this.diagramLockInfo as DiagramLock);
-    const dialogRef = this.dialog.open(UnsavedUploadDialogComponent, {
-      data: {
-        title: 'Unsaved Changes',
-        message: `This diagram has unsaved changes. Upload before ${action}?`
-      },
-      disableClose: true
-    });
-    dialogRef.afterClosed().pipe(take(1)).subscribe((shouldUpload: boolean | null) => {
-      if (shouldUpload === true)
-        this.uploadDiagram(false, proceed);
-      else if (shouldUpload === false)
-        proceed();
-    });
+    // const dialogRef = this.dialog.open(UnsavedUploadDialogComponent, {
+    //   data: {
+    //     title: 'Unsaved Changes',
+    //     message: `This diagram has unsaved changes. Upload before ${action}?`
+    //   },
+    //   disableClose: true
+    // });
+    // dialogRef.afterClosed().pipe(take(1)).subscribe((shouldUpload: boolean | null) => {
+    //   if (shouldUpload === true)
+    //     this.uploadDiagram(false, proceed);
+    //   else if (shouldUpload === false)
+    //     proceed();
+    // });
   }
 
   private storeViewport() {
@@ -1466,83 +1466,32 @@ Opening diagram in read-only mode.`
   }
 
   private saveDiagramEdits() {
-    if (this.isUploadInProgress)
-      return;
     const networkJson = this.generateNetworkJson();
-    // this.persistDiagramDraftToSessionStorage(this.pathwayDiagramId, networkJson);
-    this.isUploadInProgress = true;
-    this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
-      disableClose: true,
-      hasBackdrop: true,
-      autoFocus: false,
-      restoreFocus: false
-    });
 
-    // Determine the pathwayDiagram db id to persist. Prefer explicit pathwayDiagramId stored
+    // Determine the pathwayDiagram db id to stage. Prefer explicit pathwayDiagramId stored
     // on the component, then diagram component id. If not available, abort.
     const diagramDbId = Number(this.diagramLockInfo?.diagramDbId ?? this.pathwayDiagramId ?? this.diagram?.diagramId);
     if (!Number.isFinite(diagramDbId) || diagramDbId <= 0) {
-      this.commitWaitDialogRef?.close();
-      this.commitWaitDialogRef = undefined;
-      this.isUploadInProgress = false;
       this.dialog.open(InfoDialogComponent, {
         data: {
           title: 'Information',
-          message: 'Cannot determine PathwayDiagram dbId to save. Create or open a PathwayDiagram first.'
+          message: 'Cannot determine PathwayDiagram dbId to stage. Create or open a PathwayDiagram first.'
         }
       });
       return;
     }
 
-    const userName = this.authService.getUser();
-    this.diagramUtils.getDataService().persistPathwayDiagram(userName, diagramDbId, networkJson).subscribe({
-      next: (success) => {
-        this.commitWaitDialogRef?.close();
-        this.commitWaitDialogRef = undefined;
-        this.isUploadInProgress = false;
+    // Keep edits in local staged store; backend sync is performed periodically (2 minutes)
+    // and during logout by UserInstancesService.
+    this.saveExactSavedNetwork(diagramDbId, networkJson, this.pathwayId);
+    this.stagePathwayDiagramObject({ diagramDbId } as DiagramLock);
+    this.isEdited = false;
+    this.clearDiagramDraftFromSessionStorage();
 
-        this.dialog.open(InfoDialogComponent, {
-          data: {
-            title: success ? 'Information' : 'Error',
-            message: success ? 'Diagram edits have been saved successfully.' : 'Diagram edits could not be saved.'
-          }
-        });
-
-          if (success) {
-          this.saveExactSavedNetwork(diagramDbId, networkJson, this.pathwayId);
-          // Keep the just-saved network as the local source-of-truth for immediate reopen.
-          this.stagePathwayDiagramObject({ diagramDbId } as DiagramLock);
-          // Persist into staged diagram backend storage immediately so login can restore staged list.
-          // this.diagramUtils.getDataService().perisistPathwayDiagram([stagedDiagramObject]).pipe(take(1)).subscribe({
-          //   next: () => {
-          //     this.debugDiagramReload(`Persisted staged diagram snapshot for diagramDbId=${stagedDiagramObject.pathwayDiagramDbId}.`);
-          //   },
-          //   error: () => {
-          //     this.debugDiagramReload(`Failed to persist staged diagram snapshot for diagramDbId=${stagedDiagramObject.pathwayDiagramDbId}.`);
-          //   }
-          // });
-          const userName = this.authService.getUser();
-          if (userName) {
-            this.store.select(pathwayDiagramObjects()).pipe(take(1)).subscribe((existingObjects: PathwayDiagramObject[]) => {
-              this.diagramUtils.getDataService().getPathwayDiagrams(userName).pipe(take(1)).subscribe({
-                next: (backendObjects: PathwayDiagramObject[]) => {
-                  const mergedObjects = this.mergePathwayDiagramObjects(existingObjects ?? [], backendObjects ?? []);
-                  this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: mergedObjects }));
-                },
-                error: () => {
-                  // Keep current staged objects if backend refresh fails.
-                }
-              });
-            });
-          }
-          this.isEdited = false;
-          this.clearDiagramDraftFromSessionStorage();
-        }
-      },
-      error: () => {
-        this.commitWaitDialogRef?.close();
-        this.commitWaitDialogRef = undefined;
-        this.isUploadInProgress = false;
+    this.dialog.open(InfoDialogComponent, {
+      data: {
+        title: 'Information',
+        message: 'Diagram edits have been staged locally. They will be persisted every 2 minutes or on logout.'
       }
     });
   }
@@ -1774,6 +1723,9 @@ Opening diagram in read-only mode.`
 
   private markDiagramEdited() {
     this.isEdited = true;
+    // Keep staged edits current in the store; backend flush happens on timer/logout.
+    const lockInfo = this.diagramLockInfo ?? ({ diagramDbId: Number(this.pathwayDiagramId ?? this.diagram?.diagramId) } as DiagramLock);
+    this.stagePathwayDiagramObject(lockInfo);
   }
 
   private persistDiagramDraftToSessionStorage(diagramLock: DiagramLock, networkJson?: any) {
@@ -1893,57 +1845,14 @@ Opening diagram in read-only mode.`
       this.clearDiagramDraftFromSessionStorage();
       return;
     }
-    if (this.isUploadInProgress)
-      return;
-
-    this.isUploadInProgress = true;
-    this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
-      disableClose: true,
-      hasBackdrop: true,
-      autoFocus: false,
-      restoreFocus: false
-    });
-
-    const userName = this.authService.getUser();
-    const pendingDiagramDbId = Number(pendingDraft.diagramLock?.diagramDbId);
-    this.diagramUtils.getDataService().persistPathwayDiagram(userName, pendingDiagramDbId, pendingDraft.network).subscribe({
-      next: (success) => {
-        if (!this.isDiagramLoadRequestActive(loadRequestId) || this.pathwayId !== expectedPathwayId) {
-          this.commitWaitDialogRef?.close();
-          this.commitWaitDialogRef = undefined;
-          this.isUploadInProgress = false;
-          return;
-        }
-        this.commitWaitDialogRef?.close();
-        this.commitWaitDialogRef = undefined;
-        this.isUploadInProgress = false;
-        if (success) {
-          this.clearDiagramDraftFromSessionStorage();
-          this.isEdited = false;
-          this.diagramLockInfo = pendingDraft.diagramLock;
-          this.savePathwayDiagramLockRef(pendingDraft.diagramLock, expectedPathwayId);
-          this.pathwayDiagramId = pendingDraft.diagramLock.diagramDbId.toString();
-          this.loadPathwayDiagram();
-          this.dialog.open(InfoDialogComponent, {
-            data: {
-              title: 'Information',
-              message: 'Recovered unsaved diagram edits from the previous session and saved them to the backend.'
-            }
-          });
-        }
-      },
-      error: () => {
-        if (!this.isDiagramLoadRequestActive(loadRequestId) || this.pathwayId !== expectedPathwayId) {
-          this.commitWaitDialogRef?.close();
-          this.commitWaitDialogRef = undefined;
-          this.isUploadInProgress = false;
-          return;
-        }
-        this.commitWaitDialogRef?.close();
-        this.commitWaitDialogRef = undefined;
-        this.isUploadInProgress = false;
-      }
-    });
+    // Recover unsaved draft into local staged store only; backend sync is periodic/logout-based.
+    this.clearDiagramDraftFromSessionStorage();
+    this.isEdited = false;
+    this.diagramLockInfo = pendingDraft.diagramLock;
+    this.savePathwayDiagramLockRef(pendingDraft.diagramLock, expectedPathwayId);
+    this.pathwayDiagramId = pendingDraft.diagramLock.diagramDbId.toString();
+    this.stagePathwayDiagramObject(pendingDraft.diagramLock);
+    this.loadPathwayDiagram();
   }
 
   private createAndOpenNewPathwayDiagram() {
