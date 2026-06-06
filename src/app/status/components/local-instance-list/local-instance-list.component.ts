@@ -7,6 +7,7 @@ import { deleteInstances, updatedInstances } from 'src/app/instance/state/instan
 import { newInstances } from 'src/app/instance/state/instance.selectors';
 import { UpdateInstanceActions, NewInstanceActions, DeleteInstanceActions } from 'src/app/instance/state/instance.actions';
 import { DataService } from 'src/app/core/services/data.service';
+import { AuthenticateService } from 'src/app/core/services/authenticate.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { Observable, from, concatMap, tap, map, EMPTY, forkJoin, finalize, Subscription } from 'rxjs';
@@ -42,6 +43,7 @@ export class UpdatedInstanceListComponent implements OnInit {
   updatedInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
   pathwayDiagramObjects: PathwayDiagramObject[] = [];
+  pathwayDisplayNames: Record<number, string> = {};
   showHeader: boolean = false;
 
   // To notify the parent component to close this panel
@@ -58,6 +60,7 @@ export class UpdatedInstanceListComponent implements OnInit {
 
   private resizing = false;
   private resizeIndex = -1;
+  private pathwayDisplayNameRequests: Set<number> = new Set<number>();
   sectionFlexes = [4, 4, 2]; // Initial flex values for new, updated, deleted
   private commitWaitDialogRef?: MatDialogRef<CommitWaitDialogComponent>;
 
@@ -65,6 +68,7 @@ export class UpdatedInstanceListComponent implements OnInit {
     private route: ActivatedRoute,
     private store: Store,
     private dataService: DataService,
+    private authService: AuthenticateService,
     private instanceUtilities: InstanceUtilities,
     private dialog: MatDialog,
     private deletionService: DeletionService,
@@ -101,10 +105,41 @@ export class UpdatedInstanceListComponent implements OnInit {
     subscription = this.store.select(pathwayDiagramObjects()).subscribe((objects) => {
       this.pathwayDiagramObjects = objects || [];
       this.selectedPathwayDiagramObjects = this.selectedPathwayDiagramObjects
-        .filter(selected => this.pathwayDiagramObjects.some(item => item.dbId === selected.dbId));
+        .filter(selected => this.pathwayDiagramObjects.some(item => item.pathwayDiagramDbId === selected.pathwayDiagramDbId));
+      this.preloadPathwayDisplayNames(this.pathwayDiagramObjects);
     });
     this.subscriptions.push(subscription);
     this.getSelectedInstances();
+  }
+
+  getPathwayDisplayName(item: PathwayDiagramObject): string {
+    const pathwayDbId = Number(item?.pathwayDbId);
+    if (!Number.isFinite(pathwayDbId) || pathwayDbId <= 0)
+      return `PathwayDiagram ${item?.pathwayDiagramDbId ?? ''}`;
+    return this.pathwayDisplayNames[pathwayDbId] || `Pathway ${pathwayDbId}`;
+  }
+
+  private preloadPathwayDisplayNames(objects: PathwayDiagramObject[]) {
+    const pathwayDbIds = Array.from(new Set((objects || [])
+      .map(item => Number(item?.pathwayDbId))
+      .filter(pathwayDbId => Number.isFinite(pathwayDbId) && pathwayDbId > 0)));
+
+    pathwayDbIds.forEach((pathwayDbId: number) => {
+      if (this.pathwayDisplayNames[pathwayDbId] || this.pathwayDisplayNameRequests.has(pathwayDbId))
+        return;
+
+      this.pathwayDisplayNameRequests.add(pathwayDbId);
+      this.dataService.fetchInstance(pathwayDbId).pipe(
+        finalize(() => this.pathwayDisplayNameRequests.delete(pathwayDbId))
+      ).subscribe({
+        next: (pathway: Instance) => {
+          this.pathwayDisplayNames[pathwayDbId] = pathway?.displayName || `Pathway ${pathwayDbId}`;
+        },
+        error: () => {
+          this.pathwayDisplayNames[pathwayDbId] = `Pathway ${pathwayDbId}`;
+        }
+      });
+    });
   }
 
   compareWithDB(instance: Instance) {
@@ -222,11 +257,12 @@ export class UpdatedInstanceListComponent implements OnInit {
       'Please wait while selected pathway diagram objects are persisted.'
     );
 
-    this.dataService.perisistPathwayDiagram(this.selectedPathwayDiagramObjects).pipe(
+    const user = this.authService.getUser();
+    this.dataService.perisistPathwayDiagram(this.selectedPathwayDiagramObjects, user).pipe(
       finalize(() => this.closeCommitWaitDialog())
     ).subscribe(() => {
-      const selectedDbIds = new Set(this.selectedPathwayDiagramObjects.map(i => i.dbId));
-      const remaining = this.pathwayDiagramObjects.filter(item => !selectedDbIds.has(item.dbId));
+      const selectedDbIds = new Set(this.selectedPathwayDiagramObjects.map(i => i.pathwayDiagramDbId));
+      const remaining = this.pathwayDiagramObjects.filter(item => !selectedDbIds.has(item.pathwayDiagramDbId));
       this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: remaining }));
       this.selectedPathwayDiagramObjects = [];
     });
@@ -236,8 +272,8 @@ export class UpdatedInstanceListComponent implements OnInit {
     if (!this.selectedPathwayDiagramObjects || this.selectedPathwayDiagramObjects.length === 0)
       return;
 
-    const selectedDbIds = new Set(this.selectedPathwayDiagramObjects.map(i => i.dbId));
-    const remaining = this.pathwayDiagramObjects.filter(item => !selectedDbIds.has(item.dbId));
+    const selectedDbIds = new Set(this.selectedPathwayDiagramObjects.map(i => i.pathwayDiagramDbId));
+    const remaining = this.pathwayDiagramObjects.filter(item => !selectedDbIds.has(item.pathwayDiagramDbId));
     this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: remaining }));
     this.selectedPathwayDiagramObjects = [];
   }
@@ -251,7 +287,7 @@ export class UpdatedInstanceListComponent implements OnInit {
   }
 
   isPathwayDiagramObjectSelected(item: PathwayDiagramObject): boolean {
-    return this.selectedPathwayDiagramObjects.some(selected => selected.dbId === item.dbId);
+    return this.selectedPathwayDiagramObjects.some(selected => selected.pathwayDiagramDbId === item.pathwayDiagramDbId);
   }
 
   togglePathwayDiagramObjectSelection(item: PathwayDiagramObject, selected: boolean) {
@@ -260,17 +296,24 @@ export class UpdatedInstanceListComponent implements OnInit {
         this.selectedPathwayDiagramObjects.push(item);
       return;
     }
-    this.selectedPathwayDiagramObjects = this.selectedPathwayDiagramObjects.filter(current => current.dbId !== item.dbId);
+    this.selectedPathwayDiagramObjects = this.selectedPathwayDiagramObjects.filter(current => current.pathwayDiagramDbId !== item.pathwayDiagramDbId);
   }
 
   openPathwayDiagramObject(item: PathwayDiagramObject) {
     const pathwayDbId = Number(item?.pathwayDbId);
+    const pathwayDiagramDbId = Number(item?.pathwayDiagramDbId ?? item?.pathwayDbId ?? item?.diagramLock?.diagramDbId);
     if (!Number.isFinite(pathwayDbId) || pathwayDbId <= 0) {
       this.dialog.open(InfoDialogComponent, {
         data: {
           title: 'Information',
           message: 'This staged diagram does not have a linked pathway id yet, so it cannot be opened directly from the staged list.'
         }
+      });
+      return;
+    }
+    if (Number.isFinite(pathwayDiagramDbId) && pathwayDiagramDbId > 0) {
+      this.router.navigate([`/event_view/instance/${pathwayDbId}`], {
+        queryParams: { stagedDiagramDbId: pathwayDiagramDbId }
       });
       return;
     }

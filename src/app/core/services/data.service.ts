@@ -58,6 +58,7 @@ export class DataService {
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
   private lockDiagramUrl = `${environment.ApiRoot}/lockDiagram/`;
   private unlockDiagramUrl = `${environment.ApiRoot}/unlockDiagram/`;
+  private deletePersistedPathwayDiagramUrl = `${environment.ApiRoot}/deletePersistedPathwayDiagram/`;
   private persistPathwayDiagramUrl = `${environment.ApiRoot}/persistPathwayDiagram/`;
   private loadPathwayDiagramUrl = `${environment.ApiRoot}/loadPathwayDiagrams/`;
 
@@ -845,24 +846,24 @@ export class DataService {
     );
   }
 
-  persistPathwayDiagram(diagramLock: DiagramLock, network: object): Observable<boolean> {
+  persistPathwayDiagram(username: string | undefined, pathwayDiagramDbId: number, network: object): Observable<boolean> {
+    // username: path variable to identify which user's staged diagrams these are
+    const targetUrl = username ? `${this.persistPathwayDiagramUrl}${encodeURIComponent(username)}` : this.persistPathwayDiagramUrl;
     return this.store.select(defaultPerson()).pipe(
       take(1),
       concatMap((person: Instance[]) => {
-        if (!person || person.length === 0 || person[0].dbId === undefined) {
-          return this.handleErrorMessage(new Error('Cannot find the default person! Cannot persist pathway diagram edits without the default person!'));
-        }
+        const defaultPersonId = (person && person.length > 0 && person[0].dbId !== undefined) ? person[0].dbId : undefined;
         const networkToPersist = network && typeof network === 'object'
-          ? { ...network, defaultPersonId: person[0].dbId }
+          ? (defaultPersonId ? { ...network, defaultPersonId } : { ...network })
           : network;
         const payload = [{
-          diagramLock: diagramLock,
-          network: networkToPersist,
+          pathwayDiagramId: pathwayDiagramDbId,
+          node: networkToPersist,
         }];
-        return this.http.post<boolean>(this.persistPathwayDiagramUrl, payload).pipe(
+        return this.http.post<boolean>(targetUrl, payload).pipe(
           tap(() => {
-            console.debug('Cytoscape network for ' + diagramLock.diagramDbId + ' uploaded.');
-            this.removeInstanceInCache(diagramLock.diagramDbId);
+            console.debug('Cytoscape network for ' + pathwayDiagramDbId + ' uploaded.');
+            this.removeInstanceInCache(pathwayDiagramDbId);
           }),
           catchError(error => {
             return this.handleErrorMessage(error);
@@ -872,22 +873,17 @@ export class DataService {
     );
   }
 
-  perisistPathwayDiagram(pathwayDiagramObjects: PathwayDiagramObject[]): Observable<boolean> {
+  perisistPathwayDiagram(pathwayDiagramObjects: PathwayDiagramObject[], username?: string): Observable<boolean> {
     const payload = this.normalizePathwayDiagramObjects(pathwayDiagramObjects).map((item: PathwayDiagramObject) => ({
-      diagramLock: item.diagramLock ?? {
-        diagramDbId: item.pathwayDiagramDbId ?? item.dbId,
-        username: '',
-        lockedAt: '',
-        locked: false,
-        lockId: ''
-      },
-      network: item.object
-    })).filter(item => !!item.diagramLock?.diagramDbId && !!item.network);
+      pathwayDiagramId: Number(item.pathwayDiagramDbId ?? item.diagramLock?.diagramDbId),
+      node: item.network ?? (item as any).object
+    })).filter(item => !!item.pathwayDiagramId && !!item.node);
 
     if (payload.length === 0)
       return of(true);
 
-    return this.http.post<boolean>(this.persistPathwayDiagramUrl, payload).pipe(
+    const targetUrl = username ? `${this.persistPathwayDiagramUrl}${encodeURIComponent(username)}` : this.persistPathwayDiagramUrl;
+    return this.http.post<boolean>(targetUrl, payload).pipe(
       catchError(error => {
         return this.handleErrorMessage(error);
       })
@@ -1435,6 +1431,14 @@ export class DataService {
     );
   }
 
+  deletePersistedPathwayDiagram(diagram: DiagramLock): Observable<boolean> {
+    return this.http.post<boolean>(this.deletePersistedPathwayDiagramUrl, diagram).pipe(
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    );
+  }
+
   private normalizePathwayDiagramObjects(data: any): PathwayDiagramObject[] {
     const pathwayDiagramObjects = Array.isArray(data)
       ? data
@@ -1442,11 +1446,16 @@ export class DataService {
 
     return pathwayDiagramObjects.map((item: any) => {
       if (!item) return item;
-      const sourceObject = item.object ?? item.network ?? item;
+      const sourceObject = item.object ?? item.network ?? item.node ?? item;
       const parsedObject = typeof sourceObject === 'string'
         ? this.tryParseJson(sourceObject)
         : sourceObject;
-      const rawDiagramDbId = item.pathwayDiagramDbId ?? item.diagramLock?.diagramDbId ?? item.dbId;
+      const rawDiagramDbId = item.pathwayDiagramDbId
+        ?? item.pathwayDiagramId
+        ?? item.diagramDbId
+        ?? item.diagramId
+        ?? item.diagramLock?.diagramDbId
+        ?? item.dbId;
       const normalizedDiagramDbId = Number(rawDiagramDbId);
       const diagramDbId = Number.isFinite(normalizedDiagramDbId)
         ? normalizedDiagramDbId
@@ -1459,12 +1468,17 @@ export class DataService {
             : item.diagramLock.diagramDbId
         }
         : undefined;
-      const normalizedPathwayDbId = Number(item.pathwayDbId);
+      const rawPathwayDbId = item.pathwayDbId
+        ?? item.pathwayId
+        ?? item.representedPathwayDbId
+        ?? item.pathway?.dbId
+        ?? item.representedPathway?.dbId;
+      const normalizedPathwayDbId = Number(rawPathwayDbId);
       return {
         ...item,
         dbId: diagramDbId,
         pathwayDiagramDbId: diagramDbId,
-        pathwayDbId: Number.isFinite(normalizedPathwayDbId) ? normalizedPathwayDbId : item.pathwayDbId,
+        pathwayDbId: Number.isFinite(normalizedPathwayDbId) ? normalizedPathwayDbId : rawPathwayDbId,
         object: parsedObject,
         diagramLock: normalizedDiagramLock,
         nodeType: item.nodeType ?? item.type ?? 'object'

@@ -1,12 +1,13 @@
 import { Injectable } from "@angular/core";
 import { Store } from "@ngrx/store";
-import { combineLatest, defaultIfEmpty, finalize, take } from "rxjs";
+import { combineLatest, defaultIfEmpty, finalize, forkJoin, of, take } from "rxjs";
+import { catchError } from "rxjs/operators";
 import { Instance, UserInstances } from "src/app/core/models/reactome-instance.model";
 import { AuthenticateService } from "src/app/core/services/authenticate.service";
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { DefaultPersonActions, DeleteInstanceActions, NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
-import { defaultPerson, deleteInstances, newInstances, updatedInstances, updatedInstanceState } from "src/app/instance/state/instance.selectors";
+import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { BookmarkActions } from "src/app/schema-view/instance-bookmark/state/bookmark.actions";
 import { bookmarkedInstances } from "src/app/schema-view/instance-bookmark/state/bookmark.selectors";
 import { PathwayDiagramObjectActions } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.actions";
@@ -20,6 +21,12 @@ import { PathwayDiagramObject } from "src/app/event-view/components/pathway-diag
     providedIn: 'root'
 })
 export class UserInstancesService {
+    private readonly pathwayDiagramLockRefsStorageKey = 'pathwayDiagramLockRefs';
+    private readonly exactSavedDiagramNetworksStorageKey = 'exactSavedDiagramNetworks';
+    private readonly pendingPathwayDiagramDraftSessionKey = 'pendingPathwayDiagramDraft';
+    private readonly pathwayDiagramPersistIntervalMs = 2 * 60 * 1000;
+    private pathwayDiagramPersistTimer: ReturnType<typeof setInterval> | undefined;
+    private isPersistingPathwayDiagrams = false;
 
     constructor(private instUtils: InstanceUtilities,
         private dataService: DataService,
@@ -36,6 +43,7 @@ export class UserInstancesService {
             console.debug('Cannot find a user to loadUserInstances');
             return;
         }
+        this.startPathwayDiagramAutoPersist();
         // TODO: Make sure this is updated during deployment
         this.dataService.startLoadInstances();
         this.dataService.loadUserInstances(user).pipe(
@@ -128,20 +136,31 @@ export class UserInstancesService {
         if (localDiagramObjects && localDiagramObjects.length > 0)
             this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: localDiagramObjects }));
 
-        this.dataService.getPathwayDiagrams(userName).subscribe({
-            next: (diagramObjects: PathwayDiagramObject[]) => {
+        const candidateUserNames = Array.from(new Set([
+            userName,
+            ...this.authService.getUserCandidates()
+        ].filter((name: string | undefined): name is string => !!name && name.trim().length > 0)));
+
+        const requests = candidateUserNames.map((candidate: string) =>
+            this.dataService.getPathwayDiagrams(candidate).pipe(
+                catchError(() => of([] as PathwayDiagramObject[]))
+            )
+        );
+
+        forkJoin(requests).subscribe({
+            next: (diagramObjectGroups: PathwayDiagramObject[][]) => {
                 const localObjects = localDiagramObjects ?? [];
                 const mergedByDiagramDbId = new Map<number, PathwayDiagramObject>();
 
                 localObjects.forEach((item: PathwayDiagramObject) => {
-                    const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId ?? item?.dbId);
+                    const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId);
                     if (Number.isFinite(diagramDbId))
                         mergedByDiagramDbId.set(diagramDbId, item);
                 });
 
-                // Backend is the source of truth at login, so let it override local snapshots.
-                (diagramObjects || []).forEach((item: PathwayDiagramObject) => {
-                    const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId ?? item?.dbId);
+                // Backend is the source of truth at login, so let backend snapshots override local ones.
+                (diagramObjectGroups || []).flat().forEach((item: PathwayDiagramObject) => {
+                    const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId);
                     if (Number.isFinite(diagramDbId))
                         mergedByDiagramDbId.set(diagramDbId, item);
                 });
@@ -173,7 +192,19 @@ export class UserInstancesService {
         const clearLocalStateForLogout = () => {
             if (!removeToken)
                 return;
+            this.stopPathwayDiagramAutoPersist();
+            const preservedValues = this.captureLocalStorageValues([
+                PathwayDiagramObjectActions.get_pathway_diagram_objects.type,
+                this.pathwayDiagramLockRefsStorageKey,
+                this.exactSavedDiagramNetworksStorageKey
+            ]);
             localStorage.clear();
+            this.restoreLocalStorageValues(preservedValues);
+            // Ensure auth/session identity is removed.
+            localStorage.removeItem('token');
+            localStorage.removeItem('login_username');
+            // Clear diagram draft persisted in session storage so stale drafts are not auto-recovered after re-login.
+            sessionStorage.removeItem(this.pendingPathwayDiagramDraftSessionKey);
         };
         combineLatest([
             this.store.select(updatedInstances()),
@@ -221,7 +252,7 @@ export class UserInstancesService {
                 if (defaultPerson.length > 0)
                     userInstances.defaultPerson = defaultPerson[0];
                 const completePersist = () => {
-                    this.dataService.perisistPathwayDiagram(pathwayDiagramObjects as PathwayDiagramObject[]).subscribe({
+                                        this.dataService.perisistPathwayDiagram(pathwayDiagramObjects as PathwayDiagramObject[], user).subscribe({
                       next: () => {
                         console.debug('pathway diagram objects have been persisted at the server.');
                         clearLocalStateForLogout();
@@ -248,6 +279,61 @@ export class UserInstancesService {
                     error: () => done()
                 });
             });
+    }
+
+    private startPathwayDiagramAutoPersist(): void {
+        if (this.pathwayDiagramPersistTimer)
+            return;
+        this.pathwayDiagramPersistTimer = setInterval(() => {
+            this.flushPathwayDiagramsToBackend();
+        }, this.pathwayDiagramPersistIntervalMs);
+    }
+
+    private stopPathwayDiagramAutoPersist(): void {
+        if (!this.pathwayDiagramPersistTimer)
+            return;
+        clearInterval(this.pathwayDiagramPersistTimer);
+        this.pathwayDiagramPersistTimer = undefined;
+    }
+
+    private flushPathwayDiagramsToBackend(): void {
+        if (this.isPersistingPathwayDiagrams)
+            return;
+        const user = this.authService.getUser();
+        if (!user)
+            return;
+
+        this.store.select(pathwayDiagramObjects()).pipe(take(1)).subscribe((objects: PathwayDiagramObject[] | undefined) => {
+            const diagramObjects = objects || [];
+            if (diagramObjects.length === 0)
+                return;
+
+            this.isPersistingPathwayDiagrams = true;
+            this.dataService.perisistPathwayDiagram(diagramObjects, user).subscribe({
+                next: () => {
+                    this.isPersistingPathwayDiagrams = false;
+                },
+                error: () => {
+                    this.isPersistingPathwayDiagrams = false;
+                }
+            });
+        });
+    }
+
+    private captureLocalStorageValues(keys: string[]): Map<string, string> {
+        const captured = new Map<string, string>();
+        keys.forEach((key: string) => {
+            const value = localStorage.getItem(key);
+            if (value !== null)
+                captured.set(key, value);
+        });
+        return captured;
+    }
+
+    private restoreLocalStorageValues(values: Map<string, string>): void {
+        values.forEach((value: string, key: string) => {
+            localStorage.setItem(key, value);
+        });
     }
 
 }
