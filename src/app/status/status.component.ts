@@ -4,15 +4,13 @@ import { Store } from '@ngrx/store';
 import { Instance, MAX_STAGED_INSTANCES } from 'src/app/core/models/reactome-instance.model';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { bookmarkedInstances } from "../schema-view/instance-bookmark/state/bookmark.selectors";
-import { pathwayDiagramObjects } from "../event-view/components/pathway-diagram/state/pathway-diagram-object.selectors";
-import { PathwayDiagramObject } from "../event-view/components/pathway-diagram/state/pathway-diagram-object.model";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { UserInstancesService } from "../auth/login/user-instances.service";
 import { ListInstancesDialogService } from "../schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service";
 import { DefaultPersonActions } from "../instance/state/instance.actions";
 import { DataService } from "../core/services/data.service";
+import { AuthenticateService } from '../core/services/authenticate.service';
 import { Subscription, combineLatest, debounceTime, skip } from "rxjs";
-import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-status',
@@ -26,7 +24,7 @@ export class StatusComponent implements OnInit, OnDestroy {
   newInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
   bookmarkedInstances: Instance[] = [];
-  pathwayDiagramObjects: PathwayDiagramObject[] = [];
+  pathwayDiagramCount: number = 0;
   defaultPerson: Instance | undefined = undefined;
   saveChangesInProgress: boolean = false;
   currentUrl: string = '';
@@ -37,7 +35,8 @@ export class StatusComponent implements OnInit, OnDestroy {
     private userInstancesService: UserInstancesService,
     private instanceSelectionService: ListInstancesDialogService,
     private router: Router,
-    private dataService: DataService) {
+    private dataService: DataService,
+    private authService: AuthenticateService) {
   }
 
   private _snackBar = inject(MatSnackBar);
@@ -52,9 +51,12 @@ export class StatusComponent implements OnInit, OnDestroy {
     let sub = this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         this.currentUrl = event.urlAfterRedirects;
+        this.refreshPathwayDiagramCount();
       }
     });
     this.subscriptions.add(sub);
+
+    this.refreshPathwayDiagramCount();
 
     sub = this.store.select(updatedInstances()).subscribe((instances) => {
       instances ? this.updatedInstances = instances : this.updatedInstances = [];
@@ -76,17 +78,13 @@ export class StatusComponent implements OnInit, OnDestroy {
     sub = combineLatest([
       this.store.select(deleteInstances()),
       this.store.select(newInstances()),
-      this.store.select(updatedInstances()),
-      this.store.select(pathwayDiagramObjects())
-    ]).pipe(
-      map(([deleted, created, updated, diagrams]) => [
-        ...(deleted || []),
-        ...(created || []),
-        ...(updated || []),
-        ...(diagrams || [])
-      ])
-    ).subscribe((allInstances) => {
-      this.saveChangesInProgress = allInstances.length > MAX_STAGED_INSTANCES;
+      this.store.select(updatedInstances())
+    ]).subscribe(([deleted, created, updated]) => {
+      const stagedCount = (deleted?.length || 0)
+        + (created?.length || 0)
+        + (updated?.length || 0)
+        + this.pathwayDiagramCount;
+      this.saveChangesInProgress = stagedCount > MAX_STAGED_INSTANCES;
     })
     this.subscriptions.add(sub);
 
@@ -101,18 +99,12 @@ export class StatusComponent implements OnInit, OnDestroy {
     });
     this.subscriptions.add(sub);
 
-    sub = this.store.select(pathwayDiagramObjects()).subscribe((instances) => {
-      instances ? this.pathwayDiagramObjects = instances : this.pathwayDiagramObjects = [];
-    });
-    this.subscriptions.add(sub);
-
     // Auto-persist after 5 minutes of no edit activity across all tracked state
     sub = combineLatest([
       this.store.select(updatedInstances()),
       this.store.select(newInstances()),
       this.store.select(deleteInstances()),
       this.store.select(defaultPerson()),
-      this.store.select(pathwayDiagramObjects()),
     ]).pipe(
       skip(1), // ignore the initial emission on subscription
       debounceTime(5 * 60 * 1000)
@@ -141,6 +133,27 @@ export class StatusComponent implements OnInit, OnDestroy {
       }
     });
     this.subscriptions.add(sub);
+  }
+
+  private refreshPathwayDiagramCount(): void {
+    const user = this.authService.getUser();
+    if (!user) {
+      this.pathwayDiagramCount = 0;
+      return;
+    }
+    this.dataService.getUserLocks(user).subscribe({
+      next: (locks) => {
+        this.pathwayDiagramCount = (locks || []).length;
+        const stagedCount = (this.deletedInstances?.length || 0)
+          + (this.newInstances?.length || 0)
+          + (this.updatedInstances?.length || 0)
+          + this.pathwayDiagramCount;
+        this.saveChangesInProgress = stagedCount > MAX_STAGED_INSTANCES;
+      },
+      error: () => {
+        this.pathwayDiagramCount = 0;
+      }
+    });
   }
 
   ngOnDestroy(): void {

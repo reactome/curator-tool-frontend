@@ -13,7 +13,6 @@ import {
 import { InstanceUtilities } from "./instance.service";
 import { QAReport } from "../models/qa-report.model";
 import { ActivatedRoute, Router } from "@angular/router";
-import { PathwayDiagramObject } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.model";
 
 @Injectable({
   providedIn: 'root'
@@ -61,6 +60,9 @@ export class DataService {
   private deletePersistedPathwayDiagramUrl = `${environment.ApiRoot}/deletePersistedPathwayDiagram/`;
   private persistPathwayDiagramUrl = `${environment.ApiRoot}/persistPathwayDiagram/`;
   private loadPathwayDiagramUrl = `${environment.ApiRoot}/loadPathwayDiagrams/`;
+  private backupCyNetworkUrl = `${environment.ApiRoot}/backupCyNetwork/`;
+  private loadBackupCyNetworkUrl = `${environment.ApiRoot}/loadBackupCyNetwork/`;
+  private getUserLocksUrl = `${environment.ApiRoot}/getUserLocks/`;
 
 
   // Track the negative dbId to be used
@@ -153,7 +155,7 @@ export class DataService {
   /**
    * Load persisted pathway diagram edits for a user.
    */
-  getPathwayDiagrams(userName: string): Observable<PathwayDiagramObject[]> {
+  getPathwayDiagrams(userName: string): Observable<any[]> {
     return this.http.get<any>(this.loadPathwayDiagramUrl + `${userName}`)
       .pipe(
         map((data: any) => this.normalizePathwayDiagramObjects(data)),
@@ -164,7 +166,7 @@ export class DataService {
   }
 
   // Backward-compatible alias for existing call sites.
-  getPathwayDiagrms(userName: string): Observable<PathwayDiagramObject[]> {
+  getPathwayDiagrms(userName: string): Observable<any[]> {
     return this.getPathwayDiagrams(userName);
   }
 
@@ -873,8 +875,8 @@ export class DataService {
     );
   }
 
-  perisistPathwayDiagram(pathwayDiagramObjects: PathwayDiagramObject[], username?: string): Observable<boolean> {
-    const payload = this.normalizePathwayDiagramObjects(pathwayDiagramObjects).map((item: PathwayDiagramObject) => ({
+  perisistPathwayDiagram(any: any[], username?: string): Observable<boolean> {
+    const payload = this.normalizePathwayDiagramObjects(any).map((item: any) => ({
       pathwayDiagramId: Number(item.pathwayDiagramDbId ?? item.diagramLock?.diagramDbId),
       node: item.network ?? (item as any).object
     })).filter(item => !!item.pathwayDiagramId && !!item.node);
@@ -1439,12 +1441,12 @@ export class DataService {
     );
   }
 
-  private normalizePathwayDiagramObjects(data: any): PathwayDiagramObject[] {
-    const pathwayDiagramObjects = Array.isArray(data)
+  private normalizePathwayDiagramObjects(data: any): any[] {
+    const any = Array.isArray(data)
       ? data
-      : data?.pathwayDiagramObjects ?? data?.objects ?? data?.instances ?? [];
+      : data?.any ?? data?.objects ?? data?.instances ?? [];
 
-    return pathwayDiagramObjects.map((item: any) => {
+    return any.map((item: any) => {
       if (!item) return item;
       const sourceObject = item.object ?? item.network ?? item.node ?? item;
       const parsedObject = typeof sourceObject === 'string'
@@ -1482,7 +1484,7 @@ export class DataService {
         object: parsedObject,
         diagramLock: normalizedDiagramLock,
         nodeType: item.nodeType ?? item.type ?? 'object'
-      } as PathwayDiagramObject;
+      } as any;
     });
   }
 
@@ -1501,4 +1503,32 @@ export class DataService {
     }
     return parsed;
   }
+
+  // User will be given their locks upon logging in and refreshing the page, so this method is just for checking the locks when they are trying to access a diagram
+  getUserLocks(username: string): Observable<DiagramLock[]> {
+    return this.http.get<DiagramLock[]>(this.getUserLocksUrl + username).pipe(
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    );
+  }
+
+  // Used to keep a backup copy of the edited network in case the user wants to discard the changes and revert to the original network loaded from the database. The backup copy will be deleted after loading it back to the front end or when the user logs out.
+  backupCyNetwork(pathwayDiagramId: any): Observable<any> {
+    return this.http.get<any>(this.backupCyNetworkUrl + pathwayDiagramId).pipe(
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    );
+  }
+
+  // Load the users edits which are backed up in the server. 
+  loadBackupCyNetwork(pathwayDiagramId: number, lockId: string, network: object): Observable<any> {
+    return this.http.post<any>(this.loadBackupCyNetworkUrl + pathwayDiagramId + lockId, network).pipe(
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    );
+  }
+
 }

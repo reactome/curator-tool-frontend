@@ -29,9 +29,9 @@ import { SharedModule } from "./shared/shared.module";
 import { StatusModule } from './status/status.module';
 import { GeneLlmModule } from './gene-llm/gene-llm.module';
 import { DeletionCommitModule } from './instance/deletion-commit/deletion-commit.module';
-import { pathwayDiagramObjectsReducer } from './event-view/components/pathway-diagram/state/pathway-diagram-object.reducers';
-import { PATHWAY_DIAGRAM_OBJECTS_STATE_NAME } from './event-view/components/pathway-diagram/state/pathway-diagram-object.selectors';
-import { PathwayDiagramObjectEffects } from './event-view/components/pathway-diagram/state/pathway-diagram-object.effects';
+// import { pathwayDiagramObjectsReducer } from './event-view/components/pathway-diagram/state/pathway-diagram-object.reducers';
+// import { PATHWAY_DIAGRAM_OBJECTS_STATE_NAME } from './event-view/components/pathway-diagram/state/pathway-diagram-object.selectors';
+// import { PathwayDiagramObjectEffects } from './event-view/components/pathway-diagram/state/pathway-diagram-object.effects';
 
 // Function to get the token from local storage for JwtModule configuration
 // This is important and don't delete it!!!
@@ -90,14 +90,13 @@ const customTooltipOptions: MatTooltipDefaultOptions = {
     ListInstancesModule,
     EffectsModule.forRoot(),
     StoreModule.forRoot({router: routerReducer}),
-    EffectsModule.forRoot([BookmarkEffects, InstanceEffects, PathwayDiagramObjectEffects]),
+    EffectsModule.forRoot([BookmarkEffects, InstanceEffects]),
     RouterModule.forRoot([]),
     StoreDevtoolsModule.instrument({
       maxAge: 25,
       logOnly: environment.production,
       autoPause: true,
     }),
-    StoreModule.forFeature(PATHWAY_DIAGRAM_OBJECTS_STATE_NAME, pathwayDiagramObjectsReducer),
     SharedModule,
     MainSchemaViewModule,
     MainEventModule,

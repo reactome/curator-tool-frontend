@@ -17,12 +17,12 @@
         color="primary" mat-icon-button matTooltip="select all">
         <mat-icon>select_all</mat-icon>
       </button>
-      <button class="mini-icon-btn" (click)="clearSelectedInstances(SelectedInstancesList.newInstanceList)" color="primary"
-        mat-icon-button matTooltip="deselect all">
+      <button class="mini-icon-btn" (click)="clearSelectedInstances(SelectedInstancesList.newInstanceList)"
+        color="primary" mat-icon-button matTooltip="deselect all">
         <mat-icon>deselect_all</mat-icon>
       </button>
-      <button (click)="deleteAllSelectedNewInstances()" [disabled]="selectedNewInstances.length === 0" class="mini-icon-btn"
-        color="primary" mat-icon-button matTooltip="delete all selected new instances">
+      <button (click)="deleteAllSelectedNewInstances()" [disabled]="selectedNewInstances.length === 0"
+        class="mini-icon-btn" color="primary" mat-icon-button matTooltip="delete all selected new instances">
         <mat-icon>delete</mat-icon>
       </button>
       <button [disabled]="selectedNewInstances.length === 0" class="mini-icon-btn" color="primary" mat-icon-button
@@ -56,7 +56,8 @@
         <mat-icon>deselect_all</mat-icon>
       </button>
       <button (click)="resetSelectedUpdatedInstances()" [disabled]="selectedUpdatedInstances.length === 0"
-        class="mini-icon-btn" color="primary" mat-icon-button matTooltip="undo all changes for selected updated instances">
+        class="mini-icon-btn" color="primary" mat-icon-button
+        matTooltip="undo all changes for selected updated instances">
         <mat-icon>undo</mat-icon>
       </button>
       <button [disabled]="selectedUpdatedInstances.length === 0" class="mini-icon-btn" color="primary" mat-icon-button
@@ -108,73 +109,6 @@
     </app-instance-list-table>
   </div>
 
-  <!-- Pathway Diagram Objects Section -->
-  <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; margin-top: 8px;">
-    <div style="display: flex; flex-direction: column; align-items: flex-start;">
-      <span>Pathway Diagram Objects: {{pathwayDiagramObjects.length}} ({{selectedPathwayDiagramObjects.length}})</span>
-    </div>
-    <div class="action-buttons-row">
-      <button class="mini-icon-btn" (click)="selectAllPathwayDiagramObjects()" color="primary" mat-icon-button matTooltip="select all">
-        <mat-icon>select_all</mat-icon>
-      </button>
-      <button class="mini-icon-btn" (click)="clearSelectedPathwayDiagramObjects()" color="primary" mat-icon-button matTooltip="deselect all">
-        <mat-icon>deselect_all</mat-icon>
-      </button>
-      <button (click)="removeSelectedPathwayDiagramObjects()" [disabled]="selectedPathwayDiagramObjects.length === 0" class="mini-icon-btn"
-        color="primary" mat-icon-button matTooltip="remove selected staged diagram objects">
-        <mat-icon>undo</mat-icon>
-      </button>
-      <button [disabled]="selectedPathwayDiagramObjects.length === 0" class="mini-icon-btn" color="primary" mat-icon-button
-        matTooltip="persist selected diagram objects" (click)="persistSelectedPathwayDiagramObjects()">
-        <mat-icon>upload</mat-icon>
-      </button>
-    </div>
-  </div>
-  <div class="scroll-list" style="flex: 2; min-height: 120px;">
-    <table mat-table [dataSource]="pathwayDiagramObjects" class="mat-elevation-z0 instance-list-table" style="width:100%;">
-
-      <!-- dbId Column -->
-      <ng-container matColumnDef="dbId">
-        <th mat-header-cell *matHeaderCellDef style="width: 120px; min-width: 110px; max-width: 120px;">dbId</th>
-        <td mat-cell *matCellDef="let item" style="width: 120px; min-width: 110px; max-width: 120px;">{{ item.dbId }}</td>
-      </ng-container>
-
-      <!-- Display Name Column -->
-      <ng-container matColumnDef="displayName">
-        <th mat-header-cell *matHeaderCellDef>Display Name</th>
-        <td mat-cell *matCellDef="let item" class="wrap-text-cell">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <a (click)="$event.stopPropagation(); openPathwayDiagramObject(item)" style="text-decoration: underline; cursor: pointer;">
-              {{ getPathwayDisplayName(item) }}
-            </a>
-          </div>
-        </td>
-      </ng-container>
-
-      <!-- Action Buttons Column -->
-      <ng-container matColumnDef="actionButtons" stickyEnd>
-        <th mat-header-cell *matHeaderCellDef style="width: 150px; min-width: 150px; max-width: 270px;"></th>
-        <td mat-cell *matCellDef="let item" style="width: 150px; min-width: 150px; max-width: 270px; position: relative;">
-          <div class="action-buttons-row">
-            <button color="primary" *ngIf="isPathwayDiagramObjectSelected(item)" mat-icon-button class="mini-btn"
-              (click)="$event.stopPropagation(); togglePathwayDiagramObjectSelection(item, false)">
-              <mat-icon>check_box</mat-icon>
-            </button>
-            <button color="primary" *ngIf="!isPathwayDiagramObjectSelected(item)" mat-icon-button class="mini-btn"
-              (click)="$event.stopPropagation(); togglePathwayDiagramObjectSelection(item, true)">
-              <mat-icon>check_box_outline_blank</mat-icon>
-            </button>
-
-            <button color="primary" mat-icon-button class="mini-btn" matTooltip="Open staged diagram"
-              (click)="$event.stopPropagation(); openPathwayDiagramObject(item)">
-              <mat-icon>open_in_new</mat-icon>
-            </button>
-          </div>
-        </td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="['dbId','displayName','actionButtons']"></tr>
-      <tr mat-row *matRowDef="let row; columns: ['dbId','displayName','actionButtons'];" class="rowBackground"></tr>
-    </table>
-  </div>
+  <tr mat-header-row *matHeaderRowDef="['dbId','displayName','actionButtons']"></tr>
+  <tr mat-row *matRowDef="let row; columns: ['dbId','displayName','actionButtons'];" class="rowBackground"></tr>
 </div>

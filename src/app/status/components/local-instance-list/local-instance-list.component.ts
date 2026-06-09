@@ -17,10 +17,6 @@ import { DeleteBulkDialogService } from 'src/app/schema-view/list-instances/comp
 import { DeletionDialogService } from 'src/app/instance/components/deletion-dialog/deletion-dialog.service';
 import { CommitResultDialogService, CommitResult } from './commit-result-dialog/commit-result-dialog.service';
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
-import { pathwayDiagramObjects } from 'src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.selectors';
-import { PathwayDiagramObject } from 'src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.model';
-import { PathwayDiagramObjectActions } from 'src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.actions';
-import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 
 
 @Component({
@@ -42,7 +38,6 @@ export class UpdatedInstanceListComponent implements OnInit {
   newInstances: Instance[] = [];
   updatedInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
-  pathwayDiagramObjects: PathwayDiagramObject[] = [];
   pathwayDisplayNames: Record<number, string> = {};
   showHeader: boolean = false;
 
@@ -52,7 +47,6 @@ export class UpdatedInstanceListComponent implements OnInit {
   selectedUpdatedInstances: Instance[] = [];
   selectedNewInstances: Instance[] = [];
   selectedDeletedInstances: Instance[] = [];
-  selectedPathwayDiagramObjects: PathwayDiagramObject[] = [];
 
   showCheck: boolean = false;
 
@@ -102,45 +96,39 @@ export class UpdatedInstanceListComponent implements OnInit {
     });
     this.subscriptions.push(subscription);
 
-    subscription = this.store.select(pathwayDiagramObjects()).subscribe((objects) => {
-      this.pathwayDiagramObjects = objects || [];
-      this.selectedPathwayDiagramObjects = this.selectedPathwayDiagramObjects
-        .filter(selected => this.pathwayDiagramObjects.some(item => item.pathwayDiagramDbId === selected.pathwayDiagramDbId));
-      this.preloadPathwayDisplayNames(this.pathwayDiagramObjects);
-    });
     this.subscriptions.push(subscription);
     this.getSelectedInstances();
   }
 
-  getPathwayDisplayName(item: PathwayDiagramObject): string {
-    const pathwayDbId = Number(item?.pathwayDbId);
-    if (!Number.isFinite(pathwayDbId) || pathwayDbId <= 0)
-      return `PathwayDiagram ${item?.pathwayDiagramDbId ?? ''}`;
-    return this.pathwayDisplayNames[pathwayDbId] || `Pathway ${pathwayDbId}`;
-  }
+  // getPathwayDisplayName(item: PathwayDiagramObject): string {
+  //   const pathwayDbId = Number(item?.pathwayDbId);
+  //   if (!Number.isFinite(pathwayDbId) || pathwayDbId <= 0)
+  //     return `PathwayDiagram ${item?.pathwayDiagramDbId ?? ''}`;
+  //   return this.pathwayDisplayNames[pathwayDbId] || `Pathway ${pathwayDbId}`;
+  // }
 
-  private preloadPathwayDisplayNames(objects: PathwayDiagramObject[]) {
-    const pathwayDbIds = Array.from(new Set((objects || [])
-      .map(item => Number(item?.pathwayDbId))
-      .filter(pathwayDbId => Number.isFinite(pathwayDbId) && pathwayDbId > 0)));
+  // private preloadPathwayDisplayNames(objects: PathwayDiagramObject[]) {
+  //   const pathwayDbIds = Array.from(new Set((objects || [])
+  //     .map(item => Number(item?.pathwayDbId))
+  //     .filter(pathwayDbId => Number.isFinite(pathwayDbId) && pathwayDbId > 0)));
 
-    pathwayDbIds.forEach((pathwayDbId: number) => {
-      if (this.pathwayDisplayNames[pathwayDbId] || this.pathwayDisplayNameRequests.has(pathwayDbId))
-        return;
+  //   pathwayDbIds.forEach((pathwayDbId: number) => {
+  //     if (this.pathwayDisplayNames[pathwayDbId] || this.pathwayDisplayNameRequests.has(pathwayDbId))
+  //       return;
 
-      this.pathwayDisplayNameRequests.add(pathwayDbId);
-      this.dataService.fetchInstance(pathwayDbId).pipe(
-        finalize(() => this.pathwayDisplayNameRequests.delete(pathwayDbId))
-      ).subscribe({
-        next: (pathway: Instance) => {
-          this.pathwayDisplayNames[pathwayDbId] = pathway?.displayName || `Pathway ${pathwayDbId}`;
-        },
-        error: () => {
-          this.pathwayDisplayNames[pathwayDbId] = `Pathway ${pathwayDbId}`;
-        }
-      });
-    });
-  }
+  //     this.pathwayDisplayNameRequests.add(pathwayDbId);
+  //     this.dataService.fetchInstance(pathwayDbId).pipe(
+  //       finalize(() => this.pathwayDisplayNameRequests.delete(pathwayDbId))
+  //     ).subscribe({
+  //       next: (pathway: Instance) => {
+  //         this.pathwayDisplayNames[pathwayDbId] = pathway?.displayName || `Pathway ${pathwayDbId}`;
+  //       },
+  //       error: () => {
+  //         this.pathwayDisplayNames[pathwayDbId] = `Pathway ${pathwayDbId}`;
+  //       }
+  //     });
+  //   });
+  // }
 
   compareWithDB(instance: Instance) {
     if (this.blockRoute) {
@@ -248,77 +236,23 @@ export class UpdatedInstanceListComponent implements OnInit {
     this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.deletedInstanceList);
   }
 
-  persistSelectedPathwayDiagramObjects() {
-    if (!this.selectedPathwayDiagramObjects || this.selectedPathwayDiagramObjects.length === 0)
-      return;
+  // clearSelectedPathwayDiagramObjects() {
+  //   this.selectedPathwayDiagramObjects = [];
+  // }
 
-    this.openCommitWaitDialog(
-      'Persisting Pathway Diagram Objects',
-      'Please wait while selected pathway diagram objects are persisted.'
-    );
+  // isPathwayDiagramObjectSelected(item: PathwayDiagramObject): boolean {
+  //   return this.selectedPathwayDiagramObjects.some(selected => selected.pathwayDiagramDbId === item.pathwayDiagramDbId);
+  // }
 
-    const user = this.authService.getUser();
-    this.dataService.perisistPathwayDiagram(this.selectedPathwayDiagramObjects, user).pipe(
-      finalize(() => this.closeCommitWaitDialog())
-    ).subscribe(() => {
-      const selectedDbIds = new Set(this.selectedPathwayDiagramObjects.map(i => i.pathwayDiagramDbId));
-      const remaining = this.pathwayDiagramObjects.filter(item => !selectedDbIds.has(item.pathwayDiagramDbId));
-      this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: remaining }));
-      this.selectedPathwayDiagramObjects = [];
-    });
-  }
+  // togglePathwayDiagramObjectSelection(item: PathwayDiagramObject, selected: boolean) {
+  //   if (selected) {
+  //     if (!this.isPathwayDiagramObjectSelected(item))
+  //       this.selectedPathwayDiagramObjects.push(item);
+  //     return;
+  //   }
+  //   this.selectedPathwayDiagramObjects = this.selectedPathwayDiagramObjects.filter(current => current.pathwayDiagramDbId !== item.pathwayDiagramDbId);
+  // }
 
-  removeSelectedPathwayDiagramObjects() {
-    if (!this.selectedPathwayDiagramObjects || this.selectedPathwayDiagramObjects.length === 0)
-      return;
-
-    const selectedDbIds = new Set(this.selectedPathwayDiagramObjects.map(i => i.pathwayDiagramDbId));
-    const remaining = this.pathwayDiagramObjects.filter(item => !selectedDbIds.has(item.pathwayDiagramDbId));
-    this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: remaining }));
-    this.selectedPathwayDiagramObjects = [];
-  }
-
-  selectAllPathwayDiagramObjects() {
-    this.selectedPathwayDiagramObjects = [...this.pathwayDiagramObjects];
-  }
-
-  clearSelectedPathwayDiagramObjects() {
-    this.selectedPathwayDiagramObjects = [];
-  }
-
-  isPathwayDiagramObjectSelected(item: PathwayDiagramObject): boolean {
-    return this.selectedPathwayDiagramObjects.some(selected => selected.pathwayDiagramDbId === item.pathwayDiagramDbId);
-  }
-
-  togglePathwayDiagramObjectSelection(item: PathwayDiagramObject, selected: boolean) {
-    if (selected) {
-      if (!this.isPathwayDiagramObjectSelected(item))
-        this.selectedPathwayDiagramObjects.push(item);
-      return;
-    }
-    this.selectedPathwayDiagramObjects = this.selectedPathwayDiagramObjects.filter(current => current.pathwayDiagramDbId !== item.pathwayDiagramDbId);
-  }
-
-  openPathwayDiagramObject(item: PathwayDiagramObject) {
-    const pathwayDbId = Number(item?.pathwayDbId);
-    const pathwayDiagramDbId = Number(item?.pathwayDiagramDbId ?? item?.pathwayDbId ?? item?.diagramLock?.diagramDbId);
-    if (!Number.isFinite(pathwayDbId) || pathwayDbId <= 0) {
-      this.dialog.open(InfoDialogComponent, {
-        data: {
-          title: 'Information',
-          message: 'This staged diagram does not have a linked pathway id yet, so it cannot be opened directly from the staged list.'
-        }
-      });
-      return;
-    }
-    if (Number.isFinite(pathwayDiagramDbId) && pathwayDiagramDbId > 0) {
-      this.router.navigate([`/event_view/instance/${pathwayDbId}`], {
-        queryParams: { stagedDiagramDbId: pathwayDiagramDbId }
-      });
-      return;
-    }
-    this.router.navigate([`/event_view/instance/${pathwayDbId}`]);
-  }
 
   ngOnDestroy(): void {
     for (let subscription of this.subscriptions)

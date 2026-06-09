@@ -10,9 +10,9 @@ import { DefaultPersonActions, DeleteInstanceActions, NewInstanceActions, Update
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { BookmarkActions } from "src/app/schema-view/instance-bookmark/state/bookmark.actions";
 import { bookmarkedInstances } from "src/app/schema-view/instance-bookmark/state/bookmark.selectors";
-import { PathwayDiagramObjectActions } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.actions";
-import { pathwayDiagramObjects } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.selectors";
-import { PathwayDiagramObject } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.model";
+// import { PathwayDiagramObjectActions } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.actions";
+// import { pathwayDiagramObjects } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.selectors";
+// import { PathwayDiagramObject } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.model";
 
 /**
  * Group a set of utility methods here for easy access to all other classes.
@@ -80,7 +80,7 @@ export class UserInstancesService {
                 this.store.dispatch(BookmarkActions.set_bookmarks({ instances: userInstances.bookmarks }));
             else
                 this.store.dispatch(BookmarkActions.set_bookmarks({ instances: [] }));
-            this.loadPathwayDiagramObjects(user, userInstances);
+            // this.loadPathwayDiagramObjects(user, userInstances);
             if (userInstances.defaultPerson)
                 this.store.dispatch(DefaultPersonActions.set_default_person(userInstances.defaultPerson));
             else
@@ -124,58 +124,58 @@ export class UserInstancesService {
             const defaultPersonInst = JSON.parse(JSON.parse(defaultPerson).object);
             userInstances.defaultPerson = defaultPersonInst;
         }
-        const pathwayDiagramObjectsValue = localStorage.getItem(PathwayDiagramObjectActions.get_pathway_diagram_objects.type);
-        if (pathwayDiagramObjectsValue) {
-            const diagramObjects = JSON.parse(JSON.parse(pathwayDiagramObjectsValue).object);
-            userInstances.pathwayDiagramObjects = diagramObjects;
-        }
+        // const pathwayDiagramObjectsValue = localStorage.getItem(PathwayDiagramObjectActions.get_pathway_diagram_objects.type);
+        // if (pathwayDiagramObjectsValue) {
+        //     const diagramObjects = JSON.parse(JSON.parse(pathwayDiagramObjectsValue).object);
+        //     userInstances.pathwayDiagramObjects = diagramObjects;
+        // }
     }
 
-    private loadPathwayDiagramObjects(userName: string, userInstances: UserInstances) {
-        const localDiagramObjects = userInstances.pathwayDiagramObjects as PathwayDiagramObject[] | undefined;
-        if (localDiagramObjects && localDiagramObjects.length > 0)
-            this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: localDiagramObjects }));
+    // private loadPathwayDiagramObjects(userName: string, userInstances: UserInstances) {
+    //     const localDiagramObjects = userInstances.pathwayDiagramObjects as PathwayDiagramObject[] | undefined;
+    //     if (localDiagramObjects && localDiagramObjects.length > 0)
+    //         this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: localDiagramObjects }));
 
-        const candidateUserNames = Array.from(new Set([
-            userName,
-            ...this.authService.getUserCandidates()
-        ].filter((name: string | undefined): name is string => !!name && name.trim().length > 0)));
+    //     const candidateUserNames = Array.from(new Set([
+    //         userName,
+    //         ...this.authService.getUserCandidates()
+    //     ].filter((name: string | undefined): name is string => !!name && name.trim().length > 0)));
 
-        const requests = candidateUserNames.map((candidate: string) =>
-            this.dataService.getPathwayDiagrams(candidate).pipe(
-                catchError(() => of([] as PathwayDiagramObject[]))
-            )
-        );
+    //     const requests = candidateUserNames.map((candidate: string) =>
+    //         this.dataService.getPathwayDiagrams(candidate).pipe(
+    //             catchError(() => of([] as PathwayDiagramObject[]))
+    //         )
+    //     );
 
-        forkJoin(requests).subscribe({
-            next: (diagramObjectGroups: PathwayDiagramObject[][]) => {
-                const localObjects = localDiagramObjects ?? [];
-                const mergedByDiagramDbId = new Map<number, PathwayDiagramObject>();
+    //     forkJoin(requests).subscribe({
+    //         next: (diagramObjectGroups: PathwayDiagramObject[][]) => {
+    //             const localObjects = localDiagramObjects ?? [];
+    //             const mergedByDiagramDbId = new Map<number, PathwayDiagramObject>();
 
-                localObjects.forEach((item: PathwayDiagramObject) => {
-                    const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId);
-                    if (Number.isFinite(diagramDbId))
-                        mergedByDiagramDbId.set(diagramDbId, item);
-                });
+    //             localObjects.forEach((item: PathwayDiagramObject) => {
+    //                 const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId);
+    //                 if (Number.isFinite(diagramDbId))
+    //                     mergedByDiagramDbId.set(diagramDbId, item);
+    //             });
 
-                // Backend is the source of truth at login, so let backend snapshots override local ones.
-                (diagramObjectGroups || []).flat().forEach((item: PathwayDiagramObject) => {
-                    const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId);
-                    if (Number.isFinite(diagramDbId))
-                        mergedByDiagramDbId.set(diagramDbId, item);
-                });
+    //             // Backend is the source of truth at login, so let backend snapshots override local ones.
+    //             (diagramObjectGroups || []).flat().forEach((item: PathwayDiagramObject) => {
+    //                 const diagramDbId = Number(item?.pathwayDiagramDbId ?? item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId);
+    //                 if (Number.isFinite(diagramDbId))
+    //                     mergedByDiagramDbId.set(diagramDbId, item);
+    //             });
 
-                const mergedObjects = Array.from(mergedByDiagramDbId.values());
-                userInstances.pathwayDiagramObjects = mergedObjects as any[];
-                this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: mergedObjects }));
-            },
-            error: (error) => {
-                console.warn('Failed to load staged pathway diagram objects.', error);
-                if (!localDiagramObjects)
-                    this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: [] }));
-            }
-        });
-    }
+    //             const mergedObjects = Array.from(mergedByDiagramDbId.values());
+    //             userInstances.pathwayDiagramObjects = mergedObjects as any[];
+    //             this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: mergedObjects }));
+    //         },
+    //         error: (error) => {
+    //             console.warn('Failed to load staged pathway diagram objects.', error);
+    //             if (!localDiagramObjects)
+    //                 this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: [] }));
+    //         }
+    //     });
+    // }
 
     persistInstances(removeToken: boolean = false, onComplete?: () => void): void {
         console.debug('Calling persist instance before window closing...');
@@ -194,7 +194,7 @@ export class UserInstancesService {
                 return;
             this.stopPathwayDiagramAutoPersist();
             const preservedValues = this.captureLocalStorageValues([
-                PathwayDiagramObjectActions.get_pathway_diagram_objects.type,
+                // PathwayDiagramObjectActions.get_pathway_diagram_objects.type,
                 this.pathwayDiagramLockRefsStorageKey,
                 this.exactSavedDiagramNetworksStorageKey
             ]);
@@ -212,25 +212,25 @@ export class UserInstancesService {
             this.store.select(deleteInstances()),
             this.store.select(bookmarkedInstances()),
             this.store.select(defaultPerson()),
-            this.store.select(pathwayDiagramObjects())
+            // this.store.select(pathwayDiagramObjects())
         ])
             .pipe(take(1)) // Take only the first set of values and complete
-            .subscribe(([updated, newInst, deleted, bookmarked, defaultPerson, diagramObjects]) => {
+            .subscribe(([updated, newInst, deleted, bookmarked, defaultPerson]) => {
                 const updatedInstances = updated || [];
                 const newInstances = newInst || [];
                 const deletedInstances = deleted || [];
                 const bookmarkedInstances = bookmarked || [];
-                const pathwayDiagramObjects = diagramObjects || [];
+                // const pathwayDiagramObjects = diagramObjects || [];
                 // There should be only one instance for default person. However, we use
                 // an array to make the code simplier
                 const defaultPersonInstances = defaultPerson || [];
-                const hasDiagramObjects = pathwayDiagramObjects.length > 0;
+                // const hasDiagramObjects = pathwayDiagramObjects.length > 0;
                 const instances = [...newInstances, 
                                    ...updatedInstances,  
                                    ...deletedInstances, 
                                    ...bookmarkedInstances,
                                    ...defaultPersonInstances];
-                if (instances.length == 0 && !hasDiagramObjects) {
+                if (instances.length == 0) {
                     this.dataService.deletePersistedInstances(user).subscribe({
                         next: () => {
                             console.debug('Delete any persisted instance at the server.');
@@ -252,14 +252,14 @@ export class UserInstancesService {
                 if (defaultPerson.length > 0)
                     userInstances.defaultPerson = defaultPerson[0];
                 const completePersist = () => {
-                                        this.dataService.perisistPathwayDiagram(pathwayDiagramObjects as PathwayDiagramObject[], user).subscribe({
-                      next: () => {
-                        console.debug('pathway diagram objects have been persisted at the server.');
-                        clearLocalStateForLogout();
-                        done();
-                      },
-                      error: () => done()
-                    });
+                                        // this.dataService.perisistPathwayDiagram(pathwayDiagramObjects as PathwayDiagramObject[], user).subscribe({
+                      // next: () => {
+                      //   console.debug('pathway diagram objects have been persisted at the server.');
+                      //   clearLocalStateForLogout();
+                      //   done();
+                      // },
+                      // error: () => done()
+                    // });
                 };
                 if (instances.length == 0) {
                     this.dataService.deletePersistedInstances(user).subscribe({
@@ -303,21 +303,21 @@ export class UserInstancesService {
         if (!user)
             return;
 
-        this.store.select(pathwayDiagramObjects()).pipe(take(1)).subscribe((objects: PathwayDiagramObject[] | undefined) => {
-            const diagramObjects = objects || [];
-            if (diagramObjects.length === 0)
-                return;
+        // this.store.select(pathwayDiagramObjects()).pipe(take(1)).subscribe((objects: PathwayDiagramObject[] | undefined) => {
+        //     const diagramObjects = objects || [];
+        //     if (diagramObjects.length === 0)
+        //         return;
 
-            this.isPersistingPathwayDiagrams = true;
-            this.dataService.perisistPathwayDiagram(diagramObjects, user).subscribe({
-                next: () => {
-                    this.isPersistingPathwayDiagrams = false;
-                },
-                error: () => {
-                    this.isPersistingPathwayDiagrams = false;
-                }
-            });
-        });
+        //     this.isPersistingPathwayDiagrams = true;
+        //     this.dataService.perisistPathwayDiagram(diagramObjects, user).subscribe({
+        //         next: () => {
+        //             this.isPersistingPathwayDiagrams = false;
+        //         },
+        //         error: () => {
+        //             this.isPersistingPathwayDiagrams = false;
+        //         }
+        //     });
+        // });
     }
 
     private captureLocalStorageValues(keys: string[]): Map<string, string> {
