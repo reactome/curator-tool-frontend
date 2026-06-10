@@ -1,7 +1,7 @@
 import { Component, EventEmitter, HostListener, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { NavigationEnd, Router } from "@angular/router";
 import { Store } from '@ngrx/store';
-import { Instance, MAX_STAGED_INSTANCES } from 'src/app/core/models/reactome-instance.model';
+import { DiagramLock, Instance, MAX_STAGED_INSTANCES } from 'src/app/core/models/reactome-instance.model';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { bookmarkedInstances } from "../schema-view/instance-bookmark/state/bookmark.selectors";
 import { MatSnackBar } from "@angular/material/snack-bar";
@@ -10,7 +10,15 @@ import { ListInstancesDialogService } from "../schema-view/list-instances/compon
 import { DefaultPersonActions } from "../instance/state/instance.actions";
 import { DataService } from "../core/services/data.service";
 import { AuthenticateService } from '../core/services/authenticate.service';
-import { Subscription, combineLatest, debounceTime, skip } from "rxjs";
+import { Subscription, combineLatest, debounceTime, forkJoin, of, skip, take } from "rxjs";
+import { catchError, map } from 'rxjs/operators';
+
+interface DiagramLockViewModel {
+  diagramDbId: number;
+  lockId: string;
+  lockedAt: string;
+  displayName: string;
+}
 
 @Component({
   selector: 'app-status',
@@ -24,7 +32,10 @@ export class StatusComponent implements OnInit, OnDestroy {
   newInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
   bookmarkedInstances: Instance[] = [];
-  pathwayDiagramCount: number = 0;
+  // pathwayDiagramCount: number = 0;
+  showPathwayDiagramLocksPanel: boolean = false;
+  pathwayDiagramLocksLoading: boolean = false;
+  pathwayDiagramLocks: DiagramLockViewModel[] = [];
   defaultPerson: Instance | undefined = undefined;
   saveChangesInProgress: boolean = false;
   currentUrl: string = '';
@@ -51,12 +62,12 @@ export class StatusComponent implements OnInit, OnDestroy {
     let sub = this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         this.currentUrl = event.urlAfterRedirects;
-        this.refreshPathwayDiagramCount();
+        this.loadPathwayDiagramLocks(); // Refresh locks when navigating to make sure the count is up to date
       }
     });
     this.subscriptions.add(sub);
 
-    this.refreshPathwayDiagramCount();
+    this.loadPathwayDiagramLocks(); // Refresh locks when navigating to make sure the count is up to date
 
     sub = this.store.select(updatedInstances()).subscribe((instances) => {
       instances ? this.updatedInstances = instances : this.updatedInstances = [];
@@ -82,8 +93,7 @@ export class StatusComponent implements OnInit, OnDestroy {
     ]).subscribe(([deleted, created, updated]) => {
       const stagedCount = (deleted?.length || 0)
         + (created?.length || 0)
-        + (updated?.length || 0)
-        + this.pathwayDiagramCount;
+        + (updated?.length || 0);
       this.saveChangesInProgress = stagedCount > MAX_STAGED_INSTANCES;
     })
     this.subscriptions.add(sub);
@@ -135,26 +145,26 @@ export class StatusComponent implements OnInit, OnDestroy {
     this.subscriptions.add(sub);
   }
 
-  private refreshPathwayDiagramCount(): void {
-    const user = this.authService.getUser();
-    if (!user) {
-      this.pathwayDiagramCount = 0;
-      return;
-    }
-    this.dataService.getUserLocks(user).subscribe({
-      next: (locks) => {
-        this.pathwayDiagramCount = (locks || []).length;
-        const stagedCount = (this.deletedInstances?.length || 0)
-          + (this.newInstances?.length || 0)
-          + (this.updatedInstances?.length || 0)
-          + this.pathwayDiagramCount;
-        this.saveChangesInProgress = stagedCount > MAX_STAGED_INSTANCES;
-      },
-      error: () => {
-        this.pathwayDiagramCount = 0;
-      }
-    });
-  }
+  // private refreshPathwayDiagramCount(): void {
+  //   const user = this.authService.getUser();
+  //   if (!user) {
+  //     this.pathwayDiagramCount = 0;
+  //     return;
+  //   }
+  //   this.dataService.getDiagramLocks().subscribe({
+  //     next: (locks) => {
+  //       this.pathwayDiagramCount = (locks || []).length;
+  //       const stagedCount = (this.deletedInstances?.length || 0)
+  //         + (this.newInstances?.length || 0)
+  //         + (this.updatedInstances?.length || 0)
+  //         + this.pathwayDiagramCount;
+  //       this.saveChangesInProgress = stagedCount > MAX_STAGED_INSTANCES;
+  //     },
+  //     error: () => {
+  //       this.pathwayDiagramCount = 0;
+  //     }
+  //   });
+  // }
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
@@ -168,6 +178,70 @@ export class StatusComponent implements OnInit, OnDestroy {
 
   showUpdated(): void {
     this.showUpdatedEvent.emit(true);
+  }
+
+  togglePathwayDiagramLocksPanel(): void {
+    this.showPathwayDiagramLocksPanel = !this.showPathwayDiagramLocksPanel;
+    if (this.showPathwayDiagramLocksPanel)
+      this.loadPathwayDiagramLocks();
+  }
+
+  private loadPathwayDiagramLocks(): void {
+    const user = this.authService.getUser();
+    if (!user) {
+      this.pathwayDiagramLocks = [];
+      this.pathwayDiagramLocksLoading = false;
+      return;
+    }
+
+    this.pathwayDiagramLocksLoading = true;
+    this.dataService.getDiagramLocks().pipe(take(1)).subscribe({
+      next: (locks: DiagramLock[]) => {
+        const validLocks = (locks || []).filter((lock: DiagramLock) => Number(lock?.diagramDbId) > 0);
+        if (validLocks.length === 0) {
+          this.pathwayDiagramLocks = [];
+          this.pathwayDiagramLocksLoading = false;
+          return;
+        }
+
+        const requests = validLocks.map((lock: DiagramLock) =>
+          this.dataService.fetchInstance(Number(lock.diagramDbId)).pipe(
+            take(1),
+            map((diagramInst: Instance) => ({
+              diagramDbId: Number(lock.diagramDbId),
+              lockId: lock.lockId,
+              lockedAt: lock.lockedAt,
+              displayName: diagramInst?.displayName || `PathwayDiagram ${lock.diagramDbId}`
+            }) as DiagramLockViewModel),
+            catchError(() => of({
+              diagramDbId: Number(lock.diagramDbId),
+              lockId: lock.lockId,
+              lockedAt: lock.lockedAt,
+              displayName: `PathwayDiagram ${lock.diagramDbId}`
+            } as DiagramLockViewModel))
+          )
+        );
+
+        forkJoin(requests).subscribe({
+          next: (items: DiagramLockViewModel[]) => {
+            this.pathwayDiagramLocks = (items || []).sort((a, b) => {
+              const aTime = new Date(a.lockedAt || '').getTime();
+              const bTime = new Date(b.lockedAt || '').getTime();
+              return bTime - aTime;
+            });
+            this.pathwayDiagramLocksLoading = false;
+          },
+          error: () => {
+            this.pathwayDiagramLocks = [];
+            this.pathwayDiagramLocksLoading = false;
+          }
+        });
+      },
+      error: () => {
+        this.pathwayDiagramLocks = [];
+        this.pathwayDiagramLocksLoading = false;
+      }
+    });
   }
 
   setDefaultPerson(): void {
@@ -195,6 +269,12 @@ export class StatusComponent implements OnInit, OnDestroy {
 
   navigateToEventView() {
     this.router.navigate(["/event_view"]);
+  }
+
+  openPathwayDiagram(diagramDbId: number) {
+    if (!Number.isFinite(Number(diagramDbId))) return;
+    // Navigate to the event view and load the instance for the diagram
+    this.router.navigate(["/event_view", "instance", Number(diagramDbId)]);
   }
 
   showSchemaViewButton(): boolean {

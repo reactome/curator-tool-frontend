@@ -18,10 +18,41 @@
                         </button>
                 </span>
 
-                <span>Edited Pathway diagrams:
-                        <button mat-button style="border: 0px;" (click)="showUpdated()"
-                                        [disabled]="pathwayDiagramCount === 0">{{pathwayDiagramCount}}
+                <span class="diagram-locks-wrapper">Edited Pathway diagrams:
+                        <button mat-button style="border: 0px;" (click)="togglePathwayDiagramLocksPanel()">
+                                        {{pathwayDiagramLocks.length}}
                         </button>
+
+                        <section class="diagram-locks-panel" [class.open]="showPathwayDiagramLocksPanel"
+                                *ngIf="showPathwayDiagramLocksPanel">
+                                <div class="panel-title">
+                                        <span>Current Diagram Locks</span>
+                                        <button mat-icon-button class="panel-close-button"
+                                                (click)="togglePathwayDiagramLocksPanel()"
+                                                aria-label="Close locks panel" matTooltip="Close" matTooltipPosition="left">
+                                                <mat-icon>close</mat-icon>
+                                        </button>
+                                </div>
+
+                                <div class="panel-loading" *ngIf="pathwayDiagramLocksLoading">
+                                        Loading locks...
+                                </div>
+
+                                <div class="panel-empty" *ngIf="!pathwayDiagramLocksLoading && pathwayDiagramLocks.length === 0">
+                                        No current locks for this user.
+                                </div>
+
+                                <ul class="panel-list" *ngIf="!pathwayDiagramLocksLoading && pathwayDiagramLocks.length > 0">
+                                        <li class="panel-item" *ngFor="let lock of pathwayDiagramLocks">
+                                                <span class="diagram-name">{{lock.displayName}}</span>
+                                                <span class="diagram-meta">[{{lock.diagramDbId}}]</span>
+                                                <button mat-icon-button class="panel-open-button" (click)="openPathwayDiagram(lock.diagramDbId)"
+                                                        matTooltip="Open diagram" matTooltipPosition="left">
+                                                        <mat-icon>open_in_new</mat-icon>
+                                                </button>
+                                        </li>
+                                </ul>
+                        </section>
                 </span>
 
                 <span>Default person:
@@ -77,5 +108,7 @@
                         <mat-icon color="primary">logout</mat-icon>
                 </button>
         </div>
+
+        
 
 </mat-toolbar>

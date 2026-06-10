@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { Store } from "@ngrx/store";
 import { combineLatest, defaultIfEmpty, finalize, forkJoin, of, take } from "rxjs";
 import { catchError } from "rxjs/operators";
-import { Instance, UserInstances } from "src/app/core/models/reactome-instance.model";
+import { DiagramLock, Instance, UserInstances } from "src/app/core/models/reactome-instance.model";
 import { AuthenticateService } from "src/app/core/services/authenticate.service";
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
@@ -43,6 +43,7 @@ export class UserInstancesService {
             console.debug('Cannot find a user to loadUserInstances');
             return;
         }
+        // this.cacheUserDiagramLocks(user);
         this.startPathwayDiagramAutoPersist();
         // TODO: Make sure this is updated during deployment
         this.dataService.startLoadInstances();
@@ -252,14 +253,9 @@ export class UserInstancesService {
                 if (defaultPerson.length > 0)
                     userInstances.defaultPerson = defaultPerson[0];
                 const completePersist = () => {
-                                        // this.dataService.perisistPathwayDiagram(pathwayDiagramObjects as PathwayDiagramObject[], user).subscribe({
-                      // next: () => {
-                      //   console.debug('pathway diagram objects have been persisted at the server.');
-                      //   clearLocalStateForLogout();
-                      //   done();
-                      // },
-                      // error: () => done()
-                    // });
+                    // Clear local state and invoke completion callback after successful persist
+                    clearLocalStateForLogout();
+                    done();
                 };
                 if (instances.length == 0) {
                     this.dataService.deletePersistedInstances(user).subscribe({

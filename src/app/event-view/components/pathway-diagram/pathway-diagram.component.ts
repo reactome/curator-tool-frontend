@@ -11,7 +11,7 @@ import { EditorActionsComponent, ElementType } from './editor-actions/editor-act
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
-import { EDGE_POINT_CLASS, LABEL_CLASS, Instance, DiagramLock, Referrer } from 'src/app/core/models/reactome-instance.model';
+import { EDGE_POINT_CLASS, LABEL_CLASS, Instance, DiagramLock } from 'src/app/core/models/reactome-instance.model';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
@@ -20,29 +20,7 @@ import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait
 import { AuthenticateService } from 'src/app/core/services/authenticate.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Store } from '@ngrx/store';
-import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
-
-interface PendingDiagramDraft {
-  pathwayId: string;
-  diagramLock: DiagramLock;
-  network: any;
-  username: string;
-  savedAt: string;
-}
-
-interface StoredPathwayDiagramLockRef {
-  diagramDbId: number;
-  lockId?: string;
-  updatedAt: string;
-}
-
-interface StoredExactSavedDiagramNetwork {
-  diagramDbId: number;
-  pathwayDbId: number;
-  network: any;
-  savedAt: string;
-}
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -55,8 +33,7 @@ interface StoredExactSavedDiagramNetwork {
 export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy {
   private readonly pendingDiagramDraftSessionKey = 'pendingPathwayDiagramDraft';
   private readonly pathwayDiagramLockRefsStorageKey = 'pathwayDiagramLockRefs';
-  private readonly exactSavedDiagramNetworksStorageKey = 'exactSavedDiagramNetworks';
-  private readonly diagramReloadDebugStorageKey = 'diagramReloadDebug';
+  private readonly backupIntervalMs = 60 * 1000;
   // Special case to navigate away from the current event
   @Output() goToPathwayEvent = new EventEmitter<number>();
   @Output() openPathwayDiagramEvent = new EventEmitter<any>();
@@ -72,7 +49,6 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   // PathwayDiagram id for editing
   pathwayDiagramId: string = "";
   private requestedLockDiagramId: string = "";
-  private currentStagedDiagramDbId: string = '';
 
   @ViewChild('diagramComponent')
   diagram!: DiagramComponent;
@@ -109,20 +85,22 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   readonly dialog = inject(MatDialog);
   private commitWaitDialogRef?: MatDialogRef<CommitWaitDialogComponent>;
   private isUploadInProgress: boolean = false;
+  private isBackgroundBackupInProgress: boolean = false;
+  private backupIntervalHandle: ReturnType<typeof setInterval> | undefined;
+  private lastBackupAtMs: number = 0;
   private diagramLockInfo: DiagramLock | null = null;
   // To show the label for the diagram displayed
   diagramLabel: string = 'Pathway Diagram';
   lockStatus: 'idle' | 'acquiring' | 'acquired' | 'blocked' | 'error' = 'idle';
   lockStatusMessage: string = 'Lock not requested.';
   private isUnlockingDiagram: boolean = false;
-  private diagramLoadRequestId: number = 0;
 
   get isDiagramLocked(): boolean {
     return this.lockStatus === 'acquired' || this.lockStatus === 'blocked';
   }
 
   get isLockOwnedByMe(): boolean {
-    return !!this.diagramLockInfo && this.isLockOwnedByCurrentUser(this.diagramLockInfo);
+    return this.lockStatus === 'acquired';
   }
 
   get lockIndicatorTooltip(): string {
@@ -160,24 +138,16 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       // Do nothing if nothing is loaded
       if (!id || id === '0') return;
       const loadNewDiagram = () => {
-        this.releaseOwnedDiagramLock();
+        this.backupEditedDiagram('navigate to another diagram');
         this.pathwayId = id;
-        const stagedDiagramDbId = Number(queryParams['stagedDiagramDbId']);
-        this.currentStagedDiagramDbId = Number.isFinite(stagedDiagramDbId) && stagedDiagramDbId > 0
-          ? stagedDiagramDbId.toString()
-          : '';
-        this.diagram.diagramId = this.currentStagedDiagramDbId.length > 0
-          ? this.currentStagedDiagramDbId
-          : this.pathwayId;
+        this.diagram.diagramId = this.pathwayId;
         this.select = queryParams['select'] ?? '';
         // Always not in the editing mode when loading via URL
         this.isEditing = false;
         this.isEdited = false;
-        this.pathwayDiagramId = ''; // Reset before load so referrer-based staged lookup can run.
-        // Restore lock state if the user already owns a lock for this pathway (e.g. returning to a staged diagram).
-        this.tryRestoreLockStateFromStoredRef();
-        const loadRequestId = this.loadPathwayDiagram();
-        this.restorePendingDiagramDraft(this.pathwayId, loadRequestId);
+        this.loadPathwayDiagram();
+        this.pathwayDiagramId = ''; // reset any previous PathwayDiagram id
+        // this.restorePendingDiagramDraft();
       };
       const isSwitchingDiagram = this.pathwayId.length > 0 && this.pathwayId !== id;
       if (isSwitchingDiagram) {
@@ -201,41 +171,33 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     // Handle the selection when in the same diagram.
     // Ideally this should be handled inside the diagram widget.
     // Turn both on and pay attention to any side effects
-    this.route.queryParams.subscribe((queryParams) => {
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      // Handle query params change here
+      const queryParams = this.route.snapshot.queryParams;
       const params = this.route.snapshot.params;
       if (this.pathwayId !== params['id'])
         return;
-
-      const stagedDiagramDbId = Number(queryParams['stagedDiagramDbId']);
-      const requestedStagedDiagramId = Number.isFinite(stagedDiagramDbId) && stagedDiagramDbId > 0
-        ? stagedDiagramDbId.toString()
-        : '';
-
-      if (!this.isEditing && requestedStagedDiagramId.length > 0) {
-        const shouldReloadStagedDiagram =
-          this.diagram?.diagramId !== requestedStagedDiagramId ||
-          this.currentStagedDiagramDbId !== requestedStagedDiagramId;
-        if (shouldReloadStagedDiagram) {
-          this.currentStagedDiagramDbId = requestedStagedDiagramId;
-          this.diagram.diagramId = requestedStagedDiagramId;
-          this.pathwayDiagramId = '';
-          this.isEdited = false;
-          this.loadPathwayDiagram();
-          return;
-        }
-      }
-      else {
-        this.currentStagedDiagramDbId = '';
-      }
-
       const currentSelected = queryParams['select'];
       this.select = currentSelected;
       this.selectObjectsInDiagram(currentSelected);
     });
+
+    if (!this.backupIntervalHandle) {
+      this.backupIntervalHandle = setInterval(() => {
+        this.backupEditedDiagram('periodic autosave');
+      }, this.backupIntervalMs);
+    }
   }
 
   ngOnDestroy(): void {
-    this.releaseOwnedDiagramLock();
+    this.backupEditedDiagram('component destroy/logout');
+    if (this.backupIntervalHandle) {
+      clearInterval(this.backupIntervalHandle);
+      this.backupIntervalHandle = undefined;
+    }
+    // Keep lock until the user explicitly unlocks from the UI.
   }
 
   @HostListener('window:beforeunload', ['$event'])
@@ -248,36 +210,40 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
 
   @HostListener('document:visibilitychange')
   handleVisibilityChange() {
-    if (!document.hidden)
-      return;
-    this.releaseOwnedDiagramLock();
+    // Keep lock when tab visibility changes; unlock is manual only.
   }
 
-  private resetDiagramLockState() {
-    this.diagramLockInfo = null;
-    this.pathwayDiagramId = '';
-    this.requestedLockDiagramId = '';
-    this.lockStatus = 'idle';
-    this.lockStatusMessage = 'Lock not requested.';
-    this.isEditing = false;
-    if (this.diagram)
-      this.diagramUtils.disableEditing(this.diagram);
-  }
 
-  private releaseOwnedDiagramLock() {
-    if (!this.diagramLockInfo || !this.isLockOwnedByCurrentUser(this.diagramLockInfo) || this.isUnlockingDiagram)
+  private backupEditedDiagram(reason: string): void {
+    if (this.isBackgroundBackupInProgress)
       return;
-    if (this.isEdited)
-      this.persistDiagramDraftToSessionStorage(this.diagramLockInfo);
-    this.isUnlockingDiagram = true;
-    const lockToRelease = this.diagramLockInfo;
-    this.resetDiagramLockState();
-    this.diagramUtils.getDataService().unlockDiagram(lockToRelease).pipe(take(1)).subscribe({
+    if (!this.isEdited)
+      return;
+    if (!this.diagramLockInfo || !this.isLockOwnedByCurrentUser(this.diagramLockInfo))
+      return;
+
+    const diagramDbId = Number(this.diagramLockInfo.diagramDbId ?? this.pathwayDiagramId ?? this.diagram?.diagramId);
+    if (!Number.isFinite(diagramDbId) || diagramDbId <= 0)
+      return;
+    if (!this.diagram?.cy)
+      return;
+
+    // Periodic backups should happen only if 1 minute has elapsed since the previous backup.
+    if (reason === 'periodic autosave' && this.lastBackupAtMs > 0) {
+      const elapsedMs = Date.now() - this.lastBackupAtMs;
+      if (elapsedMs < this.backupIntervalMs)
+        return;
+    }
+
+    const networkJson = this.generateNetworkJson();
+    this.isBackgroundBackupInProgress = true;
+    this.diagramUtils.getDataService().backupCyNetwork(diagramDbId, networkJson).pipe(take(1)).subscribe({
       next: () => {
-        this.isUnlockingDiagram = false;
+        this.lastBackupAtMs = Date.now();
+        this.isBackgroundBackupInProgress = false;
       },
       error: () => {
-        this.isUnlockingDiagram = false;
+        this.isBackgroundBackupInProgress = false;
       }
     });
   }
@@ -287,20 +253,19 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       proceed();
       return;
     }
-    this.stagePathwayDiagramObject(this.diagramLockInfo as DiagramLock);
-    // const dialogRef = this.dialog.open(UnsavedUploadDialogComponent, {
-    //   data: {
-    //     title: 'Unsaved Changes',
-    //     message: `This diagram has unsaved changes. Upload before ${action}?`
-    //   },
-    //   disableClose: true
-    // });
-    // dialogRef.afterClosed().pipe(take(1)).subscribe((shouldUpload: boolean | null) => {
-    //   if (shouldUpload === true)
-    //     this.uploadDiagram(false, proceed);
-    //   else if (shouldUpload === false)
-    //     proceed();
-    // });
+    const dialogRef = this.dialog.open(UnsavedUploadDialogComponent, {
+      data: {
+        title: 'Unsaved Changes',
+        message: `This diagram has unsaved changes. Upload before ${action}?`
+      },
+      disableClose: true
+    });
+    dialogRef.afterClosed().pipe(take(1)).subscribe((shouldUpload: boolean | null) => {
+      if (shouldUpload === true)
+        this.uploadDiagram(false, proceed);
+      else if (shouldUpload === false)
+        proceed();
+    });
   }
 
   private storeViewport() {
@@ -313,542 +278,124 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     }
   }
 
-  private loadPathwayDiagram(): number {
-    const loadRequestId = this.beginDiagramLoadRequest();
+  private loadPathwayDiagram() {
     this.storeViewport();
-    // this.tryLoadStagedNetwork(() => this.loadPathwayDiagramFromBackend(loadRequestId), loadRequestId);
-    return loadRequestId;
-  }
+    const requestedDiagramDbId = Number(this.diagram.diagramId);
+    const lockAssociatedDiagramDbId = this.getLockAssociatedDiagramDbId(requestedDiagramDbId);
+    const networkDiagramDbId = Number.isFinite(lockAssociatedDiagramDbId as number) && Number(lockAssociatedDiagramDbId) > 0
+      ? Number(lockAssociatedDiagramDbId)
+      : requestedDiagramDbId;
 
-  private beginDiagramLoadRequest(): number {
-    this.diagramLoadRequestId += 1;
-    return this.diagramLoadRequestId;
-  }
-
-  private isDiagramLoadRequestActive(loadRequestId: number): boolean {
-    return loadRequestId === this.diagramLoadRequestId;
-  }
-
-  // private tryLoadStagedNetwork(onMiss: () => void, loadRequestId: number) {
-  //   this.store.select(pathwayDiagramObjects()).pipe(take(1)).subscribe((objects: PathwayDiagramObject[]) => {
-  //     if (!this.isDiagramLoadRequestActive(loadRequestId))
-  //       return;
-  //     this.tryLoadStagedNetworkWithObjects(objects ?? [], onMiss, true, loadRequestId);
-  //   });
-  // }
-
-  // private tryLoadStagedNetworkWithObjects(objects: PathwayDiagramObject[], onMiss: () => void, allowBackendLookup: boolean = false, loadRequestId: number) {
-  //   if (!this.isDiagramLoadRequestActive(loadRequestId))
-  //     return;
-
-  //   const currentDiagramId = parseInt(this.diagram.diagramId || '');
-  //   this.debugDiagramReload(`Start staged reload resolution for diagramId=${this.diagram.diagramId}, parsed=${currentDiagramId}, objects=${objects.length}, allowBackendLookup=${allowBackendLookup}.`);
-
-  //   // Merge any persisted staged objects from localStorage (effects persist snapshots there).
-  //   if (typeof localStorage !== 'undefined') {
-  //     try {
-  //       const raw = localStorage.getItem(PathwayDiagramObjectActions.get_pathway_diagram_objects.type);
-  //       if (raw) {
-  //         const parsed = JSON.parse(JSON.parse(raw).object || '[]') as PathwayDiagramObject[];
-  //         if (parsed && parsed.length > 0) {
-  //           // Convert to map keyed by pathwayDiagramDbId so persisted staged entries can override in-memory ones.
-  //           const mergedMap = new Map<number, PathwayDiagramObject>();
-  //           (objects || []).forEach(o => {
-  //             const id = Number(o?.pathwayDiagramDbId ?? o?.diagramLock?.diagramDbId);
-  //             if (Number.isFinite(id)) mergedMap.set(id, o);
-  //           });
-  //           parsed.forEach(o => {
-  //             const id = Number(o?.pathwayDiagramDbId ?? o?.diagramLock?.diagramDbId);
-  //             if (Number.isFinite(id)) mergedMap.set(id, o);
-  //           });
-  //           objects = Array.from(mergedMap.values());
-  //           this.debugDiagramReload(`Merged ${parsed.length} staged objects from localStorage; total objects=${objects.length}.`);
-  //         }
-  //       }
-  //     }
-  //     catch (e) {
-  //       // ignore parse errors and continue
-  //     }
-  //   }
-
-  //   // Hard fallback: use same-pathway pending draft directly from session storage.
-  //   // This bypasses referrer/backend timing issues during rapid route navigation.
-  //   if (!this.isEditing && !this.pathwayDiagramId && !Number.isNaN(currentDiagramId) && currentDiagramId > 0) {
-  //     const exactSavedByPathway = this.getExactSavedNetwork(undefined, currentDiagramId);
-  //     if (exactSavedByPathway) {
-  //       this.debugDiagramReload(`Found exact-saved network for pathwayDbId=${currentDiagramId}.`);
-  //       if (this.tryDisplayStagedNetwork(exactSavedByPathway, loadRequestId))
-  //         return;
-  //     }
-
-  //     const pendingDraftNetwork = this.getPendingDraftNetworkForPathway(currentDiagramId);
-  //     if (pendingDraftNetwork) {
-  //       this.debugDiagramReload(`Found pending draft for pathwayDbId=${currentDiagramId}.`);
-  //       if (this.tryDisplayStagedNetwork(pendingDraftNetwork, loadRequestId))
-  //         return;
-  //     }
-  //   }
-
-  //   const onStagedMiss = () => {
-  //     if (!this.isDiagramLoadRequestActive(loadRequestId))
-  //       return;
-  //     if (allowBackendLookup)
-  //       this.tryLoadStagedNetworkFromBackend(objects, onMiss, loadRequestId);
-  //     else
-  //       onMiss();
-  //   };
-
-  //   if (!Number.isNaN(currentDiagramId)) {
-  //     if (!this.isEditing && !this.pathwayDiagramId) {
-  //       const savedLockDiagramDbId = this.getSavedDiagramDbIdForPathway(currentDiagramId);
-  //       if (savedLockDiagramDbId) {
-  //         this.debugDiagramReload(`Using saved lock mapping pathwayDbId=${currentDiagramId} -> diagramDbId=${savedLockDiagramDbId}.`);
-  //         const exactSavedByLock = this.getExactSavedNetwork(savedLockDiagramDbId, currentDiagramId);
-  //         if (exactSavedByLock && this.tryDisplayStagedNetwork(exactSavedByLock, loadRequestId)) {
-  //           return;
-  //         }
-  //         const stagedBySavedLock = this.findStagedPathwayDiagramObject(objects, savedLockDiagramDbId);
-  //         const stagedBySavedLockNetwork = this.extractNetworkFromStagedObject(stagedBySavedLock);
-  //         if (stagedBySavedLockNetwork && this.tryDisplayStagedObject(stagedBySavedLock, stagedBySavedLockNetwork, loadRequestId)) {
-  //           return;
-  //         }
-  //         this.debugDiagramReload(`Saved lock mapping diagramDbId=${savedLockDiagramDbId} did not yield a displayable staged network.`);
-  //       }
-  //       else {
-  //         this.debugDiagramReload(`No saved lock mapping for pathwayDbId=${currentDiagramId}.`);
-  //       }
-  //     }
-
-  //     // Non-edit mode diagramId is pathway dbId. Prefer direct pathway-keyed staged drafts first.
-  //     if (!this.isEditing && !this.pathwayDiagramId) {
-  //       const stagedByPathway = this.findStagedPathwayDiagramObjectByPathwayId(objects, currentDiagramId);
-  //       const stagedPathwayNetwork = this.extractNetworkFromStagedObject(stagedByPathway);
-  //       if (stagedPathwayNetwork && this.tryDisplayStagedObject(stagedByPathway, stagedPathwayNetwork, loadRequestId)) {
-  //         return;
-  //       }
-  //       this.debugDiagramReload(`No displayable staged network found by pathwayDbId=${currentDiagramId}.`);
-  //     }
-
-  //     const staged = this.findStagedPathwayDiagramObject(objects, currentDiagramId);
-  //     const stagedNetwork = this.extractNetworkFromStagedObject(staged);
-  //     if (stagedNetwork && this.tryDisplayStagedObject(staged, stagedNetwork, loadRequestId)) {
-  //       return;
-  //     }
-  //     this.debugDiagramReload(`No displayable staged network found by diagramDbId=${currentDiagramId}.`);
-  //   }
-
-  //   // In normal mode, diagramId is pathway/instance dbId. Resolve PathwayDiagram via referrers first.
-  //   if (!this.isEditing && !this.pathwayDiagramId && !Number.isNaN(currentDiagramId) && currentDiagramId > 0) {
-  //     this.debugDiagramReload(`Trying referrer-based staged resolution for pathwayDbId=${currentDiagramId}.`);
-  //     this.tryLoadStagedNetworkViaReferrers(objects, currentDiagramId, onStagedMiss, loadRequestId);
-  //     return;
-  //   }
-
-  //   this.debugDiagramReload('No staged match found. Proceeding to fallback handler.');
-  //   onStagedMiss();
-  // }
-
-  // private tryLoadStagedNetworkFromBackend(existingObjects: PathwayDiagramObject[], onMiss: () => void, loadRequestId: number) {
-  //   if (!this.isDiagramLoadRequestActive(loadRequestId))
-  //     return;
-
-  //   const userName = this.authService.getUser();
-  //   if (!userName) {
-  //     onMiss();
-  //     return;
-  //   }
-  //   this.diagramUtils.getDataService().getPathwayDiagrams(userName).pipe(take(1)).subscribe({
-  //     next: (backendObjects: PathwayDiagramObject[]) => {
-  //       if (!this.isDiagramLoadRequestActive(loadRequestId))
-  //         return;
-  //       if (!backendObjects || backendObjects.length === 0) {
-  //         this.debugDiagramReload('Backend staged diagram fetch returned no objects.');
-  //         onMiss();
-  //         return;
-  //       }
-  //       this.debugDiagramReload(`Backend staged diagram fetch returned ${backendObjects.length} objects.`);
-  //       const mergedObjects = this.mergePathwayDiagramObjects(existingObjects, backendObjects);
-  //       this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: mergedObjects }));
-  //       this.tryLoadStagedNetworkWithObjects(mergedObjects, onMiss, false, loadRequestId);
-  //     },
-  //     error: () => {
-  //       if (!this.isDiagramLoadRequestActive(loadRequestId))
-  //         return;
-  //       this.debugDiagramReload('Backend staged diagram fetch failed. Falling back to backend diagram/cy load.');
-  //       onMiss();
-  //     }
-  //   });
-  // }
-
-  // private mergePathwayDiagramObjects(existingObjects: PathwayDiagramObject[], backendObjects: PathwayDiagramObject[]): PathwayDiagramObject[] {
-  //   const mergedByDbId = new Map<number, PathwayDiagramObject>();
-  //   const getDiagramDbId = (item: PathwayDiagramObject): number | undefined => {
-  //     const normalizedDbId = Number(item?.pathwayDiagramDbId ?? item?.pathwayDiagramDbId ?? item?.diagramLock?.diagramDbId);
-  //     return Number.isFinite(normalizedDbId) ? normalizedDbId : undefined;
-  //   };
-
-  //   backendObjects.forEach((item: PathwayDiagramObject) => {
-  //     if (!item)
-  //       return;
-  //     const diagramDbId = getDiagramDbId(item);
-  //     if (!diagramDbId)
-  //       return;
-  //     mergedByDbId.set(diagramDbId, item);
-  //   });
-
-  //   // Keep existing in-memory edits over backend snapshots for the same diagram.
-  //   existingObjects.forEach((item: PathwayDiagramObject) => {
-  //     if (!item)
-  //       return;
-  //     const diagramDbId = getDiagramDbId(item);
-  //     if (!diagramDbId)
-  //       return;
-  //     mergedByDbId.set(diagramDbId, item);
-  //   });
-
-  //   return Array.from(mergedByDbId.values());
-  // }
-
-  // private tryLoadStagedNetworkViaReferrers(objects: PathwayDiagramObject[], pathwayDbId: number, onMiss: () => void, loadRequestId: number) {
-  //   this.diagramUtils.getDataService().getReferrers(pathwayDbId).pipe(take(1)).subscribe({
-  //     next: (referrers: Referrer[]) => {
-  //       if (!this.isDiagramLoadRequestActive(loadRequestId))
-  //         return;
-
-  //       const diagramDbIds = new Set<number>();
-  //       referrers?.forEach((referrer: Referrer) => {
-  //         referrer.referrers?.forEach((inst: Instance) => {
-  //           if (inst?.schemaClassName === 'PathwayDiagram' && inst.dbId)
-  //             diagramDbIds.add(inst.dbId);
-  //         });
-  //       });
-
-  //       for (const diagramDbId of diagramDbIds) {
-  //         const staged = this.findStagedPathwayDiagramObject(objects, diagramDbId);
-  //         const stagedNetwork = this.extractNetworkFromStagedObject(staged);
-  //         if (stagedNetwork && this.tryDisplayStagedObject(staged, stagedNetwork, loadRequestId)) {
-  //           return;
-  //         }
-  //       }
-
-  //       this.debugDiagramReload(`Referrer lookup for pathwayDbId=${pathwayDbId} yielded diagramDbIds=[${Array.from(diagramDbIds).join(', ')}], none displayable.`);
-  //       this.tryLoadBackendNetworkForDiagramDbIds(Array.from(diagramDbIds), onMiss, loadRequestId);
-  //       return;
-
-  //       // Fallback for cases where referrers are incomplete/unavailable.
-  //       this.diagramUtils.getDataService().fetchPathwayDiagram(pathwayDbId).pipe(take(1)).subscribe({
-  //         next: (pathwayDiagram: Instance) => {
-  //           if (!this.isDiagramLoadRequestActive(loadRequestId))
-  //             return;
-  //           const diagramDbId = pathwayDiagram?.dbId;
-  //           const staged = diagramDbId ? this.findStagedPathwayDiagramObject(objects, diagramDbId) : undefined;
-  //           const stagedNetwork = this.extractNetworkFromStagedObject(staged);
-  //           if (stagedNetwork && this.tryDisplayStagedNetwork(stagedNetwork, loadRequestId)) {
-  //             return;
-  //           }
-  //           this.debugDiagramReload(`fetchPathwayDiagram fallback returned diagramDbId=${diagramDbId}, still no displayable staged network.`);
-  //           if (diagramDbId) {
-  //             this.tryLoadBackendNetworkForDiagramDbIds([diagramDbId], onMiss, loadRequestId);
-  //             return;
-  //           }
-  //           onMiss();
-  //         },
-  //         error: () => {
-  //           if (!this.isDiagramLoadRequestActive(loadRequestId))
-  //             return;
-  //           this.debugDiagramReload('fetchPathwayDiagram fallback failed after referrer lookup.');
-  //           onMiss();
-  //         }
-  //       });
-  //     },
-  //     error: () => {
-  //       if (!this.isDiagramLoadRequestActive(loadRequestId))
-  //         return;
-
-  //       // Fallback for cases where referrers endpoint fails.
-  //       this.diagramUtils.getDataService().fetchPathwayDiagram(pathwayDbId).pipe(take(1)).subscribe({
-  //         next: (pathwayDiagram: Instance) => {
-  //           if (!this.isDiagramLoadRequestActive(loadRequestId))
-  //             return;
-  //           const diagramDbId = pathwayDiagram?.dbId;
-  //           // const staged = diagramDbId ? this.findStagedPathwayDiagramObject(objects, diagramDbId) : undefined;
-  //           // const stagedNetwork = this.extractNetworkFromStagedObject(staged);
-  //           // if (stagedNetwork && this.tryDisplayStagedNetwork(stagedNetwork, loadRequestId)) {
-  //           //   return;
-  //           // }
-  //           this.debugDiagramReload(`Referrer API failed. fetchPathwayDiagram fallback returned diagramDbId=${diagramDbId}, no displayable staged network.`);
-  //           if (diagramDbId) {
-  //             this.tryLoadBackendNetworkForDiagramDbIds([diagramDbId], onMiss, loadRequestId);
-  //             return;
-  //           }
-  //           onMiss();
-  //         },
-  //         error: () => {
-  //           if (!this.isDiagramLoadRequestActive(loadRequestId))
-  //             return;
-  //           this.debugDiagramReload('Referrer API failed and fetchPathwayDiagram fallback failed.');
-  //           onMiss();
-  //         }
-  //       });
-  //     }
-  //   });
-  // }
-
-  private loadPathwayDiagramFromBackend(loadRequestId: number) {
-    if (!this.isDiagramLoadRequestActive(loadRequestId))
-      return;
-
-  }
-
-  private loadPathwayDiagramFromBackendInternal(loadRequestId: number) {
-    if (!this.isDiagramLoadRequestActive(loadRequestId))
-      return;
-
-    const requestedDiagramId = this.diagram.diagramId;
+    // Check server-side locks for this diagram and mark edited/lock status accordingly
+    this.diagramUtils.getDataService().getDiagramLocks().pipe(take(1)).subscribe({
+      next: (locks: DiagramLock[]) => {
+        if (!locks || locks.length === 0) {
+          this.diagramLockInfo = null;
+          this.lockStatus = 'idle';
+          this.lockStatusMessage = 'Lock not requested.';
+          return;
+        }
+        const lockForDiagram = locks.find(l => Number(l?.diagramDbId) === networkDiagramDbId);
+        if (lockForDiagram) {
+          // store lock info and update UI state
+          this.diagramLockInfo = lockForDiagram;
+          this.updateLockStatus(lockForDiagram);
+        } else {
+          this.diagramLockInfo = null;
+          this.lockStatus = 'idle';
+          this.lockStatusMessage = 'Lock not requested.';
+        }
+      },
+      error: () => {
+        // On error, clear any transient lock info so icon/state is not displayed erroneously
+        this.diagramLockInfo = null;
+        this.lockStatus = 'idle';
+        this.lockStatusMessage = 'Lock not requested.';
+      }
+    });
 
     // Check if we have cytoscape network. If yes, load it.
-    this.diagramUtils.getDataService().hasCytoscapeNetwork(requestedDiagramId).subscribe((hasCyNetwork: boolean) => {
-      if (!this.isDiagramLoadRequestActive(loadRequestId))
-        return;
+    this.diagramUtils.getDataService().hasCytoscapeNetwork(networkDiagramDbId).subscribe((hasCyNetwork: boolean) => {
+      // this.diagram.resetState(); 
       this.diagramUtils.clearSelection(this.diagram);
       if (hasCyNetwork) {
-        this.diagramUtils.getDataService().getCytoscapeNetwork(requestedDiagramId).subscribe((cytoscapeJson: any) => {
-          if (!this.isDiagramLoadRequestActive(loadRequestId))
-            return;
-          this.diagram.displayNetwork(cytoscapeJson.elements);
-          try { this.applyNetworkMetadata(cytoscapeJson); this.diagram.updateLegend?.(); this.normalizeLegendPosition(); } catch (e) { }
-          this.setDiagramLabel(loadRequestId);
-        });
-      }
-      else {
-        // When pathway-level cytoscape is absent, try its PathwayDiagram cytoscape network first.
-        this.diagramUtils.getDataService().fetchPathwayDiagram(requestedDiagramId).pipe(take(1)).subscribe({
-          next: (pathwayDiagram: Instance) => {
-            if (!this.isDiagramLoadRequestActive(loadRequestId))
-              return;
-
-            const pathwayDiagramDbId = Number(pathwayDiagram?.dbId);
-            if (Number.isFinite(pathwayDiagramDbId) && pathwayDiagramDbId > 0) {
-              this.diagramUtils.getDataService().hasCytoscapeNetwork(pathwayDiagramDbId).pipe(take(1)).subscribe({
-                next: (hasDiagramCyNetwork: boolean) => {
-                  if (!this.isDiagramLoadRequestActive(loadRequestId))
-                    return;
-                  if (hasDiagramCyNetwork) {
-                    this.diagramUtils.getDataService().getCytoscapeNetwork(pathwayDiagramDbId).pipe(take(1)).subscribe({
-                      next: (cytoscapeJson: any) => {
-                        if (!this.isDiagramLoadRequestActive(loadRequestId))
-                          return;
-                        this.diagram.displayNetwork(cytoscapeJson.elements);
-                        try { this.applyNetworkMetadata(cytoscapeJson); this.diagram.updateLegend?.(); this.normalizeLegendPosition(); } catch (e) { }
-                        this.setDiagramLabel(loadRequestId);
-                      },
-                      error: () => this.loadStaticDiagramOrEmpty(requestedDiagramId, loadRequestId)
-                    });
-                    return;
-                  }
-                  this.loadStaticDiagramOrEmpty(requestedDiagramId, loadRequestId);
-                },
-                error: () => this.loadStaticDiagramOrEmpty(requestedDiagramId, loadRequestId)
-              });
-              return;
-            }
-
-            this.loadStaticDiagramOrEmpty(requestedDiagramId, loadRequestId);
-          },
-          error: () => this.loadStaticDiagramOrEmpty(requestedDiagramId, loadRequestId)
-        });
-      }
-    });
-  }
-
-  private loadStaticDiagramOrEmpty(requestedDiagramId: string, loadRequestId: number) {
-    this.diagramUtils.getDataService().hasDiagram(requestedDiagramId).pipe(take(1)).subscribe((hasDiagramJson: boolean) => {
-      if (!this.isDiagramLoadRequestActive(loadRequestId))
-        return;
-      if (hasDiagramJson) {
-        try {
-          this.diagram.loadDiagram();
-          this.setDiagramLabel(loadRequestId);
-        } catch (error) {
-          console.error('Error loading diagram:', error);
-          this.dialog.open(InfoDialogComponent, {
-            data: {
-              title: 'Error',
-              message: 'Failed to load diagram. The diagram may not exist or is invalid.'
-            }
-          });
-        }
-      }
-      else {
-        this.createEmptyDiagram(parseInt(requestedDiagramId));
-        this.setDiagramLabel(loadRequestId);
-      }
-    });
-  }
-
-  // private findStagedPathwayDiagramObject(objects: PathwayDiagramObject[], diagramDbId: number): PathwayDiagramObject | undefined {
-  //   const requestedDiagramDbId = Number(diagramDbId);
-  //   return objects.find(item =>
-  //     Number(item.pathwayDiagramDbId ?? item.pathwayDiagramDbId ?? item.diagramLock?.diagramDbId) === requestedDiagramDbId
-  //   );
-  // }
-
-  // private findStagedPathwayDiagramObjectByPathwayId(objects: PathwayDiagramObject[], pathwayDbId: number): PathwayDiagramObject | undefined {
-  //   const requestedPathwayDbId = Number(pathwayDbId);
-  //   return objects.find(item => Number(item.pathwayDbId) === requestedPathwayDbId);
-  // }
-
-  // private extractNetworkFromStagedObject(staged?: PathwayDiagramObject): any | undefined {
-  //   if (!staged)
-  //     return undefined;
-  //   const normalizeNetwork = (candidate: any): any | undefined => {
-  //     let value = candidate;
-  //     // Handle one or more levels of string-encoded JSON payloads.
-  //     for (let i = 0; i < 3 && typeof value === 'string'; i++) {
-  //       try {
-  //         value = JSON.parse(value);
-  //       }
-  //       catch {
-  //         break;
-  //       }
-  //     }
-  //     if (!value)
-  //       return undefined;
-  //     if (value.elements)
-  //       return value;
-  //     if (value.network?.elements)
-  //       return value.network;
-  //     if (value.nodes || value.edges)
-  //       return { elements: { nodes: value.nodes ?? [], edges: value.edges ?? [] } };
-  //     if (value.network && (value.network.nodes || value.network.edges))
-  //       return { elements: { nodes: value.network.nodes ?? [], edges: value.network.edges ?? [] } };
-  //     return undefined;
-  //   };
-
-  //   return normalizeNetwork(staged.network) ?? normalizeNetwork(staged as any);
-  // }
-
-  // private tryDisplayStagedNetwork(network: any, loadRequestId: number): boolean {
-  //   if (!this.isDiagramLoadRequestActive(loadRequestId))
-  //     return false;
-  //   if (!network?.elements)
-  //     return false;
-  //   try {
-  //     this.diagramUtils.clearSelection(this.diagram);
-  //     this.diagram.displayNetwork(network.elements);
-  //     try { this.applyNetworkMetadata(network); this.diagram.updateLegend?.(); this.normalizeLegendPosition(); } catch (e) { }
-  //     this.setDiagramLabel(loadRequestId);
-  //     this.debugDiagramReload(`Displayed staged network with nodes=${network.elements?.nodes?.length ?? 0}, edges=${network.elements?.edges?.length ?? 0}.`);
-  //     return true;
-  //   }
-  //   catch (error) {
-  //     console.warn('Failed to display staged pathway diagram network. Falling back to backend load.', error);
-  //     this.debugDiagramReload('Failed to display staged network due to rendering error.');
-  //     return false;
-  //   }
-  // }
-
-  // private tryDisplayStagedObject(staged: PathwayDiagramObject | undefined, network: any, loadRequestId: number): boolean {
-  //   if (!staged)
-  //     return this.tryDisplayStagedNetwork(network, loadRequestId);
-  //   const displayed = this.tryDisplayStagedNetwork(network, loadRequestId);
-  //   if (!displayed)
-  //     return false;
-
-  //   // Restore lock info from the staged object and enable editing when owned by current user.
-  //   try {
-  //     if (staged.diagramLock) {
-  //       this.diagramLockInfo = staged.diagramLock;
-  //       this.updateLockStatus(this.diagramLockInfo);
-  //       if (this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
-  //         this.isEditing = true;
-  //         this.diagramUtils.enableEditing(this.diagram);
-  //       }
-  //     }
-  //   }
-  //   catch (e) {
-  //     console.warn('Failed to restore staged diagram lock/edit state.', e);
-  //   }
-
-  //   return true;
-  // }
-
-  private tryLoadBackendNetworkForDiagramDbIds(diagramDbIds: number[], onMiss: () => void, loadRequestId: number) {
-    if (!this.isDiagramLoadRequestActive(loadRequestId))
-      return;
-
-    const uniqueDbIds = Array.from(new Set((diagramDbIds || [])
-      .map((id: number) => Number(id))
-      .filter((id: number) => Number.isFinite(id) && id > 0)));
-
-    if (uniqueDbIds.length === 0) {
-      onMiss();
-      return;
-    }
-
-    const tryByIndex = (index: number) => {
-      if (!this.isDiagramLoadRequestActive(loadRequestId))
-        return;
-      if (index >= uniqueDbIds.length) {
-        this.debugDiagramReload(`No backend cytoscape network available for diagramDbIds=[${uniqueDbIds.join(', ')}].`);
-        onMiss();
-        return;
-      }
-
-      const diagramDbId = uniqueDbIds[index];
-      this.diagramUtils.getDataService().hasCytoscapeNetwork(diagramDbId).pipe(take(1)).subscribe({
-        next: (hasCyNetwork: boolean) => {
-          if (!this.isDiagramLoadRequestActive(loadRequestId))
-            return;
-          if (!hasCyNetwork) {
-            this.debugDiagramReload(`No backend cytoscape network found for diagramDbId=${diagramDbId}.`);
-            tryByIndex(index + 1);
+        const networkRequest$ = this.diagramUtils.getDataService().getCytoscapeNetwork(networkDiagramDbId);
+        networkRequest$.subscribe((cytoscapeJson: any) => {
+          if (!cytoscapeJson || !cytoscapeJson.elements) {
+            console.warn('No cytoscape network returned for', networkDiagramDbId);
+            // Nothing to display; avoid throwing on null/undefined
             return;
           }
-
-          this.diagramUtils.getDataService().getCytoscapeNetwork(diagramDbId).pipe(take(1)).subscribe({
-            next: (cytoscapeJson: any) => {
-              if (!this.isDiagramLoadRequestActive(loadRequestId))
-                return;
-              const network = cytoscapeJson?.elements
-                ? cytoscapeJson
-                : (cytoscapeJson?.network?.elements ? cytoscapeJson.network : undefined);
-              if (!network?.elements) {
-                this.debugDiagramReload(`Backend cytoscape payload for diagramDbId=${diagramDbId} had no elements.`);
-                tryByIndex(index + 1);
-                return;
-              }
-              this.diagramUtils.clearSelection(this.diagram);
-              this.diagram.displayNetwork(network.elements);
-              try { this.applyNetworkMetadata(network); this.diagram.updateLegend?.(); this.normalizeLegendPosition(); } catch (e) { }
-              this.setDiagramLabel(loadRequestId);
-              this.debugDiagramReload(`Displayed backend cytoscape network by diagramDbId=${diagramDbId}.`);
-            },
-            error: () => {
-              if (!this.isDiagramLoadRequestActive(loadRequestId))
-                return;
-              this.debugDiagramReload(`Failed to fetch backend cytoscape network for diagramDbId=${diagramDbId}.`);
-              tryByIndex(index + 1);
+          this.diagram.displayNetwork(cytoscapeJson.elements);
+          this.setDiagramLabel(); // This is an async call. We don't care if it is displayed at the same time at the diagram.
+        });
+      }
+      // Otherwise, check for XML-based diagram
+      else {
+        this.diagramUtils.getDataService().hasDiagram(this.diagram.diagramId).subscribe((hasDiagramJson: boolean) => {
+          if (hasDiagramJson) {
+            try {
+              this.diagram.loadDiagram();
+              this.setDiagramLabel(); // This is an async call. We don't care if it is displayed at the same time at the diagram.
+            } catch (error) {
+              console.error('Error loading diagram:', error);
+              this.dialog.open(InfoDialogComponent, {
+                data: {
+                  title: 'Error',
+                  message: 'Failed to load diagram. The diagram may not exist or is invalid.'
+                }
+              });
             }
-          });
-        },
-        error: () => {
-          if (!this.isDiagramLoadRequestActive(loadRequestId))
-            return;
-          this.debugDiagramReload(`Failed to check backend cytoscape network availability for diagramDbId=${diagramDbId}.`);
-          tryByIndex(index + 1);
-        }
-      });
-    };
-
-    tryByIndex(0);
+          }
+          // If no diagram exists at all, create an empty one
+          else {
+            this.createEmptyDiagram(parseInt(this.diagram.diagramId));
+            this.setDiagramLabel();
+          }
+        });
+      }
+    });
   }
 
-  private setDiagramLabel(loadRequestId?: number) {
-    const requestedDiagramId = parseInt(this.diagram.diagramId);
-    this.diagramUtils.getDataService().fetchInstance(requestedDiagramId).subscribe((instance: Instance) => {
-      if (loadRequestId !== undefined && !this.isDiagramLoadRequestActive(loadRequestId))
-        return;
+  private getStoredPathwayDiagramLockRefs(): Record<string, any> {
+    const raw = localStorage.getItem(this.pathwayDiagramLockRefsStorageKey);
+    if (!raw)
+      return {};
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    }
+    catch {
+      return {};
+    }
+  }
+
+  private getLockAssociatedDiagramDbId(requestedDiagramDbId: number): number | undefined {
+    const normalizedRequestedId = Number(requestedDiagramDbId);
+    if (!Number.isFinite(normalizedRequestedId) || normalizedRequestedId <= 0)
+      return undefined;
+
+    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
+    if (!currentUser)
+      return undefined;
+
+    const refs = this.getStoredPathwayDiagramLockRefs();
+
+    // Common case: when loading a pathway, use the pathway id as key to resolve its locked diagram id.
+    const keyedRef = refs[`${currentUser}:${normalizedRequestedId}`];
+    const keyedDiagramDbId = Number(keyedRef?.diagramDbId);
+    if (Number.isFinite(keyedDiagramDbId) && keyedDiagramDbId > 0)
+      return keyedDiagramDbId;
+
+    // Also support loads that already target a pathway diagram id.
+    const hasDirectDiagramLock = Object.keys(refs).some((key: string) =>
+      key.startsWith(`${currentUser}:`) && Number(refs[key]?.diagramDbId) === normalizedRequestedId
+    );
+    return hasDirectDiagramLock ? normalizedRequestedId : undefined;
+  }
+
+  private setDiagramLabel() {
+    this.diagramUtils.getDataService().fetchInstance(parseInt(this.diagram.diagramId)).subscribe((instance: Instance) => {
       if (instance) {
         this.diagramLabel = `${instance.schemaClassName}: ${instance.displayName}` || 'Pathway Diagram';
       }
@@ -865,22 +412,51 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
    * upload the edited pathway diagram to the JSON text for the Pathway instance, which is post-processed at the server side for 
    * overlaying etc.
    */
+  // Disable editing will upload the content due to the current implementation since enable editing
+  // needs to fetch content from the server side. It is quite complicated and confusing to keep the editing
+  // content at the front end. 
   private disableEditing() {
-    this.diagramUtils.disableEditing(this.diagram);
-    this.resizingNodes.forEach(node => this.diagramUtils.disableResizeCompartment(node, this.diagram));
-    this.resizingNodes.length = 0;
-    this.isEditing = false;
+    const finishDisableEditing = () => {
+      this.diagramUtils.disableEditing(this.diagram);
+      this.resizingNodes.forEach(node => this.diagramUtils.disableResizeCompartment(node, this.diagram));
+      this.resizingNodes.length = 0; // reset to empty
+      this.isEditing = false;
+      this.pathwayDiagramId = '';
+      this.requestedLockDiagramId = '';
+      this.lockStatus = 'idle';
+      this.lockStatusMessage = 'Lock not requested.';
+      this.isEdited = true;
+    };
 
-    if (this.diagramLockInfo && this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
-      if (this.isEdited)
-        this.persistDiagramDraftToSessionStorage(this.diagramLockInfo);
-      this.lockStatus = 'acquired';
-      this.lockStatusMessage = 'Lock retained. Editing is disabled; enable editing to continue or unlock to discard edits.';
+    const lockDbIdText = this.pathwayDiagramId && this.pathwayDiagramId.length > 0
+      ? this.pathwayDiagramId
+      : this.diagram?.diagramId;
+    const lockDbId = parseInt(lockDbIdText || '');
+
+    if (Number.isNaN(lockDbId) || lockDbId <= 0) {
+      finishDisableEditing();
       return;
     }
 
-    this.lockStatus = 'idle';
-    this.lockStatusMessage = 'Lock not requested.';
+    if (!this.diagramLockInfo) {
+      finishDisableEditing();
+      return;
+    }
+
+    this.isUnlockingDiagram = true;
+
+    this.diagramUtils.getDataService().unlockDiagram(this.diagramLockInfo!).subscribe({
+      next: () => {
+        this.isUnlockingDiagram = false;
+        this.diagramLockInfo = null;
+        finishDisableEditing();
+      },
+      error: () => {
+        this.isUnlockingDiagram = false;
+        this.diagramLockInfo = null;
+        finishDisableEditing();
+      }
+    });
   }
 
   private canEdit(): Observable<boolean> {
@@ -947,6 +523,8 @@ Opening diagram in read-only mode.`
   }
 
   private updateLockStatus(lockInfo: DiagramLock) {
+    // Use lock's hasBackupDiagram to determine whether the diagram has been edited
+    this.isEdited = !!lockInfo?.hasBackupDiagram;
     if (this.isLockOwnedByCurrentUser(lockInfo)) {
       this.lockStatus = 'acquired';
       this.lockStatusMessage = 'Lock acquired. Editing is available.';
@@ -974,7 +552,6 @@ Opening diagram in read-only mode.`
         if (this.isLockOwnedByCurrentUser(diagramLockInfo)) {
           this.diagramLockInfo = diagramLockInfo;
           this.pathwayDiagramId = diagramLockInfo.diagramDbId.toString();
-          this.savePathwayDiagramLockRef(diagramLockInfo, this.pathwayId);
           this.isEditing = true;
           this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
           this.updateLockStatus(diagramLockInfo);
@@ -990,40 +567,58 @@ Opening diagram in read-only mode.`
   }
 
   private loadEditingDiagramOrReuseCurrent(pathwayDiagramId: string) {
-    // Reuse the currently displayed network so users can continue editing
-    // exactly what they are viewing instead of reloading a backend variant.
-    if (this.hasDisplayedNetwork() || this.isEdited) {
-      this.debugDiagramReload(`Reusing currently displayed network while entering edit mode for diagramDbId=${pathwayDiagramId}.`);
+    // If there are unsaved changes already in memory, avoid reload to prevent loss.
+    if (this.isEdited) {
       this.diagramUtils.enableEditing(this.diagram);
       return;
     }
 
-    // Always prefer staged/persisted draft network first, then backend fallback.
-    this.diagram.diagramId = pathwayDiagramId;
-    this.loadPathwayDiagram();
-  }
+    this.diagramUtils.getDataService().hasCytoscapeNetwork(pathwayDiagramId).subscribe((hasCyNetwork: boolean) => {
+      if (hasCyNetwork) {
+        this.loadPathwayDiagram();
+        return;
+      }
 
-  private hasDisplayedNetwork(): boolean {
-    if (!this.diagram?.cy)
-      return false;
-    return this.diagram.cy.elements().length > 0;
+      this.diagramUtils.getDataService().hasDiagram(pathwayDiagramId).subscribe((hasDiagram: boolean) => {
+        if (hasDiagram) {
+          this.loadPathwayDiagram();
+          return;
+        }
+
+        // Keep the currently displayed pathway network and only turn editing on.
+        this.diagramUtils.enableEditing(this.diagram);
+        this.setDiagramLabel();
+      });
+    });
   }
 
   private enableEditing() {
-    if (this.isEditing)
-      return;
-
     this.canEdit().subscribe((canEdit: boolean) => {
       if (!canEdit)
         return;
-
-      // Always verify lock with the backend to enforce mutual exclusion.
-      // Do not skip the backend call even if diagramLockInfo appears to be set.
-      this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe(pathwayDiagram => {
-        if (pathwayDiagram) {
-          this.lockPathwayDiagram(pathwayDiagram);
-        }
-        else {
+      if (this.pathwayDiagramId && this.pathwayDiagramId.length > 0) {
+        // Already have a PathwayDiagram id for editing
+        this.isEditing = true;
+        this.diagram.diagramId = this.pathwayDiagramId;
+        this.loadPathwayDiagram();
+        return;
+      }
+      // Switch to PathwayDiagram 
+      this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe({
+        next: (pathwayDiagram: Instance) => {
+          if (pathwayDiagram) {
+            this.lockPathwayDiagram(pathwayDiagram);
+            this.isEditing = true;
+            this.diagram.diagramId = pathwayDiagram.dbId.toString();
+            // Let the event handler for "network_displayed" to handle the rest
+            this.loadPathwayDiagram();
+            this.pathwayDiagramId = pathwayDiagram.dbId.toString(); // Store it for future use
+          }
+          else {
+            this.showNoPathwayDiagramDialog();
+          }
+        },
+        error: () => {
           this.showNoPathwayDiagramDialog();
         }
       });
@@ -1070,7 +665,6 @@ Opening diagram in read-only mode.`
     this.diagramUtils.clearSelection(this.diagram);
     // Show nothing for this diagram
     this.diagram.displayNetwork([]);
-    try { this.applyNetworkMetadata({ metadata: { zoom: 1, pan: { x: 0, y: 0 } } }); this.diagram.updateLegend?.(); this.normalizeLegendPosition(); } catch (e) { }
   }
 
   private initDiagram() {
@@ -1118,9 +712,6 @@ Opening diagram in read-only mode.`
       // reset previous drag position
       this.previousDragPos.x = 0;
       this.previousDragPos.y = 0;
-      if (this.isEditing && this.diagramLockInfo && this.isEdited) {
-        this.persistDiagramDraftToSessionStorage(this.diagramLockInfo);
-      }
     });
     // Resize the compartment for resizing nodes
     this.diagram.cy.on('drag', 'node', (e: any) => {
@@ -1183,24 +774,6 @@ Opening diagram in read-only mode.`
       else if (node.hasClass('outer'))
         node.style('z-index', 0);
     });
-  }
-
-  private normalizeLegendPosition() {
-    try {
-      const cyt = (this.diagram as any)?.cytoscapeContainer?.nativeElement as HTMLElement | undefined;
-      if (!cyt) return;
-      const host = cyt.parentElement ?? cyt.closest('.variables');
-      const legendContainer = host?.querySelector('#legend-container') as HTMLElement | null;
-      if (!legendContainer) return;
-      // Reset any drag-induced inline positioning so the legend returns to boundary.
-      legendContainer.style.left = '';
-      legendContainer.style.right = '0px';
-      legendContainer.style.transform = 'none';
-      legendContainer.style.transition = 'none';
-    }
-    catch (e) {
-      // ignore
-    }
   }
 
   private restoreViewport() {
@@ -1385,9 +958,6 @@ Opening diagram in read-only mode.`
         this.uploadDiagram();
         break;
 
-      case 'saveDiagramEdits':
-        this.saveDiagramEdits();
-        break;
 
       case 'reload':
         this.promptUploadBeforeDiscard('reloading this diagram', () => {
@@ -1400,19 +970,19 @@ Opening diagram in read-only mode.`
         break;
 
       case 'editPathwayDiagram':
-        this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe({
+        this.diagramUtils.getDataService().getCytoscapeNetwork(this.pathwayDiagramId).subscribe({
           next: (pathwayDiagram: Instance) => {
             if (pathwayDiagram) {
               this.openPathwayDiagramEvent.emit(pathwayDiagram.dbId);
             }
             else {
               // Create a new PathwayDiagram instance when none exists
-              this.createAndOpenNewPathwayDiagram();
+              // this.createAndOpenNewPathwayDiagram();
             }
           },
           error: (error: Error) => {
             // Create a new PathwayDiagram instance on fetch error
-            this.createAndOpenNewPathwayDiagram();
+            // this.createAndOpenNewPathwayDiagram();
           }
         });
         break;
@@ -1428,7 +998,7 @@ Opening diagram in read-only mode.`
         break;
 
       case 'unlockDiagram':
-        this.unlockDiagramWithDiscardConfirmation();
+        this.disableEditing();
         break;
 
       default:
@@ -1438,133 +1008,6 @@ Opening diagram in read-only mode.`
 
     // Hide the menu after the action is processed
     this.showMenu = false;
-  }
-
-  private saveDiagramEdits() {
-    const networkJson = this.generateNetworkJson();
-
-    // Determine the pathwayDiagram db id to stage. Prefer explicit pathwayDiagramId stored
-    // on the component, then diagram component id. If not available, abort.
-    const diagramDbId = Number(this.diagramLockInfo?.diagramDbId ?? this.pathwayDiagramId ?? this.diagram?.diagramId);
-    if (!Number.isFinite(diagramDbId) || diagramDbId <= 0) {
-      this.dialog.open(InfoDialogComponent, {
-        data: {
-          title: 'Information',
-          message: 'Cannot determine PathwayDiagram dbId to stage. Create or open a PathwayDiagram first.'
-        }
-      });
-      return;
-    }
-
-    // Keep edits in local staged store; backend sync is performed periodically (2 minutes)
-    // and during logout by UserInstancesService.
-    this.saveExactSavedNetwork(diagramDbId, networkJson, this.pathwayId);
-    this.stagePathwayDiagramObject({ diagramDbId } as DiagramLock);
-    this.isEdited = false;
-    this.clearDiagramDraftFromSessionStorage();
-
-    this.dialog.open(InfoDialogComponent, {
-      data: {
-        title: 'Information',
-        message: 'Diagram edits have been staged locally. They will be persisted every 2 minutes or on logout.'
-      }
-    });
-  }
-
-  private unlockDiagramWithDiscardConfirmation() {
-    if (this.isUnlockingDiagram)
-      return;
-
-    const shouldUnlock = window.confirm(
-      'Are you sure you want to unlock this diagram? You will lose all unsaved edits and return to the original database diagram.'
-    );
-    if (!shouldUnlock)
-      return;
-
-    this.unlockDiagramAndDiscardEdits();
-  }
-
-  private unlockDiagramAndDiscardEdits() {
-    const lockToRelease = this.diagramLockInfo && this.isLockOwnedByCurrentUser(this.diagramLockInfo)
-      ? this.diagramLockInfo
-      : null;
-    const diagramDbId = Number(lockToRelease?.diagramDbId);
-    const pathwayDbId = Number(this.pathwayId);
-
-    this.clearAssociatedDiagramEdits(
-      Number.isFinite(diagramDbId) && diagramDbId > 0 ? diagramDbId : undefined,
-      Number.isFinite(pathwayDbId) && pathwayDbId > 0 ? pathwayDbId : undefined
-    );
-    this.isEdited = false;
-    this.resetDiagramLockState();
-
-    this.diagram.diagramId = this.pathwayId;
-    const reloadOriginalDiagram = () => {
-      const loadRequestId = this.beginDiagramLoadRequest();
-      this.storeViewport();
-      this.loadPathwayDiagramFromBackend(loadRequestId);
-    };
-
-    if (!lockToRelease) {
-      reloadOriginalDiagram();
-      return;
-    }
-
-    this.isUnlockingDiagram = true;
-    this.diagramUtils.getDataService().unlockDiagram(lockToRelease).pipe(take(1)).subscribe({
-      next: () => {
-        this.diagramUtils.getDataService().deletePersistedPathwayDiagram(lockToRelease).pipe(take(1)).subscribe({
-          next: () => {
-            this.isUnlockingDiagram = false;
-            reloadOriginalDiagram();
-          },
-          error: () => {
-            this.isUnlockingDiagram = false;
-            reloadOriginalDiagram();
-          }
-        });
-      },
-      error: () => {
-        this.isUnlockingDiagram = false;
-        reloadOriginalDiagram();
-      }
-    });
-  }
-
-  private clearAssociatedDiagramEdits(diagramDbId?: number, pathwayDbId?: number) {
-    this.clearDiagramDraftFromSessionStorage();
-    this.removePathwayDiagramFromStagedStore(diagramDbId, pathwayDbId);
-
-    this.removeSavedDiagramDbIdForPathway(pathwayDbId);
-    this.removeExactSavedNetwork(diagramDbId, pathwayDbId);
-  }
-
-  private removePathwayDiagramFromStagedStore(diagramDbId?: number, pathwayDbId?: number) {
-    const normalizedDiagramDbId = Number(diagramDbId);
-    const normalizedPathwayDbId = Number(pathwayDbId);
-    const hasDiagramDbId = Number.isFinite(normalizedDiagramDbId) && normalizedDiagramDbId > 0;
-    const hasPathwayDbId = Number.isFinite(normalizedPathwayDbId) && normalizedPathwayDbId > 0;
-
-    if (!hasDiagramDbId && !hasPathwayDbId)
-      return;
-
-    // this.store.select(pathwayDiagramObjects()).pipe(take(1)).subscribe((objects: PathwayDiagramObject[]) => {
-    //   const stagedObjects = objects || [];
-    //   const matchingObjects = stagedObjects.filter((item: PathwayDiagramObject) => {
-    //     const itemDiagramDbId = Number(item.pathwayDiagramDbId ?? item.dbId ?? item.diagramLock?.diagramDbId);
-    //     const itemPathwayDbId = Number(item.pathwayDbId);
-    //     const matchesDiagramDbId = hasDiagramDbId && itemDiagramDbId === normalizedDiagramDbId;
-    //     const matchesPathwayDbId = hasPathwayDbId && itemPathwayDbId === normalizedPathwayDbId;
-    //     return matchesDiagramDbId || matchesPathwayDbId;
-    //   });
-
-    //   if (matchingObjects.length === 0)
-    //     return;
-
-    //   // const matchedDbIds = new Set(matchingObjects.map((item: PathwayDiagramObject) => Number(item.dbId)));
-    //   // const remainingObjects = stagedObjects.filter((item: PathwayDiagramObject) => !matchedDbIds.has(Number(item.dbId)));
-    //   // this.store.dispatch(PathwayDiagramObjectActions.set_pathway_diagram_objects({ instances: remainingObjects }));
-    // });
   }
 
   private uploadDiagram(restoreEditing: boolean = true, onComplete?: () => void) {
@@ -1616,7 +1059,6 @@ Opening diagram in read-only mode.`
         if (success) {
           // After uploading, we can consider the diagram is not edited anymore. So reset the flag.
           this.isEdited = false;
-          this.clearDiagramDraftFromSessionStorage();
         }
         if (wasEditing && restoreEditing)
           this.enableEditing();
@@ -1649,191 +1091,26 @@ Opening diagram in read-only mode.`
       nodes: nodes,
       edges: edges
     };
-    // Include minimal metadata (viewport and style) so staged snapshots render
-    // more like the server-provided diagrams when reloaded.
-    const metadata = {
-      zoom: this.diagram.cy.zoom(),
-      pan: this.diagram.cy.pan(),
-      style: undefined
-    };
-    try {
-      // style().json() can be expensive or large; include it conditionally.
-      metadata.style = this.diagram.cy.style().json();
-    }
-    catch (e) {
-      metadata.style = undefined;
-    }
-
+    // We will use the default style and avoid keeping style. This also reduce the size of
+    // the uploaded JSON.
+    // const metadata = {
+    //   zoom: this.diagram.cy.zoom(),
+    //   pan: this.diagram.cy.pan(),
+    //   style: this.diagram.cy.style().json()
+    // };
     const networkJson = {
-      elements: elements,
-      metadata: metadata
+      elements: elements
+      // metadata: metadata
     };
     return networkJson;
   }
 
-  private applyNetworkMetadata(network: any) {
-    try {
-      if (!network) return;
-      const metadata = network.metadata ?? network?.network?.metadata;
-      if (!metadata) return;
-      if (metadata.style && this.diagram?.cy?.style) {
-        try {
-          this.diagram.cy.style().fromJson(metadata.style);
-        }
-        catch (e) {
-          // ignore style application errors
-        }
-      }
-      if (metadata.zoom !== undefined && typeof metadata.zoom === 'number') {
-        try { this.diagram.cy.zoom(metadata.zoom); } catch (e) { }
-      }
-      if (metadata.pan && typeof metadata.pan === 'object') {
-        try { this.diagram.cy.pan(metadata.pan); } catch (e) { }
-      }
-    }
-    catch (e) {
-      // ignore
-    }
-  }
-
   private markDiagramEdited() {
     this.isEdited = true;
-    // Keep staged edits current in the store; backend flush happens on timer/logout.
-    const lockInfo = this.diagramLockInfo ?? ({ diagramDbId: Number(this.pathwayDiagramId ?? this.diagram?.diagramId) } as DiagramLock);
-    this.stagePathwayDiagramObject(lockInfo);
+    if (this.lastBackupAtMs === 0)
+      this.lastBackupAtMs = Date.now();
   }
 
-  private persistDiagramDraftToSessionStorage(diagramLock: DiagramLock, networkJson?: any) {
-    if (!diagramLock || !this.isLockOwnedByCurrentUser(diagramLock) || !this.pathwayId || !this.diagram?.cy)
-      return;
-    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
-    if (currentUser.length === 0)
-      return;
-    const draft: PendingDiagramDraft = {
-      pathwayId: this.pathwayId,
-      diagramLock: diagramLock,
-      network: networkJson ?? this.generateNetworkJson(),
-      username: currentUser,
-      savedAt: new Date().toISOString()
-    };
-    sessionStorage.setItem(this.pendingDiagramDraftSessionKey, JSON.stringify(draft));
-    this.savePathwayDiagramLockRef(diagramLock, this.pathwayId);
-    this.stagePathwayDiagramObject(diagramLock);
-  }
-
-  private getPendingDiagramDraftFromSessionStorage(): PendingDiagramDraft | null {
-    const rawDraft = sessionStorage.getItem(this.pendingDiagramDraftSessionKey);
-    if (!rawDraft)
-      return null;
-    try {
-      return JSON.parse(rawDraft) as PendingDiagramDraft;
-    }
-    catch (error) {
-      console.warn('Failed to parse pending diagram draft from session storage.', error);
-      this.clearDiagramDraftFromSessionStorage();
-      return null;
-    }
-  }
-
-  private getPendingDraftNetworkForPathway(pathwayDbId: number): any | undefined {
-    const pendingDraft = this.getPendingDiagramDraftFromSessionStorage();
-    if (!pendingDraft)
-      return undefined;
-    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
-    if (currentUser.length === 0 || pendingDraft.username !== currentUser)
-      return undefined;
-    const draftPathwayDbId = Number(pendingDraft.pathwayId);
-    if (!Number.isFinite(draftPathwayDbId) || draftPathwayDbId !== Number(pathwayDbId))
-      return undefined;
-    const network = pendingDraft.network?.elements
-      ? pendingDraft.network
-      : pendingDraft.network?.network?.elements
-        ? pendingDraft.network.network
-        : undefined;
-    return network;
-  }
-
-  private clearDiagramDraftFromSessionStorage() {
-    sessionStorage.removeItem(this.pendingDiagramDraftSessionKey);
-  }
-
-  private stagePathwayDiagramObject(diagramLock: DiagramLock) {
-    // Always attempt to stage the current in-memory edits so they can be recovered later.
-    const parsedPathwayDbId = parseInt(this.pathwayId || '');
-    const pathwayDbId = Number.isFinite(parsedPathwayDbId) ? parsedPathwayDbId : 0;
-
-    const lockInfo = diagramLock ?? ({} as DiagramLock);
-    const parsedDiagramDbId = Number(lockInfo?.diagramDbId);
-
-    // Prefer the currently-displayed diagram id when staging so it matches
-    // the id used during load-time resolution. Fallback order:
-    // 1) this.diagram.diagramId (displayed), 2) lock.diagramDbId, 3) pathwayDbId, 4) unique negative id.
-    const currentDisplayedDiagramId = Number(this.diagram?.diagramId);
-    let pathwayDiagramDbId: number;
-    if (Number.isFinite(currentDisplayedDiagramId) && currentDisplayedDiagramId > 0) {
-      pathwayDiagramDbId = currentDisplayedDiagramId;
-    } else if (Number.isFinite(parsedDiagramDbId) && parsedDiagramDbId > 0) {
-      pathwayDiagramDbId = parsedDiagramDbId;
-    } else if (pathwayDbId > 0) {
-      pathwayDiagramDbId = pathwayDbId;
-    } else {
-      pathwayDiagramDbId = -Date.now();
-    }
-
-    this.savePathwayDiagramLockRef(lockInfo, this.pathwayId);
-
-  }
-
-  private restorePendingDiagramDraft(expectedPathwayId: string, loadRequestId: number) {
-    if (!this.isDiagramLoadRequestActive(loadRequestId) || this.pathwayId !== expectedPathwayId)
-      return;
-
-    const pendingDraft = this.getPendingDiagramDraftFromSessionStorage();
-    if (!pendingDraft || pendingDraft.pathwayId !== expectedPathwayId)
-      return;
-    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
-    if (currentUser.length === 0 || pendingDraft.username !== currentUser)
-      return;
-    if (!pendingDraft.diagramLock?.diagramDbId || !pendingDraft.network)
-      return;
-    const draftSavedAtMs = new Date(pendingDraft.savedAt || '').getTime();
-    const exactSavedSnapshot = this.getExactSavedSnapshotMeta(pendingDraft.diagramLock.diagramDbId, Number(expectedPathwayId));
-    const exactSavedAtMs = new Date(exactSavedSnapshot?.savedAt || '').getTime();
-    if (Number.isFinite(draftSavedAtMs) && Number.isFinite(exactSavedAtMs) && exactSavedAtMs >= draftSavedAtMs) {
-      this.debugDiagramReload(`Skipping stale pending draft recovery for pathwayDbId=${expectedPathwayId}. exactSavedAt=${exactSavedSnapshot?.savedAt}, draftSavedAt=${pendingDraft.savedAt}.`);
-      this.clearDiagramDraftFromSessionStorage();
-      return;
-    }
-    // Recover unsaved draft into local staged store only; backend sync is periodic/logout-based.
-    this.clearDiagramDraftFromSessionStorage();
-    this.isEdited = false;
-    this.diagramLockInfo = pendingDraft.diagramLock;
-    this.savePathwayDiagramLockRef(pendingDraft.diagramLock, expectedPathwayId);
-    this.pathwayDiagramId = pendingDraft.diagramLock.diagramDbId.toString();
-    this.stagePathwayDiagramObject(pendingDraft.diagramLock);
-    this.loadPathwayDiagram();
-  }
-
-  private createAndOpenNewPathwayDiagram() {
-    const dataService = this.diagramUtils.getDataService();
-    dataService.fetchInstance(parseInt(this.pathwayId)).subscribe((pathwayInstance: Instance) => {
-      if (!pathwayInstance)
-        return;
-      dataService.createNewInstance('PathwayDiagram').subscribe((newPathwayDiagram: Instance) => {
-        if (newPathwayDiagram && newPathwayDiagram.attributes) {
-          const pathwayShell = this.instUtil.makeShell(pathwayInstance);
-          newPathwayDiagram.attributes.set('representedPathway', [pathwayShell]);
-          // This is based on InstanceNameGenerator. Better to call that function!
-          newPathwayDiagram.displayName = 'Diagram of ' + pathwayInstance.displayName;
-          newPathwayDiagram.attributes.set('displayName', newPathwayDiagram.displayName);
-          // Register the new instance so it can be referenced
-          dataService.registerInstance(newPathwayDiagram);
-          this.store.dispatch(NewInstanceActions.register_new_instance(this.instUtil.makeShell(newPathwayDiagram)));
-          this.openPathwayDiagramEvent.emit(newPathwayDiagram.dbId);
-        }
-      });
-    });
-  }
 
   private disableResize() {
     this.diagramUtils.disableResizeCompartment(this.elementUnderMouse, this.diagram);
@@ -1983,300 +1260,4 @@ Opening diagram in read-only mode.`
     return node.hasClass('PhysicalEntity') || (node.hasClass('reaction') && !node.hasClass(EDGE_POINT_CLASS));
   }
 
-  private getStoredExactSavedDiagramNetworks(): Record<string, StoredExactSavedDiagramNetwork> {
-    const raw = localStorage.getItem(this.exactSavedDiagramNetworksStorageKey);
-    if (!raw)
-      return {};
-    try {
-      const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === 'object' ? parsed : {};
-    }
-    catch {
-      return {};
-    }
-  }
-
-  private saveExactSavedNetwork(diagramDbId: number, networkJson: any, pathwayId: string | number) {
-    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
-    const normalizedDiagramDbId = Number(diagramDbId);
-    const normalizedPathwayDbId = Number(pathwayId);
-    if (currentUser.length === 0)
-      return;
-    if (!Number.isFinite(normalizedDiagramDbId) || normalizedDiagramDbId <= 0)
-      return;
-    if (!Number.isFinite(normalizedPathwayDbId) || normalizedPathwayDbId <= 0)
-      return;
-    if (!networkJson)
-      return;
-
-    const networks = this.getStoredExactSavedDiagramNetworks();
-    networks[`${currentUser}:${normalizedDiagramDbId}`] = {
-      diagramDbId: normalizedDiagramDbId,
-      pathwayDbId: normalizedPathwayDbId,
-      // Keep an immutable snapshot to avoid accidental mutation by later edits.
-      network: JSON.parse(JSON.stringify(networkJson)),
-      savedAt: new Date().toISOString()
-    };
-    localStorage.setItem(this.exactSavedDiagramNetworksStorageKey, JSON.stringify(networks));
-    this.debugDiagramReload(`Stored exact saved snapshot for diagramDbId=${normalizedDiagramDbId}, pathwayDbId=${normalizedPathwayDbId}.`);
-  }
-
-  private getExactSavedNetwork(diagramDbId?: number, pathwayDbId?: number): any | undefined {
-    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
-    if (currentUser.length === 0)
-      return undefined;
-
-    const networks = this.getStoredExactSavedDiagramNetworks();
-    if (diagramDbId && Number.isFinite(Number(diagramDbId)) && Number(diagramDbId) > 0) {
-      const entry = networks[`${currentUser}:${Number(diagramDbId)}`];
-      // const directNetwork = this.extractNetworkFromStagedObject({ object: entry?.network } as PathwayDiagramObject);
-      // if (directNetwork)
-      //   return directNetwork;
-    }
-
-    if (pathwayDbId && Number.isFinite(Number(pathwayDbId)) && Number(pathwayDbId) > 0) {
-      let latest: StoredExactSavedDiagramNetwork | undefined;
-      Object.keys(networks).forEach((key: string) => {
-        if (!key.startsWith(`${currentUser}:`))
-          return;
-        const entry = networks[key];
-        if (!entry || Number(entry.pathwayDbId) !== Number(pathwayDbId))
-          return;
-        if (!latest || (new Date(entry.savedAt).getTime() > new Date(latest.savedAt).getTime()))
-          latest = entry;
-      });
-      // if (latest) {
-      //   const pathwayNetwork = this.extractNetworkFromStagedObject({ object: latest.network } as PathwayDiagramObject);
-      //   if (pathwayNetwork)
-      //     return pathwayNetwork;
-      // }
-    }
-
-    return undefined;
-  }
-
-  private getExactSavedSnapshotMeta(diagramDbId?: number, pathwayDbId?: number): StoredExactSavedDiagramNetwork | undefined {
-    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
-    if (currentUser.length === 0)
-      return undefined;
-
-    const networks = this.getStoredExactSavedDiagramNetworks();
-    if (diagramDbId && Number.isFinite(Number(diagramDbId)) && Number(diagramDbId) > 0) {
-      const direct = networks[`${currentUser}:${Number(diagramDbId)}`];
-      if (direct)
-        return direct;
-    }
-
-    if (pathwayDbId && Number.isFinite(Number(pathwayDbId)) && Number(pathwayDbId) > 0) {
-      let latest: StoredExactSavedDiagramNetwork | undefined;
-      Object.keys(networks).forEach((key: string) => {
-        if (!key.startsWith(`${currentUser}:`))
-          return;
-        const entry = networks[key];
-        if (!entry || Number(entry.pathwayDbId) !== Number(pathwayDbId))
-          return;
-        if (!latest || (new Date(entry.savedAt).getTime() > new Date(latest.savedAt).getTime()))
-          latest = entry;
-      });
-      return latest;
-    }
-
-    return undefined;
-  }
-
-  private getStoredPathwayDiagramLockRefs(): Record<string, StoredPathwayDiagramLockRef> {
-    const raw = localStorage.getItem(this.pathwayDiagramLockRefsStorageKey);
-    if (!raw)
-      return {};
-    try {
-      const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === 'object' ? parsed : {};
-    }
-    catch {
-      return {};
-    }
-  }
-
-  private tryRestoreLockStateFromStoredRef() {
-    const pathwayDbId = Number(this.pathwayId);
-    if (!Number.isFinite(pathwayDbId) || pathwayDbId <= 0)
-      return;
-
-    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
-    if (currentUser.length === 0)
-      return;
-
-    const refs = this.getStoredPathwayDiagramLockRefs();
-    const ref = refs[`${currentUser}:${pathwayDbId}`];
-    if (!ref?.diagramDbId)
-      return;
-
-    const restoredLock: DiagramLock = {
-      diagramDbId: ref.diagramDbId,
-      lockId: ref.lockId ?? '',
-      username: currentUser,
-      lockedAt: ref.updatedAt,
-      locked: true
-    };
-
-    // Set optimistic state so the lock icon shows and the staged diagram loads immediately.
-    // This will be reverted if the backend verification below finds the lock is no longer ours.
-    this.diagramLockInfo = restoredLock;
-    this.pathwayDiagramId = ref.diagramDbId.toString();
-    this.diagram.diagramId = ref.diagramDbId.toString();
-    this.lockStatus = 'acquired';
-    this.lockStatusMessage = 'Lock acquired. Editing is available.';
-    this.isEditing = true;
-    this.isEdited = !!this.getExactSavedNetwork(ref.diagramDbId, pathwayDbId);
-
-    // Verify with the backend that we still own this lock.
-    // This prevents stale localStorage entries from bypassing mutual exclusion.
-    const snapshotPathwayId = this.pathwayId;
-    this.diagramUtils.getDataService().fetchPathwayDiagram(snapshotPathwayId).subscribe({
-      next: (pathwayDiagram) => {
-        if (!pathwayDiagram || this.pathwayId !== snapshotPathwayId)
-          return;
-        this.diagramUtils.getDataService().lockDiagram(pathwayDiagram).pipe(take(1)).subscribe({
-          next: (verifiedLock) => {
-            if (this.pathwayId !== snapshotPathwayId)
-              return;
-            if (this.isLockOwnedByCurrentUser(verifiedLock)) {
-              // Lock confirmed — update with authoritative lock info from backend.
-              this.diagramLockInfo = verifiedLock;
-              this.savePathwayDiagramLockRef(verifiedLock, snapshotPathwayId);
-              this.updateLockStatus(verifiedLock);
-            } else {
-              // Lock is no longer ours — clear local state and reload the canonical diagram.
-              console.warn('Stored lock ref could not be verified with backend. Clearing edit state.');
-              this.clearAssociatedDiagramEdits(ref.diagramDbId, pathwayDbId);
-              this.resetDiagramLockState();
-              this.showDiagramLockedDialog(verifiedLock);
-              const reloadRequestId = this.beginDiagramLoadRequest();
-              this.diagram.diagramId = snapshotPathwayId;
-              this.loadPathwayDiagramFromBackend(reloadRequestId);
-            }
-          },
-          error: () => {
-            if (this.pathwayId !== snapshotPathwayId)
-              return;
-            // If verification errors, play it safe and clear edit state.
-            console.warn('Backend lock verification failed. Clearing edit state.');
-            this.resetDiagramLockState();
-            const reloadRequestId = this.beginDiagramLoadRequest();
-            this.diagram.diagramId = snapshotPathwayId;
-            this.loadPathwayDiagramFromBackend(reloadRequestId);
-          }
-        });
-      },
-      error: () => { /* ignore — optimistic state already set */ }
-    });
-  }
-
-  private savePathwayDiagramLockRef(diagramLock: DiagramLock, pathwayId: string | number) {
-    const normalizedPathwayDbId = Number(pathwayId);
-    const normalizedDiagramDbId = Number(diagramLock?.diagramDbId);
-    if (!Number.isFinite(normalizedPathwayDbId) || normalizedPathwayDbId <= 0)
-      return;
-    if (!Number.isFinite(normalizedDiagramDbId) || normalizedDiagramDbId <= 0)
-      return;
-
-    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
-    if (currentUser.length === 0)
-      return;
-
-    const refs = this.getStoredPathwayDiagramLockRefs();
-    refs[`${currentUser}:${normalizedPathwayDbId}`] = {
-      diagramDbId: normalizedDiagramDbId,
-      lockId: diagramLock.lockId,
-      updatedAt: new Date().toISOString()
-    };
-    localStorage.setItem(this.pathwayDiagramLockRefsStorageKey, JSON.stringify(refs));
-  }
-
-  private getSavedDiagramDbIdForPathway(pathwayDbId: number): number | undefined {
-    const normalizedPathwayDbId = Number(pathwayDbId);
-    if (!Number.isFinite(normalizedPathwayDbId) || normalizedPathwayDbId <= 0)
-      return undefined;
-
-    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
-    if (currentUser.length === 0)
-      return undefined;
-
-    const refs = this.getStoredPathwayDiagramLockRefs();
-    const ref = refs[`${currentUser}:${normalizedPathwayDbId}`];
-    const normalizedDiagramDbId = Number(ref?.diagramDbId);
-    if (!Number.isFinite(normalizedDiagramDbId) || normalizedDiagramDbId <= 0)
-      return undefined;
-    return normalizedDiagramDbId;
-  }
-
-  private removeSavedDiagramDbIdForPathway(pathwayDbId?: number) {
-    const normalizedPathwayDbId = Number(pathwayDbId);
-    if (!Number.isFinite(normalizedPathwayDbId) || normalizedPathwayDbId <= 0)
-      return;
-
-    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
-    if (currentUser.length === 0)
-      return;
-
-    const refs = this.getStoredPathwayDiagramLockRefs();
-    const refKey = `${currentUser}:${normalizedPathwayDbId}`;
-    if (!(refKey in refs))
-      return;
-
-    delete refs[refKey];
-    localStorage.setItem(this.pathwayDiagramLockRefsStorageKey, JSON.stringify(refs));
-  }
-
-  private removeExactSavedNetwork(diagramDbId?: number, pathwayDbId?: number) {
-    const currentUser = (this.authService.getUser() || '').trim().toLowerCase();
-    if (currentUser.length === 0)
-      return;
-
-    const normalizedDiagramDbId = Number(diagramDbId);
-    const normalizedPathwayDbId = Number(pathwayDbId);
-    const removeByDiagramDbId = Number.isFinite(normalizedDiagramDbId) && normalizedDiagramDbId > 0;
-    const removeByPathwayDbId = Number.isFinite(normalizedPathwayDbId) && normalizedPathwayDbId > 0;
-    if (!removeByDiagramDbId && !removeByPathwayDbId)
-      return;
-
-    const networks = this.getStoredExactSavedDiagramNetworks();
-    let hasChanges = false;
-
-    Object.keys(networks).forEach((key: string) => {
-      if (!key.startsWith(`${currentUser}:`))
-        return;
-
-      const entry = networks[key];
-      if (!entry)
-        return;
-
-      const matchesDiagramDbId = removeByDiagramDbId && Number(entry.diagramDbId) === normalizedDiagramDbId;
-      const matchesPathwayDbId = removeByPathwayDbId && Number(entry.pathwayDbId) === normalizedPathwayDbId;
-      if (!matchesDiagramDbId && !matchesPathwayDbId)
-        return;
-
-      delete networks[key];
-      hasChanges = true;
-    });
-
-    if (hasChanges)
-      localStorage.setItem(this.exactSavedDiagramNetworksStorageKey, JSON.stringify(networks));
-  }
-
-  private isDiagramReloadDebugEnabled(): boolean {
-    const queryFlag = (this.route.snapshot.queryParams['diagramReloadDebug'] || '').toString().toLowerCase();
-    if (queryFlag === '1' || queryFlag === 'true' || queryFlag === 'yes' || queryFlag === 'on')
-      return true;
-    const storageFlag = (localStorage.getItem(this.diagramReloadDebugStorageKey) || '').toLowerCase();
-    return storageFlag === '1' || storageFlag === 'true' || storageFlag === 'yes' || storageFlag === 'on';
-  }
-
-  private debugDiagramReload(message: string) {
-    if (!this.isDiagramReloadDebugEnabled())
-      return;
-    console.debug(`[diagram-reload-debug] ${message}`);
-  }
-
 }
-
