@@ -31,7 +31,7 @@ export class DataService {
   // List of URLs
   private id2instance: Map<number, Instance> = new Map<number, Instance>();
   // Use a BehaviorSubject to avoid race conditions when populating/accessing locks
-  private lockedPathwayDiagramDbIds$: BehaviorSubject<DiagramLock[]> = new BehaviorSubject<DiagramLock[]>([]);
+  private diagramLocks$: BehaviorSubject<DiagramLock[]> = new BehaviorSubject<DiagramLock[]>([]);
   private getDiagramLocksInFlight$: Observable<DiagramLock[]> | null = null;
   private schemaClassDataUrl = `${environment.ApiRoot}/getAttributes/` // TODO: Need to consider using Angular ConfigService!
   private entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
@@ -827,7 +827,7 @@ export class DataService {
   uploadCytoscapeNetwork(pathwayDiagramId: any, network: any): Observable<boolean> {
     // If the diagram is locked, persist edits to the backup endpoint instead
     const numericId = Number(pathwayDiagramId);
-    const isLocked = Number.isFinite(numericId) && this.lockedPathwayDiagramDbIds$.getValue().some(lock => lock?.diagramDbId === numericId);
+    const isLocked = Number.isFinite(numericId) && this.diagramLocks$.getValue().some(lock => lock?.diagramDbId === numericId);
 
     return this.store.select(defaultPerson()).pipe(
       take(1),
@@ -865,7 +865,7 @@ export class DataService {
   persistPathwayDiagram(username: string | undefined, pathwayDiagramDbId: number, network: object): Observable<boolean> {
     // username: path variable to identify which user's staged diagrams these are
     const targetUrl = username ? `${this.persistPathwayDiagramUrl}${encodeURIComponent(username)}` : this.persistPathwayDiagramUrl;
-    const isLocked = this.lockedPathwayDiagramDbIds$.getValue().some(lock => lock?.diagramDbId === pathwayDiagramDbId);
+    const isLocked = this.diagramLocks$.getValue().some(lock => lock?.diagramDbId === pathwayDiagramDbId);
 
     return this.store.select(defaultPerson()).pipe(
       take(1),
@@ -949,7 +949,7 @@ export class DataService {
   getCytoscapeNetwork(pathwayDiagramId: any): Observable<any> {
     const numericId = Number(pathwayDiagramId);
     // TODO: move to DiagramEditorService since this is specific to pathway diagram editing and not needed for fetching the pathway diagram instance itself
-    const lock: DiagramLock | undefined = this.lockedPathwayDiagramDbIds$.getValue().find(lock => lock?.diagramDbId === numericId);
+    const lock: DiagramLock | undefined = this.diagramLocks$.getValue().find(lock => lock?.diagramDbId === numericId);
     let url = this.getCyNetworkUrl;
 
     if (lock && lock.hasBackupDiagram) {
@@ -1540,7 +1540,7 @@ export class DataService {
   }
 
   getDiagramLocks(): Observable<DiagramLock[]> {
-    const current = this.lockedPathwayDiagramDbIds$.getValue();
+    const current = this.diagramLocks$.getValue();
     if (current && current.length > 0) {
       return of([...current]); // return shallow copy
     }
@@ -1562,7 +1562,7 @@ export class DataService {
         return pathwayDiagramLocks.filter(lock => Number.isFinite(lock?.diagramDbId) && lock.diagramDbId > 0);
       }),
       tap((validLocks: DiagramLock[]) => {
-        this.lockedPathwayDiagramDbIds$.next(validLocks);
+        this.diagramLocks$.next(validLocks);
       }),
       catchError(error => {
         return this.handleErrorMessage(error);
@@ -1588,7 +1588,7 @@ export class DataService {
 
   // Used to keep a backup copy of the edited network in case the user wants to discard the changes and revert to the original network loaded from the database. The backup copy will be deleted after loading it back to the front end or when the user logs out.
   backupCyNetwork(pathwayDiagramId: number, network: object): Observable<boolean> {
-    let lockId = this.lockedPathwayDiagramDbIds$.getValue().find(lock => lock.diagramDbId === pathwayDiagramId)?.lockId;
+    let lockId = this.diagramLocks$.getValue().find(lock => lock.diagramDbId === pathwayDiagramId)?.lockId;
     console.debug('backupCyNetwork request', { pathwayDiagramId, timeMs: Date.now() });
     return this.http.post<boolean>(this.backupCyNetworkUrl + pathwayDiagramId + (lockId ? `/${lockId}` : ''), network).pipe(
       tap(() => console.debug('backupCyNetwork success', { pathwayDiagramId, timeMs: Date.now() })),

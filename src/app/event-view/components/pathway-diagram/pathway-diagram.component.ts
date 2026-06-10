@@ -20,6 +20,7 @@ import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait
 import { AuthenticateService } from 'src/app/core/services/authenticate.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Store } from '@ngrx/store';
+import { DiagramEditorService } from './diagram-editor.service';
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 
 @Component({
@@ -116,7 +117,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     private store: Store,
     private diagramUtils: PathwayDiagramUtilService,
     private authService: AuthenticateService,
-    private instUtil: InstanceUtilities
+    private instUtil: InstanceUtilities,
+    private diagramEditorService: DiagramEditorService
   ) {
   }
 
@@ -237,7 +239,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
 
     const networkJson = this.generateNetworkJson();
     this.isBackgroundBackupInProgress = true;
-    this.diagramUtils.getDataService().backupCyNetwork(diagramDbId, networkJson).pipe(take(1)).subscribe({
+    this.diagramEditorService.backupCyNetwork(diagramDbId, networkJson).pipe(take(1)).subscribe({
       next: () => {
         this.lastBackupAtMs = Date.now();
         this.isBackgroundBackupInProgress = false;
@@ -287,7 +289,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       : requestedDiagramDbId;
 
     // Check server-side locks for this diagram and mark edited/lock status accordingly
-    this.diagramUtils.getDataService().getDiagramLocks().pipe(take(1)).subscribe({
+    this.diagramEditorService.getDiagramLocks().pipe(take(1)).subscribe({
       next: (locks: DiagramLock[]) => {
         if (!locks || locks.length === 0) {
           this.diagramLockInfo = null;
@@ -315,11 +317,11 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     });
 
     // Check if we have cytoscape network. If yes, load it.
-    this.diagramUtils.getDataService().hasCytoscapeNetwork(networkDiagramDbId).subscribe((hasCyNetwork: boolean) => {
+    this.diagramEditorService.hasCytoscapeNetwork(networkDiagramDbId).subscribe((hasCyNetwork: boolean) => {
       // this.diagram.resetState(); 
       this.diagramUtils.clearSelection(this.diagram);
       if (hasCyNetwork) {
-        const networkRequest$ = this.diagramUtils.getDataService().getCytoscapeNetwork(networkDiagramDbId);
+        const networkRequest$ = this.diagramEditorService.getCytoscapeNetwork(networkDiagramDbId);
         networkRequest$.subscribe((cytoscapeJson: any) => {
           if (!cytoscapeJson || !cytoscapeJson.elements) {
             console.warn('No cytoscape network returned for', networkDiagramDbId);
@@ -445,7 +447,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
 
     this.isUnlockingDiagram = true;
 
-    this.diagramUtils.getDataService().unlockDiagram(this.diagramLockInfo!).subscribe({
+    this.diagramEditorService.unlockDiagram(this.diagramLockInfo!).subscribe({
       next: () => {
         this.isUnlockingDiagram = false;
         this.diagramLockInfo = null;
@@ -546,7 +548,7 @@ Opening diagram in read-only mode.`
       return;
     // this.lockStatus = 'acquiring';
     // this.lockStatusMessage = 'Acquiring lock...';
-    this.diagramUtils.getDataService().lockDiagram(pathwayDiagram).subscribe({
+    this.diagramEditorService.lockDiagram(pathwayDiagram).subscribe({
       next: (diagramLockInfo) => {
         console.debug('Diagram lock info: ', diagramLockInfo);
         if (this.isLockOwnedByCurrentUser(diagramLockInfo)) {
@@ -573,7 +575,7 @@ Opening diagram in read-only mode.`
       return;
     }
 
-    this.diagramUtils.getDataService().hasCytoscapeNetwork(pathwayDiagramId).subscribe((hasCyNetwork: boolean) => {
+    this.diagramEditorService.hasCytoscapeNetwork(pathwayDiagramId).subscribe((hasCyNetwork: boolean) => {
       if (hasCyNetwork) {
         this.loadPathwayDiagram();
         return;
@@ -970,7 +972,7 @@ Opening diagram in read-only mode.`
         break;
 
       case 'editPathwayDiagram':
-        this.diagramUtils.getDataService().getCytoscapeNetwork(this.pathwayDiagramId).subscribe({
+        this.diagramEditorService.getCytoscapeNetwork(this.pathwayDiagramId).subscribe({
           next: (pathwayDiagram: Instance) => {
             if (pathwayDiagram) {
               this.openPathwayDiagramEvent.emit(pathwayDiagram.dbId);
@@ -1044,7 +1046,7 @@ Opening diagram in read-only mode.`
     });
 
     // Use pathwayDiagramId, instead of pathwayId for uploading
-    this.diagramUtils.getDataService().uploadCytoscapeNetwork(this.pathwayDiagramId, networkJson).subscribe({
+    this.diagramEditorService.uploadCytoscapeNetwork(this.pathwayDiagramId, networkJson).subscribe({
       next: (success) => {
         this.commitWaitDialogRef?.close();
         this.commitWaitDialogRef = undefined;
