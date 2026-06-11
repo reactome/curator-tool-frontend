@@ -1435,13 +1435,13 @@ export class DataService {
 
   /**
  * Lock the diagram for editing to prevent concurrent modifications.
-   * @param dbId PathwayDiagram dbId
+   * @param pathwayDiagramDbId PathwayDiagram dbId
  */
-  lockDiagram(instance: Instance): Observable<DiagramLock> {
+  lockDiagram(dbId: number): Observable<DiagramLock | null> {
 
-    return this.http.post<DiagramLock>(this.lockDiagramUrl, instance).pipe(
-      map((lock: DiagramLock) => {
-        console.debug(`Diagram ${instance.dbId} lock status: ${lock.locked ? `Locked by ${lock.username} at ${lock.lockedAt}` : 'Not locked'}`);
+    return this.http.get<DiagramLock | null>(this.lockDiagramUrl + `${dbId}`).pipe(
+      map((lock: DiagramLock | null) => {
+        console.debug(`Diagram ${dbId} lock status: ${lock?.locked ? `Locked by ${lock.username} at ${lock.lockedAt}` : 'Not locked or unavailable'}`);
         return lock;
       }),
       catchError(error => {

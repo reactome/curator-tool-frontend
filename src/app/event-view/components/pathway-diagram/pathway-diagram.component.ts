@@ -496,7 +496,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     return false;
   }
 
-  private isLockOwnedByCurrentUser(lockInfo: DiagramLock): boolean {
+  private isLockOwnedByCurrentUser(lockInfo: DiagramLock | null | undefined): boolean {
     if (!lockInfo)
       return false;
     const lockUser = (lockInfo.username || '').trim().toLowerCase();
@@ -509,22 +509,24 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   }
 
 
-  private showDiagramLockedDialog(lockInfo: DiagramLock) {
-    const owner = lockInfo.username && lockInfo.username.length > 0 ? lockInfo.username : 'another user';
-    const lockedAtLine = lockInfo.lockedAt && lockInfo.lockedAt.length > 0
+  private showDiagramLockedDialog(lockInfo: DiagramLock | null | undefined) {
+    const owner = lockInfo && lockInfo.username && lockInfo.username.length > 0 ? lockInfo.username : 'another user';
+    const lockedAtLine = lockInfo && lockInfo.lockedAt && lockInfo.lockedAt.length > 0
       ? `Locked at: ${lockInfo.lockedAt}`
       : 'Locked at: unavailable';
+    const message = lockInfo
+      ? `This pathway diagram is currently locked by user "${owner}".\n${lockedAtLine}\nOpening diagram in read-only mode.`
+      : 'This pathway diagram is currently locked by another user. Opening diagram in read-only mode.';
+
     this.dialog.open(InfoDialogComponent, {
       data: {
         title: 'Diagram Locked',
-        message: `This pathway diagram is currently locked by user "${owner}".
-${lockedAtLine}
-Opening diagram in read-only mode.`
+        message: message
       }
     });
   }
 
-  private updateLockStatus(lockInfo: DiagramLock) {
+  private updateLockStatus(lockInfo: DiagramLock | null | undefined) {
     // Use lock's hasBackupDiagram to determine whether the diagram has been edited
     this.isEdited = !!lockInfo?.hasBackupDiagram;
     if (this.isLockOwnedByCurrentUser(lockInfo)) {
@@ -538,22 +540,28 @@ Opening diagram in read-only mode.`
       this.lockStatusMessage = `Locked by ${owner}.`;
       return;
     }
+    // If no lock info, treat as idle
+    if (!lockInfo) {
+      this.lockStatus = 'idle';
+      this.lockStatusMessage = 'Lock not requested.';
+      return;
+    }
     this.lockStatus = 'error';
     this.lockStatusMessage = 'Unable to acquire lock.';
   }
 
-  private lockPathwayDiagram(pathwayDiagram: Instance) {
-    const id = pathwayDiagram.dbId;
+  private lockPathwayDiagram(pathwayDiagramDbId: number) {
+    const id = pathwayDiagramDbId;
     if (id === undefined)
       return;
     // this.lockStatus = 'acquiring';
     // this.lockStatusMessage = 'Acquiring lock...';
-    this.diagramEditorService.lockDiagram(pathwayDiagram).subscribe({
+    this.diagramEditorService.lockDiagram(pathwayDiagramDbId).subscribe({
       next: (diagramLockInfo) => {
         console.debug('Diagram lock info: ', diagramLockInfo);
         if (this.isLockOwnedByCurrentUser(diagramLockInfo)) {
           this.diagramLockInfo = diagramLockInfo;
-          this.pathwayDiagramId = diagramLockInfo.diagramDbId.toString();
+          this.pathwayDiagramId = diagramLockInfo!.diagramDbId.toString();
           this.isEditing = true;
           this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
           this.updateLockStatus(diagramLockInfo);
@@ -571,7 +579,11 @@ Opening diagram in read-only mode.`
   private loadEditingDiagramOrReuseCurrent(pathwayDiagramId: string) {
     // If there are unsaved changes already in memory, avoid reload to prevent loss.
     if (this.isEdited) {
-      this.diagramUtils.enableEditing(this.diagram);
+      if (this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
+        this.diagramUtils.enableEditing(this.diagram);
+      } else {
+        this.showDiagramLockedDialog(this.diagramLockInfo ?? null);
+      }
       return;
     }
 
@@ -587,8 +599,12 @@ Opening diagram in read-only mode.`
           return;
         }
 
-        // Keep the currently displayed pathway network and only turn editing on.
-        this.diagramUtils.enableEditing(this.diagram);
+        // Keep the currently displayed pathway network and only turn editing on if we own the lock.
+        if (this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
+          this.diagramUtils.enableEditing(this.diagram);
+        } else {
+          this.showDiagramLockedDialog(this.diagramLockInfo ?? null);
+        }
         this.setDiagramLabel();
       });
     });
@@ -599,9 +615,11 @@ Opening diagram in read-only mode.`
       if (!canEdit)
         return;
       if (this.pathwayDiagramId && this.pathwayDiagramId.length > 0) {
-        // Already have a PathwayDiagram id for editing
-        this.isEditing = true;
+        // Already have a PathwayDiagram id for editing — verify/attempt lock before enabling edits
         this.diagram.diagramId = this.pathwayDiagramId;
+        // Attempt to acquire lock; lockPathwayDiagram will enable editing only if lock is owned.
+        this.lockPathwayDiagram(Number(this.pathwayDiagramId));
+        // Load the diagram (read-only until lock is confirmed)
         this.loadPathwayDiagram();
         return;
       }
@@ -609,8 +627,8 @@ Opening diagram in read-only mode.`
       this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe({
         next: (pathwayDiagram: Instance) => {
           if (pathwayDiagram) {
-            this.lockPathwayDiagram(pathwayDiagram);
-            this.isEditing = true;
+            // Attempt to acquire a lock first; `lockPathwayDiagram` will set `isEditing` when lock is owned.
+            this.lockPathwayDiagram(pathwayDiagram.dbId);
             this.diagram.diagramId = pathwayDiagram.dbId.toString();
             // Let the event handler for "network_displayed" to handle the rest
             this.loadPathwayDiagram();

@@ -46,7 +46,7 @@
                                         <li class="panel-item" *ngFor="let lock of pathwayDiagramLocks">
                                                 <span class="diagram-name">{{lock.displayName}}</span>
                                                 <span class="diagram-meta">[{{lock.diagramDbId}}]</span>
-                                                <button mat-icon-button class="panel-open-button" (click)="openPathwayDiagram(lock.diagramDbId)"
+                                                <button mat-icon-button class="panel-open-button" (click)="openPathwayDiagram(lock.pathwayDbId || lock.diagramDbId)"
                                                         matTooltip="Open diagram" matTooltipPosition="left">
                                                         <mat-icon>open_in_new</mat-icon>
                                                 </button>

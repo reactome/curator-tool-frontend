@@ -18,6 +18,7 @@ interface DiagramLockViewModel {
   lockId: string;
   lockedAt: string;
   displayName: string;
+  pathwayDbId?: number;
 }
 
 @Component({
@@ -207,12 +208,23 @@ export class StatusComponent implements OnInit, OnDestroy {
         const requests = validLocks.map((lock: DiagramLock) =>
           this.dataService.fetchInstance(Number(lock.diagramDbId)).pipe(
             take(1),
-            map((diagramInst: Instance) => ({
-              diagramDbId: Number(lock.diagramDbId),
-              lockId: lock.lockId,
-              lockedAt: lock.lockedAt,
-              displayName: diagramInst?.displayName || `PathwayDiagram ${lock.diagramDbId}`
-            }) as DiagramLockViewModel),
+            map((diagramInst: Instance) => {
+              // Try to extract the represented pathway dbId from the PathwayDiagram instance
+              let represented = diagramInst?.attributes instanceof Map
+                ? diagramInst.attributes.get('representedPathway')
+                : diagramInst?.attributes?.representedPathway;
+              let pathwayDbId: number | undefined = undefined;
+              if (Array.isArray(represented) && represented.length > 0 && represented[0]?.dbId) {
+                pathwayDbId = Number(represented[0].dbId);
+              }
+              return ({
+                diagramDbId: Number(lock.diagramDbId),
+                lockId: lock.lockId,
+                lockedAt: lock.lockedAt,
+                displayName: diagramInst?.displayName || `PathwayDiagram ${lock.diagramDbId}`,
+                pathwayDbId: pathwayDbId
+              }) as DiagramLockViewModel
+            }),
             catchError(() => of({
               diagramDbId: Number(lock.diagramDbId),
               lockId: lock.lockId,

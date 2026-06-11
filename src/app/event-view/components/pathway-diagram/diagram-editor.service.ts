@@ -7,7 +7,7 @@ import { DiagramLock } from 'src/app/core/models/reactome-instance.model';
 export class DiagramEditorService {
   constructor(private dataService: DataService) {}
 
-  lockDiagram(pathwayDiagram: any): Observable<DiagramLock> {
+  lockDiagram(pathwayDiagram: any): Observable<DiagramLock | null> {
     return this.dataService.lockDiagram(pathwayDiagram);
   }
 
