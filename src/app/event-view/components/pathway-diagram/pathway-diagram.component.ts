@@ -101,7 +101,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   }
 
   get isLockOwnedByMe(): boolean {
-    return this.lockStatus === 'acquired';
+    return this.lockStatus === 'acquired' || this.isLockOwnedByCurrentUser(this.diagramLockInfo);
   }
 
   get lockIndicatorTooltip(): string {
@@ -304,7 +304,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
           this.lockStatusMessage = 'Lock not requested.';
           return;
         }
-        const lockForDiagram = locks.find(l => Number(l?.diagramDbId) === networkDiagramDbId);
+        const lockForDiagram = locks.find(l => {
+          const dbId = Number(l?.diagramDbId);
+          const matchesRequested = dbId === requestedDiagramDbId;
+          const matchesLockAssociated = Number.isFinite(lockAssociatedDiagramDbId as number) && dbId === Number(lockAssociatedDiagramDbId);
+          return matchesRequested || matchesLockAssociated;
+        });
         if (lockForDiagram) {
           // store lock info and update UI state
           this.diagramLockInfo = lockForDiagram;
@@ -512,7 +517,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     return false;
   }
 
-  private isLockOwnedByCurrentUser(lockInfo: DiagramLock | null | undefined): boolean {
+  isLockOwnedByCurrentUser(lockInfo: DiagramLock | null | undefined): boolean {
     if (!lockInfo)
       return false;
     const lockUser = (lockInfo.username || '').trim().toLowerCase();
