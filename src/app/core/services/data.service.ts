@@ -66,6 +66,7 @@ export class DataService {
   private backupCyNetworkUrl = `${environment.ApiRoot}/backupCyNetwork/`;
   private loadBackupCyNetworkUrl = `${environment.ApiRoot}/loadBackupCyNetwork/`;
   private getDiagramLocksUrl = `${environment.ApiRoot}/getDiagramLocks/`;
+  private hasDiagramLockedUrl = `${environment.ApiRoot}/hasDiagramLocked/`;
 
 
   // Track the negative dbId to be used
@@ -1570,21 +1571,6 @@ export class DataService {
     );
   }
 
-  // Load the users edits which are backed up in the server. 
-  // loadBackupCyNetwork(pathwayDiagramId: any): Observable<any> {
-  //   return this.http.get<any>(this.loadBackupCyNetworkUrl + pathwayDiagramId).pipe(
-  //     tap((data) => console.debug('loadBackupCyNetwork success', { pathwayDiagramId, hasData: !!data })),
-  //     catchError((error: any) => {
-  //       const status = error?.status;
-  //       console.warn(`loadBackupCyNetwork failed for ${pathwayDiagramId}:`, status, error?.message || error);
-  //       // If unauthorized, don't force a global redirect — treat as no backup available
-  //       if (status === 401) {
-  //         return of(null);
-  //       }
-  //       return this.handleErrorMessage(error);
-  //     })
-  //   );
-  // }
 
   // Used to keep a backup copy of the edited network in case the user wants to discard the changes and revert to the original network loaded from the database. The backup copy will be deleted after loading it back to the front end or when the user logs out.
   backupCyNetwork(pathwayDiagramId: number, network: object): Observable<boolean> {
@@ -1599,6 +1585,14 @@ export class DataService {
         if (status === 401) {
           return of(false);
         }
+        return this.handleErrorMessage(error);
+      })
+    );
+  }
+
+  hasDiagramLocked(pathwayDiagramId: number): Observable<DiagramLock | null> {
+    return this.http.get<DiagramLock | null>(this.hasDiagramLockedUrl + pathwayDiagramId).pipe(
+      catchError(error => {
         return this.handleErrorMessage(error);
       })
     );

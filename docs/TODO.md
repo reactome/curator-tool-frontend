@@ -75,6 +75,8 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 
 -TODO: a user may make pathway diagram edits without a lock, but they cannot commit these edits without a lock.
 
+- TODO: implement post-processing for Uniprot, ChEBI, external ontology (ReferenceMolecule)
+
 # Deletion related document kept here for the time being
  * The following may need to be collected into some document for test cases in the doc folder:
  * Expected behavior of deleting an instance:

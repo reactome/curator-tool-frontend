@@ -207,7 +207,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     if (!this.isEdited)
       return;
     event.preventDefault();
-    event.returnValue = 'You have unsaved pathway diagram changes. Upload them before closing or reloading this page.';
+    // event.returnValue = 'You have unsaved pathway diagram changes. Upload them before closing or reloading this page.';
   }
 
   @HostListener('document:visibilitychange')
@@ -215,7 +215,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     // Keep lock when tab visibility changes; unlock is manual only.
   }
 
-
+ // TODO: remove the "reason" parameter and just call this method "backupEditedDiagram" since it will be used for all backup scenarios including periodic autosave, navigate to another diagram, and component destroy/logout.
   private backupEditedDiagram(reason: string): void {
     if (this.isBackgroundBackupInProgress)
       return;
@@ -255,19 +255,19 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       proceed();
       return;
     }
-    const dialogRef = this.dialog.open(UnsavedUploadDialogComponent, {
-      data: {
-        title: 'Unsaved Changes',
-        message: `This diagram has unsaved changes. Upload before ${action}?`
-      },
-      disableClose: true
-    });
-    dialogRef.afterClosed().pipe(take(1)).subscribe((shouldUpload: boolean | null) => {
-      if (shouldUpload === true)
-        this.uploadDiagram(false, proceed);
-      else if (shouldUpload === false)
-        proceed();
-    });
+    // const dialogRef = this.dialog.open(UnsavedUploadDialogComponent, {
+    //   data: {
+    //     title: 'Unsaved Changes',
+    //     message: `This diagram has unsaved changes. Upload before ${action}?`
+    //   },
+    //   disableClose: true
+    // });
+    // dialogRef.afterClosed().pipe(take(1)).subscribe((shouldUpload: boolean | null) => {
+    //   if (shouldUpload === true)
+    //     this.uploadDiagram(false, proceed);
+    //   else if (shouldUpload === false)
+    //     proceed();
+    // });
   }
 
   private storeViewport() {
@@ -284,7 +284,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     this.storeViewport();
     const requestedDiagramDbId = Number(this.diagram.diagramId);
     const lockAssociatedDiagramDbId = this.getLockAssociatedDiagramDbId(requestedDiagramDbId);
-    const networkDiagramDbId = Number.isFinite(lockAssociatedDiagramDbId as number) && Number(lockAssociatedDiagramDbId) > 0
+    // Use lock-associated diagram id only when in editing mode or when the current user owns the lock.
+    const shouldUseLockAssociated = this.isEditing || this.isLockOwnedByCurrentUser(this.diagramLockInfo);
+    const networkDiagramDbId = shouldUseLockAssociated && Number.isFinite(lockAssociatedDiagramDbId as number) && Number(lockAssociatedDiagramDbId) > 0
       ? Number(lockAssociatedDiagramDbId)
       : requestedDiagramDbId;
 
@@ -292,6 +294,11 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     this.diagramEditorService.getDiagramLocks().pipe(take(1)).subscribe({
       next: (locks: DiagramLock[]) => {
         if (!locks || locks.length === 0) {
+          // If we currently own a lock locally, don't clear it here (may be eventual consistency)
+          if (this.diagramLockInfo && this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
+            this.updateLockStatus(this.diagramLockInfo);
+            return;
+          }
           this.diagramLockInfo = null;
           this.lockStatus = 'idle';
           this.lockStatusMessage = 'Lock not requested.';
@@ -303,13 +310,22 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
           this.diagramLockInfo = lockForDiagram;
           this.updateLockStatus(lockForDiagram);
         } else {
+          // If we currently have a locally stored lock owned by us, keep it rather than clearing.
+          if (this.diagramLockInfo && this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
+            this.updateLockStatus(this.diagramLockInfo);
+            return;
+          }
           this.diagramLockInfo = null;
           this.lockStatus = 'idle';
           this.lockStatusMessage = 'Lock not requested.';
         }
       },
       error: () => {
-        // On error, clear any transient lock info so icon/state is not displayed erroneously
+        // On error, preserve local lock if owned; otherwise clear transient lock info
+        if (this.diagramLockInfo && this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
+          this.updateLockStatus(this.diagramLockInfo);
+          return;
+        }
         this.diagramLockInfo = null;
         this.lockStatus = 'idle';
         this.lockStatusMessage = 'Lock not requested.';
@@ -515,8 +531,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       ? `Locked at: ${lockInfo.lockedAt}`
       : 'Locked at: unavailable';
     const message = lockInfo
-      ? `This pathway diagram is currently locked by user "${owner}".\n${lockedAtLine}\nOpening diagram in read-only mode.`
-      : 'This pathway diagram is currently locked by another user. Opening diagram in read-only mode.';
+      ? `This pathway diagram is currently locked by user "${owner}".\n${lockedAtLine}`
+      : 'This pathway diagram is currently locked by another user.';
 
     this.dialog.open(InfoDialogComponent, {
       data: {
@@ -527,8 +543,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   }
 
   private updateLockStatus(lockInfo: DiagramLock | null | undefined) {
-    // Use lock's hasBackupDiagram to determine whether the diagram has been edited
-    this.isEdited = !!lockInfo?.hasBackupDiagram;
+    // Use lock's hasBackupDiagram or ownership to determine whether the diagram
+    // should be considered edited. If the current user owns the lock, consider
+    // it edited so the UI reflects that (e.g. title stays red).
+    this.isEdited = !!lockInfo?.hasBackupDiagram || this.isLockOwnedByCurrentUser(lockInfo);
     if (this.isLockOwnedByCurrentUser(lockInfo)) {
       this.lockStatus = 'acquired';
       this.lockStatusMessage = 'Lock acquired. Editing is available.';
@@ -563,8 +581,11 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
           this.diagramLockInfo = diagramLockInfo;
           this.pathwayDiagramId = diagramLockInfo!.diagramDbId.toString();
           this.isEditing = true;
-          this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
-          this.updateLockStatus(diagramLockInfo);
+          // Refresh server-side diagram locks so DataService knows about the new lock
+          this.diagramEditorService.getDiagramLocks().pipe(take(1)).subscribe(() => {
+            this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
+            this.updateLockStatus(diagramLockInfo);
+          });
           return;
         }
         this.showDiagramLockedDialog(diagramLockInfo);
@@ -577,36 +598,37 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   }
 
   private loadEditingDiagramOrReuseCurrent(pathwayDiagramId: string) {
-    // If there are unsaved changes already in memory, avoid reload to prevent loss.
-    if (this.isEdited) {
-      if (this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
-        this.diagramUtils.enableEditing(this.diagram);
-      } else {
-        this.showDiagramLockedDialog(this.diagramLockInfo ?? null);
-      }
-      return;
-    }
-
-    this.diagramEditorService.hasCytoscapeNetwork(pathwayDiagramId).subscribe((hasCyNetwork: boolean) => {
-      if (hasCyNetwork) {
-        this.loadPathwayDiagram();
-        return;
-      }
-
-      this.diagramUtils.getDataService().hasDiagram(pathwayDiagramId).subscribe((hasDiagram: boolean) => {
-        if (hasDiagram) {
-          this.loadPathwayDiagram();
-          return;
+    
+    // Always fetch the cytoscape network from the server when switching to editing.
+    // The server may return a backup network (if present) or an empty response.
+    const networkRequest$ = this.diagramEditorService.getCytoscapeNetwork(pathwayDiagramId);
+    networkRequest$.subscribe({
+      next: (cytoscapeJson: any) => {
+        // Clear selection first to avoid residual selections
+        this.diagramUtils.clearSelection(this.diagram);
+        if (cytoscapeJson && cytoscapeJson.elements) {
+          this.diagram.displayNetwork(cytoscapeJson.elements);
+        } else {
+          // No network returned: display empty network to reflect server state
+          this.diagram.displayNetwork([]);
         }
 
-        // Keep the currently displayed pathway network and only turn editing on if we own the lock.
+        // Enable editing only if lock is owned by current user
         if (this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
           this.diagramUtils.enableEditing(this.diagram);
         } else {
           this.showDiagramLockedDialog(this.diagramLockInfo ?? null);
         }
         this.setDiagramLabel();
-      });
+      },
+      error: (err: any) => {
+        if (this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
+          this.diagramUtils.enableEditing(this.diagram);
+        } else {
+          this.showDiagramLockedDialog(this.diagramLockInfo ?? null);
+        }
+        this.setDiagramLabel();
+      }
     });
   }
 
@@ -614,25 +636,70 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     this.canEdit().subscribe((canEdit: boolean) => {
       if (!canEdit)
         return;
+      
       if (this.pathwayDiagramId && this.pathwayDiagramId.length > 0) {
         // Already have a PathwayDiagram id for editing — verify/attempt lock before enabling edits
         this.diagram.diagramId = this.pathwayDiagramId;
-        // Attempt to acquire lock; lockPathwayDiagram will enable editing only if lock is owned.
-        this.lockPathwayDiagram(Number(this.pathwayDiagramId));
-        // Load the diagram (read-only until lock is confirmed)
-        this.loadPathwayDiagram();
+        // First check whether a cytoscape network exists for this PathwayDiagram.
+        this.diagramEditorService.hasCytoscapeNetwork(this.pathwayDiagramId).pipe(take(1)).subscribe((hasCyNetwork: boolean) => {
+          // After knowing whether a cy network exists, check lock state and decide.
+          this.diagramUtils.getDataService().hasDiagramLocked(Number(this.pathwayDiagramId)).subscribe((lock: DiagramLock | null) => {
+            if (lock == null) {
+              // Unlocked: acquire lock and proceed to editing
+              this.lockPathwayDiagram(Number(this.pathwayDiagramId));
+              return;
+            }
+            if (this.isLockOwnedByCurrentUser(lock)) {
+              // We already own the lock: use it and load editing network
+              this.diagramLockInfo = lock;
+              this.pathwayDiagramId = lock.diagramDbId?.toString() ?? this.pathwayDiagramId;
+              this.isEditing = true;
+              // Refresh locks and load editing network
+              this.diagramEditorService.getDiagramLocks().pipe(take(1)).subscribe(() => {
+                this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
+                this.updateLockStatus(lock);
+              });
+              return;
+            }
+            // Locked by another user: inform and prevent editing
+            this.diagramLockInfo = lock;
+            this.updateLockStatus(lock);
+            this.showDiagramLockedDialog(lock);
+          });
+        });
+        // Do not load the pathway diagram here; wait for lockPathwayDiagram to
+        // call loadEditingDiagramOrReuseCurrent when the lock result is known.
         return;
       }
       // Switch to PathwayDiagram 
       this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe({
         next: (pathwayDiagram: Instance) => {
           if (pathwayDiagram) {
-            // Attempt to acquire a lock first; `lockPathwayDiagram` will set `isEditing` when lock is owned.
-            this.lockPathwayDiagram(pathwayDiagram.dbId);
+            
             this.diagram.diagramId = pathwayDiagram.dbId.toString();
-            // Let the event handler for "network_displayed" to handle the rest
-            this.loadPathwayDiagram();
             this.pathwayDiagramId = pathwayDiagram.dbId.toString(); // Store it for future use
+            // First check whether a cytoscape network exists for this PathwayDiagram.
+            this.diagramEditorService.hasCytoscapeNetwork(this.pathwayDiagramId).pipe(take(1)).subscribe((hasCyNetwork: boolean) => {
+              // After knowing whether a cy network exists, check lock state and decide.
+              this.diagramUtils.getDataService().hasDiagramLocked(Number(this.pathwayDiagramId)).subscribe((lock: DiagramLock | null) => {
+                if (lock == null) {
+                  this.lockPathwayDiagram(pathwayDiagram.dbId);
+                  return;
+                }
+                if (this.isLockOwnedByCurrentUser(lock)) {
+                  this.diagramLockInfo = lock;
+                  this.isEditing = true;
+                  this.diagramEditorService.getDiagramLocks().pipe(take(1)).subscribe(() => {
+                    this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
+                    this.updateLockStatus(lock);
+                  });
+                  return;
+                }
+                this.diagramLockInfo = lock;
+                this.updateLockStatus(lock);
+                this.showDiagramLockedDialog(lock);
+              });
+            });
           }
           else {
             this.showNoPathwayDiagramDialog();
