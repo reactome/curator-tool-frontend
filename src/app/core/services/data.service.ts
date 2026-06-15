@@ -60,8 +60,6 @@ export class DataService {
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
   private lockDiagramUrl = `${environment.ApiRoot}/lockDiagram/`;
   private unlockDiagramUrl = `${environment.ApiRoot}/unlockDiagram/`;
-  private deletePersistedPathwayDiagramUrl = `${environment.ApiRoot}/deletePersistedPathwayDiagram/`;
-  private persistPathwayDiagramUrl = `${environment.ApiRoot}/persistPathwayDiagram/`;
   private loadPathwayDiagramUrl = `${environment.ApiRoot}/loadPathwayDiagrams/`;
   private backupCyNetworkUrl = `${environment.ApiRoot}/backupCyNetwork/`;
   private loadBackupCyNetworkUrl = `${environment.ApiRoot}/loadBackupCyNetwork/`;
@@ -863,63 +861,6 @@ export class DataService {
     );
   }
 
-  persistPathwayDiagram(username: string | undefined, pathwayDiagramDbId: number, network: object): Observable<boolean> {
-    // username: path variable to identify which user's staged diagrams these are
-    const targetUrl = username ? `${this.persistPathwayDiagramUrl}${encodeURIComponent(username)}` : this.persistPathwayDiagramUrl;
-    const isLocked = this.diagramLocks$.getValue().some(lock => lock?.diagramDbId === pathwayDiagramDbId);
-
-    return this.store.select(defaultPerson()).pipe(
-      take(1),
-      concatMap((person: Instance[]) => {
-        const defaultPersonId = (person && person.length > 0 && person[0].dbId !== undefined) ? person[0].dbId : undefined;
-        const networkToPersist = network && typeof network === 'object'
-          ? (defaultPersonId ? { ...network, defaultPersonId } : { ...network })
-          : network;
-
-        if (isLocked) {
-          // Persist edited network as a backup for locked diagrams
-          return this.backupCyNetwork(pathwayDiagramDbId, networkToPersist).pipe(
-            tap(() => console.debug('Persisted edited network to backup for', pathwayDiagramDbId)),
-            catchError(error => {
-              return this.handleErrorMessage(error);
-            })
-          );
-        }
-
-        const payload = [{
-          pathwayDiagramId: pathwayDiagramDbId,
-          node: networkToPersist,
-        }];
-        return this.http.post<boolean>(targetUrl, payload).pipe(
-          tap(() => {
-            console.debug('Cytoscape network for ' + pathwayDiagramDbId + ' uploaded.');
-            this.removeInstanceInCache(pathwayDiagramDbId);
-          }),
-          catchError(error => {
-            return this.handleErrorMessage(error);
-          })
-        );
-      })
-    );
-  }
-
-  perisistPathwayDiagram(any: any[], username?: string): Observable<boolean> {
-    const payload = this.normalizePathwayDiagramObjects(any).map((item: any) => ({
-      pathwayDiagramId: Number(item.pathwayDiagramDbId ?? item.diagramLock?.diagramDbId),
-      node: item.network ?? (item as any).object
-    })).filter(item => !!item.pathwayDiagramId && !!item.node);
-
-    if (payload.length === 0)
-      return of(true);
-
-    const targetUrl = username ? `${this.persistPathwayDiagramUrl}${encodeURIComponent(username)}` : this.persistPathwayDiagramUrl;
-    return this.http.post<boolean>(targetUrl, payload).pipe(
-      catchError(error => {
-        return this.handleErrorMessage(error);
-      })
-    );
-  }
-
   hasCytoscapeNetwork(pathwayId: any): Observable<boolean> {
     return this.http.get<boolean>(this.hasCyNetworkUrl + pathwayId).pipe(
       catchError(error => {
@@ -1463,14 +1404,6 @@ export class DataService {
         return isLocked;
 
       }),
-      catchError(error => {
-        return this.handleErrorMessage(error);
-      })
-    );
-  }
-
-  deletePersistedPathwayDiagram(diagram: DiagramLock): Observable<boolean> {
-    return this.http.post<boolean>(this.deletePersistedPathwayDiagramUrl, diagram).pipe(
       catchError(error => {
         return this.handleErrorMessage(error);
       })

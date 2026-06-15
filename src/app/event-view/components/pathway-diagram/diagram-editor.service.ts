@@ -23,10 +23,6 @@ export class DiagramEditorService {
     return this.dataService.uploadCytoscapeNetwork(pathwayDiagramId, networkJson);
   }
 
-  persistPathwayDiagram(username: string | undefined, pathwayDiagramDbId: number, network: object): Observable<boolean> {
-    return this.dataService.persistPathwayDiagram(username, pathwayDiagramDbId, network);
-  }
-
   hasCytoscapeNetwork(pathwayDiagramId: any): Observable<boolean> {
     return this.dataService.hasCytoscapeNetwork(pathwayDiagramId);
   }
