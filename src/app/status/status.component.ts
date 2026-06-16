@@ -12,6 +12,7 @@ import { DataService } from "../core/services/data.service";
 import { AuthenticateService } from '../core/services/authenticate.service';
 import { Subscription, combineLatest, debounceTime, forkJoin, of, skip, take } from "rxjs";
 import { catchError, map } from 'rxjs/operators';
+import { DiagramEditorService } from '../event-view/components/pathway-diagram/utils/diagram-editor.service';
 
 interface DiagramLockViewModel {
   diagramDbId: number;
@@ -48,7 +49,8 @@ export class StatusComponent implements OnInit, OnDestroy {
     private instanceSelectionService: ListInstancesDialogService,
     private router: Router,
     private dataService: DataService,
-    private authService: AuthenticateService) {
+    private authService: AuthenticateService,
+    private diagramEditorService: DiagramEditorService) {
   }
 
   private _snackBar = inject(MatSnackBar);
@@ -196,7 +198,7 @@ export class StatusComponent implements OnInit, OnDestroy {
     }
 
     this.pathwayDiagramLocksLoading = true;
-    this.dataService.getDiagramLocks().pipe(take(1)).subscribe({
+    this.diagramEditorService.getDiagramLocks().pipe(take(1)).subscribe({
       next: (locks: DiagramLock[]) => {
         const validLocks = (locks || []).filter((lock: DiagramLock) => Number(lock?.diagramDbId) > 0);
         if (validLocks.length === 0) {

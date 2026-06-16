@@ -346,7 +346,7 @@ export class PathwayDiagramUtilService {
             if (selectedElement.classes().includes('Pathway') && element.classes().includes('PhysicalEntity'))
                 return true;
         }
-        else if (selectedElements.length == 2 && selectedElements.includes(element)) {
+        else if (selectedElements.length == 2 && selectedElements.filter((el: any) => el === element).length > 0) {
             const elm1 = selectedElements[0];
             const elm2 = selectedElements[1];
             // Make sure one of them is a ProcessNode
@@ -896,8 +896,10 @@ export class PathwayDiagramUtilService {
         });
         // Get the position of nodes to be used for edges
         const id2node = new Map<string, any>();
-        diagram.cy.nodes().forEach((node: any) => id2node.set(node.data('id'), node));
-        const id2edges = new Map<number, any[]>();
+        diagram.cy.nodes().forEach((node: any) => {
+            id2node.set(node.data('id'), node);
+        });
+        const id2edges = new Map<number | string, any[]>();
         diagram.cy.edges().forEach((edge: any) => {
             const id = this.getHyperEdgeId(edge);
             id2edges.set(id, [...(id2edges.get(id) || []), edge]);
@@ -936,12 +938,13 @@ export class PathwayDiagramUtilService {
     enableReactionEditing(id: string|number, diagram: DiagramComponent) {
         // Get the position of nodes to be used for edges
         const id2node = new Map<string, any>();
-        diagram.cy.nodes().forEach((node: any) => id2node.set(node.data('id'), node));
-        const id2edges = new Map<number, any[]>();
+        diagram.cy.nodes().forEach((node: any) => {
+            id2node.set(node.data('id'), node);
+        });
         const edges = diagram.cy.edges().filter((edge: any) => this.getHyperEdgeId(edge) === id);
         // convert all edges for a reaction into an HyperEdge object for easy editing
         const hyperEdge: HyperEdge = new HyperEdge(this, diagram.cy, id);
-        hyperEdge.expandEdges(edges, id2node);
+        hyperEdge.expandEdges(edges.toArray(), id2node);
         this.id2hyperEdge.set(id, hyperEdge);
         // For single reaction, there is not need to make sure all round-segments have been converted for editing
         // Call this to make sure all new edges can be flagged for sub-pathways if any

@@ -1,7 +1,7 @@
 import { HttpClient, HttpResponse } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
-import { catchError, combineLatest, concatMap, EMPTY, forkJoin, map, Observable, of, Subject, switchMap, take, tap, throwError, BehaviorSubject, finalize, shareReplay } from 'rxjs';
+import { catchError, combineLatest, concatMap, EMPTY, forkJoin, map, Observable, of, Subject, switchMap, take, tap, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
 import { DiagramLock, Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
@@ -30,9 +30,6 @@ export class DataService {
   // Cache fetched instances
   // List of URLs
   private id2instance: Map<number, Instance> = new Map<number, Instance>();
-  // Use a BehaviorSubject to avoid race conditions when populating/accessing locks
-  private diagramLocks$: BehaviorSubject<DiagramLock[]> = new BehaviorSubject<DiagramLock[]>([]);
-  private getDiagramLocksInFlight$: Observable<DiagramLock[]> | null = null;
   private schemaClassDataUrl = `${environment.ApiRoot}/getAttributes/` // TODO: Need to consider using Angular ConfigService!
   private entityDataUrl = `${environment.ApiRoot}/findByDbId/`;
   private schemaClassTreeUrl = `${environment.ApiRoot}/getSchemaClassTree/`;
@@ -47,24 +44,12 @@ export class DataService {
   private persistInstancesUrl = `${environment.ApiRoot}/persistInstances/`;
   private deletePersistedInstancesUrl = `${environment.ApiRoot}/deletePersistedInstances/`;
   private getReferrersUrl = `${environment.ApiRoot}/getReferrers/`;
-  private uploadCyNetworkUrl = `${environment.ApiRoot}/uploadCyNetwork/`;
-  private hasCyNetworkUrl = `${environment.ApiRoot}/hasCyNetwork/`;
-  private hasDiagramUrl = `${environment.ApiRoot}/hasDiagram/`;
-  private getCyNetworkUrl = `${environment.ApiRoot}/getCyNetwork/`;
   private deleteInstanceUrl = `${environment.ApiRoot}/delete/`;
   private fetchQAReportUrl = `${environment.ApiRoot}/qaReport/`;
   private fetchInstancesInBatchUrl = `${environment.ApiRoot}/findByDbIds/`;
-  private fetchPathwayDiagramUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
   private deleteByDeletedUrl = `${environment.ApiRoot}/deleteByDeleted/`;
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
-  private lockDiagramUrl = `${environment.ApiRoot}/lockDiagram/`;
-  private unlockDiagramUrl = `${environment.ApiRoot}/unlockDiagram/`;
-  private loadPathwayDiagramUrl = `${environment.ApiRoot}/loadPathwayDiagrams/`;
-  private backupCyNetworkUrl = `${environment.ApiRoot}/backupCyNetwork/`;
-  private loadBackupCyNetworkUrl = `${environment.ApiRoot}/loadBackupCyNetwork/`;
-  private getDiagramLocksUrl = `${environment.ApiRoot}/getDiagramLocks/`;
-  private hasDiagramLockedUrl = `${environment.ApiRoot}/hasDiagramLocked/`;
 
 
   // Track the negative dbId to be used
@@ -152,24 +137,6 @@ export class DataService {
         catchError((err: Error) => {
           return this.handleErrorMessage(err);
         }));
-  }
-
-  /**
-   * Load persisted pathway diagram edits for a user.
-   */
-  getPathwayDiagrams(userName: string): Observable<any[]> {
-    return this.http.get<any>(this.loadPathwayDiagramUrl + `${userName}`)
-      .pipe(
-        map((data: any) => this.normalizePathwayDiagramObjects(data)),
-        catchError((err: Error) => {
-          return this.handleErrorMessage(err);
-        })
-      );
-  }
-
-  // Backward-compatible alias for existing call sites.
-  getPathwayDiagrms(userName: string): Observable<any[]> {
-    return this.getPathwayDiagrams(userName);
   }
 
   /**
@@ -297,44 +264,6 @@ export class DataService {
    */
   private convertToSchemaClass(clsName: string, data: any): SchemaClass {
     return this.utils.convertToSchemaClass(clsName, data);
-  }
-
-  /**
-   * Fetch the PathwayDiagram for a given pathway based on its dbId.
-   * @param pathwayId
-   * @returns 
-   */
-  fetchPathwayDiagram(pathwayId: any): Observable<Instance> {
-    const pathwayDbId = parseInt(pathwayId);
-    const cachedPathwayDiagram = this.getCachedPathwayDiagram(pathwayDbId);
-    if (cachedPathwayDiagram)
-      return of(cachedPathwayDiagram);
-
-    return this.http.get<Instance>(this.fetchPathwayDiagramUrl + `${pathwayId}`)
-      .pipe(map((data: Instance) => {
-        // Don't register it since this is just an shell instance to get dbId
-        // for late loading.
-        // this.registerInstance(data);
-        return data;
-      }),
-        catchError((err: Error) => {
-          return throwError(() => err);
-        }));
-  }
-
-  private getCachedPathwayDiagram(pathwayDiagramId: number): Instance | undefined {
-    for (const instance of this.id2instance.values()) {
-      if (instance.schemaClassName !== 'PathwayDiagram' || !instance.attributes)
-        continue;
-      const representedPathway = instance.attributes instanceof Map
-        ? instance.attributes.get('representedPathway')
-        : instance.attributes['representedPathway'];
-      if (!representedPathway || !Array.isArray(representedPathway))
-        continue;
-      if (representedPathway.some((pathway: Instance) => pathway?.dbId === pathwayDiagramId))
-        return instance;
-    }
-    return undefined;
   }
 
   /**
@@ -823,60 +752,6 @@ export class DataService {
     return clone;
   }
 
-  uploadCytoscapeNetwork(pathwayDiagramId: any, network: any): Observable<boolean> {
-    // If the diagram is locked, persist edits to the backup endpoint instead
-    const numericId = Number(pathwayDiagramId);
-    const isLocked = Number.isFinite(numericId) && this.diagramLocks$.getValue().some(lock => lock?.diagramDbId === numericId);
-
-    return this.store.select(defaultPerson()).pipe(
-      take(1),
-      concatMap((person: Instance[]) => {
-        if (!person || person.length === 0 || person[0].dbId === undefined) {
-          return this.handleErrorMessage(new Error('Cannot find the default person! Cannot upload the cytoscape network without the default person!'));
-        }
-        const networkToUpload = network && typeof network === 'object'
-          ? { ...network, defaultPersonId: person[0].dbId }
-          : network;
-
-        if (isLocked) {
-          // Use backup endpoint so edited network is persisted as a user backup
-          return this.backupCyNetwork(numericId, networkToUpload).pipe(
-            tap(() => console.debug('Cytoscape network backup saved for', numericId)),
-            catchError(error => {
-              return this.handleErrorMessage(error);
-            })
-          );
-        }
-
-        // Not locked: upload to authoritative network endpoint and clear cache
-        return this.http.post<boolean>(this.uploadCyNetworkUrl + pathwayDiagramId, networkToUpload).pipe(
-          tap(() => {
-            this.removeInstanceInCache(parseInt(pathwayDiagramId)); // Remove the cached pathway diagram so that it can be reloaded with the new network
-          }),
-          catchError(error => {
-            return this.handleErrorMessage(error);
-          })
-        );
-      })
-    );
-  }
-
-  hasCytoscapeNetwork(pathwayId: any): Observable<boolean> {
-    return this.http.get<boolean>(this.hasCyNetworkUrl + pathwayId).pipe(
-      catchError(error => {
-        return this.handleErrorMessage(error);
-      })
-    );
-  }
-
-  hasDiagram(pathwayId: any): Observable<boolean> {
-    return this.http.get<boolean>(this.hasDiagramUrl + pathwayId).pipe(
-      catchError(error => {
-        return this.handleErrorMessage(error);
-      })
-    );
-  }
-
   exportEventDocx(dbId: number): Observable<HttpResponse<Blob>> {
     return this.http.get(this.exportEventDocxUrl + dbId, {
       observe: 'response',
@@ -887,23 +762,6 @@ export class DataService {
       })
     );
   }
-
-  getCytoscapeNetwork(pathwayDiagramId: any): Observable<any> {
-    const numericId = Number(pathwayDiagramId);
-    // TODO: move to DiagramEditorService since this is specific to pathway diagram editing and not needed for fetching the pathway diagram instance itself
-    const lock: DiagramLock | undefined = this.diagramLocks$.getValue().find(lock => lock?.diagramDbId === numericId);
-    let url = this.getCyNetworkUrl;
-
-    if (lock && lock.hasBackupDiagram) {
-      url = this.loadBackupCyNetworkUrl;
-    }
-    return this.http.get<any>(url + pathwayDiagramId).pipe(
-      catchError(error => {
-        return this.handleErrorMessage(error);
-      })
-    );
-  }
-
 
   /**
    * Empty the persisted instances at the server.
@@ -1372,162 +1230,6 @@ export class DataService {
         return dbIds.map(id => fromCache[id] || fetchedMap.get(id)!);
       }),
       catchError((err: Error) => this.handleErrorMessage(err))
-    );
-  }
-
-  /**
- * Lock the diagram for editing to prevent concurrent modifications.
-   * @param pathwayDiagramDbId PathwayDiagram dbId
- */
-  lockDiagram(dbId: number): Observable<DiagramLock | null> {
-
-    return this.http.get<DiagramLock | null>(this.lockDiagramUrl + `${dbId}`).pipe(
-      map((lock: DiagramLock | null) => {
-        console.debug(`Diagram ${dbId} lock status: ${lock?.locked ? `Locked by ${lock.username} at ${lock.lockedAt}` : 'Not locked or unavailable'}`);
-        return lock;
-      }),
-      catchError(error => {
-        return this.handleErrorMessage(error);
-      })
-    );
-  }
-
-  /**
-* Unlock the diagram once user is done editing.
- * @param diagram DiagramLock object containing lock information
-*/
-  unlockDiagram(diagram: DiagramLock): Observable<boolean> {
-
-    return this.http.post<boolean>(this.unlockDiagramUrl, diagram).pipe(
-      map((isLocked: boolean) => {
-        console.debug(`Diagram ${diagram.diagramDbId} lock status: ${isLocked ? 'Locked' : 'Not locked'}`);
-        return isLocked;
-
-      }),
-      catchError(error => {
-        return this.handleErrorMessage(error);
-      })
-    );
-  }
-
-  private normalizePathwayDiagramObjects(data: any): any[] {
-    const any = Array.isArray(data)
-      ? data
-      : data?.any ?? data?.objects ?? data?.instances ?? [];
-
-    return any.map((item: any) => {
-      if (!item) return item;
-      const sourceObject = item.object ?? item.network ?? item.node ?? item;
-      const parsedObject = typeof sourceObject === 'string'
-        ? this.tryParseJson(sourceObject)
-        : sourceObject;
-      const rawDiagramDbId = item.pathwayDiagramDbId
-        ?? item.pathwayDiagramId
-        ?? item.diagramDbId
-        ?? item.diagramId
-        ?? item.diagramLock?.diagramDbId
-        ?? item.dbId;
-      const normalizedDiagramDbId = Number(rawDiagramDbId);
-      const diagramDbId = Number.isFinite(normalizedDiagramDbId)
-        ? normalizedDiagramDbId
-        : rawDiagramDbId;
-      const normalizedDiagramLock = item.diagramLock
-        ? {
-          ...item.diagramLock,
-          diagramDbId: Number.isFinite(Number(item.diagramLock.diagramDbId))
-            ? Number(item.diagramLock.diagramDbId)
-            : item.diagramLock.diagramDbId
-        }
-        : undefined;
-      const rawPathwayDbId = item.pathwayDbId
-        ?? item.pathwayId
-        ?? item.representedPathwayDbId
-        ?? item.pathway?.dbId
-        ?? item.representedPathway?.dbId;
-      const normalizedPathwayDbId = Number(rawPathwayDbId);
-      return {
-        ...item,
-        dbId: diagramDbId,
-        pathwayDiagramDbId: diagramDbId,
-        pathwayDbId: Number.isFinite(normalizedPathwayDbId) ? normalizedPathwayDbId : rawPathwayDbId,
-        object: parsedObject,
-        diagramLock: normalizedDiagramLock,
-        nodeType: item.nodeType ?? item.type ?? 'object'
-      } as any;
-    });
-  }
-
-  private tryParseJson(content: any): any {
-    if (typeof content !== 'string')
-      return content;
-    let parsed: any = content;
-    // Some responses can contain JSON strings nested more than once.
-    for (let i = 0; i < 3 && typeof parsed === 'string'; i++) {
-      try {
-        parsed = JSON.parse(parsed);
-      }
-      catch {
-        break;
-      }
-    }
-    return parsed;
-  }
-
-  getDiagramLocks(): Observable<DiagramLock[]> {
-    const current = this.diagramLocks$.getValue();
-    if (current && current.length > 0) {
-      return of([...current]); // return shallow copy
-    }
-    if (this.getDiagramLocksInFlight$) {
-      return this.getDiagramLocksInFlight$;
-    }
-    this.getDiagramLocksInFlight$ = this.getDiagramLocksFromDB().pipe(
-      finalize(() => { this.getDiagramLocksInFlight$ = null; }),
-      shareReplay({ bufferSize: 1, refCount: false })
-    );
-    return this.getDiagramLocksInFlight$;
-  }
-
-  // User will be given their locks upon logging in and refreshing the page, so this method is just for checking the locks when they are trying to access a diagram
-  private getDiagramLocksFromDB(): Observable<DiagramLock[]> {
-    return this.http.get<DiagramLock[]>(this.getDiagramLocksUrl).pipe(
-      map((pathwayDiagramLocks: DiagramLock[]) => {
-        if (!Array.isArray(pathwayDiagramLocks)) return [];
-        return pathwayDiagramLocks.filter(lock => Number.isFinite(lock?.diagramDbId) && lock.diagramDbId > 0);
-      }),
-      tap((validLocks: DiagramLock[]) => {
-        this.diagramLocks$.next(validLocks);
-      }),
-      catchError(error => {
-        return this.handleErrorMessage(error);
-      })
-    );
-  }
-
-
-  // Used to keep a backup copy of the edited network in case the user wants to discard the changes and revert to the original network loaded from the database. The backup copy will be deleted after loading it back to the front end or when the user logs out.
-  backupCyNetwork(pathwayDiagramId: number, network: object): Observable<boolean> {
-    let lockId = this.diagramLocks$.getValue().find(lock => lock.diagramDbId === pathwayDiagramId)?.lockId;
-    console.debug('backupCyNetwork request', { pathwayDiagramId, timeMs: Date.now() });
-    return this.http.post<boolean>(this.backupCyNetworkUrl + pathwayDiagramId + (lockId ? `/${lockId}` : ''), network).pipe(
-      tap(() => console.debug('backupCyNetwork success', { pathwayDiagramId, timeMs: Date.now() })),
-      catchError((error: any) => {
-        const status = error?.status;
-        console.warn(`backupCyNetwork failed for ${pathwayDiagramId}:`, status, error?.message || error);
-        // Don't escalate auth failures during background backup to a global redirect.
-        if (status === 401) {
-          return of(false);
-        }
-        return this.handleErrorMessage(error);
-      })
-    );
-  }
-
-  hasDiagramLocked(pathwayDiagramId: number): Observable<DiagramLock | null> {
-    return this.http.get<DiagramLock | null>(this.hasDiagramLockedUrl + pathwayDiagramId).pipe(
-      catchError(error => {
-        return this.handleErrorMessage(error);
-      })
     );
   }
 
