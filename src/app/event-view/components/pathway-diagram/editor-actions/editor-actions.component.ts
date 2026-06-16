@@ -29,7 +29,6 @@ export class EditorActionsComponent {
   @Input() isNodeResizable: boolean = true;
   // Lock status shown to users in the context action panel
   @Input() lockStatus: string = 'idle';
-  @Input() lockStatusMessage: string = 'Lock not requested.';
   @Input() isLockOwnedByMe: boolean = false;
   // Include this so that we can compare in the html template
   elmTypes = ElementType;

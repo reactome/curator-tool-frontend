@@ -89,27 +89,17 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   private isBackgroundBackupInProgress: boolean = false;
   private backupIntervalHandle: ReturnType<typeof setInterval> | undefined;
   private lastBackupAtMs: number = 0;
-  private diagramLockInfo: DiagramLock | null = null;
+  private diagramLock: DiagramLock | null = null;
   // To show the label for the diagram displayed
   diagramLabel: string = 'Pathway Diagram';
   lockStatus: 'idle' | 'acquiring' | 'acquired' | 'blocked' | 'error' = 'idle';
-  lockStatusMessage: string = 'Lock not requested.';
-  private isUnlockingDiagram: boolean = false;
-
+  
   get isDiagramLocked(): boolean {
     return this.lockStatus === 'acquired' || this.lockStatus === 'blocked';
   }
 
   get isLockOwnedByMe(): boolean {
-    return this.lockStatus === 'acquired' || this.isLockOwnedByCurrentUser(this.diagramLockInfo);
-  }
-
-  get lockIndicatorTooltip(): string {
-    if (this.lockStatus === 'acquired')
-      return 'Locked by you.';
-    if (this.lockStatus === 'blocked')
-      return this.lockStatusMessage;
-    return '';
+    return this.lockStatus === 'acquired' || this.isLockOwnedByCurrentUser(this.diagramLock);
   }
 
   constructor(private route: ActivatedRoute,
@@ -221,10 +211,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       return;
     if (!this.isEdited)
       return;
-    if (!this.diagramLockInfo || !this.isLockOwnedByCurrentUser(this.diagramLockInfo))
+    if (!this.diagramLock || !this.isLockOwnedByCurrentUser(this.diagramLock))
       return;
 
-    const diagramDbId = Number(this.diagramLockInfo.diagramDbId ?? this.pathwayDiagramId ?? this.diagram?.diagramId);
+    const diagramDbId = Number(this.diagramLock.diagramDbId ?? this.pathwayDiagramId ?? this.diagram?.diagramId);
     if (!Number.isFinite(diagramDbId) || diagramDbId <= 0)
       return;
     if (!this.diagram?.cy)
@@ -285,7 +275,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     const requestedDiagramDbId = Number(this.diagram.diagramId);
     const lockAssociatedDiagramDbId = this.getLockAssociatedDiagramDbId(requestedDiagramDbId);
     // Use lock-associated diagram id only when in editing mode or when the current user owns the lock.
-    const shouldUseLockAssociated = this.isEditing || this.isLockOwnedByCurrentUser(this.diagramLockInfo);
+    const shouldUseLockAssociated = this.isEditing || this.isLockOwnedByCurrentUser(this.diagramLock);
     const networkDiagramDbId = shouldUseLockAssociated && Number.isFinite(lockAssociatedDiagramDbId as number) && Number(lockAssociatedDiagramDbId) > 0
       ? Number(lockAssociatedDiagramDbId)
       : requestedDiagramDbId;
@@ -295,13 +285,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       next: (locks: DiagramLock[]) => {
         if (!locks || locks.length === 0) {
           // If we currently own a lock locally, don't clear it here (may be eventual consistency)
-          if (this.diagramLockInfo && this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
-            this.updateLockStatus(this.diagramLockInfo);
+          if (this.diagramLock && this.isLockOwnedByCurrentUser(this.diagramLock)) {
+            this.updateLockStatus(this.diagramLock);
             return;
           }
-          this.diagramLockInfo = null;
+          this.diagramLock = null;
           this.lockStatus = 'idle';
-          this.lockStatusMessage = 'Lock not requested.';
           return;
         }
         const lockForDiagram = locks.find(l => {
@@ -312,28 +301,26 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         });
         if (lockForDiagram) {
           // store lock info and update UI state
-          this.diagramLockInfo = lockForDiagram;
+          this.diagramLock = lockForDiagram;
           this.updateLockStatus(lockForDiagram);
         } else {
           // If we currently have a locally stored lock owned by us, keep it rather than clearing.
-          if (this.diagramLockInfo && this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
-            this.updateLockStatus(this.diagramLockInfo);
+          if (this.diagramLock && this.isLockOwnedByCurrentUser(this.diagramLock)) {
+            this.updateLockStatus(this.diagramLock);
             return;
           }
-          this.diagramLockInfo = null;
+          this.diagramLock = null;
           this.lockStatus = 'idle';
-          this.lockStatusMessage = 'Lock not requested.';
         }
       },
       error: () => {
         // On error, preserve local lock if owned; otherwise clear transient lock info
-        if (this.diagramLockInfo && this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
-          this.updateLockStatus(this.diagramLockInfo);
+        if (this.diagramLock && this.isLockOwnedByCurrentUser(this.diagramLock)) {
+          this.updateLockStatus(this.diagramLock);
           return;
         }
-        this.diagramLockInfo = null;
+        this.diagramLock = null;
         this.lockStatus = 'idle';
-        this.lockStatusMessage = 'Lock not requested.';
       }
     });
 
@@ -447,7 +434,6 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       this.pathwayDiagramId = '';
       this.requestedLockDiagramId = '';
       this.lockStatus = 'idle';
-      this.lockStatusMessage = 'Lock not requested.';
       this.isEdited = true;
     };
 
@@ -461,22 +447,18 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       return;
     }
 
-    if (!this.diagramLockInfo) {
+    if (!this.diagramLock) {
       finishDisableEditing();
       return;
     }
 
-    this.isUnlockingDiagram = true;
-
-    this.diagramEditorService.unlockDiagram(this.diagramLockInfo!).subscribe({
+    this.diagramEditorService.unlockDiagram(this.diagramLock!).subscribe({
       next: () => {
-        this.isUnlockingDiagram = false;
-        this.diagramLockInfo = null;
+        this.diagramLock = null;
         finishDisableEditing();
       },
       error: () => {
-        this.isUnlockingDiagram = false;
-        this.diagramLockInfo = null;
+        this.diagramLock = null;
         finishDisableEditing();
       }
     });
@@ -547,57 +529,50 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     });
   }
 
-  private updateLockStatus(lockInfo: DiagramLock | null | undefined) {
+  private updateLockStatus(diagramLock: DiagramLock) {
     // Use lock's hasBackupDiagram or ownership to determine whether the diagram
     // should be considered edited. If the current user owns the lock, consider
     // it edited so the UI reflects that (e.g. title stays red).
-    this.isEdited = !!lockInfo?.hasBackupDiagram || this.isLockOwnedByCurrentUser(lockInfo);
-    if (this.isLockOwnedByCurrentUser(lockInfo)) {
+    this.isEdited = diagramLock?.hasBackupDiagram || false;
+    if (this.isLockOwnedByCurrentUser(diagramLock)) {
       this.lockStatus = 'acquired';
-      this.lockStatusMessage = 'Lock acquired. Editing is available.';
       return;
     }
-    if (lockInfo && lockInfo.locked) {
-      const owner = lockInfo.username && lockInfo.username.length > 0 ? lockInfo.username : 'another user';
+    if (diagramLock && diagramLock.locked) {
+      const owner = diagramLock.username && diagramLock.username.length > 0 ? diagramLock.username : 'another user';
       this.lockStatus = 'blocked';
-      this.lockStatusMessage = `Locked by ${owner}.`;
       return;
     }
     // If no lock info, treat as idle
-    if (!lockInfo) {
+    if (!diagramLock) {
       this.lockStatus = 'idle';
-      this.lockStatusMessage = 'Lock not requested.';
       return;
     }
     this.lockStatus = 'error';
-    this.lockStatusMessage = 'Unable to acquire lock.';
   }
 
   private lockPathwayDiagram(pathwayDiagramDbId: number) {
     const id = pathwayDiagramDbId;
     if (id === undefined)
       return;
-    // this.lockStatus = 'acquiring';
-    // this.lockStatusMessage = 'Acquiring lock...';
     this.diagramEditorService.lockDiagram(pathwayDiagramDbId).subscribe({
-      next: (diagramLockInfo) => {
-        console.debug('Diagram lock info: ', diagramLockInfo);
-        if (this.isLockOwnedByCurrentUser(diagramLockInfo)) {
-          this.diagramLockInfo = diagramLockInfo;
-          this.pathwayDiagramId = diagramLockInfo!.diagramDbId.toString();
+      next: (dialogLock) => {
+        console.debug('Diagram lock info: ', dialogLock);
+        if (this.isLockOwnedByCurrentUser(dialogLock)) {
+          this.diagramLock = dialogLock;
+          this.pathwayDiagramId = dialogLock!.diagramDbId.toString();
           this.isEditing = true;
           // Refresh server-side diagram locks so DataService knows about the new lock
           this.diagramEditorService.getDiagramLocks().pipe(take(1)).subscribe(() => {
             this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
-            this.updateLockStatus(diagramLockInfo);
+            this.updateLockStatus(dialogLock!);
           });
           return;
         }
-        this.showDiagramLockedDialog(diagramLockInfo);
+        this.showDiagramLockedDialog(dialogLock);
       },
       error: () => {
         this.lockStatus = 'error';
-        this.lockStatusMessage = 'Unable to acquire lock.';
       }
     });
   }
@@ -619,18 +594,18 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         }
 
         // Enable editing only if lock is owned by current user
-        if (this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
+        if (this.isLockOwnedByCurrentUser(this.diagramLock)) {
           this.diagramUtils.enableEditing(this.diagram);
         } else {
-          this.showDiagramLockedDialog(this.diagramLockInfo ?? null);
+          this.showDiagramLockedDialog(this.diagramLock ?? null);
         }
         this.setDiagramLabel();
       },
       error: (err: any) => {
-        if (this.isLockOwnedByCurrentUser(this.diagramLockInfo)) {
+        if (this.isLockOwnedByCurrentUser(this.diagramLock)) {
           this.diagramUtils.enableEditing(this.diagram);
         } else {
-          this.showDiagramLockedDialog(this.diagramLockInfo ?? null);
+          this.showDiagramLockedDialog(this.diagramLock ?? null);
         }
         this.setDiagramLabel();
       }
@@ -656,7 +631,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
             }
             if (this.isLockOwnedByCurrentUser(lock)) {
               // We already own the lock: use it and load editing network
-              this.diagramLockInfo = lock;
+              this.diagramLock = lock;
               this.pathwayDiagramId = lock.diagramDbId?.toString() ?? this.pathwayDiagramId;
               this.isEditing = true;
               // Refresh locks and load editing network
@@ -667,7 +642,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
               return;
             }
             // Locked by another user: inform and prevent editing
-            this.diagramLockInfo = lock;
+            this.diagramLock = lock;
             this.updateLockStatus(lock);
             this.showDiagramLockedDialog(lock);
           });
@@ -692,7 +667,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
                   return;
                 }
                 if (this.isLockOwnedByCurrentUser(lock)) {
-                  this.diagramLockInfo = lock;
+                  this.diagramLock = lock;
                   this.isEditing = true;
                   this.diagramEditorService.getDiagramLocks().pipe(take(1)).subscribe(() => {
                     this.loadEditingDiagramOrReuseCurrent(this.pathwayDiagramId);
@@ -700,7 +675,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
                   });
                   return;
                 }
-                this.diagramLockInfo = lock;
+                this.diagramLock = lock;
                 this.updateLockStatus(lock);
                 this.showDiagramLockedDialog(lock);
               });
@@ -1107,7 +1082,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       return;
     // Check if PathwayDiagram is being edited. If PathwayDiagram is not being edited,
     // tell the user nothing to be uploaded.
-    this.pathwayDiagramId = this.diagramLockInfo?.diagramDbId ? this.diagramLockInfo.diagramDbId.toString() : this.pathwayDiagramId;
+    this.pathwayDiagramId = this.diagramLock?.diagramDbId ? this.diagramLock.diagramDbId.toString() : this.pathwayDiagramId;
     if (this.pathwayDiagramId !== undefined && this.pathwayDiagramId.length === 0) {
       this.dialog.open(InfoDialogComponent, {
         data: {

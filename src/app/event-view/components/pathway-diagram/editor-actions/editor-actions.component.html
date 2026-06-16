@@ -1,6 +1,5 @@
 <!-- Here we have a collection of scenarios to show different set of actions according to the current status-->
 <div class="actions">
-  <div class="lock-status" [ngClass]="'lock-status-' + lockStatus">{{ lockStatusMessage }}</div>
   <button style="margin-bottom: 1px" (click)="onClick('disableEditing')" *ngIf="isDiagramEditing">Disable
     Editing</button>
   <button style="margin-bottom: 1px" (click)="onClick('enableEditing')" *ngIf="!isDiagramEditing"
