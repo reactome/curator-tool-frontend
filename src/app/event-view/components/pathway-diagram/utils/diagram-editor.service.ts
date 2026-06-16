@@ -1,8 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { catchError, concatMap, finalize, map, Observable, of, shareReplay, take, tap, throwError } from 'rxjs';
-import { defaultPerson } from 'src/app/instance/state/instance.selectors';
+import { catchError, finalize, map, Observable, of, shareReplay, tap, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { DataService } from 'src/app/core/services/data.service';
 import { DiagramLock, Instance } from 'src/app/core/models/reactome-instance.model';
@@ -25,7 +23,6 @@ export class DiagramEditorService {
 
   constructor(
     private http: HttpClient,
-    private store: Store,
     private dataService: DataService
   ) {}
 
@@ -37,8 +34,8 @@ export class DiagramEditorService {
       );
   }
 
-  lockDiagram(pathwayDiagram: any): Observable<DiagramLock | null> {
-    return this.http.get<DiagramLock | null>(this.lockDiagramUrl + `${pathwayDiagram}`).pipe(
+  lockDiagram(pathwayDiagramId: number | string): Observable<DiagramLock | null> {
+    return this.http.get<DiagramLock | null>(this.lockDiagramUrl + `${pathwayDiagramId}`).pipe(
       map((lock: DiagramLock | null) => {
         return lock;
       }),
@@ -77,32 +74,20 @@ export class DiagramEditorService {
     );
   }
 
-  uploadCytoscapeNetwork(pathwayDiagramId: string | number, networkJson: object): Observable<boolean> {
-    const numericId = Number(pathwayDiagramId);
-    const lock = this.diagramLocks.find(candidate => Number(candidate?.diagramDbId) === numericId);
-    const useBackup = !!lock;
+  uploadCytoscapeNetwork(pathwayDiagramId: string | number,
+    networkJson: object,
+    defaultPersonId: number): Observable<boolean> {
+    const networkToUpload = networkJson && typeof networkJson === 'object'
+      ? { ...networkJson, defaultPersonId: defaultPersonId }
+      : networkJson;
 
-    return this.store.select(defaultPerson()).pipe(
-      take(1),
-      concatMap((person: Instance[]) => {
-        if (!person || person.length === 0 || person[0].dbId === undefined) {
-          return this.dataService.handleErrorMessage(new Error('Cannot find the default person! Cannot upload the cytoscape network without the default person!'));
-        }
-        const networkToUpload = networkJson && typeof networkJson === 'object'
-          ? { ...networkJson, defaultPersonId: person[0].dbId }
-          : networkJson;
-
-        if (useBackup)
-          return this.backupCyNetwork(numericId, networkToUpload);
-
-        return this.http.post<boolean>(this.uploadCyNetworkUrl + pathwayDiagramId, networkToUpload).pipe(
-          tap(() => {
-            this.dataService.removeInstanceInCache(parseInt(pathwayDiagramId.toString()));
-          }),
-          catchError((error: Error) => {
-            return this.dataService.handleErrorMessage(error);
-          })
-        );
+    return this.http.post<boolean>(this.uploadCyNetworkUrl + pathwayDiagramId, networkToUpload).pipe(
+      tap(() => {
+        // Clear the cache for this pathway diagram so that next time when users open it, it will fetch the latest one from server due to some changes have been made at the server side after uploading the network json.
+        this.dataService.removeInstanceInCache(parseInt(pathwayDiagramId.toString()));
+      }),
+      catchError((error: Error) => {
+        return this.dataService.handleErrorMessage(error);
       })
     );
   }
@@ -172,69 +157,6 @@ export class DiagramEditorService {
         return this.dataService.handleErrorMessage(error);
       })
     );
-  }
-
-  private normalizePathwayDiagramObjects(data: any): any[] {
-    const any = Array.isArray(data)
-      ? data
-      : data?.any ?? data?.objects ?? data?.instances ?? [];
-
-    return any.map((item: any) => {
-      if (!item)
-        return item;
-      const sourceObject = item.object ?? item.network ?? item.node ?? item;
-      const parsedObject = typeof sourceObject === 'string'
-        ? this.tryParseJson(sourceObject)
-        : sourceObject;
-      const rawDiagramDbId = item.pathwayDiagramDbId
-        ?? item.pathwayDiagramId
-        ?? item.diagramDbId
-        ?? item.diagramId
-        ?? item.diagramLock?.diagramDbId
-        ?? item.dbId;
-      const normalizedDiagramDbId = Number(rawDiagramDbId);
-      const diagramDbId = Number.isFinite(normalizedDiagramDbId)
-        ? normalizedDiagramDbId
-        : rawDiagramDbId;
-      const normalizedDiagramLock = item.diagramLock
-        ? {
-          ...item.diagramLock,
-          diagramDbId: Number.isFinite(Number(item.diagramLock.diagramDbId))
-            ? Number(item.diagramLock.diagramDbId)
-            : item.diagramLock.diagramDbId
-        }
-        : undefined;
-      const rawPathwayDbId = item.pathwayDbId
-        ?? item.pathwayId
-        ?? item.representedPathwayDbId
-        ?? item.pathway?.dbId
-        ?? item.representedPathway?.dbId;
-      const normalizedPathwayDbId = Number(rawPathwayDbId);
-      return {
-        ...item,
-        dbId: diagramDbId,
-        pathwayDiagramDbId: diagramDbId,
-        pathwayDbId: Number.isFinite(normalizedPathwayDbId) ? normalizedPathwayDbId : rawPathwayDbId,
-        object: parsedObject,
-        diagramLock: normalizedDiagramLock,
-        nodeType: item.nodeType ?? item.type ?? 'object'
-      } as any;
-    });
-  }
-
-  private tryParseJson(content: any): any {
-    if (typeof content !== 'string')
-      return content;
-    let parsed: any = content;
-    for (let i = 0; i < 3 && typeof parsed === 'string'; i++) {
-      try {
-        parsed = JSON.parse(parsed);
-      }
-      catch {
-        break;
-      }
-    }
-    return parsed;
   }
 
   private upsertLock(lock: DiagramLock): void {

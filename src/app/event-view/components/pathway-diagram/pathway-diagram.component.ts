@@ -20,7 +20,7 @@ import { AuthenticateService } from 'src/app/core/services/authenticate.service'
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Store } from '@ngrx/store';
 import { DiagramEditorService } from './utils/diagram-editor.service';
-import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
+import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
 
 @Component({
@@ -1149,8 +1149,27 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       restoreFocus: false
     });
 
-    // Use pathwayDiagramId, instead of pathwayId for uploading
-    this.diagramEditorService.uploadCytoscapeNetwork(this.pathwayDiagramId, networkJson).subscribe({
+    this.store.select(defaultPerson()).pipe(take(1)).subscribe((persons: Instance[]) => {
+      const defaultPersonId = persons && persons.length > 0 ? persons[0].dbId : undefined;
+      if (defaultPersonId === undefined) {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
+        this.isUploadInProgress = false;
+        this.dialog.open(InfoDialogComponent, {
+          data: {
+            title: 'Error',
+            message: 'Cannot find the default person. Upload aborted.'
+          }
+        });
+        if (wasEditing && restoreEditing)
+          this.enableEditing();
+        if (onComplete)
+          onComplete();
+        return;
+      }
+
+      // Use pathwayDiagramId, instead of pathwayId for uploading
+      this.diagramEditorService.uploadCytoscapeNetwork(this.pathwayDiagramId, networkJson, defaultPersonId).subscribe({
       next: (success) => {
         this.commitWaitDialogRef?.close();
         this.commitWaitDialogRef = undefined;
@@ -1187,6 +1206,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         if (onComplete)
           onComplete();
       }
+      });
     });
   }
 
