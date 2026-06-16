@@ -105,7 +105,6 @@ export interface DiagramLock {
     diagramDbId: number;
     username: string;
     lockedAt: string; // ISO 8601 date string
-    locked: boolean; // "LOCKED" or "UNLOCKED"
     lockId: string; // Unique identifier for the lock, used for unlocking
     hasBackupDiagram: boolean; // Flag to indicate if there is a backup diagram available for this lock
 

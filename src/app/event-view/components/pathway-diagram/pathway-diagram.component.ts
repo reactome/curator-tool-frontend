@@ -191,7 +191,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   }
 
   get isDiagramLocked(): boolean {
-    return !!this.diagramEditorService.getCachedDiagramLock(this.pathwayDiagramId)?.locked;
+    return !!this.diagramEditorService.getCachedDiagramLock(this.pathwayDiagramId);
   }
 
   get isLockOwnedByMe(): boolean {
