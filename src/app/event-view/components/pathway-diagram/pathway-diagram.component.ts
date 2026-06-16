@@ -22,6 +22,7 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Store } from '@ngrx/store';
 import { DiagramEditorService } from './diagram-editor.service';
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
+import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -1037,19 +1038,19 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         break;
 
       case 'editPathwayDiagram':
-        this.diagramEditorService.getCytoscapeNetwork(this.pathwayDiagramId).subscribe({
+        this.diagramUtils.getDataService().fetchPathwayDiagram(this.pathwayId).subscribe({
           next: (pathwayDiagram: Instance) => {
             if (pathwayDiagram) {
               this.openPathwayDiagramEvent.emit(pathwayDiagram.dbId);
             }
             else {
               // Create a new PathwayDiagram instance when none exists
-              // this.createAndOpenNewPathwayDiagram();
+              this.createAndOpenNewPathwayDiagram();
             }
           },
           error: (error: Error) => {
             // Create a new PathwayDiagram instance on fetch error
-            // this.createAndOpenNewPathwayDiagram();
+            this.createAndOpenNewPathwayDiagram();
           }
         });
         break;
@@ -1178,6 +1179,26 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       this.lastBackupAtMs = Date.now();
   }
 
+  private createAndOpenNewPathwayDiagram() {
+    const dataService = this.diagramUtils.getDataService();
+    dataService.fetchInstance(parseInt(this.pathwayId)).subscribe((pathwayInstance: Instance) => {
+      if (!pathwayInstance)
+        return;
+      dataService.createNewInstance('PathwayDiagram').subscribe((newPathwayDiagram: Instance) => {
+        if (newPathwayDiagram && newPathwayDiagram.attributes) {
+          const pathwayShell = this.instUtil.makeShell(pathwayInstance);
+          newPathwayDiagram.attributes.set('representedPathway', [pathwayShell]);
+          // This is based on InstanceNameGenerator. Better to call that function!
+          newPathwayDiagram.displayName = 'Diagram of ' + pathwayInstance.displayName;
+          newPathwayDiagram.attributes.set('displayName', newPathwayDiagram.displayName);
+          // Register the new instance so it can be referenced
+          dataService.registerInstance(newPathwayDiagram);
+          this.store.dispatch(NewInstanceActions.register_new_instance(this.instUtil.makeShell(newPathwayDiagram)));
+          this.openPathwayDiagramEvent.emit(newPathwayDiagram.dbId);
+        }
+      });
+    });
+  }
 
   private disableResize() {
     this.diagramUtils.disableResizeCompartment(this.elementUnderMouse, this.diagram);
