@@ -167,6 +167,21 @@ export class StatusComponent implements OnInit, OnDestroy {
     this.showPathwayDiagramLocksPanel = !this.showPathwayDiagramLocksPanel;
   }
 
+  @HostListener('document:click', ['$event'])
+  closePathwayDiagramLocksPanelOnOutsideClick(event: MouseEvent): void {
+    if (!this.showPathwayDiagramLocksPanel)
+      return;
+
+    const target = event.target as HTMLElement | null;
+    if (!target)
+      return;
+
+    if (target.closest('.diagram-locks-wrapper'))
+      return;
+
+    this.showPathwayDiagramLocksPanel = false;
+  }
+
   setDefaultPerson(): void {
     // Set or change the default person instance
     const matDialogRef = this.instanceSelectionService.openDialog({ schemaClass: { name: 'Person' }, title: 'Select default person' });
