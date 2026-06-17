@@ -209,6 +209,11 @@ export class DiagramEditorService implements OnDestroy {
       tap(() => {
         // Clear the cache for this pathway diagram so that next time when users open it, it will fetch the latest one from server due to some changes have been made at the server side after uploading the network json.
         this.dataService.removeInstanceInCache(parseInt(pathwayDiagramId.toString()));
+        const lockInfo = this.getCachedDiagramLock(pathwayDiagramId);
+        if (lockInfo) {
+          lockInfo.hasBackupDiagram = false;
+          this.upsertLock(lockInfo);
+        }
       }),
       catchError((error: Error) => {
         return this.dataService.handleErrorMessage(error);

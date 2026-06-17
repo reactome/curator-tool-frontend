@@ -181,12 +181,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     // Keep lock until the user explicitly unlocks from the UI.
   }
 
-  @HostListener('window:beforeunload', ['$event'])
-  handleBeforeUnload(event: BeforeUnloadEvent) {
-    if (!this.isEdited)
-      return;
-    event.preventDefault();
-    // event.returnValue = 'You have unsaved pathway diagram changes. Upload them before closing or reloading this page.';
+  @HostListener('window:beforeunload')
+  handleBeforeUnload() {
+    this.backupEditedDiagram('browser unload/reload');
   }
 
   get isDiagramLocked(): boolean {
@@ -240,7 +237,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     });
     dialogRef.afterClosed().pipe(take(1)).subscribe((shouldUpload: boolean | null) => {
       if (shouldUpload === true)
-        this.uploadDiagram(false, proceed);
+        this.uploadDiagram(false, proceed); // Apply when unlocking a diagram.
       else if (shouldUpload === false)
         proceed();
     });
@@ -362,15 +359,21 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
 
   private unlockDiagram(): void {
     const lockToRelease = this.diagramEditorService.getCachedDiagramLock(this.pathwayDiagramId);
-    if (!lockToRelease) {
-      return;
-    }
-    // disable editing first
-    this.disableEditing();
-    this.diagramEditorService.unlockDiagram(lockToRelease).pipe(take(1)).subscribe({
-      next: () => {},
-      error: () => {}
-    });
+    const finalizeUnlock = () => {
+      this.disableEditing();
+      this.isEditing = false;
+      this.isEdited = false;
+
+      if (!lockToRelease)
+        return;
+
+      this.diagramEditorService.unlockDiagram(lockToRelease).pipe(take(1)).subscribe({
+        next: () => {},
+        error: () => {}
+      });
+    };
+
+    this.promptUploadBeforeDiscard('unlocking this diagram', finalizeUnlock);
   }
 
   private canEdit(): Observable<boolean> {
@@ -889,21 +892,19 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   private uploadDiagram(restoreEditing: boolean = true, onComplete?: () => void) {
     if (this.isUploadInProgress)
       return;
-    // Check if PathwayDiagram is being edited. If PathwayDiagram is not being edited,
-    // tell the user nothing to be uploaded.
-    const activeLock = this.diagramEditorService.getCachedDiagramLock(this.pathwayDiagramId);
-    this.pathwayDiagramId = activeLock?.diagramDbId ? activeLock.diagramDbId.toString() : this.pathwayDiagramId;
+    // Nothing to be uploaded 
     if (this.pathwayDiagramId !== undefined && this.pathwayDiagramId.length === 0) {
       this.dialog.open(InfoDialogComponent, {
         data: {
           title: 'Information',
-          message: 'The diagram is not being edited. Nothing to be uploaded.'
+          message: 'No diagram is edited. Nothing to be uploaded.'
         }
       });
       if (onComplete)
         onComplete();
       return;
     }
+    // Keep the original mode of editing.
     const wasEditing = this.isEditing;
     // Make sure disable diagram first
     if (wasEditing)
