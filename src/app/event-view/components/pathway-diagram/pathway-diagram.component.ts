@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, EventEmitter, HostListener, inject, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
-import { combineLatest, filter, map, Observable, take } from 'rxjs';
+import { combineLatest, filter, map, Observable, Subscription, take } from 'rxjs';
 import { EditorActionsComponent, ElementType } from './editor-actions/editor-actions.component';
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
@@ -88,6 +88,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   private isBackgroundBackupInProgress: boolean = false;
   private backupIntervalHandle: ReturnType<typeof setInterval> | undefined;
   private lastBackupAtMs: number = 0;
+  private lockSyncSubscription?: Subscription;
   isLockAcquiring: boolean = false;
   // To show the label for the diagram displayed
   diagramLabel: string = 'Pathway Diagram';
@@ -108,6 +109,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     });
     this.instUtil.lastUpdatedInstance$.subscribe(data => {
       this.diagramUtils.handleInstanceEdit(data.attribute, data.instance, this);
+    });
+
+    this.lockSyncSubscription = this.diagramEditorService.observeDiagramLocks().subscribe(() => {
+      this.syncIsEditedFromCurrentLockState();
     });
   }
 
@@ -178,6 +183,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       clearInterval(this.backupIntervalHandle);
       this.backupIntervalHandle = undefined;
     }
+    this.lockSyncSubscription?.unsubscribe();
+    this.lockSyncSubscription = undefined;
     // Keep lock until the user explicitly unlocks from the UI.
   }
 
@@ -221,6 +228,17 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         this.isBackgroundBackupInProgress = false;
       }
     });
+  }
+
+  private syncIsEditedFromCurrentLockState(): void {
+    const candidate = this.pathwayDiagramId && this.pathwayDiagramId.length > 0
+      ? this.pathwayDiagramId
+      : this.diagram?.diagramId;
+    const diagramDbId = Number(candidate);
+    if (!Number.isFinite(diagramDbId) || diagramDbId <= 0)
+      return;
+    const lockInfo = this.diagramEditorService.getCachedDiagramLock(diagramDbId);
+    this.applyLockStateForIsEdited(lockInfo);
   }
 
   private promptUploadBeforeDiscard(action: string, proceed: () => void) {

@@ -337,6 +337,12 @@ export class DiagramEditorService implements OnDestroy {
     );
   }
 
+  observeDiagramLocks(): Observable<DiagramLock[]> {
+    return this.lockCacheRevision$.pipe(
+      map(() => [...this.diagramLocks])
+    );
+  }
+
   private fetchDiagramLocksFromServer(): Observable<DiagramLock[]> {
     return this.http.get<DiagramLock[]>(this.getDiagramLocksUrl).pipe(
       map((pathwayDiagramLocks: DiagramLock[]) => {
