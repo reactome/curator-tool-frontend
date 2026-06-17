@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, catchError, finalize, forkJoin, map, Observable, of, shareReplay, switchMap, tap, throwError } from 'rxjs';
+import { BehaviorSubject, catchError, finalize, forkJoin, map, Observable, of, shareReplay, Subject, switchMap, tap, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { DataService } from 'src/app/core/services/data.service';
 import { DiagramLock, Instance } from 'src/app/core/models/reactome-instance.model';
@@ -20,6 +20,13 @@ export interface DiagramLockedDialogData {
   instanceInfo: string;
 }
 
+export interface EditingDiagramStoragePayload {
+  diagramDbId: number;
+  networkJsonText: string;
+  updatedAt: number;
+  sourceWindowId?: string;
+}
+
 export type DiagramLoadPlan =
   | { mode: 'cy'; elements: any }
   | { mode: 'diagram' }
@@ -29,9 +36,11 @@ export type DiagramLoadPlan =
 export class DiagramEditorService implements OnDestroy {
   private diagramLocks: DiagramLock[] = [];
   private readonly lockCacheRevision$ = new BehaviorSubject<number>(0);
+  private readonly editingDiagramUpdated$ = new Subject<EditingDiagramStoragePayload>();
 
   private getDiagramLocksInFlight$: Observable<DiagramLock[]> | null = null;
   private readonly diagramLocksStorageKey = 'diagramLocks';
+  private readonly editingDiagramStorageKey = 'editingDiagram';
   
   private fetchPathwayDiagramUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
   private lockDiagramUrl = `${environment.ApiRoot}/lockDiagram/`;
@@ -44,6 +53,8 @@ export class DiagramEditorService implements OnDestroy {
   private hasDiagramUrl = `${environment.ApiRoot}/hasDiagram/`;
   private getCyNetworkUrl = `${environment.ApiRoot}/getCyNetwork/`;
   private loadBackupCyNetworkUrl = `${environment.ApiRoot}/loadBackupCyNetwork/`;
+  private lastEditingDiagramFingerprint: string = '';
+  private readonly editingSourceWindowId: string = this.generateEditingSourceWindowId();
 
   constructor(
     private http: HttpClient,
@@ -343,6 +354,40 @@ export class DiagramEditorService implements OnDestroy {
     );
   }
 
+  syncEditingDiagramToLocalStorage(pathwayDiagramId: string | number | undefined, networkJsonText: string): void {
+    if (typeof localStorage === 'undefined')
+      return;
+
+    const diagramDbId = Number(pathwayDiagramId);
+    if (!Number.isFinite(diagramDbId) || diagramDbId <= 0)
+      return;
+    if (!networkJsonText || networkJsonText.length === 0)
+      return;
+
+    const fingerprint = `${diagramDbId}:${networkJsonText}`;
+    if (fingerprint === this.lastEditingDiagramFingerprint)
+      return;
+
+    const payload: EditingDiagramStoragePayload = {
+      diagramDbId,
+      networkJsonText,
+      updatedAt: Date.now(),
+      sourceWindowId: this.editingSourceWindowId
+    };
+
+    try {
+      localStorage.setItem(this.editingDiagramStorageKey, JSON.stringify(payload));
+      this.lastEditingDiagramFingerprint = fingerprint;
+    }
+    catch {
+      // Ignore localStorage write failures (quota/privacy mode).
+    }
+  }
+
+  observeEditingDiagramUpdates(): Observable<EditingDiagramStoragePayload> {
+    return this.editingDiagramUpdated$.asObservable();
+  }
+
   private fetchDiagramLocksFromServer(): Observable<DiagramLock[]> {
     return this.http.get<DiagramLock[]>(this.getDiagramLocksUrl).pipe(
       map((pathwayDiagramLocks: DiagramLock[]) => {
@@ -448,6 +493,16 @@ export class DiagramEditorService implements OnDestroy {
   }
 
   private readonly onStorageEvent = (event: StorageEvent): void => {
+    if (event.key === this.editingDiagramStorageKey) {
+      const payload = this.parseEditingDiagramStoragePayload(event.newValue);
+      if (!payload)
+        return;
+      if (payload.sourceWindowId && payload.sourceWindowId === this.editingSourceWindowId)
+        return;
+      this.editingDiagramUpdated$.next(payload);
+      return;
+    }
+
     if (event.key !== this.diagramLocksStorageKey)
       return;
 
@@ -469,5 +524,35 @@ export class DiagramEditorService implements OnDestroy {
 
   private emitLockCacheRevision(): void {
     this.lockCacheRevision$.next(this.lockCacheRevision$.value + 1);
+  }
+
+  private parseEditingDiagramStoragePayload(rawValue: string | null): EditingDiagramStoragePayload | null {
+    if (!rawValue || rawValue.length === 0)
+      return null;
+
+    try {
+      const parsed = JSON.parse(rawValue);
+      const diagramDbId = Number(parsed?.diagramDbId);
+      const networkJsonText = typeof parsed?.networkJsonText === 'string' ? parsed.networkJsonText : '';
+      const updatedAt = Number(parsed?.updatedAt);
+      if (!Number.isFinite(diagramDbId) || diagramDbId <= 0)
+        return null;
+      if (networkJsonText.length === 0)
+        return null;
+
+      return {
+        diagramDbId,
+        networkJsonText,
+        updatedAt: Number.isFinite(updatedAt) ? updatedAt : Date.now(),
+        sourceWindowId: typeof parsed?.sourceWindowId === 'string' ? parsed.sourceWindowId : undefined
+      };
+    }
+    catch {
+      return null;
+    }
+  }
+
+  private generateEditingSourceWindowId(): string {
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   }
 }

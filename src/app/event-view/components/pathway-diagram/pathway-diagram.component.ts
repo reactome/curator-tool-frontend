@@ -19,7 +19,7 @@ import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait
 import { AuthenticateService } from 'src/app/core/services/authenticate.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Store } from '@ngrx/store';
-import { DiagramEditorService } from './utils/diagram-editor.service';
+import { DiagramEditorService, EditingDiagramStoragePayload } from './utils/diagram-editor.service';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { UnsavedUploadDialogComponent } from 'src/app/shared/components/unsaved-upload-dialog/unsaved-upload-dialog.component';
@@ -35,6 +35,7 @@ import { UnsavedUploadDialogComponent } from 'src/app/shared/components/unsaved-
 export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy {
   private readonly pendingDiagramDraftSessionKey = 'pendingPathwayDiagramDraft';
   private readonly backupIntervalMs = 60 * 1000;
+  private readonly editingSyncIntervalMs = 1 * 1000;
   // Special case to navigate away from the current event
   @Output() goToPathwayEvent = new EventEmitter<number>();
   @Output() openPathwayDiagramEvent = new EventEmitter<any>();
@@ -87,7 +88,11 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   private isUploadInProgress: boolean = false;
   private isBackgroundBackupInProgress: boolean = false;
   private backupIntervalHandle: ReturnType<typeof setInterval> | undefined;
+  private editingSyncIntervalHandle: ReturnType<typeof setInterval> | undefined;
   private lastBackupAtMs: number = 0;
+  private localEditVersion: number = 0;
+  private lastSyncedLocalEditVersion: number = 0;
+  private editingSyncSubscription?: Subscription;
   private lockSyncSubscription?: Subscription;
   isLockAcquiring: boolean = false;
   // To show the label for the diagram displayed
@@ -113,6 +118,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
 
     this.lockSyncSubscription = this.diagramEditorService.observeDiagramLocks().subscribe(() => {
       this.syncIsEditedFromCurrentLockState();
+    });
+
+    this.editingSyncSubscription = this.diagramEditorService.observeEditingDiagramUpdates().subscribe((payload: EditingDiagramStoragePayload) => {
+      this.reloadFromEditingDiagramStorage(payload);
     });
   }
 
@@ -175,6 +184,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         this.backupEditedDiagram('periodic autosave');
       }, this.backupIntervalMs);
     }
+
+    if (!this.editingSyncIntervalHandle) {
+      this.editingSyncIntervalHandle = setInterval(() => {
+        this.syncEditingDiagramToLocalStorage();
+      }, this.editingSyncIntervalMs);
+    }
   }
 
   ngOnDestroy(): void {
@@ -183,6 +198,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       clearInterval(this.backupIntervalHandle);
       this.backupIntervalHandle = undefined;
     }
+    if (this.editingSyncIntervalHandle) {
+      clearInterval(this.editingSyncIntervalHandle);
+      this.editingSyncIntervalHandle = undefined;
+    }
+    this.editingSyncSubscription?.unsubscribe();
+    this.editingSyncSubscription = undefined;
     this.lockSyncSubscription?.unsubscribe();
     this.lockSyncSubscription = undefined;
     // Keep lock until the user explicitly unlocks from the UI.
@@ -239,6 +260,56 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       return;
     const lockInfo = this.diagramEditorService.getCachedDiagramLock(diagramDbId);
     this.applyLockStateForIsEdited(lockInfo);
+  }
+
+  private syncEditingDiagramToLocalStorage(): void {
+    if (!this.isEdited)
+      return;
+    if (!this.diagram?.cy)
+      return;
+    if (this.localEditVersion <= this.lastSyncedLocalEditVersion)
+      return;
+
+    const activeDiagramDbId = this.getActiveDiagramDbIdForEditingSync();
+    if (!activeDiagramDbId)
+      return;
+
+    const networkJsonText = JSON.stringify(this.generateNetworkJson());
+    this.diagramEditorService.syncEditingDiagramToLocalStorage(activeDiagramDbId, networkJsonText);
+    this.lastSyncedLocalEditVersion = this.localEditVersion;
+  }
+
+  private reloadFromEditingDiagramStorage(payload: EditingDiagramStoragePayload): void {
+    if (!this.diagram?.cy)
+      return;
+
+    const activeDiagramDbId = this.getActiveDiagramDbIdForEditingSync();
+    if (!activeDiagramDbId || payload.diagramDbId !== activeDiagramDbId)
+      return;
+
+    try {
+      const networkJson = JSON.parse(payload.networkJsonText);
+      if (!networkJson?.elements)
+        return;
+      this.diagram.displayNetwork(networkJson.elements);
+      this.isEdited = true;
+    }
+    catch {
+      // Ignore malformed localStorage payload.
+    }
+  }
+
+  private getActiveDiagramDbIdForEditingSync(): number | null {
+    if (!this.isEditing)
+      return null;
+
+    const candidate = this.pathwayDiagramId && this.pathwayDiagramId.length > 0
+      ? this.pathwayDiagramId
+      : this.diagram?.diagramId;
+    const diagramDbId = Number(candidate);
+    if (!Number.isFinite(diagramDbId) || diagramDbId <= 0)
+      return null;
+    return diagramDbId;
   }
 
   private promptUploadBeforeDiscard(action: string, proceed: () => void) {
@@ -612,7 +683,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     });
     // Resize the compartment for resizing nodes
     this.diagram.cy.on('drag', 'node', (e: any) => {
-      this.isEdited = true;
+      this.markDiagramEdited();
       let node = e.target;
       // If a node that had resize enabled is being moved, disable its resize mode
       if (node.hasClass('Compartment') && !node.hasClass(LABEL_CLASS)) {
@@ -1023,6 +1094,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
 
   private markDiagramEdited() {
     this.isEdited = true;
+    this.localEditVersion += 1;
     if (this.lastBackupAtMs === 0)
       this.lastBackupAtMs = Date.now();
   }
