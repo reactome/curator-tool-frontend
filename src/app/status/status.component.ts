@@ -54,12 +54,24 @@ export class StatusComponent implements OnInit, OnDestroy {
     let sub = this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         this.currentUrl = event.urlAfterRedirects;
-        this.loadPathwayDiagramLocks(); // Refresh locks when navigating to make sure the count is up to date
       }
     });
     this.subscriptions.add(sub);
 
-    this.loadPathwayDiagramLocks(); // Refresh locks when navigating to make sure the count is up to date
+    // The following code will load all locks from the server and subscribe to any changes. This is necessary to keep the lock status in sync across different browser tabs.
+    sub = this.diagramEditorService.observePathwayDiagramLocksViewModels().subscribe({
+      next: (items: DiagramLockViewModel[]) => {
+        this.pathwayDiagramLocks = items || [];
+        this.pathwayDiagramLocksLoading = false;
+      },
+      error: () => {
+        this.pathwayDiagramLocks = [];
+        this.pathwayDiagramLocksLoading = false;
+      }
+    });
+    this.subscriptions.add(sub);
+
+    this.pathwayDiagramLocksLoading = true;
 
     sub = this.store.select(updatedInstances()).subscribe((instances) => {
       instances ? this.updatedInstances = instances : this.updatedInstances = [];
@@ -153,22 +165,6 @@ export class StatusComponent implements OnInit, OnDestroy {
 
   togglePathwayDiagramLocksPanel(): void {
     this.showPathwayDiagramLocksPanel = !this.showPathwayDiagramLocksPanel;
-    if (this.showPathwayDiagramLocksPanel)
-      this.loadPathwayDiagramLocks();
-  }
-
-  private loadPathwayDiagramLocks(): void {
-    this.pathwayDiagramLocksLoading = true;
-    this.diagramEditorService.loadPathwayDiagramLocksViewModels().pipe(take(1)).subscribe({
-      next: (items: DiagramLockViewModel[]) => {
-        this.pathwayDiagramLocks = items || [];
-        this.pathwayDiagramLocksLoading = false;
-      },
-      error: () => {
-        this.pathwayDiagramLocks = [];
-        this.pathwayDiagramLocksLoading = false;
-      }
-    });
   }
 
   setDefaultPerson(): void {

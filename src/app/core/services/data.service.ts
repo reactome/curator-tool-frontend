@@ -1146,10 +1146,14 @@ export class DataService {
       return this.utils._isSchemaClass(instance.schemaClassName, schemaClass!);
   }
 
-  handleErrorMessage(err: Error) {
-    console.log("The resource could not be loaded: \n" + err.message);
+  handleErrorMessage(err: any) {
+    const normalizedError: Error = err instanceof Error
+      ? err
+      : new Error(typeof err === 'string' ? err : 'Unknown error');
+
+    console.log("The resource could not be loaded: \n" + normalizedError.message);
     // If the error message contains a 401 or authentication error, redirect to the login page
-    if (err.message && err.message.includes('401')) {
+    if (normalizedError.message && normalizedError.message.includes('401')) {
       // Also ensure to save the route when the token is expired
       const currentUrl = window.location.pathname + window.location.search + window.location.hash;
       // Save the state to localStorage
@@ -1158,10 +1162,10 @@ export class DataService {
       this.router.navigate(['/login']);
     }
     // Block to show refresh token failure message. This is hard-coded and should be changed in the future.
-    if (!err.message.includes('refresh token')) {
-      this.errorMessage.next(err);
+    if (!normalizedError.message.includes('refresh token')) {
+      this.errorMessage.next(normalizedError);
     }
-    return throwError(() => err);
+    return throwError(() => normalizedError);
   };
 
   /**

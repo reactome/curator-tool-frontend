@@ -43,7 +43,7 @@
                                 </div>
 
                                 <ul class="panel-list" *ngIf="!pathwayDiagramLocksLoading && pathwayDiagramLocks.length > 0">
-                                        <li class="panel-item" *ngFor="let lock of pathwayDiagramLocks">
+                                        <li class="panel-item" [class.has-backup]="lock.hasBackupDiagram" *ngFor="let lock of pathwayDiagramLocks">
                                                 <span class="diagram-name">{{lock.displayName}}</span>
                                                 <span class="diagram-meta">[{{lock.diagramDbId}}]</span>
                                                 <button mat-icon-button class="panel-open-button" (click)="openPathwayDiagram(lock.pathwayDbId || lock.diagramDbId)"

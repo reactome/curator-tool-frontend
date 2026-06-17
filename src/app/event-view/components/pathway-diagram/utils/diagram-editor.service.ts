@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { catchError, finalize, forkJoin, map, Observable, of, shareReplay, switchMap, tap, throwError } from 'rxjs';
+import { Injectable, OnDestroy } from '@angular/core';
+import { BehaviorSubject, catchError, finalize, forkJoin, map, Observable, of, shareReplay, switchMap, tap, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { DataService } from 'src/app/core/services/data.service';
 import { DiagramLock, Instance } from 'src/app/core/models/reactome-instance.model';
@@ -10,6 +10,7 @@ export interface DiagramLockViewModel {
   lockId: string;
   lockedAt: string;
   displayName: string;
+  hasBackupDiagram?: boolean;
   pathwayDbId?: number;
 }
 
@@ -19,23 +20,18 @@ export interface DiagramLockedDialogData {
   instanceInfo: string;
 }
 
-export interface EditingLockAcquireResult {
-  acquired: boolean;
-  blocked: boolean;
-  lockInfo: DiagramLock | null;
-}
-
 export type DiagramLoadPlan =
   | { mode: 'cy'; elements: any }
   | { mode: 'diagram' }
   | { mode: 'empty' };
 
 @Injectable()
-export class DiagramEditorService {
+export class DiagramEditorService implements OnDestroy {
   private diagramLocks: DiagramLock[] = [];
+  private readonly lockCacheRevision$ = new BehaviorSubject<number>(0);
 
   private getDiagramLocksInFlight$: Observable<DiagramLock[]> | null = null;
-  private readonly pathwayDiagramLockRefsStorageKey = 'pathwayDiagramLockRefs';
+  private readonly diagramLocksStorageKey = 'diagramLocks';
   
   private fetchPathwayDiagramUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
   private lockDiagramUrl = `${environment.ApiRoot}/lockDiagram/`;
@@ -52,7 +48,19 @@ export class DiagramEditorService {
   constructor(
     private http: HttpClient,
     private dataService: DataService
-  ) {}
+  ) {
+    // Don't call this. We will use the server data when the browser starts.
+    //this.syncLocksFromLocalStorage();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', this.onStorageEvent);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('storage', this.onStorageEvent);
+    }
+  }
 
   fetchPathwayDiagram(pathwayId: any): Observable<Instance> {
     return this.http.get<Instance>(this.fetchPathwayDiagramUrl + `${pathwayId}`)
@@ -77,7 +85,7 @@ export class DiagramEditorService {
     return this.http.post<boolean>(this.unlockDiagramUrl, lockInfo).pipe(
       tap(() => {
         const diagramDbId = Number(lockInfo?.diagramDbId);
-        this.diagramLocks = this.diagramLocks.filter(lock => Number(lock?.diagramDbId) !== diagramDbId);
+        this.setDiagramLocks(this.diagramLocks.filter(lock => Number(lock?.diagramDbId) !== diagramDbId));
       }),
       catchError((error: Error) => {
         return this.dataService.handleErrorMessage(error);
@@ -102,25 +110,27 @@ export class DiagramEditorService {
     return elapsedMs >= backupIntervalMs;
   }
 
-  acquireEditingLock(pathwayDiagramId: number): Observable<EditingLockAcquireResult> {
+  acquireEditingLock(pathwayDiagramId: number): Observable<DiagramLock | undefined> {
+    // Check if this user has the diagram locked already. If so, return the lock info from cache directly. Otherwise, make a request to server to acquire the lock.
+    let lockInfo = this.getCachedDiagramLock(pathwayDiagramId);
+    if (lockInfo) {
+      return of(lockInfo); // The user has the lock already, return the lock info from cache.
+    }
     return this.hasDiagramLocked(pathwayDiagramId).pipe(
       switchMap((existingLock: DiagramLock | null) => {
-        if (existingLock) {
-          if (this.isLockOwnedByCurrentUser(existingLock)) {
-            return of({ acquired: true, blocked: false, lockInfo: existingLock });
-          }
-          return of({ acquired: false, blocked: true, lockInfo: existingLock });
+        if (existingLock) { // Means this diagram is locked by someone else.
+          return of(existingLock); // Don't care if that user is the current user or not.
         }
 
         return this.lockDiagram(pathwayDiagramId).pipe(
           map((acquiredLock: DiagramLock | null) => {
             if (!acquiredLock) {
-              return { acquired: false, blocked: true, lockInfo: null } as EditingLockAcquireResult;
+              return undefined;
             }
 
             // Keep local owned-lock cache in sync after successful lock acquisition.
             this.upsertLock(acquiredLock);
-            return { acquired: true, blocked: false, lockInfo: acquiredLock } as EditingLockAcquireResult;
+            return acquiredLock;
           })
         );
       })
@@ -166,8 +176,19 @@ export class DiagramEditorService {
   backupCyNetwork(pathwayDiagramId: string | number | undefined, networkJson: object): Observable<boolean> {
     if (!pathwayDiagramId)
       return of(false);
-    const lockId = this.diagramLocks.find(lock => Number(lock?.diagramDbId) === Number(pathwayDiagramId))?.lockId;
+    const diagramDbId = Number(pathwayDiagramId);
+    const existingLock = this.diagramLocks.find(lock => Number(lock?.diagramDbId) === diagramDbId);
+    const lockId = existingLock?.lockId;
     return this.http.post<boolean>(this.backupCyNetworkUrl + pathwayDiagramId + (lockId ? `/${lockId}` : ''), networkJson).pipe(
+      tap((saved: boolean) => {
+        if (!saved || !existingLock)
+          return;
+
+        this.upsertLock({
+          ...existingLock,
+          hasBackupDiagram: true
+        });
+      }),
       catchError((error: any) => {
         const status = error?.status;
         if (status === 401)
@@ -236,11 +257,6 @@ export class DiagramEditorService {
     return !!lock;
   }
 
-  isLockOwnedByCurrentUser(lockInfo: DiagramLock | null | undefined): boolean {
-    if (!lockInfo)
-      return false;
-    return this.diagramLocks.some(lock => lock.lockId === lockInfo.lockId);
-  }
 
   getDiagramLocks() {
     if (this.diagramLocks.length > 0)
@@ -250,7 +266,7 @@ export class DiagramEditorService {
 
     this.getDiagramLocksInFlight$ = this.fetchDiagramLocksFromServer().pipe(
       tap((locks: DiagramLock[]) => {
-        this.diagramLocks = Array.isArray(locks) ? [...locks] : [];
+        this.setDiagramLocks(Array.isArray(locks) ? [...locks] : []);
       }),
       finalize(() => {
         this.getDiagramLocksInFlight$ = null;
@@ -310,6 +326,12 @@ export class DiagramEditorService {
     );
   }
 
+  observePathwayDiagramLocksViewModels(): Observable<DiagramLockViewModel[]> {
+    return this.lockCacheRevision$.pipe(
+      switchMap(() => this.loadPathwayDiagramLocksViewModels())
+    );
+  }
+
   private fetchDiagramLocksFromServer(): Observable<DiagramLock[]> {
     return this.http.get<DiagramLock[]>(this.getDiagramLocksUrl).pipe(
       map((pathwayDiagramLocks: DiagramLock[]) => {
@@ -323,16 +345,20 @@ export class DiagramEditorService {
     );
   }
 
-  private getStoredPathwayDiagramLockRefs(): Record<string, any> {
-    const raw = localStorage.getItem(this.pathwayDiagramLockRefsStorageKey);
+  private getStoredDiagramLocks(): DiagramLock[] {
+    if (typeof localStorage === 'undefined')
+      return [];
+
+    const raw = localStorage.getItem(this.diagramLocksStorageKey);
     if (!raw)
-      return {};
+      return [];
+
     try {
       const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === 'object' ? parsed : {};
+      return this.normalizeDiagramLocks(parsed);
     }
     catch {
-      return {};
+      return [];
     }
   }
 
@@ -350,6 +376,7 @@ export class DiagramEditorService {
       lockId: lock.lockId,
       lockedAt: lock.lockedAt,
       displayName: diagramInst?.displayName || `PathwayDiagram ${lock.diagramDbId}`,
+      hasBackupDiagram: !!lock.hasBackupDiagram,
       pathwayDbId: pathwayDbId
     };
   }
@@ -359,6 +386,7 @@ export class DiagramEditorService {
       diagramDbId: Number(lock.diagramDbId),
       lockId: lock.lockId,
       lockedAt: lock.lockedAt,
+      hasBackupDiagram: !!lock.hasBackupDiagram,
       displayName: `PathwayDiagram ${lock.diagramDbId}`
     };
   }
@@ -369,9 +397,66 @@ export class DiagramEditorService {
       return;
     const index = this.diagramLocks.findIndex(candidate => Number(candidate?.diagramDbId) === diagramDbId);
     if (index >= 0) {
-      this.diagramLocks[index] = lock;
+      const updatedLocks = [...this.diagramLocks];
+      updatedLocks[index] = lock;
+      this.setDiagramLocks(updatedLocks);
       return;
     }
-    this.diagramLocks.push(lock);
+    this.setDiagramLocks([...this.diagramLocks, lock]);
+  }
+
+  private setDiagramLocks(locks: DiagramLock[]): void {
+    this.diagramLocks = this.normalizeDiagramLocks(locks);
+    this.persistDiagramLocks();
+    this.emitLockCacheRevision();
+  }
+
+
+  private persistDiagramLocks(): void {
+    if (typeof localStorage === 'undefined')
+      return;
+    try {
+      // The tab itself will not get the storage event when it updates the localStorage, so we can directly update the localStorage without worrying about duplicate updates from storage event handler.
+      localStorage.setItem(this.diagramLocksStorageKey, JSON.stringify(this.diagramLocks));
+    }
+    catch {
+      // Ignore localStorage write failures (quota/privacy mode).
+    }
+  }
+
+  private normalizeDiagramLocks(value: any): DiagramLock[] {
+    if (!Array.isArray(value))
+      return [];
+
+    return value
+      .filter((item: any) => Number.isFinite(Number(item?.diagramDbId)) && Number(item.diagramDbId) > 0)
+      .map((item: any) => ({
+        ...item,
+        diagramDbId: Number(item.diagramDbId)
+      } as DiagramLock));
+  }
+
+  private readonly onStorageEvent = (event: StorageEvent): void => {
+    if (event.key !== this.diagramLocksStorageKey)
+      return;
+
+    let nextLocks: DiagramLock[] = [];
+    try {
+      nextLocks = this.normalizeDiagramLocks(event.newValue ? JSON.parse(event.newValue) : []);
+    }
+    catch {
+      nextLocks = [];
+    }
+
+    const hasChanged = JSON.stringify(nextLocks) !== JSON.stringify(this.diagramLocks);
+    if (!hasChanged)
+      return;
+
+    this.diagramLocks = nextLocks;
+    this.emitLockCacheRevision();
+  };
+
+  private emitLockCacheRevision(): void {
+    this.lockCacheRevision$.next(this.lockCacheRevision$.value + 1);
   }
 }

@@ -1,5 +1,5 @@
 import { CdkDragMove } from "@angular/cdk/drag-drop";
-import { AfterViewChecked, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewChecked, AfterViewInit, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatSidenav } from "@angular/material/sidenav";
 import { ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 import { ActivatedRoute } from "@angular/router";
@@ -15,7 +15,7 @@ import { Subscription } from "rxjs";
   templateUrl: './main-event.component.html',
   styleUrls: ['./main-event.component.scss'],
 })
-export class MainEventComponent implements OnInit, AfterViewChecked, OnDestroy {
+export class MainEventComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
   hasInstanceId = false;
   // TODO: calculate window/screden size and make the table a ratio. 
   treeWidth = 400;
@@ -41,6 +41,7 @@ export class MainEventComponent implements OnInit, AfterViewChecked, OnDestroy {
   constructor(
     private instanceUtilities: InstanceUtilities,
     private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
   ) {
     let sub = this.instanceUtilities.lastClickedDbId$.subscribe(dbId => {
       // Avoid using ngrx to avoid the complicated implementation
@@ -68,7 +69,11 @@ export class MainEventComponent implements OnInit, AfterViewChecked, OnDestroy {
     });
     if (sub) {
       this.subscriptions.add(sub);
-    } 
+    }
+
+    // MatSidenav computes content margins after first render; trigger one
+    // additional pass so dev mode does not flag ExpressionChanged.
+    this.cdr.detectChanges();
   }
 
   ngOnInit(): void {

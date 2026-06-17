@@ -157,6 +157,15 @@
   border-bottom: none;
 }
 
+.panel-item.has-backup .diagram-name,
+.panel-item.has-backup .diagram-meta {
+  color: #c62828;
+}
+
+.panel-item.has-backup .panel-open-button mat-icon {
+  color: #c62828;
+}
+
 .diagram-name {
   color: #21314d;
   font-size: 11px;

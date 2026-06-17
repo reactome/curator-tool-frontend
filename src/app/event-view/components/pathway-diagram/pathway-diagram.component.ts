@@ -22,6 +22,7 @@ import { Store } from '@ngrx/store';
 import { DiagramEditorService } from './utils/diagram-editor.service';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
+import { UnsavedUploadDialogComponent } from 'src/app/shared/components/unsaved-upload-dialog/unsaved-upload-dialog.component';
 
 @Component({
   selector: 'app-pathway-diagram',
@@ -48,8 +49,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   select: string = "";
   // PathwayDiagram id for editing
   pathwayDiagramId: string = "";
-  private requestedLockDiagramId: string = "";
-
+  
   @ViewChild('diagramComponent')
   diagram!: DiagramComponent;
 
@@ -120,7 +120,6 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       // Do nothing if nothing is loaded
       if (!id || id === '0') return;
       const loadNewDiagram = () => {
-        this.backupEditedDiagram('navigate to another diagram');
         this.pathwayId = id;
         this.diagram.diagramId = this.pathwayId;
         this.select = queryParams['select'] ?? '';
@@ -133,7 +132,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       };
       const isSwitchingDiagram = this.pathwayId.length > 0 && this.pathwayId !== id;
       if (isSwitchingDiagram) {
-        this.promptUploadBeforeDiscard('loading another diagram', loadNewDiagram);
+        this.backupBeforeSwitchingDiagram(loadNewDiagram);
         return;
       }
       loadNewDiagram();
@@ -232,19 +231,45 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       proceed();
       return;
     }
-    // const dialogRef = this.dialog.open(UnsavedUploadDialogComponent, {
-    //   data: {
-    //     title: 'Unsaved Changes',
-    //     message: `This diagram has unsaved changes. Upload before ${action}?`
-    //   },
-    //   disableClose: true
-    // });
-    // dialogRef.afterClosed().pipe(take(1)).subscribe((shouldUpload: boolean | null) => {
-    //   if (shouldUpload === true)
-    //     this.uploadDiagram(false, proceed);
-    //   else if (shouldUpload === false)
-    //     proceed();
-    // });
+    const dialogRef = this.dialog.open(UnsavedUploadDialogComponent, {
+      data: {
+        title: 'Unsaved Changes',
+        message: `This diagram has unsaved changes. Upload before ${action}?`
+      },
+      disableClose: true
+    });
+    dialogRef.afterClosed().pipe(take(1)).subscribe((shouldUpload: boolean | null) => {
+      if (shouldUpload === true)
+        this.uploadDiagram(false, proceed);
+      else if (shouldUpload === false)
+        proceed();
+    });
+  }
+
+  private backupBeforeSwitchingDiagram(proceed: () => void): void {
+    if (!this.isEdited || !this.pathwayDiagramId || !this.diagram?.cy) {
+      proceed();
+      return;
+    }
+
+    if (this.isBackgroundBackupInProgress) {
+      proceed();
+      return;
+    }
+
+    const networkJson = this.generateNetworkJson();
+    this.isBackgroundBackupInProgress = true;
+    this.diagramEditorService.backupCyNetwork(this.pathwayDiagramId, networkJson).pipe(take(1)).subscribe({
+      next: () => {
+        this.lastBackupAtMs = Date.now();
+        this.isBackgroundBackupInProgress = false;
+        proceed();
+      },
+      error: () => {
+        this.isBackgroundBackupInProgress = false;
+        proceed();
+      }
+    });
   }
 
   private storeViewport() {
@@ -395,18 +420,17 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     this.isLockAcquiring = false;
     this.pathwayDiagramId = lockInfo.diagramDbId?.toString() ?? diagramId;
     this.diagram.diagramId = this.pathwayDiagramId;
-    this.requestedLockDiagramId = this.pathwayDiagramId;
     this.isEditing = true;
     this.diagramUtils.clearSelection(this.diagram);
 
     this.diagramEditorService.resolveEditingLoadPlan(this.pathwayDiagramId, lockInfo).pipe(take(1)).subscribe({
       next: (plan) => {
-        this.applyLockStateForIsEdited(lockInfo);
         this.applyDiagramLoadPlan(this.pathwayDiagramId, plan);
+        this.applyLockStateForIsEdited(lockInfo);
       },
       error: () => {
-        this.applyLockStateForIsEdited(lockInfo);
         this.applyDiagramLoadPlan(this.pathwayDiagramId, { mode: 'diagram' });
+        this.applyLockStateForIsEdited(lockInfo);
       }
     });
   }
@@ -414,8 +438,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   private ensureEditingLockAndLoad(diagramId: string): void {
     this.pathwayDiagramId = diagramId;
     this.diagram.diagramId = diagramId;
-    this.requestedLockDiagramId = diagramId;
-
+    
     const numericDiagramId = Number(diagramId);
     if (!Number.isFinite(numericDiagramId) || numericDiagramId <= 0) {
       this.isLockAcquiring = false;
@@ -424,16 +447,17 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
 
     this.isLockAcquiring = true;
     this.diagramEditorService.acquireEditingLock(numericDiagramId).pipe(take(1)).subscribe({
-      next: (result) => {
+      next: (lockInfo) => {
         this.isLockAcquiring = false;
-        if (!result.acquired) {
-          this.applyLockStateForIsEdited(result.lockInfo);
-          this.showDiagramLockedDialog(result.lockInfo);
+        if (!this.diagramEditorService.isDiagramLockedByMe(numericDiagramId)) {
+          this.showDiagramLockedDialog(lockInfo);
           return;
         }
-        if (!result.lockInfo)
+        if (lockInfo) {
+          this.applyLockStateForIsEdited(lockInfo);
+          this.onEditingLockAcquired(lockInfo!, diagramId);
           return;
-        this.onEditingLockAcquired(result.lockInfo, diagramId);
+        }
       },
       error: () => {
         this.isLockAcquiring = false;

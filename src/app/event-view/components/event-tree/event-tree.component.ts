@@ -306,10 +306,15 @@ export class EventTreeComponent implements OnDestroy {
     this.copyNodesInfo();
     // Cache the tree parent/child relationship for performance
     this.cacheTreePaths();
-    if (paramsId === '0')
+    if (!paramsId || paramsId === '0')
       return; // This is just a flag
+
     const diagramPathwayId = Number(paramsId);
-    const select = Number(this.route.snapshot.queryParams['select']);
+    if (!Number.isFinite(diagramPathwayId) || diagramPathwayId <= 0)
+      return;
+
+    const selectParam = Number(this.route.snapshot.queryParams['select']);
+    const select = Number.isFinite(selectParam) && selectParam > 0 ? selectParam : undefined;
     this.goToPathway(select, diagramPathwayId);
   }
 
@@ -386,6 +391,9 @@ export class EventTreeComponent implements OnDestroy {
       return undefined;
     if (selectedDbId === undefined || diagramDbId === undefined)
       return undefined; // Nothing needs to be done
+    if (!Number.isFinite(selectedDbId) || !Number.isFinite(diagramDbId))
+      return undefined;
+
     let matchedNodes = [];
     let matchedPath = undefined;
     for (let index = 0; index < this.treeControl.dataNodes.length; index ++) {
