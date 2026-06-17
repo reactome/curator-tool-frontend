@@ -50,6 +50,7 @@ export class DataService {
   private deleteByDeletedUrl = `${environment.ApiRoot}/deleteByDeleted/`;
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
+  private psiModIdentifierMappingUrl = `${environment.ApiRoot}/fillPsiMod/`;
 
 
   // Track the negative dbId to be used
@@ -919,6 +920,25 @@ export class DataService {
     // Need to handle attributes. The map cannot be converted into JSON automatically!!!
     const copy = this.utils.cloneInstanceForCommit(instance);
     return this.http.post<Instance>(this.fillReferenceUrl, copy).pipe(
+      map((inst: Instance) => {
+        console.debug('filled reference: \n', inst);
+        this.handleInstanceAttributes(inst);
+        return inst;
+      }),
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    )
+  }
+
+    /**
+   * PsiMod identifer mapping for a given instance. This is used to map the psi mod identifiers to the corresponding instances in Reactome.
+   * @param instance
+   */
+  psiModIdentifierMapping(instance: Instance): Observable<Instance> {
+    // Need to handle attributes. The map cannot be converted into JSON automatically!!!
+    const copy = this.utils.cloneInstanceForCommit(instance);
+    return this.http.post<Instance>(this.psiModIdentifierMappingUrl, copy).pipe(
       map((inst: Instance) => {
         console.debug('filled reference: \n', inst);
         this.handleInstanceAttributes(inst);
