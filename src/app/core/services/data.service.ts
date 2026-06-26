@@ -51,6 +51,7 @@ export class DataService {
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
   private psiModIdentifierMappingUrl = `${environment.ApiRoot}/fillPsiMod/`;
+  private fillReferenceSequenceUrl = `${environment.ApiRoot}/fillRefSequence/`;
 
 
   // Track the negative dbId to be used
@@ -931,14 +932,35 @@ export class DataService {
     )
   }
 
-    /**
-   * PsiMod identifer mapping for a given instance. This is used to map the psi mod identifiers to the corresponding instances in Reactome.
-   * @param instance
-   */
+  /**
+ * PsiMod identifer mapping for a given instance. This is used to map the psi mod identifiers to the corresponding instances in Reactome.
+ * @param instance
+ */
   psiModIdentifierMapping(instance: Instance): Observable<Instance> {
     // Need to handle attributes. The map cannot be converted into JSON automatically!!!
     const copy = this.utils.cloneInstanceForCommit(instance);
     return this.http.post<Instance>(this.psiModIdentifierMappingUrl, copy).pipe(
+      map((inst: Instance) => {
+        console.debug('filled reference: \n', inst);
+        this.handleInstanceAttributes(inst);
+        return inst;
+      }),
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    )
+  }
+
+  /**
+ * Call this method to fill the attributes for a UniProt-backed reference sequence instance
+ * (ReferenceGeneProduct, ReferencePeptideSequence, ReferenceRNASequence, or ReferenceIsoform)
+ * based on its UniProt identifier.
+ * @param instance
+*/
+  fillReferenceSequence(instance: Instance): Observable<Instance> {
+    // Need to handle attributes. The map cannot be converted into JSON automatically!!!
+    const copy = this.utils.cloneInstanceForCommit(instance);
+    return this.http.post<Instance>(this.fillReferenceSequenceUrl, copy).pipe(
       map((inst: Instance) => {
         console.debug('filled reference: \n', inst);
         this.handleInstanceAttributes(inst);

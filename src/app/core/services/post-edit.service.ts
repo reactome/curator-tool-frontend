@@ -11,6 +11,8 @@ import { Store } from '@ngrx/store';
 import { InstanceUtilities } from './instance.service';
 import { ReviewStatusCheck } from '../post-edit/ReviewStatusCheck';
 import { MatDialog } from '@angular/material/dialog';
+import { PsiModAttributeAutoFiller } from '../post-edit/PsiModAttributeAutoFiller';
+import { ReferenceSequenceAutoFiller } from '../post-edit/ReferenceSequenceAutoFiller';
 
 @Injectable({
   providedIn: 'root',
@@ -27,6 +29,20 @@ export class PostEditService {
       this.dialog
     );
     this.postEditOperations.push(lrFiller);
+    const psiModFiller: PsiModAttributeAutoFiller = new PsiModAttributeAutoFiller(
+      this.dataService,
+      this.store,
+      this.utilities,
+      this.dialog
+    );
+    this.postEditOperations.push(psiModFiller);
+    const refFiller: ReferenceSequenceAutoFiller = new ReferenceSequenceAutoFiller(
+      this.dataService,
+      this.store,
+      this.utilities,
+      this.dialog
+    );
+    this.postEditOperations.push(refFiller);
     // Make sure display name generation service is at the bottom
     const nameOperation = new InstanceNameGenerator(this.dataService, this.utilities);
     this.postEditOperations.push(nameOperation);
