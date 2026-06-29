@@ -339,6 +339,12 @@ export class InstanceTableComponent implements PostEditListener {
     instance: Instance,
     editedAttributeName: string | undefined
   ): boolean {
+    // Async post-edit operations (e.g. the auto-fillers) may update the display name only
+    // after their HTTP response resolves, which is after finishEdit() already registered the
+    // updated instance in the store with the previous (stale) display name. Re-register here so
+    // the NgRx store shell (used by the updated/local list views) reflects the new display name.
+    if (instance)
+      this.instUtil.registerUpdatedInstance(editedAttributeName ?? '', instance);
     this.updateTableContent();
     return true;
   }
