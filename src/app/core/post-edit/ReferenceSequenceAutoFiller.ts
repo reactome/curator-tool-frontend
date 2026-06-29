@@ -54,8 +54,8 @@ export class ReferenceSequenceAutoFiller implements PostEditOperation {
             if (this.nameGenerator) {
                 this.nameGenerator.updateDisplayName(instance);
             }
-            let isoforms = instance.attributes?.get('isoforms') as Instance[];
-            if (isoforms && isoforms.length > 0) {
+            let isoformIds = instance.attributes?.get('isoformIds') 
+            if (isoformIds && isoformIds.length > 0) {
                 this.dataService.fetchSchemaClass('ReferenceIsoform').subscribe((refIsoCls: SchemaClass) => {
                     this.handleIsoForms(instance, refIsoCls);
                     if (postEditListener)
@@ -67,16 +67,21 @@ export class ReferenceSequenceAutoFiller implements PostEditOperation {
     }
 
     handleIsoForms(instance: Instance, refIsoCls: SchemaClass) {
-        let isoforms = instance.attributes?.get('isoforms');
-        if (!isoforms) return;
-        for (let isoform of isoforms) {
-            if (isoform.dbId && isoform.dbId > 0) // Old instance created before and fetched from the database
-                continue; // This should be fine
+        let isoformIds = instance.attributes?.get('isoformIds')
+        if (!isoformIds) return;
+        for (let isoformId of isoformIds) {
+
+            let isoform = this.utilities.cloneInstanceForCommit(instance);
+            // cloneInstanceForCommit serializes attributes to plain object for commits.
+            // Convert back to Map so we can safely apply in-memory attribute updates.
+            this.dataService.handleInstanceAttributes(isoform);
+            isoform.attributes.set('identifier', isoformId);
             // This is a new isoform created by the server
             // Need to assign a new dbId
             isoform.dbId = this.dataService.getNextNewDbId();
+            isoform.attributes.set('isoformParent', instance);
+            isoform.schemaClassName = refIsoCls.name;
             isoform.schemaClass = refIsoCls;
-            this.dataService.handleInstanceAttributes(isoform);
             if (this.nameGenerator)
                 this.nameGenerator.updateDisplayName(isoform);
             // May need to bound these two calls together somewhere
@@ -85,6 +90,5 @@ export class ReferenceSequenceAutoFiller implements PostEditOperation {
             this.store.dispatch(NewInstanceActions.register_new_instance(isoform));
         }
     }
-
 
 }
