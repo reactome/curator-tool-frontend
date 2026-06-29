@@ -27,7 +27,9 @@ export class ExternalOntologyFiller implements PostEditOperation {
     postEdit(instance: Instance,
         editedAttributeName: string | undefined,
         postEditListener: PostEditListener | undefined): boolean {
-        if (editedAttributeName !== 'identifier' || instance.schemaClassName)
+        let isGoTerm = this.utilities.isSchemaClass(instance, 'GO_Term', this.dataService);
+        let isExternalOntology = this.utilities.isSchemaClass(instance, 'ExternalOntology', this.dataService);
+        if (editedAttributeName !== 'identifier' || !isExternalOntology || isGoTerm)
             return false; // Nothing to do
         this.commitWaitDialogRef?.close();
         this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
@@ -40,7 +42,7 @@ export class ExternalOntologyFiller implements PostEditOperation {
                 message: 'auto-fetch related information'
             }
         });
-        this.dataService.psiModIdentifierMapping(instance).pipe(
+        this.dataService.externalOntologyFiller(instance).pipe(
             finalize(() => {
                 this.commitWaitDialogRef?.close();
                 this.commitWaitDialogRef = undefined;
@@ -54,11 +56,6 @@ export class ExternalOntologyFiller implements PostEditOperation {
             }
             if (postEditListener)
                 postEditListener.donePostEdit(instance, editedAttributeName);
-            // this.dataService.fetchSchemaClass('Person').subscribe((personCls: SchemaClass) => {
-            //     this.handleAuthors(instance, personCls);
-            //     if (postEditListener)
-            //         postEditListener.donePostEdit(instance, editedAttributeName);
-            // });
         });
         return true;
     }

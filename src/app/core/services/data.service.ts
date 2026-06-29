@@ -50,8 +50,9 @@ export class DataService {
   private deleteByDeletedUrl = `${environment.ApiRoot}/deleteByDeleted/`;
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
-  private psiModIdentifierMappingUrl = `${environment.ApiRoot}/fillPsiMod/`;
+  private chebiAutoFillerUrl = `${environment.ApiRoot}/fillChEBI/`;
   private fillReferenceSequenceUrl = `${environment.ApiRoot}/fillRefSequence/`;
+  private fillExternalOntologyUrl = `${environment.ApiRoot}/fillExternalOntology/`;
 
 
   // Track the negative dbId to be used
@@ -933,13 +934,32 @@ export class DataService {
   }
 
   /**
- * PsiMod identifer mapping for a given instance. This is used to map the psi mod identifiers to the corresponding instances in Reactome.
+ * ChEBI auto filler for a given instance. This is used to fill the ChEBI information for the instance in Reactome.
  * @param instance
  */
-  psiModIdentifierMapping(instance: Instance): Observable<Instance> {
+  chebiAutoFiller(instance: Instance): Observable<Instance> {
     // Need to handle attributes. The map cannot be converted into JSON automatically!!!
     const copy = this.utils.cloneInstanceForCommit(instance);
-    return this.http.post<Instance>(this.psiModIdentifierMappingUrl, copy).pipe(
+    return this.http.post<Instance>(this.chebiAutoFillerUrl, copy).pipe(
+      map((inst: Instance) => {
+        console.debug('filled reference: \n', inst);
+        this.handleInstanceAttributes(inst);
+        return inst;
+      }),
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    )
+  }
+
+    /**
+ * External ontology filler for a given instance. This is used to fill the external ontology information for the instance in Reactome.
+ * @param instance
+ */
+  externalOntologyFiller(instance: Instance): Observable<Instance> {
+    // Need to handle attributes. The map cannot be converted into JSON automatically!!!
+    const copy = this.utils.cloneInstanceForCommit(instance);
+    return this.http.post<Instance>(this.fillExternalOntologyUrl, copy).pipe(
       map((inst: Instance) => {
         console.debug('filled reference: \n', inst);
         this.handleInstanceAttributes(inst);
