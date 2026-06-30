@@ -75,11 +75,14 @@ export class ReferenceSequenceAutoFiller implements PostEditOperation {
             // cloneInstanceForCommit serializes attributes to plain object for commits.
             // Convert back to Map so we can safely apply in-memory attribute updates.
             this.dataService.handleInstanceAttributes(isoform);
-            isoform.attributes.set('identifier', isoformId);
             // This is a new isoform created by the server
             // Need to assign a new dbId
+            //variantIdentifier and isoformParent
             isoform.dbId = this.dataService.getNextNewDbId();
-            isoform.attributes.set('isoformParent', instance);
+            // isoformParent is a multi-valued attribute (cardinality '+'), so it must be stored
+            // as an array. Use the managed shell instance to keep references in sync.
+            isoform.attributes.set('isoformParent', [this.utilities.getShellInstance(instance)]);
+            isoform.attributes.set('variantIdentifier', isoformId);
             isoform.schemaClassName = refIsoCls.name;
             isoform.schemaClass = refIsoCls;
             if (this.nameGenerator)
