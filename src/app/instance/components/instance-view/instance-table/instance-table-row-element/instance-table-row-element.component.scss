@@ -15,6 +15,56 @@
   padding: 0 16px;
 }
 
+// Wrap a populated instance value and its inline edit-action button. The wrapper is
+// positioned so the button can overlay the row without affecting its height.
+.instance-value-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+// Inline edit-action button, only rendered while the cursor is in the row.
+// Absolutely positioned (and vertically centered) so it never changes the row height.
+.row-action-button {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  // Keep the button visually compact so it fits within the existing row height.
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  // Slightly mask the underlying text so the button stays readable when overlapping.
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+}
+
+// Empty instance slot: keep the original compact target so the empty-row height is
+// unchanged; the action button only appears (overlaid) on hover.
+.empty-slot-target {
+  position: relative;
+}
+
+.add-value-button {
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+  // Constrain to the original row height so the layout does not grow.
+  height: 24px;
+  line-height: 22px;
+  padding: 0 8px;
+  font-size: 12px;
+  white-space: nowrap;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    margin-right: 2px;
+    vertical-align: middle;
+  }
+}
+
 :host {
   --mdc-shape-small: 0;
 }

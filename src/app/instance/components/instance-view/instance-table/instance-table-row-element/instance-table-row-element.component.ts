@@ -1,5 +1,5 @@
 import { CdkTextareaAutosize } from "@angular/cdk/text-field";
-import { CdkContextMenuTrigger } from "@angular/cdk/menu";
+import { CdkContextMenuTrigger, CdkMenuTrigger } from "@angular/cdk/menu";
 import {
   Component,
   EventEmitter,
@@ -74,6 +74,11 @@ export class InstanceTableRowElementComponent implements OnInit {
   showField: boolean = true;
   color: boolean = false;
   showEditorButton: boolean = false;
+  // Controls visibility of the inline edit-action button for populated instance values.
+  showActions: boolean = false;
+  // Tracks whether the edit menu is currently open so the trigger button is kept rendered
+  // (and the menu kept open) even after the cursor leaves the row.
+  menuOpen: boolean = false;
   // viewOnly as a service is drilled down too deep in the component hierarchy. Better not been here and disable
   // the editing using a simple flag!
   constructor(private store: Store,
@@ -121,7 +126,8 @@ export class InstanceTableRowElementComponent implements OnInit {
     this.lastContextMenuPosition = { x: event.x, y: event.y };
   }
 
-  onMenuOpened(trigger: CdkContextMenuTrigger) {
+  onMenuOpened(trigger: CdkContextMenuTrigger | CdkMenuTrigger) {
+    this.menuOpen = true;
     if (this.attribute?.name === 'species') {
       if (this.skipSpeciesWarning) {
         this.skipSpeciesWarning = false;
@@ -135,9 +141,20 @@ export class InstanceTableRowElementComponent implements OnInit {
       });
       dialogRef.afterClosed().subscribe(() => {
         this.skipSpeciesWarning = true;
-        trigger.open(this.lastContextMenuPosition);
+        // CdkContextMenuTrigger opens at a coordinate; CdkMenuTrigger (button) opens relative to itself.
+        if (trigger instanceof CdkContextMenuTrigger)
+          trigger.open(this.lastContextMenuPosition);
+        else
+          trigger.open();
       });
     }
+  }
+
+  onMenuClosed() {
+    this.menuOpen = false;
+    // If the cursor already left the row while the menu was open, hide the action button now.
+    if (!this.isMouseIn)
+      this.showActions = false;
   }
 
   onEditAction(action: EDIT_ACTION) {
@@ -175,12 +192,17 @@ export class InstanceTableRowElementComponent implements OnInit {
   mouseLeave() {
     this.isMouseIn = false
     this.color = false;
+    // Keep the action button (and therefore the open menu) visible while the menu is open.
+    // It will be hidden when the menu closes (see onMenuClosed).
+    if (!this.menuOpen)
+      this.showActions = false;
     if (this.isSummationText())
       this.showEditorButton = false;
   }
 
   mouseEnter() {
     this.isMouseIn = true;
+    this.showActions = true;
     if (this.isDroppable) {
       this.color = true;
     }

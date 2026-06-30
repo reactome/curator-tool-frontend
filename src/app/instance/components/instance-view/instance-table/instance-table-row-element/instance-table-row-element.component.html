@@ -52,23 +52,41 @@
           [ngClass]="{dragging: dragging, red: !color, green: color}">
           <!-- TODO: Also need to determine if it is required or disabled-->
           <ng-container *ngIf="value !== undefined; else elseblock">
+            <div class="instance-value-wrapper">
               <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
                 #aTrigger="cdkContextMenuTriggerFor" [cdkContextMenuTriggerFor]="row_menu"
                 (contextmenu)="onContextMenu($event)" (cdkContextMenuOpened)="onMenuOpened(aTrigger)"
+                (cdkContextMenuClosed)="onMenuClosed()"
                 class="padding span-menu-trigger" style="cursor: pointer; text-decoration: underline;">
                 {{value.displayName}}
                 [{{value.dbId}}]
               </a>
+              <!-- Visible affordance: left-click opens the same edit menu as right-click.
+              Absolutely positioned and only shown on hover so the row height is unchanged. -->
+              <button mat-icon-button class="row-action-button" *ngIf="showActions"
+                #valueMenuTrigger="cdkMenuTriggerFor" [cdkMenuTriggerFor]="row_menu"
+                (cdkMenuOpened)="onMenuOpened(valueMenuTrigger)" (cdkMenuClosed)="onMenuClosed()"
+                matTooltip="Edit value" aria-label="Edit value actions">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+            </div>
           </ng-container>
-          <!-- Add this empty space so that we can pop up the context menu to handle action.
-          For the time being, the popup works for instance type only. -->
+          <!-- For an empty instance slot, keep the original compact target but reveal a clear
+          action button only while the cursor is in the row. Right-click is still supported. -->
           <ng-template #elseblock>
-            <ng-container>
-              <!-- Use a customized class to force the empty span to show the menu.-->
-              <span #spanTrigger="cdkContextMenuTriggerFor" [cdkContextMenuTriggerFor]="row_menu"
-                (contextmenu)="onContextMenu($event)" (cdkContextMenuOpened)="onMenuOpened(spanTrigger)"
-                class="span-menu-trigger"></span>
-            </ng-container>
+            <span #spanTrigger="cdkContextMenuTriggerFor" [cdkContextMenuTriggerFor]="row_menu"
+              (contextmenu)="onContextMenu($event)" (cdkContextMenuOpened)="onMenuOpened(spanTrigger)"
+              (cdkContextMenuClosed)="onMenuClosed()"
+              class="span-menu-trigger empty-slot-target">
+              <button mat-stroked-button class="add-value-button" *ngIf="showActions"
+                #addMenuTrigger="cdkMenuTriggerFor" [cdkMenuTriggerFor]="row_menu"
+                (cdkMenuOpened)="onMenuOpened(addMenuTrigger)" (cdkMenuClosed)="onMenuClosed()"
+                [matTooltip]="attribute!.cardinality === '1' ? 'Set value' : 'Add value'"
+                aria-label="Add value actions">
+                <mat-icon>edit</mat-icon>
+                Edit
+              </button>
+            </span>
           </ng-template>
         </div>
       </ng-template>

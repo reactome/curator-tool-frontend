@@ -1,5 +1,5 @@
 import { CdkDrag, CdkDragPlaceholder, CdkDropList } from "@angular/cdk/drag-drop";
-import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem } from "@angular/cdk/menu";
+import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem, CdkMenuTrigger } from "@angular/cdk/menu";
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { MatSidenavModule } from "@angular/material/sidenav";
@@ -73,6 +73,7 @@ import { MatchInstancesDialogComponent } from './components/match-instances-dial
     // StoreModule.forFeature(UPDATE_INSTANCES_STATE_NAME, updatedInstancesReducer),
     SharedModule,
     CdkContextMenuTrigger,
+    CdkMenuTrigger,
     CdkMenu,
     CdkMenuItem,
     MatTooltipModule,
