@@ -413,6 +413,8 @@ export class InstanceTableComponent implements PostEditListener {
   postEdit(attName: string) {
     if (this._instance)
       this.postEditService.postEdit(this._instance, attName, this);
+    if (this._instance?.source)
+      this.postEditService.postEdit(this._instance.source, attName, this);
   }
 
   drop(event: CdkDragDrop<string[]>, value: SchemaAttribute) {
@@ -631,18 +633,18 @@ export class InstanceTableComponent implements PostEditListener {
   getAttributeTooltip(attribute: SchemaAttribute): string {
     let tooltip = '';
     if (this.isRequired({ attribute } as AttributeValue)) {
-      tooltip +=  attribute.name + ' is required. It is recommended to have a value.';
+      tooltip += attribute.name + ' is required. It is recommended to have a value.';
     }
     if (this.isMandatory({ attribute } as AttributeValue)) {
       tooltip += ' ' + attribute.name + ' is mandatory. It should not be empty.';
     }
-    if(this.isActiveEdited(attribute.name) && this.isPassiveEdited(attribute.name)) {
+    if (this.isActiveEdited(attribute.name) && this.isPassiveEdited(attribute.name)) {
       tooltip += ' ' + attribute.name + ' has both active and passive edits.';
     }
-    if(this.isActiveEdited(attribute.name)) {
+    if (this.isActiveEdited(attribute.name)) {
       tooltip += ' ' + attribute.name + ' has been actively edited.';
     }
-    if(this.isPassiveEdited(attribute.name)) {
+    if (this.isPassiveEdited(attribute.name)) {
       tooltip += ' ' + attribute.name + ' has been passively edited.';
     }
     return tooltip;

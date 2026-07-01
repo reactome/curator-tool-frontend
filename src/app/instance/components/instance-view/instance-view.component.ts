@@ -25,6 +25,7 @@ import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
 import { MatchInstancesDialogService } from '../match-instances-dialog/match-instances-dialog.service';
 import { CommitResultDialogService } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
+import { environment } from 'src/environments/environment.dev';
 
 @Component({
   selector: 'app-instance-view',
@@ -797,7 +798,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   openCuratorGraph() {
-    const baseUrl = "https://curator.reactome.org/curatorgraph";
+    if (!this.instance || this.instance.dbId < 0)
+      return;
+    const baseUrl = environment.curatorGraphBaseUrl;
     const url = this.isEventClass()
       ? `${baseUrl}/PathwayBrowser/${this.instance!.dbId}`
       : `${baseUrl}/dataSchema/${this.instance!.schemaClassName}/instance/${this.instance!.dbId}`;

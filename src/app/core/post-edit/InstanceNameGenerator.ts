@@ -78,7 +78,7 @@ export class InstanceNameGenerator implements PostEditOperation {
       return this.generatePersonName(instance);
     if (clsName === "InstanceEdit")
       return this.generateInstanceEditName(instance);
-    if (this.isSchemaClass(instance, "PhysicalEntity"))
+    if (clsName === 'PhysicalEntityCellType' || this.isSchemaClass(instance, "PhysicalEntity"))
       return this.generateEntityName(instance);
     if (this.isSchemaClass(instance, 'ReactionLikeEvent'))
       return this.generateReactionName(instance);

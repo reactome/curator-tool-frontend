@@ -11,6 +11,8 @@
 - bug: A a newly added compartment, the drag looks too fast potentially due to the wrong previous drag posititon.
 - bug: navigate to: http://localhost:4200/event_view/instance/397014 after enabling editing, the rounded edges will become square. The user must refresh the page to regain rounded edges.
 - bug: navigate to: http://localhost:4200/event_view/instance/6787011. The diagram will not appear right away. Once the user enables editing, the diagram will again show, but disappears again once editing is disabled. (Looks like they are all rice pathways. Need to change the diagram converter so that it can run for all pathway diagrams during converting. In this specific pathway diagram, some reactions don't have inputs or outputs. During the converting the hanging ends were removed, and therefore, the backbone and the position points are not matched, resulting an error.)
+- improvement: when user is comparing two instances they can turn the comparison mode "off". Then selecting comparison again will use the database version instead of the comparison instance used previously. 
+-bug: check that new pathway diagrams are checked for duplications. currently two users can each create a pathway diagram and commit them creating duplicated pathway diagram instance.
 
 #### Deidre
 - bug: The numbers of instances at the new schema view (beta browser) are not updated when new instances are committed. It looks like the counts may be cached at the server app. However, the content of edited instances do get updated.

@@ -28,7 +28,8 @@ export class ChEBIAutoFiller implements PostEditOperation {
         editedAttributeName: string | undefined,
         postEditListener: PostEditListener | undefined): boolean {
         let isReferenceMolecule = this.utilities.isSchemaClass(instance, 'ReferenceMolecule', this.dataService);
-        if (editedAttributeName !== 'identifier' || !isReferenceMolecule)
+        let isReferenceGroup = this.utilities.isSchemaClass(instance, 'ReferenceGroup', this.dataService);
+        if (editedAttributeName !== 'identifier' || (!isReferenceMolecule && !isReferenceGroup))
             return false; // Nothing to do
         this.commitWaitDialogRef?.close();
         this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
