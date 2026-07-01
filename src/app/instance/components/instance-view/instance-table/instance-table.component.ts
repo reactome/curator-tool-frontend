@@ -413,8 +413,6 @@ export class InstanceTableComponent implements PostEditListener {
   postEdit(attName: string) {
     if (this._instance)
       this.postEditService.postEdit(this._instance, attName, this);
-    if (this._instance?.source)
-      this.postEditService.postEdit(this._instance.source, attName, this);
   }
 
   drop(event: CdkDragDrop<string[]>, value: SchemaAttribute) {

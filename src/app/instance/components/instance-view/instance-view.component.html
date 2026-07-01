@@ -59,6 +59,10 @@
             matTooltip="compare two instances">
             <mat-icon>compare_arrows</mat-icon>
           </button>
+          <button mat-icon-button color="primary" class="v-center" (click)="openCuratorGraph()"
+            matTooltip="open in curator graph">
+            <mat-icon>open_in_new</mat-icon>
+          </button>
           <ng-container *ngIf="isEventClass()">
             <ng-container *ngIf="isInEventView; else elseTemplate">
               <button mat-icon-button color="primary" class="v-center" (click)="openSchemaView()"

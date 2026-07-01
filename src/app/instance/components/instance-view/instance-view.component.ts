@@ -795,4 +795,12 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   openSchemaView() {
     this.router.navigate(["/schema_view/instance/" + this.instance!.dbId]);
   }
+
+  openCuratorGraph() {
+    const baseUrl = "https://curator.reactome.org/curatorgraph";
+    const url = this.isEventClass()
+      ? `${baseUrl}/PathwayBrowser/${this.instance!.dbId}`
+      : `${baseUrl}/dataSchema/${this.instance!.schemaClassName}/instance/${this.instance!.dbId}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
 }
