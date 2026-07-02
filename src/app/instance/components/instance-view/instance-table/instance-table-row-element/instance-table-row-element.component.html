@@ -57,13 +57,11 @@
                 #aTrigger="cdkContextMenuTriggerFor" [cdkContextMenuTriggerFor]="row_menu"
                 (contextmenu)="onContextMenu($event)" (cdkContextMenuOpened)="onMenuOpened(aTrigger)"
                 (cdkContextMenuClosed)="onMenuClosed()"
-                class="padding span-menu-trigger" style="cursor: pointer; text-decoration: underline;">
+                class="padding value-link" style="cursor: pointer; text-decoration: underline;">
                 {{value.displayName}}
                 [{{value.dbId}}]
               </a>
-              <!-- Visible affordance: left-click opens the same edit menu as right-click.
-              Absolutely positioned and only shown on hover so the row height is unchanged. -->
-              <button mat-icon-button class="row-action-button" *ngIf="showActions"
+              <button mat-mini-fab color="primary" class="row-action-fab" *ngIf="showActions"
                 #valueMenuTrigger="cdkMenuTriggerFor" [cdkMenuTriggerFor]="row_menu"
                 (cdkMenuOpened)="onMenuOpened(valueMenuTrigger)" (cdkMenuClosed)="onMenuClosed()"
                 matTooltip="Edit value" aria-label="Edit value actions">

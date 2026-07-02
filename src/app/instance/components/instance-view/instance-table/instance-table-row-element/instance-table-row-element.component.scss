@@ -18,26 +18,35 @@
 // Wrap a populated instance value and its inline edit-action button. The wrapper is
 // positioned so the button can overlay the row without affecting its height.
 .instance-value-wrapper {
-  position: relative;
-  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
 }
 
-// Inline edit-action button, only rendered while the cursor is in the row.
-// Absolutely positioned (and vertically centered) so it never changes the row height.
-.row-action-button {
-  position: absolute;
-  top: 50%;
-  padding-left: 4px;
-  padding-top: 4px;
-  right: -28px;
-  transform: translateY(-50%);
-  // Keep the button visually compact so it fits within the existing row height.
-  width: 28px;
-  height: 28px;
-  line-height: 28px;
-  // Slightly mask the underlying text so the button stays readable when overlapping.
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 50%;
+// Populated value link should size to content so the action button stays right after text.
+.value-link {
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+}
+
+// Inline mini-FAB action button rendered on hover/menu-open. Kept compact so row height
+// stays close to existing table density while still looking like a FAB.
+.row-action-fab {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  line-height: 20px;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+
+  mat-icon {
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
+    line-height: 12px;
+  }
 }
 
 // Empty instance slot: keep the original compact target so the empty-row height is
