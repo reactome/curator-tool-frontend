@@ -54,19 +54,19 @@ export class ReferenceSequenceAutoFiller implements PostEditOperation {
             if (this.nameGenerator) {
                 this.nameGenerator.updateDisplayName(instance);
             }
-            let isoformIds = instance.attributes?.get('isoformIds') 
+            let isoformIds = instance.attributes?.get('isoformIds')
             if (isoformIds && isoformIds.length > 0) {
                 this.dataService.fetchSchemaClass('ReferenceIsoform').subscribe((refIsoCls: SchemaClass) => {
                     this.handleIsoForms(instance, refIsoCls);
-                    if (postEditListener)
-                        postEditListener.donePostEdit(instance, editedAttributeName);
                 });
             }
+            if (postEditListener)
+                postEditListener.donePostEdit(instance, editedAttributeName);
         });
         return true;
     }
 
-    handleIsoForms(instance: Instance, refIsoCls: SchemaClass) {
+    private handleIsoForms(instance: Instance, refIsoCls: SchemaClass) {
         let isoformIds = instance.attributes?.get('isoformIds')
         if (!isoformIds) return;
         for (let isoformId of isoformIds) {

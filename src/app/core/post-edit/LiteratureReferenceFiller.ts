@@ -61,7 +61,7 @@ export class LiteratureReferenceFiller implements PostEditOperation {
     }
 
     /**
-     * Authors created by the server have not display names and dbIds. This method is used to make sure they have.
+     * Authors created by the server have no display names and dbIds. This method is used to make sure they have.
      * @param instance
      * @returns
      */

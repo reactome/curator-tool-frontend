@@ -602,35 +602,22 @@ export class InstanceNameGenerator implements PostEditOperation {
   }
 
   private generateReferenceSequenceName(instance: Instance): string {
-    let dbName: string | undefined = undefined;
-    const refDB: Instance | undefined = instance.attributes?.get("referenceDatabase");
-    if (refDB !== undefined) {
-      dbName = refDB.displayName;
+    const referenceDatabase: Instance | undefined = instance.attributes?.get("referenceDatabase");
+    const dbName = referenceDatabase?.displayName ?? this.unknown;
+
+    const identifier = instance.attributes?.get("variantIdentifier")
+      ?? instance.attributes?.get("identifier")
+      ?? this.unknown;
+
+    const name = instance.attributes?.get("geneName")?.[0]
+      ?? instance.attributes?.get("name")?.[0]
+      ?? this.unknown;
+
+    if (dbName === this.unknown && identifier === this.unknown && name === this.unknown) {
+      return this.unknown;
     }
-    if (dbName === undefined) {
-      dbName = "Unknown";
-    }
-    let identifier: string | undefined = undefined;
-    if (instance.attributes?.has("variantIdentifier")) {
-      // Use variantIdentifier first
-      identifier = instance.attributes?.get("variantIdentifier");
-    } else if (instance.attributes?.has("identifier")) {
-      identifier = instance.attributes?.get("identifier");
-    }
-    if (identifier === undefined) {
-      identifier = "Unknown";
-    }
-    let name: string | undefined = undefined;
-    if (instance.attributes?.has("geneName")) {
-      // In JS, [][0] is undefined, not throwing exception, so we can just do it without checking the length of the array.
-      name = instance.attributes?.get("geneName")[0] ?? 'unknown';
-    } else if (instance.attributes?.has("name")) {
-      name = instance.attributes?.get("name")[0] ?? 'unknown';
-    }
-    if (name === null) {
-      name = "unknown";
-    }
-    return dbName + ":" + identifier + " " + name;
+
+    return `${dbName}:${identifier} ${name}`;
   }
 
 
