@@ -6,15 +6,15 @@ import { PostEditOperation } from './PostEditOperation';
 export class InstanceNameGenerator implements PostEditOperation {
   // For unknown display name
   private unknown: string = 'unknown';
-  
+
   //TODO: May need to make sure this is a singleton!!!
   constructor(private dataService: DataService,
     private instanceUtilities: InstanceUtilities
   ) {
   }
 
-  postEdit(instance: Instance, 
-           editedAttributeName: string | undefined): boolean {
+  postEdit(instance: Instance,
+    editedAttributeName: string | undefined): boolean {
     this.updateDisplayName(instance);
     return true;
   }
@@ -28,7 +28,7 @@ export class InstanceNameGenerator implements PostEditOperation {
     if (instance.attributes === undefined)
       instance.attributes = new Map();
     instance.attributes.set('displayName', instance.displayName);
-    if(instance.modifiedAttributes && instance.modifiedAttributes.length > 0)
+    if (instance.modifiedAttributes && instance.modifiedAttributes.length > 0)
       this.instanceUtilities.addToModifiedAttributes('displayName', instance);
     this.instanceUtilities.registerDisplayNameChange(instance);
   }
@@ -78,7 +78,10 @@ export class InstanceNameGenerator implements PostEditOperation {
       return this.generatePersonName(instance);
     if (clsName === "InstanceEdit")
       return this.generateInstanceEditName(instance);
-    if (clsName === 'PhysicalEntityCellType' || this.isSchemaClass(instance, "PhysicalEntity"))
+    if (clsName === 'PhysicalEntityCellType') {
+      return this.generatePhysicalEntityCellTypeName(instance);
+    }
+    if (this.isSchemaClass(instance, "PhysicalEntity"))
       return this.generateEntityName(instance);
     if (this.isSchemaClass(instance, 'ReactionLikeEvent'))
       return this.generateReactionName(instance);
@@ -731,6 +734,18 @@ export class InstanceNameGenerator implements PostEditOperation {
         buffer.push("]");
       }
     }
+    return buffer.join("");
+  }
+
+  private generatePhysicalEntityCellTypeName(instance: Instance): string {
+    const buffer: string[] = [];
+    let peName = "unknown physical entity";
+    let pe = instance.attributes?.get("physicalEntity");
+    pe ? buffer.push(pe.displayName ?? peName) : buffer.push(peName);
+    buffer.push(" in ");
+    let cellName = "unknown cell type";
+    let cell = instance.attributes?.get("cell");
+    cell ? buffer.push(cell.displayName ?? cellName) : buffer.push(cellName);
     return buffer.join("");
   }
 
