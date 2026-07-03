@@ -996,6 +996,12 @@ export class DataService {
    * Match an in-memory instance against database instances with the same defined attributes.
    */
   matchInstances(instance: Instance): Observable<Instance[]> {
+    // The passed instance may be just a shell (e.g. from a store-backed list view),
+    // so use the cached full instance (with attributes) for matching if available.
+    const cached = this.id2instance.get(instance.dbId);
+    if (cached) {
+      instance = cached;
+    }
     const copy = this.utils.cloneInstanceForCommit(instance);
     return this.http.post<Instance[] | InstanceList>(this.matchInstancesUrl, copy).pipe(
       map((data: Instance[] | InstanceList) => {

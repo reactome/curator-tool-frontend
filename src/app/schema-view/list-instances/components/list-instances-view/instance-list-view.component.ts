@@ -19,6 +19,8 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { CommitResultDialogService, CommitResult } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
+import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
+import { MatchedNewInstanceGroup } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.component';
 
 @Component({
   selector: 'app-instance-list-view',
@@ -84,6 +86,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   // To show information
   readonly dialog = inject(MatDialog);
   readonly commitResultDialogService = inject(CommitResultDialogService);
+  readonly matchedInstancesDialogService = inject(MatchedInstancesDialogService);
 
   // So that we can remove subscription
   private subscription: Subscription = new Subscription();
@@ -926,17 +929,25 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       }
     });
 
-    const shells = this.selectedInstances.map(inst => this.instUtils.getShellInstance(inst));
     const results: CommitResult[] = [];
+    const matchedGroups: MatchedNewInstanceGroup[] = [];
 
-    from(shells).pipe(
+    from(this.selectedInstances).pipe(
       concatMap(inst => {
         if (inst.dbId && inst.dbId > 0) {
           return EMPTY;
         }
-        return this.dataService.commit(inst).pipe(
-          tap(rtn => this.instUtils.processCommit(inst, rtn, this.dataService)),
-          map(rtn => this.instUtils.buildCommitSummaryResults(inst, rtn))
+        return this.dataService.matchInstances(inst).pipe(
+          concatMap(matches => {
+            if (matches && matches.length > 0) {
+              matchedGroups.push({ newInstance: inst, matches });
+              return EMPTY;
+            }
+            return this.dataService.commit(inst).pipe(
+              tap(rtn => this.instUtils.processCommit(inst, rtn, this.dataService)),
+              map(rtn => this.instUtils.buildCommitSummaryResults(inst, rtn))
+            );
+          })
         );
       })
     ).pipe(
@@ -950,6 +961,12 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       complete: () => {
         this.selectedInstances = [];
         this.instUtils.clearSelectedInstances(SelectedInstancesList.newInstanceList);
+        if (matchedGroups.length > 0) {
+          this.matchedInstancesDialogService.openDialog({
+            title: 'Matches Found - Not Committed',
+            groups: matchedGroups
+          });
+        }
         if (results.length > 0) this.commitResultDialogService.openDialog(results);
       }
     });

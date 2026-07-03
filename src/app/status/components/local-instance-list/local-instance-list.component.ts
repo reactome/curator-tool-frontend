@@ -17,6 +17,8 @@ import { DeleteBulkDialogService } from 'src/app/schema-view/list-instances/comp
 import { DeletionDialogService } from 'src/app/instance/components/deletion-dialog/deletion-dialog.service';
 import { CommitResultDialogService, CommitResult } from './commit-result-dialog/commit-result-dialog.service';
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
+import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
+import { MatchedNewInstanceGroup } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.component';
 
 
 @Component({
@@ -68,7 +70,8 @@ export class UpdatedInstanceListComponent implements OnInit {
     private deletionService: DeletionService,
     private deleteBulkDialogService: DeleteBulkDialogService,
     private deletionDialogService: DeletionDialogService,
-    private commitResultDialogService: CommitResultDialogService
+    private commitResultDialogService: CommitResultDialogService,
+    private matchedInstancesDialogService: MatchedInstancesDialogService
   ) {
   }
 
@@ -192,12 +195,24 @@ export class UpdatedInstanceListComponent implements OnInit {
     }
     else if (this.newInstances.includes(instance)) {
       this.openCommitWaitDialog('Committing New Instance', 'Please wait while the selected new instance is committed.');
-      this.dataService.commit(instance).pipe(
+      this.dataService.matchInstances(instance).pipe(
+        concatMap(matches => {
+          if (matches && matches.length > 0) {
+            this.matchedInstancesDialogService.openDialog({
+              title: 'Matches Found - Not Committed',
+              groups: [{ newInstance: instance, matches }]
+            });
+            return EMPTY;
+          }
+          return this.dataService.commit(instance).pipe(
+            tap(rtn => {
+              this.instanceUtilities.processCommit(instance, rtn, this.dataService);
+              this.commitResultDialogService.openDialog(this.instanceUtilities.buildCommitSummaryResults(instance, rtn));
+            })
+          );
+        }),
         finalize(() => this.closeCommitWaitDialog())
-      ).subscribe(rtn => {
-        this.instanceUtilities.processCommit(instance, rtn, this.dataService);
-        this.commitResultDialogService.openDialog(this.instanceUtilities.buildCommitSummaryResults(instance, rtn));
-      });
+      ).subscribe();
     }
   }
 
@@ -286,17 +301,25 @@ export class UpdatedInstanceListComponent implements OnInit {
       'Please wait while selected new instances are committed one by one.'
     );
 
-    const shells = this.selectedNewInstances.map(inst => this.instanceUtilities.getShellInstance(inst));
     const results: CommitResult[] = [];
+    const matchedGroups: MatchedNewInstanceGroup[] = [];
 
-    from(shells).pipe(
+    from(this.selectedNewInstances).pipe(
       concatMap(inst => {
         if (inst.dbId && inst.dbId > 0) {
           return EMPTY;
         }
-        return this.dataService.commit(inst).pipe(
-          tap(rtn => this.instanceUtilities.processCommit(inst, rtn, this.dataService)),
-          map(rtn => this.instanceUtilities.buildCommitSummaryResults(inst, rtn))
+        return this.dataService.matchInstances(inst).pipe(
+          concatMap(matches => {
+            if (matches && matches.length > 0) {
+              matchedGroups.push({ newInstance: inst, matches });
+              return EMPTY;
+            }
+            return this.dataService.commit(inst).pipe(
+              tap(rtn => this.instanceUtilities.processCommit(inst, rtn, this.dataService)),
+              map(rtn => this.instanceUtilities.buildCommitSummaryResults(inst, rtn))
+            );
+          })
         );
       })
     ).pipe(
@@ -308,6 +331,12 @@ export class UpdatedInstanceListComponent implements OnInit {
         this.selectedNewInstances = [];
         this.showCheck = false;
         this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.newInstanceList);
+        if (matchedGroups.length > 0) {
+          this.matchedInstancesDialogService.openDialog({
+            title: 'Matches Found - Not Committed',
+            groups: matchedGroups
+          });
+        }
         if (results.length > 0) this.commitResultDialogService.openDialog(results);
       }
     });

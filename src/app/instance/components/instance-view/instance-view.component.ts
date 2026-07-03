@@ -23,6 +23,7 @@ import { InstanceViewFilter } from 'src/app/core/instance-view-filters/InstanceV
 import { ReviewStatusUpdateFilter } from 'src/app/core/instance-view-filters/ReviewStatusUpdateFilter';
 import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
 import { MatchInstancesDialogService } from '../match-instances-dialog/match-instances-dialog.service';
+import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
 import { CommitResultDialogService } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
 import { environment } from 'src/environments/environment.dev';
@@ -87,6 +88,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     private deletionDialogService: DeletionDialogService,
     private listInstancesDialogService: ListInstancesDialogService,
     private matchInstancesDialogService: MatchInstancesDialogService,
+    private matchedInstancesDialogService: MatchedInstancesDialogService,
     private deletionService: DeletionService,
     private reviewStatusCheck: ReviewStatusCheck,
     private commitResultDialogService: CommitResultDialogService
@@ -605,6 +607,24 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.deletionService.processDeletion([this.instance]);
       return;
     }
+    if (this.instance.dbId < 0) {
+      this.dataService.matchInstances(this.instance).pipe(take(1)).subscribe(matches => {
+        if (matches && matches.length > 0) {
+          this.matchedInstancesDialogService.openDialog({
+            title: 'Matches Found - Not Committed',
+            groups: [{ newInstance: this.instance!, matches }]
+          });
+          return;
+        }
+        this.commitInstance();
+      });
+      return;
+    }
+    this.commitInstance();
+  }
+
+  private commitInstance(): void {
+    if (!this.instance) return;
     this.commitWaitDialogRef?.close();
     this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
       disableClose: true,
