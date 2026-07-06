@@ -73,7 +73,8 @@ export class BookmarkListComponent implements OnInit {
     // Need to call the store when the instanceView has not changed. 
     subscription = this.store.select(bookmarkedInstances()).subscribe((instances: Instance[] | undefined) => {
       if (instances !== undefined) {
-        this.bookmarks = instances;
+        // Defensive guard: ignore malformed bookmark entries from stale local state.
+        this.bookmarks = instances.filter(inst => inst && inst.dbId !== undefined && inst.dbId !== null);
       }
     });
     this.subscriptions.push(subscription);
@@ -95,6 +96,9 @@ export class BookmarkListComponent implements OnInit {
   }
 
   navigate(instance: Instance) {
+    if (!instance || instance.dbId === undefined || instance.dbId === null) {
+      return;
+    }
     let currentPathRoot = this.route.pathFromRoot.map(route => route.snapshot.url)
       .reduce((acc, val) => acc.concat(val), [])
       .map(urlSegment => urlSegment.path);

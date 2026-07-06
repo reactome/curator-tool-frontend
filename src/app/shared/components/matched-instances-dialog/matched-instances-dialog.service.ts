@@ -6,7 +6,7 @@ import { MatchedInstancesDialogComponent, MatchedInstancesDialogData } from './m
 export class MatchedInstancesDialogService {
   constructor(private dialog: MatDialog) {}
 
-  openDialog(data: MatchedInstancesDialogData): MatDialogRef<MatchedInstancesDialogComponent> {
+  openDialog(data: MatchedInstancesDialogData): MatDialogRef<MatchedInstancesDialogComponent, boolean> {
     return this.dialog.open(MatchedInstancesDialogComponent, {
       width: '1100px',
       maxHeight: '80vh',

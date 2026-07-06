@@ -610,9 +610,14 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     if (this.instance.dbId < 0) {
       this.dataService.matchInstances(this.instance).pipe(take(1)).subscribe(matches => {
         if (matches && matches.length > 0) {
+          console.debug('[MatchedInstancesDialog] instance-view matches:', matches.length);
           this.matchedInstancesDialogService.openDialog({
-            title: 'Matches Found - Not Committed',
+            title: 'Matches Found',
             groups: [{ newInstance: this.instance!, matches }]
+          }).afterClosed().subscribe(commitAnyway => {
+            if (commitAnyway) {
+              this.commitInstance();
+            }
           });
           return;
         }

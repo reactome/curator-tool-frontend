@@ -198,22 +198,27 @@ export class UpdatedInstanceListComponent implements OnInit {
       this.dataService.matchInstances(instance).pipe(
         concatMap(matches => {
           if (matches && matches.length > 0) {
-            this.matchedInstancesDialogService.openDialog({
-              title: 'Matches Found - Not Committed',
+            return this.matchedInstancesDialogService.openDialog({
+              title: 'Matches Found',
               groups: [{ newInstance: instance, matches }]
-            });
-            return EMPTY;
+            }).afterClosed().pipe(
+              concatMap(commitAnyway => commitAnyway ? this.doCommitInstance(instance) : EMPTY)
+            );
           }
-          return this.dataService.commit(instance).pipe(
-            tap(rtn => {
-              this.instanceUtilities.processCommit(instance, rtn, this.dataService);
-              this.commitResultDialogService.openDialog(this.instanceUtilities.buildCommitSummaryResults(instance, rtn));
-            })
-          );
+          return this.doCommitInstance(instance);
         }),
         finalize(() => this.closeCommitWaitDialog())
       ).subscribe();
     }
+  }
+
+  private doCommitInstance(instance: Instance) {
+    return this.dataService.commit(instance).pipe(
+      tap(rtn => {
+        this.instanceUtilities.processCommit(instance, rtn, this.dataService);
+        this.commitResultDialogService.openDialog(this.instanceUtilities.buildCommitSummaryResults(instance, rtn));
+      })
+    );
   }
 
   commitUpdatedInstances() {
@@ -332,12 +337,44 @@ export class UpdatedInstanceListComponent implements OnInit {
         this.showCheck = false;
         this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.newInstanceList);
         if (matchedGroups.length > 0) {
+          console.debug('[MatchedInstancesDialog] bulk-new-instances groups:', matchedGroups.length,
+            'matchCounts:', matchedGroups.map(group => group.matches?.length ?? 0));
           this.matchedInstancesDialogService.openDialog({
-            title: 'Matches Found - Not Committed',
+            title: 'Matches Found',
             groups: matchedGroups
+          }).afterClosed().subscribe(commitAnyway => {
+            if (commitAnyway) {
+              this.commitMatchedGroupsAnyway(matchedGroups, results);
+            } else if (results.length > 0) {
+              this.commitResultDialogService.openDialog(results);
+            }
           });
         }
-        if (results.length > 0) this.commitResultDialogService.openDialog(results);
+        else if (results.length > 0) this.commitResultDialogService.openDialog(results);
+      }
+    });
+  }
+
+  /**
+* Commit new instances that matched existing database instances anyway, after the
+* user has reviewed the matches and explicitly chosen to proceed.
+*/
+  private commitMatchedGroupsAnyway(matchedGroups: MatchedNewInstanceGroup[], priorResults: CommitResult[]) {
+    this.openCommitWaitDialog(
+      'Committing New Instances',
+      'Please wait while the remaining new instances are committed one by one.'
+    );
+    from(matchedGroups).pipe(
+      concatMap(group => this.dataService.commit(group.newInstance).pipe(
+        tap(rtn => this.instanceUtilities.processCommit(group.newInstance, rtn, this.dataService)),
+        map(rtn => this.instanceUtilities.buildCommitSummaryResults(group.newInstance, rtn))
+      )),
+      finalize(() => this.closeCommitWaitDialog())
+    ).subscribe({
+      next: resultGroup => priorResults.push(...resultGroup),
+      error: err => console.error('Error committing matched instances', err),
+      complete: () => {
+        if (priorResults.length > 0) this.commitResultDialogService.openDialog(priorResults);
       }
     });
   }

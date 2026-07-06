@@ -10,7 +10,7 @@
         </div>
       </div>
       <button class="drag-item-button" (click)="navigate(instance)"
-        [matTooltip]="instance.schemaClassName + ' ' + '[' + instance.dbId.toString() + ']'">
+        [matTooltip]="instance.schemaClassName + ' [' + instance.dbId + ']'">
         <mat-icon class="drag_icon">open_with</mat-icon>
         {{instance.displayName}}
       </button>

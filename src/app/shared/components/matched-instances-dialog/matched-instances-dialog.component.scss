@@ -1,7 +1,25 @@
-.matched-instances-table {
+.scroll_panel {
+  height: auto;
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.matched-instances-table,
+.duplicate-instance-table {
   width: 100%;
   min-width: 400px;
   margin-bottom: 16px;
+}
+
+.plain-table {
+  border-collapse: collapse;
+}
+
+.plain-table th,
+.plain-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--outline-variant);
+  color: #1f1f1f;
 }
 
 .match-group {
@@ -10,6 +28,32 @@
 
 .match-group-title {
   margin-bottom: 4px;
+  color: var(--on-surface);
+}
+
+p,
+.mat-mdc-cell {
+  color: var(--on-surface);
+}
+
+.mat-mdc-row {
+  height: 30px;
+}
+
+.mat-mdc-row:hover .mat-mdc-cell {
+  border-color: currentColor;
+  border-top: 1px currentColor;
+  background-color: var(--surface-variant);
+  cursor: default;
+}
+
+.mat-mdc-row:hover .launch-cell .mini-btn {
+  cursor: pointer;
+}
+
+th {
+  background: var(--primary-container) !important;
+  color: var(--on-primary-container) !important;
 }
 
 .launch-cell {

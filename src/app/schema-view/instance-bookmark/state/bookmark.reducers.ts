@@ -17,14 +17,27 @@ export const bookmarkAdaptor = createEntityAdapter<Instance>({
 export const bookmarkReducer = createReducer(
   bookmarkAdaptor.getInitialState(),
   on(BookmarkActions.set_bookmarks,
-    (state, {instances}) => bookmarkAdaptor.setMany(instances, state)
+    (state, {instances}) => {
+      const valid = (instances || []).filter(inst => inst && inst.dbId !== undefined && inst.dbId !== null);
+      return bookmarkAdaptor.setMany(valid, state);
+    }
   ),
   on(BookmarkActions.add_bookmark,
     BookmarkActions.ls_add_bookmark,
-    (state, instance) =>  bookmarkAdaptor.upsertOne(instance, state)
+    (state, instance) => {
+      if (instance.dbId === undefined || instance.dbId === null) {
+        return state;
+      }
+      return bookmarkAdaptor.upsertOne(instance, state);
+    }
   ),
   on(BookmarkActions.remove_bookmark,
     BookmarkActions.ls_remove_bookmark,
-    (state, instance) => bookmarkAdaptor.removeOne(instance.dbId, state)
+    (state, instance) => {
+      if (instance.dbId === undefined || instance.dbId === null) {
+        return state;
+      }
+      return bookmarkAdaptor.removeOne(instance.dbId, state);
+    }
   ),
 )

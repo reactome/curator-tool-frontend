@@ -2,41 +2,65 @@
 
 <mat-dialog-content>
     <p>
-        The following new instance(s) matched existing instance(s) in the database and were
-        <strong>not committed</strong>. Please review the matches below.
+        The following new instance(s) matched existing instance(s) already in the database and were
+        <strong>not committed</strong>. Please review the matches below, then either close this dialog
+        to keep them uncommitted, or commit the new instance(s) anyway.
     </p>
 
-    <div class="match-group" *ngFor="let group of data.groups">
-        <h3 class="match-group-title">{{ group.newInstance.displayName }}</h3>
+    <section class="scroll_panel">
+        <div class="match-group" *ngFor="let group of groups">
+            <h3 class="match-group-title" *ngIf="getNewInstanceRows(group).length > 0">Duplicated Instance</h3>
 
-        <table mat-table [dataSource]="group.matches" class="matched-instances-table mat-elevation-z0">
+            <table *ngIf="getNewInstanceRows(group).length > 0" class="duplicate-instance-table mat-elevation-z0 instance-list-table plain-table">
+                <thead>
+                    <tr>
+                        <th>dbId</th>
+                        <th>Display Name</th>
+                        <th>Schema Class</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let row of getNewInstanceRows(group)">
+                        <td>{{ row.dbId }}</td>
+                        <td>{{ row.displayName }}</td>
+                        <td>{{ row.schemaClassName }}</td>
+                    </tr>
+                </tbody>
+            </table>
 
-            <ng-container matColumnDef="dbId">
-                <th mat-header-cell *matHeaderCellDef>dbId</th>
-                <td mat-cell *matCellDef="let row">{{ row.dbId }}</td>
-            </ng-container>
+            <h3 class="match-group-title">Matching Instance(s) in Database</h3>
 
-            <ng-container matColumnDef="displayName">
-                <th mat-header-cell *matHeaderCellDef>Display Name</th>
-                <td mat-cell *matCellDef="let row">{{ row.displayName }}</td>
-            </ng-container>
+            <table class="matched-instances-table mat-elevation-z0 instance-list-table plain-table">
+                <thead>
+                    <tr>
+                        <th>dbId</th>
+                        <th>Display Name</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let row of getMatchedRows(group)">
+                        <td>{{ row.dbId }}</td>
+                        <td>{{ row.displayName }}</td>
+                        <td class="launch-cell">
+                            <button class="mini-btn" color="primary" mat-icon-button (click)="openInstance(row.dbId)"
+                                matTooltip="Open instance">
+                                <mat-icon>open_in_new</mat-icon>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr *ngIf="getMatchedRows(group).length === 0">
+                        <td [attr.colspan]="3">No matched instances available.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-            <ng-container matColumnDef="launch">
-                <th mat-header-cell *matHeaderCellDef></th>
-                <td mat-cell *matCellDef="let row" class="launch-cell">
-                    <button class="mini-btn" color="primary" mat-icon-button (click)="openInstance(row.dbId)"
-                        matTooltip="Open instance">
-                        <mat-icon>open_in_new</mat-icon>
-                    </button>
-                </td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-        </table>
-    </div>
+        <p *ngIf="groups.length === 0">No matched instances available.</p>
+    </section>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
     <button mat-button (click)="onClose()">Close</button>
+    <button mat-flat-button color="primary" (click)="onCommitAnyway()">Commit Anyway</button>
 </mat-dialog-actions>

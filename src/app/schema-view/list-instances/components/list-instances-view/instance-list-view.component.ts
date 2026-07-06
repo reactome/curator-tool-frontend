@@ -962,12 +962,54 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         this.selectedInstances = [];
         this.instUtils.clearSelectedInstances(SelectedInstancesList.newInstanceList);
         if (matchedGroups.length > 0) {
+          console.debug('[MatchedInstancesDialog] schema-list bulk groups:', matchedGroups.length,
+            'matchCounts:', matchedGroups.map(group => group.matches?.length ?? 0));
           this.matchedInstancesDialogService.openDialog({
-            title: 'Matches Found - Not Committed',
+            title: 'Matches Found',
             groups: matchedGroups
+          }).afterClosed().subscribe(commitAnyway => {
+            if (commitAnyway) {
+              this.commitMatchedGroupsAnyway(matchedGroups, results);
+            } else if (results.length > 0) {
+              this.commitResultDialogService.openDialog(results);
+            }
           });
         }
-        if (results.length > 0) this.commitResultDialogService.openDialog(results);
+        else if (results.length > 0) this.commitResultDialogService.openDialog(results);
+      }
+    });
+  }
+
+  /**
+* Commit new instances that matched existing database instances anyway, after the
+* user has reviewed the matches and explicitly chosen to proceed.
+*/
+  private commitMatchedGroupsAnyway(matchedGroups: MatchedNewInstanceGroup[], priorResults: CommitResult[]) {
+    this.commitWaitDialogRef?.close();
+    this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
+      disableClose: true,
+      hasBackdrop: true,
+      autoFocus: false,
+      restoreFocus: false,
+      data: {
+        title: 'Committing New Instances',
+        message: 'Please wait while the remaining new instances are committed one by one.'
+      }
+    });
+    from(matchedGroups).pipe(
+      concatMap(group => this.dataService.commit(group.newInstance).pipe(
+        tap(rtn => this.instUtils.processCommit(group.newInstance, rtn, this.dataService)),
+        map(rtn => this.instUtils.buildCommitSummaryResults(group.newInstance, rtn))
+      )),
+      finalize(() => {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
+      })
+    ).subscribe({
+      next: resultGroup => priorResults.push(...resultGroup),
+      error: err => console.error('Error committing matched instances', err),
+      complete: () => {
+        if (priorResults.length > 0) this.commitResultDialogService.openDialog(priorResults);
       }
     });
   }

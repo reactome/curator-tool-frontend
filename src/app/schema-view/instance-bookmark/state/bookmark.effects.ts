@@ -21,14 +21,25 @@ export class BookmarkEffects {
   ) { 
     window.addEventListener('storage', (event) => {
       if (event.key === BookmarkActions.add_bookmark.type) {
-        const bookmark = JSON.parse(event.newValue || '{}');
-        this.store.dispatch(BookmarkActions.ls_add_bookmark(bookmark as Instance));
+        const bookmark = this.parseBookmark(event.newValue);
+        if (bookmark) this.store.dispatch(BookmarkActions.ls_add_bookmark(bookmark));
       }
       else if (event.key === BookmarkActions.remove_bookmark.type) {
-        const bookmark = JSON.parse(event.newValue || '{}');
-        this.store.dispatch(BookmarkActions.ls_remove_bookmark(bookmark as Instance));
+        const bookmark = this.parseBookmark(event.newValue);
+        if (bookmark) this.store.dispatch(BookmarkActions.ls_remove_bookmark(bookmark));
       }
     })
+  }
+
+  private parseBookmark(raw: string | null): Instance | undefined {
+    if (!raw) {
+      return undefined;
+    }
+    const parsed = JSON.parse(raw || '{}');
+    if (!parsed || parsed.dbId === undefined || parsed.dbId === null) {
+      return undefined;
+    }
+    return parsed as Instance;
   }
 
   bookmarkChanges$ = createEffect(
