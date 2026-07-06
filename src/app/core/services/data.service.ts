@@ -49,6 +49,7 @@ export class DataService {
   private fetchInstancesInBatchUrl = `${environment.ApiRoot}/findByDbIds/`;
   private deleteByDeletedUrl = `${environment.ApiRoot}/deleteByDeleted/`;
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
+  private fetchPathwayDiagramForPathwayUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
   private chebiAutoFillerUrl = `${environment.ApiRoot}/fillChEBI/`;
   private fillReferenceSequenceUrl = `${environment.ApiRoot}/fillRefSequence/`;
@@ -994,6 +995,8 @@ export class DataService {
 
   /**
    * Match an in-memory instance against database instances with the same defined attributes.
+   * For PathwayDiagram instances, also calls the dedicated fetchPathwayDiagramForPathway
+   * endpoint so that a diagram committed by another user is always detected.
    */
   matchInstances(instance: Instance): Observable<Instance[]> {
     // The passed instance may be just a shell (e.g. from a store-backed list view),
@@ -1003,7 +1006,7 @@ export class DataService {
       instance = cached;
     }
     const copy = this.utils.cloneInstanceForCommit(instance);
-    return this.http.post<Instance[] | InstanceList>(this.matchInstancesUrl, copy).pipe(
+    const genericMatch$ = this.http.post<Instance[] | InstanceList>(this.matchInstancesUrl, copy).pipe(
       map((data: Instance[] | InstanceList) => {
         if (Array.isArray(data))
           return data;
@@ -1013,6 +1016,35 @@ export class DataService {
         return this.handleErrorMessage(err);
       })
     );
+
+    // For PathwayDiagram: additionally call the dedicated endpoint so multi-user
+    // race conditions are caught (another user may have committed since this
+    // instance was created).
+    if (instance.schemaClassName === 'PathwayDiagram') {
+      const representedPathway: any[] = instance.attributes?.get?.('representedPathway') ?? [];
+      const pathwayDbId = representedPathway[0]?.dbId;
+      if (pathwayDbId !== undefined && pathwayDbId !== null) {
+        const diagramCheck$ = this.http.get<Instance>(
+          this.fetchPathwayDiagramForPathwayUrl + `${pathwayDbId}`
+        ).pipe(
+          map(result => (result ? [result] : []) as Instance[]),
+          catchError(() => of([] as Instance[]))
+        );
+        return forkJoin([genericMatch$, diagramCheck$]).pipe(
+          map(([generic, fromDiagram]) => {
+            const merged = [...generic];
+            for (const d of fromDiagram) {
+              if (!merged.some(m => m.dbId === d.dbId)) {
+                merged.push(d);
+              }
+            }
+            return merged;
+          })
+        );
+      }
+    }
+
+    return genericMatch$;
   }
 
   // TODO: Create a separate service for instance/attribute logic
