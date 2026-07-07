@@ -944,26 +944,13 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
               this.openPathwayDiagramEvent.emit(pathwayDiagram.dbId);
             }
             else {
-              // Check whether a PathwayDiagram for this pathway is already staged locally
-              // (created but not yet committed). If so, open it instead of creating a duplicate.
-              this.findStagedPathwayDiagram().then(staged => {
-                if (staged) {
-                  this.openPathwayDiagramEvent.emit(staged.dbId);
-                } else {
-                  this.createAndOpenNewPathwayDiagram();
-                }
-              });
+              // Create a new PathwayDiagram instance when none exists
+              this.createAndOpenNewPathwayDiagram();
             }
           },
           error: (error: Error) => {
-            // Check local store before creating another one on fetch error
-            this.findStagedPathwayDiagram().then(staged => {
-              if (staged) {
-                this.openPathwayDiagramEvent.emit(staged.dbId);
-              } else {
-                this.createAndOpenNewPathwayDiagram();
-              }
-            });
+            // Create a new PathwayDiagram instance on fetch error
+            this.createAndOpenNewPathwayDiagram();
           }
         });
         break;
@@ -1112,71 +1099,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       this.lastBackupAtMs = Date.now();
   }
 
-  /**
-   * Look in the local NgRx new-instances store for a PathwayDiagram that
-   * represents the current pathway but has not yet been committed (dbId < 0).
-   * Returns the first match, or undefined if none exists.
-   */
-  private findStagedPathwayDiagram(): Promise<Instance | undefined> {
-    const pathwayIdNum = parseInt(this.pathwayId, 10);
-    return new Promise(resolve => {
-      this.store.select(newInstances()).pipe(take(1)).subscribe(instances => {
-        if (!instances || !Number.isFinite(pathwayIdNum)) {
-          resolve(undefined);
-          return;
-        }
-        const candidates = instances.filter(inst =>
-          inst.schemaClassName === 'PathwayDiagram' && (inst.dbId ?? 0) < 0
-        );
-        if (candidates.length === 0) {
-          resolve(undefined);
-          return;
-        }
-        const dataService = this.diagramUtils.getDataService();
-        // fetchInstance() returns from the id2instance cache for negative dbIds
-        let resolved = false;
-        let pending = candidates.length;
-        for (const shell of candidates) {
-          dataService.fetchInstance(shell.dbId).pipe(take(1)).subscribe(full => {
-            if (!resolved) {
-              const represented: any[] = full?.attributes?.get?.('representedPathway') ?? [];
-              if (represented.some((ref: any) => Number(ref?.dbId) === pathwayIdNum)) {
-                resolved = true;
-                resolve(full);
-                return;
-              }
-            }
-            pending--;
-            if (pending === 0 && !resolved) {
-              resolve(undefined);
-            }
-          });
-        }
-      });
-    });
-  }
-
   private createAndOpenNewPathwayDiagram() {
     const dataService = this.diagramUtils.getDataService();
-    // Final guard: re-check the backend immediately before creating.
-    // Another user may have committed a PathwayDiagram between the outer fetch and now.
-    this.diagramEditorService.fetchPathwayDiagram(this.pathwayId).pipe(take(1)).subscribe({
-      next: (existing: Instance) => {
-        if (existing) {
-          // Another user just committed one — open it instead of creating a duplicate.
-          this.openPathwayDiagramEvent.emit(existing.dbId);
-          return;
-        }
-        this.doCreateAndOpenNewPathwayDiagram(dataService);
-      },
-      error: () => {
-        // Fetch errored — safe to proceed with creation.
-        this.doCreateAndOpenNewPathwayDiagram(dataService);
-      }
-    });
-  }
-
-  private doCreateAndOpenNewPathwayDiagram(dataService: any) {
     dataService.fetchInstance(parseInt(this.pathwayId)).subscribe((pathwayInstance: Instance) => {
       if (!pathwayInstance)
         return;
