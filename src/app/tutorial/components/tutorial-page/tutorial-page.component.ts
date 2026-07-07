@@ -44,6 +44,7 @@ export class TutorialPageComponent {
         'In the class tree, click the + icon next to the desired class.',
         'Edit attributes in the instance editor.',
         'Click the Upload icon in the instance toolbar to commit just this instance, or open the staged-changes panel to commit in bulk.',
+        'If the new instance matches existing database instances, it is kept uncommitted and a match-review dialog opens with the attempted new instance listed first and matched instances listed below.',
       ],
     },
     {
@@ -84,6 +85,7 @@ export class TutorialPageComponent {
         'Click the diagram action icon to add the event to the diagram.',
         'Select diagram objects to load related instances in the editor.',
         'Right-click the diagram to enable editing and make diagram changes.',
+        'When opening or creating a PathwayDiagram instance, WebBench checks both staged and database matches to avoid creating duplicates.',
         'Upload diagram changes, then commit staged instance changes via the status toolbar.',
       ],
     },

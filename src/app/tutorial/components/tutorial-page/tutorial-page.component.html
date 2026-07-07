@@ -97,6 +97,7 @@
               <li>Make edits — instance creates, updates, or deletes are staged.</li>
               <li>Review staged changes by clicking any counter in the status toolbar.</li>
               <li>Select items in the staged-changes panel and click the upload icon to commit.</li>
+              <li>When committing many updated instances, WebBench runs controlled parallel commits to keep the UI responsive during longer batches.</li>
               <li>Use the reset buttons to undo staged changes without committing.</li>
             </ol>
             <p class="tip">
@@ -156,6 +157,12 @@
               <li><strong>Delete Selected</strong></li>
               <li><strong>Compare Selected</strong> (when exactly 2 rows are selected)</li>
               <li><strong>Batch Edit</strong> (see Batch Edit section)</li>
+            </ul>
+            <h4>Commit Match Review</h4>
+            <ul>
+              <li>When committing new instances, WebBench checks for existing database matches before commit.</li>
+              <li>If matches are found, a match-review dialog opens and the new attempted instance is shown before the matched database instances.</li>
+              <li>Review the grouped rows before deciding whether to keep the instance uncommitted or proceed with commit-anyway flow where available.</li>
             </ul>
           </mat-card-content>
         </mat-card>
@@ -292,6 +299,9 @@
               <li>Open or create the related PathwayDiagram instance</li>
               <li>Navigate to a nested pathway</li>
             </ul>
+            <p class="tip"><mat-icon class="tip-icon">info</mat-icon>
+              PathwayDiagram open/create flows now re-check both staged and database instances to reduce accidental duplicate PathwayDiagram creation.
+            </p>
           </mat-card-content>
         </mat-card>
       </div>

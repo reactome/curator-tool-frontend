@@ -298,6 +298,10 @@ Each section supports:
 
 This is the main place to review and commit or undo staged work in bulk.
 
+When committing new instances, WebBench performs a pre-commit matching check against existing database instances. If matches are detected, those new instances remain uncommitted and a match-review dialog is shown with the attempted new instance listed first and matched database rows listed afterward.
+
+For larger Updated Instances selections, commits are processed with controlled parallelism to improve responsiveness during longer commit batches.
+
 ## 6) Event View
 
 Event View combines tree navigation, diagram viewing and editing, and instance editing.
@@ -365,6 +369,8 @@ Diagram action menu includes, depending on selection and edit mode:
 - Open or create the related `PathwayDiagram` instance
 - Go to a nested pathway from the diagram
 
+PathwayDiagram open/create flows include duplicate checks against both staged local instances and database matches to reduce accidental duplicate `PathwayDiagram` creation.
+
 ### 6.5 Instance editor behavior in Event View
 
 - The lower instance editor uses the same attribute editing tools as Schema View.
@@ -422,6 +428,7 @@ Depending on results, the page can show:
 3. Edit attributes in instance view.
 4. Open staged panel from status bar count.
 5. In **New Instances**, select the instance and click **commit** (upload icon).
+6. If matching database instances are found, review the match dialog (new instance first, then matched instances) before proceeding.
 
 ### B) Edit existing instances and review diffs
 
@@ -429,7 +436,7 @@ Depending on results, the page can show:
 2. Open an instance and edit fields.
 3. Use compare/referrers tools if needed.
 4. Review in **Updated Instances** panel.
-5. Commit selected or reset selected changes.
+5. Commit selected or reset selected changes. Large selected commit batches run with controlled parallel commit processing.
 
 ### C) Delete with safety checks
 
