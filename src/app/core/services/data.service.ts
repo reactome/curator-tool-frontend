@@ -1017,33 +1017,6 @@ export class DataService {
       })
     );
 
-    // For PathwayDiagram: additionally call the dedicated endpoint so multi-user
-    // race conditions are caught (another user may have committed since this
-    // instance was created).
-    if (instance.schemaClassName === 'PathwayDiagram') {
-      const representedPathway: any[] = instance.attributes?.get?.('representedPathway') ?? [];
-      const pathwayDbId = representedPathway[0]?.dbId;
-      if (pathwayDbId !== undefined && pathwayDbId !== null) {
-        const diagramCheck$ = this.http.get<Instance>(
-          this.fetchPathwayDiagramForPathwayUrl + `${pathwayDbId}`
-        ).pipe(
-          map(result => (result ? [result] : []) as Instance[]),
-          catchError(() => of([] as Instance[]))
-        );
-        return forkJoin([genericMatch$, diagramCheck$]).pipe(
-          map(([generic, fromDiagram]) => {
-            const merged = [...generic];
-            for (const d of fromDiagram) {
-              if (!merged.some(m => m.dbId === d.dbId)) {
-                merged.push(d);
-              }
-            }
-            return merged;
-          })
-        );
-      }
-    }
-
     return genericMatch$;
   }
 
