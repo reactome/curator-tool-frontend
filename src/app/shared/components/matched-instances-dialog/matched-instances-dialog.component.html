@@ -9,9 +9,9 @@
 
     <section class="scroll_panel">
         <div class="match-group" *ngFor="let group of groups">
-            <h3 class="match-group-title" *ngIf="getNewInstanceRows(group).length > 0">Duplicated Instance</h3>
+            <h3 class="match-group-title" *ngIf="getNewInstanceRows(group).length > 0">Instance Match Group</h3>
 
-            <table *ngIf="getNewInstanceRows(group).length > 0" class="duplicate-instance-table mat-elevation-z0 instance-list-table plain-table">
+            <table *ngIf="getNewInstanceRows(group).length > 0" class="matched-instances-table mat-elevation-z0 instance-list-table plain-table">
                 <thead>
                     <tr>
                         <th>dbId</th>
@@ -25,29 +25,16 @@
                         <td>{{ row.displayName }}</td>
                         <td>{{ row.schemaClassName }}</td>
                     </tr>
-                </tbody>
-            </table>
-
-            <h3 class="match-group-title">Matching Instance(s) in Database</h3>
-
-            <table class="matched-instances-table mat-elevation-z0 instance-list-table plain-table">
-                <thead>
-                    <tr>
-                        <th>dbId</th>
-                        <th>Display Name</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
                     <tr *ngFor="let row of getMatchedRows(group)">
                         <td>{{ row.dbId }}</td>
-                        <td>{{ row.displayName }}</td>
-                        <td class="launch-cell">
+                        <td>
+                            <span>{{ row.displayName }}</span>
                             <button class="mini-btn" color="primary" mat-icon-button (click)="openInstance(row.dbId)"
                                 matTooltip="Open instance">
                                 <mat-icon>open_in_new</mat-icon>
                             </button>
                         </td>
+                        <td>{{ row.schemaClassName }}</td>
                     </tr>
                     <tr *ngIf="getMatchedRows(group).length === 0">
                         <td [attr.colspan]="3">No matched instances available.</td>
@@ -62,5 +49,5 @@
 
 <mat-dialog-actions align="end">
     <button mat-button (click)="onClose()">Close</button>
-    <button mat-flat-button color="primary" (click)="onCommitAnyway()">Commit Anyway</button>
+    <!-- <button mat-flat-button color="primary" (click)="onCommitAnyway()">Commit Anyway</button> -->
 </mat-dialog-actions>
