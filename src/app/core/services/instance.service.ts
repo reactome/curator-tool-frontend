@@ -890,8 +890,11 @@ export class InstanceUtilities {
      */
     processCommit(committedInst: Instance, rtnInst: Instance, dataService: DataService) {
         if (committedInst.dbId >= 0) { // This is an updated instance
-            // this.setRefreshViewDbId(committedInst.dbId);
             this.store.dispatch(UpdateInstanceActions.remove_updated_instance(committedInst));
+            // Signal the detail/list views to re-fetch the freshly committed instance
+            // from the backend. Without this, commit() removes the instance from the
+            // cache and discards the returned copy, leaving the UI showing stale data.
+            this.setRefreshViewDbId(committedInst.dbId);
         }
         else if (committedInst.dbId < 0) { // This is a new instance
             // Make sure the remove_new_instance should be called first. The second dispatch will update the dbId in the store. 
@@ -927,15 +930,18 @@ export class InstanceUtilities {
             });
         }
         if (rtnInst.stableIdentifierModified) {
-            let stableIdentifierDbId = committedInst.attributes.get('stableIdentifier')?.dbId;
-            const shell = this.shellInstances.get(stableIdentifierDbId);
-            if (shell) {
-                this.store.dispatch(UpdateInstanceActions.ls_register_updated_instance(shell));
-                this.store.dispatch(UpdateInstanceActions.remove_updated_instance(shell));
-            }
+            dataService.fetchInstance(committedInst.dbId).subscribe(fullInst => {
+                if(!fullInst.attributes) return;
+                let stableIdentifierDbId = fullInst.attributes.get('stableIdentifier')?.dbId;
+                const shell = this.shellInstances.get(stableIdentifierDbId);
+                if (shell) {
+                    this.store.dispatch(UpdateInstanceActions.ls_register_updated_instance(shell));
+                    this.store.dispatch(UpdateInstanceActions.remove_updated_instance(shell));
+                }
 
-            this.setRefreshViewDbId(stableIdentifierDbId);
-            this.registerDisplayNameChange(stableIdentifierDbId);;
+                this.setRefreshViewDbId(stableIdentifierDbId);
+                this.registerDisplayNameChange(stableIdentifierDbId);;
+            })
         }
     }
 

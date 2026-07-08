@@ -10,7 +10,7 @@ import { DataService } from 'src/app/core/services/data.service';
 import { AuthenticateService } from 'src/app/core/services/authenticate.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
-import { Observable, from, concatMap, tap, map, EMPTY, forkJoin, finalize, Subscription } from 'rxjs';
+import { Observable, of, from, concatMap, tap, map, EMPTY, toArray, catchError, finalize, Subscription } from 'rxjs';
 import { DeletionService } from 'src/app/instance/deletion-commit/utils/deletion.service';
 import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/instance-list-table/instance-list-table.component';
 import { DeleteBulkDialogService } from 'src/app/schema-view/list-instances/components/delete-bulk-dialog/delete-bulk-dialog.service';
@@ -230,23 +230,42 @@ export class UpdatedInstanceListComponent implements OnInit {
     );
 
     const instancesToCommit = [...this.selectedUpdatedInstances];
-    const commits = instancesToCommit.map(instance =>
-      this.dataService.commit(instance).pipe(
-        tap(rtn => this.instanceUtilities.processCommit(instance, rtn, this.dataService)),
-        map(rtn => this.instanceUtilities.buildCommitSummaryResults(instance, rtn))
-      )
-    );
+    const failures: { instance: Instance; error: any }[] = [];
 
-    forkJoin(commits).pipe(
+    // Commit sequentially (one at a time) rather than in parallel. Each commit
+    // mutates shared state (the id2instance cache and NgRx store dbId remapping
+    // in processCommit), so concurrent commits race and leave the store out of
+    // sync with the backend. concatMap guarantees each commit fully completes
+    // before the next one starts. See commitNewInstances for the same pattern.
+    from(instancesToCommit).pipe(
+      concatMap(instance =>
+        this.dataService.commit(instance).pipe(
+          tap(rtn => this.instanceUtilities.processCommit(instance, rtn, this.dataService)),
+          map(rtn => this.instanceUtilities.buildCommitSummaryResults(instance, rtn)),
+          // Don't let one failed commit silently abort the rest of the batch.
+          // Record the failure, surface it, and keep committing the others.
+          catchError(error => {
+            console.error('Failed to commit updated instance', instance?.dbId, instance?.displayName, error);
+            failures.push({ instance, error });
+            return of([] as CommitResult[]);
+          })
+        )
+      ),
+      toArray(),
       finalize(() => this.closeCommitWaitDialog())
     ).subscribe(resultGroups => {
       const results: CommitResult[] = resultGroups.flat();
-      this.commitResultDialogService.openDialog(results);
+      if (results.length > 0)
+        this.commitResultDialogService.openDialog(results);
+      if (failures.length > 0) {
+        const failed = failures.map(f => `#${f.instance?.dbId} ${f.instance?.displayName ?? ''}`).join(', ');
+        console.error(`[commitUpdatedInstances] ${failures.length} instance(s) failed to commit:`, failed, failures);
+        window.alert(`${failures.length} instance(s) failed to commit and were NOT saved:\n${failed}\n\nSee the console for details.`);
+      }
+      this.selectedUpdatedInstances = [];
+      this.showCheck = false;
+      this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.updatedInstanceList);
     });
-
-    this.selectedUpdatedInstances = [];
-    this.showCheck = false;
-    this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.updatedInstanceList);
   }
 
   handleDeletion() {

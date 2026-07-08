@@ -810,29 +810,29 @@ export class DataService {
    * Commit a batch of instances, excluding those that have a referrer in the batch.
    * Only top-level (parent) instances are returned for commit, as they will handle their children.
    */
-  commitNewInstsInBatch(instances: Instance[]): Observable<Instance[]> {
-    if (!instances || instances.length === 0) return of([]);
+  // commitNewInstsInBatch(instances: Instance[]): Observable<Instance[]> {
+  //   if (!instances || instances.length === 0) return of([]);
 
-    const batchDbIds = new Set(instances.map(i => i.dbId));
-    const referredDbIds = new Set<number>();
+  //   const batchDbIds = new Set(instances.map(i => i.dbId));
+  //   const referredDbIds = new Set<number>();
 
 
-    instances.forEach(inst => {
-      if (referredDbIds.has(inst.dbId)) return;
+  //   instances.forEach(inst => {
+  //     if (referredDbIds.has(inst.dbId)) return;
 
-      if (!inst.attributes) return;
-      // Use proper Map iteration signature to ensure both keyed and unkeyed maps are handled
-      batchDbIds.forEach(batchDbId => {
-        if (this.utils.isReferrer(inst.dbId, this.id2instance.get(batchDbId)!)) {
-          referredDbIds.add(inst.dbId);
-        }
-      });
-    });
+  //     if (!inst.attributes) return;
+  //     // Use proper Map iteration signature to ensure both keyed and unkeyed maps are handled
+  //     batchDbIds.forEach(batchDbId => {
+  //       if (this.utils.isReferrer(inst.dbId, this.id2instance.get(batchDbId)!)) {
+  //         referredDbIds.add(inst.dbId);
+  //       }
+  //     });
+  //   });
 
-    // Return instances with referred ones removed (preserve original order)
-    const result = instances.filter(i => !referredDbIds.has(i.dbId));
-    return of(result);
-  }
+  //   // Return instances with referred ones removed (preserve original order)
+  //   const result = instances.filter(i => !referredDbIds.has(i.dbId));
+  //   return of(result);
+  // }
 
   /**
    * Commit the passed instance back to the database.
