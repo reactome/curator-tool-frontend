@@ -13,14 +13,10 @@ import { ActionButton } from './instance-list-table/instance-list-table.componen
 import { ListInstancesDialogService } from '../list-instances-dialog/list-instances-dialog.service';
 import { BatchEditDialogService } from './batch-edit-dialog/batch-edit-dialog-service';
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
-import { combineLatest, concatMap, EMPTY, finalize, from, map, Observable, Subscription, take, tap } from 'rxjs';
+import { combineLatest, map, Observable, Subscription, take } from 'rxjs';
 import { DeleteBulkDialogService } from '../delete-bulk-dialog/delete-bulk-dialog.service';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
-import { CommitResultDialogService, CommitResult } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
-import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
-import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
-import { MatchedNewInstanceGroup } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.component';
 
 @Component({
   selector: 'app-instance-list-view',
@@ -85,12 +81,9 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
   // To show information
   readonly dialog = inject(MatDialog);
-  readonly commitResultDialogService = inject(CommitResultDialogService);
-  readonly matchedInstancesDialogService = inject(MatchedInstancesDialogService);
 
   // So that we can remove subscription
   private subscription: Subscription = new Subscription();
-  private commitWaitDialogRef?: MatDialogRef<CommitWaitDialogComponent>;
 
   constructor(private dataService: DataService,
     private router: Router,
@@ -909,121 +902,15 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-* Save a list of instances via REST API (sequentially).
-* The server may persist related objects automatically.
+* Save the selected new instances via REST API (sequentially).
+* Delegates to the shared implementation in InstanceUtilities so this view and
+* the local instance list stay in sync.
 */
   commitNewInstances() {
-    if (!this.selectedInstances || this.selectedInstances.length === 0) {
-      return;
-    }
-
-    this.commitWaitDialogRef?.close();
-    this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
-      disableClose: true,
-      hasBackdrop: true,
-      autoFocus: false,
-      restoreFocus: false,
-      data: {
-        title: 'Committing New Instances',
-        message: 'Please wait while selected new instances are committed one by one.'
-      }
-    });
-
-    const results: CommitResult[] = [];
-    const matchedGroups: MatchedNewInstanceGroup[] = [];
-
-    from(this.selectedInstances).pipe(
-      concatMap(inst => {
-        if (inst.dbId && inst.dbId > 0) {
-          return EMPTY;
-        }
-        return this.dataService.matchInstances(inst).pipe(
-          concatMap(matches => {
-            if (matches && matches.length > 0) {
-              matchedGroups.push({ newInstance: inst, matches });
-              return EMPTY;
-            }
-            return this.dataService.commit(inst).pipe(
-              tap(rtn => this.instUtils.processCommit(inst, rtn, this.dataService)),
-              map(rtn => this.instUtils.buildCommitSummaryResults(inst, rtn))
-            );
-          })
-        );
-      })
-    ).pipe(
-      finalize(() => {
-        this.commitWaitDialogRef?.close();
-        this.commitWaitDialogRef = undefined;
-      })
-    ).subscribe({
-      next: resultGroup => results.push(...resultGroup),
-      error: err => console.error('Error committing new instances', err),
-      complete: () => {
-        this.selectedInstances = [];
-        this.instUtils.clearSelectedInstances(SelectedInstancesList.newInstanceList);
-        if (matchedGroups.length > 0) {
-          console.debug('[MatchedInstancesDialog] schema-list bulk groups:', matchedGroups.length,
-            'matchCounts:', matchedGroups.map(group => group.matches?.length ?? 0));
-          this.matchedInstancesDialogService.openDialog({
-            title: 'Matches Found',
-            groups: matchedGroups
-          }).afterClosed().subscribe(commitAnyway => {
-            if (commitAnyway) {
-              this.commitMatchedGroupsAnyway(matchedGroups, results);
-            } else if (results.length > 0) {
-              this.commitResultDialogService.openDialog(results);
-            }
-          });
-        }
-        else if (results.length > 0) this.commitResultDialogService.openDialog(results);
-      }
+    this.instUtils.commitNewInstances(this.selectedInstances, this.dataService, () => {
+      this.selectedInstances = [];
+      this.instUtils.clearSelectedInstances(SelectedInstancesList.newInstanceList);
     });
   }
 
-  /**
-* Commit new instances that matched existing database instances anyway, after the
-* user has reviewed the matches and explicitly chosen to proceed.
-*/
-  private commitMatchedGroupsAnyway(matchedGroups: MatchedNewInstanceGroup[], priorResults: CommitResult[]) {
-    this.commitWaitDialogRef?.close();
-    this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
-      disableClose: true,
-      hasBackdrop: true,
-      autoFocus: false,
-      restoreFocus: false,
-      data: {
-        title: 'Committing New Instances',
-        message: 'Please wait while the remaining new instances are committed one by one.'
-      }
-    });
-    from(matchedGroups).pipe(
-      concatMap(group => this.dataService.commit(group.newInstance).pipe(
-        tap(rtn => this.instUtils.processCommit(group.newInstance, rtn, this.dataService)),
-        map(rtn => this.instUtils.buildCommitSummaryResults(group.newInstance, rtn))
-      )),
-      finalize(() => {
-        this.commitWaitDialogRef?.close();
-        this.commitWaitDialogRef = undefined;
-      })
-    ).subscribe({
-      next: resultGroup => priorResults.push(...resultGroup),
-      error: err => console.error('Error committing matched instances', err),
-      complete: () => {
-        if (priorResults.length > 0) this.commitResultDialogService.openDialog(priorResults);
-      }
-    });
-  }
-
-  /**
-* Save a single object via the REST API.
-* Backend may persist related objects and return all saved ones.
-*/
-  private saveOne(inst: Instance): Observable<Instance[]> {
-    return this.dataService.commit(inst).pipe(
-      tap(rtn => {
-        this.instUtils.processCommit(inst, rtn, this.dataService);
-      }),
-      map(saved => Array.isArray(saved) ? saved : [saved])
-    );
-  }
 }

@@ -1,11 +1,16 @@
 import { Injectable } from "@angular/core";
+import { MatDialog, MatDialogRef } from "@angular/material/dialog";
 import { Instance } from "../models/reactome-instance.model";
 import { DataService } from "./data.service";
 import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttribute, SchemaClass } from "../models/reactome-schema.model";
-import { Subject, take, Observable, of, concatMap, map } from "rxjs";
+import { Subject, take, Observable, of, concatMap, map, from, tap, EMPTY, finalize } from "rxjs";
 import { Store } from "@ngrx/store";
 import { deleteInstances } from "src/app/instance/state/instance.selectors";
 import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
+import { CommitWaitDialogComponent } from "src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component";
+import { CommitResultDialogService, CommitResult } from "src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service";
+import { MatchedInstancesDialogService } from "src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service";
+import { MatchedNewInstanceGroup } from "src/app/shared/components/matched-instances-dialog/matched-instances-dialog.component";
 
 /**
  * Group a set of utility methods here for easy access to all other classes.
@@ -71,7 +76,13 @@ export class InstanceUtilities {
     // Tracking the instances that are selected
     private listName2selectedInstances = new Map<string, Instance[]>();
 
-    constructor(private store: Store) {
+    // Shared wait dialog used while committing new instances one by one
+    private commitWaitDialogRef?: MatDialogRef<CommitWaitDialogComponent>;
+
+    constructor(private store: Store,
+        private dialog: MatDialog,
+        private commitResultDialogService: CommitResultDialogService,
+        private matchedInstancesDialogService: MatchedInstancesDialogService) {
     }
 
     /**
@@ -943,6 +954,95 @@ export class InstanceUtilities {
                 this.registerDisplayNameChange(stableIdentifierDbId);;
             })
         }
+    }
+
+    /**
+     * Commit a list of new instances to the database sequentially (one by one).
+     *
+     * Each instance is first checked for existing database matches. Any instance
+     * that matches is deferred and collected; once the initial pass finishes the
+     * user is shown the matched-instances dialog and may choose to commit the
+     * matched instances anyway. Instances without matches are committed
+     * immediately. A wait dialog is shown throughout, and a commit-result dialog
+     * is opened at the end summarizing what was persisted.
+     *
+     * Sequential commits (concatMap) are required because each commit mutates
+     * shared state (the id2instance cache and the NgRx store dbId remapping in
+     * processCommit); concurrent commits would race and desync the store.
+     *
+     * Shared by the schema list view (InstanceListViewComponent) and the local
+     * instance list (UpdatedInstanceListComponent).
+     *
+     * @param instances the new instances to commit
+     * @param dataService the data service used for the match/commit REST calls
+     * @param onComplete invoked once the initial commit pass completes, before any
+     *                   result/match dialogs open. Use it to clear selection state.
+     */
+    commitNewInstances(instances: Instance[], dataService: DataService, onComplete?: () => void) {
+        if (!instances || instances.length === 0)
+            return;
+
+        this.openCommitWaitDialog(
+            'Committing New Instances',
+            'Please wait while selected new instances are committed one by one.'
+        );
+
+        const results: CommitResult[] = [];
+        const matchedGroups: MatchedNewInstanceGroup[] = [];
+
+        from(instances).pipe(
+            concatMap(inst => {
+                if (inst.dbId && inst.dbId > 0) {
+                    return EMPTY;
+                }
+                return dataService.matchInstances(inst).pipe(
+                    concatMap(matches => {
+                        if (matches && matches.length > 0) {
+                            matchedGroups.push({ newInstance: inst, matches });
+                            return EMPTY;
+                        }
+                        return dataService.commit(inst).pipe(
+                            tap(rtn => this.processCommit(inst, rtn, dataService)),
+                            map(rtn => this.buildCommitSummaryResults(inst, rtn))
+                        );
+                    })
+                );
+            }),
+            finalize(() => this.closeCommitWaitDialog())
+        ).subscribe({
+            next: resultGroup => results.push(...resultGroup),
+            error: err => console.error('Error committing new instances', err),
+            complete: () => {
+                onComplete?.();
+                if (matchedGroups.length > 0) {
+                    this.matchedInstancesDialogService.openDialog({
+                        title: 'Matches Found',
+                        groups: matchedGroups
+                    }).afterClosed().subscribe(() => {
+                        if (results.length > 0) {
+                            this.commitResultDialogService.openDialog(results);
+                        }
+                    });
+                }
+                else if (results.length > 0) this.commitResultDialogService.openDialog(results);
+            }
+        });
+    }
+
+    private openCommitWaitDialog(title: string, message: string) {
+        this.closeCommitWaitDialog();
+        this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
+            disableClose: true,
+            hasBackdrop: true,
+            autoFocus: false,
+            restoreFocus: false,
+            data: { title, message }
+        });
+    }
+
+    private closeCommitWaitDialog() {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
     }
 
     initialzeSelectedInstances(listName: string) {
