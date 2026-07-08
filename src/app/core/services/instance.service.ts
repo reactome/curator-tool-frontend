@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { MatDialog, MatDialogRef } from "@angular/material/dialog";
-import { Instance } from "../models/reactome-instance.model";
+import { Instance, NEW_DISPLAY_NAME } from "../models/reactome-instance.model";
 import { DataService } from "./data.service";
 import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttribute, SchemaClass } from "../models/reactome-schema.model";
 import { Subject, take, Observable, of, concatMap, map, from, tap, EMPTY, finalize } from "rxjs";
@@ -560,11 +560,22 @@ export class InstanceUtilities {
             seenDbIds.add(dbId);
             results.push({
                 dbId,
-                displayName: displayName ?? "To be generated"
+                displayName: displayName ?? NEW_DISPLAY_NAME
             });
         };
 
-        const committedName = committedInst.displayName ?? rtnInst.displayName;
+        // The passed instance can be a stale shell whose displayName is still the
+        // "To be generated" placeholder (e.g. a selection captured before the name
+        // was generated). In that case fall back to the authoritative display-name
+        // cache — the same source makeShell and the list views use — so the commit
+        // summary matches what the user sees in the list.
+        const resolveDisplayName = (inst: Instance): string | undefined => {
+            if (inst.displayName && inst.displayName !== NEW_DISPLAY_NAME)
+                return inst.displayName;
+            return this.dbId2displayName.get(inst.dbId) ?? inst.displayName;
+        };
+
+        const committedName = resolveDisplayName(committedInst) ?? rtnInst.displayName;
         addResult(rtnInst.dbId, committedName);
 
         // Legacy payload support: map old local ids to newly persisted ids.
