@@ -1,481 +1,732 @@
-# Reactome WebBench User Guide
+# Reactome WebBench — Curator Tool User Guide
 
-This guide explains how to use the Curator Tool frontend for daily curation tasks.
+This guide explains how to use the Curator Tool frontend (**Reactome WebBench**) for daily curation tasks. It documents every user interface in the application: the exact buttons, icons, tooltips, dialogs, menus, keyboard shortcuts, and behaviors you will encounter.
 
-## Quick links
+## Table of contents
 
-- [Jump to Attribute Editing Quick Reference](#attribute-editing-quick-reference)
-- [Jump to Schema View](#5-schema-view)
-- [Jump to Event View](#6-event-view)
-- [Jump to Gene2Path App](#7-gene2path-app)
-- [Jump to Common Workflows](#8-common-workflows)
+1. [What this site includes](#1-what-this-site-includes)
+2. [Sign in and session basics](#2-sign-in-and-session-basics)
+3. [Home page](#3-home-page)
+4. [The curation model: staging and committing](#4-the-curation-model-staging-and-committing)
+5. [Global status toolbar](#5-global-status-toolbar)
+6. [Staged-changes panel](#6-staged-changes-panel)
+7. [Bookmarks](#7-bookmarks)
+8. [Schema View](#8-schema-view)
+9. [Instance editor (shared by Schema View and Event View)](#9-instance-editor)
+10. [Event View](#10-event-view)
+11. [Gene2Path app](#11-gene2path-app)
+12. [Paper2Path app](#12-paper2path-app)
+13. [Help panel and guided tours](#13-help-panel-and-guided-tours)
+14. [Keyboard shortcuts](#14-keyboard-shortcuts)
+15. [Common workflows](#15-common-workflows)
+16. [Tips and troubleshooting](#16-tips-and-troubleshooting)
+17. [Quick URL reference](#17-quick-url-reference)
+
+### Quick links
+
+- [Attribute Editing Quick Reference](#93-attribute-editing-quick-reference)
+- [Instance-valued slot action menu](#96-instance-valued-slot-action-menu)
+- [Batch edit reference](#84-batch-edit)
+- [Diagram context menu reference](#104-pathway-diagram)
+
+---
 
 ## 1) What this site includes
 
-After login, the home page gives access to three major areas:
+After login, the **home page** launches five areas:
 
-- **Schema View**: browse schema classes, list instances, open/edit instances, and manage staged changes.
-- **Event View**: work with pathway/event trees, diagrams, and instance editing together.
-- **Gene2Path App**: submit a gene and review LLM-generated pathway annotation support.
+- **Schema View** — browse schema classes, list instances, open/edit instances, run batch edits, and manage staged changes.
+- **Event View** — work with pathway/event trees, pathway diagrams, and instance editing together.
+- **Gene2Path** — submit a gene symbol and review LLM-generated pathway annotation support.
+- **Paper2Path** — run a multi-agent (CrewAI) literature-annotation job from PMIDs/PDFs/a gene, then register generated instances into Schema View. *(Experimental.)*
+- **Tutorial** — tabbed reference plus interactive guided tours for each area.
+
+Two AI-assistance apps (Gene2Path, Paper2Path) and the Tutorial open in a **new browser tab**; Schema View and Event View open in the same tab.
+
+---
 
 ## 2) Sign in and session basics
 
 ### Sign in
 
-1. Open the site login page.
-2. Enter **Username** and **Password**.
+1. Open the login page (`/login`).
+2. The login card is titled **"Login"**. Enter **Username** and **Password** (both are plain fields with placeholder text; there is no client-side validation, so empty submissions are possible — the server decides validity).
 3. Click **OK**.
 
-If authentication fails, you will see an error dialog indicating wrong credentials.
+There is **no self-service registration** — accounts are provisioned separately.
 
-### Protected pages
+**On success**, your session token is stored in the browser, your saved staged instances are loaded, and you are taken to `/home` — or back to whatever protected page you were trying to reach before being sent to login.
 
-The following areas require login:
+**On failure**, an **"Error"** dialog appears with the message **"Wrong user name or password"** and a single **OK** button.
 
-- `/home`
-- `/schema_view`
-- `/event_view`
+> **Password tip:** passwords containing special characters (`!`, `$`, etc.) are not supported. Use an alphanumeric password.
 
-`/gene2path` is currently available without the route guard.
+### Protected vs. public pages
+
+| Area | Route | Login required? |
+|---|---|---|
+| Login | `/login` | No |
+| Home | `/home` | **Yes** |
+| Schema View | `/schema_view` | **Yes** |
+| Event View | `/event_view` | **Yes** |
+| Paper2Path | `/paper2path` | **Yes** |
+| Gene2Path | `/gene2path` | **No** (intentionally public — the link is cited in grant applications) |
+| Tutorial | `/tutorial` | No |
+
+The empty URL (`/`) redirects to `/home`.
 
 ### Session behavior
 
-- If you are redirected to login from a protected URL, successful login returns you to that saved URL.
-- On browser close/reload, staged user instances are persisted.
-- Clicking **Log out** persists current user-instance state and returns to login.
+- **Redirect-back:** if you are bounced to login from a protected URL, a successful login returns you to that saved URL.
+- **Silent token refresh:** if your token expires mid-session, the app tries to refresh it transparently in the background so you stay logged in. Only if the refresh fails are you sent back to login (with your current page remembered for redirect-back).
+- **Reload:** because your token lives in browser storage, reloading the page keeps you logged in until the token expires.
+- **Auto-save:** after ~5 minutes of edit inactivity, and on browser close/reload, your staged instances are persisted automatically.
+- **Log out:** clicking **Log out** in the status toolbar persists your current staged state to the server, clears local identity, and returns you to login. If you have no staged changes, any previously server-saved instances for you are cleared.
+
+---
 
 ## 3) Home page
 
-The home page is your launcher:
+The home page shows the Reactome logo and the title **"Reactome WebBench"**, followed by a grid of launch cards:
 
-- **Schema View** card
-- **Event View** card
-- **Gene2Path App** card
+| Card | Icon | Opens |
+|---|---|---|
+| **Schema View** | `account_tree` | `/schema_view` (same tab) |
+| **Event View** | `timeline` | `/event_view` (same tab) |
+| **Gene2Path** | `psychology` | `/gene2path` (new tab) |
+| **Paper2Path** | `article` | `/paper2path` (new tab) |
+| **Tutorial** | `school` | `/tutorial` (new tab) |
 
-A bottom status toolbar is also shown here (without staged-instance counters).
+The [global status toolbar](#5-global-status-toolbar) is shown at the bottom of the home page with the staged-instance counters hidden.
 
-## 4) Global status toolbar
+---
 
-Most work pages display the status toolbar at the bottom.
+## 4) The curation model: staging and committing
 
-### What it shows
+WebBench uses a **local staging** model. When you create, edit, or delete an instance, the change is held **locally** (staged) — it is **not** written to the database until you explicitly **commit** it.
 
-- **New instances** count
-- **Updated instances** count
-- **Deleted instances** count
-- **Default person** (current selected Person instance, if any)
+- Staged changes are tracked in three buckets: **New**, **Updated**, and **Deleted** instances.
+- Counts for each bucket appear in the [status toolbar](#5-global-status-toolbar); clicking any count opens the [staged-changes panel](#6-staged-changes-panel).
+- Staged changes survive reloads and logout (they are persisted per-user).
+- **Committing** uploads staged changes to the database. Committing **new** instances first runs a duplicate-match check (see [§6](#6-staged-changes-panel)).
 
-### Main actions
+> **Staged-change limit:** when your combined staged count (New + Updated + Deleted) exceeds **200**, a warning appears and **batch edit is blocked** until you commit. Commit staged work regularly to avoid this.
 
-- Click a staged-count button to open the staged-changes panel.
-- Click **Default person** to select/change default Person.
-- **Home** icon: go to home page.
-- **Bug report** icon: opens the bug report document.
-- **Log out** icon: save state and log out.
+---
 
-### Staged-change warning
+## 5) Global status toolbar
 
-If too many instances are staged, a warning appears asking you to commit changes as soon as possible.
+The status toolbar appears at the bottom of Home, Schema View, and Event View.
 
-## 5) Schema View
+### Left section — counters
 
-Schema View is the main curation workspace.
+Each is a label plus a count button; the button is **disabled when the count is 0**. Clicking any of the first three opens the combined [staged-changes panel](#6-staged-changes-panel).
 
-Layout:
+- **New instances:** `n`
+- **Updated instances:** `n`
+- **Deleted instances:** `n`
+- **Pathway Diagram Locks:** `n` — clicking opens an inline **"Current Diagram Locks"** flyout listing diagrams you currently hold editing locks on. Each row shows the diagram name and `[dbId]` with an **Open diagram** (`open_in_new`) button that navigates to `/event_view/instance/<dbId>`. A **Close** (`close`) button dismisses the flyout, which also closes on any outside click.
+- **Default person:** shows `displayName [dbId]` or **"Not Defined"**. Clicking opens a **"Select default person"** dialog filtered to the `Person` class; the person you pick is stamped as author on your edits.
 
-- **Left panel**: schema class tree (or staged-changes panel when toggled).
-- **Main panel**: routed content (class table, instance list, or instance editor).
-- **Bookmark panel**: draggable/collapsible **BOOKMARKS** strip on the right.
-- **Bottom**: global status toolbar.
+> All three of New/Updated/Deleted open the **same** combined staged-changes panel.
 
-### 5.1 Schema class tree (left)
+### "Too many staged instances" warning
 
-For each class, you can use:
+When your staged count exceeds **200**, the toolbar shows **"Too many staged instances. Commit them as soon as possible."** (tooltip: *"You have too many staged instances. Please commit your changes to avoid losing them."*).
 
-- Class name link → class attribute table (`/schema_view/class/{ClassName}`)
-- `[count]` link → database list (`/schema_view/list_instances/{ClassName}`)
-- `(localCount)` link (if present) → staged/local list (`/schema_view/local_list_instances/{ClassName}`)
-- **Add** icon → create a new instance of that class
+### Right section — action buttons
 
-### 5.2 Class attributes page
+| Icon | Tooltip | Action |
+|---|---|---|
+| `account_tree` | **Go to schema view** | Navigate to `/schema_view` (shown from Event View / Home) |
+| `timeline` | **Go to event view** | Navigate to `/event_view` (shown from Schema View / Home) |
+| `home` | **Go to home page** | Navigate to `/home` |
+| `menu_book` | **User guide** | Opens this guide on GitHub in a new tab |
+| `bug_report` | **Report bug** | Opens the bug-report Google Doc in a new tab |
+| `logout` | **Log out** | Persists staged state, then returns to `/login` |
 
-The class table displays:
+Backend errors surface as a snackbar at the bottom with a **Close** action.
 
-- Attribute name
-- Value type
-- Category
-- Allowed classes
-- Origin class
-- Cardinality
-- Defining type
+---
 
-Useful behavior:
+## 6) Staged-changes panel
 
-- Instance-type attributes link to their allowed class page.
-- Origin links to the class defining that attribute.
-- Rows are sortable.
+Open it by clicking any of the New/Updated/Deleted counts. It replaces the left panel in Schema View and Event View, and has a **Close** (`close`) button at the top. It contains three resizable sections (drag the dividers between them to change their heights).
 
-### 5.3 List Instances page
+Each section header reads **"<Section> Instances: {total} ({selected})"** and has an action row. Clicking a staged row typically opens it in **comparison view** so you can see your changes against the database copy.
 
-The list header indicates source:
+### New Instances
 
-- `@Database` for DB-backed list
-- `@Staged` for local/staged list
+- `select_all` — **select all**
+- `deselect_all` — **deselect all**
+- `delete` — **delete all selected new instances** (opens a confirm dialog)
+- `upload` — **commit all selected** (commits sequentially)
+- Per-row buttons: **DELETE**, **COMMIT**
+
+### Updated Instances
+
+- `select_all` / `deselect_all`
+- `undo` — **undo all changes for selected updated instances** (re-fetches each from the DB and resets)
+- `upload` — **commit all selected** (commits sequentially; any failures are reported afterward listing `#dbId displayName` of each failure)
+- Per-row buttons: **COMPARE2DB**, **UNDO**, **COMMIT**
+
+### Deleted Instances
+
+- `select_all` / `deselect_all`
+- `undo` — **restore all selected deleted instances**
+- `upload` — **commit all selected** (processes the deletions)
+- Per-row buttons: **UNDO**, **COMMIT**
+
+### Commit dialogs and the duplicate-match check
+
+- While a commit runs, a modal **commit-wait dialog** shows a spinner with a title such as **"Committing Updated Instance(s)"**, **"Committing New Instance"**, or **"Committing Deleted Instances"**.
+- **New-instance duplicate check:** before a new instance is committed, WebBench runs a match check against the database. If matches are found, a **"Matches Found"** dialog appears explaining the new instance was **not committed**, and lists each match group in a table (**dbId / Display Name / Schema Class**) with an **Open instance** (`open_in_new`) button per match. Review the matches, then **Close** the dialog to keep the instance uncommitted. *(Note: a "Commit Anyway" button exists in the code but is currently disabled, so today the safe path is to close and reconcile duplicates manually.)*
+- After a successful commit, a **commit-result dialog** (title **"Committed Instances"**, or **"Deleted Instances"** for deletions) lists the affected instances with **dbId** and **Display Name**; committed (non-deleted) rows include an `open_in_new` button that opens the instance in a new tab.
+
+---
+
+## 7) Bookmarks
+
+Bookmarks give you fast access to instances you use repeatedly — and let you drag an instance directly into a compatible attribute slot.
+
+### Adding a bookmark
+
+- From an instance-list row: the `bookmark` button (tooltip **"add bookmark"**), disabled for deleted instances.
+- From the instance editor toolbar: the `bookmark` button (tooltip **"Add Bookmark"**).
+
+### The BOOKMARKS strip
+
+A vertical **BOOKMARKS** handle is anchored to the right edge of Schema View and Event View. Click it to slide the panel open/closed (it starts closed); you can also **drag** the handle along the right edge to reposition it.
+
+Inside the panel:
+
+- Bookmarks can be **reordered** by dragging.
+- Each row has an **open/navigate** button (`open_with` icon + the instance's display name; tooltip shows `<SchemaClass> [dbId]`) that navigates to the instance, and a **remove** button (`clear` icon, tooltip **"Remove Instance"**).
+- Empty state: **"No bookmarks to show"**.
+
+**Drag-and-drop onto attribute slots:** drag a bookmark onto a compatible instance-valued attribute in the editor to set/add it. Valid drop targets highlight **green**, invalid ones **red**.
+
+Bookmarks maintain themselves: a bookmarked instance is removed automatically when it is deleted, and a new instance's bookmark is re-pointed to the real database instance once committed.
+
+---
+
+## 8) Schema View
+
+Schema View is the main curation workspace at `/schema_view`.
+
+**Layout:**
+
+- **Left panel** — the schema class tree (or the staged-changes panel when toggled from the status bar; the choice is remembered).
+- **Main panel** — routed content: a welcome page, a class-attributes table, an instance list, or the instance editor.
+- **Right edge** — the [BOOKMARKS](#7-bookmarks) strip.
+- **Bottom** — the [status toolbar](#5-global-status-toolbar).
+
+The left divider is draggable to resize the sidebar (default width 400px). The default landing panel is an informational **"Reactome WebBench: Schema View"** welcome card (no controls).
+
+### 8.1 Schema class tree (left)
+
+A fully-expanded tree of Reactome classes. Each node offers:
+
+- **Class-name link** → class attributes page (`/schema_view/class/{ClassName}`).
+- **`[count]` link** → the database instance list (`/schema_view/list_instances/{ClassName}`). This is the number of instances in the database.
+- **`(localCount)` link** — shown only when you have staged changes for the class; opens the staged/local list (`/schema_view/local_list_instances/{ClassName}`).
+- **Add icon** (`add_box`, tooltip **"Click to create new {ClassName}"**) → creates a new instance of that class and opens it in the editor. Hidden for abstract classes.
+
+Counts update automatically as you create, commit, update, or delete instances.
+
+### 8.2 Class attributes page
+
+Heading: **"Attributes of class '{ClassName}'"**. A sortable table (all columns sortable) with these columns:
+
+- **Attribute Name**
+- **Cardinality** (`1` = single-valued, `+` = multi-valued)
+- **Value Type** — for `Instance` types, links to the allowed class page
+- **Category** (Mandatory / Required / Optional / NoManualEdit)
+- **Attribute Origin** — the class that defines the attribute (links to that class)
+- **Defining Type**
+
+Rows for the class's **own** (non-inherited) attributes are highlighted in color. A footer legend explains the coloring, the bracketed instance counts, and the `+` cardinality marker.
+
+### 8.3 List Instances page
+
+The header toolbar shows the source:
+
+- **`{ClassName}@Database`** — the database-backed list.
+- **`{ClassName}@Staged`** — the local/staged list (only your changed/new/deleted instances for that class).
+
+**Table columns:** **dbId**, **Display Name**, and per-row **action buttons**.
+
+- In the **dbId** column, updated instances show a small gold `star` icon (tooltip **"Modified"**).
+- Hovering a **Display Name** appends the schema class in gray brackets `[SchemaClass]`.
+- Deleted rows are shown with a distinct (deletion) highlight rather than being hidden.
+- Empty state: **"No instance matching the search key"**.
+- Pagination: page sizes **20 / 50 / 100** (default 20), with first/last-page buttons.
 
 #### Search modes
 
-- **Simple search**: type in search box, press Enter.
-- **Advanced search**: click manage-search icon to switch modes, then build conditions in the filter panel.
-- In advanced mode, you can undo the last added condition.
+- **Simple search:** type in the **Search** box and press **Enter** (matches display name / dbId).
+- **Advanced search:** click the `manage_search` icon (**"Advanced Search"**) to switch modes. The search box becomes read-only and shows the composed query; build conditions in the filter panel:
+  - **Select attribute** dropdown.
+  - **Select operand** dropdown — supported operands: **Equal**, **Not Equal**, **Contains**, **IS NULL**, **IS NOT NULL**.
+  - **Enter search term** input, with a **Search the query above** (`query_stats`) button.
+  - **Enter** adds another condition; **Ctrl+Enter** completes and runs the search. Use the **Undo last** (`undo`) icon to remove the most recent condition. Switch back with the `manage_search` (**"Simple Search"**) icon.
 
-#### Download search results
+#### Download search results (CSV)
 
-- After running a search on an `@Database` list, a **Download search results** icon appears in the search bar.
-- Click the icon to export the full current search result set, not just the visible page.
-- You will be prompted to enter a file name before the download starts.
-- The downloaded file is a CSV with these columns:
-	`dbId`, `displayName`, `schemaClass`
-- This download action is only available after a search and is not shown for `@Staged` lists.
+- After a search on a `@Database` list, a **Download search results** (`download`) icon appears in the search bar (not shown on `@Staged` lists, and only when there are results).
+- You are prompted for a file name (`.csv` is appended if missing). The export contains the **full** result set, not just the visible page.
+- CSV columns: `dbId`, `displayName`, `schemaClass`.
 
-Supported advanced operands:
+#### Per-row actions
 
-- `Contains`
-- `Equal`
-- `Not Equal`
-- `IS NULL`
-- `IS NOT NULL`
+A checkbox toggles row selection (`check_box_outline_blank` → **select**, `check_box` → **unselect**). Primary actions on the DB list:
 
-#### Row and bulk actions
+- `launch` — **launch instance** (opens the instance editor in a **new tab**)
+- `delete` — **delete instance** (opens the deletion dialog)
+- `list_alt` — **show referrers**
 
-Per-row actions can include:
+Behind the **`more_horiz`** (**expand**) button:
 
-- Launch/open instance
-- Delete
-- Show referrers
-- Copy/clone
-- Compare instances
-- Show tree (for event classes)
+- `content_copy` — **clone instance**
+- `compare_arrows` — **compare two instances**
+- `timeline` — **open event view** (event classes only)
+- `bookmark` — **add bookmark** (when enabled; disabled for deleted rows)
 
-List-level tools:
+#### List-level tools
 
-- Select all on page
-- Deselect all
-- Delete selected
-- Compare selected (available when exactly 2 selected)
-- Pagination controls
+Shown above the paginator with a **"Selected Instances: {n}"** count:
 
-#### Batch edit
+- `check_box_outline` — **Select all on page**
+- `deselect_all` — **Deselect all**
+- `delete` — **Delete selected** (opens a bulk-delete confirm dialog)
+- `compare_arrows` — **Compare instances** (only when **exactly 2** are selected)
+- `edit_square` — **Batch Edit** (when ≥1 selected)
+- `download` — **Download selected** (CSV, columns `dbId,displayName,schemaClass`; prompts for filename)
+- `upload` — **commit all selected** (staged list only)
 
-- Click the **Batch Edit** icon in the search bar.
-- If specific rows are selected, batch edit applies to selected rows; otherwise it applies to the current list scope.
-- If staged changes exceed the configured limit, batch edit is blocked until you commit.
+#### Related dialogs
 
-Batch-edit dialog supports editing by attribute type (instance, text, boolean) with the following actions.
+- **Select an Instance** — a schema-class dropdown plus two tabs, **Database Instances** and **New and Updated Instances**, with a **Selected Instances** list; **OK** / **Cancel**. Single-valued targets show *"Only one value may be selected for {attribute}."*
+- **Confirm Delete** (bulk) — *"Are you sure you want to delete these {n} instances?"* with a note that database instances are only removed after you commit the deletions; **Delete** / **Cancel**.
 
-##### Batch edit actions by attribute type
+### 8.4 Batch edit
+
+Batch edit applies a single change across many instances at once. Open it from the **Batch Edit** (`edit_square`) icon.
+
+- If **no rows are selected**, an info dialog **"No instances selected"** asks you to select rows first.
+- If your staged count exceeds **200**, an info dialog **"Too many changes"** blocks batch edit until you commit.
+
+The dialog is titled **"Batch Edit for Selected Instances"**:
+
+- **Attribute** dropdown (*"Select an Attribute to Edit"*) — only attributes common to all selected instances' classes, excluding `NoManualEdit`.
+- **Edit Action** — the actions available depend on attribute type and cardinality (below).
+- **Batch Edit Summary** — a running description after each action (e.g. *"'X' set in 'attr' for N instances."*, with a note if some instances already had the value and were skipped).
+- **Selected Instances** / **Removed Instances** lists — remove a row (`close`, **"remove instance"**) to exclude it, or restore it (`undo`, **"reset instance"**).
+- **Close** finishes.
+
+#### Actions by attribute type / cardinality
 
 **Instance attributes**
 
-- **Single-valued**:
-	- **Set via Creation**
-	- **Set via Selection**
-	- **Delete**
-- **Multi-valued**:
-	- **Add via Creation**
-	- **Add via Selection**
-	- **Replace via Creation**
-	- **Replace via Selection**
-	- **Delete**
+- **Single-valued:** **Set via Creation**, **Set via Selection**, **Delete**
+- **Multi-valued:** **Add via Creation**, **Add via Selection**, **Replace via Creation**, **Replace via Selection**, **Delete**
 
-**Text attributes**
+**Text / String attributes**
 
-- **Single-valued**:
-	- **Replace Text**
-	- **Delete**
-- **Multi-valued**:
-	- **Add New Text**
-	- **Replace Text**
-	- **Delete**
+- **Single-valued:** **Set New Text**, **Replace Text**, **Delete** (a **New Value** / **Replaced Value** field appears)
+- **Multi-valued:** **Add New Text**, **Replace Text**, **Delete**
 
-**Boolean attributes**
+**Numeric (Integer / Float):** a numeric input applies a scalar replace.
 
-- Use the toggle to set the new value across selected rows.
+**Boolean:** a **True / False** radio group plus a **Set** button (disabled until you pick a value; tooltip *"Select True or False first"*).
 
-When using replacement/deletion in batch mode, the dialog can prompt for aggregated existing values so you can target which values are replaced/removed.
+For **Delete**, **Replace…**, and **Replace Text**, the tool first opens an **aggregated-values** dialog (*"Values of '{attribute}' for selected instances:"*) so you can pick exactly **which existing values** to target (with checkboxes, or launchable rows for instance values); **OK** / **Cancel**.
 
-### 5.4 Instance view/editor
+---
 
-When you open an instance, the instance toolbar includes:
+## 9) Instance editor
 
-- QA report/check action
-- Show referrers
-- Compare against database reference (when available)
-- Delete instance
-- Upload/commit instance
-- Add bookmark
-- More actions (expand): copy, compare two instances, open Event View / Schema View toggle for event classes
+The instance editor is used both in Schema View (`/schema_view/instance/{dbId}`) and, embedded, in Event View. It is the same component in both places.
 
-Additional behaviors:
+### 9.1 Breadcrumb / navigation history
 
-- Edited/deleted instances are visually highlighted.
-- Instance table below the toolbar is where attribute edits are made.
-- Breadcrumb/history appears when enabled by parent view.
+When history is enabled (always in Event View), a breadcrumb bar shows the instances you have visited, each as a clickable **dbId** link (hover shows `SchemaClass: displayName`). Clicking an earlier crumb jumps back **and discards** the forward history after it. Deleting/committing the displayed instance removes it from history.
 
-#### Attribute editing actions (instance table)
+### 9.2 Toolbar
 
-The instance table supports different edit actions depending on attribute type and cardinality.
+The title reads **"{SchemaClass}: {displayName} [{dbId}]"**. It turns **red** when the instance has unsaved edits or is new, and shows **strikethrough** when marked deleted.
 
-##### Attribute Editing Quick Reference
+**Always-visible buttons:**
 
-| Attribute Type | Cardinality | Instance Editor Actions | Batch Edit Actions |
+| Icon | Tooltip | Notes |
+|---|---|---|
+| `checklist` | **Run QA Report** (or *"You may need to commit your changes first for the QA Report"* when edits are pending) | Icon is blue (not run), **green** (passed), or **red** (failed) |
+| `list_alt` | **Show Referrers** | |
+| `compare` | **compare to instance at db** / **turn off comparison** | Enabled only when a database copy is available; toggles the comparison column |
+| `delete` | **Delete Instance** | Opens the deletion dialog |
+| `upload` | **Upload** | Commits this instance; enabled only when there are changes |
+| `download` | **Export event to DOCX** | Event classes only; blocked while staged instances are pending |
+| `manage_search` | **Match new instance in database** | New instances only |
+| `bookmark` | **Add Bookmark** | |
+
+**Behind the `more_horiz` (expand) button:**
+
+- `content_copy` — **clone instance**
+- `compare_arrows` — **compare two instances** (opens a *"Compare {name} to"* picker)
+- `open_in_new` — **open in curator graph** (external; disabled for new instances)
+- `account_tree` — **open schema view** *(in Event View)* / `timeline` — **open event view** *(in Schema View)* — event classes only
+
+### 9.3 Attribute Editing Quick Reference
+
+| Attribute Type | Cardinality | Instance-editor actions | Batch-edit actions |
 |---|---|---|---|
-| Instance | Single-valued | Set via Creation; Set via Selection; Delete; drag bookmark to set value | Set via Creation; Set via Selection; Delete |
-| Instance | Multi-valued | Add via Creation; Add via Selection; Replace via Creation; Replace via Selection; Delete; drag bookmark to add; reorder values | Add via Creation; Add via Selection; Replace via Creation; Replace via Selection; Delete |
-| Text/String | Single-valued | Edit text directly; Text Editor (find/replace); undo per attribute | Replace Text; Delete |
-| Text/String | Multi-valued | Edit existing entries; add empty row value; undo per attribute | Add New Text; Replace Text; Delete |
-| Integer / Float | Single-valued | Edit numeric value directly; undo per attribute | Replace value via attribute editor |
-| Integer / Float | Multi-valued | Edit numeric entries directly; add empty row value; undo per attribute | Replace value via attribute editor; Delete targeted values |
-| Boolean | Single-valued | Toggle true/false; undo per attribute | Toggle/set selected rows |
-| Boolean | Multi-valued | N/A in typical schema usage | Toggle/set selected rows |
+| Instance | Single | Set via Creation; Set via Selection; Delete; drag bookmark to set | Set via Creation; Set via Selection; Delete |
+| Instance | Multi | Add via Creation; Add via Selection; Replace via Creation; Replace via Selection; Delete; drag bookmark to add; reorder | Add/Replace via Creation/Selection; Delete |
+| Text/String | Single | Edit in textarea; rich Text Editor (find/replace); undo | Set New Text; Replace Text; Delete |
+| Text/String | Multi | Edit entries; add empty row; undo; reorder | Add New Text; Replace Text; Delete |
+| Integer / Float | Single | Edit numeric value; undo | Replace via numeric input |
+| Integer / Float | Multi | Edit numeric entries; add empty row; undo; reorder | Replace; Delete targeted values |
+| Boolean | Single | Toggle true/false; undo | Set True/False on selected rows |
 
-##### Direct value editing
+### 9.4 The attribute table
 
-- **String**: edit in textarea; commit on change (or with `Ctrl+Enter`).
-- **Integer/Float**: edit in numeric input.
-- **Boolean**: toggle on/off.
-- **NoManualEdit attributes**: read-only.
+Columns: **Attribute**, **Value**, and (when comparing) a reference column headed **Database Value** (comparing to the DB copy) or the other instance's display name (comparing two instances).
 
-##### Instance-valued slot action menu
+**Attribute-name cell:** shows a category icon — **Mandatory**, **Required**, **Optional**, or **NoManualEdit** — and is color-coded:
 
-Right-click/context-click on an instance-valued field to open the action menu.
+- **Light-orange** = a Required attribute that is empty
+- **Red** = a Mandatory attribute that is empty
+- **Bold purple** = actively edited
+- **Italic brown** = passively (automatically) edited
+- **Bold + italic** = both
 
-- **Single-valued**:
-	- **Set via Creation**
-	- **Set via Selection**
-	- **Delete**
-- **Multi-valued**:
-	- **Add via Creation**
-	- **Add via Selection**
-	- **Replace via Creation**
-	- **Replace via Selection**
-	- **Delete**
+Hovering the attribute name shows a tooltip explaining its state. Hovering column headers reveals extra controls: **Sort attributes by name** (`sort_by_alpha`), **Sort by defined attributes** (`sort`), an **edited attributes** filter (`filter_list`), a category filter (`filter_alt` → Mandatory/Required/Optional/NoManualEdit checkboxes), and an **attributes having different values** filter on the reference column.
 
-##### Bookmark drag-and-drop
+### 9.5 Direct value editing
 
-- Drag a bookmarked instance onto a compatible instance-valued slot to add/set that value.
-- Multi-valued instance slots also support drag-drop ordering of existing values.
+- **String:** an auto-sizing textarea. **Enter commits** the edit; **Ctrl+Enter / ⌘+Enter inserts a newline** instead. On a Summation `text` attribute, an inline **Edit Text** (`edit`) pencil opens the rich [Text Editor dialog](#96-text-editor-dialog).
+- **Integer:** numeric input, digits only (leading `-` allowed).
+- **Float:** numeric input, one decimal point (leading `-` allowed).
+- **Boolean:** a slide toggle; commits immediately.
+- **NoManualEdit** attributes are read-only.
+- **Undo/reset:** for an actively edited attribute, an `undo` icon appears in the value cell when the comparison column is shown; it resets the attribute to the reference value (tooltip **"reset to the db value"** or **"set to the right value"**).
+- **Multi-valued** attributes support **drag-to-reorder** (except NoManualEdit) and an extra empty row to add a new value.
 
-##### Reset/undo per attribute
+### 9.6 Instance-valued slot action menu
 
-- For actively edited attributes, an **undo** icon appears in the value row (when comparison/reference column is visible).
-- Undo resets the current attribute to the database/right-side reference value.
+For instance-valued attributes, open the action menu by clicking the edit pencil/fab or **right-clicking** the value. An empty slot shows an **Edit** button (tooltip **"Set value"** / **"Add value"**); a populated slot shows an edit pencil (**"Edit value"**).
 
-##### Text editor dialog (for `text` attribute)
+- **Single-valued:** **Set via Creation** (`add_box`), **Set via Selection** (`search`), **Delete** (`delete`)
+- **Multi-valued:** **Add via Creation** (`add_box`), **Add via Selection** (`search`), **Replace via Creation** (`switch_access_shortcut_add`), **Replace via Selection** (`find_replace`), **Delete** (`delete`)
 
-The text editor includes find/replace tools:
+"via Creation" opens the **Create a New Instance** dialog (pick a schema class, fill in attributes); "via Selection" opens the **Select an Instance** dialog.
 
-- Search and highlight matches
-- Navigate previous/next match
-- Replace current match
-- Replace all matches
-- Clear current search highlights
+> **Species warning:** editing the `species` attribute first shows a warning that changing species may change the `stId` / `stableIdentifier`.
 
-### 5.5 Staged changes panel
+**Bookmark drag-and-drop:** drag a bookmark onto a compatible slot to add/set it (valid targets highlight green, invalid red).
 
-Open by clicking counts in the status toolbar.
+### 9.7 Text editor dialog
 
-It has three sections:
+Titled **"Edit Text"**, a rich-text editor for long `text` attributes. A **Find and replace** (`find_replace`) FAB toggles the find/replace toolbar:
 
-- **New Instances**
-- **Updated Instances**
-- **Deleted Instances**
+- **Search text** field (Enter or `search` icon runs the search) with a **`{current}/{total}`** match counter.
+- **previous match** (`keyboard_arrow_up`), **next match** (`keyboard_arrow_down`), **clear** (`close`).
+- **Replace** field with **Replace current match** (`redo`) and **Replace all** (`cached`).
 
-Each section supports:
+Highlights are removed automatically when you click **OK** (keep changes) or **Cancel** (discard).
 
-- Select all / deselect all
-- Section-specific reset/delete/restore actions
-- Commit selected (upload icon)
+### 9.8 Supporting dialogs
 
-This is the main place to review and commit or undo staged work in bulk.
+- **Referrers** — titled *Referrers of "{name} [{dbId}]"*, grouped by attribute with counts; each referrer has a **launch** button. Shows **"Total Referrers: {count}"** (very large lists are truncated). In a deletion context, instances that would be structurally affected are shown in red.
+- **QA Report** — titled *QA Report for "{name}"*; passed checks show green **" Passed"**, failed checks render a table with clickable instance links.
+- **Delete** — titled *Delete "{name} [{dbId}]"*, with an optional structural-change warning and a **Show Referrers / Hide Referrers** toggle; **Delete** / **Cancel**. A separate **Confirm Delete** step notes that database instances are only removed after you commit the deletion. You may also be offered to **create a "Deleted" instance** to record the deletion.
+- **Match Instances** — titled *Matched instances for {name}*; select an existing instance and click **OK** to navigate to it.
+- **Create a New Instance** — pick a schema class, then fill in attributes; **OK** / **Cancel**.
 
-When committing new instances, WebBench performs a pre-commit matching check against existing database instances. If matches are detected, those new instances remain uncommitted and a match-review dialog is shown with the attempted new instance listed first and matched database rows listed afterward.
+---
 
-For larger Updated Instances selections, commits are processed with controlled parallelism to improve responsiveness during longer commit batches.
+## 10) Event View
 
-## 6) Event View
+Event View (`/event_view`) combines tree navigation, pathway-diagram viewing/editing, and instance editing.
 
-Event View combines tree navigation, diagram viewing and editing, and instance editing.
+**Layout:**
 
-Layout:
+- **Left panel** — event filter + event tree (or the staged-changes panel when toggled).
+- **Top-right** — the pathway diagram.
+- **Bottom-right** — the instance editor.
+- **Right edge** — the BOOKMARKS strip.
+- **Bottom** — the status toolbar.
 
-- **Left panel**: event filter + event tree (or staged-changes panel when toggled)
-- **Upper right**: pathway diagram area
-- **Lower right**: instance editor
-- **Right edge**: bookmarks panel
-- **Bottom**: status toolbar
+Until you select an event, the right side shows a welcome banner (**"Reactome WebBench: Event View"**) with usage hints.
 
-### 6.1 Layout and panel controls
+### 10.1 Layout controls
 
-- The left tree panel can be resized horizontally.
-- The diagram and instance editor split can be resized vertically.
-- The **BOOKMARKS** strip can be expanded/collapsed and dragged along the right edge.
-- The status toolbar can switch the left panel between the event tree and the staged-changes list.
+- Drag the **vertical bar** on the right edge of the tree to resize the tree width.
+- Drag the **horizontal bar** between the diagram and the editor to change the split.
+- Click the **BOOKMARKS** handle to open/close the bookmarks strip (drag to reposition).
+- The status toolbar can **swap the tree for the staged-changes panel** in the left panel (the choice is remembered per session).
 
-### 6.2 Event filter
+### 10.2 Event filter
 
-- Species dropdown (default **All**) with supported species options.
-- Text filter input (press Enter) for event name/dbId filtering.
-- Event View filtering is simple text/dbId filtering only; use Schema View for advanced attribute search.
+- **species** dropdown — options: **All** (default), **Homo sapiens**, **C. elegans**, **D. melanogaster**, **Gallus gallus**, **Fugu rubripes**, **Mus musculus**.
+- **filter** input — press **Enter** to filter by event **name** (text) or **dbId** (digits). Tooltip: *"Use text to filter for name and number for dbId. Use schema view for advanced search."* (Event View filtering is simple only; use Schema View for attribute-level search.)
 
-### 6.3 Event tree actions
+### 10.3 Event tree
 
-For each event node you can:
+Each node row provides, left to right:
 
-- Expand/collapse hierarchy
-- Focus/unfocus node
-- Add event to diagram
-- Create empty diagram (when available)
-- Toggle release flag for the selected event.
-- Shift+click the release flag to toggle release/unrelease for that event and all children under it.
-- Open/click event to load details into the instance editor
+- **Expand/collapse** (`expand_more` / `chevron_right`).
+- **Focus/unfocus** (`center_focus_strong`, tooltip **"Click to focus/unfocus"**) — isolates the node's ancestor path and descendants.
+- **Add to diagram** (`new_label`, tooltip **"Click to add this event to diagram"**).
+- **Create empty diagram** (`schema`, tooltip **"Click to create an empty diagram"**) — shown only for non-reaction nodes that don't already have a diagram.
+- **Release flag** — an image with a native tooltip: released shows *"released. click to unrelease. shift + click to unrelease all under this event"*; not-released shows the release equivalent. **Shift+click cascades** the release/unrelease to the node and all its descendants; each toggle registers the instance as updated.
+- **Class-name icon** — indicates Reaction, Pathway, BlackBoxEvent, Polymerisation, etc.
+- **Event name** — click to load the event.
 
-Additional visual cues in the tree:
+**Visual cues:** filter matches are **dodgerblue**; events **with** a diagram are **bold** (without are normal weight); the **focused** node has a light-blue background.
 
-- Events can be highlighted by the current tree filter.
-- Events with diagrams are visually distinguished from events without diagrams.
-- The currently focused event is visually marked.
+**Behaviors:**
 
-### 6.4 Pathway diagram features
+- Clicking an event name navigates to the nearest ancestor that has a diagram and selects the clicked object in it. If no diagram exists in that branch, an info dialog explains you must create an empty diagram first.
+- Adding a reaction to a diagram is blocked (with an info dialog) if the reaction is not contained by the displayed pathway.
 
-- Selecting an event in the tree can highlight/select its objects in the diagram.
-- Selecting objects in the diagram loads the corresponding instance in the lower editor.
-- The diagram label changes color when there are unsaved diagram edits.
-- A context action menu is available in the diagram for editing and navigation actions.
+### 10.4 Pathway diagram
 
-Diagram action menu includes, depending on selection and edit mode:
+The diagram label shows the pathway name and **turns red when there are unsaved edits**; a `lock` icon (tooltip **"Diagram is locked by you"**) appears while you hold the editing lock.
 
-- Enable or disable diagram editing
-- Enable or disable reaction edge editing
-- Add or remove edge points
-- Add or remove flow lines
-- Resize compartments and pathway nodes
-- Insert or delete compartments
-- Remove reactions
-- Delete pathway nodes when allowed
-- Align multiple selected nodes vertically or horizontally
-- Toggle diagram color theme
-- Upload diagram changes
-- Reload the current pathway diagram
-- Open or create the related `PathwayDiagram` instance
-- Go to a nested pathway from the diagram
+**Selection stays in sync** across the tree, the diagram, and the instance editor — selecting in one highlights/loads in the others.
 
-PathwayDiagram open/create flows include duplicate checks against both staged local instances and database matches to reduce accidental duplicate `PathwayDiagram` creation.
+**Right-click** opens the context menu. Available items (context-sensitive):
 
-### 6.5 Instance editor behavior in Event View
+*Always:*
+- **Enable Editing** / **Disable Editing**
+- **Toggle Color Theme**
+- **Reload Pathway Diagram**
+- **Edit/Create PathwayDiagram**
 
-- The lower instance editor uses the same attribute editing tools as Schema View.
-- Selecting from either the tree or the diagram updates the instance editor.
-- Comparison/history support is available in the Event View instance editor.
+*Conditionally:*
+- On a reaction edge: **Add Edge Point**, **Remove Reaction**, **Enable/Disable Edge Editing**
+- **Add Flow Line** / (on a flow line) **Add Edge Point**, **Remove Flow Line**
+- **Unlock Diagram** (when you hold the lock)
+- **Resize** / **Disable Resizing** (nodes/compartments)
+- **Delete Compartment**, **Insert Compartment**
+- **Remove Edge Point**
+- On a pathway node: **Delete Pathway** (when deletable), **Go to Pathway**
+- With multiple nodes selected: **Align Centers Vertically**, **Align Centers Horizontally**
+- **Upload Diagram** (when there are unsaved edits)
 
-### 6.6 Staged changes and bookmarks
+**Before you can edit** a diagram, you must commit any staged Event / PhysicalEntity / Regulation / CatalystActivity / PathwayDiagram instances (you'll get an info dialog otherwise), and a PathwayDiagram instance must exist. Editing acquires a **lock**; if someone else holds it, you'll see a "locked" dialog.
 
-- The status toolbar works the same as in Schema View for new, updated, deleted, and default-person tracking.
-- In Event View, the status toggle can replace the tree with the staged-changes list in the left panel.
-- Bookmarks remain available from the right-side bookmark strip while working in the tree, diagram, and instance editor.
+**Open/Create PathwayDiagram (duplicate-safe):** **Edit/Create PathwayDiagram** first checks whether a PathwayDiagram already exists for the pathway. If so, it **opens the existing one** (preventing accidental duplicates); if not, it **creates a new** PathwayDiagram (named *"Diagram of {pathway}"*) and opens it.
 
-### 6.7 Diagram + instance flow
+**Uploading diagram changes:** **Upload Diagram** shows a spinner while uploading and reports success/failure via an info dialog (and requires a default person). Actions that would discard unsaved edits (reload, unlock, go-to-pathway, disable editing) first prompt with an **"Unsaved Changes"** dialog offering **Cancel / No (discard) / Yes (upload)**. The diagram also auto-backs-up periodically and on navigation.
 
-Typical workflow:
+### 10.5 Instance editor in Event View
 
-1. Filter/select species and event.
-2. Click event to inspect it.
-3. Add/focus in diagram as needed.
-4. Edit the loaded instance in the lower instance panel.
-5. Use status/staged panel to commit or undo changes.
+The lower panel is the same [instance editor](#9-instance-editor) described above, with history (breadcrumb) enabled and edits kept local to the session. Edits propagate live: renaming, changing `hasEvent`, or toggling `doRelease` updates the tree and diagram immediately. In-place DB comparison stays in Event View; **compare two instances** hands off to a Schema View comparison route.
 
-## 7) Gene2Path App
+---
 
-Gene2Path uses LLM services to help annotate a gene against Reactome pathways.
+## 11) Gene2Path app
+
+Gene2Path (`/gene2path`, opens in a new tab, no login required) uses LLM services to help annotate a gene against Reactome pathways.
+
+**Title:** *"Gene2Path: Use LLM to Annotate a Gene in Reactome"*.
 
 ### Basic usage
 
-1. Enter a gene symbol (default shown is prefilled).
-2. Click **Submit** (publish icon).
-3. Optional: open **Settings** (gear icon) to change configuration before submit.
+1. In **"Enter a gene:"**, type a gene symbol (a default is prefilled).
+2. Click **Submit** (`publish` icon, tooltip **"Submit gene for processing"**).
+3. Optionally open **Settings** (`settings` icon, tooltip **"Edit Configurations"**) before submitting.
 
-### Output sections
+An **indeterminate progress bar** shows while the query runs.
 
-Depending on results, the page can show:
+### Settings / configuration
 
-- Failure message (if request fails)
-- **Annotated Pathways** summary/details
-- **Predicted Pathways** summary/details
-- Protein-protein interaction support tables and summaries
-- Navigation side menu for quick jumping between generated sections
+- **Choose Interaction Source** — **"IntAct & BioGrid Protein-Protein Interactions"** (default) or **"Reactome Functional Interactions"**.
+- **Filter PPIs based on Reactome FIs** (checkbox, default on; only with IntAct & BioGrid).
+- **Functional Interaction Score ≥** (0–0.9, default 0.8)
+- **Top Pubmed Results:** (default 8)
+- **Pathway Similarity Cutoff:** (0–0.9, default 0.20)
+- **LLM Score Cutoff:** (default 3)
+- **Top Pathways:** (0–20, default 8)
+- **FDR: <** (1, 0.05, 0.01, 0.001, 0.0001, 0.00001; default 0.01)
+- **Reset** (`refresh`) restores defaults.
 
-### Notes
+### Output
 
-- A progress bar appears while query is running.
-- Generated text includes links to Reactome pathways and PubMed where available.
-- Treat generated content as curation assistance that still requires curator review.
+Results appear with a left **navigation menu** (smooth-scrolls to sections) and content cards:
 
-## 8) Common workflows
+- **Annotated Pathways** — **Summary** and **Details** (pathways the gene is already annotated in).
+- **Predicted Pathways** — **Summary** and **Details**. Each predicted item shows *"PMID: … vs PATHWAY: …"* with a Semantic Score, LLM Score, and Pathway FDR. An expandable **"Click to process the full text paper"** panel extracts relationships and source text; if the PDF isn't found, you can upload one (**Choose a File**).
+- **Protein-Protein Interactions Supporting Annotation** — per-pathway tables with columns **Interaction Partner** and **PMID** (PubMed links), plus a summary.
+
+Failures show under a **"Failure"** heading.
+
+> Gene2Path does **not** write to the curation database. Generated text links out to reactome.org and PubMed. Treat all output as curation assistance requiring review.
+
+---
+
+## 12) Paper2Path app
+
+Paper2Path (`/paper2path`, opens in a new tab, **login required**) runs a multi-agent (CrewAI) literature-annotation workflow and can register the results into Schema View.
+
+> **Experimental:** *"Paper2Path is under active development. Results may be incomplete or inaccurate. Do not use for production curation without review."*
+
+**Banner:** *"Paper2Path — Multi-Agent Literature Annotation · Powered by CrewAI"*.
+
+### Configuration (**Configure** / **Hide Config** toggle)
+
+- **Max Papers** (1–20, default 8)
+- **Quality Threshold** (0–1, default 0.7)
+- **Enable Full Text Analysis** (default on) — process full PDFs vs. abstracts only
+- **Enable Literature Search** (default off) — search PubMed for more papers (requires a target gene)
+- **Agent Dashboard Controls** — enable/disable **Execution Phases**, **Agents**, and per-agent **Tools** (all server-driven; all enabled by default)
+
+### Run an annotation job
+
+Under **Annotation**:
+
+1. Optionally enter a **Target Gene** (e.g. `NTN1`) — you can annotate by gene alone or combine with papers.
+2. Choose a source tab:
+   - **Enter Papers** — add **PMID** fields (**Add PMID** / remove) and/or upload a PDF named `PMID.pdf` (**Select PDF File**).
+   - **Preloaded Papers** — pick from papers already on the server (each shows PMID, size, title, and a PDF-available/not-found status icon).
+   - **Results** — enabled once a job/result exists.
+3. Click **Start Annotation** (`send`; disabled until at least one PMID, a selected preloaded paper, or a target gene is provided). It shows **"Processing…"** while running; **Clear** resets.
+
+### Review results (Results tab)
+
+- **Processing Annotation…** shows Job ID, Status, Gene, and Current Phase with a progress bar.
+- **CrewAI Runtime Logs** stream live (timestamp, colored status tag, phase, summary/detail).
+- On failure: **Annotation Failed** with **Try Again** / **Dismiss**.
+- On success: **Annotation Complete** shows the JSON result and action buttons:
+  - **Download Results** (`download`) — saves `paper2path-results-YYYY-MM-DD.json`.
+  - **Add to Schema View** (`add_circle`, tooltip *"Register annotated entities, reactions and pathways as new instances in the schema view"*).
+  - **New Annotation** (`refresh`) — resets.
+
+### Register results into Schema View
+
+**Add to Schema View** parses the result and creates new staged instances — LiteratureReferences (from PMIDs, auto-filled server-side), entities (default `EntityWithAccessionedSequence`), output Complexes, Reactions, and Pathways — then shows a snackbar (**"N instances added to schema view."**) and opens **Schema View in a new tab**. These are **staged** instances: review and validate them in Schema View, then commit. Paper2Path does not write to the database directly.
+
+*(On first load, a bundled sample result is shown so the Results tab has example output before you run a real job.)*
+
+---
+
+## 13) Help panel and guided tours
+
+### Floating help panel
+
+A round **help** button (`help_outline`, tooltip **"Open help"** / **"Close help"**) floats over the AI apps. It opens a context-sensitive drawer — **"Gene2Path Help"** or **"Paper2Path Help"** — with usage/reviewing sections and a footer link **"Open full Tutorial page"** (→ `/tutorial`).
+
+### Tutorial page
+
+The **Tutorial** (`/tutorial`) has a header, a row of **Launch interactive tour** buttons (Schema View, Event View, Gene2Path, Paper2Path), and tabbed reference content: **Getting Started**, **Schema View**, **Event View**, **Gene2Path**, **Paper2Path**, **Keyboard Shortcuts**, and **Workflows**.
+
+### Guided tour overlay
+
+A tour highlights UI elements step by step. The step card shows **"Step X / N"**, a progress bar, navigation dots, **Back** / **Next** (**Finish** on the last step), and an **End tour** (`close`) button.
+
+> Launching the Schema/Event/Paper2Path tours while logged out will redirect you to login (those routes are protected).
+
+---
+
+## 14) Keyboard shortcuts
+
+**Attribute editing**
+
+| Key | Context | Action |
+|---|---|---|
+| `Enter` | Text / number field | Commit the current edit |
+| `Ctrl+Enter` / `⌘+Enter` | Text area | Insert a newline at the cursor |
+
+**Search & list**
+
+| Key | Context | Action |
+|---|---|---|
+| `Enter` | Simple search box | Run the search |
+| `Enter` | Advanced-search condition | Add another condition |
+| `Ctrl+Enter` | Advanced-search condition | Complete and run the search |
+| `Enter` | Event-tree filter | Apply the name / dbId filter |
+| `Shift+Click` | Event-tree release flag | Toggle release for the event **and all children** |
+
+**Guided tour**
+
+| Key | Action |
+|---|---|
+| `→` | Next step |
+| `←` | Previous step |
+| `Esc` | End the tour |
+
+---
+
+## 15) Common workflows
 
 ### A) Create and commit a new instance
 
-1. Go to **Schema View**.
-2. In class tree, click **Add** next to a class.
-3. Edit attributes in instance view.
-4. Open staged panel from status bar count.
-5. In **New Instances**, select the instance and click **commit** (upload icon).
-6. If matching database instances are found, review the match dialog (new instance first, then matched instances) before proceeding.
+1. In **Schema View**, click the **Add** icon next to a class in the tree.
+2. Edit attributes in the instance editor.
+3. Open the staged panel from the status bar.
+4. In **New Instances**, select the instance and click **commit** (`upload`).
+5. If matches are found, review the **"Matches Found"** dialog (new instance vs. matched DB instances) and reconcile duplicates.
 
 ### B) Edit existing instances and review diffs
 
-1. Open class instance list.
-2. Open an instance and edit fields.
-3. Use compare/referrers tools if needed.
-4. Review in **Updated Instances** panel.
-5. Commit selected or reset selected changes. Large selected commit batches run with controlled parallel commit processing.
+1. Open a class instance list and open an instance.
+2. Edit fields (use the **compare** toggle and **referrers** as needed).
+3. Review changes in **Updated Instances** (they open in comparison view).
+4. Commit selected, or **undo** to reset.
 
 ### C) Delete with safety checks
 
-1. Open an instance.
-2. Click **Delete**.
-3. Review deletion dialog and referrers warning.
-4. Confirm deletion.
-5. Commit deletion from **Deleted Instances** panel.
+1. Open an instance and click **Delete**.
+2. Review the deletion dialog and referrers warning; confirm.
+3. Commit the deletion from **Deleted Instances**. (Database instances are only removed after commit.)
 
-### D) Use local/staged class list
+### D) Batch-edit an attribute across many instances
 
-1. Open class tree.
-2. Click `(localCount)` next to class.
-3. Work in `@Staged` list to review only changed/new/deleted instances for that class.
+1. In a list, select the target rows.
+2. Click **Batch Edit** and pick the attribute and action.
+3. For replace/delete, pick which existing values to target.
+4. Review the summary; commit the resulting Updated Instances.
 
-### E) Work in Event View with tree, diagram, and editor together
+### E) Work in Event View with tree, diagram, and editor
 
-1. Open **Event View**.
-2. Use the species dropdown and filter box to narrow the event tree.
-3. Click an event in the tree to load it into the instance editor.
-4. Use the tree action buttons to focus the event, add it to the diagram, or create an empty diagram when needed.
-5. Select objects in the pathway diagram to load related instances into the lower editor.
-6. If diagram editing is needed, use the diagram context menu to enable editing and apply diagram changes.
-7. Upload diagram changes when ready, then use the status toolbar to review and commit staged instance changes.
+1. Open **Event View**; narrow the tree with the species dropdown and filter box.
+2. Click an event to load it into the editor.
+3. Focus, add to diagram, or create an empty diagram as needed.
+4. Select diagram objects to load related instances.
+5. Enable diagram editing (commit prerequisite instances first), make changes, then **Upload Diagram**.
+6. Commit staged instance changes from the status toolbar.
 
-## 9) Tips and troubleshooting
+### F) Use bookmarks for fast assignment
 
-- If you see the “too many staged instances” warning, commit staged work before continuing large edits.
-- Use advanced search for attribute-level filtering; use simple search for quick text/dbId filtering.
-- If list actions feel out of sync after major changes, refresh list page or re-open the class list.
-- For issues, use the bug-report button in the status toolbar.
+1. Bookmark instances you reuse (from a list row or the editor toolbar).
+2. Open the **BOOKMARKS** strip.
+3. Drag a bookmark onto a compatible attribute slot (green = valid) to set/add it.
 
-## 10) Quick URL reference
+---
+
+## 16) Tips and troubleshooting
+
+- If you see the **"too many staged instances"** warning (over 200), commit staged work before continuing — batch edit is blocked until you do.
+- Use **advanced search** for attribute-level filtering; use simple search for quick name/dbId lookups.
+- Diagram editing requires committing staged Event/PhysicalEntity/Regulation/CatalystActivity/PathwayDiagram instances first, and a default person must be set to upload.
+- If a diagram is locked by someone else, you cannot edit it until the lock is released.
+- Gene2Path and Paper2Path output is **curation assistance** — always review before committing.
+- If list actions feel out of sync after major changes, re-open the class list.
+- Use the **Report bug** (`bug_report`) button in the status toolbar to file issues.
+
+---
+
+## 17) Quick URL reference
 
 - Login: `/login`
 - Home: `/home`
 - Schema View root: `/schema_view`
 - Event View root: `/event_view`
 - Gene2Path: `/gene2path`
+- Paper2Path: `/paper2path`
+- Tutorial: `/tutorial`
 - Class attributes: `/schema_view/class/{ClassName}`
 - DB list by class: `/schema_view/list_instances/{ClassName}`
 - Staged list by class: `/schema_view/local_list_instances/{ClassName}`
@@ -484,4 +735,4 @@ Depending on results, the page can show:
 
 ---
 
-Later can create role-based short guides (for example, “new curator quick start” vs “advanced curator workflows”), this document can be split into focused variants.
+*This guide can later be split into role-based variants (e.g. "new curator quick start" vs. "advanced curator workflows").*
