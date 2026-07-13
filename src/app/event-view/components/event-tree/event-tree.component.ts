@@ -515,7 +515,8 @@ export class EventTreeComponent implements OnDestroy {
       this.dialog.open(InfoDialogComponent, {
         data: {
           title: 'Information',
-          message: 'Cannot find a diagram for the clicked event. Create an empty diagram first in the branch.'
+          message: 'Cannot find a diagram for the clicked event. ' +
+            'Create an empty diagram first by clicking the "Create Empty Diagram" button in the tree.'
         }
       });
       console.error('Cannot find a higher level pathway having diagram for ' + event.name);
