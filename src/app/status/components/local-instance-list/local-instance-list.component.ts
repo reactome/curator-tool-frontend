@@ -194,6 +194,13 @@ export class UpdatedInstanceListComponent implements OnInit {
     }
     else if (this.newInstances.includes(instance)) {
       this.openCommitWaitDialog('Committing New Instance', 'Please wait while the selected new instance is committed.');
+      // The duplication check is limited to PathwayDiagram instances for now.
+      if (!this.dataService.shouldCheckForMatches(instance)) {
+        this.doCommitInstance(instance).pipe(
+          finalize(() => this.closeCommitWaitDialog())
+        ).subscribe();
+        return;
+      }
       this.dataService.matchInstances(instance).pipe(
         concatMap(matches => {
           if (matches && matches.length > 0) {

@@ -1219,6 +1219,15 @@ export class DataService {
       return this.utils._isSchemaClass(instance.schemaClassName, schemaClass!);
   }
 
+  /**
+   * Whether the pre-commit duplication check (the matchInstances call that opens the
+   * "Matches Found" dialog) should run for a new instance. For the time being this is
+   * limited to PathwayDiagram instances only.
+   */
+  shouldCheckForMatches(instance: Instance): boolean {
+    return this.isSchemaClass(instance, 'PathwayDiagram');
+  }
+
   handleErrorMessage(err: any) {
     // HttpErrorResponse is NOT an instance of Error, so we must inspect it explicitly.
     // Otherwise meaningful HTTP failures (e.g. an expired-JWT 401) collapse into a

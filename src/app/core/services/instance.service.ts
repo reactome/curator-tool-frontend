@@ -1006,16 +1006,21 @@ export class InstanceUtilities {
                 if (inst.dbId && inst.dbId > 0) {
                     return EMPTY;
                 }
+                const commit$ = dataService.commit(inst).pipe(
+                    tap(rtn => this.processCommit(inst, rtn, dataService)),
+                    map(rtn => this.buildCommitSummaryResults(inst, rtn))
+                );
+                // The duplication check is limited to PathwayDiagram instances for now.
+                if (!dataService.shouldCheckForMatches(inst)) {
+                    return commit$;
+                }
                 return dataService.matchInstances(inst).pipe(
                     concatMap(matches => {
                         if (matches && matches.length > 0) {
                             matchedGroups.push({ newInstance: inst, matches });
                             return EMPTY;
                         }
-                        return dataService.commit(inst).pipe(
-                            tap(rtn => this.processCommit(inst, rtn, dataService)),
-                            map(rtn => this.buildCommitSummaryResults(inst, rtn))
-                        );
+                        return commit$;
                     })
                 );
             }),

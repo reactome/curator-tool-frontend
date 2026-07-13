@@ -608,6 +608,11 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       return;
     }
     if (this.instance.dbId < 0) {
+      // The duplication check is limited to PathwayDiagram instances for now.
+      if (!this.dataService.shouldCheckForMatches(this.instance)) {
+        this.commitInstance();
+        return;
+      }
       this.dataService.matchInstances(this.instance).pipe(take(1)).subscribe(matches => {
         if (matches && matches.length > 0) {
           console.debug('[MatchedInstancesDialog] instance-view matches:', matches.length);
