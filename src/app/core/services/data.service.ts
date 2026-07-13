@@ -1,4 +1,4 @@
-import { HttpClient, HttpResponse } from "@angular/common/http";
+import { HttpClient, HttpErrorResponse, HttpResponse } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, EMPTY, forkJoin, map, Observable, of, Subject, switchMap, take, tap, throwError } from 'rxjs';
@@ -1220,26 +1220,50 @@ export class DataService {
   }
 
   handleErrorMessage(err: any) {
+    // HttpErrorResponse is NOT an instance of Error, so we must inspect it explicitly.
+    // Otherwise meaningful HTTP failures (e.g. an expired-JWT 401) collapse into a
+    // confusing "Unknown error" banner instead of triggering the login redirect.
+    const status: number | undefined = err instanceof HttpErrorResponse ? err.status : undefined;
     const normalizedError: Error = err instanceof Error
       ? err
-      : new Error(typeof err === 'string' ? err : 'Unknown error');
+      : new Error(this.extractErrorMessage(err));
 
     console.log("The resource could not be loaded: \n" + normalizedError.message);
-    // If the error message contains a 401 or authentication error, redirect to the login page
-    if (normalizedError.message && normalizedError.message.includes('401')) {
+
+    // A 401 means the session/JWT expired. The auth interceptor already attempts a token
+    // refresh and redirects to /login on failure, so here we just make sure we land on the
+    // login page and suppress the error banner (the user is being asked to re-authenticate,
+    // not shown a failure).
+    if (status === 401 || normalizedError.message.includes('401')) {
       // Also ensure to save the route when the token is expired
       const currentUrl = window.location.pathname + window.location.search + window.location.hash;
       // Save the state to localStorage
       if (currentUrl !== '/login')
         sessionStorage.setItem('currentUrl', currentUrl);
       this.router.navigate(['/login']);
+      return throwError(() => normalizedError);
     }
+
     // Block to show refresh token failure message. This is hard-coded and should be changed in the future.
     if (!normalizedError.message.includes('refresh token')) {
       this.errorMessage.next(normalizedError);
     }
     return throwError(() => normalizedError);
   };
+
+  private extractErrorMessage(err: any): string {
+    if (typeof err === 'string')
+      return err;
+    if (err instanceof HttpErrorResponse) {
+      // Prefer a server-provided message when available, then fall back to the HTTP message.
+      if (typeof err.error === 'string' && err.error.trim().length > 0)
+        return err.error;
+      if (err.error?.message)
+        return err.error.message;
+      return err.message || `HTTP ${err.status} error`;
+    }
+    return err?.message || 'Unknown error';
+  }
 
   /**
   * Pass the instance to the back end for QA checks.
