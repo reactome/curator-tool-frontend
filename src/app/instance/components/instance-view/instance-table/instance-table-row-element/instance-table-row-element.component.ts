@@ -121,6 +121,9 @@ export class InstanceTableRowElementComponent implements OnInit {
 
   private lastContextMenuPosition = { x: 0, y: 0 };
   private skipSpeciesWarning = false;
+  // True while the species warning dialog is open. Keeps the trigger button mounted so its
+  // CdkMenuTrigger instance stays valid for reopening (a destroyed trigger reopens at 0,0).
+  private speciesWarningPending = false;
 
   onContextMenu(event: MouseEvent) {
     this.lastContextMenuPosition = { x: event.x, y: event.y };
@@ -133,6 +136,11 @@ export class InstanceTableRowElementComponent implements OnInit {
         this.skipSpeciesWarning = false;
         return;
       }
+      // Opening the dialog closes the menu (its backdrop counts as an outside click). Flag the
+      // warning as pending so onMenuClosed/mouseLeave keep the trigger button mounted, otherwise
+      // Angular destroys its CdkMenuTrigger and reopening `trigger` anchors the overlay at (0,0).
+      this.speciesWarningPending = true;
+      this.showActions = true;
       const dialogRef = this.dialog.open(InfoDialogComponent, {
         data: {
           title: 'Warning',
@@ -140,12 +148,16 @@ export class InstanceTableRowElementComponent implements OnInit {
         }
       });
       dialogRef.afterClosed().subscribe(() => {
+        this.speciesWarningPending = false;
         this.skipSpeciesWarning = true;
+        // If the dialog already closed the menu, reopen it now that the warning is acknowledged.
         // CdkContextMenuTrigger opens at a coordinate; CdkMenuTrigger (button) opens relative to itself.
-        if (trigger instanceof CdkContextMenuTrigger)
-          trigger.open(this.lastContextMenuPosition);
-        else
-          trigger.open();
+        if (!trigger.isOpen()) {
+          if (trigger instanceof CdkContextMenuTrigger)
+            trigger.open(this.lastContextMenuPosition);
+          else
+            trigger.open();
+        }
       });
     }
   }
@@ -153,7 +165,8 @@ export class InstanceTableRowElementComponent implements OnInit {
   onMenuClosed() {
     this.menuOpen = false;
     // If the cursor already left the row while the menu was open, hide the action button now.
-    if (!this.isMouseIn)
+    // Keep it while a species warning is pending so the trigger can reopen the menu afterwards.
+    if (!this.isMouseIn && !this.speciesWarningPending)
       this.showActions = false;
   }
 
@@ -193,8 +206,9 @@ export class InstanceTableRowElementComponent implements OnInit {
     this.isMouseIn = false
     this.color = false;
     // Keep the action button (and therefore the open menu) visible while the menu is open.
-    // It will be hidden when the menu closes (see onMenuClosed).
-    if (!this.menuOpen)
+    // It will be hidden when the menu closes (see onMenuClosed). Also keep it during a species
+    // warning so the trigger stays mounted for reopening.
+    if (!this.menuOpen && !this.speciesWarningPending)
       this.showActions = false;
     if (this.isSummationText())
       this.showEditorButton = false;
