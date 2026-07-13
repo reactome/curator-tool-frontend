@@ -9,6 +9,7 @@ import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 export class AuthFormComponent implements OnInit {
   @Input() error: string = "";
   @Input() title: string = "Login"
+  @Input() loading: boolean = false;
   @Output() submitEmitter = new EventEmitter();
   form: FormGroup;
   constructor(private fb: FormBuilder) {
@@ -25,6 +26,9 @@ export class AuthFormComponent implements OnInit {
   }
 
   submit() {
+    // Guard against repeated submits while a request is already in flight.
+    if (this.loading)
+      return;
     this.submitEmitter.emit(this.form.value);
   }
 

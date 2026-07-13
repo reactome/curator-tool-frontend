@@ -19,6 +19,11 @@ export class LoginComponent{
   // To show information
   readonly dialog = inject(MatDialog);
 
+  // Tracks whether a login request is currently in flight so the OK button can be
+  // disabled and repeated submits ignored (previously each click fired another
+  // concurrent login + bootstrap sequence).
+  submitting = false;
+
   constructor(private authService: AuthenticateService, 
               private userInstancesService: UserInstancesService,
               private dataService: DataService,
@@ -26,6 +31,11 @@ export class LoginComponent{
   }
 
   submit(data: User) {
+    // Ignore repeat submits while a request is already in flight.
+    if (this.submitting)
+      return;
+    this.submitting = true;
+
     this.authService.login(data).pipe(
       catchError(error => {
         this.handleError(error); // Custom error handling
@@ -36,33 +46,43 @@ export class LoginComponent{
         localStorage.setItem('token', token);
         localStorage.setItem('login_username', data.username);
         let url: string = sessionStorage.getItem('currentUrl') ?? '/home';
-        // todo: check login here. 
-        
+        // todo: check login here.
+
         sessionStorage.removeItem('currentUrl'); // Clear the saved URL after using it
-        
+
         // Initialize schema classes if they haven't been loaded yet
         if (!this.dataService.isSchemaClassesLoaded()) {
           console.debug('Schema classes not loaded, initializing DataService after login...');
           this.dataService.initialize().then(() => {
             console.debug('DataService initialized successfully after login');
-            this.userInstancesService.loadUserInstances();
-            this.router.navigateByUrl(url);
+            this.finishLogin(url);
           }).catch(error => {
             console.warn('Failed to initialize DataService after login:', error);
             // Continue anyway - schema classes will be loaded on-demand
-            this.userInstancesService.loadUserInstances();
-            this.router.navigateByUrl(url);
+            this.finishLogin(url);
           });
         } else {
           // Schema classes already loaded, proceed normally
-          this.userInstancesService.loadUserInstances();
-          this.router.navigateByUrl(url);
+          this.finishLogin(url);
         }
+      } else {
+        // The request completed without an error but returned no usable token.
+        // Previously this silently did nothing, leaving the user on the login page
+        // with no feedback. Surface it and re-enable the form so they can retry.
+        this.submitting = false;
+        this.handleError(new Error('Login response did not contain a token'));
       }
     });
   }
 
+  private finishLogin(url: string): void {
+    this.userInstancesService.loadUserInstances();
+    this.router.navigateByUrl(url);
+    this.submitting = false;
+  }
+
   private handleError(error: any): void {
+    this.submitting = false;
     this.dialog.open(InfoDialogComponent, {
       data: {
         title: 'Error',

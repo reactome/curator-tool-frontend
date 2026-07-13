@@ -21,7 +21,7 @@
 
 
       <div class="button">
-        <button type="submit" mat-button>OK</button>
+        <button type="submit" mat-button [disabled]="loading">{{ loading ? 'Signing in…' : 'OK' }}</button>
       </div>
 <!--      <p *ngIf="title == 'Login'" class="link" [routerLink]="['register']" routerLinkActive="router-link-active" >Create account</p>-->
 <!--      <p *ngIf="title == 'Register'" class="link" [routerLink]="['']" routerLinkActive="router-link-active" >Sign In</p>-->
