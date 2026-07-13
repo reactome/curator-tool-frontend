@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpInterceptor, HttpEvent, HttpRequest, HttpHandler, HttpErrorResponse, HttpClient, HttpBackend } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, catchError, filter, finalize, switchMap, take, tap, throwError } from 'rxjs';
+import { JwtHelperService } from '@auth0/angular-jwt';
 import { environment } from 'src/environments/environment.dev';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class HeaderInterceptor implements HttpInterceptor {
   private readonly httpWithoutInterceptor: HttpClient;
 
   constructor(private httpBackend: HttpBackend,
+              private jwtHelper: JwtHelperService,
               private router: Router) {
     this.httpWithoutInterceptor = new HttpClient(this.httpBackend);
   }
@@ -87,6 +89,18 @@ export class HeaderInterceptor implements HttpInterceptor {
 
   private handleRefreshFailure(error: HttpErrorResponse): Observable<never> {
     this.refreshTokenSubject.next(false);
+
+    // If the locally stored token is still valid (not expired), a 401 + failed refresh
+    // is almost certainly transient — e.g. a race during the bootstrap requests fired
+    // right after login, before the refresh cookie is fully established. Wiping the token
+    // and bouncing to /login in that window is what forced users to log in repeatedly.
+    // Keep the session intact and just surface this request's error; the session is only
+    // torn down once the token is actually expired or gone.
+    if (this.isStoredTokenValid()) {
+      console.warn('Token refresh failed but the stored token is still valid; treating this 401 as transient and keeping the session.');
+      return throwError(() => error);
+    }
+
     localStorage.removeItem('token');
     const currentUrl = window.location.pathname + window.location.search + window.location.hash;
     if (currentUrl !== '/login') {
@@ -94,6 +108,17 @@ export class HeaderInterceptor implements HttpInterceptor {
     }
     this.router.navigate(['/login']);
     return throwError(() => error);
+  }
+
+  private isStoredTokenValid(): boolean {
+    const token = localStorage.getItem('token');
+    if (!token)
+      return false;
+    try {
+      return !this.jwtHelper.isTokenExpired(token);
+    } catch {
+      return false;
+    }
   }
 
   private isAuthRequest(url: string): boolean {

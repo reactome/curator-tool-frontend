@@ -52,3 +52,4 @@ docs/note2myself
 package-lock copy.json
 .gitignore
 dist.tgz
+package.json

@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --base-href='/curatortool/' && cd dist && tar czvf curator-tool-frontend.tgz curator-tool-frontend && scp curator-tool-frontend.tgz aws_curator:~/",
+    "build": "ng build --base-href='/curatortool/' && cd dist && tar czvf curator-tool-frontend.tgz curator-tool-frontend && scp curator-tool-frontend.tgz curator:~/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

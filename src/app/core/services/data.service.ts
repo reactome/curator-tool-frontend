@@ -13,6 +13,7 @@ import {
 import { InstanceUtilities } from "./instance.service";
 import { QAReport } from "../models/qa-report.model";
 import { ActivatedRoute, Router, UrlSegmentGroup } from "@angular/router";
+import { JwtHelperService } from '@auth0/angular-jwt';
 
 @Injectable({
   providedIn: 'root'
@@ -76,6 +77,7 @@ export class DataService {
   constructor(private http: HttpClient,
     private utils: InstanceUtilities,
     private store: Store,
+    private jwtHelper: JwtHelperService,
     private router: Router,) {
   }
 
@@ -1244,6 +1246,14 @@ export class DataService {
     // login page and suppress the error banner (the user is being asked to re-authenticate,
     // not shown a failure).
     if (status === 401 || normalizedError.message.includes('401')) {
+      // Only bounce to /login when the token is actually gone or expired. A 401 while the
+      // stored token is still valid is almost certainly a transient race (e.g. the bootstrap
+      // requests fired right after login); redirecting in that window is what forced users to
+      // log in repeatedly. In that case just propagate the error and keep the session.
+      if (this.isStoredTokenValid()) {
+        console.warn('Received a 401 but the stored token is still valid; treating as transient and keeping the session.');
+        return throwError(() => normalizedError);
+      }
       // Also ensure to save the route when the token is expired
       const currentUrl = window.location.pathname + window.location.search + window.location.hash;
       // Save the state to localStorage
@@ -1259,6 +1269,17 @@ export class DataService {
     }
     return throwError(() => normalizedError);
   };
+
+  private isStoredTokenValid(): boolean {
+    const token = localStorage.getItem('token');
+    if (!token)
+      return false;
+    try {
+      return !this.jwtHelper.isTokenExpired(token);
+    } catch {
+      return false;
+    }
+  }
 
   private extractErrorMessage(err: any): string {
     if (typeof err === 'string')
