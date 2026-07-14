@@ -3,6 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { AttributeValue, Instance } from 'src/app/core/models/reactome-instance.model';
 import { ACTION_BUTTONS, SchemaClass } from "../../../../core/models/reactome-schema.model";
 import { ActionButton } from '../list-instances-view/instance-list-table/instance-list-table.component';
+import { DataService } from 'src/app/core/services/data.service';
 
 /**
  * A dialog component that is used to create a new Instance object.
@@ -32,7 +33,8 @@ export class SelectInstanceDialogComponent {
   
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public attributeValue: AttributeValue,
-    public dialogRef: MatDialogRef<SelectInstanceDialogComponent>) {
+    public dialogRef: MatDialogRef<SelectInstanceDialogComponent>,
+    private dataService: DataService) {
     this.isSingleValued = this.attributeValue.attribute.cardinality === '1';
     this.attributeSchemaClass = this.attributeValue.attribute.name;
     this.setCandidateClasses(attributeValue);
@@ -104,13 +106,13 @@ export class SelectInstanceDialogComponent {
     // @ts-ignore
     // Using allosed classes instead of concrete to simplify the drop-down menu
     this.candidateClasses = attributeValue.attribute.allowedClases!;
-    // let concreteClassNames = new Set<string>();
-    // for (let clsName of attributeValue.attribute.allowedClases!) {
-    //   let schemaClass: SchemaClass = this.dataService.getSchemaClass(clsName)!;
-    //   this.grepConcreteClasses(schemaClass, concreteClassNames);
-    // }
-    // this.candidateClasses = [...concreteClassNames];
-    // this.candidateClasses.sort();
+    let concreteClassNames = new Set<string>();
+    for (let clsName of attributeValue.attribute.allowedClases!) {
+      let schemaClass: SchemaClass = this.dataService.getSchemaClass(clsName)!;
+      this.grepConcreteClasses(schemaClass, concreteClassNames);
+    }
+    this.candidateClasses = [...concreteClassNames];
+    this.candidateClasses.sort();
   }
 
   private grepConcreteClasses(schemaClass: SchemaClass, concreteClsNames: Set<String>): void {

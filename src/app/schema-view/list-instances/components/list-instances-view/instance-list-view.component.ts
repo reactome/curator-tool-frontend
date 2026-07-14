@@ -440,6 +440,19 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Remove a specific search criterium (e.g. when its chip is dismissed).
+   * Assign a new array reference so the chip list picks up the change.
+   */
+  removeSearchCriteriumAt(index: number) {
+    if (index < 0 || index >= this.searchCriteria.length)
+      return;
+    this.searchCriteria = this.searchCriteria.filter((_, i) => i !== index);
+    this.updateAdvancedSearchKey();
+    if (this.searchCriteria.length === 0)
+      this.hasExecutedSearch = false;
+  }
+
+  /**
    * Perform advance search.
    */
   doAdvancedSearch(skip: number) {

@@ -22,7 +22,11 @@ export class SearchInstanceComponent {
 
   @Output() addSearchCriterium: EventEmitter<SearchCriterium> = new EventEmitter();
   @Output() removeSearchCriterium: EventEmitter<SearchCriterium> = new EventEmitter();
+  @Output() removeSearchCriteriumAt: EventEmitter<number> = new EventEmitter();
   @Output() search: EventEmitter<void> = new EventEmitter();
+
+  // The list of conditions accumulated so far, shown as removable chips.
+  @Input() criteria: SearchCriterium[] = [];
 
 
   // For doing search
@@ -52,6 +56,14 @@ export class SearchInstanceComponent {
 
   removeAttribute(attributeCondition: SearchCriterium) {
     this.removeSearchCriterium.emit(attributeCondition);
+  }
+
+  removeCriterion(index: number) {
+    this.removeSearchCriteriumAt.emit(index);
+  }
+
+  isNullOperand(operand: string): boolean {
+    return !!operand && operand.toLocaleLowerCase().includes('null');
   }
 
 }

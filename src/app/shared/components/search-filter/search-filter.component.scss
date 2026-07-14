@@ -6,6 +6,64 @@
   min-height: 13px !important;
 }
 
-.fc-margin {
-  margin-left: 20px;
+.advanced-search-card {
+  margin: 8px 16px 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conditions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.conditions-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.conditions-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.conditions-hint {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.conditions-empty {
+  margin: 0;
+  font-size: 13px;
+  font-style: italic;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.conditions-chips {
+  --mdc-chip-label-text-size: 13px;
+}
+
+.chip-attribute {
+  font-weight: 600;
+}
+
+.chip-operand {
+  margin: 0 6px;
+  color: rgba(0, 0, 0, 0.6);
+  font-style: italic;
+}
+
+.chip-value {
+  font-weight: 500;
+}
+
+.section-divider {
+  margin: 0;
 }
