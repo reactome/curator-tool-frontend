@@ -1,28 +1,41 @@
-<div style="width: 100%">
-  <mat-form-field class="fc-margin inline wrap">
-    <mat-label>Select attribute</mat-label>
-    <mat-select class="text-sm" [(value)]="attributeCondition.attributeName">
-      @for (attribute of schemaAttributes; track attribute) {
-      <mat-option class="text-sm" [value]="attribute">{{attribute}}</mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
-
-  <mat-form-field class="fc-margin inline wrap">
-    <mat-label>Select operand</mat-label>
-    <mat-select class="text-sm" [(value)]="attributeCondition.operand">
-      @for (operand of operands; track operand) {
-      <mat-option class="text-sm" [value]="operand">{{operand}}</mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
-
-  <ng-container>
-    <mat-form-field id="searchKeyField" class="fc-margin inline wrap" style="width: 55%">
-      <mat-label>Enter search term</mat-label>
-      <input [(ngModel)]="attributeCondition.searchKey" id="searchKey" (keydown)="onKeyDown($event)"
-        class="text-sm" matInput #input>
-        <mat-icon class="custom-search-icon" matTooltip="Search the query above" (click)="completeQuery()" matSuffix>query_stats</mat-icon>
+<div class="condition-builder">
+  <div class="condition-fields">
+    <mat-form-field class="field-attribute" subscriptSizing="dynamic">
+      <mat-label>Attribute</mat-label>
+      <mat-select class="text-sm" [(value)]="attributeCondition.attributeName">
+        @for (attribute of schemaAttributes; track attribute) {
+        <mat-option class="text-sm" [value]="attribute">{{attribute}}</mat-option>
+        }
+      </mat-select>
     </mat-form-field>
-  </ng-container>
+
+    <mat-form-field class="field-operand" subscriptSizing="dynamic">
+      <mat-label>Operand</mat-label>
+      <mat-select class="text-sm" [(value)]="attributeCondition.operand">
+        @for (operand of operands; track operand) {
+        <mat-option class="text-sm" [value]="operand">{{operand}}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="field-term" subscriptSizing="dynamic" *ngIf="!isNullOperand()">
+      <mat-label>Search term</mat-label>
+      <input [(ngModel)]="attributeCondition.searchKey" id="searchKey" (keydown)="onKeyDown($event)"
+        class="text-sm" matInput #input placeholder="Enter a value">
+    </mat-form-field>
+  </div>
+
+  <div class="condition-actions">
+    <button mat-stroked-button color="primary" type="button" class="text-sm"
+      [disabled]="!canAddCondition()"
+      matTooltip="Add this condition to the list (Enter)" (click)="addNewCriterium()">
+      <mat-icon>add</mat-icon>
+      Add condition
+    </button>
+    <button mat-flat-button color="primary" type="button" class="text-sm"
+      matTooltip="Run the search using all conditions (Ctrl+Enter)" (click)="completeQuery()">
+      <mat-icon>search</mat-icon>
+      Search
+    </button>
+  </div>
 </div>

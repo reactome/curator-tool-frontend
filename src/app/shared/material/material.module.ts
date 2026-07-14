@@ -24,6 +24,7 @@ import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatChipsModule } from '@angular/material/chips';
 
 @NgModule({
   declarations: [],
@@ -56,6 +57,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatDialogModule,
     MatDividerModule,
     MatTooltipModule,
+    MatChipsModule,
   ],
   exports: [
     MatTableModule,
@@ -85,6 +87,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatDialogModule,
     MatDividerModule,
     MatTooltipModule,
+    MatChipsModule,
   ]
 })
 export class MaterialModule { }

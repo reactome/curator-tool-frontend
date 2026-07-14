@@ -1,11 +1,33 @@
-<mat-card style="margin: 20px; background-color:#E5E4E2;">
-  <div>
-    <app-attribute-condition
-      [schemaClassAttributes]="attributes"
-      [attributeCondition]=blankAttributeCondition
-      (addAttributeCondition)="addAttribute($event)"
-      (submitAction)="performSearch($event)"
-      (removeAttributeCondition)="removeAttribute($event)">
-    </app-attribute-condition>
+<mat-card appearance="outlined" class="advanced-search-card">
+  <div class="conditions-section">
+    <div class="conditions-header">
+      <span class="conditions-title">Conditions</span>
+      <span class="conditions-hint" *ngIf="criteria.length > 1">Results match all conditions</span>
+    </div>
+
+    <mat-chip-set *ngIf="criteria.length > 0" class="conditions-chips" aria-label="Active search conditions">
+      <mat-chip-row *ngFor="let criterium of criteria; let i = index" (removed)="removeCriterion(i)">
+        <span class="chip-attribute">{{ criterium.attributeName }}</span>
+        <span class="chip-operand">{{ criterium.operand }}</span>
+        <span class="chip-value" *ngIf="!isNullOperand(criterium.operand)">{{ criterium.searchKey }}</span>
+        <button matChipRemove [attr.aria-label]="'Remove ' + criterium.attributeName + ' condition'">
+          <mat-icon>cancel</mat-icon>
+        </button>
+      </mat-chip-row>
+    </mat-chip-set>
+
+    <p *ngIf="criteria.length === 0" class="conditions-empty">
+      No conditions yet — build one below, add it, then run the search.
+    </p>
   </div>
+
+  <mat-divider class="section-divider"></mat-divider>
+
+  <app-attribute-condition
+    [schemaClassAttributes]="attributes"
+    [attributeCondition]=blankAttributeCondition
+    (addAttributeCondition)="addAttribute($event)"
+    (submitAction)="performSearch($event)"
+    (removeAttributeCondition)="removeAttribute($event)">
+  </app-attribute-condition>
 </mat-card>

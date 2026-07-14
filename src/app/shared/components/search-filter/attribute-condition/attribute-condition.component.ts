@@ -32,6 +32,19 @@ export class AttributeConditionComponent {
     let copyAttributeCondition = this.cloneCriterium();
     this.addAttributeCondition.emit(copyAttributeCondition);
     this.submitAction.emit(copyAttributeCondition);
+    this.resetSearchKey();
+  }
+
+  /**
+   * Operands that check for the presence/absence of a value don't need a
+   * search term, so the term field is hidden for them.
+   */
+  isNullOperand(operand: string = this.attributeCondition?.operand): boolean {
+    return !!operand && operand.toLocaleLowerCase().includes('null');
+  }
+
+  private resetSearchKey() {
+    this.attributeCondition.searchKey = '';
   }
 
   onKeyDown(event: KeyboardEvent) {
@@ -57,6 +70,19 @@ export class AttributeConditionComponent {
   addNewCriterium(){
     let copyAttributeCondition = this.cloneCriterium();
     this.addAttributeCondition.emit(copyAttributeCondition);
+    this.resetSearchKey();
+  }
+
+  /**
+   * A condition can be added when a search term is present, or when the
+   * operand is a NULL check (which needs no term).
+   */
+  canAddCondition(): boolean {
+    if (!this.attributeCondition?.attributeName)
+      return false;
+    if (this.isNullOperand())
+      return true;
+    return !!this.attributeCondition.searchKey && this.attributeCondition.searchKey.trim().length > 0;
   }
 
 }

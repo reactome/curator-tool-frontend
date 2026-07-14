@@ -6,14 +6,42 @@
   min-height: 13px !important;
 }
 
-.fc-margin {
+.condition-builder {
+  display: flex;
   flex-wrap: wrap;
-  padding: 5px;
+  align-items: flex-end;
+  gap: 12px;
+  width: 100%;
 }
 
-.custom-search-icon {
-  height: 36px !important;
-  width: 36px !important;
-  font-size: 28px !important;
-  padding: 5px;
+.condition-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
+.field-attribute,
+.field-operand {
+  flex: 1 1 150px;
+  min-width: 120px;
+}
+
+.field-term {
+  flex: 2 1 200px;
+  min-width: 160px;
+}
+
+.condition-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 4px;
+  white-space: nowrap;
+}
+
+.condition-actions button mat-icon {
+  margin-right: 4px;
 }
