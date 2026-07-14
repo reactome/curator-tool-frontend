@@ -3,7 +3,8 @@
     <ng-container *ngIf="element.attribute.cardinality === '1'">
       <app-instance-table-row-element [disable]="isInstanceDeleted()" [attribute]="element.attribute"
         [value]="element.value" [dragDropStatus]="dragDropStatus" (newValueEvent)="onNoInstanceAttributeEdit($event)"
-        (editAction)="onInstanceAttributeEdit($event)" [blockRoute]="blockRouter" />
+        (editAction)="onInstanceAttributeEdit($event)" [blockRoute]="blockRouter"
+        [hasStableIdentifier]="hasStableIdentifier()" />
     </ng-container>
     <ng-container *ngIf="element.attribute.cardinality === '+'">
 
@@ -21,7 +22,7 @@
               *ngFor="let object of element.value; let i = index" class="draggable-instance-box"
               [attribute]="element.attribute" [value]="object" [dragDropStatus]="dragDropStatus"
               (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)"
-              [blockRoute]="blockRouter" [index]="i" />
+              [blockRoute]="blockRouter" [index]="i" [hasStableIdentifier]="hasStableIdentifier()" />
           </div>
         </ng-template>
       </ng-container>
@@ -38,7 +39,7 @@
       <ng-container *ngIf="element.attribute.type === DATA_TYPES.INSTANCE">
         <app-instance-table-row-element [attribute]="element.attribute" [dragDropStatus]="dragDropStatus"
           (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)"
-          [disable]="isInstanceDeleted()" />
+          [disable]="isInstanceDeleted()" [hasStableIdentifier]="hasStableIdentifier()" />
       </ng-container>
     </ng-template>
   </ng-template>

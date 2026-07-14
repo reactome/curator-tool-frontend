@@ -94,6 +94,15 @@ export class InstanceTableComponent implements PostEditListener {
   // To check if a value has been deleted
   deletedDBIds: number[] = [];
 
+  /**
+   * Whether the current instance has a populated stableIdentifier attribute. Used to decide whether
+   * the species-edit warning should be shown.
+   */
+  hasStableIdentifier(): boolean {
+    const stableId = this._instance?.attributes?.get('stableIdentifier');
+    return stableId !== undefined && stableId !== null;
+  }
+
   // Make sure it is bound to input instance
   @Input() set instance(instance: Instance | undefined) {
     if (this.inEditing)

@@ -36,6 +36,9 @@ export class InstanceTableRowElementComponent implements OnInit {
   @Input() value: any;
   @Input() index: number = -1; // The position for a value in multi-slot
   @Input() blockRoute: boolean = false;
+  // Whether the instance being edited has a populated stableIdentifier. Used to decide whether the
+  // species-edit warning (about the stId/stableIdentifier changing) is relevant.
+  @Input() hasStableIdentifier: boolean = false;
   
   // The following properties and attributes are used for DnD from bookmarks
   private isMouseIn: boolean = false;
@@ -131,7 +134,9 @@ export class InstanceTableRowElementComponent implements OnInit {
 
   onMenuOpened(trigger: CdkContextMenuTrigger | CdkMenuTrigger) {
     this.menuOpen = true;
-    if (this.attribute?.name === 'species') {
+    // Only warn about the stId/stableIdentifier changing when the instance actually has a
+    // stableIdentifier to change.
+    if (this.attribute?.name === 'species' && this.hasStableIdentifier) {
       if (this.skipSpeciesWarning) {
         this.skipSpeciesWarning = false;
         return;
