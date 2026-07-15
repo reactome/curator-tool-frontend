@@ -52,6 +52,12 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 
 - Diagram Locking: In the front-end need to store the diagram (session) lock for a pathway diagram that is in the process of being edited. If/whden the user has the session end due to inacitinactivity, try to get the saved diagram from the back-end using the session id. Back-up edits made every 2.5 minutes periodically. Also back-up current diagram before session time-out. 
 
+- TODO: create an EWAS based on ReferenceGeneProduct, same as the desktop 
+
+- TODO: do a table design for the duplicates and allow the user the option to still commit. 
+
+- Testing of event view, adding a new subpathway etc, use dev env. Create a new event, create a new diagram for event 
+
 
 #### TODO
 - comments from Eliot and others during a demo on March 16, 2026: https://docs.google.com/document/d/1zlj3KKDwRQYUBCGIi4P3uqsb5X3JRfk8WoOqj2BXssI/edit?tab=t.0#heading=h.y6ik0la1wydu.

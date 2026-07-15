@@ -97,8 +97,7 @@ export class InstanceTableRowElementComponent implements OnInit {
 
   ngOnInit() {
 
-    // hasDiagram is derived/managed server-side and should never be edited manually.
-    if (this.attribute?.category === AttributeCategory.NOMANUALEDIT || this.attribute?.name === 'hasDiagram') {
+    if (this.attribute?.category === AttributeCategory.NOMANUALEDIT) {
       this.control.disable();
     }
 

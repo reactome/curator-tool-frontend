@@ -33,8 +33,11 @@ export class InactivityService implements OnDestroy {
   private timerId: ReturnType<typeof setTimeout> | undefined;
   private started = false;
   private loggingOut = false;
+  /** Wall-clock time (ms since epoch) of the most recent user activity. */
+  private lastActivityAt = Date.now();
   private warningDialogRef: MatDialogRef<InactivityWarningDialogComponent, InactivityWarningResult> | undefined;
   private readonly onActivity = () => this.resetTimer();
+  private readonly onVisibilityChange = () => this.checkExpiredOnReturn();
 
   constructor(private zone: NgZone,
               private router: Router,
@@ -52,6 +55,10 @@ export class InactivityService implements OnDestroy {
       InactivityService.ACTIVITY_EVENTS.forEach(event =>
         document.addEventListener(event, this.onActivity, { passive: true })
       );
+      // Timers are throttled while the tab is hidden and are frozen entirely
+      // while the machine sleeps, so returning to the tab is the moment to
+      // recheck whether the idle limit was blown past while we were away.
+      document.addEventListener('visibilitychange', this.onVisibilityChange);
     });
     this.resetTimer();
   }
@@ -60,6 +67,7 @@ export class InactivityService implements OnDestroy {
     InactivityService.ACTIVITY_EVENTS.forEach(event =>
       document.removeEventListener(event, this.onActivity)
     );
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
     this.clearTimer();
   }
 
@@ -68,6 +76,7 @@ export class InactivityService implements OnDestroy {
     // user must explicitly choose to stay logged in.
     if (this.warningDialogRef)
       return;
+    this.lastActivityAt = Date.now();
     this.clearTimer();
     // Fire the warning early enough that the countdown finishes exactly at the
     // full inactivity timeout.
@@ -91,9 +100,35 @@ export class InactivityService implements OnDestroy {
       this.resetTimer();
       return;
     }
+    // setTimeout is throttled while the tab is backgrounded and does not advance
+    // while the machine sleeps, so this callback can fire well after the idle
+    // deadline. Check the real wall-clock elapsed time: if the full inactivity
+    // limit has already passed, the warning countdown would be pointless — the
+    // user has effectively already timed out, so log them straight out.
+    const idleMs = Date.now() - this.lastActivityAt;
+    if (idleMs >= InactivityService.INACTIVITY_TIMEOUT_MS) {
+      this.zone.run(() => this.logout());
+      return;
+    }
     // Re-enter Angular's zone: opening a dialog, navigating, and dispatching
     // store actions must all run inside the zone.
     this.zone.run(() => this.showWarning());
+  }
+
+  /**
+   * Called when the tab becomes visible again. If the user has been idle for at
+   * least the full inactivity limit while the tab was hidden/asleep, log them
+   * straight out instead of letting a (possibly already-open) warning dialog sit
+   * there — the grace period has effectively already elapsed.
+   */
+  private checkExpiredOnReturn(): void {
+    if (document.visibilityState !== 'visible')
+      return;
+    if (this.loggingOut || !localStorage.getItem('token'))
+      return;
+    const idleMs = Date.now() - this.lastActivityAt;
+    if (idleMs >= InactivityService.INACTIVITY_TIMEOUT_MS)
+      this.zone.run(() => this.logout());
   }
 
   private showWarning(): void {
@@ -115,6 +150,14 @@ export class InactivityService implements OnDestroy {
     if (this.loggingOut)
       return;
     this.loggingOut = true;
+    // Tear down the warning dialog if it is still open (e.g. the tab was hidden
+    // when its countdown was meant to expire). Clear the ref first so the
+    // afterClosed handler's re-entrant logout() call is a no-op.
+    if (this.warningDialogRef) {
+      const ref = this.warningDialogRef;
+      this.warningDialogRef = undefined;
+      ref.close();
+    }
     console.debug('Logging out after inactivity timeout.');
     this.userInstancesService.persistInstances(true, () => {
       // Defensively clear the session identity even if the persist call failed

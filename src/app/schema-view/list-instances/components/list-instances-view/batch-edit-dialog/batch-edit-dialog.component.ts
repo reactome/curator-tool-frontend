@@ -169,8 +169,8 @@ export class BatchEditDialogComponent implements PostEditListener {
 
     forkJoin(fetches).subscribe(classes => {
       for (const clazz of classes) {
-        // Exclude attributes with NOMANUALEDIT, and hasDiagram (derived/managed server-side)
-        const attributes = clazz.attributes?.filter(attr => (!attr.category || attr.category !== AttributeCategory.NOMANUALEDIT) && attr.name !== 'hasDiagram');
+        // Exclude attributes with NOMANUALEDIT
+        const attributes = clazz.attributes?.filter(attr => !attr.category || attr.category !== AttributeCategory.NOMANUALEDIT);
         if (attributes) {
           attributeArrays.push(attributes);
         }

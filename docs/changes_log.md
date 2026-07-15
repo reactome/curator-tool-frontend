@@ -16,3 +16,16 @@
 - The interface for the advanced search has been improved to be more user friendly. 
 
 - Editinig the "species" attibute of an instance will only prompt the warning dialog if a StableIdentifier has already been assigned to the instance. This is because an edit to the species attribute would only further affect an instance that has already had a stable identifer generated. 
+
+
+### Build on July 15, 2026
+
+- Clear the user's refresh cookie with a true logout sent to the server. This is to fix the issue of needing to send a login request twice.
+
+- In the front-end the "hasDiagram" toggle attribute is now disabled to block user editing.
+
+- Fix the LiteratureReference to allow a pubmed link and a pubmed id.
+
+- User's Pathway Diagram locks were not visible in the schema view. The panel has been made visible with locks loaded with the rest of the status content. 
+
+- Fix to the "Are you still there" dialog which warns the user that their time of inactivity is exceeding its limit. This dialog would appear with a countdown even after the limit if the user navigated away and came back. Now it should not display if the user exceeds their limit, just log them out and redirect to the login. 
