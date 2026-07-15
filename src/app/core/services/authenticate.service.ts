@@ -20,6 +20,18 @@ export class AuthenticateService {
     )
   }
 
+  /**
+   * Ask the backend to invalidate the session and expire the HttpOnly refresh cookie.
+   * The refresh cookie can only be cleared server-side (it is HttpOnly), so a client-only
+   * logout leaves a stale cookie behind that later gets replayed on /refresh. `withCredentials`
+   * sends the current cookie so the backend can expire it.
+   */
+  logout(): Observable<any> {
+    return this.http.post<any>(`${environment.authURL}/logout`, {}, { withCredentials: true }).pipe(
+      catchError(err => throwError(() => err))
+    )
+  }
+
   // register(data: { username: string, password: string }): Observable<any> {
   //   return this.http.post<any>(`${environment.authURL}/register`, data).pipe(
   //     tap((data: any) => data),

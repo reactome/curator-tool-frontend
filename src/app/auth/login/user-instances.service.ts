@@ -193,6 +193,13 @@ export class UserInstancesService {
         const clearLocalStateForLogout = () => {
             if (!removeToken)
                 return;
+            // Tell the backend to invalidate the session and expire the HttpOnly refresh cookie.
+            // This is best-effort and fire-and-forget: the local session is torn down regardless
+            // of the result, so the user is always logged out client-side even if the call fails.
+            // Fired before localStorage is cleared so the request still carries the current cookie.
+            this.authService.logout().subscribe({
+                error: (err) => console.warn('Backend logout call failed; clearing local session anyway.', err)
+            });
             this.stopPathwayDiagramAutoPersist();
             const preservedValues = this.captureLocalStorageValues([
                 // PathwayDiagramObjectActions.get_pathway_diagram_objects.type,

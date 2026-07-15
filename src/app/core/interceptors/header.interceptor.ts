@@ -1,9 +1,13 @@
 import { Injectable } from '@angular/core';
-import { HttpInterceptor, HttpEvent, HttpRequest, HttpHandler, HttpErrorResponse, HttpClient, HttpBackend } from '@angular/common/http';
+import { HttpInterceptor, HttpEvent, HttpRequest, HttpHandler, HttpErrorResponse, HttpClient, HttpBackend, HttpContextToken } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, catchError, filter, finalize, switchMap, take, tap, throwError } from 'rxjs';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { environment } from 'src/environments/environment.dev';
+
+// Marks a request that has already been transparently retried once after a 401 while the
+// stored JWT was still valid, so we never retry the same request in an endless loop.
+const RETRIED_AFTER_401 = new HttpContextToken<boolean>(() => false);
 
 @Injectable()
 export class HeaderInterceptor implements HttpInterceptor {
@@ -44,6 +48,26 @@ export class HeaderInterceptor implements HttpInterceptor {
   }
 
   private handle401Error(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    // If the stored JWT is still valid, this 401 is almost certainly a transient race —
+    // e.g. bootstrap api/curation requests fired right after login, before the backend
+    // session is fully established. Retry the original request once with the same token
+    // instead of firing /refresh against a refresh cookie the backend may not accept yet
+    // (that is what surfaced "Invalid or expired refresh token" on the first login). Only
+    // fall back to a real token refresh when the retry also 401s or the token is expired.
+    if (this.isStoredTokenValid() && !request.context.get(RETRIED_AFTER_401)) {
+      console.warn('Received a 401 while the stored token is still valid; retrying the request once before attempting a token refresh.');
+      const retried = request.clone({ context: request.context.set(RETRIED_AFTER_401, true) });
+      return next.handle(retried).pipe(
+        catchError((retryError: HttpErrorResponse) =>
+          retryError.status === 401
+            ? this.refreshTokenAndRetry(request, next)
+            : throwError(() => retryError))
+      );
+    }
+    return this.refreshTokenAndRetry(request, next);
+  }
+
+  private refreshTokenAndRetry(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     if (this.isRefreshing) {
       return this.refreshTokenSubject.pipe(
         filter((token): token is string | false => token !== null),

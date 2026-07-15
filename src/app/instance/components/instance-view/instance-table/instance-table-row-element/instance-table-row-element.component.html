@@ -25,7 +25,7 @@
     <ng-template [ngSwitchCase]="DATA_TYPES.INTEGER">
       <mat-form-field appearance="outline" subscriptSizing="dynamic" class="form-field">
         <input [formControl]="control" matInput type="number" step="1" (keydown)="preventNonIntegerInput($event)"
-          (wheel)="$event.preventDefault()" (change)="onChange()">
+          (paste)="onIntegerPaste($event)" (wheel)="$event.preventDefault()" (change)="onChange()">
       </mat-form-field>
     </ng-template>
 

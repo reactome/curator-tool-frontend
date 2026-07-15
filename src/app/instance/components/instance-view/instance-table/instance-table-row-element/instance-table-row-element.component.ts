@@ -97,7 +97,8 @@ export class InstanceTableRowElementComponent implements OnInit {
 
   ngOnInit() {
 
-    if (this.attribute?.category === AttributeCategory.NOMANUALEDIT) {
+    // hasDiagram is derived/managed server-side and should never be edited manually.
+    if (this.attribute?.category === AttributeCategory.NOMANUALEDIT || this.attribute?.name === 'hasDiagram') {
       this.control.disable();
     }
 
@@ -281,6 +282,26 @@ export class InstanceTableRowElementComponent implements OnInit {
     if (!isDigit && !isNegativeSign) {
       event.preventDefault();
     }
+  }
+
+  /**
+   * Handle pasting into an integer field (e.g. pubMedIdentifier). Accepts either a bare id or a
+   * link whose id is at the end (e.g. https://pubmed.ncbi.nlm.nih.gov/12345678). Without this, a
+   * pasted URL is left to the native number input, which keeps stray characters such as the "e"
+   * in "pubmed" and produces values like "e12345678".
+   */
+  onIntegerPaste(event: ClipboardEvent) {
+    const pasted = (event.clipboardData?.getData('text') ?? '').trim();
+    if (!pasted || /^-?\d+$/.test(pasted)) {
+      return; // Empty or already a plain integer: let the input handle it
+    }
+    const match = pasted.match(/(\d+)\/?$/); // Trailing digits, tolerating a trailing slash
+    if (!match) {
+      return;
+    }
+    event.preventDefault();
+    this.control.setValue(Number(match[1]));
+    this.onChange();
   }
 
   preventNonFloatInput(event: KeyboardEvent) {
