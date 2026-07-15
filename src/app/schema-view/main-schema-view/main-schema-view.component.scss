@@ -52,6 +52,9 @@ side-nav {
   bottom: 10px;
   width: 100%;
   height: var(--status-height);
+  // Keep the status bar (and its diagram-locks panel) above the list view's sticky
+  // paginator/batch-edit controls (z-index: 10), otherwise the panel is covered and appears hidden.
+  z-index: 20;
 }
 
 

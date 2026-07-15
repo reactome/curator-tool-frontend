@@ -59,6 +59,12 @@ export class StatusComponent implements OnInit, OnDestroy {
     this.subscriptions.add(sub);
 
     // The following code will load all locks from the server and subscribe to any changes. This is necessary to keep the lock status in sync across different browser tabs.
+    // Set the loading flag before subscribing: observePathwayDiagramLocksViewModels() is backed by a
+    // BehaviorSubject and can emit synchronously when the caches are already warm. If we set it after
+    // subscribing, that synchronous emission's loading=false would be immediately overwritten with
+    // true and the panel would stay stuck on "Loading locks...".
+    this.pathwayDiagramLocksLoading = true;
+
     sub = this.diagramEditorService.observePathwayDiagramLocksViewModels().subscribe({
       next: (items: DiagramLockViewModel[]) => {
         this.pathwayDiagramLocks = items || [];
@@ -70,8 +76,6 @@ export class StatusComponent implements OnInit, OnDestroy {
       }
     });
     this.subscriptions.add(sub);
-
-    this.pathwayDiagramLocksLoading = true;
 
     sub = this.store.select(updatedInstances()).subscribe((instances) => {
       instances ? this.updatedInstances = instances : this.updatedInstances = [];
