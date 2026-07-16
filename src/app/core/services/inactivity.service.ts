@@ -2,6 +2,7 @@ import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
+import { AuthenticateService } from './authenticate.service';
 import {
   InactivityWarningDialogComponent,
   InactivityWarningResult
@@ -16,6 +17,15 @@ import {
  * once none has happened for {@link INACTIVITY_TIMEOUT_MS}, warns the user with
  * a countdown dialog and then tears the session down using the same logout flow
  * the rest of the app uses.
+ *
+ * It also proactively keeps the session alive while the user IS active. The
+ * server's refresh-token idle window (jwt.idle-token-time) only resets when
+ * /api/auth/refresh is actually called, and that call was otherwise only ever
+ * triggered reactively by a 401 from an api/curation request. A normal gap in
+ * backend calls (reading a page, filling a form) longer than that server-side
+ * window was enough to expire an actively-used session. Piggybacking a throttled
+ * refresh onto the same activity signal used for the idle logout fixes that
+ * without changing when the 18-minute idle logout itself kicks in.
  */
 @Injectable({ providedIn: 'root' })
 export class InactivityService implements OnDestroy {
@@ -24,6 +34,13 @@ export class InactivityService implements OnDestroy {
 
   /** How long the "Are you still there?" warning is shown before logout, in seconds. */
   private static readonly WARNING_COUNTDOWN_SECONDS = 60;
+
+  /**
+   * Minimum gap between proactive keep-alive refreshes, in milliseconds. Must stay
+   * comfortably below the server's jwt.idle-token-time (20 minutes by default) so an
+   * actively-used session's refresh token never goes idle between calls.
+   */
+  private static readonly KEEP_ALIVE_INTERVAL_MS = 4 * 60 * 1000;
 
   /** DOM events that count as "the user is active" and reset the timer. */
   private static readonly ACTIVITY_EVENTS = [
@@ -35,6 +52,8 @@ export class InactivityService implements OnDestroy {
   private loggingOut = false;
   /** Wall-clock time (ms since epoch) of the most recent user activity. */
   private lastActivityAt = Date.now();
+  /** Wall-clock time (ms since epoch) of the most recent proactive keep-alive refresh. */
+  private lastRefreshAt = 0;
   private warningDialogRef: MatDialogRef<InactivityWarningDialogComponent, InactivityWarningResult> | undefined;
   private readonly onActivity = () => this.resetTimer();
   private readonly onVisibilityChange = () => this.checkExpiredOnReturn();
@@ -42,13 +61,17 @@ export class InactivityService implements OnDestroy {
   constructor(private zone: NgZone,
               private router: Router,
               private dialog: MatDialog,
-              private userInstancesService: UserInstancesService) {}
+              private userInstancesService: UserInstancesService,
+              private authenticateService: AuthenticateService) {}
 
   /** Begin tracking activity. Safe to call more than once. */
   start(): void {
     if (this.started)
       return;
     this.started = true;
+    // Login just established a fresh refresh token - skip an immediate, redundant keep-alive.
+    this.lastRefreshAt = Date.now();
+    console.debug(`[InactivityService] started at ${new Date(this.lastRefreshAt).toISOString()}`);
     // Register the listeners outside Angular's zone so ordinary mouse/keyboard
     // activity does not trigger change detection on every single event.
     this.zone.runOutsideAngular(() => {
@@ -83,6 +106,37 @@ export class InactivityService implements OnDestroy {
     const idleMs = InactivityService.INACTIVITY_TIMEOUT_MS
       - InactivityService.WARNING_COUNTDOWN_SECONDS * 1000;
     this.timerId = setTimeout(() => this.onIdle(), idleMs);
+    this.maybeKeepSessionAlive();
+  }
+
+  /**
+   * Proactively refresh the access/refresh tokens while the user is active, throttled to
+   * at most once per KEEP_ALIVE_INTERVAL_MS. This is what stops an actively-used session
+   * from tripping the server's refresh-token idle window during a stretch with no
+   * api/curation calls (see the class-level comment above).
+   */
+  private maybeKeepSessionAlive(): void {
+    if (!localStorage.getItem('token'))
+      return;
+    const now = Date.now();
+    const sinceLastRefreshMs = now - this.lastRefreshAt;
+    if (sinceLastRefreshMs < InactivityService.KEEP_ALIVE_INTERVAL_MS)
+      return;
+    this.lastRefreshAt = now;
+    console.debug(`[InactivityService] proactive keep-alive refresh triggered at ${new Date(now).toISOString()} (${Math.round(sinceLastRefreshMs / 1000)}s since last refresh)`);
+    this.authenticateService.refresh().subscribe({
+      next: (token) => {
+        const at = new Date().toISOString();
+        if (token) {
+          localStorage.setItem('token', token);
+          console.debug(`[InactivityService] proactive keep-alive refresh succeeded at ${at}`);
+        } else {
+          console.debug(`[InactivityService] proactive keep-alive refresh returned no token at ${at}`);
+        }
+      },
+      error: (error) => console.debug(
+        `[InactivityService] proactive keep-alive refresh failed at ${new Date().toISOString()}; leaving it to the reactive refresh/idle logout.`, error)
+    });
   }
 
   private clearTimer(): void {
