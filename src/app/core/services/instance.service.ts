@@ -534,6 +534,101 @@ export class InstanceUtilities {
         return shell;
     }
 
+    /**
+     * Copy the attributes shared between a ReferenceGeneProduct (or, historically,
+     * a ReferencePeptideSequence) and an EntityWithAccessionedSequence into the passed
+     * EWAS. This is a TypeScript port of
+     * InstanceUtilities.copyAttributesFromRefPepSeqToEwas in the Java Curator Tool.
+     *
+     * The EWAS is expected to already have its schemaClass populated (e.g. created via
+     * DataService.createNewInstance) so that attribute cardinalities can be honored.
+     * @param ewas the EntityWithAccessionedSequence to fill in
+     * @param refGeneProduct the source ReferenceGeneProduct (fully loaded attributes)
+     */
+    copyAttributesFromRefGeneProductToEwas(ewas: Instance, refGeneProduct: Instance): void {
+        if (!ewas.attributes)
+            ewas.attributes = new Map();
+        const source: Map<string, any> = refGeneProduct.attributes;
+
+        // Helper to set a value honoring the EWAS attribute's cardinality.
+        const setValue = (attributeName: string, value: any) => {
+            const attribute = ewas.schemaClass?.attributes?.find(a => a.name === attributeName);
+            if (!attribute)
+                return; // Not a valid EWAS attribute; skip defensively
+            if (attribute.cardinality === '1')
+                ewas.attributes.set(attributeName, Array.isArray(value) ? value[0] : value);
+            else
+                ewas.attributes.set(attributeName, Array.isArray(value) ? value : [value]);
+        };
+
+        // The EWAS points back to the ReferenceGeneProduct via referenceEntity.
+        setValue('referenceEntity', this.getShellInstance(refGeneProduct));
+
+        // Copy species. On a ReferenceSequence this is single-valued.
+        let species = source?.get('species');
+        if (Array.isArray(species))
+            species = species[0];
+        if (species)
+            setValue('species', this.getShellInstance(species));
+
+        // Build up the list of names from geneName, description, name and secondaryIdentifier.
+        const ewasNames: string[] = [];
+
+        // The first gene name
+        const geneNames: string[] = source?.get('geneName');
+        if (geneNames && geneNames.length > 0)
+            ewasNames.push(geneNames[0]);
+
+        // Name from the description: the text before "(", handling the UniProt
+        // shortName/alternativeName/recommendedName formats.
+        let description: string = source?.get('description');
+        if (description) {
+            description = description.trim();
+            let index = description.indexOf('(');
+            if (index > 0)
+                description = description.substring(0, index).trim();
+            // Check if the new (03/15/09) format is used
+            let index1 = description.indexOf('shortName');
+            let index2 = description.indexOf('alternativeName');
+            if (index1 > 0 || index2 > 0) {
+                if (index1 < 0)
+                    index1 = description.length;
+                if (index2 < 0)
+                    index2 = description.length;
+                index = Math.min(index1, index2);
+                description = description.substring(0, index).trim();
+            }
+            // Sometimes description starts with "recommendedName"
+            if (description.startsWith('recommendedName'))
+                description = description.substring('recommendedName'.length + 1).trim(); // Remove: recommendedName:
+            if (description.length > 0 && !ewasNames.includes(description))
+                ewasNames.push(description);
+        }
+
+        // The first name
+        const names: string[] = source?.get('name');
+        if (names && names.length > 0) {
+            const name = names[0];
+            if (!ewasNames.includes(name))
+                ewasNames.push(name);
+        }
+
+        // UniProt id from secondaryIdentifier (e.g. something ending in _HUMAN)
+        const ids: string[] = source?.get('secondaryIdentifier');
+        if (ids && ids.length > 0) {
+            const pattern = /_[A-Z]+$/; // Java: _(\p{Upper})+$
+            for (const id of ids) {
+                if (pattern.test(id)) {
+                    if (!ewasNames.includes(id))
+                        ewasNames.push(id);
+                    break;
+                }
+            }
+        }
+
+        setValue('name', ewasNames);
+    }
+
     private getDynamicAttributeValue(instance: any, attributeName: string): any {
         if (!instance || !instance.attributes)
             return undefined;

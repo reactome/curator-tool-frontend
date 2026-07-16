@@ -17,6 +17,7 @@ import { combineLatest, map, Observable, Subscription, take } from 'rxjs';
 import { DeleteBulkDialogService } from '../delete-bulk-dialog/delete-bulk-dialog.service';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
+import { InstanceNameGenerator } from 'src/app/core/post-edit/InstanceNameGenerator';
 
 @Component({
   selector: 'app-instance-list-view',
@@ -146,6 +147,9 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       else {
         this.secondaryActionButtons = [ACTION_BUTTONS.COPY, ACTION_BUTTONS.COMPARE_INSTANCES];
       }
+      // For ReferenceGeneProducts, allow creating an EntityWithAccessionedSequence from them.
+      if (this.dataService.isReferenceGeneProductClass(this.className))
+        this.secondaryActionButtons = [...this.secondaryActionButtons, ACTION_BUTTONS.CREATE_EWAS];
     }
   }
 
@@ -354,7 +358,33 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
           this.router.navigate(["/event_view/instance/" + actionEvent.instance.dbId]);
         break;
       }
+
+      case ACTION_BUTTONS.CREATE_EWAS.name: {
+        this.createEwasFromReferenceGeneProduct(actionEvent.instance);
+        break;
+      }
     }
+  }
+
+  /**
+   * Create a new EntityWithAccessionedSequence from a ReferenceGeneProduct, copying the
+   * shared attributes (referenceEntity, species and names) over. This mirrors the
+   * "Create EWAS from RefGeneProduct" action in the Java Curator Tool.
+   */
+  createEwasFromReferenceGeneProduct(instance: Instance) {
+    // The list view only holds shell instances, so load the full ReferenceGeneProduct first.
+    combineLatest([
+      this.dataService.fetchInstance(instance.dbId),
+      this.dataService.createNewInstance('EntityWithAccessionedSequence')
+    ]).pipe(take(1)).subscribe(([refGeneProduct, ewas]) => {
+      this.instUtils.copyAttributesFromRefGeneProductToEwas(ewas, refGeneProduct);
+      // Generate the display name from the freshly copied names.
+      new InstanceNameGenerator(this.dataService, this.instUtils).updateDisplayName(ewas);
+      // Register the new instance and navigate to it, just like cloneInstance.
+      this.dataService.registerInstance(ewas);
+      this.store.dispatch(NewInstanceActions.register_new_instance(this.instUtils.makeShell(ewas)));
+      this.router.navigate(["/schema_view/instance/" + ewas.dbId.toString()]);
+    });
   }
 
   /**

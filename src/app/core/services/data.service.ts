@@ -264,6 +264,11 @@ export class DataService {
     return this.utils._isSchemaClass(clsName, schemaClass);
   }
 
+  isReferenceGeneProductClass(clsName: string): boolean {
+    let schemaClass = this.getSchemaClass('ReferenceGeneProduct');
+    return this.utils._isSchemaClass(clsName, schemaClass);
+  }
+
   /**
    * A helper function to convert a JSON array into a SchemaClass so that it is easier to model.
    * @param data
