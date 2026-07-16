@@ -14,6 +14,8 @@
 - improvement: when user is comparing two instances they can turn the comparison mode "off". Then selecting comparison again will use the database version instead of the comparison instance used previously. 
 -bug: check that new pathway diagrams are checked for duplications. currently two users can each create a pathway diagram and commit them creating duplicated pathway diagram instance.
 
+-TODO: Uniprot has changed their xml format, so start and end coordinates must be parsed a different way. Currently we are using ReferenceGeneProducts' existing chain attribute to get coordinates. In the future for new species we will need to update the script for aquiring coordinates from the fetched xml.
+
 #### Deidre
 - bug: The numbers of instances at the new schema view (beta browser) are not updated when new instances are committed. It looks like the counts may be cached at the server app. However, the content of edited instances do get updated.
 - bug: Pick any pathway, add a new reaction in its hasEvent slot view creation, commit the pathway (in the updated list). The new reaction should be committed too (indeed). However, nothing to indicate this: the dialog doesn't show the dbId is updated for this reaction.

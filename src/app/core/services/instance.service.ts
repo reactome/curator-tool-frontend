@@ -632,6 +632,46 @@ export class InstanceUtilities {
         }
 
         setValue('name', ewasNames);
+
+        // Set the start/end coordinates of the EWAS by parsing the ReferenceGeneProduct's
+        // "chain" attribute locally, instead of downloading the UniProt flat file and reading
+        // its "FT   CHAIN" line (the original Java fetchCoordinates approach). The chain values
+        // are stored in the Reactome model as "<featureType>:<start>-<end>" strings; mirroring
+        // the Java logic, we use the first "chain"-typed entry and take its first two integers.
+        // Fall back to a default start of 1 and end of -1 when no chain coordinates are available.
+        const coordinates = this.parseCoordinatesFromChain(source?.get('chain')) ?? [1, -1];
+        setValue('startCoordinate', coordinates[0]);
+        setValue('endCoordinate', coordinates[1]);
+    }
+
+    /**
+     * Parse the start and end coordinates from a ReferenceGeneProduct's "chain" attribute.
+     *
+     * This is the local equivalent of the Java CuratorTool's fetchCoordinates(String), which
+     * downloaded the UniProt flat file and read the first "FT   CHAIN" line, taking the first
+     * two integers on that line as the start and end. Here the same information is already
+     * available on the ReferenceGeneProduct's "chain" attribute (a list of
+     * "<featureType>:<start>-<end>" strings), so no network request is needed.
+     *
+     * @param chain the raw value of the "chain" attribute (array of strings, a single string, or undefined)
+     * @returns a [start, end] tuple, or null if no "chain:"-prefixed entry with two coordinates was found
+     */
+    private parseCoordinatesFromChain(chain: any): [number, number] | null {
+        if (!chain)
+            return null;
+        const entries: string[] = (Array.isArray(chain) ? chain : [chain])
+            .filter(v => typeof v === 'string' && v.trim().length > 0)
+            .map(v => v.trim());
+
+        // Use the first entry beginning with "chain:" (mirroring the Java "FT   CHAIN" filter),
+        // and take its first two integers as the start and end coordinates.
+        const chainEntry = entries.find(entry => entry.toLowerCase().startsWith('chain:'));
+        if (!chainEntry)
+            return null;
+        const nums = (chainEntry.match(/\d+/g) ?? []).map(n => parseInt(n, 10));
+        if (nums.length < 2)
+            return null;
+        return [nums[0], nums[1]];
     }
 
     private getDynamicAttributeValue(instance: any, attributeName: string): any {
