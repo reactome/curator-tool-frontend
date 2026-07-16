@@ -27,6 +27,7 @@ import { MatchedInstancesDialogService } from 'src/app/shared/components/matched
 import { CommitResultDialogService } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
 import { environment } from 'src/environments/environment.dev';
+import { InstanceNameGenerator } from 'src/app/core/post-edit/InstanceNameGenerator';
 
 @Component({
   selector: 'app-instance-view',
@@ -773,6 +774,30 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.store.dispatch(NewInstanceActions.register_new_instance(this.instUtils.makeShell(instance)));
       let dbId = instance.dbId.toString();
       this.router.navigate(["/schema_view/instance/" + dbId.toString()]);
+    });
+  }
+
+  isReferenceGeneProductInstance(): boolean {
+    return !!this.instance && this.dataService.isReferenceGeneProductClass(this.instance.schemaClassName);
+  }
+
+  /**
+   * Create a new EntityWithAccessionedSequence from the displayed ReferenceGeneProduct,
+   * copying the shared attributes (referenceEntity, species and names) over. This mirrors
+   * the "Create EWAS from RefGeneProduct" action in the Java Curator Tool.
+   */
+  createEwasFromReferenceGeneProduct() {
+    if (!this.instance)
+      return;
+    const refGeneProduct = this.instance;
+    this.dataService.createNewInstance('EntityWithAccessionedSequence').subscribe(ewas => {
+      this.instUtils.copyAttributesFromRefGeneProductToEwas(ewas, refGeneProduct);
+      // Generate the display name from the freshly copied names.
+      new InstanceNameGenerator(this.dataService, this.instUtils).updateDisplayName(ewas);
+      // Register the new instance and navigate to it, just like cloneInstance.
+      this.dataService.registerInstance(ewas);
+      this.store.dispatch(NewInstanceActions.register_new_instance(this.instUtils.makeShell(ewas)));
+      this.router.navigate(["/schema_view/instance/" + ewas.dbId.toString()]);
     });
   }
 

@@ -63,6 +63,10 @@
             matTooltip="open in curator graph" [disabled]="instance.dbId < 0">
             <mat-icon>open_in_new</mat-icon>
           </button>
+          <button *ngIf="isReferenceGeneProductInstance()" mat-icon-button color="primary" class="v-center"
+            (click)="createEwasFromReferenceGeneProduct()" matTooltip="create EWAS from ReferenceGeneProduct">
+            <mat-icon>science</mat-icon>
+          </button>
           <ng-container *ngIf="isEventClass()">
             <ng-container *ngIf="isInEventView; else elseTemplate">
               <button mat-icon-button color="primary" class="v-center" (click)="openSchemaView()"
