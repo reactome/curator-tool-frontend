@@ -8,10 +8,23 @@
     </p>
 
     <section class="scroll_panel">
-        <div class="match-group" *ngFor="let group of groups">
-            <h3 class="match-group-title" *ngIf="getNewInstanceRows(group).length > 0">Instance Match Group</h3>
+        <div class="match-group" *ngFor="let group of groups; let i = index">
+            <div class="match-group-header">
+                <button mat-button class="toggle-btn" (click)="toggle(i)"
+                    [attr.aria-expanded]="isExpanded(i)">
+                    <mat-icon>{{ isExpanded(i) ? 'arrow_drop_down' : 'arrow_right' }}</mat-icon>
+                </button>
+                <span class="match-group-label">
+                    {{ group.newInstance.displayName }} [{{ group.newInstance.dbId }}]
+                    &mdash; {{ group.newInstance.schemaClassName }}: {{ getMatchedRows(group).length }} match(es)
+                </span>
+                <mat-checkbox class="select-box" [checked]="isSelected(i)" (change)="toggleSelection(i)"
+                    matTooltip="Select to commit this new instance anyway">
+                </mat-checkbox>
+            </div>
 
-            <table *ngIf="getNewInstanceRows(group).length > 0" class="matched-instances-table mat-elevation-z0 instance-list-table plain-table">
+            <table *ngIf="isExpanded(i)"
+                class="matched-instances-table mat-elevation-z0 instance-list-table plain-table">
                 <thead>
                     <tr>
                         <th>dbId</th>
@@ -20,11 +33,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let row of getNewInstanceRows(group)">
-                        <td>{{ row.dbId }}</td>
-                        <td>{{ row.displayName }}</td>
-                        <td>{{ row.schemaClassName }}</td>
-                    </tr>
                     <tr *ngFor="let row of getMatchedRows(group)">
                         <td>{{ row.dbId }}</td>
                         <td>
@@ -49,5 +57,7 @@
 
 <mat-dialog-actions align="end">
     <button mat-button (click)="onClose()">Close</button>
-    <!-- <button mat-flat-button color="primary" (click)="onCommitAnyway()">Commit Anyway</button> -->
+    <span [matTooltip]="'Select at least one instance to commit'" [matTooltipDisabled]="hasSelection">
+        <button mat-flat-button color="primary" [disabled]="!hasSelection" (click)="onCommitAnyway()">Commit Anyway</button>
+    </span>
 </mat-dialog-actions>

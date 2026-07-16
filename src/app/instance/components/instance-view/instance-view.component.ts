@@ -609,7 +609,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       return;
     }
     if (this.instance.dbId < 0) {
-      // The duplication check is limited to PathwayDiagram instances for now.
+      // Run the pre-commit duplication check for new instances (see shouldCheckForMatches).
       if (!this.dataService.shouldCheckForMatches(this.instance)) {
         this.commitInstance();
         return;
@@ -620,8 +620,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
           this.matchedInstancesDialogService.openDialog({
             title: 'Matches Found',
             groups: [{ newInstance: this.instance!, matches }]
-          }).afterClosed().subscribe(commitAnyway => {
-            if (commitAnyway) {
+          }).afterClosed().subscribe(selected => {
+            if (selected && selected.length > 0) {
               this.commitInstance();
             }
           });

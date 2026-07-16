@@ -1228,11 +1228,12 @@ export class DataService {
 
   /**
    * Whether the pre-commit duplication check (the matchInstances call that opens the
-   * "Matches Found" dialog) should run for a new instance. For the time being this is
-   * limited to PathwayDiagram instances only.
+   * "Matches Found" dialog) should run for a new instance. The check runs for all new
+   * instances; this remains a single choke-point so the scope can be narrowed later if
+   * needed (e.g. `return this.isSchemaClass(instance, 'PathwayDiagram')`).
    */
   shouldCheckForMatches(instance: Instance): boolean {
-    return this.isSchemaClass(instance, 'PathwayDiagram');
+    return true;
   }
 
   handleErrorMessage(err: any) {

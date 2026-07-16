@@ -1110,7 +1110,7 @@ export class InstanceUtilities {
                     tap(rtn => this.processCommit(inst, rtn, dataService)),
                     map(rtn => this.buildCommitSummaryResults(inst, rtn))
                 );
-                // The duplication check is limited to PathwayDiagram instances for now.
+                // Run the pre-commit duplication check for new instances (see shouldCheckForMatches).
                 if (!dataService.shouldCheckForMatches(inst)) {
                     return commit$;
                 }
@@ -1130,17 +1130,46 @@ export class InstanceUtilities {
             error: err => console.error('Error committing new instances', err),
             complete: () => {
                 onComplete?.();
-                if (matchedGroups.length > 0) {
-                    this.matchedInstancesDialogService.openDialog({
-                        title: 'Matches Found',
-                        groups: matchedGroups
-                    }).afterClosed().subscribe(() => {
-                        if (results.length > 0) {
-                            this.commitResultDialogService.openDialog(results);
+                if (matchedGroups.length === 0) {
+                    if (results.length > 0) this.commitResultDialogService.openDialog(results);
+                    return;
+                }
+                this.matchedInstancesDialogService.openDialog({
+                    title: 'Matches Found',
+                    groups: matchedGroups
+                }).afterClosed().subscribe((selected?: Instance[]) => {
+                    // The dialog returns display-normalized copies; map back to the
+                    // original held-back instances by dbId so we commit the registered
+                    // objects (not the copies) that the rest of the app tracks.
+                    const selectedDbIds = new Set((selected ?? []).map(inst => inst.dbId));
+                    const toCommit = matchedGroups
+                        .map(group => group.newInstance)
+                        .filter(inst => selectedDbIds.has(inst.dbId));
+
+                    if (toCommit.length === 0) {
+                        if (results.length > 0) this.commitResultDialogService.openDialog(results);
+                        return;
+                    }
+
+                    // Commit the selected new instances that were held back due to matches.
+                    this.openCommitWaitDialog(
+                        'Committing New Instances',
+                        'Please wait while selected new instances are committed one by one.'
+                    );
+                    from(toCommit).pipe(
+                        concatMap(inst => dataService.commit(inst).pipe(
+                            tap(rtn => this.processCommit(inst, rtn, dataService)),
+                            map(rtn => this.buildCommitSummaryResults(inst, rtn))
+                        )),
+                        finalize(() => this.closeCommitWaitDialog())
+                    ).subscribe({
+                        next: resultGroup => results.push(...resultGroup),
+                        error: err => console.error('Error committing matched new instances', err),
+                        complete: () => {
+                            if (results.length > 0) this.commitResultDialogService.openDialog(results);
                         }
                     });
-                }
-                else if (results.length > 0) this.commitResultDialogService.openDialog(results);
+                });
             }
         });
     }

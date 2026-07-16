@@ -26,8 +26,24 @@
   margin-bottom: 16px;
 }
 
-.match-group-title {
-  margin-bottom: 4px;
+.match-group-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.select-box {
+  margin-left: 8px;
+}
+
+.toggle-btn {
+  min-width: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.match-group-label {
+  font-weight: 600;
   color: var(--on-surface);
 }
 

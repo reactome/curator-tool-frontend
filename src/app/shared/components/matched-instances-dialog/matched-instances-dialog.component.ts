@@ -11,6 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 
 /**
@@ -41,33 +42,65 @@ export interface MatchedInstancesDialogData {
   templateUrl: './matched-instances-dialog.component.html',
   styleUrls: ['./matched-instances-dialog.component.scss'],
   standalone: true,
-  imports: [CommonModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatButtonModule, MatTableModule, MatIconModule, MatTooltipModule]
+  imports: [CommonModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatButtonModule, MatTableModule, MatIconModule, MatTooltipModule, MatCheckboxModule]
 })
 export class MatchedInstancesDialogComponent {
   readonly groups: MatchedNewInstanceGroup[];
+  /** Indices of the groups whose matches table is currently expanded. */
+  private readonly expanded = new Set<number>();
+  /** Indices of the groups whose new instance is selected to be committed anyway. */
+  private readonly selected = new Set<number>();
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: MatchedInstancesDialogData,
-    public dialogRef: MatDialogRef<MatchedInstancesDialogComponent, boolean>
+    public dialogRef: MatDialogRef<MatchedInstancesDialogComponent, Instance[]>
   ) {
     this.groups = this.normalizeGroups(this.extractGroups(data));
+    // Expand the first group by default, mirroring the referrers table.
+    if (this.groups.length > 0) {
+      this.expanded.add(0);
+    }
     console.debug('[MatchedInstancesDialog] groups:', this.groups.length,
       'matchCounts:', this.groups.map(group => this.getMatchedRows(group).length));
   }
 
+  isExpanded(index: number): boolean {
+    return this.expanded.has(index);
+  }
+
+  toggle(index: number): void {
+    if (this.expanded.has(index)) {
+      this.expanded.delete(index);
+    } else {
+      this.expanded.add(index);
+    }
+  }
+
+  isSelected(index: number): boolean {
+    return this.selected.has(index);
+  }
+
+  toggleSelection(index: number): void {
+    if (this.selected.has(index)) {
+      this.selected.delete(index);
+    } else {
+      this.selected.add(index);
+    }
+  }
+
+  get hasSelection(): boolean {
+    return this.selected.size > 0;
+  }
+
   onClose(): void {
-    this.dialogRef.close(false);
+    this.dialogRef.close([]);
   }
 
   onCommitAnyway(): void {
-    this.dialogRef.close(true);
-  }
-
-  getNewInstanceRows(group: MatchedNewInstanceGroup): Instance[] {
-    if (!group?.newInstance || group.newInstance.dbId === undefined || group.newInstance.dbId === null) {
-      return [];
-    }
-    return [group.newInstance];
+    const selectedInstances = this.groups
+      .filter((_, index) => this.selected.has(index))
+      .map(group => group.newInstance);
+    this.dialogRef.close(selectedInstances);
   }
 
   getMatchedRows(group: MatchedNewInstanceGroup): Instance[] {
