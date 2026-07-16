@@ -101,11 +101,11 @@ export class HeaderInterceptor implements HttpInterceptor {
   }
 
   private requestTokenRefresh(): Observable<string> {
-    console.debug('Requesting token refresh');
+    console.debug('Requesting token refresh at', new Date().toLocaleString());
     return this.httpWithoutInterceptor
       .post<any>(this.refreshUrl, {}, { withCredentials: true}).pipe(
         tap((token: string) => {
-          console.debug('Token refreshed.');
+          console.debug('Token refreshed at', new Date().toLocaleString());
         }),
         catchError((error: HttpErrorResponse) => this.handleRefreshFailure(error))
       );

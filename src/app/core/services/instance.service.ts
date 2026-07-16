@@ -581,7 +581,12 @@ export class InstanceUtilities {
 
         // Name from the description: the text before "(", handling the UniProt
         // shortName/alternativeName/recommendedName formats.
-        let description: string = source?.get('description');
+        const rawDescription = source?.get('description');
+        let description: string | undefined;
+        if (Array.isArray(rawDescription))
+            description = rawDescription.find(value => typeof value === 'string' && value.trim().length > 0);
+        else if (typeof rawDescription === 'string')
+            description = rawDescription;
         if (description) {
             description = description.trim();
             let index = description.indexOf('(');
