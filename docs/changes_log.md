@@ -36,8 +36,15 @@
 - The duplcates table is back with a "commit anyway" option. 
 
 
-### Build on July 16, 2026
+### Build on July 17, 2026
 
 - Logic for creating an EWAS from a RGP has been updated so that start and end coordinates can be populated from the "chain" attribute of the RGP instead of fetching coordinates from Uniprot which has changed.
 
-- The links in the mismatch table were not working. 
+- The links in the mismatch table were not working. These have been updated and some additional formatting added.
+
+- The expand/collapse arrows in the referrers table now reflect the state of each table. A right-pointing arrow indicates a collapsed table and a down-pointing arrow indicates an expanded table.
+
+- The dialog to add new instances via selection now allows candidate classes (the top level abstract class allowed) and all of the concrete classes. ie. A user may search all "Event" types without knowing the sublcass, or search by a specific "Pathway", Reaction", etc.
+
+- Fixed a bug in the Event view where adding an event to the "hasEvent" attribute (via creation or selection) would show the new value for a moment and then have it disappear. The instance panel was force-reloading during the edit and clobbering the just-added value; it now skips that reload while the instance is being edited.
+

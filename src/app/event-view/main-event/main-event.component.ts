@@ -55,6 +55,12 @@ export class MainEventComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.subscriptions.add(sub);    
     sub = this.instanceUtilities.lastUpdatedInstance$.subscribe(data => {
       if (data.instance && this.instanceView?.instance && data.instance.dbId === this.instanceView.instance.dbId) {
+        // Don't force a reload if the currently displayed instance is being edited here.
+        // finishEdit() has already refreshed the table in place, and reloading would swap in
+        // a re-fetched instance, clobbering the just-added value (e.g. a new hasEvent child).
+        // Mirrors the inEditing guard in InstanceViewComponent's refreshViewDbId$ handler.
+        if (this.instanceView.instanceTable?.inEditing)
+          return;
         this.instanceView?.loadInstance(data.instance.dbId, false, false, true, false);
       }
     });
