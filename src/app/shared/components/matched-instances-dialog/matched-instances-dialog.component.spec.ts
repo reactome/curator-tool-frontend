@@ -8,6 +8,10 @@ import { concatMap, finalize } from 'rxjs/operators';
 import { MatchedInstancesDialogData } from './matched-instances-dialog.component';
 import { MatchedInstancesDialogService } from './matched-instances-dialog.service';
 import { CommitWaitDialogComponent } from '../commit-wait-dialog/commit-wait-dialog.component';
+import { StoreModule } from '@ngrx/store';
+import { RouterTestingModule } from '@angular/router/testing';
+
+const EMPTY_ENTITY_STATE = { ids: [], entities: {} };
 
 @Component({ template: '', standalone: true })
 class HostComponent {}
@@ -32,7 +36,19 @@ describe('MatchedInstancesDialogComponent (via MatDialog.open, real overlay path
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HostComponent, MatDialogModule, NoopAnimationsModule],
+      imports: [
+        HostComponent,
+        MatDialogModule,
+        NoopAnimationsModule,
+        RouterTestingModule,
+        StoreModule.forRoot({} as any, {
+          initialState: {
+            new_instances: EMPTY_ENTITY_STATE,
+            updated_instances: EMPTY_ENTITY_STATE,
+            delete_instances: EMPTY_ENTITY_STATE,
+          }
+        })
+      ],
       providers: [MatchedInstancesDialogService, Overlay]
     }).compileComponents();
 
@@ -67,6 +83,80 @@ describe('MatchedInstancesDialogComponent (via MatDialog.open, real overlay path
     });
 
     expect(tables.length).toBeGreaterThan(0);
+
+    dialog.closeAll();
+    flush();
+  }));
+
+  it('routes a launch action-button click through to window.open, and the button is hit-testable', fakeAsync(() => {
+    const openSpy = spyOn(window, 'open').and.returnValue({} as Window);
+
+    service.openDialog(testData);
+    fixture.detectChanges();
+    flush();
+    fixture.detectChanges();
+
+    const overlayContainer: HTMLElement = document.querySelector('.cdk-overlay-container') as HTMLElement;
+    const buttons = Array.from(overlayContainer?.querySelectorAll('button') ?? []) as HTMLButtonElement[];
+    const launchButton = buttons.find(b => (b.textContent || '').trim().includes('launch'));
+    expect(launchButton).toBeTruthy();
+
+    // Guard against the positioning regression: the action cell must not be absolutely
+    // positioned (which pulls the button out of its cell), and a point hit-test at the
+    // button's centre must resolve to the button itself (nothing overlapping it).
+    const actionCell = launchButton!.closest('td') as HTMLElement;
+    expect(getComputedStyle(actionCell).position).toBe('static');
+    const btnRect = launchButton!.getBoundingClientRect();
+    const hit = document.elementFromPoint(
+      btnRect.left + btnRect.width / 2,
+      btnRect.top + btnRect.height / 2
+    ) as HTMLElement;
+    expect(launchButton!.contains(hit)).toBe(true);
+
+    // Wiring: click -> table.actionEvent -> handleAction -> openInstance -> window.open
+    launchButton!.click();
+    fixture.detectChanges();
+    flush();
+    expect(openSpy).toHaveBeenCalledWith('schema_view/instance/100', '_blank');
+
+    dialog.closeAll();
+    flush();
+  }));
+
+  it('keeps the matches table DOM stable across change detection (so real mouse clicks are not lost)', fakeAsync(() => {
+    const ref = service.openDialog(testData);
+    fixture.detectChanges();
+    flush();
+    fixture.detectChanges();
+
+    const component = ref.componentInstance;
+    const group = component.groups[0];
+
+    // Root cause guard: the [dataSource] binding must return a STABLE reference.
+    // If getMatchedRows() re-normalizes, it yields a new array of new row objects
+    // every call, the mat-table re-renders all rows each change-detection cycle,
+    // and the action buttons are destroyed/recreated mid-click (mousedown then
+    // mouseup on different element instances => no click => launch silently lost).
+    expect(component.getMatchedRows(group)).toBe(component.getMatchedRows(group));
+
+    const overlayContainer: HTMLElement = document.querySelector('.cdk-overlay-container') as HTMLElement;
+    const launchBefore = Array.from(overlayContainer.querySelectorAll('button'))
+      .find(b => (b.textContent || '').trim().includes('launch')) as HTMLButtonElement;
+    expect(launchBefore).toBeTruthy();
+
+    // Force several change-detection cycles like real pointer interaction would.
+    fixture.detectChanges();
+    fixture.detectChanges();
+    flush();
+    fixture.detectChanges();
+
+    const launchAfter = Array.from(overlayContainer.querySelectorAll('button'))
+      .find(b => (b.textContent || '').trim().includes('launch')) as HTMLButtonElement;
+
+    // Same element instance still in the DOM => a mousedown/mouseup pair lands on
+    // one button and the click actually fires.
+    expect(launchAfter).toBe(launchBefore);
+    expect(launchBefore.isConnected).toBe(true);
 
     dialog.closeAll();
     flush();

@@ -23,32 +23,15 @@
                 </mat-checkbox>
             </div>
 
-            <table *ngIf="isExpanded(i)"
-                class="matched-instances-table mat-elevation-z0 instance-list-table plain-table">
-                <thead>
-                    <tr>
-                        <th>dbId</th>
-                        <th>Display Name</th>
-                        <th>Schema Class</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngFor="let row of getMatchedRows(group)">
-                        <td>{{ row.dbId }}</td>
-                        <td>
-                            <span>{{ row.displayName }}</span>
-                            <button class="mini-btn" color="primary" mat-icon-button (click)="openInstance(row.dbId)"
-                                matTooltip="Open instance">
-                                <mat-icon>open_in_new</mat-icon>
-                            </button>
-                        </td>
-                        <td>{{ row.schemaClassName }}</td>
-                    </tr>
-                    <tr *ngIf="getMatchedRows(group).length === 0">
-                        <td [attr.colspan]="3">No matched instances available.</td>
-                    </tr>
-                </tbody>
-            </table>
+            <app-instance-list-table *ngIf="isExpanded(i)"
+                [dataSource]="getMatchedRows(group)"
+                [isSelection]="true"
+                [actionButtons]="actionButtons"
+                [secondaryActionButtons]="[]"
+                [showBookmark]="false"
+                [showCheckMark]="false"
+                (actionEvent)="handleAction($event)">
+            </app-instance-list-table>
         </div>
 
         <p *ngIf="groups.length === 0">No matched instances available.</p>

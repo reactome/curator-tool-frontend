@@ -77,3 +77,23 @@ th {
     cursor: pointer;
   }
 }
+
+// The shared instance-list-table hard-codes a fixed 500px table width and an
+// absolutely-positioned action-buttons cell, which is tuned for the main list
+// view. Inside this (wider) dialog those inline styles push the launch button
+// out of its cell to a wrong, effectively unclickable position. Scope overrides
+// to this dialog only so the table fills the dialog and the buttons stay inline.
+:host ::ng-deep app-instance-list-table {
+  table.instance-list-table {
+    width: 100% !important;
+  }
+
+  .mat-column-actionButtons {
+    position: static !important;
+    text-align: right;
+  }
+
+  .action-buttons-row {
+    margin-top: 0;
+  }
+}

@@ -1,5 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import {
   MAT_DIALOG_DATA,
   MatDialogRef,
@@ -13,6 +14,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
+import { ListInstancesModule } from 'src/app/schema-view/list-instances/list-instances.module';
+import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/instance-list-table/instance-list-table.component';
 
 /**
  * A new instance along with the existing database instances that matched it.
@@ -42,10 +46,23 @@ export interface MatchedInstancesDialogData {
   templateUrl: './matched-instances-dialog.component.html',
   styleUrls: ['./matched-instances-dialog.component.scss'],
   standalone: true,
-  imports: [CommonModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatButtonModule, MatTableModule, MatIconModule, MatTooltipModule, MatCheckboxModule]
+  imports: [
+    CommonModule,
+    MatDialogTitle,
+    MatDialogContent,
+    MatDialogActions,
+    MatButtonModule,
+    MatTableModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatCheckboxModule,
+    ListInstancesModule,
+  ]
 })
 export class MatchedInstancesDialogComponent {
   readonly groups: MatchedNewInstanceGroup[];
+  /** Action buttons shown on each matched row; only the "launch" (open) action is offered here. */
+  actionButtons: ActionButton[] = [ACTION_BUTTONS.LAUNCH];
   /** Indices of the groups whose matches table is currently expanded. */
   private readonly expanded = new Set<number>();
   /** Indices of the groups whose new instance is selected to be committed anyway. */
@@ -53,7 +70,8 @@ export class MatchedInstancesDialogComponent {
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: MatchedInstancesDialogData,
-    public dialogRef: MatDialogRef<MatchedInstancesDialogComponent, Instance[]>
+    public dialogRef: MatDialogRef<MatchedInstancesDialogComponent, Instance[]>,
+    private router: Router
   ) {
     this.groups = this.normalizeGroups(this.extractGroups(data));
     // Expand the first group by default, mirroring the referrers table.
@@ -104,14 +122,42 @@ export class MatchedInstancesDialogComponent {
   }
 
   getMatchedRows(group: MatchedNewInstanceGroup): Instance[] {
-    return this.normalizeMatches((group as any)?.matches);
+    // Return the already-normalized array built once in normalizeGroups(). Do NOT
+    // re-normalize here: this is bound as [dataSource]="getMatchedRows(group)", so
+    // returning a fresh array of fresh row objects on every change-detection cycle
+    // makes the mat-table re-render all rows (it diffs by object identity). That
+    // destroys and recreates the action buttons mid-interaction, so a real mouse
+    // click (mousedown then mouseup on what is now a different element) never fires
+    // a click event, and the launch action is silently lost.
+    return group?.matches ?? [];
+  }
+
+  /** Handle action-button clicks emitted by the shared instance list table. */
+  handleAction(actionEvent: { instance: Instance, action: string }): void {
+    if (actionEvent.action === ACTION_BUTTONS.LAUNCH.name) {
+      this.openInstance(actionEvent.instance?.dbId);
+    }
   }
 
   openInstance(dbId: number): void {
-    if (dbId === undefined || dbId === null) {
+    if (dbId === undefined || dbId === null || (dbId as any) === '') {
       return;
     }
-    window.open(`schema_view/instance/${dbId}`, '_blank');
+    const path = `schema_view/instance/${dbId}`;
+    // Prefer opening the instance in a new tab. In some embedding contexts
+    // (in-editor preview / webview, or a blocked popup) window.open is a no-op
+    // and returns null; fall back to in-app router navigation so the launch
+    // action always does something.
+    let opened: Window | null = null;
+    try {
+      opened = window.open(path, '_blank');
+    } catch {
+      opened = null;
+    }
+    if (!opened) {
+      this.dialogRef.close([]);
+      this.router.navigateByUrl(`/${path}`);
+    }
   }
 
   private normalizeGroups(groups: unknown): MatchedNewInstanceGroup[] {

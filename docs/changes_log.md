@@ -34,3 +34,10 @@
 (Actually, the coordinates need to be added still, this will be added soon!)
 
 - The duplcates table is back with a "commit anyway" option. 
+
+
+### Build on July 16, 2026
+
+- Logic for creating an EWAS from a RGP has been updated so that start and end coordinates can be populated from the "chain" attribute of the RGP instead of fetching coordinates from Uniprot which has changed.
+
+- The links in the mismatch table were not working. 
