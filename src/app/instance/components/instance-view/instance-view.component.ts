@@ -428,7 +428,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.runInstanceViewFilters(instance).subscribe(filteredInstance => {
       // Due to the switch of the bound instance identify, the table will be reloaded automatically.
       // Therefore, nothing needs to be done here.
-      if (this.instance === filteredInstance) 
+      if (this.instance === filteredInstance)
         this.instanceTable.updateTableContent(); // Force to reload
       else
         this.instance = filteredInstance;

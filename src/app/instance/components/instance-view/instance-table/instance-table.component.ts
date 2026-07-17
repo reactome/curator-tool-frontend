@@ -25,6 +25,7 @@ import {
   InstanceDataSource,
 } from './instance-table.model';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
+import { DataService } from 'src/app/core/services/data.service';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
 import { deleteInstances } from 'src/app/instance/state/instance.selectors';
 import { Subscription } from 'rxjs';
@@ -127,6 +128,7 @@ export class InstanceTableComponent implements PostEditListener {
     private instUtil: InstanceUtilities,
     private attributeEditService: AttributeEditService,
     private postEditService: PostEditService, // This is used to perform post-edit actions
+    private dataService: DataService,
   ) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
@@ -393,6 +395,17 @@ export class InstanceTableComponent implements PostEditListener {
   private registerUpdatedInstance(attName: string): void {
     if (this.preventEvent)
       return;
+    // Make sure the instance we just edited IS the one held in the DataService cache
+    // (id2instance). When a pathway is navigated to within the Event view, the object
+    // shown here can diverge from the cached object; the edit then lands only on this
+    // displayed object while the cache stays stale. That stale cache is what the
+    // reload re-binds to (value disappears on screen) and what persistence reads
+    // (value never saved). Re-registering keeps display, event tree, and persistence
+    // in sync. Register before dispatching so the synchronous last_updated_instance
+    // effect (which re-fetches from the cache) sees the edited instance.
+    if (this._instance) {
+      this.dataService.registerInstance(this._instance.source ?? this._instance);
+    }
     this.instUtil.registerUpdatedInstance(attName, this._instance!);
   }
 

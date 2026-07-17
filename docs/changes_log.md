@@ -46,5 +46,5 @@
 
 - The dialog to add new instances via selection now allows candidate classes (the top level abstract class allowed) and all of the concrete classes. ie. A user may search all "Event" types without knowing the sublcass, or search by a specific "Pathway", Reaction", etc.
 
-- Fixed a bug in the Event view where adding an event to the "hasEvent" attribute (via creation or selection) would show the new value for a moment and then have it disappear. The instance panel was force-reloading during the edit and clobbering the just-added value; it now skips that reload while the instance is being edited.
+- Fixed a bug where editing an attribute (e.g. adding an event to "hasEvent") on a pathway that was navigated to within the Event view would appear to take for a moment and then be lost - both on screen and after logging out and back in. The displayed instance had drifted from the cached copy, so the edit never reached the cache that the display refresh and the save both read from. Edits are now written back to the cache when registered, keeping the instance view, the event tree, and saved changes in sync.
 
