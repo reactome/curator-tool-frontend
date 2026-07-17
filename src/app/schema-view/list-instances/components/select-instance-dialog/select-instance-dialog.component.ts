@@ -22,6 +22,8 @@ export class SelectInstanceDialogComponent {
 
   selected: string = '';
   candidateClasses: string[] = [];
+  // Grouped by allowed (candidate) class, each with its concrete classes sorted alphabetically
+  candidateClassGroups: Array<{ allowedClass: string, concreteClasses: string[] }> = [];
   instance: Instance | undefined;
   selectedInstances: Instance[] = [];
   selectedPanelMaxHeight: string = '50vh';
@@ -38,7 +40,7 @@ export class SelectInstanceDialogComponent {
     this.isSingleValued = this.attributeValue.attribute.cardinality === '1';
     this.attributeSchemaClass = this.attributeValue.attribute.name;
     this.setCandidateClasses(attributeValue);
-    this.selected = this.candidateClasses![0];
+    this.selected = this.candidateClasses[0];
   }
 
   onSelectRow(row: Instance) {
@@ -103,16 +105,19 @@ export class SelectInstanceDialogComponent {
   }
 
   setCandidateClasses(attributeValue: AttributeValue) {
-    // @ts-ignore
-    // Using allosed classes instead of concrete to simplify the drop-down menu
-    this.candidateClasses = attributeValue.attribute.allowedClases!;
-    let concreteClassNames = new Set<string>();
+    // For each allowed (candidate) class, list its concrete classes in alphabetical order.
+    this.candidateClassGroups = [];
+    this.candidateClasses = [];
     for (let clsName of attributeValue.attribute.allowedClases!) {
       let schemaClass: SchemaClass = this.dataService.getSchemaClass(clsName)!;
+      let concreteClassNames = new Set<string>();
       this.grepConcreteClasses(schemaClass, concreteClassNames);
+      // The candidate class is shown as its own selectable option, so drop it
+      // from the concrete list to avoid listing it twice.
+      let concreteClasses = [...concreteClassNames].filter(name => name !== clsName).sort();
+      this.candidateClassGroups.push({ allowedClass: clsName, concreteClasses });
+      this.candidateClasses.push(clsName, ...concreteClasses);
     }
-    this.candidateClasses = [...concreteClassNames];
-    this.candidateClasses.sort();
   }
 
   private grepConcreteClasses(schemaClass: SchemaClass, concreteClsNames: Set<String>): void {

@@ -62,3 +62,12 @@ mat-dialog-actions {
   display: block;
   max-width: 1000px;
 }
+
+// mat-option is projected into an overlay panel, so ::ng-deep is needed to reach it.
+::ng-deep .candidate-class-option {
+  font-weight: bold;
+}
+
+::ng-deep .concrete-class-option .mdc-list-item__primary-text {
+  padding-left: 16px;
+}

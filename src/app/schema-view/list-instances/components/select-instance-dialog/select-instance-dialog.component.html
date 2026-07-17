@@ -3,8 +3,11 @@
   <!-- <div style="height: 65%"> -->
   <mat-label>Select a Schema Class: </mat-label>
   <mat-select [(value)]="selected" class="drop_down" (selectionChange)="onSelectionChange()">
-    <ng-container>
-      <mat-option *ngFor="let value of candidateClasses" [value]="value">
+    <ng-container *ngFor="let group of candidateClassGroups">
+      <mat-option class="candidate-class-option" [value]="group.allowedClass">
+        {{group.allowedClass}}
+      </mat-option>
+      <mat-option class="concrete-class-option" *ngFor="let value of group.concreteClasses" [value]="value">
         {{value}}
       </mat-option>
     </ng-container>
