@@ -1,3 +1,21 @@
+:host {
+  --bookmark-width: 250px;
+  --border-width: 2px;
+  --handle-width: 20px;
+}
+
+// When the bookmark panel slides out it is fixed over the right edge of the
+// viewport, on top of the content's vertical scrollbar. Shrink the sidenav
+// container by the panel + handle width so the scrollbar shifts left and stays
+// reachable. Transition matches the panel's 500ms slide.
+mat-sidenav-container {
+  transition: width 500ms ease;
+
+  &.bookmark-open {
+    width: calc(100% - var(--bookmark-width) - var(--handle-width));
+  }
+}
+
 .resize-container {
   position: absolute;
   top: 0;
@@ -59,10 +77,6 @@ side-nav {
 
 
 #bookmark-boundary {
-  --bookmark-width: 250px;
-  --border-width: 2px;
-  --handle-width: 20px;
-
   position: fixed;
   pointer-events: none;
   right: calc(-1 *  var(--bookmark-width) - var(--border-width));

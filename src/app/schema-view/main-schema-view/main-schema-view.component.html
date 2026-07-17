@@ -1,5 +1,6 @@
 <div #container>
   <mat-sidenav-container (dragover)="$event.preventDefault()" autosize="true"
+    [class.bookmark-open]="status.opened"
     style="height: 94vh; overflow: visible !important">
     <mat-sidenav #sidenav mode="side" opened (openedChange)="schemaPanelOpen" [disableClose]="true"
       [style.width]="sideWidth + 'px'">
