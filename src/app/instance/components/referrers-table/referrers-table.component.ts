@@ -17,6 +17,7 @@ import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
 export class ReferrersTableComponent {
   selected: string = '';
   instanceList: Referrer[] = [];
+  expandedTables: Set<string> = new Set<string>();
   actionButtons: Array<ActionButton> = [ACTION_BUTTONS.LAUNCH];
   showProgressSpinner: boolean = false;
   totalCount: number = 0;
@@ -42,6 +43,10 @@ export class ReferrersTableComponent {
           }
         })
         this.instanceList = referrers.sort((a, b) => a.attributeName.localeCompare(b.attributeName));
+        // The first table is shown by default
+        if (this.instanceList.length > 0) {
+          this.expandedTables.add(this.instanceList[0].attributeName);
+        }
         this.showProgressSpinner = false;
         this.numberOfRefs.emit(this.totalCount);
       })
@@ -58,14 +63,16 @@ export class ReferrersTableComponent {
     }
   }
 
-  showFirstTable(index: number): boolean {
-    if (index === 0) return false;
-    else return true;
+  isExpanded(attributeName: string): boolean {
+    return this.expandedTables.has(attributeName);
   }
 
   openTable(attributeName: string) {
-    let isHidden = document.getElementById(attributeName)!.hidden;
-    document.getElementById(attributeName)!.hidden = !isHidden;
+    if (this.expandedTables.has(attributeName)) {
+      this.expandedTables.delete(attributeName);
+    } else {
+      this.expandedTables.add(attributeName);
+    }
   }
 
   navigateUrl(instance: Instance) {
