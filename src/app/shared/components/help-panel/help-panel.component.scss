@@ -7,6 +7,15 @@
   bottom: 72px; // sit above the status toolbar (approx 56px)
   right: 16px;
   z-index: 1050;
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+
+  &.help-fab--hidden {
+    opacity: 0;
+    transform: scale(0.6);
+    pointer-events: none;
+  }
 }
 
 .help-drawer {

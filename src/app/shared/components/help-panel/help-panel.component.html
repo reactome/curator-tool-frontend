@@ -3,6 +3,7 @@
   mat-mini-fab
   color="primary"
   class="help-fab"
+  [class.help-fab--hidden]="!isButtonVisible && !isOpen"
   (click)="toggle()"
   [matTooltip]="isOpen ? 'Close help' : 'Open help'"
   matTooltipPosition="left"
