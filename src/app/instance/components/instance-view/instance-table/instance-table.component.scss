@@ -93,8 +93,11 @@
 }
 
 .table-container {
+  // Only cap the height; don't force it, so the box shrinks to fit the
+  // current instance's attribute count instead of always reserving a
+  // near-viewport-tall area (which left a stale scroll position pointing
+  // into blank space when switching from a large instance to a small one).
   max-height: calc(100vh - var(--bread-crumb-height) - var(--title-height) - var(--body-margin) - 15px);
-  height: calc(100vh - var(--bread-crumb-height) - var(--title-height) - var(--body-margin) - 15px);
   overflow: auto;
   border: none;
 }
