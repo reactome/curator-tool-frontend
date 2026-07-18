@@ -48,3 +48,5 @@
 
 - Fixed a bug where editing an attribute (e.g. adding an event to "hasEvent") on a pathway that was navigated to within the Event view would appear to take for a moment and then be lost - both on screen and after logging out and back in. The displayed instance had drifted from the cached copy, so the edit never reached the cache that the display refresh and the save both read from. Edits are now written back to the cache when registered, keeping the instance view, the event tree, and saved changes in sync.
 
+- In the changed-instances list, clicking an instance's display name or dbId now opens it in whichever view you are already in: the schema view opens the instance view, and the event view opens the pathway diagram for event instances (pathways/reactions).
+

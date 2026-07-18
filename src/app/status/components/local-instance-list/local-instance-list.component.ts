@@ -407,9 +407,13 @@ export class UpdatedInstanceListComponent implements OnInit {
 
   navigateUrl(instance: Instance) {
     if (this.blockRoute) {
-      // Using the comparison is not that convenient for the users.
-      // Just open the instance view.
-      this.instanceUtilities.setLastClickedDbId(instance.dbId);
+      // blockRoute is only set in the event view. Open the instance in the event view:
+      // for event instances (pathways/reactions) route to their diagram; for everything
+      // else just load it in the event view's instance panel.
+      if (this.dataService.isEventClass(instance.schemaClassName))
+        this.router.navigate(["/event_view/instance/" + instance.dbId]);
+      else
+        this.instanceUtilities.setLastClickedDbId(instance.dbId);
       return;
     }
     if (!this.isSelection)
