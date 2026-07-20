@@ -22,8 +22,9 @@ export class SelectInstanceDialogComponent {
 
   selected: string = '';
   candidateClasses: string[] = [];
-  // Grouped by allowed (candidate) class, each with its concrete classes sorted alphabetically
-  candidateClassGroups: Array<{ allowedClass: string, concreteClasses: string[] }> = [];
+  // Grouped by allowed (candidate) class, each with its concrete classes sorted alphabetically.
+  // leadingClasses are concrete classes surfaced ahead of the group header (e.g. LiteratureReference).
+  candidateClassGroups: Array<{ allowedClass: string, leadingClasses: string[], concreteClasses: string[] }> = [];
   instance: Instance | undefined;
   selectedInstances: Instance[] = [];
   selectedPanelMaxHeight: string = '50vh';
@@ -115,8 +116,15 @@ export class SelectInstanceDialogComponent {
       // The candidate class is shown as its own selectable option, so drop it
       // from the concrete list to avoid listing it twice.
       let concreteClasses = [...concreteClassNames].filter(name => name !== clsName).sort();
-      this.candidateClassGroups.push({ allowedClass: clsName, concreteClasses });
-      this.candidateClasses.push(clsName, ...concreteClasses);
+      // For Publication attributes, surface LiteratureReference ahead of the
+      // Publication group header since it is the most commonly used one.
+      let leadingClasses: string[] = [];
+      if (clsName === 'Publication' && concreteClasses.includes('LiteratureReference')) {
+        concreteClasses = concreteClasses.filter(name => name !== 'LiteratureReference');
+        leadingClasses = ['LiteratureReference'];
+      }
+      this.candidateClassGroups.push({ allowedClass: clsName, leadingClasses, concreteClasses });
+      this.candidateClasses.push(...leadingClasses, clsName, ...concreteClasses);
     }
   }
 

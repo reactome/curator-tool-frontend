@@ -1049,7 +1049,17 @@ export class DataService {
       }
     }
     let candidateClasses = [...concreteClassNames];
-    return candidateClasses.sort();
+    candidateClasses.sort();
+    // For Publication attributes, surface LiteratureReference as the first
+    // option since it is the most commonly used one.
+    if (schemaAttribute.allowedClases?.includes('Publication')) {
+      candidateClasses.sort((a, b) => {
+        if (a === 'LiteratureReference') return -1;
+        if (b === 'LiteratureReference') return 1;
+        return a.localeCompare(b);
+      });
+    }
+    return candidateClasses;
   }
 
   // Was private, changed to public for testing purposes. This method is recursive and will populate the provided set with the names of all concrete classes in the subtree rooted at schemaClass.
