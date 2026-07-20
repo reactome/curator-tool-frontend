@@ -19,8 +19,11 @@
   <!-- This is the table node template for expandable nodes -->
   <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding class="schema_class_text"
     matTreeNodePaddingIndent="15">
-    <button mat-icon-button disabled>
-      <mat-icon class="mat-icon-rtl-mirror">expand_more</mat-icon>
+    <button mat-icon-button matTreeNodeToggle
+      [attr.aria-label]="'Toggle ' + node.name">
+      <mat-icon class="mat-icon-rtl-mirror">
+        {{ treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right' }}
+      </mat-icon>
     </button>
     <a class="schema_class_text" routerLink="/schema_view/class/{{node.name}}">{{node.name}}</a>&nbsp;
     <a routerLink="/schema_view/list_instances/{{node.name}}"> [{{node.count}}]</a>&nbsp;

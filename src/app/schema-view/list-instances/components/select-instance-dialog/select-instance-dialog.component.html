@@ -4,6 +4,9 @@
   <mat-label>Select a Schema Class: </mat-label>
   <mat-select [(value)]="selected" class="drop_down" (selectionChange)="onSelectionChange()">
     <ng-container *ngFor="let group of candidateClassGroups">
+      <mat-option class="concrete-class-option" *ngFor="let value of group.leadingClasses" [value]="value">
+        {{value}}
+      </mat-option>
       <mat-option class="candidate-class-option" [value]="group.allowedClass">
         {{group.allowedClass}}
       </mat-option>

@@ -70,6 +70,9 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
   hasChild = (_: number, node: SchemaClassNode) => node.expandable;
 
   private subscription: Subscription = new Subscription();
+  // Expand the whole tree on the first load only, so user-toggled
+  // collapse/expand state survives subsequent reloads.
+  private hasExpandedOnFirstLoad = false;
 
   constructor(private service: DataService,
     private router: Router,
@@ -116,8 +119,21 @@ export class SchemaClassTreeComponent implements OnInit, OnDestroy {
         this.store.select(updatedInstances())
       ]).pipe(take(1)).subscribe(([deleted, created, updated]) => {
         this.setUpLocalCount(deleted, created, updated, root); // Reload the tree to update local counts
+        // The flattener creates new node objects on each reload, so the
+        // expansion model (keyed by object reference) is lost. Snapshot the
+        // expanded node names first, then restore them after the data is set.
+        const expandedNames = new Set(this.treeControl.expansionModel.selected.map(node => node.name));
         this.dataSource.data = [root]
-        this.treeControl.expandAll();
+        if (!this.hasExpandedOnFirstLoad) {
+          this.treeControl.expandAll();
+          this.hasExpandedOnFirstLoad = true;
+        } else {
+          this.treeControl.dataNodes?.forEach(node => {
+            if (node.expandable && expandedNames.has(node.name)) {
+              this.treeControl.expand(node);
+            }
+          });
+        }
       });
     });
   }
