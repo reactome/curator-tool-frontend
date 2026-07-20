@@ -1,16 +1,27 @@
 :host {
-    display: block;
-    height: 100%; /* Ensure the component takes the full height of its parent */
-  }
-  
-  .cytoscape-container {
-    width: 100%; /* Ensure full width */
-    height: 100%; /* Ensure full height */
-    position: relative; /* Required for proper positioning */
-  }
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Ensure the component takes the full height of its parent */
+  min-height: 0;
+  overflow: hidden; /* The label, toolbar, and canvas below account for the full height between them */
+}
+
+app-diagram-toolbar {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.cytoscape-container {
+  width: 100%; /* Ensure full width */
+  flex: 1 1 auto; /* Take up whatever height is left after the label and toolbar */
+  min-height: 0; /* Allow this flex item to shrink instead of overflowing the host */
+  position: relative; /* Required for proper positioning */
+}
 
 /* Updated diagram-label style to handle dynamic color based on isEdited state */
 .diagram-label {
+  flex: 0 0 auto;
+  box-sizing: border-box;
   width: 100%;
   display: flex;
   align-items: center;
@@ -24,7 +35,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
-  margin: 16px 16px 16px 16px; /* Top, right, bottom, left margins */
+  padding: 16px; /* Use padding (not margin) so it stays within the 100% width instead of overflowing it */
 }
 
 .diagram-label-text {

@@ -505,6 +505,9 @@ A persistent toolbar sits above the diagram canvas with icon buttons (hover for 
 | `edit` | **Enable Editing** | Not currently editing |
 | `edit_off` | **Disable Editing** | Currently editing |
 | `lock_open` | **Unlock Diagram** | You hold the editing lock |
+| `add` | **Zoom In** | Always |
+| `remove` | **Zoom Out** | Always |
+| `zoom_out_map` | **Fit to Screen** | Always |
 | `undo` | **Undo** | While editing, and there is a step to undo |
 | `redo` | **Redo** | While editing, and there is a step to redo |
 | `add_box` | **Insert Compartment** | While editing |
@@ -516,7 +519,7 @@ A persistent toolbar sits above the diagram canvas with icon buttons (hover for 
 | `refresh` | **Reload Pathway Diagram** | Always |
 | `description` | **Edit/Create PathwayDiagram** | Always |
 
-**Right-click** also opens the classic context menu — it still offers all of the actions above (both access points work identically) plus every element-specific action, context-sensitive to what you clicked:
+**Right-click** also opens the classic context menu — it still offers most of the actions above (both access points work identically) plus every element-specific action, context-sensitive to what you clicked. Zoom In / Zoom Out / Fit to Screen are toolbar-only (view-level controls, not tied to any right-clicked element):
 
 *Always:*
 - **Enable Editing** / **Disable Editing**

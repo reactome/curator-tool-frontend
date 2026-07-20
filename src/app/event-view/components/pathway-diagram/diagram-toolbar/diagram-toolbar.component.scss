@@ -1,7 +1,13 @@
+:host {
+  display: block;
+}
+
 .diagram-toolbar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  box-sizing: border-box;
+  width: 100%;
   height: auto;
   min-height: 40px;
   padding: 0 4px;

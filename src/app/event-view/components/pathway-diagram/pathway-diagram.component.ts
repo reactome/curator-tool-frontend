@@ -944,6 +944,18 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         this.diagram.dark.isDark = !this.diagram.dark.isDark;
         break;
 
+      case 'zoomIn':
+        this.zoomBy(1.25);
+        break;
+
+      case 'zoomOut':
+        this.zoomBy(1 / 1.25);
+        break;
+
+      case 'fitToScreen':
+        this.fitDiagram();
+        break;
+
       case 'addFlowLine':
         this.pushUndoSnapshot();
         this.diagramUtils.addFlowLine(this.elementUnderMouse, this);
@@ -1268,6 +1280,27 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     const index = this.resizingNodes.indexOf(this.elementUnderMouse);
     if (index >= 0)
       this.resizingNodes.splice(index, 1);
+  }
+
+  private zoomBy(factor: number): void {
+    const cy = this.diagram?.cy;
+    if (!cy)
+      return;
+    const container = cy.container();
+    const renderedPosition = container
+      ? { x: container.clientWidth / 2, y: container.clientHeight / 2 }
+      : undefined;
+    cy.zoom({
+      level: cy.zoom() * factor,
+      renderedPosition
+    } as any);
+  }
+
+  private fitDiagram(): void {
+    const cy = this.diagram?.cy;
+    if (!cy || cy.elements().length === 0)
+      return;
+    cy.fit(cy.elements(), 30);
   }
 
   handleReactomeEvent(event: any) {
