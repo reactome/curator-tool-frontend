@@ -116,7 +116,8 @@
   font-size: 16px;
 }
 
-.panel-open-button {
+.panel-open-button,
+.panel-unlock-button {
   width: 28px;
   height: 28px;
   min-width: 28px;
@@ -127,8 +128,14 @@
   align-items: center;
   vertical-align: middle;
 }
-.panel-open-button mat-icon {
+.panel-open-button mat-icon,
+.panel-unlock-button mat-icon {
   font-size: 16px;
+}
+
+.panel-unlock-button {
+  margin-left: 2px;
+  color: #c62828;
 }
 
 .panel-loading,

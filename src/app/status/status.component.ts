@@ -219,6 +219,28 @@ export class StatusComponent implements OnInit, OnDestroy {
     this.router.navigate(["/event_view", "instance", Number(diagramDbId)]);
   }
 
+  unlockPathwayDiagram(lock: DiagramLockViewModel): void {
+    const lockInfo = this.diagramEditorService.getCachedDiagramLock(lock.diagramDbId);
+    if (!lockInfo) {
+      this.openSnackBar('Unable to unlock this diagram: lock information is unavailable.', 'Close');
+      return;
+    }
+
+    // Unlocking discards the editing lock (and any unsaved backup diagram), so confirm first.
+    const backupWarning = lock.hasBackupDiagram
+      ? ' Any unsaved backup for this diagram will be discarded.'
+      : '';
+    if (!window.confirm(`Unlock "${lock.displayName}" [${lock.diagramDbId}]?${backupWarning}`))
+      return;
+
+    // On success the service removes the lock from its cache and re-emits, which
+    // updates pathwayDiagramLocks (and the panel list) via the subscription in ngOnInit.
+    this.diagramEditorService.unlockDiagram(lockInfo).subscribe({
+      next: () => this.openSnackBar(`Unlocked "${lock.displayName}".`, 'Close'),
+      error: () => this.openSnackBar(`Failed to unlock "${lock.displayName}".`, 'Close'),
+    });
+  }
+
   showSchemaViewButton(): boolean {
     return this.currentUrl.includes('/event_view') || this.currentUrl.includes('/home');
   }
