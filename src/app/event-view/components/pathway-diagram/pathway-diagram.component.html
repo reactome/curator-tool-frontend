@@ -4,6 +4,10 @@
   <mat-icon *ngIf="isLockOwnedByMe" class="diagram-locked-icon" tooltip="Diagram is locked by you">lock</mat-icon>
   <span class="diagram-label-text" [title]="diagramLabel">{{ diagramLabel }}</span>
 </div>
+<app-diagram-toolbar (action)="onAction($event)" [isDiagramEditing]="isEditing" [isDiagramEdited]="isEdited"
+  [isLockAcquiring]="isLockAcquiring" [isLockOwnedByMe]="isLockOwnedByMe" [canUndo]="canUndo" [canRedo]="canRedo"
+  [canAlign]="canAlign" [hasActiveResizing]="hasActiveResizing">
+</app-diagram-toolbar>
 <div class="cytoscape-container">
   <cr-diagram #diagramComponent (reactomeEvents$)="handleReactomeEvent($event)" [usedbId]="true"
     [blockRouterChange]="true"></cr-diagram>
@@ -12,7 +16,7 @@
       [isFlowLineAddable]="isFlowLineAddable" [isPathwayDeletable]="isPathwayDeletable"
       [isNodeResizing]="isNodeResizing()" [isNodeResizable]="isNodeResizable()" [isEdgeEditable]="isEdgeEditable"
       [isDiagramEdited]="isEdited" [isLockAcquiring]="isLockAcquiring"
-      [isLockOwnedByMe]="isLockOwnedByMe">
+      [isLockOwnedByMe]="isLockOwnedByMe" [canUndo]="canUndo" [canRedo]="canRedo">
     </app-editor-actions>
   </div>
 </div>

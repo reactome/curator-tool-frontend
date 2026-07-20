@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, input, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'app-editor-actions',
@@ -20,7 +20,7 @@ export class EditorActionsComponent {
   // Flag this diagram has been edited but not saved yet
   @Input() isDiagramEdited: boolean = false;
   // Default is cytoscape
-  @Input() elmType: ElementType = ElementType.CYTOSCAPE; 
+  @Input() elmType: ElementType = ElementType.CYTOSCAPE;
   // Check if a clicked pathway is deletable
   @Input() isPathwayDeletable: boolean = false;
   // Flag if a selected node is resizing
@@ -30,9 +30,11 @@ export class EditorActionsComponent {
   // Track lock acquire in progress to prevent duplicate requests.
   @Input() isLockAcquiring: boolean = false;
   @Input() isLockOwnedByMe: boolean = false;
+  @Input() canUndo: boolean = false;
+  @Input() canRedo: boolean = false;
   // Include this so that we can compare in the html template
   elmTypes = ElementType;
-  
+
   constructor() {
   }
 

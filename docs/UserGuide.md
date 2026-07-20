@@ -496,10 +496,31 @@ The diagram label shows the pathway name and **turns red when there are unsaved 
 
 **Selection stays in sync** across the tree, the diagram, and the instance editor — selecting in one highlights/loads in the others.
 
-**Right-click** opens the context menu. Available items (context-sensitive):
+#### Diagram toolbar
+
+A persistent toolbar sits above the diagram canvas with icon buttons (hover for tooltips) for the global, mode-level actions — these don't require right-clicking a specific element first:
+
+| Icon | Action | Shown / enabled when |
+|---|---|---|
+| `edit` | **Enable Editing** | Not currently editing |
+| `edit_off` | **Disable Editing** | Currently editing |
+| `lock_open` | **Unlock Diagram** | You hold the editing lock |
+| `undo` | **Undo** | While editing, and there is a step to undo |
+| `redo` | **Redo** | While editing, and there is a step to redo |
+| `add_box` | **Insert Compartment** | While editing |
+| `align_horizontal_center` | **Align Centers Vertically** | While editing, with 2+ alignable nodes selected |
+| `align_vertical_center` | **Align Centers Horizontally** | While editing, with 2+ alignable nodes selected |
+| `block` | **Disable All Resizing** | While editing, only appears if any compartment currently has resize widgets showing |
+| `brightness_4` | **Toggle Color Theme** | Always |
+| `cloud_upload` | **Upload Diagram** | There are unsaved edits |
+| `refresh` | **Reload Pathway Diagram** | Always |
+| `description` | **Edit/Create PathwayDiagram** | Always |
+
+**Right-click** also opens the classic context menu — it still offers all of the actions above (both access points work identically) plus every element-specific action, context-sensitive to what you clicked:
 
 *Always:*
 - **Enable Editing** / **Disable Editing**
+- **Undo** / **Redo** (while editing)
 - **Toggle Color Theme**
 - **Reload Pathway Diagram**
 - **Edit/Create PathwayDiagram**
@@ -520,6 +541,14 @@ The diagram label shows the pathway name and **turns red when there are unsaved 
 **Open/Create PathwayDiagram (duplicate-safe):** **Edit/Create PathwayDiagram** first checks whether a PathwayDiagram already exists for the pathway. If so, it **opens the existing one** (preventing accidental duplicates); if not, it **creates a new** PathwayDiagram (named *"Diagram of {pathway}"*) and opens it.
 
 **Uploading diagram changes:** **Upload Diagram** shows a spinner while uploading and reports success/failure via an info dialog (and requires a default person). Actions that would discard unsaved edits (reload, unlock, go-to-pathway, disable editing) first prompt with an **"Unsaved Changes"** dialog offering **Cancel / No (discard) / Yes (upload)**. The diagram also auto-backs-up periodically and on navigation.
+
+#### Undo / Redo
+
+While editing, most edits push an undo step: adding/removing an edge point, deleting a reaction or flow line, adding a flow line or event, deleting/inserting a compartment, deleting a pathway node, aligning centers, and moving or resizing a node/compartment (one step per drag gesture, not per pixel moved). Use the toolbar's **Undo**/**Redo** buttons, the right-click menu, or the keyboard shortcuts below. The history is per editing session — it resets whenever the diagram is (re)loaded (opening editing, reloading, or a cross-tab sync from another window).
+
+#### Compartment resizing
+
+Clicking **Resize** on a compartment or PE node shows four corner drag handles; drag one to resize, or click **Disable Resizing** to remove them. If handles are ever left showing with no reachable **Disable Resizing** action (e.g. after reloading an older backup), use the toolbar's **Disable All Resizing** button — it clears every resize handle in the diagram in one click regardless of which compartment it belongs to. Resize handles are also now excluded from backups/uploads/undo snapshots so this situation shouldn't recur.
 
 ### 10.5 Instance editor in Event View
 
@@ -649,6 +678,13 @@ A tour highlights UI elements step by step. The step card shows **"Step X / N"**
 | `Enter` | Event-tree filter | Apply the name / dbId filter |
 | `Shift+Click` | Event-tree release flag | Toggle release for the event **and all children** |
 
+**Pathway diagram editing**
+
+| Key | Action |
+|---|---|
+| `Ctrl+Z` / `⌘+Z` | Undo |
+| `Ctrl+Shift+Z` / `⌘+Shift+Z` / `Ctrl+Y` | Redo |
+
 **Guided tour**
 
 | Key | Action |
@@ -695,7 +731,7 @@ A tour highlights UI elements step by step. The step card shows **"Step X / N"**
 2. Click an event to load it into the editor.
 3. Focus, add to diagram, or create an empty diagram as needed.
 4. Select diagram objects to load related instances.
-5. Enable diagram editing (commit prerequisite instances first), make changes, then **Upload Diagram**.
+5. Enable diagram editing (commit prerequisite instances first), make changes (use **Undo**/**Redo** as needed), then **Upload Diagram**.
 6. Commit staged instance changes from the status toolbar.
 
 ### F) Use bookmarks for fast assignment

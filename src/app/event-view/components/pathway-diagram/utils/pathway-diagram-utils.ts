@@ -822,6 +822,17 @@ export class PathwayDiagramUtilService {
     }
 
     /**
+     * Remove any resizing widget nodes left in the diagram, regardless of which compartment(s)
+     * they belong to. Used to guarantee a clean slate (e.g. when editing is (re)enabled) so a
+     * compartment can never get stuck showing resize widgets with no way to dismiss them.
+     */
+    disableAllResizing(diagram: DiagramComponent): void {
+        const widgets = diagram.cy.nodes('.resizing');
+        if (widgets.length > 0)
+            diagram.cy.remove(widgets);
+    }
+
+    /**
      * Remove a node representing a connecting point from the diagram.
      * @param diagram
      * @param element the node to be removed.

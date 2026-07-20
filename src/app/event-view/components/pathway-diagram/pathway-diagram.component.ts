@@ -8,6 +8,7 @@ import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { DiagramComponent } from 'ngx-reactome-diagram';
 import { combineLatest, filter, map, Observable, Subscription, take } from 'rxjs';
 import { EditorActionsComponent, ElementType } from './editor-actions/editor-actions.component';
+import { DiagramToolbarComponent } from './diagram-toolbar/diagram-toolbar.component';
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
@@ -27,7 +28,7 @@ import { UnsavedUploadDialogComponent } from 'src/app/shared/components/unsaved-
 @Component({
   selector: 'app-pathway-diagram',
   standalone: true,
-  imports: [DiagramComponent, CommonModule, EditorActionsComponent, MatIconModule],
+  imports: [DiagramComponent, CommonModule, EditorActionsComponent, DiagramToolbarComponent, MatIconModule],
   templateUrl: './pathway-diagram.component.html',
   styleUrl: './pathway-diagram.component.scss',
   providers: [PathwayDiagramUtilService]
@@ -97,6 +98,13 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   isLockAcquiring: boolean = false;
   // To show the label for the diagram displayed
   diagramLabel: string = 'Pathway Diagram';
+  // Undo/redo history: each entry is a snapshot of the cytoscape network elements
+  // (same shape as generateNetworkJson().elements) taken right before a mutating action.
+  private undoStack: any[] = [];
+  private redoStack: any[] = [];
+  private readonly maxUndoStackSize = 25;
+  // Number of currently selected nodes that are eligible for the "Align Centers" actions.
+  private alignableSelectionCount: number = 0;
 
   constructor(private route: ActivatedRoute,
     private router: Router,
@@ -214,6 +222,29 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     this.backupEditedDiagram('browser unload/reload');
   }
 
+  @HostListener('document:keydown', ['$event'])
+  handleUndoRedoKeydown(event: KeyboardEvent) {
+    if (!this.isEditing)
+      return;
+    const isModifierPressed = event.ctrlKey || event.metaKey;
+    if (!isModifierPressed || event.key.toLowerCase() !== 'z' && event.key.toLowerCase() !== 'y')
+      return;
+    const targetTagName = (event.target as HTMLElement)?.tagName;
+    if (targetTagName === 'INPUT' || targetTagName === 'TEXTAREA')
+      return;
+
+    if (event.key.toLowerCase() === 'y') {
+      event.preventDefault();
+      this.redo();
+    } else if (event.shiftKey) {
+      event.preventDefault();
+      this.redo();
+    } else {
+      event.preventDefault();
+      this.undo();
+    }
+  }
+
   get isDiagramLocked(): boolean {
     return !!this.diagramEditorService.getCachedDiagramLock(this.pathwayDiagramId);
   }
@@ -291,6 +322,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       const networkJson = JSON.parse(payload.networkJsonText);
       if (!networkJson?.elements)
         return;
+      this.clearUndoHistory();
       this.diagram.displayNetwork(networkJson.elements);
       this.isEdited = true;
     }
@@ -392,6 +424,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   }
 
   private applyDiagramLoadPlan(diagramId: string, plan: { mode: 'cy'; elements: any } | { mode: 'diagram' } | { mode: 'empty' }): void {
+    this.clearUndoHistory();
     this.diagram.diagramId = diagramId;
     if (plan.mode === 'cy') {
       this.diagram.displayNetwork(plan.elements);
@@ -439,7 +472,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   private disableEditing() {
     // const doDisable = () => {
       this.diagramUtils.disableEditing(this.diagram);
-      this.resizingNodes.forEach(node => this.diagramUtils.disableResizeCompartment(node, this.diagram));
+      // Sweep for all resize widgets rather than relying solely on resizingNodes bookkeeping,
+      // which can miss widgets left over from a stale load/backup or an undo/redo restore.
+      this.diagramUtils.disableAllResizing(this.diagram);
       this.resizingNodes.length = 0; // reset to empty
       this.isEditing = false;
     // };
@@ -625,6 +660,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
    * @param pathwayId
    */
   createEmptyDiagram(pathwayId: number) {
+    this.clearUndoHistory();
     this.pathwayId = pathwayId.toString();
     this.diagram.diagramId = this.pathwayId;
     this.select = '';
@@ -641,6 +677,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       return;
     this.diagramUtils.diagramService = this.diagram.getDiagramService();
     this.normalizeCompartmentZIndex();
+    // Any resizing widgets are transient UI state and must never survive a (re)load - otherwise
+    // a compartment can end up stuck showing resize widgets with no reachable "Disable Resizing" action.
+    this.diagramUtils.disableAllResizing(this.diagram);
+    this.resizingNodes.length = 0;
     // When the diagram is loaded first, disable node dragging to avoid
     // change the coordinates
     this.diagram.cy.nodes().grabify().panify();
@@ -680,6 +720,15 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       // reset previous drag position
       this.previousDragPos.x = 0;
       this.previousDragPos.y = 0;
+    });
+    // Capture one undo snapshot per drag gesture (move or resize), not per mousemove tick.
+    this.diagram.cy.on('grab', 'node', () => {
+      if (this.isEditing)
+        this.pushUndoSnapshot();
+    });
+    // Keep the toolbar's "Align Centers" buttons in sync with the current selection.
+    this.diagram.cy.on('select unselect', 'node', () => {
+      this.updateAlignableSelectionCount();
     });
     // Resize the compartment for resizing nodes
     this.diagram.cy.on('drag', 'node', (e: any) => {
@@ -730,6 +779,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       this.diagramUtils.enableEditing(this.diagram);
     }
     this.restoreViewport();
+    // The graph was just (re)created, so any previous selection is gone.
+    this.updateAlignableSelectionCount();
   }
 
   private normalizeCompartmentZIndex() {
@@ -858,16 +909,19 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
           x: parseInt(this.menuPositionX) - this.MENU_POSITION_BUFFER,
           y: parseInt(this.menuPositionY) - this.MENU_POSITION_BUFFER
         };
+        this.pushUndoSnapshot();
         this.diagramUtils.addPoint(mousePosition, this.elementUnderMouse);
         this.markDiagramEdited();
         break;
 
       case 'removePoint':
+        this.pushUndoSnapshot();
         this.diagramUtils.removePoint(this.elementUnderMouse);
         this.markDiagramEdited();
         break;
 
       case 'delete':
+        this.pushUndoSnapshot();
         this.diagramUtils.deleteHyperEdge(this.elementUnderMouse);
         this.markDiagramEdited();
         break;
@@ -881,13 +935,27 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         this.disableResize();
         break;
 
+      case 'disableAllResizing':
+        this.diagramUtils.disableAllResizing(this.diagram);
+        this.resizingNodes.length = 0;
+        break;
+
       case 'toggleDarkMode':
         this.diagram.dark.isDark = !this.diagram.dark.isDark;
         break;
 
       case 'addFlowLine':
+        this.pushUndoSnapshot();
         this.diagramUtils.addFlowLine(this.elementUnderMouse, this);
         this.markDiagramEdited();
+        break;
+
+      case 'undo':
+        this.undo();
+        break;
+
+      case 'redo':
+        this.redo();
         break;
 
       case 'goToPathway':
@@ -905,6 +973,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         if (this.resizingNodes.includes(this.elementUnderMouse)) {
           this.disableResize();
         }
+        this.pushUndoSnapshot();
         this.diagramUtils.deletePathwayNode(this.elementUnderMouse, this.diagram);
         this.markDiagramEdited();
         break;
@@ -913,11 +982,13 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         if (this.resizingNodes.includes(this.elementUnderMouse)) {
           this.disableResize();
         }
+        this.pushUndoSnapshot();
         this.diagramUtils.deleteCompartment(this.elementUnderMouse, this.diagram);
         this.markDiagramEdited();
         break;
 
       case 'insertCompartment':
+        this.pushUndoSnapshot();
         this.diagramUtils.insertCompartment(this.diagram);
         this.markDiagramEdited();
         break;
@@ -956,11 +1027,13 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         break;
 
       case 'alignCentersVertically':
+        this.pushUndoSnapshot();
         this.alignNodesVertically();
         this.markDiagramEdited();
         break;
 
       case 'alignCentersHorizontally':
+        this.pushUndoSnapshot();
         this.alignNodesHorizontally();
         this.markDiagramEdited();
         break;
@@ -1072,7 +1145,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   }
 
   private generateNetworkJson() {
-    const nodes = this.diagram.cy.nodes().jsons();
+    // Resize widgets are transient UI helpers, not part of the diagram model, and must
+    // never be persisted (backup/upload) or captured in an undo/redo snapshot - otherwise
+    // they can reappear on reload/undo with no way left to dismiss them.
+    const nodes = this.diagram.cy.nodes().not('.resizing').jsons();
     const edges = this.diagram.cy.edges().jsons();
     const elements = {
       nodes: nodes,
@@ -1097,6 +1173,73 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     this.localEditVersion += 1;
     if (this.lastBackupAtMs === 0)
       this.lastBackupAtMs = Date.now();
+  }
+
+  get canUndo(): boolean {
+    return this.undoStack.length > 0;
+  }
+
+  get canRedo(): boolean {
+    return this.redoStack.length > 0;
+  }
+
+  get canAlign(): boolean {
+    return this.alignableSelectionCount > 1;
+  }
+
+  // Computed straight from the live graph (rather than the resizingNodes bookkeeping array) so
+  // this stays accurate even if that array ever drifts out of sync with the actual widget nodes.
+  get hasActiveResizing(): boolean {
+    return !!this.diagram?.cy && this.diagram.cy.nodes('.resizing').length > 0;
+  }
+
+  /**
+   * Capture the current cytoscape network as a snapshot for undo. Call this right before
+   * a mutating action is applied so the stack holds pre-action states.
+   */
+  private pushUndoSnapshot(): void {
+    if (!this.diagram?.cy)
+      return;
+    this.undoStack.push(this.cloneElements(this.generateNetworkJson().elements));
+    if (this.undoStack.length > this.maxUndoStackSize)
+      this.undoStack.shift();
+    // A fresh action invalidates any previously undone redo history.
+    this.redoStack.length = 0;
+  }
+
+  private clearUndoHistory(): void {
+    this.undoStack.length = 0;
+    this.redoStack.length = 0;
+  }
+
+  private cloneElements(elements: any): any {
+    return JSON.parse(JSON.stringify(elements));
+  }
+
+  undo(): void {
+    if (!this.canUndo || !this.diagram?.cy)
+      return;
+    const previous = this.undoStack.pop();
+    this.redoStack.push(this.cloneElements(this.generateNetworkJson().elements));
+    this.restoreSnapshot(previous);
+  }
+
+  redo(): void {
+    if (!this.canRedo || !this.diagram?.cy)
+      return;
+    const next = this.redoStack.pop();
+    this.undoStack.push(this.cloneElements(this.generateNetworkJson().elements));
+    this.restoreSnapshot(next);
+  }
+
+  private restoreSnapshot(elements: any): void {
+    // Any transient UI state (popup menu, in-progress resize widgets) refers to elements
+    // that are about to be replaced wholesale.
+    this.resizingNodes.length = 0;
+    this.elementUnderMouse = undefined;
+    this.showMenu = false;
+    this.diagram.displayNetwork(elements);
+    this.markDiagramEdited();
   }
 
   private createAndOpenNewPathwayDiagram() {
@@ -1179,6 +1322,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       });
       return;
     }
+    this.pushUndoSnapshot();
     this.diagramUtils.addNewEvent(event, this.diagram.cy);
     this.markDiagramEdited();
   }
@@ -1266,6 +1410,16 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
    */
   private isNodeForAlignment(node: any): boolean {
     return node.hasClass('PhysicalEntity') || (node.hasClass('reaction') && !node.hasClass(EDGE_POINT_CLASS));
+  }
+
+  private updateAlignableSelectionCount(): void {
+    if (!this.diagram?.cy) {
+      this.alignableSelectionCount = 0;
+      return;
+    }
+    this.alignableSelectionCount = this.diagram.cy.$(':selected').nodes().filter((node: any) => {
+      return this.isNodeForAlignment(node);
+    }).length;
   }
 
 }

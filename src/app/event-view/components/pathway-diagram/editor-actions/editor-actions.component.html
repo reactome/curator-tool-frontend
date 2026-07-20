@@ -1,4 +1,7 @@
-<!-- Here we have a collection of scenarios to show different set of actions according to the current status-->
+<!-- Here we have a collection of scenarios to show different set of actions according to the current status.
+     Note: the global/mode-level actions below (Enable/Disable Editing, Undo/Redo, Upload, Reload, Toggle Theme,
+     Insert Compartment, Align Centers, Unlock) are also available from the persistent app-diagram-toolbar. Both
+     access points are kept so users can act either via right-click or via the toolbar. -->
 <div class="actions">
   <button style="margin-bottom: 1px" (click)="onClick('disableEditing')" *ngIf="isDiagramEditing">Disable
     Editing</button>
@@ -30,6 +33,10 @@
   <!-- The following actions are for editing only -->
   <button style="margin-bottom: 1px" (click)="onClick('unlockDiagram')" *ngIf="isLockOwnedByMe">Unlock Diagram</button>
   <ng-container *ngIf="isDiagramEditing">
+    <button style="margin-bottom: 1px" (click)="onClick('undo')" [disabled]="!canUndo">Undo</button>
+    <button style="margin-bottom: 1px" (click)="onClick('redo')" [disabled]="!canRedo">Redo</button>
+  </ng-container>
+  <ng-container *ngIf="isDiagramEditing">
     <ng-container *ngIf="isNodeResizable">
       <button style="margin-bottom: 1px" (click)="onClick('resizeCompartment')" *ngIf="!isNodeResizing">Resize</button>
       <button style="margin-bottom: 1px" (click)="onClick('disableResize')" *ngIf="isNodeResizing">Disable
@@ -55,7 +62,6 @@
     <button style="margin-bottom: 1px" (click)="onClick('alignCentersHorizontally')">Align Centers Horizontally</button>
   </ng-container>
   <button style="margin-bottom: 1px" (click)="onClick('toggleDarkMode')">Toggle Color Theme</button>
-  <!-- <button style="margin-bottom: 1px" (click)="onClick('saveDiagramEdits')" *ngIf="isDiagramEdited">Save Diagram Edits</button> -->
   <!-- diagram can be uploaded at either editing or non-editing modes in case the user disables editing after change or they'd like reload to see others' changes -->
   <button style="margin-bottom: 1px" (click)="onClick('upload')" *ngIf="isDiagramEdited">Upload Diagram</button>
   <button style="margin-bottom: 1px" (click)="onClick('reload')">Reload Pathway Diagram</button>
