@@ -605,7 +605,9 @@ export class DataService {
     if (searchKey)
       searchKey = searchKey.trim(); // Just to make sure no space there
     if (searchKey && searchKey.length > 0) {
-      url += '?query=' + searchKey;
+      // Use encodeURIComponent so special characters (e.g. '+', '&', '#') survive
+      // the query string instead of being interpreted by the server (e.g. '+' as a space).
+      url += '?query=' + encodeURIComponent(searchKey);
     }
     return this.http.get<InstanceList>(url).pipe(
       // First concatMap: Fetch schema class hierarchy
@@ -646,9 +648,11 @@ export class DataService {
     let url = this.searchInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
 
     if (selectedAttributes !== undefined && selectedOperands !== undefined && searchKeys !== undefined) {
-      url += '?attributes=' + encodeURI(selectedAttributes.toString())
-        + '&operands=' + encodeURI(selectedOperands.toString())
-        + '&searchKeys=' + encodeURI(searchKeys.toString().replaceAll("'", "\\'"));
+      // Use encodeURIComponent (not encodeURI) so special characters such as '+', '&'
+      // and '#' in the search terms survive instead of being interpreted by the server.
+      url += '?attributes=' + encodeURIComponent(selectedAttributes.toString())
+        + '&operands=' + encodeURIComponent(selectedOperands.toString())
+        + '&searchKeys=' + encodeURIComponent(searchKeys.toString().replaceAll("'", "\\'"));
     }
     console.debug('search instances url: ' + url);
     return this.http.get<InstanceList>(url)
