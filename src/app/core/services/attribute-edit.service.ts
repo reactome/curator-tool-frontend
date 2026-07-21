@@ -89,7 +89,7 @@ export class AttributeEditService {
                 if (replace) {
                     value.splice(attributeValue.index, 1, result);
                 } else if (insertAtIndex && attributeValue.index !== undefined && attributeValue.index >= 0) {
-                    value.splice(attributeValue.index, 0, result);
+                    value.splice(attributeValue.index + 1, 0, result);
                 } else {
                     value.push(result);
                 }
@@ -145,7 +145,7 @@ export class AttributeEditService {
                 if (replace) {
                     value.splice(attributeValue.index, 1, ...uniqueValues);
                 } else if (insertAtIndex && attributeValue.index !== undefined && attributeValue.index >= 0) {
-                    value.splice(attributeValue.index, 0, ...uniqueValues);
+                    value.splice(attributeValue.index + 1, 0, ...uniqueValues);
                 } else {
                     value.push(...uniqueValues);
                 }
