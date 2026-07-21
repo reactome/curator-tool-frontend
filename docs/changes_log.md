@@ -10,11 +10,15 @@
 
 - Show "Literature Reference" first for creating and selecting dialogs for an attribute taking Publication
 
-- Added a shortcut to unlock pathway diagram lock.
+- Added a shortcut to unlock pathway diagram lock. Unlocking a diagram now uses the existing confirmation dialogs for a consistent experience.
+
+- When the connection to the server is lost, you are now redirected to the login page and then returned to the page you were originally on after logging back in, so you no longer lose your place.
 
 - Added a new feature to show backups of curators' staged instances: You may restore a previous backup. The current one should be saved automatically when you reload the browser. Note: The timestamp is UTC (Coordinated Universal Time). 
 
 - Updated user guide for the above features
+
+
 
 ### Build on July 17, 2026
 
