@@ -5,6 +5,7 @@ import { Instance, MAX_STAGED_INSTANCES } from 'src/app/core/models/reactome-ins
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { bookmarkedInstances } from "../schema-view/instance-bookmark/state/bookmark.selectors";
 import { MatSnackBar } from "@angular/material/snack-bar";
+import { MatDialog, MatDialogRef } from "@angular/material/dialog";
 import { UserInstancesService } from "../auth/login/user-instances.service";
 import { ListInstancesDialogService } from "../schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service";
 import { DefaultPersonActions } from "../instance/state/instance.actions";
@@ -12,6 +13,8 @@ import { DataService } from "../core/services/data.service";
 import { Subscription, combineLatest, debounceTime, skip, take } from "rxjs";
 import { DiagramEditorService, DiagramLockViewModel } from '../event-view/components/pathway-diagram/utils/diagram-editor.service';
 import { UserInstanceBackupsDialogService } from './components/user-instance-backups-dialog/user-instance-backups-dialog.service';
+import { UnsavedUploadDialogComponent } from "../shared/components/unsaved-upload-dialog/unsaved-upload-dialog.component";
+import { CommitWaitDialogComponent } from "../shared/components/commit-wait-dialog/commit-wait-dialog.component";
 
 @Component({
   selector: 'app-status',
@@ -41,8 +44,11 @@ export class StatusComponent implements OnInit, OnDestroy {
     private router: Router,
     private dataService: DataService,
     private diagramEditorService: DiagramEditorService,
-    private userInstanceBackupsDialogService: UserInstanceBackupsDialogService) {
+    private userInstanceBackupsDialogService: UserInstanceBackupsDialogService,
+    private dialog: MatDialog) {
   }
+
+  private commitWaitDialogRef?: MatDialogRef<CommitWaitDialogComponent>;
 
   private _snackBar = inject(MatSnackBar);
 
@@ -232,18 +238,71 @@ export class StatusComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Unlocking discards the editing lock (and any unsaved backup diagram), so confirm first.
-    const backupWarning = lock.hasBackupDiagram
-      ? ' Any unsaved backup for this diagram will be discarded.'
-      : '';
-    if (!window.confirm(`Unlock "${lock.displayName}" [${lock.diagramDbId}]?${backupWarning}`))
-      return;
-
     // On success the service removes the lock from its cache and re-emits, which
     // updates pathwayDiagramLocks (and the panel list) via the subscription in ngOnInit.
-    this.diagramEditorService.unlockDiagram(lockInfo).subscribe({
-      next: () => this.openSnackBar(`Unlocked "${lock.displayName}".`, 'Close'),
-      error: () => this.openSnackBar(`Failed to unlock "${lock.displayName}".`, 'Close'),
+    const finalizeUnlock = () => {
+      this.diagramEditorService.unlockDiagram(lockInfo).subscribe({
+        next: () => this.openSnackBar(`Unlocked "${lock.displayName}".`, 'Close'),
+        error: () => this.openSnackBar(`Failed to unlock "${lock.displayName}".`, 'Close'),
+      });
+    };
+
+    // No unsaved backup means there is nothing to upload, so unlock directly. This mirrors
+    // the editor's promptUploadBeforeDiscard flow, where the prompt is skipped when !isEdited.
+    if (!lock.hasBackupDiagram) {
+      finalizeUnlock();
+      return;
+    }
+
+    // Unsaved edits for a diagram that is not open in the editor live in a server-side backup.
+    // Offer the same upload / discard / cancel choices the editor gives when unlocking.
+    const dialogRef = this.dialog.open(UnsavedUploadDialogComponent, {
+      data: {
+        title: 'Unsaved Changes',
+        message: `"${lock.displayName}" has unsaved changes. Upload before unlocking this diagram?`
+      },
+      disableClose: true
+    });
+    dialogRef.afterClosed().pipe(take(1)).subscribe((shouldUpload: boolean | null) => {
+      if (shouldUpload === true)
+        this.uploadBackupThenUnlock(lock, finalizeUnlock);
+      else if (shouldUpload === false)
+        finalizeUnlock(); // Discard the backup and unlock.
+      // null => Cancel: leave the diagram locked and its backup intact.
+    });
+  }
+
+  private uploadBackupThenUnlock(lock: DiagramLockViewModel, finalizeUnlock: () => void): void {
+    const defaultPersonId = this.defaultPerson?.dbId;
+    if (defaultPersonId === undefined) {
+      this.openSnackBar('Cannot find the default person. Upload aborted; diagram not unlocked.', 'Close');
+      return;
+    }
+
+    this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
+      disableClose: true,
+      hasBackdrop: true,
+      autoFocus: false,
+      restoreFocus: false
+    });
+
+    this.diagramEditorService.uploadBackupCyNetwork(lock.diagramDbId, defaultPersonId).pipe(take(1)).subscribe({
+      next: (success) => {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
+        if (success) {
+          this.openSnackBar(`Uploaded changes for "${lock.displayName}".`, 'Close');
+          finalizeUnlock();
+        } else {
+          // Keep the diagram locked so the backed-up edits are not lost.
+          this.openSnackBar(`Failed to upload changes for "${lock.displayName}". Diagram left locked.`, 'Close');
+        }
+      },
+      error: () => {
+        this.commitWaitDialogRef?.close();
+        this.commitWaitDialogRef = undefined;
+        this.openSnackBar(`Failed to upload changes for "${lock.displayName}". Diagram left locked.`, 'Close');
+      }
     });
   }
 

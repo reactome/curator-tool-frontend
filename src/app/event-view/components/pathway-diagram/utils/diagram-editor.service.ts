@@ -232,6 +232,21 @@ export class DiagramEditorService implements OnDestroy {
     );
   }
 
+  /**
+   * Upload the server-side backup (unsaved) cytoscape network for a diagram that is not currently
+   * open in the editor. Used by the status panel's lock list so a user can push the backed-up edits
+   * before unlocking without having to reopen the diagram. Emits false if there is no backup to upload.
+   */
+  uploadBackupCyNetwork(pathwayDiagramId: number | string, defaultPersonId: number): Observable<boolean> {
+    return this.getCytoscapeNetwork(pathwayDiagramId).pipe(
+      switchMap((backupNetwork: any) => {
+        if (!backupNetwork || !backupNetwork.elements)
+          return of(false);
+        return this.uploadCytoscapeNetwork(pathwayDiagramId, backupNetwork, defaultPersonId);
+      })
+    );
+  }
+
   hasCytoscapeNetwork(pathwayDiagramId: any): Observable<boolean> {
     return this.http.get<boolean>(this.hasCyNetworkUrl + pathwayDiagramId).pipe(
       catchError((error: Error) => {

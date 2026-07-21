@@ -28,6 +28,18 @@ export class HeaderInterceptor implements HttpInterceptor {
 
     return next.handle(secureRequest).pipe(
       catchError((error: HttpErrorResponse) => {
+        // A status of 0 means the request never reached the server (network down,
+        // server unreachable, CORS/connection failure). Treat this as a lost
+        // connection on any request and bounce the user to /login, saving where
+        // they were so they land back there once they re-authenticate. Auth
+        // requests are excluded so a failed login/refresh doesn't loop us back
+        // to a page we're already on.
+        if (error.status === 0 &&
+            !this.isAuthRequest(secureRequest.url)) {
+          console.warn('Connection to the server was lost; redirecting to login.');
+          this.redirectToLogin();
+          return throwError(() => error);
+        }
         if (error.status !== 401 ||
             this.isAuthRequest(secureRequest.url) ||
             !this.isProtectedApiRequest(secureRequest.url)) {
@@ -114,24 +126,26 @@ export class HeaderInterceptor implements HttpInterceptor {
   private handleRefreshFailure(error: HttpErrorResponse): Observable<never> {
     this.refreshTokenSubject.next(false);
 
-    // If the locally stored token is still valid (not expired), a 401 + failed refresh
-    // is almost certainly transient — e.g. a race during the bootstrap requests fired
-    // right after login, before the refresh cookie is fully established. Wiping the token
-    // and bouncing to /login in that window is what forced users to log in repeatedly.
-    // Keep the session intact and just surface this request's error; the session is only
-    // torn down once the token is actually expired or gone.
-    if (this.isStoredTokenValid()) {
-      console.warn('Token refresh failed but the stored token is still valid; treating this 401 as transient and keeping the session.');
-      return throwError(() => error);
-    }
-
+    // We only reach here after the transient-race protection has already run: the
+    // original 401 was retried once with the same token (see handle401Error) and a
+    // token refresh was then attempted and failed. A failed refresh means the server
+    // will no longer accept our credentials, so the session is genuinely gone — tear
+    // it down and redirect to /login even if the locally stored JWT has not expired
+    // yet (a locally-valid-but-server-rejected token would otherwise loop on 401s
+    // forever without ever redirecting).
     localStorage.removeItem('token');
+    this.redirectToLogin();
+    return throwError(() => error);
+  }
+
+  // Saves the page the user is currently on (so the login flow can send them back
+  // there afterwards) and redirects to /login. Skips saving when already on /login.
+  private redirectToLogin(): void {
     const currentUrl = window.location.pathname + window.location.search + window.location.hash;
     if (currentUrl !== '/login') {
       sessionStorage.setItem('currentUrl', currentUrl);
     }
     this.router.navigate(['/login']);
-    return throwError(() => error);
   }
 
   private isStoredTokenValid(): boolean {
