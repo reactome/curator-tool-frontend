@@ -1,4 +1,20 @@
+### Build on July 20, 2026
 
+- Add undo/redo (25 steps) for pathway edits: Keyboard shortcuts: Ctrl/Cmd+Z (undo), Ctrl/Cmd+Shift+Z or Ctrl+Y (redo).
+
+- Add a toolbar at the top of the diagram component for major editing functions, including zoom in/out, fit to view, which may be used to scroll the diagram
+
+- Adjust the diagram component size to remove scroll bars: address the scrolling issue reported by Ralf and Karen
+
+- Enable open/close subclasses in the schema tree
+
+- Show "Literature Reference" first for creating and selecting dialogs for an attribute taking Publication
+
+- Added a shortcut to unlock pathway diagram lock.
+
+- Added a new feature to show backups of curators' staged instances: You may restore a previous backup. The current one should be saved automatically when you reload the browser. Note: The timestamp is UTC (Coordinated Universal Time). 
+
+- Updated user guide for the above features
 
 ### Build on July 17, 2026
 
