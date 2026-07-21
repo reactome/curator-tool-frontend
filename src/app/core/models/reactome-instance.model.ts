@@ -101,6 +101,14 @@ export interface UserInstances {
   defaultPerson?: Instance
 }
 
+/**
+ * Summary of one backup of a user's staged UserInstances, as listed by listUserInstanceBackups().
+ */
+export interface UserInstanceBackupSummary {
+  fileName: string; // Opaque identifier to pass back to loadUserInstanceBackup()
+  lastModified: number; // Epoch milliseconds
+}
+
 export interface DiagramLock {
     diagramDbId: number;
     username: string;

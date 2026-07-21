@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Store } from "@ngrx/store";
-import { combineLatest, defaultIfEmpty, finalize, forkJoin, of, take } from "rxjs";
-import { catchError } from "rxjs/operators";
+import { combineLatest, defaultIfEmpty, finalize, forkJoin, Observable, of, take } from "rxjs";
+import { catchError, tap } from "rxjs/operators";
 import { DiagramLock, Instance, UserInstances } from "src/app/core/models/reactome-instance.model";
 import { AuthenticateService } from "src/app/core/services/authenticate.service";
 import { DataService } from "src/app/core/services/data.service";
@@ -87,6 +87,28 @@ export class UserInstancesService {
             else
                 this.store.dispatch(DefaultPersonActions.set_default_person(undefined));
         });
+    }
+
+    /**
+     * Replace the currently staged new/updated/deleted instances, bookmarks, and default person
+     * with the content of one specific backup. This only replaces the in-browser editing session
+     * (the ngrx store) - it does NOT persist anything to the server. The previously-current state
+     * is not saved anywhere by this call; if the user wants to keep it, they should not have
+     * unsaved changes they care about before restoring, since this simply loads the backup for
+     * review - saving it (if desired) still goes through the normal persistInstances save path.
+     * @param fileName as returned by DataService.listUserInstanceBackups()
+     */
+    restoreUserInstanceBackup(fileName: string): Observable<UserInstances> {
+        return this.dataService.loadUserInstanceBackup(fileName).pipe(
+            tap((userInstances: UserInstances) => {
+                this.store.dispatch(NewInstanceActions.set_new_instances({ instances: this.makeShell(userInstances.newInstances ?? []) }));
+                this.store.dispatch(UpdateInstanceActions.set_updated_instances({ instances: this.makeShell(userInstances.updatedInstances ?? []) }));
+                this.store.dispatch(DeleteInstanceActions.set_deleted_instances({ instances: this.makeShell(userInstances.deletedInstances ?? []) }));
+                this.store.dispatch(BookmarkActions.set_bookmarks({ instances: userInstances.bookmarks ?? [] }));
+                this.store.dispatch(DefaultPersonActions.set_default_person(userInstances.defaultPerson));
+                this.dataService.resetNextNewDbId();
+            })
+        );
     }
 
     private makeShell(insts: Instance[]) {

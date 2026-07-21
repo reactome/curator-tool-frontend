@@ -4,7 +4,7 @@ import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, EMPTY, forkJoin, map, Observable, of, Subject, switchMap, take, tap, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
-import { DiagramLock, Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstances } from "../models/reactome-instance.model";
+import { DiagramLock, Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstanceBackupSummary, UserInstances } from "../models/reactome-instance.model";
 import {
   AttributeCategory,
   SchemaAttribute,
@@ -44,6 +44,8 @@ export class DataService {
   private loadInstancesUrl = `${environment.ApiRoot}/loadInstances/`;
   private persistInstancesUrl = `${environment.ApiRoot}/persistInstances/`;
   private deletePersistedInstancesUrl = `${environment.ApiRoot}/deletePersistedInstances/`;
+  private listUserInstanceBackupsUrl = `${environment.ApiRoot}/listUserInstanceBackups`;
+  private getUserInstanceBackupUrl = `${environment.ApiRoot}/getUserInstanceBackup/`;
   private getReferrersUrl = `${environment.ApiRoot}/getReferrers/`;
   private deleteInstanceUrl = `${environment.ApiRoot}/delete/`;
   private fetchQAReportUrl = `${environment.ApiRoot}/qaReport/`;
@@ -680,29 +682,61 @@ export class DataService {
   loadUserInstances(userName: string): Observable<UserInstances> {
     return this.http.get<UserInstances>(this.loadInstancesUrl + userName)
       .pipe(
-        concatMap(userInstance => {
-          // Collect all schema classes to load so that we haveefined attributes
-          const classes = new Set<string>();
-          userInstance.deletedInstances?.forEach(inst => classes.add(inst.schemaClassName));
-          userInstance.newInstances?.forEach(inst => classes.add(inst.schemaClassName));
-          userInstance.updatedInstances?.forEach(inst => classes.add(inst.schemaClassName));
-          if (classes.size == 0)
-            return of(userInstance);
-          return this.fetchSchemaClasses([...classes]).pipe(map(data => {
-            // Don't do anything for bookmark. We need a simple, shell instance only
-            // userInstance.bookmarks?.map(inst => this.handleUserInstance(inst));
-            // Don't cache the deleted instances since they are just shell instances
-            // We need to load the attributes from the database
-            userInstance.deletedInstances?.map(inst => this.handleUserInstance(inst, false));
-            userInstance.newInstances?.map(inst => this.handleUserInstance(inst));
-            userInstance.updatedInstances?.map(inst => this.handleUserInstance(inst));
-            return userInstance;
-          }));
-        }),
+        concatMap(userInstance => this.hydrateUserInstances(userInstance)),
         catchError((err: Error) => {
           return this.handleErrorMessage(err);
         }),
       );
+  }
+
+  /**
+   * List the staged-instances backups available for the current (JWT-authenticated) user.
+   */
+  listUserInstanceBackups(): Observable<UserInstanceBackupSummary[]> {
+    return this.http.get<UserInstanceBackupSummary[]>(this.listUserInstanceBackupsUrl).pipe(
+      catchError((err: Error) => {
+        return this.handleErrorMessage(err);
+      })
+    );
+  }
+
+  /**
+   * Fetch the content of one specific backup, hydrated the same way loadUserInstances() is.
+   * @param fileName as returned by listUserInstanceBackups()
+   */
+  loadUserInstanceBackup(fileName: string): Observable<UserInstances> {
+    return this.http.get<UserInstances>(this.getUserInstanceBackupUrl + encodeURIComponent(fileName))
+      .pipe(
+        concatMap(userInstance => this.hydrateUserInstances(userInstance)),
+        catchError((err: Error) => {
+          return this.handleErrorMessage(err);
+        }),
+      );
+  }
+
+  /**
+   * Collect the schema classes referenced by a UserInstances payload and hydrate each
+   * instance's schemaClass/attributes, then clone each into a shell for store use - the
+   * same treatment loadUserInstances() applies to the primary persisted blob.
+   */
+  private hydrateUserInstances(userInstance: UserInstances): Observable<UserInstances> {
+    // Collect all schema classes to load so that we haveefined attributes
+    const classes = new Set<string>();
+    userInstance.deletedInstances?.forEach(inst => classes.add(inst.schemaClassName));
+    userInstance.newInstances?.forEach(inst => classes.add(inst.schemaClassName));
+    userInstance.updatedInstances?.forEach(inst => classes.add(inst.schemaClassName));
+    if (classes.size == 0)
+      return of(userInstance);
+    return this.fetchSchemaClasses([...classes]).pipe(map(data => {
+      // Don't do anything for bookmark. We need a simple, shell instance only
+      // userInstance.bookmarks?.map(inst => this.handleUserInstance(inst));
+      // Don't cache the deleted instances since they are just shell instances
+      // We need to load the attributes from the database
+      userInstance.deletedInstances?.map(inst => this.handleUserInstance(inst, false));
+      userInstance.newInstances?.map(inst => this.handleUserInstance(inst));
+      userInstance.updatedInstances?.map(inst => this.handleUserInstance(inst));
+      return userInstance;
+    }));
   }
 
   private handleUserInstance(inst: Instance, cached: boolean = true): Instance {

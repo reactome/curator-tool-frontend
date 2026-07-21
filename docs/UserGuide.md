@@ -141,11 +141,18 @@ When your staged count exceeds **200**, the toolbar shows **"Too many staged ins
 | `account_tree` | **Go to schema view** | Navigate to `/schema_view` (shown from Event View / Home) |
 | `timeline` | **Go to event view** | Navigate to `/event_view` (shown from Schema View / Home) |
 | `home` | **Go to home page** | Navigate to `/home` |
+| `restore` | **Restore staged-changes backup** | Opens the [Restore Staged-Changes Backup](#restore-staged-changes-backup) dialog |
 | `menu_book` | **User guide** | Opens this guide on GitHub in a new tab |
 | `bug_report` | **Report bug** | Opens the bug-report Google Doc in a new tab |
 | `logout` | **Log out** | Persists staged state, then returns to `/login` |
 
 Backend errors surface as a snackbar at the bottom with a **Close** action.
+
+#### Restore staged-changes backup
+
+Every time your staged changes (new/updated/deleted instances, bookmarks, default person) are saved to the server and a previous save already existed, the server automatically keeps a timestamped backup of what was there before — this happens as a side effect of normal saving, with no action needed from you. The **Restore staged-changes backup** dialog lists your available backups (most recent first) with a **Restore** button on each row.
+
+Clicking **Restore** first asks you to confirm (since it replaces what's currently in your editor), then loads that backup's new/updated/deleted instances, bookmarks, and default person into your current editing session. **This only loads the backup — it does not save anything by itself.** Your last-saved state on the server is untouched either way; review the restored changes and use the normal save action (or simply keep working) if you want to keep them. The server keeps a rolling history of your most recent backups (older ones are pruned automatically).
 
 ---
 

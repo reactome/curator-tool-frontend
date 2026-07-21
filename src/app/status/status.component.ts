@@ -11,6 +11,7 @@ import { DefaultPersonActions } from "../instance/state/instance.actions";
 import { DataService } from "../core/services/data.service";
 import { Subscription, combineLatest, debounceTime, skip, take } from "rxjs";
 import { DiagramEditorService, DiagramLockViewModel } from '../event-view/components/pathway-diagram/utils/diagram-editor.service';
+import { UserInstanceBackupsDialogService } from './components/user-instance-backups-dialog/user-instance-backups-dialog.service';
 
 @Component({
   selector: 'app-status',
@@ -39,7 +40,8 @@ export class StatusComponent implements OnInit, OnDestroy {
     private instanceSelectionService: ListInstancesDialogService,
     private router: Router,
     private dataService: DataService,
-    private diagramEditorService: DiagramEditorService) {
+    private diagramEditorService: DiagramEditorService,
+    private userInstanceBackupsDialogService: UserInstanceBackupsDialogService) {
   }
 
   private _snackBar = inject(MatSnackBar);
@@ -203,6 +205,10 @@ export class StatusComponent implements OnInit, OnDestroy {
 
   navigateHome() {
     this.router.navigate(["/home"]);
+  }
+
+  openUserInstanceBackups(): void {
+    this.userInstanceBackupsDialogService.openDialog();
   }
 
   navigateToSchemaView() {
