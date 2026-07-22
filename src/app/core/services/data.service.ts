@@ -58,6 +58,11 @@ export class DataService {
   private fillExternalOntologyUrl = `${environment.ApiRoot}/fillExternalOntology/`;
 
 
+  // Serialized snapshot of the last user-instances payload sent to (or loaded from) the
+  // server. Used to skip redundant persist/backup calls when nothing has actually changed,
+  // so the automatic backup is only sent when a real change is detected.
+  private lastPersistedPayload: string | undefined;
+
   // Track the negative dbId to be used
   private nextNewDbId: number = -1;
   // The root class is cached for performance
@@ -685,6 +690,9 @@ export class DataService {
     return this.http.get<UserInstances>(this.loadInstancesUrl + userName)
       .pipe(
         concatMap(userInstance => this.hydrateUserInstances(userInstance)),
+        // Seed the change-detection baseline with what the server currently holds so the
+        // periodic auto-persist does not write a redundant backup of just-loaded data.
+        tap(userInstance => this.lastPersistedPayload = this.computePersistPayload(userInstance)),
         catchError((err: Error) => {
           return this.handleErrorMessage(err);
         }),
@@ -773,19 +781,46 @@ export class DataService {
   // performance.
   persitUserInstances(userInstances: UserInstances, userName: string): Observable<any> {
     const cloned = this.cloneUserInstances(userInstances);
+    const payload = JSON.stringify(cloned);
+    // Skip the network call (and therefore the server-side backup) when the content is
+    // identical to what was last persisted/loaded. This prevents the automatic backup from
+    // being written when no change has actually been made (e.g. the periodic auto-persist
+    // firing after login with no edits, or the same state being sent twice by overlapping
+    // triggers such as beforeunload + auto-persist).
+    if (payload === this.lastPersistedPayload) {
+      console.debug('persitUserInstances: no changes detected since last persist; skipping backup.');
+      return of(null);
+    }
     return this.http.post<any>(this.persistInstancesUrl + userName, cloned).pipe(
+      tap(() => this.lastPersistedPayload = payload),
       catchError(error => {
         return this.handleErrorMessage(error);
       })
     );
   }
 
+  /**
+   * Serialize the current staged user instances exactly as persitUserInstances() would send
+   * them, so callers can seed the change-detection baseline (e.g. after loading from the
+   * server) without triggering a redundant persist.
+   */
+  computePersistPayload(userInstances: UserInstances): string {
+    return JSON.stringify(this.cloneUserInstances(userInstances));
+  }
+
+  /**
+   * Record the payload currently on the server so the next persist is only sent if it differs.
+   */
+  setLastPersistedPayload(payload: string | undefined): void {
+    this.lastPersistedPayload = payload;
+  }
+
   private cloneUserInstances(userInstances: UserInstances): UserInstances {
-    const newInstances = userInstances.newInstances.map(i => this.utils.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
-    const updatedInstances = userInstances.updatedInstances.map(i => this.utils.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
-    const deletedInstances = userInstances.deletedInstances.map(i => this.utils.makeShell(i));
+    const newInstances = (userInstances.newInstances ?? []).map(i => this.utils.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
+    const updatedInstances = (userInstances.updatedInstances ?? []).map(i => this.utils.cloneInstanceForCommit(this.id2instance.get(i.dbId)!));
+    const deletedInstances = (userInstances.deletedInstances ?? []).map(i => this.utils.makeShell(i));
     // There is no need to get the full instance for a bookmark
-    const bookmarks = userInstances.bookmarks.map(i => this.utils.cloneInstanceForCommit(i));
+    const bookmarks = (userInstances.bookmarks ?? []).map(i => this.utils.cloneInstanceForCommit(i));
     const clone: UserInstances =
     {
       newInstances: newInstances,
@@ -816,7 +851,17 @@ export class DataService {
    * @returns
    */
   deletePersistedInstances(userName: string): Observable<any> {
+    const emptyPayload = this.computePersistPayload({
+      newInstances: [], updatedInstances: [], deletedInstances: [], bookmarks: []
+    });
+    // If the server already has nothing staged, there is nothing to delete and no backup to
+    // write - avoid the redundant call (and duplicate empty backup).
+    if (emptyPayload === this.lastPersistedPayload) {
+      console.debug('deletePersistedInstances: nothing staged since last persist; skipping.');
+      return of(null);
+    }
     return this.http.delete<any>(this.deletePersistedInstancesUrl + userName).pipe(
+      tap(() => this.lastPersistedPayload = emptyPayload),
       catchError(error => {
         return this.handleErrorMessage(error);
       })

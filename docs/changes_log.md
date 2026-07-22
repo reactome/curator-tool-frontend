@@ -1,3 +1,13 @@
+### Build on July 21, 2026
+
+- The search query has been updated to accept symbols and more complicated search results, such as a reaction name. 
+
+- When adding a new instance via selection or creation it is now added after the instance the edit option was chosen from. Before the instance was added above the instance in the list and the user had to rearrange. 
+
+- The automatic backup has a flag to check if changes have been made before backing up the same instances twice. 
+
+
+
 ### Build on July 20, 2026
 
 - Add undo/redo (25 steps) for pathway edits: Keyboard shortcuts: Ctrl/Cmd+Z (undo), Ctrl/Cmd+Shift+Z or Ctrl+Y (redo).
