@@ -3,27 +3,46 @@
 <mat-dialog-content>
     <p>
         The following new instance(s) matched existing instance(s) already in the database and were
-        <strong>not committed</strong>. For each one you can commit it anyway (checkbox), or use a
-        match's row actions to <strong>use the existing instance instead</strong> or
-        <strong>merge</strong> the new instance into it. Close this dialog to keep them uncommitted.
+        <strong>not committed</strong>. Choose what to do with each one. Anything left as
+        <em>&ldquo;Leave uncommitted&rdquo;</em> stays staged and is not changed.
     </p>
 
     <section class="scroll_panel">
-        <div class="match-group" *ngFor="let group of groups; let i = index">
+        <div class="match-group" *ngFor="let group of groups; let i = index"
+            [class.match-group--resolved]="getAction(i) !== 'none'">
             <div class="match-group-header">
-                <button mat-button class="toggle-btn" (click)="toggle(i)"
-                    [attr.aria-expanded]="isExpanded(i)">
-                    <mat-icon>{{ isExpanded(i) ? 'arrow_drop_down' : 'arrow_right' }}</mat-icon>
-                </button>
                 <span class="match-group-label">
                     {{ group.newInstance.displayName }} [{{ group.newInstance.dbId }}]
-                    &mdash; {{ group.newInstance.schemaClassName }}: {{ getMatchedRows(group).length }} match(es)
+                    &mdash; {{ group.newInstance.schemaClassName }}
+                    <span class="match-count">{{ getMatchedRows(group).length }} match(es)</span>
                 </span>
-                <span class="resolution-chip" *ngIf="getResolutionLabel(i) as label">{{ label }}</span>
-                <mat-checkbox class="select-box" [checked]="isSelected(i)" (change)="toggleSelection(i)"
-                    matTooltip="Select to commit this new instance anyway">
-                </mat-checkbox>
             </div>
+
+            <div class="match-group-controls">
+                <mat-form-field appearance="outline" class="action-field" subscriptSizing="dynamic">
+                    <mat-label>Action</mat-label>
+                    <mat-select [value]="getAction(i)" (selectionChange)="setAction(i, $event.value)">
+                        <mat-option *ngFor="let option of actionOptions" [value]="option.value">
+                            {{ option.label }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field *ngIf="needsTarget(i)" appearance="outline" class="target-field"
+                    subscriptSizing="dynamic">
+                    <mat-label>Existing instance</mat-label>
+                    <mat-select [value]="getTarget(i)" (selectionChange)="setTarget(i, $event.value)">
+                        <mat-option *ngFor="let match of getMatchedRows(group)" [value]="match.dbId">
+                            {{ match.displayName }} [{{ match.dbId }}]
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <button mat-button class="toggle-btn" (click)="toggle(i)" [attr.aria-expanded]="isExpanded(i)">
+                <mat-icon>{{ isExpanded(i) ? 'arrow_drop_down' : 'arrow_right' }}</mat-icon>
+                {{ isExpanded(i) ? 'Hide matches' : 'Show matches' }}
+            </button>
 
             <app-instance-list-table *ngIf="isExpanded(i)"
                 [dataSource]="getMatchedRows(group)"
@@ -32,7 +51,7 @@
                 [secondaryActionButtons]="[]"
                 [showBookmark]="false"
                 [showCheckMark]="false"
-                (actionEvent)="handleAction($event, i)">
+                (actionEvent)="handleAction($event)">
             </app-instance-list-table>
         </div>
 
@@ -41,7 +60,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-    <button mat-button (click)="onClose()">Close</button>
+    <button mat-button (click)="onClose()">Cancel</button>
     <span [matTooltip]="'Choose an action for at least one instance'" [matTooltipDisabled]="hasSelection">
         <button mat-flat-button color="primary" [disabled]="!hasSelection" (click)="onApply()">Apply</button>
     </span>

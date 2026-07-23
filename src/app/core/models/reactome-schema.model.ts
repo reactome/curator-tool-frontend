@@ -102,8 +102,6 @@ export const ACTION_BUTTONS = {
   CHECK_BOX_OUTLINE: { name: 'check_box_outline_blank', tooltip: 'select' },
   TIMELINE: { name: 'timeline', tooltip: 'open event view' },
   CREATE_EWAS: { name: 'science', tooltip: 'create EWAS from ReferenceGeneProduct' },
-  USE_EXISTING: { name: 'swap_horiz', tooltip: 'use this existing instance instead of the new one' },
-  MERGE: { name: 'merge', tooltip: 'merge the new instance into this existing one' },
 }
 
 export const CLASSES_AFFECTING_STRUCTURE = [

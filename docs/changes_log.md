@@ -1,3 +1,10 @@
+### Build on July 23, 2026
+
+- When committing a new instance that matches existing instance(s) in the database, you can now resolve each duplicate directly from the "Matches Found" dialog instead of only committing it anyway. For each matched new instance you choose an action: leave it uncommitted (default), commit it as a new instance, use an existing match instead, or merge the new instance into an existing match. "Use existing" discards the new instance and repoints everything that referenced it at the chosen existing instance. "Merge" copies the new instance's attributes onto the chosen existing instance (single-valued attributes are overwritten; multivalued attributes have the new values appended), then repoints references and discards the new instance. Resulting edits are staged for review, not committed immediately.
+
+- Redesigned the "Matches Found" dialog for clarity: each matched new instance is now a card with a single Action dropdown (and, for use/merge, a picker for which existing instance to target) plus a show/hide view of the matches, replacing the previous mix of checkboxes and per-row buttons.
+
+
 ### Build on July 21, 2026
 
 - The search query has been updated to accept symbols and more complicated search results, such as a reaction name. 

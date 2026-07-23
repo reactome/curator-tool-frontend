@@ -12,7 +12,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { Instance, MatchResolution, MatchResolutionAction } from 'src/app/core/models/reactome-instance.model';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ListInstancesModule } from 'src/app/schema-view/list-instances/list-instances.module';
@@ -35,17 +36,14 @@ export interface MatchedInstancesDialogData {
   newInstance?: Instance;
 }
 
-interface RowResolution {
-  action: Exclude<MatchResolutionAction, 'commit-anyway'>;
-  existingInstanceDbId: number;
-  existingDisplayName: string;
-}
+/** What the user has chosen to do with a matched new instance. 'none' = leave uncommitted. */
+type GroupAction = 'none' | MatchResolutionAction;
 
 /**
  * Dialog shown when one or more new instances being committed have matching
- * instances already in the database. By default these new instances are not
- * committed; this dialog lets the user review the matches for each of them
- * and, if desired, commit the new instance(s) anyway despite the matches.
+ * instances already in the database. For each new instance the user picks an
+ * action: leave it uncommitted (default), commit it as a new instance anyway,
+ * use one of the existing matches instead, or merge it into a match.
  */
 @Component({
   selector: 'app-matched-instances-dialog',
@@ -61,24 +59,29 @@ interface RowResolution {
     MatTableModule,
     MatIconModule,
     MatTooltipModule,
-    MatCheckboxModule,
+    MatFormFieldModule,
+    MatSelectModule,
     ListInstancesModule,
   ]
 })
 
 export class MatchedInstancesDialogComponent {
   readonly groups: MatchedNewInstanceGroup[];
-  /**
-   * Action buttons shown on each matched row: open the match, use it instead of the new
-   * instance, or merge the new instance into it.
-   */
-  actionButtons: ActionButton[] = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.USE_EXISTING, ACTION_BUTTONS.MERGE];
+  /** The matched rows only offer the "open in new tab" action; the resolution is picked via the dropdown. */
+  actionButtons: ActionButton[] = [ACTION_BUTTONS.LAUNCH];
+  /** The selectable actions shown in each instance's dropdown, in display order. */
+  readonly actionOptions: { value: GroupAction; label: string }[] = [
+    { value: 'none', label: 'Leave uncommitted' },
+    { value: 'commit-anyway', label: 'Commit as a new instance' },
+    { value: 'use-existing', label: 'Use an existing instance instead' },
+    { value: 'merge', label: 'Merge into an existing instance' },
+  ];
   /** Indices of the groups whose matches table is currently expanded. */
   private readonly expanded = new Set<number>();
-  /** Indices of the groups whose new instance is selected to be committed anyway. */
-  private readonly selected = new Set<number>();
-  /** Group index -> chosen "use existing" / "merge" resolution against a specific match. */
-  private readonly rowResolutions = new Map<number, RowResolution>();
+  /** Group index -> chosen action. Absent / 'none' means leave the new instance uncommitted. */
+  private readonly actions = new Map<number, GroupAction>();
+  /** Group index -> dbId of the chosen existing match (for 'use-existing' / 'merge'). */
+  private readonly targets = new Map<number, number>();
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: MatchedInstancesDialogData,
@@ -106,33 +109,42 @@ export class MatchedInstancesDialogComponent {
     }
   }
 
-  isSelected(index: number): boolean {
-    return this.selected.has(index);
+  /** The action currently chosen for a group; defaults to 'none' (leave uncommitted). */
+  getAction(index: number): GroupAction {
+    return this.actions.get(index) ?? 'none';
   }
 
-  toggleSelection(index: number): void {
-    if (this.selected.has(index)) {
-      this.selected.delete(index);
-    } else {
-      this.selected.add(index);
-      // Committing anyway and using/merging an existing instance are mutually exclusive.
-      this.rowResolutions.delete(index);
+  setAction(index: number, action: GroupAction): void {
+    this.actions.set(index, action);
+    if (action === 'use-existing' || action === 'merge') {
+      // Default the target to the first match and reveal it so the choice is never empty.
+      if (!this.targets.has(index)) {
+        const firstMatch = this.groups[index]?.matches?.[0];
+        if (firstMatch?.dbId !== undefined && firstMatch.dbId !== null) {
+          this.targets.set(index, firstMatch.dbId);
+        }
+      }
+      this.expanded.add(index);
     }
   }
 
-  /** True if any group has a chosen action (commit-anyway, use-existing, or merge). */
+  /** True when the chosen action needs a target existing instance. */
+  needsTarget(index: number): boolean {
+    const action = this.getAction(index);
+    return action === 'use-existing' || action === 'merge';
+  }
+
+  getTarget(index: number): number | undefined {
+    return this.targets.get(index);
+  }
+
+  setTarget(index: number, dbId: number): void {
+    this.targets.set(index, dbId);
+  }
+
+  /** True if any group has an actionable choice (i.e. not "leave uncommitted"). */
   get hasSelection(): boolean {
-    return this.selected.size > 0 || this.rowResolutions.size > 0;
-  }
-
-  /** A short label describing the chosen "use existing" / "merge" action for a group, if any. */
-  getResolutionLabel(index: number): string | null {
-    const resolution = this.rowResolutions.get(index);
-    if (!resolution) {
-      return null;
-    }
-    const verb = resolution.action === 'use-existing' ? 'Use existing' : 'Merge into';
-    return `${verb}: ${resolution.existingDisplayName}`;
+    return this.groups.some((_, index) => this.getAction(index) !== 'none');
   }
 
   onClose(): void {
@@ -146,16 +158,16 @@ export class MatchedInstancesDialogComponent {
       if (newInstanceDbId === undefined || newInstanceDbId === null) {
         return;
       }
-      const rowResolution = this.rowResolutions.get(index);
-      if (rowResolution) {
-        resolutions.push({
-          newInstanceDbId,
-          action: rowResolution.action,
-          existingInstanceDbId: rowResolution.existingInstanceDbId
-        });
-      } else if (this.selected.has(index)) {
-        resolutions.push({ newInstanceDbId, action: 'commit-anyway' });
+      const action = this.getAction(index);
+      if (action === 'commit-anyway') {
+        resolutions.push({ newInstanceDbId, action });
+      } else if (action === 'use-existing' || action === 'merge') {
+        const existingInstanceDbId = this.getTarget(index);
+        if (existingInstanceDbId !== undefined) {
+          resolutions.push({ newInstanceDbId, action, existingInstanceDbId });
+        }
       }
+      // 'none' -> leave the new instance uncommitted (emit nothing).
     });
     this.dialogRef.close(resolutions);
   }
@@ -171,38 +183,11 @@ export class MatchedInstancesDialogComponent {
     return group?.matches ?? [];
   }
 
-  /** Handle action-button clicks emitted by the shared instance list table. */
-  handleAction(actionEvent: { instance: Instance, action: string }, groupIndex: number): void {
+  /** Handle action-button clicks emitted by the shared instance list table (open only). */
+  handleAction(actionEvent: { instance: Instance, action: string }): void {
     if (actionEvent.action === ACTION_BUTTONS.LAUNCH.name) {
       this.openInstance(actionEvent.instance?.dbId);
-      return;
     }
-    if (actionEvent.action === ACTION_BUTTONS.USE_EXISTING.name) {
-      this.setRowResolution(groupIndex, 'use-existing', actionEvent.instance);
-      return;
-    }
-    if (actionEvent.action === ACTION_BUTTONS.MERGE.name) {
-      this.setRowResolution(groupIndex, 'merge', actionEvent.instance);
-    }
-  }
-
-  private setRowResolution(groupIndex: number, action: RowResolution['action'], match: Instance): void {
-    if (!match || match.dbId === undefined || match.dbId === null || (match.dbId as any) === '') {
-      return;
-    }
-    const existing = this.rowResolutions.get(groupIndex);
-    // Clicking the same action against the same match again toggles it off.
-    if (existing && existing.action === action && existing.existingInstanceDbId === match.dbId) {
-      this.rowResolutions.delete(groupIndex);
-      return;
-    }
-    this.rowResolutions.set(groupIndex, {
-      action,
-      existingInstanceDbId: match.dbId,
-      existingDisplayName: match.displayName ?? String(match.dbId)
-    });
-    // Choosing an existing instance clears the "commit anyway" selection for this group.
-    this.selected.delete(groupIndex);
   }
 
   openInstance(dbId: number): void {
