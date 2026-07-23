@@ -3,8 +3,9 @@
 <mat-dialog-content>
     <p>
         The following new instance(s) matched existing instance(s) already in the database and were
-        <strong>not committed</strong>. Please review the matches below, then either close this dialog
-        to keep them uncommitted, or commit the new instance(s) anyway.
+        <strong>not committed</strong>. For each one you can commit it anyway (checkbox), or use a
+        match's row actions to <strong>use the existing instance instead</strong> or
+        <strong>merge</strong> the new instance into it. Close this dialog to keep them uncommitted.
     </p>
 
     <section class="scroll_panel">
@@ -18,6 +19,7 @@
                     {{ group.newInstance.displayName }} [{{ group.newInstance.dbId }}]
                     &mdash; {{ group.newInstance.schemaClassName }}: {{ getMatchedRows(group).length }} match(es)
                 </span>
+                <span class="resolution-chip" *ngIf="getResolutionLabel(i) as label">{{ label }}</span>
                 <mat-checkbox class="select-box" [checked]="isSelected(i)" (change)="toggleSelection(i)"
                     matTooltip="Select to commit this new instance anyway">
                 </mat-checkbox>
@@ -30,7 +32,7 @@
                 [secondaryActionButtons]="[]"
                 [showBookmark]="false"
                 [showCheckMark]="false"
-                (actionEvent)="handleAction($event)">
+                (actionEvent)="handleAction($event, i)">
             </app-instance-list-table>
         </div>
 
@@ -40,7 +42,7 @@
 
 <mat-dialog-actions align="end">
     <button mat-button (click)="onClose()">Close</button>
-    <span [matTooltip]="'Select at least one instance to commit'" [matTooltipDisabled]="hasSelection">
-        <button mat-flat-button color="primary" [disabled]="!hasSelection" (click)="onCommitAnyway()">Commit Anyway</button>
+    <span [matTooltip]="'Choose an action for at least one instance'" [matTooltipDisabled]="hasSelection">
+        <button mat-flat-button color="primary" [disabled]="!hasSelection" (click)="onApply()">Apply</button>
     </span>
 </mat-dialog-actions>

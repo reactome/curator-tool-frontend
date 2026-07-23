@@ -24,6 +24,7 @@ import { ReviewStatusUpdateFilter } from 'src/app/core/instance-view-filters/Rev
 import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
 import { MatchInstancesDialogService } from '../match-instances-dialog/match-instances-dialog.service';
 import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
+import { MatchResolutionService } from 'src/app/core/services/match-resolution.service';
 import { CommitResultDialogService } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
 import { environment } from 'src/environments/environment.dev';
@@ -90,6 +91,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     private listInstancesDialogService: ListInstancesDialogService,
     private matchInstancesDialogService: MatchInstancesDialogService,
     private matchedInstancesDialogService: MatchedInstancesDialogService,
+    private matchResolutionService: MatchResolutionService,
     private deletionService: DeletionService,
     private reviewStatusCheck: ReviewStatusCheck,
     private commitResultDialogService: CommitResultDialogService
@@ -620,10 +622,13 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
           this.matchedInstancesDialogService.openDialog({
             title: 'Matches Found',
             groups: [{ newInstance: this.instance!, matches }]
-          }).afterClosed().subscribe(selected => {
-            if (selected && selected.length > 0) {
-              this.commitInstance();
-            }
+          }).afterClosed().subscribe(resolutions => {
+            this.matchResolutionService.resolve(resolutions).pipe(take(1)).subscribe(toCommit => {
+              // toCommit contains this instance only if the user chose "commit anyway".
+              if (toCommit.some(inst => inst.dbId === this.instance!.dbId)) {
+                this.commitInstance();
+              }
+            });
           });
           return;
         }

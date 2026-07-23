@@ -11,6 +11,7 @@ import {
   SchemaClass
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
+import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 import { QAReport } from "../models/qa-report.model";
 import { ActivatedRoute, Router, UrlSegmentGroup } from "@angular/router";
 
@@ -500,7 +501,7 @@ export class DataService {
     );
   }
 
-  private getAttributeNamesNotClonable(): Array<string> {
+  getAttributeNamesNotClonable(): Array<string> {
     return ['authored', 'edited', 'reviewed', 'revised', '_doRelease', 'releaseStatus',
       'releaseDate', 'created', 'modified', 'doi', 'internalReviewed', 'reviewStatus', 'previousReviewStatus'];
   }
@@ -514,6 +515,11 @@ export class DataService {
       this.handleInstanceAttributes(instance);
     }
     this.id2instance.set(instance.dbId, instance);
+  }
+
+  /** Return the cached full instance for a dbId, if present. */
+  getCachedInstance(dbId: number): Instance | undefined {
+    return this.id2instance.get(dbId);
   }
 
   removeInstanceInCache(dbId: number): void {
@@ -552,6 +558,69 @@ export class DataService {
       if (changed)
         this.registerInstance(inst);
     }
+  }
+
+  /**
+   * Replace every reference to a (usually new/uncommitted) instance with a reference to a
+   * different instance across all cached instances. Used when the user resolves a duplicate
+   * new instance by choosing to "use an existing instance instead" or to "merge" it into an
+   * existing one: anywhere the old instance was used as a reference-attribute value, the
+   * chosen replacement instance is substituted.
+   *
+   * Each changed referrer is marked modified and, if it is an already-committed instance
+   * (positive dbId), staged as an updated instance so the change is not lost. New-instance
+   * referrers (negative dbId) are already tracked in the store, so only the cache is updated.
+   *
+   * @returns the referrer instances that were changed.
+   */
+  replaceInstanceReferences(oldDbId: number, replacement: Instance): Instance[] {
+    if (!oldDbId || !replacement || replacement.dbId === oldDbId) return [];
+
+    const changedReferrers: Instance[] = [];
+    for (const inst of this.id2instance.values()) {
+      if (!inst.attributes || inst.dbId === oldDbId || inst.dbId === replacement.dbId) continue;
+      const changedAttributes: string[] = [];
+
+      for (const att of inst.attributes.keys()) {
+        const attValue = inst.attributes.get(att);
+        if (!attValue) continue;
+
+        if (Array.isArray(attValue)) {
+          for (let i = 0; i < attValue.length; i++) {
+            const v = attValue[i];
+            if (this.utils.isInstance(v) && v.dbId === oldDbId) {
+              attValue[i] = this.utils.makeShell(replacement);
+              if (!changedAttributes.includes(att)) changedAttributes.push(att);
+            }
+          }
+        } else if (this.utils.isInstance(attValue) && attValue.dbId === oldDbId) {
+          inst.attributes.set(att, this.utils.makeShell(replacement));
+          if (!changedAttributes.includes(att)) changedAttributes.push(att);
+        }
+      }
+
+      if (changedAttributes.length > 0) {
+        for (const att of changedAttributes)
+          this.utils.addToModifiedAttributes(att, inst);
+        this.registerInstance(inst);
+        // Stage already-committed referrers as updates so the redirected reference is
+        // eventually committed. New-instance referrers are already tracked in the store.
+        if (inst.dbId > 0)
+          this.store.dispatch(UpdateInstanceActions.register_updated_instance(this.utils.makeShell(inst)));
+        changedReferrers.push(inst);
+      }
+    }
+    return changedReferrers;
+  }
+
+  /**
+   * Discard an uncommitted new instance: drop it from the in-memory cache and remove it from
+   * the staged new-instances store (the effect mirrors the removal to localStorage).
+   */
+  discardNewInstance(instance: Instance): void {
+    if (!instance) return;
+    this.removeInstanceInCache(instance.dbId);
+    this.store.dispatch(NewInstanceActions.remove_new_instance(this.utils.makeShell(instance)));
   }
 
   /**

@@ -1,7 +1,8 @@
 import { Injectable } from "@angular/core";
 import { MatDialog, MatDialogRef } from "@angular/material/dialog";
-import { Instance, NEW_DISPLAY_NAME } from "../models/reactome-instance.model";
+import { Instance, MatchResolution, NEW_DISPLAY_NAME } from "../models/reactome-instance.model";
 import { DataService } from "./data.service";
+import type { MatchResolutionService } from "./match-resolution.service";
 import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttribute, SchemaClass } from "../models/reactome-schema.model";
 import { Subject, take, Observable, of, concatMap, map, from, tap, EMPTY, finalize } from "rxjs";
 import { Store } from "@ngrx/store";
@@ -1129,7 +1130,7 @@ export class InstanceUtilities {
      * @param onComplete invoked once the initial commit pass completes, before any
      *                   result/match dialogs open. Use it to clear selection state.
      */
-    commitNewInstances(instances: Instance[], dataService: DataService, onComplete?: () => void) {
+    commitNewInstances(instances: Instance[], dataService: DataService, matchResolutionService: MatchResolutionService, onComplete?: () => void) {
         if (!instances || instances.length === 0)
             return;
 
@@ -1177,37 +1178,33 @@ export class InstanceUtilities {
                 this.matchedInstancesDialogService.openDialog({
                     title: 'Matches Found',
                     groups: matchedGroups
-                }).afterClosed().subscribe((selected?: Instance[]) => {
-                    // The dialog returns display-normalized copies; map back to the
-                    // original held-back instances by dbId so we commit the registered
-                    // objects (not the copies) that the rest of the app tracks.
-                    const selectedDbIds = new Set((selected ?? []).map(inst => inst.dbId));
-                    const toCommit = matchedGroups
-                        .map(group => group.newInstance)
-                        .filter(inst => selectedDbIds.has(inst.dbId));
-
-                    if (toCommit.length === 0) {
-                        if (results.length > 0) this.commitResultDialogService.openDialog(results);
-                        return;
-                    }
-
-                    // Commit the selected new instances that were held back due to matches.
-                    this.openCommitWaitDialog(
-                        'Committing New Instances',
-                        'Please wait while selected new instances are committed one by one.'
-                    );
-                    from(toCommit).pipe(
-                        concatMap(inst => dataService.commit(inst).pipe(
-                            tap(rtn => this.processCommit(inst, rtn, dataService)),
-                            map(rtn => this.buildCommitSummaryResults(inst, rtn))
-                        )),
-                        finalize(() => this.closeCommitWaitDialog())
-                    ).subscribe({
-                        next: resultGroup => results.push(...resultGroup),
-                        error: err => console.error('Error committing matched new instances', err),
-                        complete: () => {
+                }).afterClosed().subscribe((resolutions?: MatchResolution[]) => {
+                    // Apply "use existing" / "merge" resolutions (side effects) and get back the
+                    // held-back new instances the user chose to commit anyway.
+                    matchResolutionService.resolve(resolutions).pipe(take(1)).subscribe(toCommit => {
+                        if (toCommit.length === 0) {
                             if (results.length > 0) this.commitResultDialogService.openDialog(results);
+                            return;
                         }
+
+                        // Commit the selected new instances that were held back due to matches.
+                        this.openCommitWaitDialog(
+                            'Committing New Instances',
+                            'Please wait while selected new instances are committed one by one.'
+                        );
+                        from(toCommit).pipe(
+                            concatMap(inst => dataService.commit(inst).pipe(
+                                tap(rtn => this.processCommit(inst, rtn, dataService)),
+                                map(rtn => this.buildCommitSummaryResults(inst, rtn))
+                            )),
+                            finalize(() => this.closeCommitWaitDialog())
+                        ).subscribe({
+                            next: resultGroup => results.push(...resultGroup),
+                            error: err => console.error('Error committing matched new instances', err),
+                            complete: () => {
+                                if (results.length > 0) this.commitResultDialogService.openDialog(results);
+                            }
+                        });
                     });
                 });
             }

@@ -2,6 +2,7 @@ import { Component, EventEmitter, inject, Input, OnDestroy, OnInit, Output } fro
 import { PageEvent } from "@angular/material/paginator";
 import { SearchCriterium, Instance, InstanceList, MAX_STAGED_INSTANCES, SelectedInstancesList } from "../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../core/services/data.service";
+import { MatchResolutionService } from "../../../../core/services/match-resolution.service";
 import { ActivatedRoute, Params, Router } from "@angular/router";
 import { ReferrersDialogService } from "../../../../instance/components/referrers-dialog/referrers-dialog.service";
 import { DeletionDialogService } from "../../../../instance/components/deletion-dialog/deletion-dialog.service";
@@ -95,7 +96,8 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     private instUtils: InstanceUtilities,
     private listInstancesDialogService: ListInstancesDialogService,
     private batchEditDialogService: BatchEditDialogService,
-    private deleteBulkDialogService: DeleteBulkDialogService) {
+    private deleteBulkDialogService: DeleteBulkDialogService,
+    private matchResolutionService: MatchResolutionService) {
   }
 
   ngOnDestroy(): void {
@@ -950,7 +952,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 * the local instance list stay in sync.
 */
   commitNewInstances() {
-    this.instUtils.commitNewInstances(this.selectedInstances, this.dataService, () => {
+    this.instUtils.commitNewInstances(this.selectedInstances, this.dataService, this.matchResolutionService, () => {
       this.selectedInstances = [];
       this.instUtils.clearSelectedInstances(SelectedInstancesList.newInstanceList);
     });

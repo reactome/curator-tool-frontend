@@ -13,7 +13,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { Instance, MatchResolution, MatchResolutionAction } from 'src/app/core/models/reactome-instance.model';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ListInstancesModule } from 'src/app/schema-view/list-instances/list-instances.module';
 import { ActionButton } from 'src/app/schema-view/list-instances/components/list-instances-view/instance-list-table/instance-list-table.component';
@@ -33,6 +33,12 @@ export interface MatchedInstancesDialogData {
   matches?: Instance[];
   matchedGroups?: MatchedNewInstanceGroup[];
   newInstance?: Instance;
+}
+
+interface RowResolution {
+  action: Exclude<MatchResolutionAction, 'commit-anyway'>;
+  existingInstanceDbId: number;
+  existingDisplayName: string;
 }
 
 /**
@@ -59,18 +65,24 @@ export interface MatchedInstancesDialogData {
     ListInstancesModule,
   ]
 })
+
 export class MatchedInstancesDialogComponent {
   readonly groups: MatchedNewInstanceGroup[];
-  /** Action buttons shown on each matched row; only the "launch" (open) action is offered here. */
-  actionButtons: ActionButton[] = [ACTION_BUTTONS.LAUNCH];
+  /**
+   * Action buttons shown on each matched row: open the match, use it instead of the new
+   * instance, or merge the new instance into it.
+   */
+  actionButtons: ActionButton[] = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.USE_EXISTING, ACTION_BUTTONS.MERGE];
   /** Indices of the groups whose matches table is currently expanded. */
   private readonly expanded = new Set<number>();
   /** Indices of the groups whose new instance is selected to be committed anyway. */
   private readonly selected = new Set<number>();
+  /** Group index -> chosen "use existing" / "merge" resolution against a specific match. */
+  private readonly rowResolutions = new Map<number, RowResolution>();
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: MatchedInstancesDialogData,
-    public dialogRef: MatDialogRef<MatchedInstancesDialogComponent, Instance[]>,
+    public dialogRef: MatDialogRef<MatchedInstancesDialogComponent, MatchResolution[]>,
     private router: Router
   ) {
     this.groups = this.normalizeGroups(this.extractGroups(data));
@@ -103,22 +115,49 @@ export class MatchedInstancesDialogComponent {
       this.selected.delete(index);
     } else {
       this.selected.add(index);
+      // Committing anyway and using/merging an existing instance are mutually exclusive.
+      this.rowResolutions.delete(index);
     }
   }
 
+  /** True if any group has a chosen action (commit-anyway, use-existing, or merge). */
   get hasSelection(): boolean {
-    return this.selected.size > 0;
+    return this.selected.size > 0 || this.rowResolutions.size > 0;
+  }
+
+  /** A short label describing the chosen "use existing" / "merge" action for a group, if any. */
+  getResolutionLabel(index: number): string | null {
+    const resolution = this.rowResolutions.get(index);
+    if (!resolution) {
+      return null;
+    }
+    const verb = resolution.action === 'use-existing' ? 'Use existing' : 'Merge into';
+    return `${verb}: ${resolution.existingDisplayName}`;
   }
 
   onClose(): void {
     this.dialogRef.close([]);
   }
 
-  onCommitAnyway(): void {
-    const selectedInstances = this.groups
-      .filter((_, index) => this.selected.has(index))
-      .map(group => group.newInstance);
-    this.dialogRef.close(selectedInstances);
+  onApply(): void {
+    const resolutions: MatchResolution[] = [];
+    this.groups.forEach((group, index) => {
+      const newInstanceDbId = group.newInstance?.dbId;
+      if (newInstanceDbId === undefined || newInstanceDbId === null) {
+        return;
+      }
+      const rowResolution = this.rowResolutions.get(index);
+      if (rowResolution) {
+        resolutions.push({
+          newInstanceDbId,
+          action: rowResolution.action,
+          existingInstanceDbId: rowResolution.existingInstanceDbId
+        });
+      } else if (this.selected.has(index)) {
+        resolutions.push({ newInstanceDbId, action: 'commit-anyway' });
+      }
+    });
+    this.dialogRef.close(resolutions);
   }
 
   getMatchedRows(group: MatchedNewInstanceGroup): Instance[] {
@@ -133,10 +172,37 @@ export class MatchedInstancesDialogComponent {
   }
 
   /** Handle action-button clicks emitted by the shared instance list table. */
-  handleAction(actionEvent: { instance: Instance, action: string }): void {
+  handleAction(actionEvent: { instance: Instance, action: string }, groupIndex: number): void {
     if (actionEvent.action === ACTION_BUTTONS.LAUNCH.name) {
       this.openInstance(actionEvent.instance?.dbId);
+      return;
     }
+    if (actionEvent.action === ACTION_BUTTONS.USE_EXISTING.name) {
+      this.setRowResolution(groupIndex, 'use-existing', actionEvent.instance);
+      return;
+    }
+    if (actionEvent.action === ACTION_BUTTONS.MERGE.name) {
+      this.setRowResolution(groupIndex, 'merge', actionEvent.instance);
+    }
+  }
+
+  private setRowResolution(groupIndex: number, action: RowResolution['action'], match: Instance): void {
+    if (!match || match.dbId === undefined || match.dbId === null || (match.dbId as any) === '') {
+      return;
+    }
+    const existing = this.rowResolutions.get(groupIndex);
+    // Clicking the same action against the same match again toggles it off.
+    if (existing && existing.action === action && existing.existingInstanceDbId === match.dbId) {
+      this.rowResolutions.delete(groupIndex);
+      return;
+    }
+    this.rowResolutions.set(groupIndex, {
+      action,
+      existingInstanceDbId: match.dbId,
+      existingDisplayName: match.displayName ?? String(match.dbId)
+    });
+    // Choosing an existing instance clears the "commit anyway" selection for this group.
+    this.selected.delete(groupIndex);
   }
 
   openInstance(dbId: number): void {

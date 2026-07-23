@@ -18,6 +18,7 @@ import { DeletionDialogService } from 'src/app/instance/components/deletion-dial
 import { CommitResultDialogService, CommitResult } from './commit-result-dialog/commit-result-dialog.service';
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
 import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
+import { MatchResolutionService } from 'src/app/core/services/match-resolution.service';
 
 
 @Component({
@@ -70,7 +71,8 @@ export class UpdatedInstanceListComponent implements OnInit {
     private deleteBulkDialogService: DeleteBulkDialogService,
     private deletionDialogService: DeletionDialogService,
     private commitResultDialogService: CommitResultDialogService,
-    private matchedInstancesDialogService: MatchedInstancesDialogService
+    private matchedInstancesDialogService: MatchedInstancesDialogService,
+    private matchResolutionService: MatchResolutionService
   ) {
   }
 
@@ -212,8 +214,9 @@ export class UpdatedInstanceListComponent implements OnInit {
               title: 'Matches Found',
               groups: [{ newInstance: instance, matches }]
             }).afterClosed().pipe(
-              concatMap(selected => {
-                if (selected && selected.length > 0) {
+              concatMap(resolutions => this.matchResolutionService.resolve(resolutions)),
+              concatMap(toCommit => {
+                if (toCommit.some(inst => inst.dbId === instance.dbId)) {
                   this.openCommitWaitDialog('Committing New Instance', 'Please wait while the selected new instance is committed.');
                   return this.doCommitInstance(instance);
                 }
@@ -333,7 +336,7 @@ export class UpdatedInstanceListComponent implements OnInit {
 * the schema list view stay in sync.
 */
   commitNewInstances() {
-    this.instanceUtilities.commitNewInstances(this.selectedNewInstances, this.dataService, () => {
+    this.instanceUtilities.commitNewInstances(this.selectedNewInstances, this.dataService, this.matchResolutionService, () => {
       this.selectedNewInstances = [];
       this.showCheck = false;
       this.instanceUtilities.clearSelectedInstances(SelectedInstancesList.newInstanceList);

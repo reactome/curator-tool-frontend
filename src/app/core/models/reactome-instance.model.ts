@@ -30,6 +30,25 @@ export interface Instance {
 }
 
 /**
+ * How the user chose to resolve a new instance that matched existing database instance(s)
+ * in the pre-commit duplicate check:
+ * - 'commit-anyway': commit the new instance despite the match (the original behavior).
+ * - 'use-existing': discard the new instance and repoint its references at a chosen match.
+ * - 'merge': copy the new instance's attributes onto a chosen match, then discard the new
+ *   instance and repoint its references at that match.
+ */
+export type MatchResolutionAction = 'commit-anyway' | 'use-existing' | 'merge';
+
+/**
+ * A single per-new-instance decision returned by the matched-instances dialog.
+ */
+export interface MatchResolution {
+  newInstanceDbId: number; // the held-back new instance (negative dbId)
+  action: MatchResolutionAction;
+  existingInstanceDbId?: number; // the chosen match, required for 'use-existing' / 'merge'
+}
+
+/**
  * Used to encode the data for the attribute value cell.
  */
 export interface AttributeValue {
