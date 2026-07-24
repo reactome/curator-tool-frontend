@@ -1,4 +1,11 @@
-### Build on July 23, 2026
+### Build on July 24, 2026
+
+- Added the ability to change an instance's schema class. From the instance view you can open a dialog and pick any concrete class. Before the change is allowed, every referrer that points at the instance is checked to make sure the instance would still be valid under the new class; if any referrer's attribute would no longer accept it, the change is blocked and the offending referrers are listed (each can be opened in a new tab to resolve the reference first).
+
+- Added stoichiometry support for adding and editing multivalued instance values. You can now set the stoichiometry (number of copies) of a value when adding it via the "new instance" and "select instance" dialogs, and change the stoichiometry of an existing value from its action menu via a small dialog.
+
+- Testing the crash when committing instances that contain circular references (e.g. A → B → A). Preparing such an instance for commit previously recursed indefinitely and overflowed the stack; cycles are now detected and handled safely while still allowing the same instance to appear in separate branches.
+
 
 - When committing a new instance that matches existing instance(s) in the database, you can now resolve each duplicate directly from the "Matches Found" dialog instead of only committing it anyway. For each matched new instance you choose an action: leave it uncommitted (default), commit it as a new instance, use an existing match instead, or merge the new instance into an existing match. "Use existing" discards the new instance and repoints everything that referenced it at the chosen existing instance. "Merge" copies the new instance's attributes onto the chosen existing instance (single-valued attributes are overwritten; multivalued attributes have the new values appended), then repoints references and discards the new instance. Resulting edits are staged for review, not committed immediately.
 
