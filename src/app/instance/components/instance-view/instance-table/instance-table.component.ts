@@ -17,6 +17,7 @@ import {
   AttributeCategory,
   AttributeDataType,
   SchemaAttribute,
+  STOICHIOMETRY_RELATIONSHIP_TYPES,
 } from '../../../../core/models/reactome-schema.model';
 import { DragDropService } from '../../../../schema-view/instance-bookmark/drag-drop.service';
 import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
@@ -252,23 +253,36 @@ export class InstanceTableComponent implements PostEditListener {
       // Add the new value
       if (!result || !result.instance) return; // Do nothing
       const created = result.instance;
-      // Stoichiometry relationship types may add the same instance multiple times.
-      const count = Math.max(1, Math.floor(result.stoichiometry) || 1);
-      // Use cached shell instance. The first copy honors the replace/insert
-      // behavior; any additional stoichiometry copies are appended.
-      for (let i = 0; i < count; i++) {
-        const replaceThis = replace && i === 0;
-        const insertAtIndex = i === 0 ? !replace : false;
+      // Replacing a collapsed stoichiometry group swaps out every old copy for the newly created
+      // instance in the old group's position, rather than replacing a single copy.
+      if (replace && this.isStoichiometryAttribute(attributeValue.attribute)) {
         if (this._instance!.source)
-          this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(created), this._instance!.source, replaceThis, true, insertAtIndex);
-        this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(created), this._instance!, replaceThis, true, insertAtIndex);
+          this.attributeEditService.replaceStoichiometryGroup(attributeValue, this._instance!.source, [created]);
+        this.attributeEditService.replaceStoichiometryGroup(attributeValue, this._instance!, [created]);
+        this.finishEdit(attributeValue.attribute.name, attributeValue.value);
+        this.cdr.detectChanges();
+        return;
       }
+      // Use cached shell instance, honoring the replace/insert behavior.
+      const insertAtIndex = !replace;
+      if (this._instance!.source)
+        this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(created), this._instance!.source, replace, true, insertAtIndex);
+      this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(created), this._instance!, replace, true, insertAtIndex);
       this.finishEdit(attributeValue.attribute.name, attributeValue.value);
       this.cdr.detectChanges();
     });
   }
 
   private deleteInstanceAttribute(attributeValue: AttributeValue) {
+    // A stoichiometry row is collapsed to "N × instance", so deleting it removes every copy of
+    // that instance (use Edit Stoichiometry to change the count instead).
+    if (this.isStoichiometryAttribute(attributeValue.attribute)) {
+      if (this._instance?.source)
+        this.attributeEditService.deleteAllInstanceOccurrences(attributeValue, this._instance.source);
+      this.attributeEditService.deleteAllInstanceOccurrences(attributeValue, this._instance!);
+      this.finishEdit(attributeValue.attribute.name, attributeValue.value);
+      return;
+    }
     // If there is a source instance, map the index based on dbId
     if (this._instance?.source) {
       const sourceAttributeValue = this.mapppingIndexInSourceInstance(attributeValue);
@@ -312,12 +326,71 @@ export class InstanceTableComponent implements PostEditListener {
       this.selectInstanceDialogService.openDialog(attributeValue);
     matDialogRef.afterClosed().subscribe((result) => {
       if (result === undefined || result.length === 0) return; // Do nothing
+      // Replacing a collapsed stoichiometry group swaps out every old copy for the selected
+      // instance(s) in the old group's position, rather than replacing a single copy.
+      if (replace && this.isStoichiometryAttribute(attributeValue.attribute)) {
+        if (this._instance!.source)
+          this.attributeEditService.replaceStoichiometryGroup(attributeValue, this._instance!.source, result);
+        this.attributeEditService.replaceStoichiometryGroup(attributeValue, this._instance!, result);
+        this.finishEdit(attributeValue.attribute.name, attributeValue.value);
+        this.cdr.detectChanges();
+        return;
+      }
       if (this._instance!.source)
         this.attributeEditService.addInstanceViaSelect(attributeValue, result, this._instance!.source, replace, true, !replace);
       this.attributeEditService.addInstanceViaSelect(attributeValue, result, this._instance!, replace, true, !replace);
       this.finishEdit(attributeValue.attribute.name, attributeValue.value);
       this.cdr.detectChanges();
     });
+  }
+
+  /**
+   * Stoichiometry relationship types (input, output, hasComponent, repeatedUnit) may hold the
+   * same instance multiple times. Their values are rendered as one collapsed "N ×" row per
+   * unique instance rather than one row per copy.
+   */
+  isStoichiometryAttribute(attribute: SchemaAttribute | undefined): boolean {
+    return attribute?.type === AttributeDataType.INSTANCE &&
+      attribute?.cardinality !== '1' &&
+      STOICHIOMETRY_RELATIONSHIP_TYPES.includes(attribute?.name ?? '');
+  }
+
+  /**
+   * Collapse the repeated instance values of a stoichiometry attribute into one group per unique
+   * instance. `index` is the position of the first copy in the underlying array (used to anchor
+   * add/insert actions); `count` is how many copies exist; `items` are the actual copies, kept so
+   * a drag reorder can rebuild the flat array exactly.
+   */
+  getStoichiometryGroups(rawValue: any): { value: any; count: number; index: number; items: any[] }[] {
+    const list = Array.isArray(rawValue) ? rawValue : (rawValue === undefined ? [] : [rawValue]);
+    const groups: { value: any; count: number; index: number; items: any[] }[] = [];
+    list.forEach((v: any, i: number) => {
+      const existing = groups.find(g => g.value?.dbId === v?.dbId);
+      if (existing) {
+        existing.count++;
+        existing.items.push(v);
+      } else {
+        groups.push({ value: v, count: 1, index: i, items: [v] });
+      }
+    });
+    return groups;
+  }
+
+  trackByGroupDbId(_index: number, group: { value: any }): any {
+    return group.value?.dbId ?? _index;
+  }
+
+  /**
+   * Reorder collapsed stoichiometry groups by drag/drop and rebuild the underlying array so all
+   * copies of a moved instance stay together.
+   */
+  dropStoichiometry(event: CdkDragDrop<any[]>, element: AttributeValue) {
+    const groups = this.getStoichiometryGroups(element.value);
+    if (event.previousIndex === event.currentIndex) return;
+    moveItemInArray(groups, event.previousIndex, event.currentIndex);
+    const rebuilt = groups.flatMap(g => g.items);
+    this._instance!.attributes.set(element.attribute.name, rebuilt);
+    this.finishEdit(element.attribute.name, rebuilt);
   }
 
   private editStoichiometry(attributeValue: AttributeValue) {

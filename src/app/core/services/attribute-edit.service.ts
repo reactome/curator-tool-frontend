@@ -54,6 +54,52 @@ export class AttributeEditService {
         //this.finishEdit(attributeValue.attribute.name, value, instance);
     }
 
+    /**
+     * Remove every copy of an instance from a stoichiometry relationship type (input, output,
+     * hasComponent, repeatedUnit), where the same instance may appear multiple times. Matching is
+     * by dbId. If nothing remains, the attribute is set to undefined so it renders as an empty slot.
+     */
+    public deleteAllInstanceOccurrences(attributeValue: AttributeValue, instance: Instance): void {
+        const attributeName = attributeValue.attribute.name;
+        let value = instance?.attributes?.get(attributeName);
+        if (value === undefined) return;
+        if (!Array.isArray(value)) {
+            instance?.attributes?.set(attributeName, undefined);
+            return;
+        }
+        const remaining = value.filter((v: any) => !this.isSameValue(v, attributeValue.value));
+        if (remaining.length === 0) {
+            instance?.attributes?.set(attributeName, undefined);
+        } else {
+            instance?.attributes?.set(attributeName, remaining);
+        }
+    }
+
+    /**
+     * Replace an entire collapsed stoichiometry group (every copy of attributeValue.value) with
+     * the given new values, inserted at the position the old group first occupied. Used when a
+     * stoichiometry "N ×" row is replaced via creation/selection so the swapped instance takes the
+     * old one's place rather than leaving the old copies behind. New values are stored as shells.
+     */
+    public replaceStoichiometryGroup(attributeValue: AttributeValue, instance: Instance, newValues: any[]): void {
+        const attributeName = attributeValue.attribute.name;
+        const shells = newValues.map((v: any) => this.instUtil.getShellInstance(v));
+        let value = instance?.attributes?.get(attributeName);
+        if (value === undefined || !Array.isArray(value)) {
+            instance?.attributes?.set(attributeName, shells);
+            return;
+        }
+        // Insert where the old group first appeared, counting only the values that are kept.
+        const firstIndex = value.findIndex((v: any) => this.isSameValue(v, attributeValue.value));
+        let insertAt = 0;
+        for (let i = 0; i < value.length && (firstIndex < 0 || i < firstIndex); i++) {
+            if (!this.isSameValue(value[i], attributeValue.value)) insertAt++;
+        }
+        const remaining = value.filter((v: any) => !this.isSameValue(v, attributeValue.value));
+        remaining.splice(insertAt, 0, ...shells);
+        instance?.attributes?.set(attributeName, remaining);
+    }
+
     public addValueToAttributeInBatch(attributeValue: AttributeValue, result: any, data: Instance[], replace?: boolean) {
         let objects = this.dataService.fetchInstanceInBatch(data.map(inst => inst.dbId));
         // for (let instance of objects) {

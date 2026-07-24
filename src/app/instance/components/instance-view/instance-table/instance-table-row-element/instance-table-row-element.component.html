@@ -42,6 +42,7 @@
           <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
             [queryParamsHandling]="'preserve'" class="padding span-menu-trigger"
             style="cursor: pointer; text-decoration: underline;">
+            <span *ngIf="stoichiometry > 1" class="stoichiometry-prefix">{{stoichiometry}} &times; </span>
             {{value.displayName}}
             [{{value.dbId}}]
           </a><br>
@@ -53,6 +54,13 @@
           <!-- TODO: Also need to determine if it is required or disabled-->
           <ng-container *ngIf="value !== undefined; else elseblock">
             <div class="instance-value-wrapper">
+              <!-- Stoichiometry rows show the copy count as a clickable badge; clicking it opens the
+              stoichiometry editor directly. Shown whenever there is more than one copy, or on hover
+              (so a single copy can still be increased). -->
+              <button *ngIf="canEditStoichiometry && (stoichiometry > 1 || showActions)" type="button"
+                class="stoichiometry-chip" (click)="onEditStoichiometry($event)" matTooltip="Set stoichiometry">
+                &nbsp;{{stoichiometry}} &times;
+              </button>
               <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
                 #aTrigger="cdkContextMenuTriggerFor" [cdkContextMenuTriggerFor]="row_menu"
                 (contextmenu)="onContextMenu($event)" (cdkContextMenuOpened)="onMenuOpened(aTrigger)"

@@ -15,6 +15,27 @@
   padding: 0 16px;
 }
 
+// "N ×" prefix shown before a stoichiometry instance value that appears more than once
+// (read-only contexts such as the comparison column).
+.stoichiometry-prefix {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+// Clickable stoichiometry count on an editable stoichiometry row, shown as plain "N ×" text
+// before the instance. Clicking opens the stoichiometry editor directly.
+.stoichiometry-chip {
+  flex: 0 0 auto;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 // Wrap a populated instance value and its inline edit-action button. The wrapper is
 // positioned so the button can overlay the row without affecting its height.
 .instance-value-wrapper {

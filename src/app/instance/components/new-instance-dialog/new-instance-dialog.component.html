@@ -9,11 +9,6 @@
       </mat-option>
     </ng-container>
   </mat-select>
-  <mat-form-field *ngIf="allowsDuplicates" class="stoichiometry-field" appearance="fill">
-    <mat-label>Stoichiometry</mat-label>
-    <input matInput type="number" min="1" step="1" [(ngModel)]="stoichiometry">
-    <mat-hint>The new instance is added this many times.</mat-hint>
-  </mat-form-field>
 <!--  TODO: change to case statement-->
   <ng-container *ngIf="attributeValue.editAction === 0 || attributeValue.editAction === 2">
     <!-- Don't fire any editing event to the ngrx store during creating and before committing -->

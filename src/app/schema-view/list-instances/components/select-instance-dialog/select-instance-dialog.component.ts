@@ -30,10 +30,6 @@ export class SelectInstanceDialogComponent {
   selectedPanelMaxHeight: string = '50vh';
   isSingleValued: boolean = false;
   attributeSchemaClass: string = '';
-  // For input, output, and hasComponent the same instance may be added multiple
-  // times (e.g. ATP with a stoichiometry > 1). This drives how many copies of a
-  // selected instance are added to the attribute value.
-  stoichiometry: number = 1;
 
   // Customized buttons
   actionButtons: Array<ActionButton> = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.LIST];
@@ -59,12 +55,11 @@ export class SelectInstanceDialogComponent {
       // Only take one value if the cardinality is 1
       this.selectedInstances = [row];
     }
-    // input, output, and hasComponent may have the same instance multiple times
-    // (ex: ATP). Add it stoichiometry times based on the stoichiometry input.
+    // input, output, hasComponent and repeatedUnit may have the same instance multiple times
+    // (ex: ATP), so allow the same row to be added again. Use the Stoichiometry action on the
+    // instance table to adjust how many copies exist.
     else if (this.allowsDuplicates) {
-      const count = Math.max(1, Math.floor(this.stoichiometry) || 1);
-      const copies = Array.from({ length: count }, () => row);
-      this.selectedInstances = [...this.selectedInstances, ...copies];
+      this.selectedInstances = [...this.selectedInstances, row];
     }
     else {
       this.selectedInstances = [...this.selectedInstances, row];
