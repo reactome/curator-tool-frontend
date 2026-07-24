@@ -993,6 +993,22 @@ export class InstanceUtilities {
     }
 
     cloneInstanceForCommit(source: Instance): Instance {
+        return this.cloneInstanceForCommitInternal(source, new Set<Instance>());
+    }
+
+    /**
+     * Recursive worker for cloneInstanceForCommit. The `path` set tracks the
+     * instances currently on the recursion stack so we can guard against
+     * circular references (e.g. A -> B -> A). Without this guard a cycle in the
+     * attribute graph causes infinite recursion and a stack overflow. When a
+     * referenced instance is already an ancestor in the current path we emit a
+     * lightweight shell reference instead of cloning it again.
+     */
+    private cloneInstanceForCommitInternal(source: Instance, path: Set<Instance>): Instance {
+        if (path.has(source)) {
+            return this.makeShell(source);
+        }
+        path.add(source);
         let instance: Instance = {
             dbId: source.dbId,
             displayName: source.displayName,
@@ -1013,7 +1029,7 @@ export class InstanceUtilities {
                     let arrayValue = [];
                     for (let element of value) {
                         if (this.isInstance(element)) {
-                            arrayValue.push(this.cloneInstanceForCommit(element));
+                            arrayValue.push(this.cloneInstanceForCommitInternal(element, path));
                         }
                         else
                             arrayValue.push(element);
@@ -1021,7 +1037,7 @@ export class InstanceUtilities {
                     instance.attributes.set(key, arrayValue);
                 }
                 else if (this.isInstance(value)) {
-                    instance.attributes.set(key, this.cloneInstanceForCommit(value));
+                    instance.attributes.set(key, this.cloneInstanceForCommitInternal(value, path));
                 }
                 else
                     instance.attributes.set(key, value);
@@ -1029,6 +1045,9 @@ export class InstanceUtilities {
             let attributesJson = Object.fromEntries(instance.attributes);
             instance.attributes = attributesJson;
         }
+        // Done with this branch: allow the same instance to appear again in a
+        // sibling branch (a DAG is fine), only reject it as a true ancestor cycle.
+        path.delete(source);
         return instance;
     }
 
