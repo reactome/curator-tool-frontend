@@ -244,12 +244,19 @@ export class InstanceTableComponent implements PostEditListener {
     matDialogRef.afterClosed().subscribe((result) => {
       // console.debug(`New value for ${JSON.stringify(attributeValue)}: ${JSON.stringify(result)}`)
       // Add the new value
-      if (result === undefined || result === this.instUtil.getShellInstance(result)) return; // Do nothing
-      // Check if there is any value
-      // Use cached shell instance
-      if (this._instance!.source)
-        this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!.source, replace, true, !replace);
-      this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!, replace, true, !replace);
+      if (!result || !result.instance) return; // Do nothing
+      const created = result.instance;
+      // Stoichiometry relationship types may add the same instance multiple times.
+      const count = Math.max(1, Math.floor(result.stoichiometry) || 1);
+      // Use cached shell instance. The first copy honors the replace/insert
+      // behavior; any additional stoichiometry copies are appended.
+      for (let i = 0; i < count; i++) {
+        const replaceThis = replace && i === 0;
+        const insertAtIndex = i === 0 ? !replace : false;
+        if (this._instance!.source)
+          this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(created), this._instance!.source, replaceThis, true, insertAtIndex);
+        this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(created), this._instance!, replaceThis, true, insertAtIndex);
+      }
       this.finishEdit(attributeValue.attribute.name, attributeValue.value);
       this.cdr.detectChanges();
     });

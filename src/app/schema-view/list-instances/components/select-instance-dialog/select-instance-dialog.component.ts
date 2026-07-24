@@ -1,7 +1,7 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { AttributeValue, Instance } from 'src/app/core/models/reactome-instance.model';
-import { ACTION_BUTTONS, SchemaClass } from "../../../../core/models/reactome-schema.model";
+import { ACTION_BUTTONS, SchemaClass, STOICHIOMETRY_RELATIONSHIP_TYPES } from "../../../../core/models/reactome-schema.model";
 import { ActionButton } from '../list-instances-view/instance-list-table/instance-list-table.component';
 import { DataService } from 'src/app/core/services/data.service';
 
@@ -30,6 +30,10 @@ export class SelectInstanceDialogComponent {
   selectedPanelMaxHeight: string = '50vh';
   isSingleValued: boolean = false;
   attributeSchemaClass: string = '';
+  // For input, output, and hasComponent the same instance may be added multiple
+  // times (e.g. ATP with a stoichiometry > 1). This drives how many copies of a
+  // selected instance are added to the attribute value.
+  stoichiometry: number = 1;
 
   // Customized buttons
   actionButtons: Array<ActionButton> = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.LIST];
@@ -44,16 +48,23 @@ export class SelectInstanceDialogComponent {
     this.selected = this.candidateClasses[0];
   }
 
+  // Stoichiometry relationship types (input, output, hasComponent, repeatedUnit)
+  // may legitimately contain the same instance multiple times.
+  get allowsDuplicates(): boolean {
+    return STOICHIOMETRY_RELATIONSHIP_TYPES.includes(this.attributeSchemaClass);
+  }
+
   onSelectRow(row: Instance) {
     if (this.isSingleValued) {
       // Only take one value if the cardinality is 1
       this.selectedInstances = [row];
     }
-    // input, output, and hasComponent may have multiple values (ex: ATP)
-    else if (this.attributeSchemaClass === 'input' || 
-            this.attributeSchemaClass === 'output' || 
-            this.attributeSchemaClass === 'hasComponent') {
-      this.selectedInstances = [...this.selectedInstances, row];
+    // input, output, and hasComponent may have the same instance multiple times
+    // (ex: ATP). Add it stoichiometry times based on the stoichiometry input.
+    else if (this.allowsDuplicates) {
+      const count = Math.max(1, Math.floor(this.stoichiometry) || 1);
+      const copies = Array.from({ length: count }, () => row);
+      this.selectedInstances = [...this.selectedInstances, ...copies];
     }
     else {
       this.selectedInstances = [...this.selectedInstances, row];

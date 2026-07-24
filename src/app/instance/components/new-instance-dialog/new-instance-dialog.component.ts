@@ -1,11 +1,22 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { AttributeValue, Instance } from 'src/app/core/models/reactome-instance.model';
+import { STOICHIOMETRY_RELATIONSHIP_TYPES } from 'src/app/core/models/reactome-schema.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { Store } from '@ngrx/store';
 import { NewInstanceActions } from "src/app/instance/state/instance.actions";
 import { concatMap, from, Observable } from 'rxjs';
 import { Pipe } from '@angular/core';
+
+/**
+ * The value returned when the create-new-instance dialog is confirmed.
+ * stoichiometry is how many times the created instance should be added to the
+ * attribute value (only > 1 for stoichiometry relationship types).
+ */
+export interface NewInstanceDialogResult {
+  instance: Instance | undefined;
+  stoichiometry: number;
+}
 
 /**
  * A dialog component that is used to create a new Instance object.
@@ -22,6 +33,9 @@ export class NewInstanceDialogComponent {
   selected: string = '';
   candidateClasses: string[] = [];
   instance: Instance | undefined;
+  // For stoichiometry relationship types (input, output, hasComponent,
+  // repeatedUnit) the created instance may be added multiple times.
+  stoichiometry: number = 1;
 
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public attributeValue: AttributeValue,
@@ -31,6 +45,12 @@ export class NewInstanceDialogComponent {
       this.candidateClasses = dataService.setCandidateClasses(attributeValue.attribute);
       this.selected = this.candidateClasses![0];
       this.dataService.createNewInstance(this.selected).subscribe(instance => this.instance = instance);
+  }
+
+  // Stoichiometry relationship types (input, output, hasComponent, repeatedUnit)
+  // may legitimately contain the same instance multiple times.
+  get allowsDuplicates(): boolean {
+    return STOICHIOMETRY_RELATIONSHIP_TYPES.includes(this.attributeValue.attribute.name);
   }
 
   onSelectionChange(): void {
@@ -54,7 +74,11 @@ export class NewInstanceDialogComponent {
       this.dataService.registerInstance(this.instance);
       this.store.dispatch(NewInstanceActions.register_new_instance(this.instance));
     }
-    this.dialogRef.close(this.instance);
+    const result: NewInstanceDialogResult = {
+      instance: this.instance,
+      stoichiometry: this.allowsDuplicates ? this.stoichiometry : 1,
+    };
+    this.dialogRef.close(result);
   }
 
   // setCandidateClasses(attributeValue: AttributeValue) {
