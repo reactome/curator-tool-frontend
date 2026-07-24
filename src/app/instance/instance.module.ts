@@ -38,6 +38,7 @@ import { QAReportTable } from "./components/qa-report-dialog/selected-instances-
 import { MatExpansionModule } from "@angular/material/expansion";
 import { TextEditorDialogComponent } from "./components/instance-view/instance-table/instance-table-row-element/text-editor-dialog/text-editor-dialog.component";
 import { StoichiometryDialogComponent } from "./components/instance-view/instance-table/stoichiometry-dialog/stoichiometry-dialog.component";
+import { ChangeClassDialogComponent } from "./components/change-class-dialog/change-class-dialog.component";
 import { HttpClientModule } from "@angular/common/http";
 import { AngularEditorModule } from "@kolkov/angular-editor";
 import { DeletionCommitModule } from "./deletion-commit/deletion-commit.module";
@@ -61,6 +62,7 @@ import { MatchInstancesDialogComponent } from './components/match-instances-dial
         QAReportTable,
         TextEditorDialogComponent,
         StoichiometryDialogComponent,
+        ChangeClassDialogComponent,
         MatchInstancesDialogComponent,
     ],
   imports: [

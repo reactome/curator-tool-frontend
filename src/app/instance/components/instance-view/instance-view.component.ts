@@ -2,6 +2,7 @@ import { Component, inject, Input, OnDestroy, OnInit, ViewChild } from '@angular
 import { ActivatedRoute, Router } from "@angular/router";
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { SchemaClass } from 'src/app/core/models/reactome-schema.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 import { DragDropService } from "../../../schema-view/instance-bookmark/drag-drop.service";
@@ -29,6 +30,7 @@ import { CommitResultDialogService } from 'src/app/status/components/local-insta
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
 import { environment } from 'src/environments/environment.dev';
 import { InstanceNameGenerator } from 'src/app/core/post-edit/InstanceNameGenerator';
+import { ChangeClassDialogComponent } from '../change-class-dialog/change-class-dialog.component';
 
 @Component({
   selector: 'app-instance-view',
@@ -780,6 +782,49 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       let dbId = instance.dbId.toString();
       this.router.navigate(["/schema_view/instance/" + dbId.toString()]);
     });
+  }
+
+  /**
+   * Change the schema class of the displayed instance. Any concrete class may be chosen; the
+   * dialog blocks the change if a referrer's attribute would no longer accept the instance.
+   * On confirmation, attributes shared with the new class are preserved, the display name is
+   * regenerated, and the same dbId is kept.
+   */
+  changeSchemaClass() {
+    if (!this.instance)
+      return;
+    const dialogRef = this.dialog.open(ChangeClassDialogComponent, {
+      width: '480px',
+      data: { instance: this.instance }
+    });
+    dialogRef.afterClosed().subscribe((newClassName: string | undefined) => {
+      if (!newClassName || !this.instance || newClassName === this.instance.schemaClassName)
+        return;
+      this.dataService.fetchSchemaClass(newClassName).subscribe(newSchemaClass => {
+        this.applySchemaClassChange(this.instance!, newSchemaClass);
+        // Reload so the table, title and pruned attributes reflect the new class.
+        this.loadInstance(this.instance!.dbId, false, false, true);
+      });
+    });
+  }
+
+  private applySchemaClassChange(instance: Instance, newSchemaClass: SchemaClass) {
+    const nameGenerator = new InstanceNameGenerator(this.dataService, this.instUtils);
+    const apply = (inst: Instance | undefined) => {
+      if (!inst)
+        return;
+      this.instUtils.changeSchemaClass(inst, newSchemaClass);
+      // A class change is a structural change; flag it and regenerate the display name,
+      // which is derived from the schema class.
+      this.instUtils.addToModifiedAttributes('schemaClass', inst);
+      inst.isStructureModified = true;
+      nameGenerator.updateDisplayName(inst);
+    };
+    apply(instance.source);
+    apply(instance);
+    // Make sure the edited object is the one cached, then stage it as an update.
+    this.dataService.registerInstance(instance.source ?? instance);
+    this.instUtils.registerUpdatedInstance('schemaClass', instance);
   }
 
   isReferenceGeneProductInstance(): boolean {

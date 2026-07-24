@@ -1,0 +1,54 @@
+.dialog_title {
+  text-align: left;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.current {
+  margin: 0 0 12px;
+}
+
+.target-name {
+  display: block;
+  font-weight: 500;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.class-field {
+  display: block;
+  width: 100%;
+}
+
+.conflicts {
+  margin-top: 8px;
+  color: #b00020;
+
+  .conflicts-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 6px;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  .conflicts-hint {
+    margin: 8px 0 0;
+    font-style: italic;
+  }
+
+  .referrer-link {
+    color: #1976d2;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+}

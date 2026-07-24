@@ -370,6 +370,41 @@ export class InstanceUtilities {
     }
 
     /**
+     * True if className is accepted by an INSTANCE-typed attribute, i.e. it is one of the
+     * attribute's allowed classes or a descendant of one. An attribute with no allowedClases
+     * imposes no class constraint. Used to check whether an instance still qualifies for a
+     * referrer's attribute after its schema class changes.
+     */
+    isClassAllowedForAttribute(className: string, attribute: SchemaAttribute, dataService: DataService): boolean {
+        if (!attribute.allowedClases || attribute.allowedClases.length === 0)
+            return true;
+        return attribute.allowedClases.some(allowed =>
+            this._isSchemaClass(className, dataService.getSchemaClass(allowed)));
+    }
+
+    /**
+     * Change an instance's schema class in place, preserving the original dbId. Attribute values
+     * whose attribute name is not defined on the new class are dropped; every attribute the new
+     * class still defines is preserved. Updates schemaClassName and schemaClass. The caller is
+     * responsible for regenerating the display name (via InstanceNameGenerator) and staging the
+     * change, since the display name derives from the schema class.
+     */
+    changeSchemaClass(instance: Instance | undefined, newSchemaClass: SchemaClass): void {
+        if (!instance) return;
+        const allowedNames = new Set<string>((newSchemaClass.attributes ?? []).map(a => a.name));
+        // Universal keys that are not schema attributes but must survive the class switch.
+        const alwaysKeep = new Set<string>(['dbId', 'DB_ID', 'schemaClass', 'schemaClassName', 'displayName']);
+        if (instance.attributes instanceof Map) {
+            for (const key of Array.from(instance.attributes.keys())) {
+                if (!allowedNames.has(key) && !alwaysKeep.has(key))
+                    instance.attributes.delete(key);
+            }
+        }
+        instance.schemaClassName = newSchemaClass.name;
+        instance.schemaClass = newSchemaClass;
+    }
+
+    /**
      * A utility function to parse by "." and return the last string as the
      * schemaClass name from a Java class name.
      */
