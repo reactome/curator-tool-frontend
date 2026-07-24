@@ -154,6 +154,43 @@ export class AttributeEditService {
         return true;
     }
 
+    /**
+     * Set how many copies of an existing instance value exist in a stoichiometry
+     * relationship type (input, output, hasComponent, repeatedUnit). Adds shell
+     * copies or removes extras so the total matches targetCount (minimum 1).
+     * Returns true if the attribute was changed.
+     */
+    public setInstanceStoichiometry(attributeValue: AttributeValue, instance: Instance, targetCount: number): boolean {
+        const attributeName = attributeValue.attribute.name;
+        let value = instance?.attributes?.get(attributeName);
+        if (value === undefined) return false;
+        if (!Array.isArray(value)) value = [value];
+
+        const target = attributeValue.value;
+        const current = value.filter((v: any) => this.isSameValue(v, target)).length;
+        if (current === 0) return false;
+
+        const desired = Math.max(1, Math.floor(targetCount) || 1);
+        if (desired === current) return false;
+
+        if (desired > current) {
+            for (let i = current; i < desired; i++) {
+                value.push(this.instUtil.getShellInstance(target));
+            }
+        } else {
+            // Remove extra copies from the end, keeping earlier positions stable.
+            let toRemove = current - desired;
+            for (let i = value.length - 1; i >= 0 && toRemove > 0; i--) {
+                if (this.isSameValue(value[i], target)) {
+                    value.splice(i, 1);
+                    toRemove--;
+                }
+            }
+        }
+        instance?.attributes?.set(attributeName, value);
+        return true;
+    }
+
     private containsValue(attributeName: string, values: any[], candidate: any, ignoreIndex?: number): boolean {
         if (this.allowsDuplicateInstanceValue(attributeName, candidate)) {
             return false;

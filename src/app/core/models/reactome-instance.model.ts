@@ -66,7 +66,8 @@ export enum EDIT_ACTION {
   REPLACE_VIA_SELECT,
   DELETE,
   EDIT,
-  BOOKMARK
+  BOOKMARK,
+  EDIT_STOICHIOMETRY
 }
 
 export interface InstanceList {

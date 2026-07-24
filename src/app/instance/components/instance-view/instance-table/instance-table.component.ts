@@ -31,6 +31,8 @@ import { deleteInstances } from 'src/app/instance/state/instance.selectors';
 import { Subscription } from 'rxjs';
 import { AttributeValue, EDIT_ACTION } from 'src/app/core/models/reactome-instance.model';
 import { InstanceComparisonDataSource } from './instance-table-comparison.model';
+import { MatDialog } from '@angular/material/dialog';
+import { StoichiometryDialogComponent } from './stoichiometry-dialog/stoichiometry-dialog.component';
 
 /**
  * This is the actual table component to show the content of an Instance.
@@ -129,6 +131,7 @@ export class InstanceTableComponent implements PostEditListener {
     private attributeEditService: AttributeEditService,
     private postEditService: PostEditService, // This is used to perform post-edit actions
     private dataService: DataService,
+    private dialog: MatDialog,
   ) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
@@ -228,6 +231,9 @@ export class InstanceTableComponent implements PostEditListener {
       case EDIT_ACTION.BOOKMARK:
         this.addBookmarkedInstance(attributeValue);
         break;
+      case EDIT_ACTION.EDIT_STOICHIOMETRY:
+        this.editStoichiometry(attributeValue);
+        break;
       default:
         console.error("The action doesn't know: ", attributeValue.editAction);
     }
@@ -312,6 +318,34 @@ export class InstanceTableComponent implements PostEditListener {
       this.finishEdit(attributeValue.attribute.name, attributeValue.value);
       this.cdr.detectChanges();
     });
+  }
+
+  private editStoichiometry(attributeValue: AttributeValue) {
+    const currentCount = this.countInstanceOccurrences(attributeValue);
+    if (currentCount === 0) return;
+    const dialogRef = this.dialog.open(StoichiometryDialogComponent, {
+      width: '360px',
+      data: {
+        displayName: `${attributeValue.value?.displayName} [${attributeValue.value?.dbId}]`,
+        currentCount,
+      },
+    });
+    dialogRef.afterClosed().subscribe((newCount: number | undefined) => {
+      if (newCount === undefined || newCount === currentCount) return;
+      if (this._instance!.source)
+        this.attributeEditService.setInstanceStoichiometry(attributeValue, this._instance!.source, newCount);
+      this.attributeEditService.setInstanceStoichiometry(attributeValue, this._instance!, newCount);
+      this.finishEdit(attributeValue.attribute.name, attributeValue.value);
+      this.cdr.detectChanges();
+    });
+  }
+
+  private countInstanceOccurrences(attributeValue: AttributeValue): number {
+    let value = this._instance?.attributes?.get(attributeValue.attribute.name);
+    if (value === undefined) return 0;
+    if (!Array.isArray(value)) value = [value];
+    const targetDbId = attributeValue.value?.dbId;
+    return value.filter((v: any) => v?.dbId === targetDbId).length;
   }
 
   // Note: the value parameter is not used here, but kept for future extension

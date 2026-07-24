@@ -92,7 +92,8 @@
 
     <ng-template #row_menu>
       <app-action-menu (actionItem)="onEditAction($event)"
-        [isSingledValued]="attribute!.cardinality === '1'"></app-action-menu>
+        [isSingledValued]="attribute!.cardinality === '1'"
+        [canEditStoichiometry]="canEditStoichiometry"></app-action-menu>
     </ng-template>
   </ng-container>
 

@@ -13,7 +13,7 @@ import { FormControl, Validators } from "@angular/forms";
 import { ActivatedRoute } from "@angular/router";
 import { Store } from "@ngrx/store";
 import { Observable, take } from "rxjs";
-import { AttributeCategory, AttributeDataType, SchemaAttribute } from 'src/app/core/models/reactome-schema.model';
+import { AttributeCategory, AttributeDataType, SchemaAttribute, STOICHIOMETRY_RELATIONSHIP_TYPES } from 'src/app/core/models/reactome-schema.model';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { AttributeValue, EDIT_ACTION, Instance } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
@@ -173,6 +173,15 @@ export class InstanceTableRowElementComponent implements OnInit {
     // Keep it while a species warning is pending so the trigger can reopen the menu afterwards.
     if (!this.isMouseIn && !this.speciesWarningPending)
       this.showActions = false;
+  }
+
+  // Stoichiometry relationship types (input, output, hasComponent, repeatedUnit)
+  // may repeat the same instance. Offer the stoichiometry editor only for an
+  // existing instance value on such a multi-valued attribute.
+  get canEditStoichiometry(): boolean {
+    return this.value !== undefined &&
+           this.attribute?.cardinality !== '1' &&
+           STOICHIOMETRY_RELATIONSHIP_TYPES.includes(this.attribute?.name ?? '');
   }
 
   onEditAction(action: EDIT_ACTION) {
