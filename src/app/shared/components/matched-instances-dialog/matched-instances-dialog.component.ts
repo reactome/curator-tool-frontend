@@ -71,10 +71,10 @@ export class MatchedInstancesDialogComponent {
   actionButtons: ActionButton[] = [ACTION_BUTTONS.LAUNCH];
   /** The selectable actions shown in each instance's dropdown, in display order. */
   readonly actionOptions: { value: GroupAction; label: string }[] = [
-    { value: 'none', label: 'Leave uncommitted' },
+    { value: 'none', label: 'Do Nothing' },
     { value: 'commit-anyway', label: 'Commit as a new instance' },
-    { value: 'use-existing', label: 'Use an existing instance instead' },
-    { value: 'merge', label: 'Merge into an existing instance' },
+    { value: 'use-existing', label: 'Use a DB instance instead' },
+    { value: 'merge', label: 'Merge into a DB instance' },
   ];
   /** Indices of the groups whose matches table is currently expanded. */
   private readonly expanded = new Set<number>();

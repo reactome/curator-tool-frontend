@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { Store } from "@ngrx/store";
 import { concatMap, from, map, Observable, of, toArray } from "rxjs";
 import { Instance, MatchResolution } from "../models/reactome-instance.model";
-import { AttributeCategory, SchemaAttribute, STOICHIOMETRY_RELATIONSHIP_TYPES } from "../models/reactome-schema.model";
+import { AttributeCategory, SchemaAttribute } from "../models/reactome-schema.model";
 import { UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 import { DataService } from "./data.service";
 import { InstanceUtilities } from "./instance.service";
@@ -129,25 +129,25 @@ export class MatchResolutionService {
             } else {
                 const newValues = Array.isArray(newValue) ? newValue : [newValue];
                 if (newValues.length === 0) continue;
-                const existingValues = existingAttributes.get(attribute.name);
+                let existingValues = existingAttributes.get(attribute.name);
                 if (existingValues === undefined || existingValues === null) {
-                    existingAttributes.set(attribute.name, [...newValues]);
-                    this.instUtils.addToModifiedAttributes(attribute.name, existing);
-                } else {
-                    // Stoichiometry relationship attributes intentionally allow duplicate
-                    // instance values (e.g. two molecules of the same input), matching
-                    // AttributeEditService; other attributes skip exact duplicates.
-                    const allowDuplicates = STOICHIOMETRY_RELATIONSHIP_TYPES.includes(attribute.name);
-                    let added = false;
-                    for (const value of newValues) {
-                        if (allowDuplicates || !existingValues.some((v: any) => this.isSameValue(v, value))) {
-                            existingValues.push(value);
-                            added = true;
-                        }
-                    }
-                    if (added)
-                        this.instUtils.addToModifiedAttributes(attribute.name, existing);
+                    existingValues = [];
+                    existingAttributes.set(attribute.name, existingValues);
                 }
+                // Skip values the existing instance already holds (instances compared by
+                // dbId) so a merge never introduces a duplicate. Deduping against the
+                // growing list also collapses duplicates within the new values themselves.
+                // This applies to every multivalued attribute, including stoichiometry
+                // relationship types (hasComponent/input/output/repeatedUnit).
+                let added = false;
+                for (const value of newValues) {
+                    if (!existingValues.some((v: any) => this.isSameValue(v, value))) {
+                        existingValues.push(value);
+                        added = true;
+                    }
+                }
+                if (added)
+                    this.instUtils.addToModifiedAttributes(attribute.name, existing);
             }
         }
     }
