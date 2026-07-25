@@ -15,6 +15,7 @@
 -bug: check that new pathway diagrams are checked for duplications. currently two users can each create a pathway diagram and commit them creating duplicated pathway diagram instance.
 
 -TODO: Uniprot has changed their xml format, so start and end coordinates must be parsed a different way. Currently we are using ReferenceGeneProducts' existing chain attribute to get coordinates. In the future for new species we will need to update the script for aquiring coordinates from the fetched xml.
+- Bug: Some events have orthologousEvent. However, searching for this slot with is not null returns nothing. This is most likely a bug at the model level: the edge name is "inferredTo", the edge is mapped to both "inferredFrom" and "orthologousEvent". A positive example is: 1113134.
 
 #### Deidre
 - bug: The numbers of instances at the new schema view (beta browser) are not updated when new instances are committed. It looks like the counts may be cached at the server app. However, the content of edited instances do get updated.

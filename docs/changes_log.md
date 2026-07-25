@@ -1,3 +1,9 @@
+### Changes at the server
+
+- Data model update: orthologousEvent and inferredTo are changed from optional to non-manual edit. For curation, curators should use inferredFrom
+- Bug fix: activeUnit for CatalystActivity can be saved now. Prevously it cannot.
+- Bug fix: advanced search for some instance-type attributes may not work (e.g. inferredFrom). This has been fixed.
+
 ### Build on July 23, 2026
 
 - When committing a new instance that matches existing instance(s) in the database, you can now resolve each duplicate directly from the "Matches Found" dialog instead of only committing it anyway. For each matched new instance you choose an action: leave it uncommitted (default), commit it as a new instance, use an existing match instead, or merge the new instance into an existing match. "Use existing" discards the new instance and repoints everything that referenced it at the chosen existing instance. "Merge" copies the new instance's attributes onto the chosen existing instance (single-valued attributes are overwritten; multivalued attributes have the new values appended), then repoints references and discards the new instance. Resulting edits are staged for review, not committed immediately.
