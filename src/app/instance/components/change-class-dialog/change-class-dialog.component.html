@@ -1,0 +1,40 @@
+<h2 class="dialog_title" mat-dialog-title>Change Schema Class</h2>
+<mat-dialog-content>
+  <p class="current">
+    Current class: <strong>{{ currentClass }}</strong>
+    <span class="target-name">{{ data.instance.displayName }} [{{ data.instance.dbId }}]</span>
+  </p>
+
+  <div *ngIf="loading" class="loading">
+    <mat-spinner diameter="24"></mat-spinner>
+    <span>Loading classes and checking referrers&hellip;</span>
+  </div>
+
+  <ng-container *ngIf="!loading">
+    <mat-form-field class="class-field" appearance="fill">
+      <mat-label>New schema class</mat-label>
+      <mat-select [(ngModel)]="selected" (selectionChange)="onSelectionChange()" cdkFocusInitial>
+        <mat-option *ngFor="let cls of candidateClasses" [value]="cls">{{ cls }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div *ngIf="conflicts.length > 0" class="conflicts">
+      <p class="conflicts-header">
+        <mat-icon>error_outline</mat-icon>
+        <span><strong>{{ selected }}</strong> is not accepted by these referrers:</span>
+      </p>
+      <ul>
+        <li *ngFor="let c of conflicts">
+          <a class="referrer-link" (click)="openReferrer(c.referrerDbId)"
+            matTooltip="open in new tab">{{ c.referrerDisplayName }} [{{ c.referrerDbId }}]</a>
+          &mdash; attribute <em>{{ c.attributeName }}</em> allows only {{ c.allowedClasses.join(', ') }}
+        </li>
+      </ul>
+      <p class="conflicts-hint">Resolve or remove these references before changing the class.</p>
+    </div>
+  </ng-container>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [disabled]="!canApply" (click)="onOK()"><mat-icon>check</mat-icon>Change Class</button>
+  <button mat-button (click)="onCancel()"><mat-icon>close</mat-icon>Cancel</button>
+</mat-dialog-actions>

@@ -187,7 +187,13 @@ Each section header reads **"<Section> Instances: {total} ({selected})"** and ha
 ### Commit dialogs and the duplicate-match check
 
 - While a commit runs, a modal **commit-wait dialog** shows a spinner with a title such as **"Committing Updated Instance(s)"**, **"Committing New Instance"**, or **"Committing Deleted Instances"**.
-- **New-instance duplicate check:** before a new instance is committed, WebBench runs a match check against the database. If matches are found, a **"Matches Found"** dialog appears explaining the new instance was **not committed**, and lists each match group in a table (**dbId / Display Name / Schema Class**) with an **Open instance** (`open_in_new`) button per match. Review the matches, then **Close** the dialog to keep the instance uncommitted. *(Note: a "Commit Anyway" button exists in the code but is currently disabled, so today the safe path is to close and reconcile duplicates manually.)*
+- **New-instance duplicate check:** before a new instance is committed, WebBench runs a match check against the database. If matches are found, a **"Matches Found"** dialog appears explaining the matched new instance(s) were **not committed** and lets you resolve each one. Each new instance gets a group header (`{displayName} [{dbId}] — {SchemaClass}` with a `{n} match(es)` badge) and an **Action** dropdown:
+  - **Do Nothing** (default) — leave the new instance uncommitted (staged, unchanged).
+  - **Commit as a new instance** — commit it anyway despite the match.
+  - **Use a DB instance instead** — discard the new instance and repoint everything that referenced it at a chosen existing match.
+  - **Merge into a DB instance** — copy the new instance's attributes onto a chosen existing match (single-valued overwritten, multivalued appended), repoint references, and discard the new instance.
+
+  Choosing **Use a DB instance instead** or **Merge into a DB instance** reveals an **Existing instance** dropdown (listing the matches as `{displayName} [{dbId}]`) to pick the target. A **Show matches / Hide matches** toggle expands the matches table (columns **dbId** and **Display Name**; hovering a name shows `[SchemaClass]`), with a **launch instance** (`launch`) button per match that opens it in a new tab. Resulting edits are staged for review, not committed immediately. **Apply** is disabled (tooltip **"Choose an action for at least one instance"**) until at least one group has a non-default action; **Cancel** closes without changes.
 - After a successful commit, a **commit-result dialog** (title **"Committed Instances"**, or **"Deleted Instances"** for deletions) lists the affected instances with **dbId** and **Display Name**; committed (non-deleted) rows include an `open_in_new` button that opens the instance in a new tab.
 
 ---
@@ -380,6 +386,7 @@ The title reads **"{SchemaClass}: {displayName} [{dbId}]"**. It turns **red** wh
 
 - `content_copy` — **clone instance**
 - `compare_arrows` — **compare two instances** (opens a *"Compare {name} to"* picker)
+- `swap_horiz` — **change schema class** (opens the [Change Schema Class dialog](#98-supporting-dialogs))
 - `open_in_new` — **open in curator graph** (external; disabled for new instances)
 - `account_tree` — **open schema view** *(in Event View)* / `timeline` — **open event view** *(in Schema View)* — event classes only
 
@@ -388,7 +395,7 @@ The title reads **"{SchemaClass}: {displayName} [{dbId}]"**. It turns **red** wh
 | Attribute Type | Cardinality | Instance-editor actions | Batch-edit actions |
 |---|---|---|---|
 | Instance | Single | Set via Creation; Set via Selection; Delete; drag bookmark to set | Set via Creation; Set via Selection; Delete |
-| Instance | Multi | Add via Creation; Add via Selection; Replace via Creation; Replace via Selection; Delete; drag bookmark to add; reorder | Add/Replace via Creation/Selection; Delete |
+| Instance | Multi | Add via Creation; Add via Selection; Replace via Creation; Replace via Selection; Delete; drag bookmark to add; reorder; set Stoichiometry (`input`/`output`/`hasComponent`/`repeatedUnit` only) | Add/Replace via Creation/Selection; Delete |
 | Text/String | Single | Edit in textarea; rich Text Editor (find/replace); undo | Set New Text; Replace Text; Delete |
 | Text/String | Multi | Edit entries; add empty row; undo; reorder | Add New Text; Replace Text; Delete |
 | Integer / Float | Single | Edit numeric value; undo | Replace via numeric input |
@@ -425,8 +432,16 @@ For instance-valued attributes, open the action menu by clicking the edit pencil
 
 - **Single-valued:** **Set via Creation** (`add_box`), **Set via Selection** (`search`), **Delete** (`delete`)
 - **Multi-valued:** **Add via Creation** (`add_box`), **Add via Selection** (`search`), **Replace via Creation** (`switch_access_shortcut_add`), **Replace via Selection** (`find_replace`), **Delete** (`delete`)
+- **Stoichiometry** (`tag`) — shown only for the multivalued stoichiometry attributes (`input`, `output`, `hasComponent`, `repeatedUnit`) on a populated value; opens the [Set Stoichiometry dialog](#98-supporting-dialogs).
 
 "via Creation" opens the **Create a New Instance** dialog (pick a schema class, fill in attributes); "via Selection" opens the **Select an Instance** dialog.
+
+#### Stoichiometry (number of copies)
+
+For the multivalued attributes **`input`**, **`output`**, **`hasComponent`**, and **`repeatedUnit`**, a value can appear more than once (its **stoichiometry** = number of copies). There is no separate stoichiometry field in the add dialogs — you raise the count by **adding the same instance again** (duplicates are permitted for these attributes only), then fine-tune the exact count with the **Stoichiometry** action.
+
+- A value with more than one copy is shown with a **`{n} ×`** prefix before its name (e.g. `3 × ATP [113592]`).
+- When the value is editable, the count renders as a small clickable chip (tooltip **"Set stoichiometry"**); clicking it — or choosing **Stoichiometry** from the action menu — opens the **Set Stoichiometry** dialog. The chip also appears on hover for single-copy values so you can increase the count.
 
 > **Species warning:** editing the `species` attribute first shows a warning that changing species may change the `stId` / `stableIdentifier`.
 
@@ -449,6 +464,8 @@ Highlights are removed automatically when you click **OK** (keep changes) or **C
 - **Delete** — titled *Delete "{name} [{dbId}]"*, with an optional structural-change warning and a **Show Referrers / Hide Referrers** toggle; **Delete** / **Cancel**. A separate **Confirm Delete** step notes that database instances are only removed after you commit the deletion. You may also be offered to **create a "Deleted" instance** to record the deletion.
 - **Match Instances** — titled *Matched instances for {name}*; select an existing instance and click **OK** to navigate to it.
 - **Create a New Instance** — pick a schema class, then fill in attributes; **OK** / **Cancel**.
+- **Change Schema Class** — titled **"Change Schema Class"**. Shows the **Current class** and the instance as `{displayName} [{dbId}]`, then a **New schema class** dropdown listing the concrete classes (the current class excluded). On open it loads the class list and checks every referrer (**"Loading classes and checking referrers…"**). If the chosen class would break any reference, a block appears headed *"{NewClass} is not accepted by these referrers:"* listing each offending referrer as a clickable `{displayName} [{dbId}]` link (tooltip **"open in new tab"**, opens the referrer in a new tab) with the attribute and its allowed classes, plus the hint *"Resolve or remove these references before changing the class."* The **Change Class** button (`check`) stays disabled until a valid, conflict-free class is selected; **Cancel** (`close`) closes without changes. Applying keeps the same dbId, preserves shared attribute values, regenerates the display name, and reloads the instance (no separate confirmation step).
+- **Set Stoichiometry** — titled **"Set Stoichiometry"**. Shows the value's display name and a **Number of copies** numeric input (minimum 1; **Enter** confirms), with a hint **"Currently {n}."** **OK** (`check`) applies the new count; **Cancel** (`close`) leaves it unchanged.
 
 ---
 
@@ -713,7 +730,7 @@ A tour highlights UI elements step by step. The step card shows **"Step X / N"**
 2. Edit attributes in the instance editor.
 3. Open the staged panel from the status bar.
 4. In **New Instances**, select the instance and click **commit** (`upload`).
-5. If matches are found, review the **"Matches Found"** dialog (new instance vs. matched DB instances) and reconcile duplicates.
+5. If matches are found, use the **"Matches Found"** dialog to resolve each one — choose **Do Nothing**, **Commit as a new instance**, **Use a DB instance instead**, or **Merge into a DB instance**, then **Apply**.
 
 ### B) Edit existing instances and review diffs
 
@@ -749,6 +766,20 @@ A tour highlights UI elements step by step. The step card shows **"Step X / N"**
 1. Bookmark instances you reuse (from a list row or the editor toolbar).
 2. Open the **BOOKMARKS** strip.
 3. Drag a bookmark onto a compatible attribute slot (green = valid) to set/add it.
+
+### G) Change an instance's schema class
+
+1. Open the instance and click the **expand** (`more_horiz`) button in the editor toolbar.
+2. Click **change schema class** (`swap_horiz`) to open the **Change Schema Class** dialog.
+3. Pick a **New schema class**. WebBench checks every referrer against the new class.
+4. If any referrer would no longer accept the instance, resolve or remove those references first (open each offending referrer in a new tab from the list), then reopen the dialog.
+5. When the class is conflict-free, click **Change Class**. The dbId is kept and shared attribute values are preserved; commit the resulting Updated Instance.
+
+### H) Set stoichiometry on a multivalued value
+
+1. In the editor, add the same instance to an `input`/`output`/`hasComponent`/`repeatedUnit` attribute as many times as needed, **or** add it once.
+2. Click the **`{n} ×`** chip on the value (or choose **Stoichiometry** from its action menu).
+3. Enter the **Number of copies** and click **OK**; commit the resulting change.
 
 ---
 

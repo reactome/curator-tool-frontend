@@ -9,6 +9,21 @@
     <ng-container *ngIf="element.attribute.cardinality === '+'">
 
       <ng-container *ngIf="element.value !== undefined; else noValue">
+        <!-- Stoichiometry relationship types (input, output, hasComponent, repeatedUnit) may hold
+        the same instance multiple times. Collapse the duplicates into a single "N ×" row rather
+        than listing the instance repeatedly. -->
+        <ng-container *ngIf="isStoichiometryAttribute(element.attribute); else nonStoichiometry">
+          <div cdkDropList [cdkDropListData]="element.value"
+            (cdkDropListDropped)="dropStoichiometry($event, element)">
+            <app-instance-table-row-element [disable]="isInstanceDeleted()" cdkDrag
+              *ngFor="let group of getStoichiometryGroups(element.value); let i = index; trackBy: trackByGroupDbId"
+              class="draggable-instance-box" [attribute]="element.attribute" [value]="group.value"
+              [stoichiometry]="group.count" [index]="group.index" [dragDropStatus]="dragDropStatus"
+              (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)"
+              [blockRoute]="blockRouter" [hasStableIdentifier]="hasStableIdentifier()" />
+          </div>
+        </ng-container>
+        <ng-template #nonStoichiometry>
         <!-- Disable drag and drop for no manual edit attributes -->
         <ng-container *ngIf="element.attribute.category === AttributeCategory.NOMANUALEDIT; else dragDropEnabled">
           <app-instance-table-row-element [disable]="isInstanceDeleted()"
@@ -24,6 +39,7 @@
               (newValueEvent)="onNoInstanceAttributeEdit($event)" (editAction)="onInstanceAttributeEdit($event)"
               [blockRoute]="blockRouter" [index]="i" [hasStableIdentifier]="hasStableIdentifier()" />
           </div>
+        </ng-template>
         </ng-template>
       </ng-container>
 
@@ -55,9 +71,17 @@
           [passiveEdit]="isPassiveEdited(element.attribute.name)" />
       </ng-container>
       <ng-template #elseblock>
-        <app-instance-table-row-element *ngFor="let object of element.referenceValue; let i = index" class="example-box"
-          [attribute]="element.attribute" [value]="object" [disable]="true"
-          [passiveEdit]="isPassiveEdited(element.attribute.name)" />
+        <ng-container *ngIf="isStoichiometryAttribute(element.attribute); else refPlain">
+          <app-instance-table-row-element
+            *ngFor="let group of getStoichiometryGroups(element.referenceValue); trackBy: trackByGroupDbId"
+            class="example-box" [attribute]="element.attribute" [value]="group.value" [stoichiometry]="group.count"
+            [disable]="true" [passiveEdit]="isPassiveEdited(element.attribute.name)" />
+        </ng-container>
+        <ng-template #refPlain>
+          <app-instance-table-row-element *ngFor="let object of element.referenceValue; let i = index"
+            class="example-box" [attribute]="element.attribute" [value]="object" [disable]="true"
+            [passiveEdit]="isPassiveEdited(element.attribute.name)" />
+        </ng-template>
       </ng-template>
     </ng-container>
   </ng-template>

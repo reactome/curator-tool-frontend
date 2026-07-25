@@ -35,6 +35,10 @@ export class InstanceTableRowElementComponent implements OnInit {
   @Input() attribute: SchemaAttribute | undefined = undefined;
   @Input() value: any;
   @Input() index: number = -1; // The position for a value in multi-slot
+  // For stoichiometry relationship types (input, output, hasComponent, repeatedUnit) the same
+  // instance may appear multiple times. Rather than list it repeatedly, a single row is shown
+  // with this count as an "N ×" prefix. Defaults to 1 (no prefix shown).
+  @Input() stoichiometry: number = 1;
   @Input() blockRoute: boolean = false;
   // Whether the instance being edited has a populated stableIdentifier. Used to decide whether the
   // species-edit warning (about the stId/stableIdentifier changing) is relevant.
@@ -193,6 +197,14 @@ export class InstanceTableRowElementComponent implements OnInit {
     }
     console.debug("onEditAction: ", attributeValue);
     this.editAction.emit(attributeValue);
+  }
+
+  // Clicking the inline stoichiometry badge opens the stoichiometry editor directly, without
+  // going through the right-click action menu.
+  onEditStoichiometry(event: MouseEvent) {
+    event.stopPropagation();
+    event.preventDefault();
+    this.onEditAction(EDIT_ACTION.EDIT_STOICHIOMETRY);
   }
 
   triggerResize() {

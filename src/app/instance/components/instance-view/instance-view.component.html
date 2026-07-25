@@ -67,6 +67,10 @@
             (click)="createEwasFromReferenceGeneProduct()" matTooltip="create EWAS from ReferenceGeneProduct">
             <mat-icon>science</mat-icon>
           </button>
+          <button mat-icon-button color="primary" class="v-center" (click)="changeSchemaClass()"
+            matTooltip="change schema class">
+            <mat-icon>swap_horiz</mat-icon>
+          </button>
           <ng-container *ngIf="isEventClass()">
             <ng-container *ngIf="isInEventView; else elseTemplate">
               <button mat-icon-button color="primary" class="v-center" (click)="openSchemaView()"

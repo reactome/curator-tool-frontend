@@ -365,7 +365,7 @@ export class BatchEditDialogComponent implements PostEditListener {
               attribute: this.selectedAttribute!,
               value: values.value,
             } as AttributeValue));
-            this.addAttributes(attributesToReplace, result.instance, replace, result.stoichiometry);
+            this.addAttributes(attributesToReplace, result.instance, replace);
 
           });
         });
@@ -378,7 +378,7 @@ export class BatchEditDialogComponent implements PostEditListener {
       matDialogRef.afterClosed().subscribe((result) => {
         if (!result || !result.instance)
           return;
-        this.addAttribute(attributeValue, result.instance, replace, result.stoichiometry);
+        this.addAttribute(attributeValue, result.instance, replace);
 
       });
     }
@@ -427,17 +427,14 @@ export class BatchEditDialogComponent implements PostEditListener {
     }
   }
 
-  private addAttribute(attributeValue: AttributeValue, result: any, replace: boolean, stoichiometry: number = 1) {
-    this.addAttributes([attributeValue], result, replace, stoichiometry);
+  private addAttribute(attributeValue: AttributeValue, result: any, replace: boolean) {
+    this.addAttributes([attributeValue], result, replace);
   }
 
-  private addAttributes(attributeValues: AttributeValue[], result: any, replace: boolean, stoichiometry: number = 1) {
+  private addAttributes(attributeValues: AttributeValue[], result: any, replace: boolean) {
     if (!attributeValues || attributeValues.length === 0) {
       return;
     }
-
-    // Stoichiometry relationship types may add the same instance multiple times.
-    const count = Math.max(1, Math.floor(stoichiometry) || 1);
 
     this.getInstancesForEdit().pipe(take(1)).subscribe((instances: Instance[]) => {
       const isInstanceAttribute = attributeValues[0].attribute.type === this.DATA_TYPES.INSTANCE;
@@ -452,16 +449,9 @@ export class BatchEditDialogComponent implements PostEditListener {
 
           let edited: boolean;
           if (isInstanceAttribute) {
-            const addInstanceOnce = (replaceThis: boolean) =>
-              result?.dbId < 0
-                ? this.attributeEditService.addValueToAttribute(attributeValue, result, instance, replaceThis, false)
-                : this.attributeEditService.addInstanceViaSelect(attributeValue, result, instance, replaceThis, false);
-            // The first copy honors the replace flag; additional stoichiometry
-            // copies are appended so they are never replaced away.
-            edited = addInstanceOnce(replace);
-            for (let i = 1; i < count; i++) {
-              edited = addInstanceOnce(false) || edited;
-            }
+            edited = result?.dbId < 0
+              ? this.attributeEditService.addValueToAttribute(attributeValue, result, instance, replace, false)
+              : this.attributeEditService.addInstanceViaSelect(attributeValue, result, instance, replace, false);
           }
           else {
             edited = this.attributeEditService.onNoInstanceAttributeEdit(attributeValue, result, instance, replace, false);
