@@ -608,6 +608,11 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       if (!canEdit)
         return;
 
+      // Enabling editing rebuilds the cytoscape network from scratch (see applyDiagramLoadPlan),
+      // which resets zoom/pan. Capture the current viewport now so restoreViewport() (invoked
+      // automatically once the rebuilt network fires 'network_displayed') puts it back.
+      this.storeViewport();
+
       if (this.pathwayDiagramId && this.pathwayDiagramId.length > 0) {
         this.ensureEditingLockAndLoad(this.pathwayDiagramId);
         return;
