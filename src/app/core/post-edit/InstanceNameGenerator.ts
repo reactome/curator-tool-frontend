@@ -300,7 +300,7 @@ export class InstanceNameGenerator implements PostEditOperation {
 
   private generateUpdateTrackerName(instance: Instance) {
     let updatedEvent = instance.attributes?.get('updatedEvent');
-    let updatedEventDBID = updatedEvent.getDBID();
+    let updatedEventDBID = updatedEvent?.dbId;
     return "Revision of instance: " + updatedEventDBID;
   }
 
