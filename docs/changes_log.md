@@ -10,6 +10,8 @@
 
 - Redesigned the "Matches Found" dialog for clarity: each matched new instance is now a card with a single Action dropdown (and, for use/merge, a picker for which existing instance to target) plus a show/hide view of the matches, replacing the previous mix of checkboxes and per-row buttons.
 
+- Keep the same network view in the pathway editing during toggling enable/disable editing.
+
 - Data model update: orthologousEvent and inferredTo are changed from optional to non-manual edit. For curation, curators should use inferredFrom
 
 - Bug fix: activeUnit for CatalystActivity can be saved now. Prevously it cannot.
