@@ -1,7 +1,12 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
 .bookmark-list {
-  // TODO: This value 95 has been used in the schema view and event view too.
-  // Need to refactor this to a common place.
-  height: 94vh;
+  // Fill whatever height the hosting panel gives us so the list stays inside
+  // the panel's bounds instead of running past the toolbar / status bar.
+  height: 100%;
   width: 250px;
   display: block;
   border-radius: 4px;

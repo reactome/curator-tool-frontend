@@ -17,7 +17,7 @@
   </mat-sidenav-container>
   <app-status class="status" (showUpdatedEvent)="showUpdatedInstances($event)"></app-status>
 
-  <div id="bookmark-boundary">
+  <div id="bookmark-boundary" [ngClass]="bookmarkLayout$ | async">
     <!-- Remove [style.height]="container.clientHeight + 'px'" in the following div to avoid expression changed after checked NG0100 Error
     TODO: fix the dragging after the SAB-->
     <!-- <div cdkDrag cdkDragLockAxis="x" cdkDragBoundary="bookmark-boundary" id="bookmark-container" [ngClass]="status"

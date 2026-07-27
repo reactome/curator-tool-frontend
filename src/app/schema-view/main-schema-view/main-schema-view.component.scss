@@ -62,17 +62,26 @@ side-nav {
   --bookmark-width: 250px;
   --border-width: 2px;
   --handle-width: 20px;
+  // Keep the panel between the instance view's toolbar (bread crumb + title bar)
+  // and the status bar, which is fixed 10px above the bottom of the window.
+  --bookmark-top: calc(var(--bread-crumb-height, 40px) + var(--title-height, 5vh));
+  --bookmark-bottom: calc(var(--status-height, 35px) + 10px);
 
   position: fixed;
   pointer-events: none;
   right: calc(-1 *  var(--bookmark-width) - var(--border-width));
   // Speicify a minimum value for right
   // right: max(calc(-1 * var(--bookmark-width) + var(--handle-width)), -230px); // Ensure a minimum value for right
-  height: 100%;
   width: calc(2 * var(--bookmark-width) + var(--handle-width));
-  top: 0;
-  bottom: 0;
+  top: var(--bookmark-top);
+  bottom: var(--bookmark-bottom);
   z-index: 1;
+
+  // The list view's header is taller: a title bar (with an 8px top margin) followed by
+  // the search field (with a 5px top margin), so start the panel below the search bar.
+  &.list-view {
+    --bookmark-top: calc(var(--bread-crumb-height, 40px) + 8px + var(--filter-height, 80px) + 5px);
+  }
 
   #bookmark {
     width: var(--bookmark-width);

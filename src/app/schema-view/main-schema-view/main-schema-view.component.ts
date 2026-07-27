@@ -1,6 +1,8 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {CdkDragMove} from "@angular/cdk/drag-drop";
 import {MatSidenav} from "@angular/material/sidenav";
+import {NavigationEnd, Router} from "@angular/router";
+import {filter, map, startWith} from "rxjs";
 
 @Component({
   selector: 'app-main-schema-view',
@@ -13,6 +15,21 @@ export class MainSchemaViewComponent implements OnInit{
   resizing: boolean = false;
   showChanged = false; // Default state
   status = {closed: true, opened: false, dragging: false};
+
+  /**
+   * The bookmark panel is anchored below whatever header the active child route renders.
+   * The instance view shows a bread crumb plus a title bar; the list view shows a title bar
+   * plus a search field, which is taller. See the .list-view rule in the scss.
+   */
+  bookmarkLayout$ = this.router.events.pipe(
+    filter(event => event instanceof NavigationEnd),
+    map(event => (event as NavigationEnd).urlAfterRedirects),
+    startWith(this.router.url),
+    map(url => url.includes('list_instances') ? 'list-view' : 'instance-view')
+  );
+
+  constructor(private router: Router) {
+  }
 
   ngOnInit(): void {
     // Restore the state from localStorage
