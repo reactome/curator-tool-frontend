@@ -488,6 +488,12 @@ export class DataService {
               }
               newInst.attributes.set(attribute.name, value);
             }
+            // A clone should never inherit the release flag: released content has to be
+            // reviewed again before the clone can be released.
+            for (let attribute of newInst.schemaClass!.attributes!) {
+              if (attribute.name === 'doRelease' || attribute.name === '_doRelease')
+                newInst.attributes.set(attribute.name, false);
+            }
             // Set displayName last
             newInst.attributes.set('displayName', 'Clone of ' + instance.displayName);
             newInst.displayName = 'Clone of ' + instance.displayName;
