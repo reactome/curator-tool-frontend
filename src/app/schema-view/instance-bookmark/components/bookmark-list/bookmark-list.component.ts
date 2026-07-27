@@ -28,17 +28,13 @@ export class BookmarkListComponent implements OnInit {
     private route: ActivatedRoute,
     private instUtils: InstanceUtilities,
     private dataService: DataService) {
-    // An instance that is marked as deleted should not be used
-    // This is different from the instance view: an instance is deleted but
-    // not commited can still be used in the attribute list!!!
+    // Note: An instance that is marked as deleted should not be used and therefore is
+    // dropped from the bookmark list. This is different from the instance view: an
+    // instance is deleted but not commited can still be used in the attribute list!!!
     // TODO: This behavior is quite confusing. Need to think more!
-    let subscription = (this.instUtils.markDeletionDbId$.subscribe(dbId => {
-      const found = this.bookmarks.filter(inst => inst.dbId === dbId);
-      if (found.length > 0)
-        this.store.dispatch(BookmarkActions.remove_bookmark(found[0])); // There should be only one
-    }));
-    this.subscriptions.push(subscription);
-    subscription = this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
+    // The removal itself is done by BookmarkEffects.removeBookmarkOnDelete$ so that it
+    // also happens when this component is not rendered.
+    let subscription = this.instUtils.committedNewInstDbId$.subscribe(([oldDbId, newDbId]) => {
       // This will change the dbId and display name
       const removed = this.bookmarks.filter(inst => inst.dbId === oldDbId);
       if (removed.length > 0) {
@@ -61,7 +57,7 @@ export class BookmarkListComponent implements OnInit {
         }
       })
 
-      if (dbIdsFromBookmarkStore.includes(dbId)) {
+      if (dbIdsFromBookmarkStore.includes(dbId) && !this.instUtils.isPermanentlyRemovedNewInstance(dbId)) {
         this.dataService.fetchInstance(dbId).subscribe(instance => {
           this.store.dispatch(BookmarkActions.add_bookmark(instance));
         }
@@ -73,8 +69,14 @@ export class BookmarkListComponent implements OnInit {
     // Need to call the store when the instanceView has not changed. 
     subscription = this.store.select(bookmarkedInstances()).subscribe((instances: Instance[] | undefined) => {
       if (instances !== undefined) {
-        // Defensive guard: ignore malformed bookmark entries from stale local state.
-        this.bookmarks = instances.filter(inst => inst && inst.dbId !== undefined && inst.dbId !== null);
+        // Defensive guard: ignore malformed bookmark entries from stale local state and
+        // any local-only new instance (dbId < 0) that has been deleted, which may be
+        // restored from persisted bookmarks saved before the deletion.
+        const stale = instances.filter(inst => inst && this.instUtils.isPermanentlyRemovedNewInstance(inst.dbId));
+        this.bookmarks = instances.filter(inst => inst && inst.dbId !== undefined && inst.dbId !== null
+          && !this.instUtils.isPermanentlyRemovedNewInstance(inst.dbId));
+        // Drop them from the state too so they are not persisted again
+        stale.forEach(inst => this.store.dispatch(BookmarkActions.remove_bookmark(inst)));
       }
     });
     this.subscriptions.push(subscription);

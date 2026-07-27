@@ -64,7 +64,9 @@ export class DeleteBulkDialogComponent {
       }
       else {
         this.store.dispatch(NewInstanceActions.remove_new_instance(this.instUtil.makeShell(instance)));
-        this.instUtil.setDeletedDbId(instance.dbId); // Commit right away
+        // Commit right away. Dispatch the action instead of calling setDeletedDbId() directly
+        // so that all listeners (e.g. the bookmark list) and other tabs are notified too.
+        this.store.dispatch(DeleteInstanceActions.commit_deleted_instance(this.instUtil.makeShell(instance)));
       }
     }
 
