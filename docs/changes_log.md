@@ -1,3 +1,15 @@
+### Build on July 27, 2026
+
+- The bookmark panel no longer covers the toolbars. It is now anchored below whatever header the current view shows (the bread crumb and title bar in the instance view, the taller title bar plus search field in the list view) and stops above the status bar, so the toolbars stay clickable while the panel is open.
+
+- Added a border to the bookmark panel in both the schema view and the event view so its edge is visible against the content behind it.
+
+- Deleted instances are now removed from the bookmark list. This applies both to database instances marked for deletion and to local-only new instances that are dropped before ever being committed, including deletions made through the bulk-delete dialog. The removal now happens even when the bookmark list is not on screen, and deleted new instances are no longer restored from bookmarks that were saved before the deletion.
+
+- Bug fix: cloning an instance no longer copies the "_doRelease" flag. A clone starts with the flag cleared, since released content has to be reviewed again before the clone can be released.
+
+- Bug fix: the commit summary showed "To be generated" instead of the real display name for a new instance that was committed as a side effect of committing the instance referring to it (e.g. a new Reaction pulled in through a new Pathway's hasEvent). The display names in the commit payload are now captured before the commit is sent, so the summary reports the names the curator actually sees.
+
 ### Build on July 24, 2026
 
 - Added the ability to change an instance's schema class. From the instance view you can open a dialog and pick any concrete class. Before the change is allowed, every referrer that points at the instance is checked to make sure the instance would still be valid under the new class; if any referrer's attribute would no longer accept it, the change is blocked and the offending referrers are listed (each can be opened in a new tab to resolve the reference first).
