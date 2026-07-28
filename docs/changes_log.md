@@ -1,3 +1,7 @@
+### Build on July 28, 2026
+
+- Bug fix: new instances that are committed as a side effect of committing the instance referring to them (e.g. the new Person instances created for a new LiteratureReference's authors when a PubMed identifier is filled in) stayed in the new instances list with their local negative dbIds, so they could be committed a second time — showing up as duplicates of the instances they had just been saved as. Such instances are now removed from the new instances list and from the local cache when their referrer is committed, and everything still pointing at them is repointed at their database dbIds.
+
 ### Build on July 27, 2026
 
 - The bookmark panel no longer covers the toolbars. It is now anchored below whatever header the current view shows (the bread crumb and title bar in the instance view, the taller title bar plus search field in the list view) and stops above the status bar, so the toolbars stay clickable while the panel is open.

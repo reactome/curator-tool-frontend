@@ -728,6 +728,48 @@ export class InstanceUtilities {
     }
 
     /**
+     * Collect the local (negative) dbId to persisted dbId pairs of the new instances the server
+     * committed together with the instance the commit was invoked on, e.g. the new Persons created
+     * for the author attribute of a new LiteratureReference.
+     *
+     * As in buildCommitSummaryResults, the server may report these either as the legacy
+     * newInstOld2NewId mapping or as per-instance newInstOldId markers on committedInstances. The
+     * latter only carries a local dbId when the instance was new here, which is exactly the case
+     * we need: an instance committed with a positive dbId has nothing to remap.
+     */
+    private collectCoCommittedNewInstanceIds(rtnInst: Instance): Map<number, number> {
+        const old2new = new Map<number, number>();
+        const add = (oldId: any, newId: any) => {
+            const oldDbId = Number(oldId);
+            const newDbId = Number(newId);
+            if (isNaN(oldDbId) || isNaN(newDbId) || oldDbId >= 0 || newDbId <= 0)
+                return;
+            old2new.set(oldDbId, newDbId);
+        };
+
+        if (rtnInst.newInstOld2NewId) {
+            // Have to use this temp variable to avoid type error
+            const old2newId: any = rtnInst.newInstOld2NewId;
+            Object.keys(old2newId).forEach(oldId => add(oldId, old2newId[oldId]));
+        }
+
+        const returnedCommittedInstances = (rtnInst as any).committedInstances
+            ?? this.getDynamicAttributeValue(rtnInst, 'committedInstances');
+        if (Array.isArray(returnedCommittedInstances)) {
+            returnedCommittedInstances.forEach((returnedInst: any) => {
+                if (!returnedInst)
+                    return;
+                const oldId = returnedInst.newInstOldId
+                    ?? this.getDynamicAttributeValue(returnedInst, 'newInstOldId');
+                if (oldId !== undefined && oldId !== null)
+                    add(oldId, returnedInst.dbId);
+            });
+        }
+
+        return old2new;
+    }
+
+    /**
      * Build commit summary rows for the dialog by including the directly committed instance and
      * any additional committed instances returned by the server.
      *
@@ -1190,30 +1232,34 @@ export class InstanceUtilities {
             }));
             dataService.flagSchemaTreeForReload()
         }
-        // Make sure new instances are updated if any
-        // The following code is applied to shell instances that may be referred. This action
-        // is needed and is different from the above committedInst. 
-        if (rtnInst.newInstOld2NewId) {
-            // Have to use this temp variable to avoid type error
-            let old2newId: any = rtnInst.newInstOld2NewId!;
-            Object.keys(old2newId).map((oldId) => {
-                const oldDbId: number = parseInt(oldId, 10);
-                const newDbId: number = old2newId[oldId];
-                const shell = this.shellInstances.get(oldDbId);
-                if (shell) {
-                    this.store.dispatch(NewInstanceActions.remove_new_instance(shell));
-                    this.store.dispatch(NewInstanceActions.commit_new_instance({
-                        oldDbId: oldDbId,
-                        newDbId: newDbId
-                    }));
-                    // check that the store has updated the dbId, otherwise update it here so that the shell instances are synchronized
-                    if (shell.dbId !== newDbId) {
-                        this.updateNewInstanceRegistration(oldDbId, newDbId);
-                        this.setRefreshViewDbId(committedInst.dbId);
-                    }
-                }
-            });
-        }
+        // Make sure new instances are updated if any. The following is applied to the new
+        // instances the server committed together with committedInst, e.g. the new Persons
+        // created for the author attribute of a new LiteratureReference. This action is needed
+        // and is different from the above committedInst.
+        this.collectCoCommittedNewInstanceIds(rtnInst).forEach((newDbId, oldDbId) => {
+            if (oldDbId === committedInst.dbId)
+                return; // Already handled above
+            // A co-committed instance is only in shellInstances if it has been referred via a
+            // shell. Instances registered directly as new instances (e.g. the authors filled in
+            // from a PubMed identifier) are not, so fall back to the cached full instance: they
+            // must be removed from the new instance list too, otherwise they linger there with
+            // their local (negative) dbId and can be committed a second time.
+            const shell = this.shellInstances.get(oldDbId);
+            const localInst = shell
+                ?? dataService.getCachedInstance(oldDbId)
+                ?? { dbId: oldDbId } as Instance;
+            // Make sure the remove_new_instance is dispatched first, as for committedInst above.
+            this.store.dispatch(NewInstanceActions.remove_new_instance(this.makeShell(localInst)));
+            this.store.dispatch(NewInstanceActions.commit_new_instance({
+                oldDbId: oldDbId,
+                newDbId: newDbId
+            }));
+            // check that the store has updated the dbId, otherwise update it here so that the shell instances are synchronized
+            if (shell && shell.dbId !== newDbId) {
+                this.updateNewInstanceRegistration(oldDbId, newDbId);
+                this.setRefreshViewDbId(committedInst.dbId);
+            }
+        });
         if (rtnInst.stableIdentifierModified) {
             dataService.fetchInstance(committedInst.dbId).subscribe(fullInst => {
                 if(!fullInst.attributes) return;
