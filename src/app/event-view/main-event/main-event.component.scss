@@ -24,8 +24,8 @@
 
 .resize-container-horizontal {
   position: absolute;
-  //top: 0;
-  bottom: 225px;
+  // Straddle the top edge of the table pane, which is where the divider sits.
+  top: -3px;
   //right: 0px;
   width: 100%;
   height: 6px;
@@ -61,12 +61,18 @@ side-nav {
   position:relative;
 }
 
-.instance-view-container {
-  max-height: 100vh;
+// The lower half of the event view: the instance table plus the bookmark panel overlaying it.
+// The layout variables live here so both of them (and the instance view's own header) see them.
+.table-pane {
+  position: relative;
   --bread-crumb-height: 40px;
   --title-height: 5vh;
   --filter-height: 80px;
   --status-height: 5vh;
+}
+
+.instance-view-container {
+  max-height: 100vh;
   border: 1px solid var(--outline-variant);
   border-left-width: 0;
   //width: 60vw;
@@ -78,14 +84,18 @@ side-nav {
   --border-width: 2px;
   --handle-width: 20px;
   --bookmark-radius: 8.5px;
+  // Fit the panel to the instance table: start below the table's header (bread crumb plus
+  // title bar) so its toolbar stays clickable, and end at the bottom of the pane, which
+  // already sits above the status bar.
+  --bookmark-top: calc(var(--bread-crumb-height, 40px) + var(--title-height, 5vh));
+  --bookmark-bottom: 8px;
 
   position: absolute;
   pointer-events: none;
   right: calc(-1 *  var(--bookmark-width) - var(--border-width));
-  //height: 100%;
   width: calc(2 * var(--bookmark-width) + var(--handle-width));
-  //top: 0;
-  bottom: 100px;
+  top: var(--bookmark-top);
+  bottom: var(--bookmark-bottom);
 
   .event-home-container {
     min-height: 70vh;
@@ -123,7 +133,7 @@ side-nav {
   #bookmark {
     box-sizing: border-box;
     width: var(--bookmark-width);
-    //height: 100%;
+    height: 100%;
     // Close the panel off with a top and bottom edge and round the corners facing
     // the content area; the right edge sits off screen so it stays square.
     border: var(--border-width) solid var(--primary);
@@ -159,7 +169,7 @@ side-nav {
     width: fit-content;
     left: calc(var(--bookmark-width) - var(--border-width));
     pointer-events: all;
-    //height: 100%;
+    height: 100%;
     transition-duration: 500ms;
 
     &.opened {
