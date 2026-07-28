@@ -1012,6 +1012,13 @@ export class DataService {
     instance = cached
     const checked = new Set<number>();
     instance = this.fillAttributesForCommit(instance, checked);
+    // Snapshot the display names of everything going into this payload, e.g. a new Reaction
+    // pulled in via the new Pathway's hasEvent. These full instances are the authoritative
+    // local copies, but they are dropped from the caches while the commit is processed, so
+    // the commit summary cannot look them up afterwards.
+    this.utils.rememberPreCommitDisplayNames([...checked]
+      .map(dbId => this.id2instance.get(dbId))
+      .filter((inst): inst is Instance => inst !== undefined));
     let instanceToBeCommitted = this.utils.cloneInstanceForCommit(instance);
     // Need to add default person id for this instance
     return this.store.select(defaultPerson()).pipe(

@@ -65,6 +65,14 @@ export class InstanceUtilities {
     // Track the changed display names
     private dbId2displayName = new Map<number, string | undefined>();
 
+    // Display names of the instances sent in the commit currently being processed, keyed by the
+    // dbIds they had locally. See rememberPreCommitDisplayNames.
+    private preCommitDisplayNames = new Map<number, string>();
+
+    // Persisted dbId to the local (negative) dbId it was committed from, for the commit
+    // currently being processed
+    private newDbId2oldDbId = new Map<number, number>();
+
     // Shell instances are managed here so that we can update their views (e.g. display name for updated instances
     // or dbId and display name for new instances after comitted)
     // Note: only shell instances referred are stored here
@@ -126,6 +134,7 @@ export class InstanceUtilities {
     }
 
     setCommittedNewInstDbId(oldDbId: number, newDbId: number) {
+        this.newDbId2oldDbId.set(newDbId, oldDbId);
         this.permanentlyRemovedNewDbIds.delete(oldDbId);
         this.updateNewInstanceRegistration(oldDbId, newDbId);
         this.committedNewInstDbId.next([oldDbId, newDbId]);
@@ -746,9 +755,10 @@ export class InstanceUtilities {
         // cache — the same source makeShell and the list views use — so the commit
         // summary matches what the user sees in the list.
         const resolveDisplayName = (inst: Instance): string | undefined => {
-            if (inst.displayName && inst.displayName !== NEW_DISPLAY_NAME)
-                return inst.displayName;
-            return this.dbId2displayName.get(inst.dbId) ?? inst.displayName;
+            return this.usableName(inst.displayName)
+                ?? this.preCommitDisplayNames.get(inst.dbId)
+                ?? this.usableName(this.dbId2displayName.get(inst.dbId))
+                ?? inst.displayName;
         };
 
         const committedName = resolveDisplayName(committedInst) ?? rtnInst.displayName;
@@ -760,29 +770,87 @@ export class InstanceUtilities {
             Object.keys(old2newId).forEach((oldId) => {
                 const oldDbId = parseInt(oldId, 10);
                 const newDbId = old2newId[oldId];
-                const oldShell = this.shellInstances.get(oldDbId);
-                addResult(newDbId, oldShell?.displayName);
+                addResult(newDbId, this.resolveNewInstanceName(oldDbId, newDbId));
             });
         }
 
         const rtnOldId = (rtnInst as any).newInstOldId ?? this.getDynamicAttributeValue(rtnInst, 'newInstOldId');
         if (rtnOldId !== undefined && rtnOldId !== null) {
-            const oldShell = this.shellInstances.get(Number(rtnOldId));
-            addResult(rtnInst.dbId, rtnInst.displayName ?? oldShell?.displayName);
+            addResult(rtnInst.dbId, this.usableName(rtnInst.displayName)
+                ?? this.resolveNewInstanceName(Number(rtnOldId), rtnInst.dbId));
         }
 
-        const returnedCommittedInstances = this.getDynamicAttributeValue(rtnInst, 'committedInstances');
+        // As with newInstOldId above, the server may send this alongside the attributes rather
+        // than inside them.
+        const returnedCommittedInstances = (rtnInst as any).committedInstances
+            ?? this.getDynamicAttributeValue(rtnInst, 'committedInstances');
         if (Array.isArray(returnedCommittedInstances)) {
             returnedCommittedInstances.forEach((returnedInst: any) => {
                 if (!returnedInst || returnedInst.dbId === undefined || returnedInst.dbId === null)
                     return;
                 const oldId = returnedInst.newInstOldId ?? this.getDynamicAttributeValue(returnedInst, 'newInstOldId');
-                const oldShell = oldId !== undefined && oldId !== null ? this.shellInstances.get(Number(oldId)) : undefined;
-                addResult(returnedInst.dbId, returnedInst.displayName ?? oldShell?.displayName);
+                addResult(returnedInst.dbId, this.usableName(returnedInst.displayName)
+                    ?? this.resolveNewInstanceName(oldId === undefined || oldId === null ? undefined : Number(oldId),
+                        returnedInst.dbId));
             });
         }
 
         return results;
+    }
+
+    /**
+     * Return the name only if it is a real name, i.e. not the "To be generated" placeholder
+     * a new instance carries until its display name has been generated.
+     */
+    private usableName(displayName: string | undefined): string | undefined {
+        return displayName && displayName !== NEW_DISPLAY_NAME ? displayName : undefined;
+    }
+
+    /**
+     * Remember the display names of the instances about to be committed together, keyed by the
+     * dbIds they have locally. Called by DataService.commit with the full instances that make up
+     * the payload.
+     *
+     * These full instances are the only reliable source for the name of a new instance that is
+     * committed as a side effect of committing its referrer: the shell instance kept for it may
+     * still carry the "To be generated" placeholder it was created with (a shell is only updated
+     * in place while the tab that named the instance is alive), and both the shell and the cached
+     * instance are gone by the time the commit summary is built.
+     */
+    rememberPreCommitDisplayNames(instances: Instance[]) {
+        this.preCommitDisplayNames.clear();
+        this.newDbId2oldDbId.clear();
+        for (const inst of instances) {
+            const name = this.usableName(inst.displayName)
+                ?? this.usableName(this.getDynamicAttributeValue(inst, 'displayName'));
+            if (name !== undefined)
+                this.preCommitDisplayNames.set(inst.dbId, name);
+        }
+    }
+
+    /**
+     * Resolve the display name of a new instance that has just been committed, e.g. a new
+     * Reaction committed as a side effect of committing the Pathway referring to it via hasEvent.
+     *
+     * The name is taken from the payload snapshot first, since that is the instance the curator
+     * has been editing. The caches are only a fallback: processCommit runs before the summary is
+     * built and re-keys the shell instance from the local (negative) dbId to the persisted one,
+     * so the old dbId alone finds nothing and the summary would fall back to the "To be
+     * generated" placeholder even though the name was generated long before the commit.
+     */
+    private resolveNewInstanceName(oldDbId: number | undefined, newDbId: number): string | undefined {
+        // The payload may identify a co-committed instance by its persisted dbId only; the
+        // remapping done by processCommit tells us which local instance it came from.
+        const localDbId = oldDbId !== undefined && !isNaN(oldDbId) ? oldDbId : this.newDbId2oldDbId.get(newDbId);
+        const candidates: (string | undefined)[] = [];
+        if (localDbId !== undefined) {
+            candidates.push(this.preCommitDisplayNames.get(localDbId));
+            candidates.push(this.shellInstances.get(localDbId)?.displayName);
+            candidates.push(this.dbId2displayName.get(localDbId));
+        }
+        candidates.push(this.shellInstances.get(newDbId)?.displayName);
+        candidates.push(this.dbId2displayName.get(newDbId));
+        return candidates.map(name => this.usableName(name)).find(name => name !== undefined);
     }
 
     removeInstInArray(target: Instance, array: Instance[]) {
