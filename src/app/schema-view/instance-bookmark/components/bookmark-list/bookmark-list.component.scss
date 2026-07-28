@@ -7,10 +7,11 @@
   // Fill whatever height the hosting panel gives us so the list stays inside
   // the panel's bounds instead of running past the toolbar / status bar.
   height: 100%;
-  width: 250px;
+  // Fill the hosting panel rather than assuming its width, so the panel's border
+  // and rounded corners stay visible.
+  width: 100%;
   display: block;
-  border-radius: 4px;
-  overflow: scroll;
+  overflow: auto;
   z-index: 1;
 }
 
