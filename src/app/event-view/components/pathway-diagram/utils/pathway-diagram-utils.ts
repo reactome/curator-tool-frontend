@@ -249,6 +249,17 @@ export class PathwayDiagramUtilService {
         diagram.cy.remove(pathwayElm);
     }
 
+    isNodeDeletable(nodeElm: any) {
+        const connectedEdges = nodeElm.connectedEdges();
+        if (connectedEdges && connectedEdges.length > 0)
+            return false;
+        return true;
+    }
+
+    deleteNode(nodeElm: any, diagram: DiagramComponent) {
+        diagram.cy.remove(nodeElm);
+    }
+
     /**
      * Compartments may have two nodes for double layers. Both of them should be deleted.
      * @param compartment 

@@ -48,9 +48,6 @@
 
   <span class="toolbar-spacer"></span>
 
-  <button mat-icon-button (click)="onClick('toggleDarkMode')" matTooltip="Toggle Color Theme">
-    <mat-icon>brightness_4</mat-icon>
-  </button>
   <button mat-icon-button *ngIf="isDiagramEdited" (click)="onClick('upload')" matTooltip="Upload Diagram">
     <mat-icon>cloud_upload</mat-icon>
   </button>
@@ -60,4 +57,8 @@
   <button mat-icon-button (click)="onClick('editPathwayDiagram')" matTooltip="Edit/Create PathwayDiagram">
     <mat-icon>description</mat-icon>
   </button>
+    <button mat-icon-button (click)="onClick('toggleDarkMode')" matTooltip="Toggle Color Theme">
+    <mat-icon>brightness_4</mat-icon>
+  </button>
+  
 </mat-toolbar>

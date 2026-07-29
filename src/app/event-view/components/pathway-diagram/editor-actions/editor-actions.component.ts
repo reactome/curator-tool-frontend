@@ -23,13 +23,14 @@ export class EditorActionsComponent {
   @Input() elmType: ElementType = ElementType.CYTOSCAPE;
   // Check if a clicked pathway is deletable
   @Input() isPathwayDeletable: boolean = false;
+  // Check if a clicked PE node has no edges connected to it and can be deleted
+  @Input() isNodeDeletable: boolean = false;
   // Flag if a selected node is resizing
   @Input() isNodeResizing: boolean = false;
   // Flag is a selected node is resizable
   @Input() isNodeResizable: boolean = true;
   // Track lock acquire in progress to prevent duplicate requests.
   @Input() isLockAcquiring: boolean = false;
-  @Input() isLockOwnedByMe: boolean = false;
   @Input() canUndo: boolean = false;
   @Input() canRedo: boolean = false;
   // Include this so that we can compare in the html template

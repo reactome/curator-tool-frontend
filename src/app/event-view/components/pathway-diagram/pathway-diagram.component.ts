@@ -76,6 +76,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   isFlowLineAddable: boolean = false;
   // flag is the clicked pathway is deletable
   isPathwayDeletable: boolean = false;
+  // flag is the clicked PE node has no edges connected to it and can be deleted
+  isNodeDeletable: boolean = false;
   // Tracking the previous dragging position: should cytoscape provides this?
   previousDragPos: Position = { x: 0, y: 0 };
   // Track a list of nodes that are under resizing
@@ -846,6 +848,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       else if (this.elementUnderMouse.hasClass('PhysicalEntity')) {
         this.elementTypeForPopup = ElementType.PE_Node;
         this.isFlowLineAddable = this.diagramUtils.isFlowLineAddable(this.elementUnderMouse, this);
+        this.isNodeDeletable = this.diagramUtils.isNodeDeletable(this.elementUnderMouse);
       }
       else if (this.elementUnderMouse.hasClass("SUB")) { // This is for pathway
         this.elementTypeForPopup = ElementType.PATHWAY_NODE;
@@ -992,6 +995,15 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         }
         this.pushUndoSnapshot();
         this.diagramUtils.deletePathwayNode(this.elementUnderMouse, this.diagram);
+        this.markDiagramEdited();
+        break;
+
+      case 'deleteNode':
+        if (this.resizingNodes.includes(this.elementUnderMouse)) {
+          this.disableResize();
+        }
+        this.pushUndoSnapshot();
+        this.diagramUtils.deleteNode(this.elementUnderMouse, this.diagram);
         this.markDiagramEdited();
         break;
 
