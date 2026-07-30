@@ -815,6 +815,46 @@ export class DataService {
   }
 
   /**
+   * Raw snapshot of what is currently persisted for a user - deliberately skips the
+   * schema-hydration/id2instance-caching that loadUserInstances() does, since this is used
+   * only to merge against before persisting (see UserInstancesService.persistInstances()).
+   * Hydrating here would let a sibling tab's stale-in-transit view clobber this tab's own
+   * cached, in-progress edits - the exact class of bug this merge step exists to prevent.
+   */
+  getPersistedUserInstances(userName: string): Observable<UserInstances> {
+    return this.http.get<UserInstances>(this.loadInstancesUrl + userName);
+  }
+
+  /**
+   * Best-effort persist used only from the window:beforeunload handler, where a normal
+   * HttpClient call is frequently cancelled by the browser mid-flight once the tab actually
+   * closes. `fetch` with `keepalive: true` is built to survive page teardown, but it can't
+   * go through the HttpClient/interceptor pipeline, so the auth header is attached by hand
+   * here exactly as HeaderInterceptor does for '/api/curation' requests.
+   */
+  persistUserInstancesBeacon(userInstances: UserInstances, userName: string): void {
+    const cloned = this.cloneUserInstances(userInstances);
+    const payload = JSON.stringify(cloned);
+    if (payload === this.lastPersistedPayload) {
+      return;
+    }
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token)
+      headers['Authorization'] = `Bearer ${token}`;
+    fetch(this.persistInstancesUrl + userName, {
+      method: 'POST',
+      keepalive: true,
+      headers,
+      body: payload,
+    }).then(() => {
+      this.lastPersistedPayload = payload;
+    }).catch(() => {
+      // Best-effort: nothing more we can do once the tab is closing.
+    });
+  }
+
+  /**
    * List the staged-instances backups available for the current (JWT-authenticated) user.
    */
   listUserInstanceBackups(): Observable<UserInstanceBackupSummary[]> {

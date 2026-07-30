@@ -200,7 +200,18 @@ export class UserInstancesService {
     //     });
     // }
 
-    persistInstances(removeToken: boolean = false, onComplete?: () => void): void {
+    /**
+     * @param useBeacon Only set from the window:beforeunload handler. The page may be torn
+     * down before a normal request completes, so this mode skips the server-merge round trip
+     * (see mergeUserInstances()) and fires a single fetch(keepalive) POST of whatever this tab
+     * currently has staged - and only ever adds to the server backup, never deletes it, even
+     * if this tab's own staged lists happen to be empty. That keeps the fast/unreliable path
+     * safe: a tab with nothing staged simply does nothing, rather than risking a wipe of a
+     * sibling tab's not-yet-broadcast changes. Clearing/deleting the backup when everything is
+     * genuinely empty is left to the normal (non-beacon) persist paths below, which have time
+     * to check with the server first.
+     */
+    persistInstances(removeToken: boolean = false, onComplete?: () => void, useBeacon: boolean = false): void {
         console.debug('Calling persist instance before window closing...');
         const done = () => {
             if (onComplete)
@@ -245,65 +256,94 @@ export class UserInstancesService {
             // this.store.select(pathwayDiagramObjects())
         ])
             .pipe(take(1)) // Take only the first set of values and complete
-            .subscribe(([updated, newInst, deleted, bookmarked, defaultPerson]) => {
-                const updatedInstances = updated || [];
-                const newInstances = newInst || [];
-                const deletedInstances = deleted || [];
-                const bookmarkedInstances = bookmarked || [];
-                // const pathwayDiagramObjects = diagramObjects || [];
-                // There should be only one instance for default person. However, we use
-                // an array to make the code simplier
-                const defaultPersonInstances = defaultPerson || [];
-                // const hasDiagramObjects = pathwayDiagramObjects.length > 0;
-                const instances = [...newInstances, 
-                                   ...updatedInstances,  
-                                   ...deletedInstances, 
-                                   ...bookmarkedInstances,
-                                   ...defaultPersonInstances];
-                if (instances.length == 0) {
-                    this.dataService.deletePersistedInstances(user).subscribe({
+            .subscribe(([updated, newInst, deleted, bookmarked, defaultPersonInstances]) => {
+                const local: UserInstances = {
+                    newInstances: newInst || [],
+                    updatedInstances: updated || [],
+                    deletedInstances: deleted || [],
+                    bookmarks: bookmarked || [],
+                    defaultPerson: (defaultPersonInstances && defaultPersonInstances.length > 0)
+                        ? defaultPersonInstances[0]
+                        : undefined,
+                };
+                if (useBeacon) {
+                    if (this.countStagedInstances(local) > 0)
+                        this.dataService.persistUserInstancesBeacon(local, user);
+                    done();
+                    return;
+                }
+                // Merge against whatever the server currently holds before persisting - this
+                // tab's own view may not yet include a sibling tab's very recent staged change
+                // (the cross-tab live sync is fast but not instant), and without this merge a
+                // persist from this tab would silently overwrite/erase that change server-side.
+                // See mergeUserInstances() for the (currently coarse, per-instance) resolution
+                // rule used when the same dbId is known to both sides.
+                this.dataService.getPersistedUserInstances(user).pipe(
+                    catchError(() => of(undefined)),
+                ).subscribe((serverSnapshot: UserInstances | undefined) => {
+                    const merged = this.mergeUserInstances(local, serverSnapshot);
+                    if (this.countStagedInstances(merged) === 0) {
+                        this.dataService.deletePersistedInstances(user).subscribe({
+                            next: () => {
+                                console.debug('Delete any persisted instance at the server.');
+                                clearLocalStateForLogout();
+                                done();
+                            },
+                            error: () => done()
+                        });
+                        return;
+                    }
+                    this.dataService.persitUserInstances(merged, user).subscribe({
                         next: () => {
-                            console.debug('Delete any persisted instance at the server.');
+                            console.debug('userInstances have been persisted at the server.');
                             clearLocalStateForLogout();
                             done();
                         },
                         error: () => done()
                     });
-                    return; // Do nothing
-                }
-                // Need to persist these instances
-                // To be persist
-                const userInstances: UserInstances = {
-                    newInstances: newInstances,
-                    updatedInstances: updatedInstances,
-                    deletedInstances: deletedInstances,
-                    bookmarks: bookmarkedInstances
-                };
-                if (defaultPerson.length > 0)
-                    userInstances.defaultPerson = defaultPerson[0];
-                const completePersist = () => {
-                    // Clear local state and invoke completion callback after successful persist
-                    clearLocalStateForLogout();
-                    done();
-                };
-                if (instances.length == 0) {
-                    this.dataService.deletePersistedInstances(user).subscribe({
-                        next: () => {
-                            console.debug('Delete any persisted instance at the server.');
-                            completePersist();
-                        },
-                        error: () => done()
-                    });
-                    return;
-                }
-                this.dataService.persitUserInstances(userInstances, user).subscribe({
-                    next: () => {
-                        console.debug('userInstances have been persisted at the server.');
-                        completePersist();
-                    },
-                    error: () => done()
                 });
             });
+    }
+
+    private countStagedInstances(userInstances: UserInstances): number {
+        return (userInstances.newInstances?.length ?? 0)
+            + (userInstances.updatedInstances?.length ?? 0)
+            + (userInstances.deletedInstances?.length ?? 0)
+            + (userInstances.bookmarks?.length ?? 0)
+            + (userInstances.defaultPerson ? 1 : 0);
+    }
+
+    /**
+     * Combine this tab's staged changes with the server's currently-persisted snapshot so a
+     * persist can't silently drop a sibling tab's change this tab hasn't heard about yet.
+     * Resolution rule: for any dbId this tab has an opinion about (i.e. it appears in one of
+     * this tab's new/updated/deleted lists), this tab's copy wins outright - a dbId is only
+     * ever carried over from the server side when this tab has no record of it at all.
+     * This is a coarse, whole-instance (not per-attribute) resolution: if the very same dbId
+     * was updated differently in two tabs, whichever tab persists uses its own copy, and the
+     * other tab's edit is lost unless it also gets persisted separately. Closing that gap needs
+     * per-instance modified-timestamps, which is a deliberate follow-up, not done here.
+     * Bookmarks and defaultPerson are scoped out of the merge (kept local-only, matching prior
+     * behavior): a missing bookmark can't be told apart from an intentionally-removed one
+     * without more state than currently exists, so merging it in risks resurrecting a bookmark
+     * the user deliberately removed.
+     */
+    private mergeUserInstances(local: UserInstances, server: UserInstances | undefined): UserInstances {
+        if (!server)
+            return local;
+        const localDbIds = new Set<number>([
+            ...(local.newInstances ?? []).map(i => i.dbId),
+            ...(local.updatedInstances ?? []).map(i => i.dbId),
+            ...(local.deletedInstances ?? []).map(i => i.dbId),
+        ]);
+        const carryOver = (list?: Instance[]) => (list ?? []).filter(i => !localDbIds.has(i.dbId));
+        return {
+            newInstances: [...(local.newInstances ?? []), ...carryOver(server.newInstances)],
+            updatedInstances: [...(local.updatedInstances ?? []), ...carryOver(server.updatedInstances)],
+            deletedInstances: [...(local.deletedInstances ?? []), ...carryOver(server.deletedInstances)],
+            bookmarks: local.bookmarks ?? [],
+            defaultPerson: local.defaultPerson ?? server.defaultPerson,
+        };
     }
 
     private startPathwayDiagramAutoPersist(): void {

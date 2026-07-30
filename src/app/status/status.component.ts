@@ -166,9 +166,12 @@ export class StatusComponent implements OnInit, OnDestroy {
   }
 
   // Calling ngOnDestroy is not reliable: https://blog.devgenius.io/where-ngondestroy-fails-you-54a8c2eca0e0.
+  // Use beacon mode here: a normal request is frequently cancelled by the browser once the
+  // tab actually closes, so this fires a single fetch(keepalive) best-effort persist instead
+  // of the full merge-with-server flow the other call sites use (see persistInstances() docs).
   @HostListener('window:beforeunload')
   persistInstances(): void {
-    this.userInstancesService.persistInstances();
+    this.userInstancesService.persistInstances(false, undefined, true);
   }
 
   showUpdated(): void {

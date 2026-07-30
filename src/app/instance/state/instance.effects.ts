@@ -256,7 +256,7 @@ export class InstanceEffects {
 
   private storeDeletedInstances() {
     this.store.select(deleteInstances()).pipe(take(1)).subscribe(instances => {
-      this.setLocalStorageItem(DeleteInstanceActions.get_deleted_instances.type, this.instUtils.stringifyInstances(instances));
+      this.mergeAndStoreSnapshot(this.deletedInstancesSnapshotLockName, DeleteInstanceActions.get_deleted_instances.type, instances);
     });
   }
 
@@ -265,10 +265,10 @@ export class InstanceEffects {
       // We need the whole instance
       const dbIds = instances.map(i => i.dbId);
       this.dataService.fetchInstances(dbIds).pipe(defaultIfEmpty([])).subscribe(fullInsts => {
-        // There are some empty instance in fullInsts. Need to filter them out. 
+        // There are some empty instance in fullInsts. Need to filter them out.
         fullInsts = fullInsts.filter(i => i && i.dbId);
         // Need this list so that we can persist it.
-        this.setLocalStorageItem(NewInstanceActions.get_new_instances.type, this.instUtils.stringifyInstances(fullInsts));
+        this.mergeAndStoreSnapshot(this.newInstancesSnapshotLockName, NewInstanceActions.get_new_instances.type, fullInsts);
       });
     });
   }
@@ -280,9 +280,61 @@ export class InstanceEffects {
       this.dataService.fetchInstances(dbIds).pipe(defaultIfEmpty([])).subscribe(fullInsts => {
         // Don't remove the item if it is empty. We need to use an empty array as a change
         // evidence. Otherwise, we cannot see the difference between the saved state and the changed state
-        this.setLocalStorageItem(UpdateInstanceActions.get_updated_instances.type, this.instUtils.stringifyInstances(fullInsts));
+        this.mergeAndStoreSnapshot(this.updatedInstancesSnapshotLockName, UpdateInstanceActions.get_updated_instances.type, fullInsts);
       });
     });
+  }
+
+  private readonly newInstancesSnapshotLockName = 'newInstancesSnapshotLock';
+  private readonly updatedInstancesSnapshotLockName = 'updatedInstancesSnapshotLock';
+  private readonly deletedInstancesSnapshotLockName = 'deletedInstancesSnapshotLock';
+
+  /**
+   * Every tab recomputes this list from only its own current store on every mutation, so two
+   * tabs mutating around the same time can overwrite each other's simultaneous addition if the
+   * write is a blind replace - whichever tab's async fetchInstances() finishes last would win
+   * and silently drop the other tab's entry from the shared snapshot (only read back at the
+   * next login/reload). Guarding with a Web Locks lock serializes the writes; merging against
+   * whatever is currently stored (rather than replacing it outright) additionally protects a
+   * tab whose write happens to land first from being clobbered by one that lands slightly
+   * later with a view that hasn't yet caught up via the live cross-tab sync.
+   * Resolution rule: `currentList` (this tab's own fresh, complete view) is authoritative for
+   * every dbId it mentions; only dbIds this tab doesn't mention at all are carried over from
+   * what's already stored. This can't perfectly distinguish "a sibling tab hasn't told me about
+   * this dbId yet" from "this dbId was removed and I correctly no longer list it" - but since
+   * removals are also broadcast live (see the window:storage listener above) and this runs
+   * again on every mutation, any such gap is only as wide as the live-sync propagation delay,
+   * not the much larger gap this fixes (concurrent async writes racing each other).
+   */
+  private mergeAndStoreSnapshot(lockName: string, storageKey: string, currentList: Instance[]) {
+    const write = () => {
+      const known = new Set(currentList.map(i => i.dbId));
+      const existing = this.readSnapshot(storageKey).filter((i: any) => i && !known.has(i.dbId));
+      const merged = [...currentList.map(i => this.toStorablePlainInstance(i)), ...existing];
+      this.setLocalStorageItem(storageKey, JSON.stringify(merged));
+    };
+    if (typeof navigator === 'undefined' || !navigator.locks) {
+      write();
+      return;
+    }
+    navigator.locks.request(lockName, async () => write());
+  }
+
+  private toStorablePlainInstance(inst: Instance): any {
+    return {
+      ...inst,
+      schemaClass: undefined,
+      attributes: inst.attributes instanceof Map ? Object.fromEntries(inst.attributes) : inst.attributes,
+    };
+  }
+
+  private readSnapshot(storageKey: string): any[] {
+    try {
+      const parsed = this.parseLocalStorageObject(localStorage.getItem(storageKey));
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   }
 
   private setLocalStorageItem(key: string, object: string) {
