@@ -345,8 +345,14 @@ export class InstanceConverter {
         // Apparent there is no compartment mapping
         if (inst.schemaClassName === 'Compartment')
             newNode.addClass('Compartment');
-        else
-            service.nodeTypeMap.get(this.getNodeType(inst)).forEach((cls: string) => newNode.addClass(cls));
+        else {
+            const nodeType = this.getNodeType(inst);
+            const classes = service.nodeTypeMap.get(nodeType);
+            if (classes)
+                classes.forEach((cls: string) => newNode.addClass(cls));
+            else
+                console.warn(`instance-converter: no nodeTypeMap entry for node type "${nodeType}" (schemaClass "${inst.schemaClassName}"); node will use default styling.`);
+        }
         if (inst.schemaClassName === "RNADrug")
             newNode.addClass("drug");
         
