@@ -66,7 +66,7 @@ export class ReferenceSequenceAutoFiller implements PostEditOperation {
         return true;
     }
 
-    private handleIsoForms(instance: Instance, refIsoCls: SchemaClass) {
+    private async handleIsoForms(instance: Instance, refIsoCls: SchemaClass) {
         let isoformIds = instance.attributes?.get('isoformIds')
         if (!isoformIds) return;
         for (let isoformId of isoformIds) {
@@ -78,7 +78,7 @@ export class ReferenceSequenceAutoFiller implements PostEditOperation {
             // This is a new isoform created by the server
             // Need to assign a new dbId
             //variantIdentifier and isoformParent
-            isoform.dbId = this.dataService.getNextNewDbId();
+            isoform.dbId = await this.dataService.getNextNewDbId();
             // isoformParent is a multi-valued attribute (cardinality '+'), so it must be stored
             // as an array. Use the managed shell instance to keep references in sync.
             isoform.attributes.set('isoformParent', [this.utilities.getShellInstance(instance)]);

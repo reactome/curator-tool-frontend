@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpResponse } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
-import { catchError, combineLatest, concatMap, EMPTY, forkJoin, map, Observable, of, Subject, switchMap, take, tap, throwError } from 'rxjs';
+import { catchError, combineLatest, concatMap, EMPTY, forkJoin, from, map, Observable, of, Subject, switchMap, take, tap, throwError } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
 import { DiagramLock, Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstanceBackupSummary, UserInstances } from "../models/reactome-instance.model";
@@ -64,9 +64,11 @@ export class DataService {
   // so the automatic backup is only sent when a real change is detected.
   private lastPersistedPayload: string | undefined;
 
-  // Range bounds for random local dbIds: negative 9-digit integers.
-  private static readonly MIN_LOCAL_DBID_ABS = 100000000;
-  private static readonly MAX_LOCAL_DBID_ABS = 999999999;
+  // Seed value used the very first time this browser ever hands out a negative dbId,
+  // i.e. before localStorage[nextNewDbIdStorageKey] has been written.
+  private readonly initialNextNewDbId = -1;
+  private readonly nextNewDbIdStorageKey = 'nextNewDbId';
+  private readonly nextNewDbIdLockName = 'nextNewDbIdLock';
   // The root class is cached for performance
   private rootClass: SchemaClass | undefined;
   private rootEvent: Instance | undefined;
@@ -419,41 +421,79 @@ export class DataService {
   }
 
 
-  getNextNewDbId(): number {
-    // Generate a random negative 9-digit dbId and avoid collisions in local cache.
-    for (let i = 0; i < 1000; i++) {
-      const abs = Math.floor(Math.random() *
-        (DataService.MAX_LOCAL_DBID_ABS - DataService.MIN_LOCAL_DBID_ABS + 1))
-        + DataService.MIN_LOCAL_DBID_ABS;
-      const candidate = -abs;
-      if (!this.id2instance.has(candidate))
-        return candidate;
+  /**
+   * Every open tab shares the same negative dbId counter through localStorage, guarded by
+   * the Web Locks API so a dbId can never be handed out twice across tabs. A lock request
+   * queues automatically if another tab holds it, and is released by the browser as soon as
+   * the callback settles - including if the holding tab is closed or crashes mid-request -
+   * so there is no manual unlock/cleanup-on-close logic to get wrong.
+   */
+  async getNextNewDbId(): Promise<number> {
+    const claim = () => {
+      const rtn = this.readSharedNextNewDbId();
+      localStorage.setItem(this.nextNewDbIdStorageKey, String(rtn - 1));
+      return rtn;
+    };
+    if (typeof navigator === 'undefined' || !navigator.locks) {
+      // Fallback for browsers without the Web Locks API: still draw from the shared
+      // localStorage counter so tabs don't each restart at -1, but the read-then-write
+      // below is no longer atomic across tabs, so a same-instant claim from another
+      // tab could in theory still collide.
+      return claim();
     }
-    throw new Error('Unable to generate a unique random local dbId.');
+    return navigator.locks.request(this.nextNewDbIdLockName, async () => claim());
+  }
+
+  private readSharedNextNewDbId(): number {
+    const stored = localStorage.getItem(this.nextNewDbIdStorageKey);
+    return stored !== null ? parseInt(stored, 10) : this.initialNextNewDbId;
   }
 
   resetNextNewDbId() {
-    // No-op kept for compatibility: local dbIds are generated randomly.
-    return;
+    if (!this.id2instance || this.id2instance.size == 0) {
+      return; // Need to do nothing
+    }
+    let min = 0;
+    for (let id of this.id2instance.keys()) {
+      if (id < min)
+        min = id;
+    }
+    // Need to reduce 0 to avoid using the used one
+    const candidate = min - 1;
+    // Only ever lower the shared counter - another tab may already have handed out
+    // ids below our own candidate, and we must not reissue those.
+    const lower = () => {
+      if (candidate < this.readSharedNextNewDbId()) {
+        localStorage.setItem(this.nextNewDbIdStorageKey, String(candidate));
+      }
+    };
+    if (typeof navigator === 'undefined' || !navigator.locks) {
+      lower();
+      return;
+    }
+    navigator.locks.request(this.nextNewDbIdLockName, async () => lower());
   }
 
   /**
    * Create a new instance for the specified class.
    */
   createNewInstance(schemaClassName: string): Observable<Instance> {
-    return this.fetchSchemaClass(schemaClassName).pipe(map((schemaClass: SchemaClass) => {
-      const attributes = new Map();
-      attributes.set('dbId', this.getNextNewDbId());
-      attributes.set('displayName', NEW_DISPLAY_NAME);
-      let instance: Instance = {
-        dbId: attributes.get('dbId'),
-        displayName: attributes.get('displayName'),
-        schemaClassName: schemaClassName,
-        attributes: attributes
-      };
-      instance.schemaClass = schemaClass;
-      return instance;
-    }),
+    return this.fetchSchemaClass(schemaClassName).pipe(
+      switchMap((schemaClass: SchemaClass) => from(this.getNextNewDbId()).pipe(
+        map((dbId: number) => {
+          const attributes = new Map();
+          attributes.set('dbId', dbId);
+          attributes.set('displayName', NEW_DISPLAY_NAME);
+          let instance: Instance = {
+            dbId: attributes.get('dbId'),
+            displayName: attributes.get('displayName'),
+            schemaClassName: schemaClassName,
+            attributes: attributes
+          };
+          instance.schemaClass = schemaClass;
+          return instance;
+        }),
+      )),
       catchError((err: Error) => {
         return this.handleErrorMessage(err);
       }),

@@ -51,8 +51,8 @@ export class LiteratureReferenceFiller implements PostEditOperation {
             if (this.nameGenerator) {
                 this.nameGenerator.updateDisplayName(instance);
             }
-            this.dataService.fetchSchemaClass('Person').subscribe((personCls: SchemaClass) => {
-                this.handleAuthors(instance, personCls);
+            this.dataService.fetchSchemaClass('Person').subscribe(async (personCls: SchemaClass) => {
+                await this.handleAuthors(instance, personCls);
                 if (postEditListener)
                     postEditListener.donePostEdit(instance, editedAttributeName);
             });
@@ -65,7 +65,7 @@ export class LiteratureReferenceFiller implements PostEditOperation {
      * @param instance
      * @returns
      */
-    private handleAuthors(instance: Instance,
+    private async handleAuthors(instance: Instance,
                           personCls: SchemaClass) {
         let authors = instance.attributes?.get('author');
         if (!authors) return;
@@ -74,7 +74,7 @@ export class LiteratureReferenceFiller implements PostEditOperation {
                 continue; // This should be fine
             // This is a new author created by the server
             // Need to assign a new dbId
-            author.dbId = this.dataService.getNextNewDbId();
+            author.dbId = await this.dataService.getNextNewDbId();
             author.schemaClass = personCls;
             this.dataService.handleInstanceAttributes(author);
             if (this.nameGenerator)
