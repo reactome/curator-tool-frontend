@@ -1,3 +1,21 @@
+### Build on July 30, 2026
+
+- Bug fix: opening the tool in more than one browser tab at once could occasionally let two new instances (including ones created automatically, such as new isoforms or literature-reference authors) get assigned the same temporary id, with one silently overwriting the other. New instances are now assigned a coordinated unique id shared across all of a user's open tabs.
+
+- Bug fix: staged new/updated/deleted instances did not always survive correctly when working across more than one open browser tab at a time - for example, a staged new instance you had just deleted could reappear after reloading. Your own staged changes, including deletions, are now always kept, and staged changes are also better protected from being overwritten by another of your open tabs.
+
+- Added the ability to export your currently staged new/updated/deleted instances, bookmarks, and default person to a local file, and to load such a file back into your editing session later. Both are available from the status toolbar next to "Restore staged-changes backup" (the download/upload icons). Exporting now prompts you to choose a file name (pre-filled with a timestamped default). Loading a file - or restoring a server-side backup - now updates every browser tab you have open, not just the one you loaded it in.
+
+- Bug fix: a pathway diagram containing a Polymer entity could fail to open. Polymer nodes now render correctly. Note: This is a temporary fix. We will work on this more to get the full rendering graph for polymer as shown in the production server.
+
+- Re-organized actions in pathway diagrams. Enabled deletion of PE nodes without edges. 
+
+### Build on July 29, 2026
+
+- Reorganized the right-click actions menu in the pathway diagram editor for clarity: related actions are grouped together, and actions that don't currently apply are hidden instead of shown disabled.
+
+- Added the ability to delete a PhysicalEntity node directly from the diagram when it has no edges connected to it.
+
 ### Build on July 28, 2026
 
 - Bug fix: new instances that are committed as a side effect of committing the instance referring to them (e.g. the new Person instances created for a new LiteratureReference's authors when a PubMed identifier is filled in) stayed in the new instances list with their local negative dbIds, so they could be committed a second time — showing up as duplicates of the instances they had just been saved as. Such instances are now removed from the new instances list and from the local cache when their referrer is committed, and everything still pointing at them is repointed at their database dbIds.
