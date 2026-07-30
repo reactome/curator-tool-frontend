@@ -142,6 +142,8 @@ When your staged count exceeds **200**, the toolbar shows **"Too many staged ins
 | `timeline` | **Go to event view** | Navigate to `/event_view` (shown from Schema View / Home) |
 | `home` | **Go to home page** | Navigate to `/home` |
 | `restore` | **Restore staged-changes backup** | Opens the [Restore Staged-Changes Backup](#restore-staged-changes-backup) dialog |
+| `file_download` | **Export staged instances to a local file** | Opens the [Export staged instances to a local file](#export-staged-instances-to-a-local-file) flow |
+| `file_upload` | **Load staged instances from a local file** | Opens the [Load staged instances from a local file](#load-staged-instances-from-a-local-file) flow |
 | `menu_book` | **User guide** | Opens this guide on GitHub in a new tab |
 | `bug_report` | **Report bug** | Opens the bug-report Google Doc in a new tab |
 | `logout` | **Log out** | Persists staged state, then returns to `/login` |
@@ -153,6 +155,22 @@ Backend errors surface as a snackbar at the bottom with a **Close** action.
 Every time your staged changes (new/updated/deleted instances, bookmarks, default person) are saved to the server and a previous save already existed, the server automatically keeps a timestamped backup of what was there before — this happens as a side effect of normal saving, with no action needed from you. The **Restore staged-changes backup** dialog lists your available backups (most recent first) with a **Restore** button on each row.
 
 Clicking **Restore** first asks you to confirm (since it replaces what's currently in your editor), then loads that backup's new/updated/deleted instances, bookmarks, and default person into your current editing session. **This only loads the backup — it does not save anything by itself.** Your last-saved state on the server is untouched either way; review the restored changes and use the normal save action (or simply keep working) if you want to keep them. The server keeps a rolling history of your most recent backups (older ones are pruned automatically).
+
+#### Export staged instances to a local file
+
+The **`file_download`** button downloads your currently staged new/updated/deleted instances, bookmarks, and default person as a JSON file on your own computer — mainly intended as a debugging/inspection aid, and as a manual backup you keep yourself (separate from the server's automatic backups above).
+
+Clicking it opens an **"Export Staged Instances"** dialog with a **File name** field pre-filled with a timestamped default (e.g. `user-instances-2026-07-30T20-45-12-345Z.json`); edit it if you want a different name, then click **Export** (`.json` is appended automatically if you leave it off). **Cancel** closes without downloading.
+
+#### Load staged instances from a local file
+
+The **`file_upload`** button is the counterpart to the export above — it loads a previously exported JSON file back into your current editing session. This is local-only: **nothing is saved to the server just by loading the file.**
+
+1. Click **`file_upload`** and choose a `.json` file (only use a file previously produced by **Export staged instances to a local file** above).
+2. A confirmation dialog warns that this **replaces** your currently staged (unsaved) changes in the editor; your last-saved state on the server is untouched either way. Confirm to proceed, or cancel to back out.
+3. On success, an **"Instances Loaded"** dialog confirms the file has been loaded — review the changes and commit/save as usual if you want to keep them.
+
+> **Multi-tab note:** if you have more than one browser tab open, loading a file (or restoring a backup, above) updates the staged instances in **every** open tab, not just the one you loaded it in — so all your tabs stay showing the same state.
 
 ---
 

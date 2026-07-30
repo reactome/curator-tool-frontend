@@ -78,7 +78,7 @@ export class UserInstanceBackupsDialogComponent implements OnInit {
           this.dialog.open(InfoDialogComponent, {
             data: {
               title: 'Backup Loaded',
-              message: 'The backup has been loaded into your editing session. Review the changes and click Save to keep them.'
+              message: 'The backup has been loaded into your editing session.'
             }
           });
         },

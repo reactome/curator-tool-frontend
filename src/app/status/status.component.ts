@@ -16,6 +16,7 @@ import { UserInstanceBackupsDialogService } from './components/user-instance-bac
 import { UnsavedUploadDialogComponent } from "../shared/components/unsaved-upload-dialog/unsaved-upload-dialog.component";
 import { CommitWaitDialogComponent } from "../shared/components/commit-wait-dialog/commit-wait-dialog.component";
 import { InfoDialogComponent } from "../shared/components/info-dialog/info-dialog.component";
+import { FileNamePromptDialogComponent } from "../shared/components/file-name-prompt-dialog/file-name-prompt-dialog.component";
 
 @Component({
   selector: 'app-status',
@@ -224,18 +225,34 @@ export class StatusComponent implements OnInit, OnDestroy {
 
   /**
    * Debugging aid: download this tab's currently staged new/updated/deleted instances,
-   * bookmarks, and default person as a local JSON file.
+   * bookmarks, and default person as a local JSON file. Prompts for a file name first,
+   * pre-filled with a timestamped default.
    */
   exportUserInstancesToFile(): void {
-    this.userInstancesService.exportUserInstances().subscribe({
-      next: (payload: string) => this.downloadJsonFile(payload, this.buildUserInstancesExportFileName()),
-      error: () => this.openSnackBar('Failed to export staged instances.', 'Close')
+    const dialogRef = this.dialog.open(FileNamePromptDialogComponent, {
+      data: {
+        title: 'Export Staged Instances',
+        message: 'Choose a file name for the exported JSON file.',
+        defaultFileName: this.buildUserInstancesExportFileName(),
+      }
+    });
+    dialogRef.afterClosed().pipe(take(1)).subscribe((fileName: string | null) => {
+      if (!fileName)
+        return;
+      this.userInstancesService.exportUserInstances().subscribe({
+        next: (payload: string) => this.downloadJsonFile(payload, this.ensureJsonExtension(fileName)),
+        error: () => this.openSnackBar('Failed to export staged instances.', 'Close')
+      });
     });
   }
 
   private buildUserInstancesExportFileName(): string {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     return `user-instances-${timestamp}.json`;
+  }
+
+  private ensureJsonExtension(fileName: string): string {
+    return fileName.toLowerCase().endsWith('.json') ? fileName : `${fileName}.json`;
   }
 
   private downloadJsonFile(payload: string, fileName: string): void {
@@ -292,7 +309,7 @@ export class StatusComponent implements OnInit, OnDestroy {
           this.dialog.open(InfoDialogComponent, {
             data: {
               title: 'Instances Loaded',
-              message: 'The file has been loaded into your editing session. Review the changes and click Save to keep them.'
+              message: 'The file has been loaded into your editing session.'
             }
           });
         },

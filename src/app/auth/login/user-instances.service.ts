@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Store } from "@ngrx/store";
-import { combineLatest, defaultIfEmpty, finalize, forkJoin, Observable, take } from "rxjs";
-import { map, tap } from "rxjs/operators";
+import { combineLatest, defaultIfEmpty, finalize, forkJoin, Observable, of, take } from "rxjs";
+import { catchError, map, tap } from "rxjs/operators";
 import { DiagramLock, Instance, UserInstances } from "src/app/core/models/reactome-instance.model";
 import { AuthenticateService } from "src/app/core/services/authenticate.service";
 import { DataService } from "src/app/core/services/data.service";
@@ -27,11 +27,32 @@ export class UserInstancesService {
     private readonly pathwayDiagramPersistIntervalMs = 2 * 60 * 1000;
     private pathwayDiagramPersistTimer: ReturnType<typeof setInterval> | undefined;
     private isPersistingPathwayDiagrams = false;
+    // Broadcasts a wholesale replacement of the staged new/updated/deleted instances,
+    // bookmarks, and default person (restoreUserInstanceBackup()/importUserInstancesFromFile())
+    // to every other open tab. Distinct from the per-mutation broadcasts in InstanceEffects,
+    // which only cover incremental register/remove/update actions, not a bulk replace.
+    private readonly userInstancesSyncBroadcastKey = 'syncUserInstances';
 
     constructor(private instUtils: InstanceUtilities,
         private dataService: DataService,
         private authService: AuthenticateService,
         private store: Store) {
+        window.addEventListener('storage', (event: StorageEvent) => {
+            if (event.key !== this.userInstancesSyncBroadcastKey)
+                return;
+            const userInstances = this.parseBroadcastPayload(event.newValue);
+            if (!userInstances)
+                return;
+            // Hydrate independently in this tab (its own id2instance/schemaClass caches are
+            // separate from the tab that broadcast this) and apply, but don't re-broadcast -
+            // only the tab where the user actually triggered the restore/import does that.
+            this.dataService.hydrateUserInstances(userInstances).pipe(
+                catchError(() => of(undefined))
+            ).subscribe((hydrated: UserInstances | undefined) => {
+                if (hydrated)
+                    this.applyUserInstancesToEditingSession(hydrated);
+            });
+        });
     }
 
     // TODO: This may use the same pattern as being used to load schema tree by using APP_INITIALIZER
@@ -100,7 +121,10 @@ export class UserInstancesService {
      */
     restoreUserInstanceBackup(fileName: string): Observable<UserInstances> {
         return this.dataService.loadUserInstanceBackup(fileName).pipe(
-            tap((userInstances: UserInstances) => this.applyUserInstancesToEditingSession(userInstances))
+            tap((userInstances: UserInstances) => {
+                this.applyUserInstancesToEditingSession(userInstances);
+                this.broadcastUserInstances(userInstances);
+            })
         );
     }
 
@@ -137,11 +161,16 @@ export class UserInstancesService {
      * Debugging aid: the counterpart to exportUserInstances() - replaces the currently staged
      * new/updated/deleted instances, bookmarks, and default person with the content of a
      * UserInstances object parsed from a locally exported file. Same in-browser-only semantics
-     * as restoreUserInstanceBackup(): nothing is persisted to the server by this call.
+     * as restoreUserInstanceBackup(): nothing is persisted to the server by this call. Also
+     * broadcast to every other open tab (see the window:storage listener in the constructor) so
+     * all tabs end up showing the same newly loaded state, not just this one.
      */
     importUserInstancesFromFile(userInstances: UserInstances): Observable<UserInstances> {
         return this.dataService.hydrateUserInstances(userInstances).pipe(
-            tap((hydrated: UserInstances) => this.applyUserInstancesToEditingSession(hydrated))
+            tap((hydrated: UserInstances) => {
+                this.applyUserInstancesToEditingSession(hydrated);
+                this.broadcastUserInstances(hydrated);
+            })
         );
     }
 
@@ -152,6 +181,29 @@ export class UserInstancesService {
         this.store.dispatch(BookmarkActions.set_bookmarks({ instances: userInstances.bookmarks ?? [] }));
         this.store.dispatch(DefaultPersonActions.set_default_person(userInstances.defaultPerson));
         this.dataService.resetNextNewDbId();
+    }
+
+    /**
+     * Broadcasts a wholesale UserInstances replacement to every other open tab. Re-derives the
+     * plain, JSON-serializable shape via computePersistPayload() rather than serializing
+     * `userInstances` directly, since a hydrated UserInstances holds attributes as Maps and a
+     * populated schemaClass - neither of which JSON.stringify can round-trip. Each receiving tab
+     * re-hydrates independently (see the window:storage listener in the constructor), since
+     * id2instance/schemaClass caches are per-tab.
+     */
+    private broadcastUserInstances(userInstances: UserInstances): void {
+        const payload = this.dataService.computePersistPayload(userInstances);
+        localStorage.setItem(this.userInstancesSyncBroadcastKey,
+            JSON.stringify({ object: payload, timestamp: Date.now() }));
+    }
+
+    private parseBroadcastPayload(content: string | undefined | null): UserInstances | undefined {
+        try {
+            const value = JSON.parse(content || '{}');
+            return JSON.parse(value.object || '{}');
+        } catch {
+            return undefined;
+        }
     }
 
     private makeShell(insts: Instance[]) {
