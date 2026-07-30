@@ -64,8 +64,9 @@ export class DataService {
   // so the automatic backup is only sent when a real change is detected.
   private lastPersistedPayload: string | undefined;
 
-  // Track the negative dbId to be used
-  private nextNewDbId: number = -1;
+  // Range bounds for random local dbIds: negative 9-digit integers.
+  private static readonly MIN_LOCAL_DBID_ABS = 100000000;
+  private static readonly MAX_LOCAL_DBID_ABS = 999999999;
   // The root class is cached for performance
   private rootClass: SchemaClass | undefined;
   private rootEvent: Instance | undefined;
@@ -419,22 +420,21 @@ export class DataService {
 
 
   getNextNewDbId(): number {
-    let rtn = this.nextNewDbId;
-    this.nextNewDbId -= 1;
-    return rtn;
+    // Generate a random negative 9-digit dbId and avoid collisions in local cache.
+    for (let i = 0; i < 1000; i++) {
+      const abs = Math.floor(Math.random() *
+        (DataService.MAX_LOCAL_DBID_ABS - DataService.MIN_LOCAL_DBID_ABS + 1))
+        + DataService.MIN_LOCAL_DBID_ABS;
+      const candidate = -abs;
+      if (!this.id2instance.has(candidate))
+        return candidate;
+    }
+    throw new Error('Unable to generate a unique random local dbId.');
   }
 
   resetNextNewDbId() {
-    if (!this.id2instance || this.id2instance.size == 0) {
-      return; // Need to do nothing
-    }
-    let min = 0;
-    for (let id of this.id2instance.keys()) {
-      if (id < min)
-        min = id;
-    }
-    // Need to reduce 0 to avoid using the used one
-    this.nextNewDbId = min - 1;
+    // No-op kept for compatibility: local dbIds are generated randomly.
+    return;
   }
 
   /**
