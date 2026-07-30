@@ -815,17 +815,6 @@ export class DataService {
   }
 
   /**
-   * Raw snapshot of what is currently persisted for a user - deliberately skips the
-   * schema-hydration/id2instance-caching that loadUserInstances() does, since this is used
-   * only to merge against before persisting (see UserInstancesService.persistInstances()).
-   * Hydrating here would let a sibling tab's stale-in-transit view clobber this tab's own
-   * cached, in-progress edits - the exact class of bug this merge step exists to prevent.
-   */
-  getPersistedUserInstances(userName: string): Observable<UserInstances> {
-    return this.http.get<UserInstances>(this.loadInstancesUrl + userName);
-  }
-
-  /**
    * Best-effort persist used only from the window:beforeunload handler, where a normal
    * HttpClient call is frequently cancelled by the browser mid-flight once the tab actually
    * closes. `fetch` with `keepalive: true` is built to survive page teardown, but it can't
@@ -882,9 +871,11 @@ export class DataService {
   /**
    * Collect the schema classes referenced by a UserInstances payload and hydrate each
    * instance's schemaClass/attributes, then clone each into a shell for store use - the
-   * same treatment loadUserInstances() applies to the primary persisted blob.
+   * same treatment loadUserInstances() applies to the primary persisted blob. Public so
+   * UserInstancesService can also apply it to a UserInstances payload it didn't itself fetch
+   * over HTTP (e.g. one read from a local debug-export file).
    */
-  private hydrateUserInstances(userInstance: UserInstances): Observable<UserInstances> {
+  hydrateUserInstances(userInstance: UserInstances): Observable<UserInstances> {
     // Collect all schema classes to load so that we haveefined attributes
     const classes = new Set<string>();
     userInstance.deletedInstances?.forEach(inst => classes.add(inst.schemaClassName));

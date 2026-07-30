@@ -1,7 +1,7 @@
-import { Component, EventEmitter, HostListener, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, inject, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 import { NavigationEnd, Router } from "@angular/router";
 import { Store } from '@ngrx/store';
-import { Instance, MAX_STAGED_INSTANCES } from 'src/app/core/models/reactome-instance.model';
+import { Instance, MAX_STAGED_INSTANCES, UserInstances } from 'src/app/core/models/reactome-instance.model';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { bookmarkedInstances } from "../schema-view/instance-bookmark/state/bookmark.selectors";
 import { MatSnackBar } from "@angular/material/snack-bar";
@@ -15,6 +15,7 @@ import { DiagramEditorService, DiagramLockViewModel } from '../event-view/compon
 import { UserInstanceBackupsDialogService } from './components/user-instance-backups-dialog/user-instance-backups-dialog.service';
 import { UnsavedUploadDialogComponent } from "../shared/components/unsaved-upload-dialog/unsaved-upload-dialog.component";
 import { CommitWaitDialogComponent } from "../shared/components/commit-wait-dialog/commit-wait-dialog.component";
+import { InfoDialogComponent } from "../shared/components/info-dialog/info-dialog.component";
 
 @Component({
   selector: 'app-status',
@@ -24,6 +25,7 @@ import { CommitWaitDialogComponent } from "../shared/components/commit-wait-dial
 export class StatusComponent implements OnInit, OnDestroy {
   @Input() hideInstanceStatus: boolean = false;
   @Output() showUpdatedEvent = new EventEmitter<boolean>();
+  @ViewChild('importUserInstancesInput') importUserInstancesInput?: ElementRef<HTMLInputElement>;
   updatedInstances: Instance[] = [];
   newInstances: Instance[] = [];
   deletedInstances: Instance[] = [];
@@ -218,6 +220,85 @@ export class StatusComponent implements OnInit, OnDestroy {
 
   openUserInstanceBackups(): void {
     this.userInstanceBackupsDialogService.openDialog();
+  }
+
+  /**
+   * Debugging aid: download this tab's currently staged new/updated/deleted instances,
+   * bookmarks, and default person as a local JSON file.
+   */
+  exportUserInstancesToFile(): void {
+    this.userInstancesService.exportUserInstances().subscribe({
+      next: (payload: string) => this.downloadJsonFile(payload, this.buildUserInstancesExportFileName()),
+      error: () => this.openSnackBar('Failed to export staged instances.', 'Close')
+    });
+  }
+
+  private buildUserInstancesExportFileName(): string {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    return `user-instances-${timestamp}.json`;
+  }
+
+  private downloadJsonFile(payload: string, fileName: string): void {
+    const blob = new Blob([payload], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Debugging aid: the counterpart to exportUserInstancesToFile() - loads a previously
+   * exported JSON file back into the current editing session (in the browser only; this
+   * does not persist anything to the server by itself).
+   */
+  triggerImportUserInstances(): void {
+    this.importUserInstancesInput?.nativeElement.click();
+  }
+
+  onImportUserInstancesFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // Allow re-selecting the same file to fire another change event.
+    if (!file)
+      return;
+    file.text().then((content: string) => {
+      let parsed: UserInstances;
+      try {
+        parsed = JSON.parse(content);
+      } catch {
+        this.openSnackBar('Selected file is not valid JSON.', 'Close');
+        return;
+      }
+      this.confirmAndImportUserInstances(parsed);
+    }).catch(() => this.openSnackBar('Failed to read the selected file.', 'Close'));
+  }
+
+  private confirmAndImportUserInstances(userInstances: UserInstances): void {
+    const confirmRef = this.dialog.open(UnsavedUploadDialogComponent, {
+      data: {
+        title: 'Load Instances From File',
+        message: 'Load the selected file into your current editing session? This replaces your currently staged '
+          + '(unsaved) changes in the editor - it does not save anything by itself. Your last saved changes remain '
+          + 'safely on the server either way. This is a debugging tool - only use it with a file exported by this app.'
+      }
+    });
+    confirmRef.afterClosed().pipe(take(1)).subscribe((confirmed: boolean | null) => {
+      if (confirmed !== true)
+        return;
+      this.userInstancesService.importUserInstancesFromFile(userInstances).subscribe({
+        next: () => {
+          this.dialog.open(InfoDialogComponent, {
+            data: {
+              title: 'Instances Loaded',
+              message: 'The file has been loaded into your editing session. Review the changes and click Save to keep them.'
+            }
+          });
+        },
+        error: () => this.openSnackBar('Failed to load the selected file into the editing session.', 'Close')
+      });
+    });
   }
 
   navigateToSchemaView() {

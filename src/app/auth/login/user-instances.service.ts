@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Store } from "@ngrx/store";
-import { combineLatest, defaultIfEmpty, finalize, forkJoin, Observable, of, take } from "rxjs";
-import { catchError, tap } from "rxjs/operators";
+import { combineLatest, defaultIfEmpty, finalize, forkJoin, Observable, take } from "rxjs";
+import { map, tap } from "rxjs/operators";
 import { DiagramLock, Instance, UserInstances } from "src/app/core/models/reactome-instance.model";
 import { AuthenticateService } from "src/app/core/services/authenticate.service";
 import { DataService } from "src/app/core/services/data.service";
@@ -100,15 +100,58 @@ export class UserInstancesService {
      */
     restoreUserInstanceBackup(fileName: string): Observable<UserInstances> {
         return this.dataService.loadUserInstanceBackup(fileName).pipe(
-            tap((userInstances: UserInstances) => {
-                this.store.dispatch(NewInstanceActions.set_new_instances({ instances: this.makeShell(userInstances.newInstances ?? []) }));
-                this.store.dispatch(UpdateInstanceActions.set_updated_instances({ instances: this.makeShell(userInstances.updatedInstances ?? []) }));
-                this.store.dispatch(DeleteInstanceActions.set_deleted_instances({ instances: this.makeShell(userInstances.deletedInstances ?? []) }));
-                this.store.dispatch(BookmarkActions.set_bookmarks({ instances: userInstances.bookmarks ?? [] }));
-                this.store.dispatch(DefaultPersonActions.set_default_person(userInstances.defaultPerson));
-                this.dataService.resetNextNewDbId();
+            tap((userInstances: UserInstances) => this.applyUserInstancesToEditingSession(userInstances))
+        );
+    }
+
+    /**
+     * Debugging aid: serialize this tab's currently staged new/updated/deleted instances,
+     * bookmarks, and default person exactly as persistInstances() would send them, so the
+     * result can be written to a local file and later reloaded with importUserInstancesFromFile().
+     */
+    exportUserInstances(): Observable<string> {
+        return combineLatest([
+            this.store.select(updatedInstances()),
+            this.store.select(newInstances()),
+            this.store.select(deleteInstances()),
+            this.store.select(bookmarkedInstances()),
+            this.store.select(defaultPerson()),
+        ]).pipe(
+            take(1),
+            map(([updated, newInst, deleted, bookmarked, defaultPersonInstances]) => {
+                const userInstances: UserInstances = {
+                    newInstances: newInst || [],
+                    updatedInstances: updated || [],
+                    deletedInstances: deleted || [],
+                    bookmarks: bookmarked || [],
+                    defaultPerson: (defaultPersonInstances && defaultPersonInstances.length > 0)
+                        ? defaultPersonInstances[0]
+                        : undefined,
+                };
+                return this.dataService.computePersistPayload(userInstances);
             })
         );
+    }
+
+    /**
+     * Debugging aid: the counterpart to exportUserInstances() - replaces the currently staged
+     * new/updated/deleted instances, bookmarks, and default person with the content of a
+     * UserInstances object parsed from a locally exported file. Same in-browser-only semantics
+     * as restoreUserInstanceBackup(): nothing is persisted to the server by this call.
+     */
+    importUserInstancesFromFile(userInstances: UserInstances): Observable<UserInstances> {
+        return this.dataService.hydrateUserInstances(userInstances).pipe(
+            tap((hydrated: UserInstances) => this.applyUserInstancesToEditingSession(hydrated))
+        );
+    }
+
+    private applyUserInstancesToEditingSession(userInstances: UserInstances): void {
+        this.store.dispatch(NewInstanceActions.set_new_instances({ instances: this.makeShell(userInstances.newInstances ?? []) }));
+        this.store.dispatch(UpdateInstanceActions.set_updated_instances({ instances: this.makeShell(userInstances.updatedInstances ?? []) }));
+        this.store.dispatch(DeleteInstanceActions.set_deleted_instances({ instances: this.makeShell(userInstances.deletedInstances ?? []) }));
+        this.store.dispatch(BookmarkActions.set_bookmarks({ instances: userInstances.bookmarks ?? [] }));
+        this.store.dispatch(DefaultPersonActions.set_default_person(userInstances.defaultPerson));
+        this.dataService.resetNextNewDbId();
     }
 
     private makeShell(insts: Instance[]) {
@@ -202,14 +245,13 @@ export class UserInstancesService {
 
     /**
      * @param useBeacon Only set from the window:beforeunload handler. The page may be torn
-     * down before a normal request completes, so this mode skips the server-merge round trip
-     * (see mergeUserInstances()) and fires a single fetch(keepalive) POST of whatever this tab
-     * currently has staged - and only ever adds to the server backup, never deletes it, even
-     * if this tab's own staged lists happen to be empty. That keeps the fast/unreliable path
-     * safe: a tab with nothing staged simply does nothing, rather than risking a wipe of a
-     * sibling tab's not-yet-broadcast changes. Clearing/deleting the backup when everything is
-     * genuinely empty is left to the normal (non-beacon) persist paths below, which have time
-     * to check with the server first.
+     * down before a normal request completes, so this mode fires a single fetch(keepalive)
+     * POST of whatever this tab currently has staged - and only ever adds to the server
+     * backup, never deletes it, even if this tab's own staged lists happen to be empty. That
+     * keeps the fast/unreliable path safe: a tab with nothing staged simply does nothing,
+     * rather than risking a wipe of a sibling tab's not-yet-broadcast changes. Clearing/
+     * deleting the backup when everything is genuinely empty is left to the normal (non-beacon)
+     * persist path below.
      */
     persistInstances(removeToken: boolean = false, onComplete?: () => void, useBeacon: boolean = false): void {
         console.debug('Calling persist instance before window closing...');
@@ -272,35 +314,33 @@ export class UserInstancesService {
                     done();
                     return;
                 }
-                // Merge against whatever the server currently holds before persisting - this
-                // tab's own view may not yet include a sibling tab's very recent staged change
-                // (the cross-tab live sync is fast but not instant), and without this merge a
-                // persist from this tab would silently overwrite/erase that change server-side.
-                // See mergeUserInstances() for the (currently coarse, per-instance) resolution
-                // rule used when the same dbId is known to both sides.
-                this.dataService.getPersistedUserInstances(user).pipe(
-                    catchError(() => of(undefined)),
-                ).subscribe((serverSnapshot: UserInstances | undefined) => {
-                    const merged = this.mergeUserInstances(local, serverSnapshot);
-                    if (this.countStagedInstances(merged) === 0) {
-                        this.dataService.deletePersistedInstances(user).subscribe({
-                            next: () => {
-                                console.debug('Delete any persisted instance at the server.');
-                                clearLocalStateForLogout();
-                                done();
-                            },
-                            error: () => done()
-                        });
-                        return;
-                    }
-                    this.dataService.persitUserInstances(merged, user).subscribe({
+                // This tab's current staged state is sent as-is and wins outright - no merge
+                // with whatever the server currently holds. An earlier version of this method
+                // fetched the server's snapshot first and carried over any dbId missing from
+                // `local`, meaning to protect a sibling tab's very-recent, not-yet-broadcast
+                // change from being silently dropped. But "missing from local" can't be told
+                // apart from "this tab deliberately removed/committed it", so that merge
+                // resurrected instances the user had just removed - e.g. deleting staged new
+                // instances and reloading would bring them back. Front-end state (including
+                // deletions) must win outright, so persist local state directly instead.
+                if (this.countStagedInstances(local) === 0) {
+                    this.dataService.deletePersistedInstances(user).subscribe({
                         next: () => {
-                            console.debug('userInstances have been persisted at the server.');
+                            console.debug('Delete any persisted instance at the server.');
                             clearLocalStateForLogout();
                             done();
                         },
                         error: () => done()
                     });
+                    return;
+                }
+                this.dataService.persitUserInstances(local, user).subscribe({
+                    next: () => {
+                        console.debug('userInstances have been persisted at the server.');
+                        clearLocalStateForLogout();
+                        done();
+                    },
+                    error: () => done()
                 });
             });
     }
@@ -311,39 +351,6 @@ export class UserInstancesService {
             + (userInstances.deletedInstances?.length ?? 0)
             + (userInstances.bookmarks?.length ?? 0)
             + (userInstances.defaultPerson ? 1 : 0);
-    }
-
-    /**
-     * Combine this tab's staged changes with the server's currently-persisted snapshot so a
-     * persist can't silently drop a sibling tab's change this tab hasn't heard about yet.
-     * Resolution rule: for any dbId this tab has an opinion about (i.e. it appears in one of
-     * this tab's new/updated/deleted lists), this tab's copy wins outright - a dbId is only
-     * ever carried over from the server side when this tab has no record of it at all.
-     * This is a coarse, whole-instance (not per-attribute) resolution: if the very same dbId
-     * was updated differently in two tabs, whichever tab persists uses its own copy, and the
-     * other tab's edit is lost unless it also gets persisted separately. Closing that gap needs
-     * per-instance modified-timestamps, which is a deliberate follow-up, not done here.
-     * Bookmarks and defaultPerson are scoped out of the merge (kept local-only, matching prior
-     * behavior): a missing bookmark can't be told apart from an intentionally-removed one
-     * without more state than currently exists, so merging it in risks resurrecting a bookmark
-     * the user deliberately removed.
-     */
-    private mergeUserInstances(local: UserInstances, server: UserInstances | undefined): UserInstances {
-        if (!server)
-            return local;
-        const localDbIds = new Set<number>([
-            ...(local.newInstances ?? []).map(i => i.dbId),
-            ...(local.updatedInstances ?? []).map(i => i.dbId),
-            ...(local.deletedInstances ?? []).map(i => i.dbId),
-        ]);
-        const carryOver = (list?: Instance[]) => (list ?? []).filter(i => !localDbIds.has(i.dbId));
-        return {
-            newInstances: [...(local.newInstances ?? []), ...carryOver(server.newInstances)],
-            updatedInstances: [...(local.updatedInstances ?? []), ...carryOver(server.updatedInstances)],
-            deletedInstances: [...(local.deletedInstances ?? []), ...carryOver(server.deletedInstances)],
-            bookmarks: local.bookmarks ?? [],
-            defaultPerson: local.defaultPerson ?? server.defaultPerson,
-        };
     }
 
     private startPathwayDiagramAutoPersist(): void {
