@@ -296,24 +296,29 @@ export class StatusComponent implements OnInit, OnDestroy {
     const confirmRef = this.dialog.open(UnsavedUploadDialogComponent, {
       data: {
         title: 'Load Instances From File',
-        message: 'Load the selected file into your current editing session? This replaces your currently staged '
-          + '(unsaved) changes in the editor - it does not save anything by itself. Your last saved changes remain '
-          + 'safely on the server either way. This is a debugging tool - only use it with a file exported by this app.'
+        message: 'Load the selected file into your current editing session? Your currently staged (unsaved) changes '
+          + 'will first be saved to the server as a backup (recoverable afterward via "Restore staged-changes '
+          + 'backup"), then replaced by the file\'s content. This is a debugging tool - only use it with a file '
+          + 'exported by this app.'
       }
     });
     confirmRef.afterClosed().pipe(take(1)).subscribe((confirmed: boolean | null) => {
       if (confirmed !== true)
         return;
-      this.userInstancesService.importUserInstancesFromFile(userInstances).subscribe({
-        next: () => {
-          this.dialog.open(InfoDialogComponent, {
-            data: {
-              title: 'Instances Loaded',
-              message: 'The file has been loaded into your editing session.'
-            }
-          });
-        },
-        error: () => this.openSnackBar('Failed to load the selected file into the editing session.', 'Close')
+      // Back up whatever is currently staged before replacing it with the file's content, so it
+      // isn't lost - it becomes available afterward via "Restore staged-changes backup".
+      this.userInstancesService.persistInstances(false, () => {
+        this.userInstancesService.importUserInstancesFromFile(userInstances).subscribe({
+          next: () => {
+            this.dialog.open(InfoDialogComponent, {
+              data: {
+                title: 'Instances Loaded',
+                message: 'The file has been loaded into your editing session.'
+              }
+            });
+          },
+          error: () => this.openSnackBar('Failed to load the selected file into the editing session.', 'Close')
+        });
       });
     });
   }

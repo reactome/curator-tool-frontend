@@ -164,11 +164,12 @@ Clicking it opens an **"Export Staged Instances"** dialog with a **File name** f
 
 #### Load staged instances from a local file
 
-The **`file_upload`** button is the counterpart to the export above — it loads a previously exported JSON file back into your current editing session. This is local-only: **nothing is saved to the server just by loading the file.**
+The **`file_upload`** button is the counterpart to the export above — it loads a previously exported JSON file back into your current editing session.
 
 1. Click **`file_upload`** and choose a `.json` file (only use a file previously produced by **Export staged instances to a local file** above).
-2. A confirmation dialog warns that this **replaces** your currently staged (unsaved) changes in the editor; your last-saved state on the server is untouched either way. Confirm to proceed, or cancel to back out.
-3. On success, an **"Instances Loaded"** dialog confirms the file has been loaded — review the changes and commit/save as usual if you want to keep them.
+2. A confirmation dialog warns that this **replaces** your currently staged (unsaved) changes in the editor. Confirm to proceed, or cancel to back out.
+3. Before loading the file, whatever you currently have staged is **automatically saved to the server as a backup** — so if you want it back afterward, use **Restore staged-changes backup** (above) to recover it. The file's content then replaces your staged instances.
+4. On success, an **"Instances Loaded"** dialog confirms the file has been loaded — review the changes and commit/save as usual if you want to keep them.
 
 > **Multi-tab note:** if you have more than one browser tab open, loading a file (or restoring a backup, above) updates the staged instances in **every** open tab, not just the one you loaded it in — so all your tabs stay showing the same state.
 
