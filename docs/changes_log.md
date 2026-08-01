@@ -1,3 +1,14 @@
+### Build on July 31, 2026
+
+- Added a new attribute, authorName, on Publication. This is now the default, mandatory way to record author names, as a list of strings. The original author list of Person instances is optional going forward and should no longer be used for new Publication instances.
+
+- Following the change above, auto-fetching a LiteratureReference from PubMed now fills in authorName directly, instead of creating a Person instance for every author, as discussed via email.
+
+- Updated how display names are generated for Publication instances, following Marija's approach (see [this doc](https://docs.google.com/document/d/1lraEKKOBnLpRZ-iVNbdCKFeSKq3LF7PAvOkqPyjy4-4/edit?tab=t.0#bookmark=id.g19wsfbeem8t)) (abbrevations of middle name and first name are kept):
+  - More than two authors: "SurnameOfFirstAuthor et al., year, title"
+  - Two authors: "SurnameOfFirstAuthor and SurnameOfSecondAuthor, year, title"
+  - One author: "SurnameOfFirstAuthor, year, title"
+
 ### Build on July 30, 2026
 
 - Bug fix: opening the tool in more than one browser tab at once could occasionally let two new instances (including ones created automatically, such as new isoforms or literature-reference authors) get assigned the same temporary id, with one silently overwriting the other. New instances are now assigned a coordinated unique id shared across all of a user's open tabs.
