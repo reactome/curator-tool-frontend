@@ -65,8 +65,8 @@ export class InstanceNameGenerator implements PostEditOperation {
     }
     if (clsName === "CatalystActivity")
       return this.generateCatalystActivityName(instance);
-    if (clsName === "LiteratureReference")
-      return this.generateLiteratureReferenceName(instance);
+    if (this.isSchemaClass(instance, "Publication"))
+      return this.generatePublicationName(instance);
     // The following is for Regulation
     if (this.isSchemaClass(instance, 'Regulation'))
       return this.generateRegulationName(instance);
@@ -546,22 +546,31 @@ export class InstanceNameGenerator implements PostEditOperation {
     return builder.join("");
   }
 
-  private generateLiteratureReferenceName(instance: Instance): string {
+  private generatePublicationName(instance: Instance): string {
+    const authorNames: string[] | undefined = instance.attributes?.get("authorName");
+    const authorPart = this.generatePublicationAuthorPart(authorNames);
+
+    let year: number | undefined = instance.attributes?.get("year");
+    if (Array.isArray(year))
+      year = year[0];
+    const yearPart = (year !== undefined && year !== null) ? year.toString() : this.unknown;
+
     const title: string | undefined = instance.attributes?.get("title");
-    if (title && title.trim().length > 0) {
-      return title;
-    }
-    // Try pubmed
-    const pubMedValues: string | undefined = instance.attributes?.get("pubMedIdentifier");
-    if (pubMedValues) {
-      return pubMedValues;
-    }
-    // Try journal
-    const journal: string | undefined = instance.attributes?.get("journal");
-    if (journal && journal.trim().length > 0) {
-      return journal;
-    }
-    return this.unknown;
+    const titlePart = (title && title.trim().length > 0) ? title : this.unknown;
+
+    return `${authorPart}, ${yearPart}, ${titlePart}`;
+  }
+
+  // First author name followed by "et al." for more than two authors,
+  // "and" between names for exactly two, or just the name for one.
+  private generatePublicationAuthorPart(authorNames: string[] | undefined): string {
+    if (!authorNames || authorNames.length === 0)
+      return this.unknown;
+    if (authorNames.length === 1)
+      return authorNames[0];
+    if (authorNames.length === 2)
+      return `${authorNames[0]} and ${authorNames[1]}`;
+    return `${authorNames[0]} et al.`;
   }
 
   private generateCatalystActivityName(instance: Instance): string {
