@@ -5,6 +5,7 @@ import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ReferrersDialogService } from '../referrers-dialog/referrers-dialog.service';
 import { Store } from '@ngrx/store';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
+import { InstanceUtilities } from 'src/app/core/services/instance.service';
 
 export interface MatchInstancesDialogData {
   title: string;
@@ -25,6 +26,7 @@ export class MatchInstancesDialogComponent {
     private dialogRef: MatDialogRef<MatchInstancesDialogComponent, Instance>,
     private referrersDialogService: ReferrersDialogService,
     private store: Store,
+    private instUtils: InstanceUtilities,
   ) {}
 
   onSelectRow(row: Instance): void {
@@ -43,7 +45,7 @@ export class MatchInstancesDialogComponent {
         break;
       }
       case ACTION_BUTTONS.BOOKMARK.name: {
-        this.store.dispatch(BookmarkActions.add_bookmark(actionEvent.instance));
+        this.store.dispatch(BookmarkActions.add_bookmark(this.instUtils.makeShell(actionEvent.instance)));
         break;
       }
     }

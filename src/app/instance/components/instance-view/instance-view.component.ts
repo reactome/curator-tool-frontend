@@ -551,7 +551,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   addBookmark() {
     if (this.instance)
-      this.store.dispatch(BookmarkActions.add_bookmark(this.instance));
+      this.store.dispatch(BookmarkActions.add_bookmark(this.instUtils.makeShell(this.instance)));
   }
 
   showReferenceValueColumn() {

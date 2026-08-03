@@ -117,7 +117,7 @@ export class InstanceListTableComponent implements OnInit, OnDestroy {
   }
 
   addBookmark(instance: Instance) {
-    this.store.dispatch(BookmarkActions.add_bookmark(instance));
+    this.store.dispatch(BookmarkActions.add_bookmark(this.instUtils.makeShell(instance)));
   }
 
   onInstanceLinkClicked(instance: Instance) {

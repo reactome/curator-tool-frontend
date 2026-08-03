@@ -102,11 +102,36 @@ export class UserInstancesService {
                 this.store.dispatch(BookmarkActions.set_bookmarks({ instances: userInstances.bookmarks }));
             else
                 this.store.dispatch(BookmarkActions.set_bookmarks({ instances: [] }));
+            this.pruneStaleBookmarks(userInstances.bookmarks ?? []);
             // this.loadPathwayDiagramObjects(user, userInstances);
             if (userInstances.defaultPerson)
                 this.store.dispatch(DefaultPersonActions.set_default_person(userInstances.defaultPerson));
             else
                 this.store.dispatch(DefaultPersonActions.set_default_person(undefined));
+        });
+    }
+
+    /**
+     * Bookmarks are only ever refreshed lazily while the app is open (see
+     * BookmarkListComponent, which re-fetches one on refreshViewDbId$), so a restored bookmark
+     * can point at an instance that was deleted - by this user in another tab, or by someone
+     * else - since it was bookmarked. Check every restored bookmark against the database once
+     * and drop any whose instance no longer exists there.
+     */
+    private pruneStaleBookmarks(bookmarks: Instance[]): void {
+        if (!bookmarks || bookmarks.length === 0)
+            return;
+        forkJoin(
+            bookmarks.map(bookmark =>
+                this.dataService.fetchInstance(bookmark.dbId).pipe(
+                    map(() => true),
+                    catchError(() => of(false))
+                )
+            )
+        ).subscribe(exists => {
+            bookmarks
+                .filter((_, i) => !exists[i])
+                .forEach(bookmark => this.store.dispatch(BookmarkActions.remove_bookmark(bookmark)));
         });
     }
 
@@ -179,6 +204,7 @@ export class UserInstancesService {
         this.store.dispatch(UpdateInstanceActions.set_updated_instances({ instances: this.makeShell(userInstances.updatedInstances ?? []) }));
         this.store.dispatch(DeleteInstanceActions.set_deleted_instances({ instances: this.makeShell(userInstances.deletedInstances ?? []) }));
         this.store.dispatch(BookmarkActions.set_bookmarks({ instances: userInstances.bookmarks ?? [] }));
+        this.pruneStaleBookmarks(userInstances.bookmarks ?? []);
         this.store.dispatch(DefaultPersonActions.set_default_person(userInstances.defaultPerson));
         this.dataService.resetNextNewDbId();
     }
