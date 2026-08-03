@@ -1,3 +1,15 @@
+### Build on August 3, 2026
+
+- Deleting an instance (or discarding a new, not-yet-saved one) now automatically removes that reference from every other instance that pointed to it, instead of leaving those referrers pointing at a value that no longer exists.
+
+- Bug fix: after deleting an instance, any other instance that referred to it kept showing its old display name if that name had been generated from the now-removed reference (for example, a PhysicalEntity named for its compartment). Display names for such referrers are now regenerated as soon as the reference is removed.
+
+- Committing a deletion does not mark every referrer of the deleted instance as changed. The database already removes the relationship together with the deleted instance, so only referrers that already had other pending edits are updated locally; referrers with nothing else pending are simply refreshed from the database next time they're opened, instead of being flagged with an edit you never made.
+
+- Staging a deletion (before it is committed) does not touch other instances that refer to the instance you're about to delete; those references are already hidden from view, without being staged as edits, until the deletion itself is committed. This only applies to already-saved instances - deleting a brand-new, not-yet-saved instance still updates its referrers right away, since that removal happens immediately rather than being staged.
+
+- Bug fix: auto-filling a LiteratureReference's details from PubMed could leave its display name and attribute table stuck showing stale values (e.g. "To be generated") until the view was reloaded, because a completion signal needed to refresh them was never sent after the fill finished. That signal is now always sent.
+
 ### Build on July 31, 2026
 
 - Added a new attribute, authorName, on Publication. This is now the default, mandatory way to record author names, as a list of strings. The original author list of Person instances is optional going forward and should no longer be used for new Publication instances.
