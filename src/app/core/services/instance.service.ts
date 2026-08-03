@@ -1264,14 +1264,21 @@ export class InstanceUtilities {
             dataService.fetchInstance(committedInst.dbId).subscribe(fullInst => {
                 if(!fullInst.attributes) return;
                 let stableIdentifierDbId = fullInst.attributes.get('stableIdentifier')?.dbId;
+                if (stableIdentifierDbId === undefined) return;
                 const shell = this.shellInstances.get(stableIdentifierDbId);
                 if (shell) {
                     this.store.dispatch(UpdateInstanceActions.ls_register_updated_instance(shell));
                     this.store.dispatch(UpdateInstanceActions.remove_updated_instance(shell));
                 }
 
-                this.setRefreshViewDbId(stableIdentifierDbId);
-                this.registerDisplayNameChange(stableIdentifierDbId);;
+                // The stable identifier's own display name (identifier.version) changed on the
+                // server, so its cached copy is stale - evict it and fetch the fresh instance
+                // before syncing the display name cache (registerDisplayNameChange also takes
+                // care of refreshing any open view of it).
+                dataService.removeInstanceInCache(stableIdentifierDbId);
+                dataService.fetchInstance(stableIdentifierDbId).subscribe(stableIdentifierInst => {
+                    this.registerDisplayNameChange(stableIdentifierInst);
+                });
             })
         }
     }
