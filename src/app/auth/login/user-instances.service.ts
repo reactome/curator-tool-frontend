@@ -235,7 +235,12 @@ export class UserInstancesService {
         if (deleted) {
             const deletedInsts = JSON.parse(JSON.parse(deleted).object);
             userInstances.deletedInstances = deletedInsts;
-            deletedInsts.forEach((inst: any) => this.dataService.registerInstance(inst));
+            // Unlike updated/new instances, the deleted-instances snapshot only ever holds
+            // shells (dbId/displayName/schemaClassName - see storeDeletedInstances(), which
+            // persists the deleteInstances store slice as-is without fetching full instances).
+            // Registering a shell here would poison the full-instance cache under this dbId,
+            // so a later fetchInstance() call returns the shell instead of loading the real
+            // instance from the database. Let it load fresh from the database on demand instead.
         }
         const defaultPerson = localStorage.getItem(DefaultPersonActions.set_default_person.type);
         if (defaultPerson) {

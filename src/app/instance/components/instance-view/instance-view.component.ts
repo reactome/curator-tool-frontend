@@ -245,23 +245,25 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.subscriptions.add(subscription);
     // To mark an instance is deleted
     subscription = this.store.select(deleteInstances()).subscribe(deletedInstances => {
-      if (this.isSyncViewBlocked()) return;
-      if (!this.instance) {
-        // When this view first starts, the instance is not loaded yet
-        // but we still need to track the deleted instances for display and other things
-        this.deletedInstances = deletedInstances;
-        return;
-      }
-      // Check if the current instance is in the deleted instances
-      const isIn = this.deletedInstances.map(inst => inst.dbId).includes(this.instance.dbId);
+      // Keep this in sync unconditionally, even while sync view is blocked (e.g. the initial
+      // instance load is still in flight): store selectors replay the current state synchronously
+      // to a new subscriber, and if that lands while blocked with nothing dropping in to update
+      // it later, isDeleted() would be stuck reading an empty list for this view's whole lifetime.
       const preSize = this.deletedInstances.length;
+      const isIn = this.instance !== undefined
+        && this.deletedInstances.map(inst => inst.dbId).includes(this.instance.dbId);
       this.deletedInstances = deletedInstances;
+
+      if (this.isSyncViewBlocked()) return;
+      if (!this.instance) return;
+
+      // Check if the current instance is in the deleted instances
       const isCurrentIn = this.deletedInstances.map(inst => inst.dbId).includes(this.instance.dbId);
       if (isIn && !isCurrentIn) {
         return; // The displayed instance is committed
       }
       if ((this.deletedInstances.length - preSize) == -1) {
-        // reset a deleted instance from db. since we don't know if the instance has referred 
+        // reset a deleted instance from db. since we don't know if the instance has referred
         // this the reset deletion, therefore, we just reload it.
         this.loadInstance(this.instance.dbId, false, false, true);
       }

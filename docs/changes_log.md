@@ -10,6 +10,10 @@
 
 - Bug fix: auto-filling a LiteratureReference's details from PubMed could leave its display name and attribute table stuck showing stale values (e.g. "To be generated") until the view was reloaded, because a completion signal needed to refresh them was never sent after the fill finished. That signal is now always sent.
 
+- Bug fix: after refreshing the page (or picking up a deletion staged in another tab), opening an instance you had marked for deletion showed it as empty, with none of its attributes. The deleted-instances snapshot used to restore your staged changes only ever holds lightweight placeholders, not the full instance; opening one now loads its real data from the database instead of getting stuck on the placeholder.
+
+- Bug fix: right after opening (or refreshing) an instance you had marked for deletion, its display name could fail to show in red with a strikethrough, even though the deletion was still correctly staged. The deletion status is now always picked up as soon as it is known, rather than only when a later change happens to arrive after the view finishes loading.
+
 ### Build on July 31, 2026
 
 - Added a new attribute, authorName, on Publication. This is now the default, mandatory way to record author names, as a list of strings. The original author list of Person instances is optional going forward and should no longer be used for new Publication instances.
