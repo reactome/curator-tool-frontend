@@ -14,6 +14,12 @@
 
 - Bug fix: right after opening (or refreshing) an instance you had marked for deletion, its display name could fail to show in red with a strikethrough, even though the deletion was still correctly staged. The deletion status is now always picked up as soon as it is known, rather than only when a later change happens to arrive after the view finishes loading.
 
+- A bookmarked instance can go stale if it gets deleted (by you in another tab, or by someone else) after you bookmark it. Dragging a bookmark into an attribute now checks that the instance still exists first - if it doesn't, you're told, and the stale bookmark is removed automatically. Every restored bookmark is also checked against the database once after loading (including after restoring a backup or an imported file), and any that no longer exist are dropped.
+
+- Bug fix: committing an instance whose stable identifier had just changed could crash with an error instead of completing. The stable identifier's display name is now correctly refreshed after such a commit.
+
+- Bug fix: an occasional "ExpressionChangedAfterItHasBeenCheckedError" could appear in the console (and in some cases interrupt rendering) right as an instance's deletion status was being picked up. That update is now applied in a way that can't collide with an in-progress screen refresh.
+
 ### Build on July 31, 2026
 
 - Added a new attribute, authorName, on Publication. This is now the default, mandatory way to record author names, as a list of strings. The original author list of Person instances is optional going forward and should no longer be used for new Publication instances.
