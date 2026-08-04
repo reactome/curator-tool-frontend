@@ -110,6 +110,16 @@
     text-align: left;
     vertical-align: top;
     color: var(--on-surface);
+    // Long values (text slots, instance display names) wrap inside their own column instead of
+    // spilling over the next one.
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+
+  // Keep the column boundaries visible now that values can wrap over several lines.
+  th + th,
+  td + td {
+    border-left: 1px solid var(--outline-variant);
   }
 
   th {
@@ -152,16 +162,36 @@
 
   .value-line {
     display: block;
+    max-width: 100%;
   }
 
   // Values (especially long text slots and instance names) must not widen the table.
   .value-label {
-    display: inline-block;
+    display: block;
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    vertical-align: bottom;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  // Material lays the control and its label out as an inline flex row that grows with the label,
+  // so the label needs to be shrinkable for the wrapping above to take effect.
+  mat-checkbox,
+  mat-radio-button {
+    display: block;
+    max-width: 100%;
+
+    ::ng-deep .mdc-form-field {
+      width: 100%;
+      align-items: flex-start;
+    }
+
+    // min-width lets the label shrink below its text width; the padding keeps the first line of a
+    // wrapped label level with the (40px tall) control.
+    ::ng-deep label {
+      min-width: 0;
+      padding-top: 10px;
+      white-space: normal;
+    }
   }
 
   .empty {

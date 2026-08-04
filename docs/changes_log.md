@@ -1,4 +1,6 @@
-### Build on July 31, 2026
+### Build on August 4, 2026
+
+- Bug fix: in the merge instances dialog, a long attribute value (a text slot, or an instance with a long display name) ran past the edge of its column and overlapped the neighbouring one, making it hard to tell which value belonged to which instance. Long values now wrap within their own column, and the columns are separated by a dividing line. Hovering a value still shows it in full as a tooltip.
 
 - Added the ability to merge two instances. From the instance view, the new `merge_type` button behind the "more" button lets you pick a second instance (the picker's class dropdown also offers the ancestor classes, so the two do not have to be of the same class) and then choose between two ways of combining them. "Create a new merged instance" makes a brand new instance in the two instances' common class and lets you pick, attribute by attribute and value by value, what it gets - both originals are left untouched. "Merge one instance into the other" copies the source's single-valued attributes over the target's, appends its multivalued attributes to the end of the target's lists (skipping values the target already holds), repoints every instance referring to the source at the target, and marks the source for deletion; a preview shows what will change and the referrer count before you go ahead. Nothing reaches the database until you commit.
 
