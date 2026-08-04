@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { NewInstanceDialogComponent } from './referrers-table.component';
+import { ReferrersTableComponent } from './referrers-table.component';
 
-describe('NewInstanceDialogComponent', () => {
-  let component: NewInstanceDialogComponent;
-  let fixture: ComponentFixture<NewInstanceDialogComponent>;
+describe('ReferrersTableComponent', () => {
+  let component: ReferrersTableComponent;
+  let fixture: ComponentFixture<ReferrersTableComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ NewInstanceDialogComponent ]
+      declarations: [ ReferrersTableComponent ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(NewInstanceDialogComponent);
+    fixture = TestBed.createComponent(ReferrersTableComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

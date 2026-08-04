@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { ActionMenuComponent } from './action-menu.component';
+import { EditMenuComponent } from './action-menu.component';
 
 describe('ToolTipComponent', () => {
-  let component: ActionMenuComponent;
-  let fixture: ComponentFixture<ActionMenuComponent>;
+  let component: EditMenuComponent;
+  let fixture: ComponentFixture<EditMenuComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ActionMenuComponent ]
+      declarations: [ EditMenuComponent ]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(ActionMenuComponent);
+    fixture = TestBed.createComponent(EditMenuComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

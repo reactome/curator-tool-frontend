@@ -19,6 +19,7 @@ import { DeleteBulkDialogService } from '../delete-bulk-dialog/delete-bulk-dialo
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { InstanceNameGenerator } from 'src/app/core/post-edit/InstanceNameGenerator';
+import { decodeSearchKeys, encodeSearchKeys } from 'src/app/core/utils/search-key-codec';
 
 @Component({
   selector: 'app-instance-list-view',
@@ -504,7 +505,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
           queryParams: {
             attributes: attributes.toString(),
             operands: operands.toString(),
-            searchKeys: searchKeys.toString()
+            searchKeys: encodeSearchKeys(searchKeys)
           },
         });
     }
@@ -628,12 +629,34 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         return valStr === patStr;
       case 'Not Equal':
         return valStr !== patStr;
+      case 'Regex':
+        return this.matchesRegex(val != null ? val.toString() : '', pattern);
       case 'IS NULL':
         return val == null || valStr === '';
       case 'IS NOT NULL':
         return val != null && valStr !== '';
       default:
         return false;
+    }
+  }
+
+  /**
+   * Match a value against a curator-supplied regular expression the same way the backend
+   * does: case-insensitively and against the whole value, since Cypher's =~ is a full
+   * match. Anchoring here keeps locally edited instances and database instances from
+   * giving different results for the same pattern.
+   */
+  private matchesRegex(value: string, pattern: string): boolean {
+    if (pattern == null || pattern.length === 0)
+      return false;
+    try {
+      return new RegExp('^(?:' + pattern + ')$', 'i').test(value);
+    }
+    catch (e) {
+      // An invalid pattern is rejected in the search filter before it gets here; treat
+      // it as matching nothing rather than failing the whole listing.
+      console.warn('Invalid regular expression in search: ' + pattern, e);
+      return false;
     }
   }
 
@@ -867,7 +890,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       // Need to get attributes
       let attributes = queryParams['attributes'].split(',');
       let operands = queryParams['operands'].split(',');
-      let searchKeys = queryParams['searchKeys'].split(',');
+      let searchKeys = decodeSearchKeys(queryParams['searchKeys']);
       this.resetSearchCriteria();
       for (let i = 0; i < attributes.length; i++) {
         const criterium: SearchCriterium = {

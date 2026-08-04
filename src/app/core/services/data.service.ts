@@ -14,6 +14,7 @@ import { InstanceUtilities } from "./instance.service";
 import { InstanceNameGenerator } from "../post-edit/InstanceNameGenerator";
 import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 import { QAReport } from "../models/qa-report.model";
+import { encodeSearchKeys } from "../utils/search-key-codec";
 import { ActivatedRoute, Router, UrlSegmentGroup } from "@angular/router";
 
 @Injectable({
@@ -799,9 +800,11 @@ export class DataService {
     if (selectedAttributes !== undefined && selectedOperands !== undefined && searchKeys !== undefined) {
       // Use encodeURIComponent (not encodeURI) so special characters such as '+', '&'
       // and '#' in the search terms survive instead of being interpreted by the server.
+      // Escape commas within a term (common in regex quantifiers such as a{2,3}) so the
+      // server splits searchKeys back into the same number of terms it was given.
       url += '?attributes=' + encodeURIComponent(selectedAttributes.toString())
         + '&operands=' + encodeURIComponent(selectedOperands.toString())
-        + '&searchKeys=' + encodeURIComponent(searchKeys.toString().replaceAll("'", "\\'"));
+        + '&searchKeys=' + encodeURIComponent(encodeSearchKeys(searchKeys));
     }
     console.debug('search instances url: ' + url);
     return this.http.get<InstanceList>(url)

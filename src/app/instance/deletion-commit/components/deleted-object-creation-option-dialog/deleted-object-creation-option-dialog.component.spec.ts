@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CommitDeletedDialogComponent } from './deleted-object-creation-option-dialog.component';
+import { DeletedObjectCreationOptionDialogComponent } from './deleted-object-creation-option-dialog.component';
 
-describe('CommitDeletedDialogComponent', () => {
-  let component: CommitDeletedDialogComponent;
-  let fixture: ComponentFixture<CommitDeletedDialogComponent>;
+describe('DeletedObjectCreationOptionDialogComponent', () => {
+  let component: DeletedObjectCreationOptionDialogComponent;
+  let fixture: ComponentFixture<DeletedObjectCreationOptionDialogComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CommitDeletedDialogComponent]
+      imports: [DeletedObjectCreationOptionDialogComponent]
     })
     .compileComponents();
     
-    fixture = TestBed.createComponent(CommitDeletedDialogComponent);
+    fixture = TestBed.createComponent(DeletedObjectCreationOptionDialogComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
