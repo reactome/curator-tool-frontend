@@ -42,8 +42,8 @@ type GroupAction = 'none' | MatchResolutionAction;
 /**
  * Dialog shown when one or more new instances being committed have matching
  * instances already in the database. For each new instance the user picks an
- * action: leave it uncommitted (default), commit it as a new instance anyway,
- * use one of the existing matches instead, or merge it into a match.
+ * action: use one of the existing matches instead (the default), merge it into
+ * a match, commit it as a new instance anyway, or leave it uncommitted.
  */
 @Component({
   selector: 'app-matched-instances-dialog',
@@ -69,16 +69,23 @@ export class MatchedInstancesDialogComponent {
   readonly groups: MatchedNewInstanceGroup[];
   /** The matched rows only offer the "open in new tab" action; the resolution is picked via the dropdown. */
   actionButtons: ActionButton[] = [ACTION_BUTTONS.LAUNCH];
-  /** The selectable actions shown in each instance's dropdown, in display order. */
+  /**
+   * The selectable actions shown in each instance's dropdown, in display order.
+   * The first entry is the default for every group (see DEFAULT_ACTION).
+   */
   readonly actionOptions: { value: GroupAction; label: string }[] = [
-    { value: 'none', label: 'Do Nothing' },
-    { value: 'commit-anyway', label: 'Commit as a new instance' },
     { value: 'use-existing', label: 'Use a DB instance instead' },
     { value: 'merge', label: 'Merge into a DB instance' },
+    { value: 'commit-anyway', label: 'Commit as a new instance' },
+    { value: 'none', label: 'Do Nothing' },
   ];
+  /** The action pre-selected for every group, and the initial value of the "apply to all" dropdown. */
+  readonly DEFAULT_ACTION: GroupAction = this.actionOptions[0].value;
+  /** The action the "apply to all" control will push onto every group. */
+  bulkAction: GroupAction = this.DEFAULT_ACTION;
   /** Indices of the groups whose matches table is currently expanded. */
   private readonly expanded = new Set<number>();
-  /** Group index -> chosen action. Absent / 'none' means leave the new instance uncommitted. */
+  /** Group index -> chosen action. Absent means the default action. */
   private readonly actions = new Map<number, GroupAction>();
   /** Group index -> dbId of the chosen existing match (for 'use-existing' / 'merge'). */
   private readonly targets = new Map<number, number>();
@@ -89,6 +96,9 @@ export class MatchedInstancesDialogComponent {
     private router: Router
   ) {
     this.groups = this.normalizeGroups(this.extractGroups(data));
+    // Every group starts on the default action, targeting its first match, so the
+    // common case (the new instance really is the existing one) needs no clicks.
+    this.groups.forEach((_, index) => this.applyDefaultTarget(index));
     // Expand the first group by default, mirroring the referrers table.
     if (this.groups.length > 0) {
       this.expanded.add(0);
@@ -109,23 +119,57 @@ export class MatchedInstancesDialogComponent {
     }
   }
 
-  /** The action currently chosen for a group; defaults to 'none' (leave uncommitted). */
+  /** The action currently chosen for a group; every group is seeded in the constructor. */
   getAction(index: number): GroupAction {
     return this.actions.get(index) ?? 'none';
   }
 
-  setAction(index: number, action: GroupAction): void {
+  /**
+   * Record the action for one group. `expand` is suppressed by "apply to all" so a
+   * bulk choice does not blow every matches table open at once.
+   */
+  setAction(index: number, action: GroupAction, expand = true): void {
     this.actions.set(index, action);
     if (action === 'use-existing' || action === 'merge') {
-      // Default the target to the first match and reveal it so the choice is never empty.
+      // Default the target to the first match so the choice is never empty.
       if (!this.targets.has(index)) {
-        const firstMatch = this.groups[index]?.matches?.[0];
-        if (firstMatch?.dbId !== undefined && firstMatch.dbId !== null) {
-          this.targets.set(index, firstMatch.dbId);
+        const firstDbId = this.firstMatchDbId(index);
+        if (firstDbId !== undefined) {
+          this.targets.set(index, firstDbId);
         }
       }
-      this.expanded.add(index);
+      if (expand) {
+        this.expanded.add(index);
+      }
     }
+  }
+
+  /** Push the action picked in the "apply to all" dropdown onto every group. */
+  applyToAll(): void {
+    this.groups.forEach((_, index) => this.setAction(index, this.bulkAction, false));
+  }
+
+  /**
+   * Seed a group with the default action, targeting its first match. A group with no
+   * usable match falls back to 'none' so it is not reported as resolved.
+   */
+  private applyDefaultTarget(index: number): void {
+    const firstDbId = this.firstMatchDbId(index);
+    if (firstDbId === undefined) {
+      this.actions.set(index, 'none');
+      return;
+    }
+    this.actions.set(index, this.DEFAULT_ACTION);
+    this.targets.set(index, firstDbId);
+  }
+
+  /** dbId of a group's first match, or undefined when it has none / it is unusable. */
+  private firstMatchDbId(index: number): number | undefined {
+    const dbId = this.groups[index]?.matches?.[0]?.dbId;
+    if (dbId === undefined || dbId === null || (dbId as any) === '') {
+      return undefined;
+    }
+    return dbId;
   }
 
   /** True when the chosen action needs a target existing instance. */

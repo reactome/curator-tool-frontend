@@ -22,6 +22,16 @@
   color: #1f1f1f;
 }
 
+.bulk-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
 .match-group {
   margin-bottom: 12px;
   padding: 12px;

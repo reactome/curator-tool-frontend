@@ -3,9 +3,25 @@
 <mat-dialog-content>
     <p>
         The following new instance(s) matched existing instance(s) already in the database and were
-        <strong>not committed</strong>. Choose what to do with each one. Anything left as
-        <em>&ldquo;Leave uncommitted&rdquo;</em> stays staged and is not changed.
+        <strong>not committed</strong>. Choose what to do with each one. Each is set by default to
+        use its first matching database instance; anything set to <em>&ldquo;Do Nothing&rdquo;</em>
+        stays staged and is not changed.
     </p>
+
+    <div class="bulk-controls" *ngIf="groups.length > 1">
+        <mat-form-field appearance="outline" class="action-field" subscriptSizing="dynamic">
+            <mat-label>Action for all</mat-label>
+            <mat-select [(value)]="bulkAction">
+                <mat-option *ngFor="let option of actionOptions" [value]="option.value">
+                    {{ option.label }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+        <button mat-stroked-button color="primary" (click)="applyToAll()"
+            matTooltip="Set every instance below to this action, each using its first match">
+            Apply to all
+        </button>
+    </div>
 
     <section class="scroll_panel">
         <div class="match-group" *ngFor="let group of groups; let i = index"
