@@ -2,6 +2,43 @@
 
 - Added the ability to merge two instances. From the instance view, the new `merge_type` button behind the "more" button lets you pick a second instance (the picker's class dropdown also offers the ancestor classes, so the two do not have to be of the same class) and then choose between two ways of combining them. "Create a new merged instance" makes a brand new instance in the two instances' common class and lets you pick, attribute by attribute and value by value, what it gets - both originals are left untouched. "Merge one instance into the other" copies the source's single-valued attributes over the target's, appends its multivalued attributes to the end of the target's lists (skipping values the target already holds), repoints every instance referring to the source at the target, and marks the source for deletion; a preview shows what will change and the referrer count before you go ahead. Nothing reaches the database until you commit.
 
+### Build on August 3, 2026
+
+- Deleting an instance (or discarding a new, not-yet-saved one) now automatically removes that reference from every other instance that pointed to it, instead of leaving those referrers pointing at a value that no longer exists.
+
+- Bug fix: after deleting an instance, any other instance that referred to it kept showing its old display name if that name had been generated from the now-removed reference (for example, a PhysicalEntity named for its compartment). Display names for such referrers are now regenerated as soon as the reference is removed.
+
+- Committing a deletion does not mark every referrer of the deleted instance as changed. The database already removes the relationship together with the deleted instance, so only referrers that already had other pending edits are updated locally; referrers with nothing else pending are simply refreshed from the database next time they're opened, instead of being flagged with an edit you never made.
+
+- Staging a deletion (before it is committed) does not touch other instances that refer to the instance you're about to delete; those references are already hidden from view, without being staged as edits, until the deletion itself is committed. This only applies to already-saved instances - deleting a brand-new, not-yet-saved instance still updates its referrers right away, since that removal happens immediately rather than being staged.
+
+- Bug fix: auto-filling a LiteratureReference's details from PubMed could leave its display name and attribute table stuck showing stale values (e.g. "To be generated") until the view was reloaded, because a completion signal needed to refresh them was never sent after the fill finished. That signal is now always sent.
+
+- Bug fix: after refreshing the page (or picking up a deletion staged in another tab), opening an instance you had marked for deletion showed it as empty, with none of its attributes. The deleted-instances snapshot used to restore your staged changes only ever holds lightweight placeholders, not the full instance; opening one now loads its real data from the database instead of getting stuck on the placeholder.
+
+- Bug fix: right after opening (or refreshing) an instance you had marked for deletion, its display name could fail to show in red with a strikethrough, even though the deletion was still correctly staged. The deletion status is now always picked up as soon as it is known, rather than only when a later change happens to arrive after the view finishes loading.
+
+- A bookmarked instance can go stale if it gets deleted (by you in another tab, or by someone else) after you bookmark it. Dragging a bookmark into an attribute now checks that the instance still exists first - if it doesn't, you're told, and the stale bookmark is removed automatically. Every restored bookmark is also checked against the database once after loading (including after restoring a backup or an imported file), and any that no longer exist are dropped.
+
+- Bug fix: committing an instance whose stable identifier had just changed could crash with an error instead of completing. The stable identifier's display name is now correctly refreshed after such a commit.
+
+- Bug fix: an occasional "ExpressionChangedAfterItHasBeenCheckedError" could appear in the console (and in some cases interrupt rendering) right as an instance's deletion status was being picked up. That update is now applied in a way that can't collide with an in-progress screen refresh.
+
+- Bug fix: the check that verifies a bookmarked instance still exists (when dragging it into an attribute, or when bookmarks are restored after reloading) could occasionally be wrong in both directions - a brief network hiccup could make a perfectly valid bookmark look deleted, while an instance already viewed earlier in the same browser tab could still look like it existed even after being deleted elsewhere. This check is now more reliable, and it additionally refreshes a bookmark's display name and class if either was changed by someone else since you bookmarked it.
+
+- Bug fix: after changing an instance's class and committing it, other places that already had a cached reference to that instance - including the same instance open in a different browser tab - could keep showing its old class. Committing a class change now updates every such cached reference, both in the tab where the change was made and in every other open tab.
+
+### Build on July 31, 2026
+
+- Added a new attribute, authorName, on Publication. This is now the default, mandatory way to record author names, as a list of strings. The original author list of Person instances is optional going forward and should no longer be used for new Publication instances.
+
+- Following the change above, auto-fetching a LiteratureReference from PubMed now fills in authorName directly, instead of creating a Person instance for every author, as discussed via email.
+
+- Updated how display names are generated for Publication instances, following Marija's approach (see [this doc](https://docs.google.com/document/d/1lraEKKOBnLpRZ-iVNbdCKFeSKq3LF7PAvOkqPyjy4-4/edit?tab=t.0#bookmark=id.g19wsfbeem8t)) (abbrevations of middle name and first name are kept):
+  - More than two authors: "SurnameOfFirstAuthor et al., year, title"
+  - Two authors: "SurnameOfFirstAuthor and SurnameOfSecondAuthor, year, title"
+  - One author: "SurnameOfFirstAuthor, year, title"
+
 ### Build on July 30, 2026
 
 - Bug fix: opening the tool in more than one browser tab at once could occasionally let two new instances (including ones created automatically, such as new isoforms or literature-reference authors) get assigned the same temporary id, with one silently overwriting the other. New instances are now assigned a coordinated unique id shared across all of a user's open tabs.

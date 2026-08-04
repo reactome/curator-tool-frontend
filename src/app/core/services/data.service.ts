@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpResponse } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
-import { catchError, combineLatest, concatMap, EMPTY, forkJoin, from, map, Observable, of, Subject, switchMap, take, tap, throwError } from 'rxjs';
+import { catchError, combineLatest, concatMap, EMPTY, forkJoin, from, map, Observable, of, Subject, switchMap, take, tap, throwError, toArray } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
 import { DiagramLock, Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstanceBackupSummary, UserInstances } from "../models/reactome-instance.model";
@@ -11,6 +11,7 @@ import {
   SchemaClass
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
+import { InstanceNameGenerator } from "../post-edit/InstanceNameGenerator";
 import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 import { QAReport } from "../models/qa-report.model";
 import { ActivatedRoute, Router, UrlSegmentGroup } from "@angular/router";
@@ -418,6 +419,34 @@ export class DataService {
           return this.handleErrorMessage(err);
         }),
       );
+  }
+
+  /**
+   * The instance's current shell (dbId, schemaClassName, displayName) as it stands in the
+   * database right now, or undefined if it's been deleted. Always queries the server directly
+   * and never consults id2instance - the whole point is to catch changes (by this user in
+   * another tab, or by someone else) that this tab's cache doesn't know about yet, which
+   * fetchInstance() would miss since it returns a cached copy without a network round-trip.
+   *
+   * Used to refresh a bookmark: a bookmarked instance is stored as a shell snapshot
+   * (see InstanceUtilities.makeShell) that is only ever refreshed lazily while the app is open,
+   * so its schemaClassName/displayName can go stale if another user edits or reclassifies it
+   * after it was bookmarked - not just deleted.
+   *
+   * Only a 404 is treated as "deleted" (returns undefined); any other failure (network blip,
+   * expired session, server error) is not treated as a deletion - it's surfaced the normal way
+   * (see handleErrorMessage) so callers can't mistake "we couldn't check" for "it's gone".
+   */
+  fetchBookmarkShell(dbId: number): Observable<Instance | undefined> {
+    if (dbId < 0) return of(undefined);
+    return this.http.get<Instance>(this.entityDataUrl + `${dbId}`).pipe(
+      map((data: Instance) => this.utils.makeShell(data)),
+      catchError((err: any) => {
+        if (err instanceof HttpErrorResponse && err.status === 404)
+          return of(undefined);
+        return this.handleErrorMessage(err);
+      }),
+    );
   }
 
 
@@ -1388,6 +1417,49 @@ export class DataService {
         }));
     }
     return this._getReferrers(dbId, referrers);
+  }
+
+  synchronizeDeletedReferrers(deletedInstances: Instance[]): Observable<Instance[]> {
+    const referrerDbIds = new Set<number>();
+
+    return from(deletedInstances).pipe(
+      concatMap(instance => this.getReferrers(instance.dbId)),
+      tap(referrerGroups => referrerGroups.forEach(group => group.referrers.forEach(referrer => {
+        if (!deletedInstances.some(deleted => deleted.dbId === referrer.dbId))
+          referrerDbIds.add(referrer.dbId);
+      }))),
+      toArray(),
+      concatMap(() => referrerDbIds.size > 0
+        ? this.fetchInstances([...referrerDbIds])
+        : of([] as Instance[])),
+      tap(referrers => referrers.forEach(referrer => {
+        // A new (uncommitted) referrer only exists locally, so its stale reference
+        // must be repaired here. An existing referrer with other pending edits also
+        // needs repairing, since committing it later would resend the now-dropped
+        // relationship. Otherwise, the database (Neo4j drops relationships together
+        // with the node) already reflects reality; just evict the stale local copy
+        // rather than flagging an edit the curator never made.
+        const hasPendingEdits = referrer.dbId < 0
+          || (referrer.modifiedAttributes !== undefined && referrer.modifiedAttributes.length > 0);
+        if (!hasPendingEdits) {
+          this.removeInstanceInCache(referrer.dbId);
+          this.utils.setRefreshViewDbId(referrer.dbId);
+          return;
+        }
+
+        if (!this.utils.applyLocalDeletions(referrer, deletedInstances, true, false))
+          return;
+
+        // The removed reference may be what the referrer's display name was derived
+        // from (e.g. a Reaction named from its input/output), so it needs refreshing.
+        new InstanceNameGenerator(this, this.utils).updateDisplayName(referrer);
+        this.registerInstance(referrer);
+        if (referrer.dbId > 0)
+          this.store.dispatch(UpdateInstanceActions.register_updated_instance(
+            this.utils.makeShell(referrer)
+          ));
+      }))
+    );
   }
 
   /**

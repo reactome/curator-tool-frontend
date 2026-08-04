@@ -29,7 +29,8 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { DataService } from 'src/app/core/services/data.service';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
 import { deleteInstances } from 'src/app/instance/state/instance.selectors';
-import { Subscription } from 'rxjs';
+import { Subscription, catchError, of } from 'rxjs';
+import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 import { AttributeValue, EDIT_ACTION } from 'src/app/core/models/reactome-instance.model';
 import { InstanceComparisonDataSource } from './instance-table-comparison.model';
 import { MatDialog } from '@angular/material/dialog';
@@ -453,11 +454,34 @@ export class InstanceTableComponent implements PostEditListener {
   addBookmarkedInstance(attributeValue: AttributeValue) {
     let result = attributeValue.value; //Only one value emitted at once
 
-    if (this._instance!.source)
-      this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!.source, false, true, true);
-    this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(result), this._instance!, false, true, true);
-    this.finishEdit(attributeValue.attribute.name, attributeValue.value);
-    this.cdr.detectChanges();
+    // A bookmark is only ever refreshed lazily (see BookmarkListComponent), so it can go
+    // stale if the underlying instance was deleted, renamed, or reclassified - by this user in
+    // another tab, or by someone else - since it was bookmarked. Confirm it still exists and
+    // refresh its class/displayName before wiring it into an attribute, rather than trusting
+    // the bookmark shell as-is. Use fetchBookmarkShell() rather than fetchInstance(), which
+    // would return a cached copy without a network round-trip and so could miss a change this
+    // tab doesn't know about yet. A transient failure (network blip, session expiry) resolves
+    // to the bookmark's current shell unchanged, so it isn't mistaken for the instance being
+    // gone or having changed.
+    this.dataService.fetchBookmarkShell(result.dbId).pipe(
+      catchError(() => of(result))
+    ).subscribe(fresh => {
+      if (!fresh) {
+        this.store.dispatch(BookmarkActions.remove_bookmark(this.instUtil.makeShell(result)));
+        window.alert(`"${result.displayName ?? result.dbId}" no longer exists in the database and has been removed from your bookmarks.`);
+        return;
+      }
+      if (fresh.schemaClassName !== result.schemaClassName || fresh.displayName !== result.displayName) {
+        this.instUtil.refreshShellInstance(fresh);
+        this.store.dispatch(BookmarkActions.add_bookmark(fresh));
+      }
+
+      if (this._instance!.source)
+        this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(fresh), this._instance!.source, false, true, true);
+      this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(fresh), this._instance!, false, true, true);
+      this.finishEdit(attributeValue.attribute.name, attributeValue.value);
+      this.cdr.detectChanges();
+    });
   }
 
   donePostEdit(

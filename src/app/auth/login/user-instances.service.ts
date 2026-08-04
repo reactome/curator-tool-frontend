@@ -102,11 +102,49 @@ export class UserInstancesService {
                 this.store.dispatch(BookmarkActions.set_bookmarks({ instances: userInstances.bookmarks }));
             else
                 this.store.dispatch(BookmarkActions.set_bookmarks({ instances: [] }));
+            this.pruneStaleBookmarks(userInstances.bookmarks ?? []);
             // this.loadPathwayDiagramObjects(user, userInstances);
             if (userInstances.defaultPerson)
                 this.store.dispatch(DefaultPersonActions.set_default_person(userInstances.defaultPerson));
             else
                 this.store.dispatch(DefaultPersonActions.set_default_person(undefined));
+        });
+    }
+
+    /**
+     * Bookmarks are only ever refreshed lazily while the app is open (see
+     * BookmarkListComponent, which re-fetches one on refreshViewDbId$), so a restored bookmark
+     * can point at an instance that was deleted, or renamed/reclassified, by this user in
+     * another tab or by someone else since it was bookmarked. Check every restored bookmark
+     * against the database once: drop any whose instance no longer exists, and refresh the
+     * shell (schemaClassName/displayName) of any whose instance changed since it was bookmarked.
+     *
+     * Uses dataService.fetchBookmarkShell() rather than fetchInstance(): fetchInstance would
+     * happily return a cached copy for a bookmark already fetched earlier in this session,
+     * silently skipping the very check we're trying to do. fetchBookmarkShell() only reports a
+     * bookmark gone on a genuine 404 - a transient failure (network blip, session expiry)
+     * resolves to the bookmark's current shell unchanged, so a flaky moment during reload can't
+     * wrongly wipe out or misreport valid bookmarks.
+     */
+    private pruneStaleBookmarks(bookmarks: Instance[]): void {
+        if (!bookmarks || bookmarks.length === 0)
+            return;
+        forkJoin(
+            bookmarks.map(bookmark =>
+                this.dataService.fetchBookmarkShell(bookmark.dbId).pipe(
+                    catchError(() => of(bookmark))
+                )
+            )
+        ).subscribe(refreshed => {
+            refreshed.forEach((fresh, i) => {
+                const bookmark = bookmarks[i];
+                if (!fresh) {
+                    this.store.dispatch(BookmarkActions.remove_bookmark(bookmark));
+                } else if (fresh.schemaClassName !== bookmark.schemaClassName || fresh.displayName !== bookmark.displayName) {
+                    this.instUtils.refreshShellInstance(fresh);
+                    this.store.dispatch(BookmarkActions.add_bookmark(fresh));
+                }
+            });
         });
     }
 
@@ -179,6 +217,7 @@ export class UserInstancesService {
         this.store.dispatch(UpdateInstanceActions.set_updated_instances({ instances: this.makeShell(userInstances.updatedInstances ?? []) }));
         this.store.dispatch(DeleteInstanceActions.set_deleted_instances({ instances: this.makeShell(userInstances.deletedInstances ?? []) }));
         this.store.dispatch(BookmarkActions.set_bookmarks({ instances: userInstances.bookmarks ?? [] }));
+        this.pruneStaleBookmarks(userInstances.bookmarks ?? []);
         this.store.dispatch(DefaultPersonActions.set_default_person(userInstances.defaultPerson));
         this.dataService.resetNextNewDbId();
     }
@@ -235,7 +274,12 @@ export class UserInstancesService {
         if (deleted) {
             const deletedInsts = JSON.parse(JSON.parse(deleted).object);
             userInstances.deletedInstances = deletedInsts;
-            deletedInsts.forEach((inst: any) => this.dataService.registerInstance(inst));
+            // Unlike updated/new instances, the deleted-instances snapshot only ever holds
+            // shells (dbId/displayName/schemaClassName - see storeDeletedInstances(), which
+            // persists the deleteInstances store slice as-is without fetching full instances).
+            // Registering a shell here would poison the full-instance cache under this dbId,
+            // so a later fetchInstance() call returns the shell instead of loading the real
+            // instance from the database. Let it load fresh from the database on demand instead.
         }
         const defaultPerson = localStorage.getItem(DefaultPersonActions.set_default_person.type);
         if (defaultPerson) {

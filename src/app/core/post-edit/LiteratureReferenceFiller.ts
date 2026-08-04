@@ -51,11 +51,14 @@ export class LiteratureReferenceFiller implements PostEditOperation {
             if (this.nameGenerator) {
                 this.nameGenerator.updateDisplayName(instance);
             }
-            this.dataService.fetchSchemaClass('Person').subscribe(async (personCls: SchemaClass) => {
-                await this.handleAuthors(instance, personCls);
-                if (postEditListener)
-                    postEditListener.donePostEdit(instance, editedAttributeName);
-            });
+            if (postEditListener)
+                postEditListener.donePostEdit(instance, editedAttributeName);
+            // As of July 31, 2026, no need to handle authors here. We use author names now.
+            // this.dataService.fetchSchemaClass('Person').subscribe(async (personCls: SchemaClass) => {
+            //     await this.handleAuthors(instance, personCls);
+            //     if (postEditListener)
+            //         postEditListener.donePostEdit(instance, editedAttributeName);
+            // });
         });
         return true;
     }

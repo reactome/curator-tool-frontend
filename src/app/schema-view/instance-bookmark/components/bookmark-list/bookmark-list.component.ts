@@ -59,7 +59,7 @@ export class BookmarkListComponent implements OnInit {
 
       if (dbIdsFromBookmarkStore.includes(dbId) && !this.instUtils.isPermanentlyRemovedNewInstance(dbId)) {
         this.dataService.fetchInstance(dbId).subscribe(instance => {
-          this.store.dispatch(BookmarkActions.add_bookmark(instance));
+          this.store.dispatch(BookmarkActions.add_bookmark(this.instUtils.makeShell(instance)));
         }
         )
       }

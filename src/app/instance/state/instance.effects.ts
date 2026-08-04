@@ -67,10 +67,17 @@ export class InstanceEffects {
         case UpdateInstanceActions.last_updated_instance.type:
           // We will use last_updated_instance to catch the change
           // for any update. Not the other. Actually don't use any other
-          // to avoid threading race, causing the identity change of the 
+          // to avoid threading race, causing the identity change of the
           // displayed instance with unexpected effect.
           this.dataService.registerInstance(inst.instance);
-          this.instUtils.syncDisplayNameCache(inst.instance);
+          // Covers both a plain displayName edit and a schema class switch (which regenerates
+          // the display name and is broadcast through this same channel - see
+          // applySchemaClassChange/registerUpdatedInstance('schemaClass', ...)). Patching
+          // schemaClassName here too is a no-op for any other attribute edit, since
+          // inst.instance.schemaClassName is unchanged in that case. Without this, only the tab
+          // that performed the edit gets its shellInstances cache refreshed (via processCommit);
+          // every other open tab would keep showing the old class for this dbId indefinitely.
+          this.instUtils.refreshShellInstance(inst.instance);
           // Need a shell to avoid locking the instance
           this.store.dispatch(UpdateInstanceActions.ls_last_updated_instance({
             attribute: inst.attribute,
@@ -195,7 +202,11 @@ export class InstanceEffects {
         ofType(UpdateInstanceActions.last_updated_instance),
         tap((action) => {
           this.dataService.fetchInstance(action.instance.dbId).subscribe(fullInst => {
-            this.instUtils.syncDisplayNameCache(fullInst);
+            // Also patches schemaClassName on the cached shell - a no-op unless this update was
+            // a schema class switch (see applySchemaClassChange), in which case it makes sure
+            // this (editing) tab's own shellInstances cache reflects the new class immediately,
+            // rather than waiting for the eventual commit (see processCommit).
+            this.instUtils.refreshShellInstance(fullInst);
             const clone = {
               attribute: action.attribute,
               instance: {

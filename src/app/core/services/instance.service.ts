@@ -564,9 +564,25 @@ export class InstanceUtilities {
     }
 
     /**
+     * Refresh a cached shell's schemaClassName and displayName to match a freshly fetched copy of
+     * the same instance - e.g. after confirming a bookmarked instance still exists in the
+     * database but was renamed or reclassified by someone else since it was bookmarked. Reuses
+     * registerDisplayNameChange for the displayName side (which also flags views referring to
+     * this dbId for refresh); schemaClassName has no equivalent app-wide cache, so it's patched
+     * directly on the shell object every other referrer already shares by reference. A no-op if
+     * this dbId was never cached as a shell.
+     */
+    refreshShellInstance(fresh: Instance): void {
+        const shell = this.shellInstances.get(fresh.dbId);
+        if (shell)
+            shell.schemaClassName = fresh.schemaClassName;
+        this.registerDisplayNameChange(fresh);
+    }
+
+    /**
      * Get the cached shell instance for the passed instance. If not cached, create one and cache it.
-     * @param inst 
-     * @returns 
+     * @param inst
+     * @returns
      */
     getShellInstance(inst: Instance) {
         let shell = this.shellInstances.get(inst.dbId);
@@ -1222,6 +1238,13 @@ export class InstanceUtilities {
             // from the backend. Without this, commit() removes the instance from the
             // cache and discards the returned copy, leaving the UI showing stale data.
             this.setRefreshViewDbId(committedInst.dbId);
+            // changeSchemaClass() mutates the canonical instance object in place, but any OTHER
+            // cached shell for this dbId (e.g. one held by a referrer's attribute list, a
+            // bookmark, or a table row) is a separate object and keeps the old schemaClassName
+            // until refreshed. Use the server's confirmed copy (rtnInst), not committedInst, as
+            // the source of truth for the committed class.
+            if (committedInst.modifiedAttributes?.includes('schemaClass'))
+                this.refreshShellInstance(rtnInst);
         }
         else if (committedInst.dbId < 0) { // This is a new instance
             // Make sure the remove_new_instance should be called first. The second dispatch will update the dbId in the store. 
@@ -1264,14 +1287,21 @@ export class InstanceUtilities {
             dataService.fetchInstance(committedInst.dbId).subscribe(fullInst => {
                 if(!fullInst.attributes) return;
                 let stableIdentifierDbId = fullInst.attributes.get('stableIdentifier')?.dbId;
+                if (stableIdentifierDbId === undefined) return;
                 const shell = this.shellInstances.get(stableIdentifierDbId);
                 if (shell) {
                     this.store.dispatch(UpdateInstanceActions.ls_register_updated_instance(shell));
                     this.store.dispatch(UpdateInstanceActions.remove_updated_instance(shell));
                 }
 
-                this.setRefreshViewDbId(stableIdentifierDbId);
-                this.registerDisplayNameChange(stableIdentifierDbId);;
+                // The stable identifier's own display name (identifier.version) changed on the
+                // server, so its cached copy is stale - evict it and fetch the fresh instance
+                // before syncing the display name cache (registerDisplayNameChange also takes
+                // care of refreshing any open view of it).
+                dataService.removeInstanceInCache(stableIdentifierDbId);
+                dataService.fetchInstance(stableIdentifierDbId).subscribe(stableIdentifierInst => {
+                    this.registerDisplayNameChange(stableIdentifierInst);
+                });
             })
         }
     }

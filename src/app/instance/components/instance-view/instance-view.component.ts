@@ -247,26 +247,36 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.subscriptions.add(subscription);
     // To mark an instance is deleted
     subscription = this.store.select(deleteInstances()).subscribe(deletedInstances => {
-      if (this.isSyncViewBlocked()) return;
-      if (!this.instance) {
-        // When this view first starts, the instance is not loaded yet
-        // but we still need to track the deleted instances for display and other things
+      // Keep this in sync unconditionally, even while sync view is blocked (e.g. the initial
+      // instance load is still in flight): store selectors replay the current state synchronously
+      // to a new subscriber, and if that lands while blocked with nothing dropping in to update
+      // it later, isDeleted() would be stuck reading an empty list for this view's whole lifetime.
+      //
+      // The assignment itself is pushed to the next VM turn (see https://angular.io/errors/NG0100):
+      // this emission can arrive synchronously and reentrantly mid change-detection cycle (e.g. a
+      // cross-tab update, or a nested dispatch during a commit), and isDeleted()/isChanged() read
+      // this.deletedInstances directly in the template, so mutating it synchronously here can flip
+      // their value between Angular's check and its dev-mode verification pass within the same tick.
+      setTimeout(() => {
+        const preSize = this.deletedInstances.length;
+        const isIn = this.instance !== undefined
+          && this.deletedInstances.map(inst => inst.dbId).includes(this.instance.dbId);
         this.deletedInstances = deletedInstances;
-        return;
-      }
-      // Check if the current instance is in the deleted instances
-      const isIn = this.deletedInstances.map(inst => inst.dbId).includes(this.instance.dbId);
-      const preSize = this.deletedInstances.length;
-      this.deletedInstances = deletedInstances;
-      const isCurrentIn = this.deletedInstances.map(inst => inst.dbId).includes(this.instance.dbId);
-      if (isIn && !isCurrentIn) {
-        return; // The displayed instance is committed
-      }
-      if ((this.deletedInstances.length - preSize) == -1) {
-        // reset a deleted instance from db. since we don't know if the instance has referred 
-        // this the reset deletion, therefore, we just reload it.
-        this.loadInstance(this.instance.dbId, false, false, true);
-      }
+
+        if (this.isSyncViewBlocked()) return;
+        if (!this.instance) return;
+
+        // Check if the current instance is in the deleted instances
+        const isCurrentIn = this.deletedInstances.map(inst => inst.dbId).includes(this.instance.dbId);
+        if (isIn && !isCurrentIn) {
+          return; // The displayed instance is committed
+        }
+        if ((this.deletedInstances.length - preSize) == -1) {
+          // reset a deleted instance from db. since we don't know if the instance has referred
+          // this the reset deletion, therefore, we just reload it.
+          this.loadInstance(this.instance.dbId, false, false, true);
+        }
+      });
     });
     this.subscriptions.add(subscription);
 
@@ -551,7 +561,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   addBookmark() {
     if (this.instance)
-      this.store.dispatch(BookmarkActions.add_bookmark(this.instance));
+      this.store.dispatch(BookmarkActions.add_bookmark(this.instUtils.makeShell(this.instance)));
   }
 
   showReferenceValueColumn() {

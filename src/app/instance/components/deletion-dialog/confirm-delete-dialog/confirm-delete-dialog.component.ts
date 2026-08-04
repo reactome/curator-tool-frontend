@@ -33,14 +33,21 @@ export class ConfirmDeleteDialogComponent {
 
   onDelete() {
     if (this.instance.dbId >= 0) {
+      // Staging only: referrers still validly point at this instance in the database
+      // until the deletion is actually committed, so DeletedInstanceAttributeFilter's
+      // passive, display-only filtering (driven by the deleteInstances store slice) is
+      // enough here. No need to actively mutate referrers or cached instances yet.
       this.store.dispatch(DeleteInstanceActions.register_deleted_instance(this.instUtil.makeShell(this.instance)));
       // Make sure it is removed from the updated list if it is.
       if (this.instance.modifiedAttributes && this.instance.modifiedAttributes.length > 0)
         this.store.dispatch(UpdateInstanceActions.remove_updated_instance(this.instUtil.makeShell(this.instance)));
     }
     else {
+      // A new instance's deletion is applied immediately (there's no staged phase for
+      // it), so referrers need to be actively repaired right away.
       this.store.dispatch(NewInstanceActions.remove_new_instance(this.instance));
       this.store.dispatch(DeleteInstanceActions.commit_deleted_instance(this.instUtil.makeShell(this.instance)));
+      this.dataService.synchronizeDeletedReferrers([this.instance]).subscribe();
     }
     this.dialogRef.close(this.instance);
     // this.router.navigate(["/schema_view"])
