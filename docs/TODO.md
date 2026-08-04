@@ -14,6 +14,10 @@
 - improvement: when user is comparing two instances they can turn the comparison mode "off". Then selecting comparison again will use the database version instead of the comparison instance used previously. 
 -bug: check that new pathway diagrams are checked for duplications. currently two users can each create a pathway diagram and commit them creating duplicated pathway diagram instance.
 
+- TODO: Add a new action for links, mainly in the attribute table, to open the referred instances in another tab or window
+- TODO: In the reference table, make the table clickable to open it in another tab
+- TODO: List all updated and newly commited instances for a curator during past one day, one week, or some customized time range
+
 - TODO: Use the new set of Reactome icons at Figma, designed by the EBI team. Need to check with Eliott.
 - Bug: In the event view, the mouse position is lowed when scroll up/down the instance view. (low priority)
 - TODO: Boolean sliders appear to be 'false' when they are 'true' and disabled due to the gray styling for disabled buttons.
