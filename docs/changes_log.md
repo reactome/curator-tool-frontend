@@ -20,6 +20,10 @@
 
 - Bug fix: an occasional "ExpressionChangedAfterItHasBeenCheckedError" could appear in the console (and in some cases interrupt rendering) right as an instance's deletion status was being picked up. That update is now applied in a way that can't collide with an in-progress screen refresh.
 
+- Bug fix: the check that verifies a bookmarked instance still exists (when dragging it into an attribute, or when bookmarks are restored after reloading) could occasionally be wrong in both directions - a brief network hiccup could make a perfectly valid bookmark look deleted, while an instance already viewed earlier in the same browser tab could still look like it existed even after being deleted elsewhere. This check is now more reliable, and it additionally refreshes a bookmark's display name and class if either was changed by someone else since you bookmarked it.
+
+- Bug fix: after changing an instance's class and committing it, other places that already had a cached reference to that instance - including the same instance open in a different browser tab - could keep showing its old class. Committing a class change now updates every such cached reference, both in the tab where the change was made and in every other open tab.
+
 ### Build on July 31, 2026
 
 - Added a new attribute, authorName, on Publication. This is now the default, mandatory way to record author names, as a list of strings. The original author list of Person instances is optional going forward and should no longer be used for new Publication instances.

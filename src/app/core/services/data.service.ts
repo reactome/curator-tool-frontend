@@ -421,6 +421,34 @@ export class DataService {
       );
   }
 
+  /**
+   * The instance's current shell (dbId, schemaClassName, displayName) as it stands in the
+   * database right now, or undefined if it's been deleted. Always queries the server directly
+   * and never consults id2instance - the whole point is to catch changes (by this user in
+   * another tab, or by someone else) that this tab's cache doesn't know about yet, which
+   * fetchInstance() would miss since it returns a cached copy without a network round-trip.
+   *
+   * Used to refresh a bookmark: a bookmarked instance is stored as a shell snapshot
+   * (see InstanceUtilities.makeShell) that is only ever refreshed lazily while the app is open,
+   * so its schemaClassName/displayName can go stale if another user edits or reclassifies it
+   * after it was bookmarked - not just deleted.
+   *
+   * Only a 404 is treated as "deleted" (returns undefined); any other failure (network blip,
+   * expired session, server error) is not treated as a deletion - it's surfaced the normal way
+   * (see handleErrorMessage) so callers can't mistake "we couldn't check" for "it's gone".
+   */
+  fetchBookmarkShell(dbId: number): Observable<Instance | undefined> {
+    if (dbId < 0) return of(undefined);
+    return this.http.get<Instance>(this.entityDataUrl + `${dbId}`).pipe(
+      map((data: Instance) => this.utils.makeShell(data)),
+      catchError((err: any) => {
+        if (err instanceof HttpErrorResponse && err.status === 404)
+          return of(undefined);
+        return this.handleErrorMessage(err);
+      }),
+    );
+  }
+
 
   /**
    * Every open tab shares the same negative dbId counter through localStorage, guarded by

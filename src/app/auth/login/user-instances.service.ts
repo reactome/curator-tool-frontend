@@ -114,24 +114,37 @@ export class UserInstancesService {
     /**
      * Bookmarks are only ever refreshed lazily while the app is open (see
      * BookmarkListComponent, which re-fetches one on refreshViewDbId$), so a restored bookmark
-     * can point at an instance that was deleted - by this user in another tab, or by someone
-     * else - since it was bookmarked. Check every restored bookmark against the database once
-     * and drop any whose instance no longer exists there.
+     * can point at an instance that was deleted, or renamed/reclassified, by this user in
+     * another tab or by someone else since it was bookmarked. Check every restored bookmark
+     * against the database once: drop any whose instance no longer exists, and refresh the
+     * shell (schemaClassName/displayName) of any whose instance changed since it was bookmarked.
+     *
+     * Uses dataService.fetchBookmarkShell() rather than fetchInstance(): fetchInstance would
+     * happily return a cached copy for a bookmark already fetched earlier in this session,
+     * silently skipping the very check we're trying to do. fetchBookmarkShell() only reports a
+     * bookmark gone on a genuine 404 - a transient failure (network blip, session expiry)
+     * resolves to the bookmark's current shell unchanged, so a flaky moment during reload can't
+     * wrongly wipe out or misreport valid bookmarks.
      */
     private pruneStaleBookmarks(bookmarks: Instance[]): void {
         if (!bookmarks || bookmarks.length === 0)
             return;
         forkJoin(
             bookmarks.map(bookmark =>
-                this.dataService.fetchInstance(bookmark.dbId).pipe(
-                    map(() => true),
-                    catchError(() => of(false))
+                this.dataService.fetchBookmarkShell(bookmark.dbId).pipe(
+                    catchError(() => of(bookmark))
                 )
             )
-        ).subscribe(exists => {
-            bookmarks
-                .filter((_, i) => !exists[i])
-                .forEach(bookmark => this.store.dispatch(BookmarkActions.remove_bookmark(bookmark)));
+        ).subscribe(refreshed => {
+            refreshed.forEach((fresh, i) => {
+                const bookmark = bookmarks[i];
+                if (!fresh) {
+                    this.store.dispatch(BookmarkActions.remove_bookmark(bookmark));
+                } else if (fresh.schemaClassName !== bookmark.schemaClassName || fresh.displayName !== bookmark.displayName) {
+                    this.instUtils.refreshShellInstance(fresh);
+                    this.store.dispatch(BookmarkActions.add_bookmark(fresh));
+                }
+            });
         });
     }
 
