@@ -1,0 +1,174 @@
+.dialog_title {
+  text-align: left;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.instances {
+  margin-bottom: 12px;
+
+  .instance-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+    color: var(--on-surface);
+  }
+
+  .side-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+  }
+}
+
+.mode-group,
+.direction-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.direction-group {
+  margin-top: 12px;
+}
+
+.target-class {
+  margin: 12px 0 4px;
+  color: var(--on-surface);
+}
+
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--surface-variant);
+  color: var(--on-surface-variant);
+  font-size: 13px;
+
+  .note-icon {
+    flex: 0 0 auto;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &.warning {
+    background: color-mix(in srgb, #b00020 10%, transparent);
+    color: #b00020;
+  }
+
+  .referrer-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0;
+    font-weight: 500;
+  }
+}
+
+.table-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 8px;
+
+  .spacer {
+    flex: 1 1 auto;
+  }
+
+  .bulk-label {
+    font-size: 13px;
+    color: var(--on-surface-variant);
+  }
+
+  button {
+    min-width: 48px;
+    line-height: 28px;
+  }
+}
+
+.merge-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  th,
+  td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--outline-variant);
+    text-align: left;
+    vertical-align: top;
+    color: var(--on-surface);
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    font-size: 13px;
+  }
+
+  .attribute-col {
+    width: 22%;
+  }
+
+  .value-col {
+    width: 34%;
+  }
+
+  .effect-col {
+    width: 18%;
+  }
+
+  .shortcut-col {
+    width: 10%;
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .attribute-name {
+    font-weight: 500;
+    word-break: break-word;
+  }
+
+  .cardinality {
+    margin-left: 4px;
+    font-size: 11px;
+    color: var(--on-surface-variant);
+  }
+
+  .value-line {
+    display: block;
+  }
+
+  // Values (especially long text slots and instance names) must not widen the table.
+  .value-label {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+  }
+
+  .empty {
+    color: var(--on-surface-variant);
+  }
+}
+
+.preview-table .value-col {
+  width: 50%;
+}

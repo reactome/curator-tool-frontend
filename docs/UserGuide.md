@@ -405,6 +405,7 @@ The title reads **"{SchemaClass}: {displayName} [{dbId}]"**. It turns **red** wh
 
 - `content_copy` — **clone instance**
 - `compare_arrows` — **compare two instances** (opens a *"Compare {name} to"* picker)
+- `merge_type` — **merge with another instance** (opens the [Merge Instances dialog](#98-supporting-dialogs))
 - `swap_horiz` — **change schema class** (opens the [Change Schema Class dialog](#98-supporting-dialogs))
 - `open_in_new` — **open in curator graph** (external; disabled for new instances)
 - `account_tree` — **open schema view** *(in Event View)* / `timeline` — **open event view** *(in Schema View)* — event classes only
@@ -485,6 +486,32 @@ Highlights are removed automatically when you click **OK** (keep changes) or **C
 - **Create a New Instance** — pick a schema class, then fill in attributes; **OK** / **Cancel**.
 - **Change Schema Class** — titled **"Change Schema Class"**. Shows the **Current class** and the instance as `{displayName} [{dbId}]`, then a **New schema class** dropdown listing the concrete classes (the current class excluded). On open it loads the class list and checks every referrer (**"Loading classes and checking referrers…"**). If the chosen class would break any reference, a block appears headed *"{NewClass} is not accepted by these referrers:"* listing each offending referrer as a clickable `{displayName} [{dbId}]` link (tooltip **"open in new tab"**, opens the referrer in a new tab) with the attribute and its allowed classes, plus the hint *"Resolve or remove these references before changing the class."* The **Change Class** button (`check`) stays disabled until a valid, conflict-free class is selected; **Cancel** (`close`) closes without changes. Applying keeps the same dbId, preserves shared attribute values, regenerates the display name, and reloads the instance (no separate confirmation step).
 - **Set Stoichiometry** — titled **"Set Stoichiometry"**. Shows the value's display name and a **Number of copies** numeric input (minimum 1; **Enter** confirms), with a hint **"Currently {n}."** **OK** (`check`) applies the new count; **Cancel** (`close`) leaves it unchanged.
+- **Merge Instances** — see [Merging two instances](#99-merging-two-instances).
+
+### 9.9 Merging two instances
+
+The `merge_type` button behind **more_horiz** merges the displayed instance with a second one. You first pick the second instance from the usual *"Merge {name} with"* list dialog — its class dropdown also offers the ancestor classes, so the second instance does not have to be of the same class. The **Merge Instances** dialog then labels the two instances **1** (the one you started from) and **2**, and offers two ways to combine them.
+
+**Create a new merged instance and pick the values.** A brand new instance is created and you choose, attribute by attribute, which values it gets. Both originals are left completely untouched.
+
+- **New instance class** — the class both instances share. Two instances of the same class merge into that class; otherwise the nearest common ancestor is used. When that ancestor is abstract and so cannot be instantiated (Complex and DefinedSet meet only at PhysicalEntity, for example), instance **1**'s class is used instead and the dialog says so — attributes that only instance **2**'s class defines cannot be carried over.
+- **Single-valued attributes** `[1]` — a radio choice between instance **1**'s value, instance **2**'s value, or neither. Defaults to instance **1** when it has a value.
+- **Multivalued attributes** `[+]` — a checkbox per individual value on each side, so you can build any combination. Everything is selected by default (the union). The chosen values are written in column order: instance **1**'s picks first, then instance **2**'s, with duplicates dropped (instances compared by dbId).
+- **Row shortcuts** — `merge_type` takes both sides deduplicated, `clear` leaves the attribute empty. The **All rows: 1 / 2 / Both / None** buttons apply the same shortcut to every visible row.
+- **Hide empty attributes** — on by default; turn it off to see attributes neither instance has a value for.
+- Server-managed and provenance slots (`created`, `modified`, `reviewed`, `authored`, `_doRelease`, `releaseStatus`, …) are never offered, the same as when cloning.
+
+Clicking **Merge** creates the instance, generates its display name, stages it as a new instance, and navigates to it.
+
+**Merge one instance into the other.** Pick the direction; the *source* is merged away into the *target*.
+
+- Every single-valued attribute the source has a value for **overwrites** the target's value.
+- Every multivalued attribute's values are **appended to the end** of the target's list, skipping values the target already holds.
+- A preview table shows exactly what will happen to each attribute of the target before you commit to it.
+- Every instance referring to the source is **repointed at the target** and staged as an update. Referrers are loaded from the server first, so referrers not already open in your session are included too. The dialog shows the referrer count once you choose this mode (this is a heavier server query, so it is not run for the pick-and-choose mode) and blocks the merge if the source has more than 200 referrers — move those references in smaller batches, or merge in the other direction.
+- The source is then **marked for deletion**.
+
+Nothing reaches the database until you commit the staged changes; until then the merge can be undone by resetting the staged instances.
 
 ---
 

@@ -1,0 +1,167 @@
+<h2 class="dialog_title" mat-dialog-title>Merge Instances</h2>
+
+<mat-dialog-content>
+  <div class="instances">
+    <div class="instance-line"><span class="side-tag">1</span>{{instanceLabel(first)}}</div>
+    <div class="instance-line"><span class="side-tag">2</span>{{instanceLabel(second)}}</div>
+  </div>
+
+  <mat-radio-group class="mode-group" [(ngModel)]="mode">
+    <mat-radio-button value="new-instance">
+      Create a new merged instance and pick the values
+    </mat-radio-button>
+    <mat-radio-button value="merge-into">
+      Merge one instance into the other
+    </mat-radio-button>
+  </mat-radio-group>
+
+  <mat-divider></mat-divider>
+
+  <!-- ------------------------------------------------ pick-and-choose mode -->
+  <ng-container *ngIf="mode === 'new-instance'">
+    <div class="target-class">
+      New instance class: <b>{{targetClass.schemaClass.name}}</b>
+    </div>
+    <div class="note" *ngIf="targetClass.fallbackNote">
+      <mat-icon class="note-icon">info</mat-icon>{{targetClass.fallbackNote}}
+    </div>
+
+    <div class="table-controls">
+      <mat-slide-toggle [(ngModel)]="hideEmptyAttributes">Hide empty attributes</mat-slide-toggle>
+      <span class="spacer"></span>
+      <span class="bulk-label">All rows:</span>
+      <button mat-stroked-button (click)="selectAllRows('first')" matTooltip="Take every value from instance 1">1</button>
+      <button mat-stroked-button (click)="selectAllRows('second')" matTooltip="Take every value from instance 2">2</button>
+      <button mat-stroked-button (click)="selectBothForAllRows()"
+        matTooltip="Take both, deduplicated (multivalued attributes only)">Both</button>
+      <button mat-stroked-button (click)="clearAllRows()" matTooltip="Clear every selection">None</button>
+    </div>
+
+    <table class="merge-table">
+      <thead>
+        <tr>
+          <th class="attribute-col">Attribute</th>
+          <th class="value-col">1 &mdash; {{first.displayName}}</th>
+          <th class="value-col">2 &mdash; {{second.displayName}}</th>
+          <th class="shortcut-col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of visibleRows">
+          <td class="attribute-col">
+            <span class="attribute-name">{{row.attribute.name}}</span>
+            <span class="cardinality">{{row.multiValued ? '[+]' : '[1]'}}</span>
+          </td>
+
+          <!-- Multivalued: one checkbox per value on each side. -->
+          <ng-container *ngIf="row.multiValued">
+            <td class="value-col" *ngFor="let side of sides">
+              <div class="value-line" *ngFor="let option of optionsFor(row, $any(side))">
+                <mat-checkbox [(ngModel)]="option.selected">
+                  <span class="value-label" [matTooltip]="option.label">{{option.label}}</span>
+                </mat-checkbox>
+              </div>
+              <span class="empty" *ngIf="optionsFor(row, $any(side)).length === 0">&mdash;</span>
+            </td>
+          </ng-container>
+
+          <!-- Single-valued: a three-way choice between the two sides and "leave empty". -->
+          <ng-container *ngIf="!row.multiValued">
+            <td class="value-col" *ngFor="let side of sides">
+              <ng-container *ngIf="optionsFor(row, $any(side)).length > 0; else noValue">
+                <mat-radio-button [value]="side" [checked]="row.singleChoice === side"
+                  (change)="row.singleChoice = $any(side)" [name]="'single-' + row.attribute.name">
+                  <span class="value-label" [matTooltip]="optionsFor(row, $any(side))[0].label">
+                    {{optionsFor(row, $any(side))[0].label}}
+                  </span>
+                </mat-radio-button>
+              </ng-container>
+              <ng-template #noValue><span class="empty">&mdash;</span></ng-template>
+            </td>
+          </ng-container>
+
+          <td class="shortcut-col">
+            <button mat-icon-button *ngIf="row.multiValued" (click)="selectBoth(row)"
+              matTooltip="Take both, deduplicated">
+              <mat-icon>merge_type</mat-icon>
+            </button>
+            <button mat-icon-button (click)="clearRow(row)" matTooltip="Leave this attribute empty">
+              <mat-icon>clear</mat-icon>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="visibleRows.length === 0">
+          <td colspan="4" class="empty">No attributes to merge.</td>
+        </tr>
+      </tbody>
+    </table>
+  </ng-container>
+
+  <!-- --------------------------------------------------- merge-into mode -->
+  <ng-container *ngIf="mode === 'merge-into'">
+    <mat-radio-group class="direction-group" [(ngModel)]="mergeIntoSource">
+      <mat-radio-button value="second">
+        Merge <b>2 &mdash; {{second.displayName}}</b> into <b>1 &mdash; {{first.displayName}}</b>
+      </mat-radio-button>
+      <mat-radio-button value="first">
+        Merge <b>1 &mdash; {{first.displayName}}</b> into <b>2 &mdash; {{second.displayName}}</b>
+      </mat-radio-button>
+    </mat-radio-group>
+
+    <div class="note warning">
+      <mat-icon class="note-icon">warning</mat-icon>
+      <div>
+        <div>Every instance referring to <b>{{sourceInstance.displayName}} [{{sourceInstance.dbId}}]</b>
+          will be repointed at <b>{{targetInstance.displayName}} [{{targetInstance.dbId}}]</b>, and
+          <b>{{sourceInstance.displayName}}</b> will be marked for deletion.</div>
+        <div class="referrer-count">
+          <ng-container *ngIf="countingReferrers">
+            <mat-spinner diameter="14"></mat-spinner> Counting referrers&hellip;
+          </ng-container>
+          <ng-container *ngIf="!countingReferrers && sourceReferrerCount !== undefined">
+            {{sourceReferrerCount}} referrer{{sourceReferrerCount === 1 ? '' : 's'}} will be
+            repointed and staged as updates.
+          </ng-container>
+        </div>
+        <div>Nothing is sent to the database until you commit the staged changes.</div>
+      </div>
+    </div>
+
+    <div class="note warning" *ngIf="exceedsReferrerLimit">
+      <mat-icon class="note-icon">block</mat-icon>
+      <div>
+        {{sourceInstance.displayName}} has more than {{maxReferrers}} referrers, which is more than
+        this tool will stage at once. Move the references in smaller batches, or merge in the other
+        direction.
+      </div>
+    </div>
+
+    <table class="merge-table preview-table">
+      <thead>
+        <tr>
+          <th class="attribute-col">Attribute</th>
+          <th class="effect-col">Effect on {{targetInstance.displayName}}</th>
+          <th class="value-col">Values</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of mergeIntoPreview">
+          <td class="attribute-col"><span class="attribute-name">{{row.attributeName}}</span></td>
+          <td class="effect-col">{{row.effect}}</td>
+          <td class="value-col"><span class="value-label" [matTooltip]="row.detail">{{row.detail}}</span></td>
+        </tr>
+        <tr *ngIf="mergeIntoPreview.length === 0">
+          <td colspan="3" class="empty">
+            {{sourceInstance.displayName}} has no values to copy. The merge will only move
+            references and mark it for deletion.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </ng-container>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-button color="primary" cdkFocusInitial [disabled]="!isValid()" (click)="onOK()">Merge</button>
+</mat-dialog-actions>

@@ -31,6 +31,7 @@ import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait
 import { environment } from 'src/environments/environment.dev';
 import { InstanceNameGenerator } from 'src/app/core/post-edit/InstanceNameGenerator';
 import { ChangeClassDialogComponent } from '../change-class-dialog/change-class-dialog.component';
+import { MergeInstancesDialogService } from '../merge-instances-dialog/merge-instances-dialog.service';
 
 @Component({
   selector: 'app-instance-view',
@@ -96,7 +97,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     private matchResolutionService: MatchResolutionService,
     private deletionService: DeletionService,
     private reviewStatusCheck: ReviewStatusCheck,
-    private commitResultDialogService: CommitResultDialogService
+    private commitResultDialogService: CommitResultDialogService,
+    private mergeInstancesDialogService: MergeInstancesDialogService
   ) {
     this.instanceViewFilters = this.setUpInstanceViewFilters();
 
@@ -876,7 +878,42 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  // TODO: do not hardcode schema view, should not always point back to schema view 
+  /**
+   * Merge the displayed instance with another one the curator picks. Either a new instance is
+   * created from values chosen out of both, or one instance is merged into the other (its values
+   * copied over, its references repointed, and itself marked for deletion). Both outcomes are
+   * staged locally; nothing reaches the database until the changes are committed.
+   */
+  mergeInstances() {
+    if (!this.instance)
+      return;
+    this.mergeInstancesDialogService.merge(this.instance).pipe(take(1)).subscribe(outcome => {
+      if (outcome.mode === 'new-instance') {
+        this.router.navigate(["/schema_view/instance/" + outcome.instance.dbId.toString()]);
+        return;
+      }
+      // The merge target absorbed the source. Drop the now-deleted source from the bread crumb
+      // so it cannot be navigated back to, then show the target. When the target is already the
+      // displayed instance, changeTable() would navigate to the URL we are on and show stale
+      // values, so force a reload instead.
+      if (outcome.sourceDbId !== undefined)
+        this.instUtils.removeInstInArray({ dbId: outcome.sourceDbId } as Instance, this.viewHistory);
+      if (this.instance?.dbId === outcome.instance.dbId)
+        this.loadInstance(outcome.instance.dbId, false, false, true);
+      else
+        this.changeTable(outcome.instance);
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Merge Complete',
+          message: `Merged into ${outcome.instance.displayName} [${outcome.instance.dbId}]. `
+            + `${outcome.changedReferrerCount ?? 0} referrer(s) were repointed. `
+            + `Commit the staged changes to apply the merge to the database.`
+        }
+      });
+    });
+  }
+
+  // TODO: do not hardcode schema view, should not always point back to schema view
   compareInstances() {
     let schemaClass = this.dataService.getSchemaClass(this.instance!.schemaClassName)
     const matDialogRef =

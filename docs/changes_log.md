@@ -1,3 +1,7 @@
+### Build on July 31, 2026
+
+- Added the ability to merge two instances. From the instance view, the new `merge_type` button behind the "more" button lets you pick a second instance (the picker's class dropdown also offers the ancestor classes, so the two do not have to be of the same class) and then choose between two ways of combining them. "Create a new merged instance" makes a brand new instance in the two instances' common class and lets you pick, attribute by attribute and value by value, what it gets - both originals are left untouched. "Merge one instance into the other" copies the source's single-valued attributes over the target's, appends its multivalued attributes to the end of the target's lists (skipping values the target already holds), repoints every instance referring to the source at the target, and marks the source for deletion; a preview shows what will change and the referrer count before you go ahead. Nothing reaches the database until you commit.
+
 ### Build on July 30, 2026
 
 - Bug fix: opening the tool in more than one browser tab at once could occasionally let two new instances (including ones created automatically, such as new isoforms or literature-reference authors) get assigned the same temporary id, with one silently overwriting the other. New instances are now assigned a coordinated unique id shared across all of a user's open tabs.

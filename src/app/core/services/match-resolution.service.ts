@@ -2,9 +2,9 @@ import { Injectable } from "@angular/core";
 import { Store } from "@ngrx/store";
 import { concatMap, from, map, Observable, of, toArray } from "rxjs";
 import { Instance, MatchResolution } from "../models/reactome-instance.model";
-import { AttributeCategory, SchemaAttribute } from "../models/reactome-schema.model";
 import { UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 import { DataService } from "./data.service";
+import { InstanceMergeService } from "./instance-merge.service";
 import { InstanceUtilities } from "./instance.service";
 
 /**
@@ -25,6 +25,7 @@ export class MatchResolutionService {
 
     constructor(private dataService: DataService,
         private instUtils: InstanceUtilities,
+        private mergeService: InstanceMergeService,
         private store: Store) {
     }
 
@@ -86,7 +87,7 @@ export class MatchResolutionService {
     private merge(newInstance: Instance, existingDbId: number): Observable<null> {
         return this.dataService.fetchInstance(existingDbId).pipe(
             map(existing => {
-                this.mergeAttributes(newInstance, existing);
+                this.mergeService.applyMergeAttributes(newInstance, existing);
                 // Ensure the merged full instance is in the cache (commit pulls from id2instance)
                 // and stage it as an updated instance so the merge is committed later.
                 this.dataService.registerInstance(existing);
@@ -99,72 +100,4 @@ export class MatchResolutionService {
         );
     }
 
-    /**
-     * Apply the new instance's attribute values onto the existing instance:
-     * single-valued attributes are overwritten with the new value; multivalued attributes get
-     * the new values appended to the end (skipping exact duplicates).
-     */
-    private mergeAttributes(newInstance: Instance, existing: Instance): void {
-        const newAttributes: Map<string, any> = newInstance.attributes;
-        if (!newAttributes) return;
-        if (!(existing.attributes instanceof Map)) {
-            this.dataService.handleInstanceAttributes(existing);
-        }
-        const existingAttributes: Map<string, any> = existing.attributes;
-
-        const attributes = this.getEditableAttributes(newInstance);
-        const notClonable = this.dataService.getAttributeNamesNotClonable();
-
-        for (const attribute of attributes) {
-            if (attribute.category === AttributeCategory.NOMANUALEDIT) continue;
-            if (attribute.name === 'dbId' || attribute.name === 'displayName') continue;
-            if (notClonable.includes(attribute.name)) continue;
-
-            const newValue = newAttributes.get(attribute.name);
-            if (newValue === undefined || newValue === null) continue;
-
-            if (attribute.cardinality === '1') {
-                existingAttributes.set(attribute.name, newValue);
-                this.instUtils.addToModifiedAttributes(attribute.name, existing);
-            } else {
-                const newValues = Array.isArray(newValue) ? newValue : [newValue];
-                if (newValues.length === 0) continue;
-                let existingValues = existingAttributes.get(attribute.name);
-                if (existingValues === undefined || existingValues === null) {
-                    existingValues = [];
-                    existingAttributes.set(attribute.name, existingValues);
-                }
-                // Skip values the existing instance already holds (instances compared by
-                // dbId) so a merge never introduces a duplicate. Deduping against the
-                // growing list also collapses duplicates within the new values themselves.
-                // This applies to every multivalued attribute, including stoichiometry
-                // relationship types (hasComponent/input/output/repeatedUnit).
-                let added = false;
-                for (const value of newValues) {
-                    if (!existingValues.some((v: any) => this.isSameValue(v, value))) {
-                        existingValues.push(value);
-                        added = true;
-                    }
-                }
-                if (added)
-                    this.instUtils.addToModifiedAttributes(attribute.name, existing);
-            }
-        }
-    }
-
-    private getEditableAttributes(instance: Instance): SchemaAttribute[] {
-        const schemaClass = instance.schemaClass ?? this.dataService.getSchemaClass(instance.schemaClassName);
-        return schemaClass?.attributes ?? [];
-    }
-
-    /** Mirrors AttributeEditService.isSameValue: instances compare by dbId, others by value. */
-    private isSameValue(left: any, right: any): boolean {
-        if (left === right) {
-            return true;
-        }
-        if (left && right && typeof left === 'object' && typeof right === 'object' && 'dbId' in left && 'dbId' in right) {
-            return left.dbId === right.dbId;
-        }
-        return JSON.stringify(left) === JSON.stringify(right);
-    }
 }

@@ -59,6 +59,10 @@
             matTooltip="compare two instances">
             <mat-icon>compare_arrows</mat-icon>
           </button>
+          <button mat-icon-button color="primary" class="v-center" (click)="mergeInstances()"
+            matTooltip="merge with another instance">
+            <mat-icon>merge_type</mat-icon>
+          </button>
           <button mat-icon-button color="primary" class="v-center" (click)="openCuratorGraph()"
             matTooltip="open in curator graph" [disabled]="instance.dbId < 0">
             <mat-icon>open_in_new</mat-icon>
