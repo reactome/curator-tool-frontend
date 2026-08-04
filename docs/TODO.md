@@ -17,6 +17,7 @@
 - TODO: Add a new action for links, mainly in the attribute table, to open the referred instances in another tab or window
 - TODO: In the reference table, make the table clickable to open it in another tab
 - TODO: List all updated and newly commited instances for a curator during past one day, one week, or some customized time range
+- TODO: Port preceding/following Event inference feature from Java version
 
 - TODO: Use the new set of Reactome icons at Figma, designed by the EBI team. Need to check with Eliott.
 - Bug: In the event view, the mouse position is lowed when scroll up/down the instance view. (low priority)
