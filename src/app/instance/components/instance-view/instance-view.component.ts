@@ -81,6 +81,16 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   readonly dialog = inject(MatDialog);
   // block sync view to avoid re-loading the instance for handling URL change
   private blockSyncViewCount: number = 0;
+  // dbId of the instance currently being switched to, if any. Loading runs across several async
+  // steps (fetch -> view filters -> assignment) and the view filters can themselves fire
+  // refreshViewDbId$ for the incoming instance: DisplayNameViewFilter regenerates a display name
+  // that differs from the stored one (every Regulation, whose stored name quotes the regulator -
+  // "Positive regulation by 'TTC12 [cytosol]'" - while the generator does not) and reports it via
+  // registerDisplayNameChange. That notification arrives while this.instance is still the outgoing
+  // instance, which usually refers to the incoming one (a reaction listing it under regulatedBy),
+  // so the isReferrer branch below would reload the outgoing instance right over the one being
+  // opened. See loadInstance().
+  private loadingDbId: number | undefined;
 
   constructor(private router: Router,
     private route: ActivatedRoute,
@@ -176,6 +186,10 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     // first check if modified att has displayname change and if so check referrers and resfresh their view as well 
     subscription = this.instUtils.refreshViewDbId$.subscribe(dbId => {
       if (this.isSyncViewBlocked()) return;
+      // A switch to another instance is in flight, so the currently displayed one is on its way
+      // out: reloading it here would land after the switch and undo it. The incoming instance is
+      // being fetched anyway, so it picks up whatever this notification is about. See loadingDbId.
+      if (this.loadingDbId !== undefined) return;
       if (!this.instance) return;
       if (this.instance.dbId === dbId) {
         if (this.instanceTable.inEditing)
@@ -409,13 +423,18 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         this.unblockSyncView();
       return;
     }
+    // Mark the switch as in flight so that notifications raised while loading (including ones this
+    // load raises itself, see loadingDbId) cannot reload the instance being replaced on top of it.
+    this.loadingDbId = dbId;
     setTimeout(() => {
       this.showProgressSpinner = true;
       if (resetCache && dbId >= 0) // TODO: Make sure this does not have any side effect.
         this.dataService.removeInstanceInCache(dbId)
       this.dataService.fetchInstance(dbId).subscribe((instance) => {
-        if (!instance)
+        if (!instance) {
+          this.doneLoading(dbId);
           return; // Don't do anything if there is no instance. Due to the many subscriptions, this may occur. Need more time to figure out why and how to avoid it.
+        }
         if (instance.schemaClass)
           // Turn off the comparison first
           this._loadIntance(instance, resetHistory, needComparsion, dbId, releaseSyncBlockOnComplete);
@@ -423,17 +442,28 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
           this.dataService.handleSchemaClassForInstance(instance).subscribe(inst => {
             this._loadIntance(inst, resetHistory, needComparsion, dbId, releaseSyncBlockOnComplete);
           }, () => {
+            this.doneLoading(dbId);
             this.showProgressSpinner = false;
             if (releaseSyncBlockOnComplete)
               this.unblockSyncView();
           })
         }
       }, () => {
+        this.doneLoading(dbId);
         this.showProgressSpinner = false;
         if (releaseSyncBlockOnComplete)
           this.unblockSyncView();
       })
     });
+  }
+
+  /**
+   * Clear the in-flight marker, but only if it still belongs to this load: a newer load started in
+   * the meantime owns it and must keep its own protection until it finishes.
+   */
+  private doneLoading(dbId: number) {
+    if (this.loadingDbId === dbId)
+      this.loadingDbId = undefined;
   }
 
   private _loadIntance(instance: Instance,
@@ -442,6 +472,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     dbId: number,
     releaseSyncBlockOnComplete: boolean = false) {
     this.runInstanceViewFilters(instance).subscribe(filteredInstance => {
+      // The switch has landed: anything raised from here on applies to the instance now displayed.
+      this.doneLoading(dbId);
       // Due to the switch of the bound instance identify, the table will be reloaded automatically.
       // Therefore, nothing needs to be done here.
       if (this.instance === filteredInstance)
@@ -470,6 +502,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         this.unblockSyncView();
       }
     }, () => {
+      this.doneLoading(dbId);
       this.showProgressSpinner = false;
       if (releaseSyncBlockOnComplete)
         this.unblockSyncView();
