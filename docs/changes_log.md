@@ -1,3 +1,11 @@
+### Build on August 6, 2026
+
+- Bug fix: dragging a bookmark into an attribute stopped working after navigating away from an instance view and coming back to it (reported by Ralf). The set of attributes willing to accept a dropped bookmark was emptied every time the displayed instance changed, and nothing ever put the attributes of the newly shown instance back into it, so from then on no attribute would take a drag. Attributes now stay registered as drop targets for as long as they are on screen, whichever way you got there.
+
+- While a bookmark is being dragged, the highlight telling you whether it can be dropped now covers the whole attribute slot - which is what the drop actually targets - instead of only the single value the cursor happens to be over. It is drawn as a tinted outline rather than a solid block of colour, so the values underneath stay readable and the row does not shift as the highlight appears.
+
+- Bug fix: opening a Regulation from the regulatedBy slot of a reaction (or from anywhere else referring to it) could snap the view straight back to where you came from, so the Regulation never actually opened. Two things combined to cause this: the display name generated for a Regulation left out the quotation marks around the regulator ("Positive regulation by 'TTC12 [cytosol]'"), which made every existing Regulation look as though it had just been renamed the moment it was displayed, and that apparent rename asked everything referring to it - including the reaction you had just left - to reload, arriving on top of the instance being opened. The quotes are generated again, and a reload can no longer overtake a switch to another instance that is already under way.
+
 ### Build on August 4, 2026
 
 - In the matched instances dialog, every matched instance now starts out set to "Use a DB instance instead", pointing at the first of its matches, rather than to "Do Nothing". When more than one instance matched, a new "Action for all" dropdown and "Apply to all" button at the top of the dialog set every match at once to whichever action you pick, each one using its first match as the database instance. Individual choices can still be changed afterwards.
