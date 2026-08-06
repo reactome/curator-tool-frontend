@@ -29,14 +29,7 @@ export class AttributeConditionComponent {
     'IS NOT NULL'
   ];
 
-  // Shown on hover rather than as a hint under the field, so that switching to the
-  // Regex operand doesn't reflow the condition builder.
-  regexTooltip: string = 'Matching is case-insensitive and covers the whole value: '
-    + 'use .* to match part of it, e.g. .*cyclin.*';
-
   completeQuery() {
-    if (this.regexError())
-      return; // Don't send a pattern the backend will reject
     let copyAttributeCondition = this.cloneCriterium();
     this.addAttributeCondition.emit(copyAttributeCondition);
     this.submitAction.emit(copyAttributeCondition);
@@ -49,34 +42,6 @@ export class AttributeConditionComponent {
    */
   isNullOperand(operand: string = this.attributeCondition?.operand): boolean {
     return !!operand && operand.toLocaleLowerCase().includes('null');
-  }
-
-  /**
-   * The search term is treated as a regular expression, matched against the whole
-   * attribute value (the backend uses Cypher's =~, which is a full match).
-   */
-  isRegexOperand(operand: string = this.attributeCondition?.operand): boolean {
-    return !!operand && operand.toLocaleLowerCase() === 'regex';
-  }
-
-  /**
-   * Report a malformed regular expression while the curator is typing it, rather than
-   * letting the backend reject the search after the fact.
-   * @return null when the term is a usable pattern.
-   */
-  regexError(): string | null {
-    if (!this.isRegexOperand())
-      return null;
-    const key = this.attributeCondition?.searchKey;
-    if (!key || key.trim().length === 0)
-      return null; // Nothing typed yet: canAddCondition already blocks an empty term.
-    try {
-      new RegExp(key);
-      return null;
-    }
-    catch (e) {
-      return 'Invalid regular expression: ' + (e instanceof Error ? e.message : e);
-    }
   }
 
   private resetSearchKey() {
@@ -118,8 +83,6 @@ export class AttributeConditionComponent {
       return false;
     if (this.isNullOperand())
       return true;
-    if (this.regexError())
-      return false;
     return !!this.attributeCondition.searchKey && this.attributeCondition.searchKey.trim().length > 0;
   }
 

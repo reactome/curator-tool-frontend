@@ -54,7 +54,11 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 
 - staged instances MCP
 
-- Request to view only one pathway's realted instances 
+- Request to view only one pathway's realted instances (Karen requested)
+
+- quickly show if a "hasEvent" is a rxn or pathway 
+
+
 
 #### TODO
 - Enable move inner part of the compartment during the pathway diagram editing

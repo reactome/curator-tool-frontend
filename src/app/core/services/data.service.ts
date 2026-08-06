@@ -14,7 +14,6 @@ import { InstanceUtilities } from "./instance.service";
 import { InstanceNameGenerator } from "../post-edit/InstanceNameGenerator";
 import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 import { QAReport } from "../models/qa-report.model";
-import { encodeSearchKeys } from "../utils/search-key-codec";
 import { ActivatedRoute, Router, UrlSegmentGroup } from "@angular/router";
 
 @Injectable({
@@ -798,13 +797,15 @@ export class DataService {
     let url = this.searchInstancesUrl + `${className}/` + `${skip}/` + `${limit}`;
 
     if (selectedAttributes !== undefined && selectedOperands !== undefined && searchKeys !== undefined) {
-      // Use encodeURIComponent (not encodeURI) so special characters such as '+', '&'
-      // and '#' in the search terms survive instead of being interpreted by the server.
-      // Escape commas within a term (common in regex quantifiers such as a{2,3}) so the
-      // server splits searchKeys back into the same number of terms it was given.
+      // Search terms are sent verbatim: the backend binds them as Cypher query parameters,
+      // so nothing here needs escaping, and a Regex term has to reach the server exactly
+      // as the curator typed it. encodeURIComponent (not encodeURI) is what keeps special
+      // characters such as '+', '&' and '#' from being interpreted along the way.
+      // Attributes and operands come from fixed vocabularies and stay comma-delimited, but
+      // each search key gets its own parameter, since a term may itself contain a comma.
       url += '?attributes=' + encodeURIComponent(selectedAttributes.toString())
         + '&operands=' + encodeURIComponent(selectedOperands.toString())
-        + '&searchKeys=' + encodeURIComponent(encodeSearchKeys(searchKeys));
+        + searchKeys.map(key => '&searchKeys=' + encodeURIComponent(key)).join('');
     }
     console.debug('search instances url: ' + url);
     return this.http.get<InstanceList>(url)
