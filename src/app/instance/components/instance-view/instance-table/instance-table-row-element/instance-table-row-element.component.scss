@@ -142,19 +142,6 @@ mat-form-field {
     }
   }
 
-  &.dragging:hover {
-
-    &.green {
-      border: 4px green;
-      background: green;
-    }
-
-    &.red {
-      border: 4px red;
-      background: red;
-    }
-  }
-
   &.notDragging {
     border-color: #8a9296;
   }

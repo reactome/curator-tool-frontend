@@ -23,6 +23,7 @@ import { DragDropService } from '../../../../schema-view/instance-bookmark/drag-
 import { NewInstanceDialogService } from '../../new-instance-dialog/new-instance-dialog.service';
 import {
   DragDropStatus,
+  DragHoverStatus,
   InstanceDataSource,
 } from './instance-table.model';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
@@ -95,6 +96,12 @@ export class InstanceTableComponent implements PostEditListener {
     dropping: false,
     draggedInstance: undefined,
   };
+
+  // Name of the attribute whose value cell the cursor is over during a bookmark drag, and whether
+  // the dragged instance is accepted there. Held at the table level so the highlight can cover the
+  // whole slot; the values themselves report their hover state via (dragHover).
+  private dragHoverAttribute: string | undefined;
+  private dragHoverDroppable: boolean = false;
 
   // To check if a value has been deleted
   deletedDBIds: number[] = [];
@@ -647,6 +654,38 @@ export class InstanceTableComponent implements PostEditListener {
       dropping: false,
       draggedInstance: undefined,
     };
+    this.clearDragHover();
+  }
+
+  /**
+   * A value of the slot under the cursor reports that the drag entered or left it. Tracked per
+   * attribute so that the highlight spans every value of the slot, which is what the drop actually
+   * targets.
+   */
+  onDragHover(status: DragHoverStatus) {
+    if (status.hovered) {
+      this.dragHoverAttribute = status.attribute.name;
+      this.dragHoverDroppable = status.droppable;
+    }
+    // Moving between two values of the same slot fires leave on the old one before enter on the
+    // new one, so only clear when the slot being left is still the one recorded.
+    else if (this.dragHoverAttribute === status.attribute.name) {
+      this.clearDragHover();
+    }
+  }
+
+  /**
+   * Highlight to apply to an attribute's value cell while a bookmark is being dragged over it.
+   */
+  dragHoverClass(attribute: SchemaAttribute): string | undefined {
+    if (!this.dragDropStatus.dragging || this.dragHoverAttribute !== attribute.name)
+      return undefined;
+    return this.dragHoverDroppable ? 'droppable' : 'notDroppable';
+  }
+
+  private clearDragHover() {
+    this.dragHoverAttribute = undefined;
+    this.dragHoverDroppable = false;
   }
 
   protected readonly AttributeCategory = AttributeCategory;
@@ -658,6 +697,7 @@ export class InstanceTableComponent implements PostEditListener {
       dropping: true,
       draggedInstance: $event.item.data,
     };
+    this.clearDragHover();
   }
 
   dragEntering($event: CdkDragEnter<Instance | undefined>) {

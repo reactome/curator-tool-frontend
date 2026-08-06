@@ -49,8 +49,9 @@
         </ng-container>
       </ng-container>
       <ng-template #editInstance>
-        <div (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="valueRow"
-          [ngClass]="{dragging: dragging, red: !color, green: color}">
+        <!-- The bookmark-drag highlight lives on the enclosing value cell (see instance-table),
+        so that the whole slot lights up rather than just this one value. -->
+        <div (mouseenter)="mouseEnter()" (mouseleave)="mouseLeave()" class="valueRow">
           <!-- TODO: Also need to determine if it is required or disabled-->
           <ng-container *ngIf="value !== undefined; else elseblock">
             <div class="instance-value-wrapper">

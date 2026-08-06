@@ -5,7 +5,6 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { SchemaClass } from 'src/app/core/models/reactome-schema.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
-import { DragDropService } from "../../../schema-view/instance-bookmark/drag-drop.service";
 import { NewInstanceActions } from '../../state/instance.actions';
 import { DeletionDialogService } from "../deletion-dialog/deletion-dialog.service";
 import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
@@ -95,7 +94,6 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   constructor(private router: Router,
     private route: ActivatedRoute,
     private dataService: DataService,
-    private dragDropService: DragDropService,
     private store: Store,
     private qaReportDialogService: QAReportDialogService,
     private referrersDialogService: ReferrersDialogService,
@@ -562,7 +560,6 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   changeTable(instance: Instance) {
     if (!instance) return;
-    this.dragDropService.resetList();
     // If in comparison mode, the showReferenceColumn will be true and the instance should be loaded.
     if (this.blockRoute || this.showReferenceColumn) {
       this.loadInstance(instance.dbId);
