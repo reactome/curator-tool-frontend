@@ -971,12 +971,21 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     return this.dataService.isEventClass(this.instance!.schemaClassName)
   }
 
+  // Open the other view in its own named browser tab so that the current view is kept as is.
   showPathwayDiagram() {
-    this.router.navigate(["/event_view/instance/" + this.instance!.dbId]);
+    this.openInNamedWindow("event_view");
   }
 
   openSchemaView() {
-    this.router.navigate(["/schema_view/instance/" + this.instance!.dbId]);
+    this.openInNamedWindow("schema_view");
+  }
+
+  private openInNamedWindow(view: "event_view" | "schema_view") {
+    const url = this.router.serializeUrl(
+      this.router.createUrlTree(["/" + view + "/instance/" + this.instance!.dbId])
+    );
+    // A window having the same name is re-used and re-pointed to the new instance.
+    window.open(url, view)?.focus();
   }
 
   openCuratorGraph() {

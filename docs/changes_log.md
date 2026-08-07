@@ -1,5 +1,7 @@
 ### Build on August 7, 2026
 
+- The buttons that switch an event between the schema view and the event view no longer replace what you are looking at. "Open event view" now opens the event view in its own browser tab, and "open schema view" opens the schema view in its own tab, leaving the view you started from as it was. Each of the two views has a single dedicated tab, so switching again re-uses that tab and points it at the new instance rather than piling up windows.
+
 - Bug fix: logging out in one Webbench window left every other open window looking as though it were still signed in, so you could keep working there until something finally failed with an unexplained error. For example: create a reaction, open the compartment picker, launch one of the compartments into a second window, log out there, then come back and press OK and commit - the commit died with "An unexpected error occurred". Logging out (or being logged out by the inactivity timeout, or by an expired session) now signs out every window at once: any dialog still open is closed, you are returned to the login page, and you are told why. Logging back in takes you to the page you were on.
 
 - Bug fix: logging out while the server could not be reached did not actually log you out. The logout first saves your staged changes to the server, and if that save failed the whole logout was abandoned halfway - you were shown the login page, but your session was still live and still usable. The session is now always ended, whether or not the save succeeds.

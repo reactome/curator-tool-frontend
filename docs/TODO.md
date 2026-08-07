@@ -58,6 +58,7 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 
 - quickly show if a "hasEvent" is a rxn or pathway 
 
+- a quick filter for species: 1. No filter, 2. Human only, 3. No human filter 
 
 
 #### TODO
