@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { UserInstancesService } from './auth/login/user-instances.service';
 import { InactivityService } from './core/services/inactivity.service';
+import { SessionSyncService } from './core/services/session-sync.service';
 
 @Component({
   selector: 'app-root',
@@ -15,7 +16,8 @@ export class AppComponent {
 
   constructor(
     private userInstancesService: UserInstancesService,
-    private inactivityService: InactivityService
+    private inactivityService: InactivityService,
+    private sessionSyncService: SessionSyncService
   ) {}
 
   ngOnInit() {
@@ -23,6 +25,9 @@ export class AppComponent {
     // Start the inactivity watchdog: after 18 minutes without user activity the
     // session is logged out (only takes effect while a user is actually logged in).
     this.inactivityService.start();
+    // Log this tab out as soon as any other tab/window logs out, so a tab left open
+    // behind a logout cannot keep presenting an editable, apparently-authenticated UI.
+    this.sessionSyncService.start();
   }
 }
 

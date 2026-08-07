@@ -1,3 +1,9 @@
+### Build on August 7, 2026
+
+- Bug fix: logging out in one Webbench window left every other open window looking as though it were still signed in, so you could keep working there until something finally failed with an unexplained error. For example: create a reaction, open the compartment picker, launch one of the compartments into a second window, log out there, then come back and press OK and commit - the commit died with "An unexpected error occurred". Logging out (or being logged out by the inactivity timeout, or by an expired session) now signs out every window at once: any dialog still open is closed, you are returned to the login page, and you are told why. Logging back in takes you to the page you were on.
+
+- Bug fix: logging out while the server could not be reached did not actually log you out. The logout first saves your staged changes to the server, and if that save failed the whole logout was abandoned halfway - you were shown the login page, but your session was still live and still usable. The session is now always ended, whether or not the save succeeds.
+
 ### Build on August 6, 2026
 
 - Bug fix: dragging a bookmark into an attribute stopped working after navigating away from an instance view and coming back to it (reported by Ralf). The set of attributes willing to accept a dropped bookmark was emptied every time the displayed instance changed, and nothing ever put the attributes of the newly shown instance back into it, so from then on no attribute would take a drag. Attributes now stay registered as drop targets for as long as they are on screen, whichever way you got there.

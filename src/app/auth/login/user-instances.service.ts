@@ -419,6 +419,13 @@ export class UserInstancesService {
                 // resurrected instances the user had just removed - e.g. deleting staged new
                 // instances and reloading would bring them back. Front-end state (including
                 // deletions) must win outright, so persist local state directly instead.
+                // Whether the server call succeeds or fails, a logout must still log the user
+                // out: clearLocalStateForLogout() used to run only on success, so a failed
+                // persist/delete left the token and the refresh cookie in place while the UI
+                // navigated to /login - the user looked signed out but was not, and no other
+                // tab was told anything either (SessionSyncService keys off the token being
+                // removed). Losing the server-side backup is bad; silently keeping a live
+                // session the user asked to end is worse.
                 if (this.countStagedInstances(local) === 0) {
                     this.dataService.deletePersistedInstances(user).subscribe({
                         next: () => {
@@ -426,7 +433,11 @@ export class UserInstancesService {
                             clearLocalStateForLogout();
                             done();
                         },
-                        error: () => done()
+                        error: (err) => {
+                            console.warn('Failed to delete persisted instances; logging out anyway.', err);
+                            clearLocalStateForLogout();
+                            done();
+                        }
                     });
                     return;
                 }
@@ -436,7 +447,11 @@ export class UserInstancesService {
                         clearLocalStateForLogout();
                         done();
                     },
-                    error: () => done()
+                    error: (err) => {
+                        console.warn('Failed to persist user instances; logging out anyway.', err);
+                        clearLocalStateForLogout();
+                        done();
+                    }
                 });
             });
     }
