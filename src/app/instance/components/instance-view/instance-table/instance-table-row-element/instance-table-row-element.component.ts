@@ -18,7 +18,7 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { AttributeValue, EDIT_ACTION, Instance } from "../../../../../core/models/reactome-instance.model";
 import { DataService } from "../../../../../core/services/data.service";
 import { DragDropService } from "../../../../../schema-view/instance-bookmark/drag-drop.service";
-import { DragDropStatus } from '../instance-table.model';
+import { DragDropStatus, DragHoverStatus } from '../instance-table.model';
 import { MatDialog } from "@angular/material/dialog";
 import { TextEditorDialogComponent } from "./text-editor-dialog/text-editor-dialog.component";
 import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
@@ -46,22 +46,24 @@ export class InstanceTableRowElementComponent implements OnInit {
   
   // The following properties and attributes are used for DnD from bookmarks
   private isMouseIn: boolean = false;
-  dragging: boolean = false;
   isDroppable: boolean = false;
   @Input() set dragDropStatus(dndStatus: DragDropStatus) {
     // console.debug('set dragDropStatus', dndStatus);
-    this.dragging = dndStatus.dragging;
     if (dndStatus.dropping) {
       this.dropInstance(dndStatus.draggedInstance);
     }
     else {
-      // Call onces to set the color
-      this.color = this.canDrop(dndStatus.draggedInstance);
-      this.isDroppable = this.color;
+      this.isDroppable = this.canDrop(dndStatus.draggedInstance);
+      // The drag may have entered the table with the cursor already over this value, in which case
+      // mouseEnter ran before we knew what was being dragged. Report the now-known state.
+      if (this.isMouseIn)
+        this.emitDragHover(true);
     }
   }
 
   // @Output() canDropEvent = new EventEmitter<string>();
+  // Reported so that the table can highlight the whole attribute slot during a bookmark drag.
+  @Output() dragHover = new EventEmitter<DragHoverStatus>();
   @Output() newValueEvent = new EventEmitter<AttributeValue>();
   // Edit action
   @Output() editAction = new EventEmitter<AttributeValue>();
@@ -79,7 +81,6 @@ export class InstanceTableRowElementComponent implements OnInit {
 
   control = new FormControl();
   showField: boolean = true;
-  color: boolean = false;
   showEditorButton: boolean = false;
   // Controls visibility of the inline edit-action button for populated instance values.
   showActions: boolean = false;
@@ -230,7 +231,7 @@ export class InstanceTableRowElementComponent implements OnInit {
 
   mouseLeave() {
     this.isMouseIn = false
-    this.color = false;
+    this.emitDragHover(false);
     // Keep the action button (and therefore the open menu) visible while the menu is open.
     // It will be hidden when the menu closes (see onMenuClosed). Also keep it during a species
     // warning so the trigger stays mounted for reopening.
@@ -243,11 +244,20 @@ export class InstanceTableRowElementComponent implements OnInit {
   mouseEnter() {
     this.isMouseIn = true;
     this.showActions = true;
-    if (this.isDroppable) {
-      this.color = true;
-    }
+    this.emitDragHover(true);
     if (this.isSummationText())
       this.showEditorButton = true;
+  }
+
+  /**
+   * A slot is one drop target no matter how many values it holds, so the highlight is owned by the
+   * table cell rather than by this value. Only instance slots take part: the other types have never
+   * given drag feedback and flashing every string/number cell while dragging past would be noise.
+   */
+  private emitDragHover(hovered: boolean) {
+    if (!this.attribute || this.attribute.type !== AttributeDataType.INSTANCE)
+      return;
+    this.dragHover.emit({ attribute: this.attribute, hovered: hovered, droppable: this.isDroppable });
   }
 
   private dropInstance(draggedInstance: Instance | undefined) {

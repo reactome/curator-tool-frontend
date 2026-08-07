@@ -14,6 +14,19 @@ export interface DragDropStatus {
   draggedInstance: Instance | undefined
 }
 
+/**
+ * Reported by a value row element as the cursor moves over it during a bookmark drag. The table
+ * uses it to highlight the whole attribute slot rather than only the value under the cursor: a
+ * multi-valued slot is a single drop target, so lighting up one of its values is misleading.
+ */
+export interface DragHoverStatus {
+  attribute: SchemaAttribute,
+  // Whether the cursor entered (true) or left (false) this value
+  hovered: boolean,
+  // Whether the instance being dragged is accepted by this attribute
+  droppable: boolean
+}
+
 
 /**
  * Customize a DataSource so that we can use an Instance object directly for table display.

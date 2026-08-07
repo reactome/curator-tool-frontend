@@ -539,7 +539,11 @@ export class InstanceNameGenerator implements PostEditOperation {
     builder.push(" by ");
     let regulator = regulation.attributes?.get('regulator');
     if (regulator) {
-      builder.push(regulator.displayName ?? '');
+      // The regulator is quoted, as the curator tool has always written it
+      // ("Positive regulation by 'TTC12 [cytosol]'"). Without the quotes every existing Regulation
+      // looks renamed the moment it is displayed: DisplayNameViewFilter would flag displayName as
+      // passively modified and broadcast the change to every view referring to it.
+      builder.push("'" + (regulator.displayName ?? '') + "'");
     }
     else
       builder.push(this.unknown);
