@@ -562,7 +562,8 @@ export class InstanceNameGenerator implements PostEditOperation {
     const title: string | undefined = instance.attributes?.get("title");
     const titlePart = (title && title.trim().length > 0) ? title : this.unknown;
 
-    return `${authorPart}, ${yearPart}, ${titlePart}`;
+    const separator = authorPart.endsWith("et al.") ? " " : ". ";
+    return `${authorPart}${separator}${yearPart}. ${titlePart}`;
   }
 
   // First author name followed by "et al." for more than two authors,
