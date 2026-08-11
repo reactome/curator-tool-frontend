@@ -29,6 +29,13 @@ export class AttributeConditionComponent {
     'IS NOT NULL'
   ];
 
+  // Shown on hover rather than as a hint under the field, so that switching to the
+  // Regex operand doesn't reflow the condition builder. The wording follows what the
+  // server actually does: Cypher's =~ is an anchored, case-sensitive match, so a bare
+  // word matches nothing and wrapping the pattern is the curator's job.
+  regexTooltip: string = 'The pattern has to match the whole value and is case sensitive: '
+    + 'use .* to match part of it (e.g. .*cyclin.*) and (?i) to ignore case.';
+
   completeQuery() {
     let copyAttributeCondition = this.cloneCriterium();
     this.addAttributeCondition.emit(copyAttributeCondition);
@@ -42,6 +49,17 @@ export class AttributeConditionComponent {
    */
   isNullOperand(operand: string = this.attributeCondition?.operand): boolean {
     return !!operand && operand.toLocaleLowerCase().includes('null');
+  }
+
+  /**
+   * The search term is treated as a regular expression by the server, which matches it
+   * against the whole attribute value. Nothing is validated here: a pattern that
+   * JavaScript cannot compile can still be perfectly good on the server (an inline
+   * '(?i)' is the obvious example), so rejecting it in the browser would block searches
+   * that work.
+   */
+  isRegexOperand(operand: string = this.attributeCondition?.operand): boolean {
+    return !!operand && operand.toLocaleLowerCase() === 'regex';
   }
 
   private resetSearchKey() {

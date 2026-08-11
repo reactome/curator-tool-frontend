@@ -620,6 +620,11 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   }
 
   checkOperand(val: any, operand: string, pattern: string): boolean {
+    // Regex is handled before the values are folded to lower case: a pattern such as
+    // \D or [A-Z] means something else entirely once it has been lower-cased.
+    if (this.isRegexOperand(operand))
+      return this.matchesRegex(val != null ? val.toString() : '', pattern);
+
     const valStr = val != null ? val.toString().toLowerCase() : '';
     const patStr = pattern != null ? pattern.toString().toLowerCase() : '';
 
@@ -636,6 +641,40 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         return val != null && valStr !== '';
       default:
         return false;
+    }
+  }
+
+  private isRegexOperand(operand: string): boolean {
+    return !!operand && operand.toLocaleLowerCase() === 'regex';
+  }
+
+  /**
+   * Match a value against a curator-supplied regular expression the same way the backend
+   * does, so that a pattern gives the same results in the staged list as it does in the
+   * database list. Cypher's =~ is a full match and case sensitive, so anchoring here and
+   * leaving the case alone is what keeps the two in step; '.*' and '(?i)' are the
+   * curator's job either way. JavaScript has no inline flag syntax, so a leading '(?i)'
+   * is turned into the RegExp 'i' flag rather than left in the pattern, where it would
+   * throw.
+   */
+  private matchesRegex(value: string, pattern: string): boolean {
+    if (pattern == null || pattern.length === 0)
+      return false;
+    let body = pattern;
+    let flags = '';
+    if (body.startsWith('(?i)')) {
+      body = body.substring('(?i)'.length);
+      flags = 'i';
+    }
+    try {
+      return new RegExp('^(?:' + body + ')$', flags).test(value);
+    }
+    catch (e) {
+      // A pattern JavaScript cannot compile (e.g. a Java-only construct) matches nothing
+      // locally rather than failing the whole listing; the database side of the same
+      // search is evaluated by Neo4j and is unaffected.
+      console.warn('Invalid regular expression in search: ' + pattern, e);
+      return false;
     }
   }
 
@@ -879,7 +918,11 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         const criterium: SearchCriterium = {
           attributeName: attributes[i],
           operand: operands[i],
-          searchKey: searchKeys[i] == 'null' ? '' : searchKeys[i]
+          // Take the key as it came out of the URL. The 'null' placeholder belongs to the
+          // NULL operands, and neither the condition chips nor the search box show a key
+          // for those, so there is nothing to strip here; blanking it out instead threw
+          // away a criterium whose term happened to be the text 'null'.
+          searchKey: searchKeys[i] ?? ''
         };
         this.addSearchCriterium(criterium);
       }
@@ -916,8 +959,15 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     this.searchCriteria.forEach(criterium => {
       attributes.push(criterium.attributeName);
       operands.push(criterium.operand);
-      if (criterium.searchKey)
-        searchKeys.push(criterium.searchKey.trim());
+      // The three lists are zipped back together by position on the server, so every
+      // criterium has to contribute exactly one key ('null' being the placeholder the
+      // NULL operands carry). Leaving one out would shift the remaining keys onto the
+      // wrong attributes, and a single key left standing for several attributes is
+      // comma-split by the server, which tears a quantifier such as a{2,3} in half.
+      // A Regex term is passed on verbatim: the match covers the whole value, so leading
+      // and trailing spaces are part of the pattern rather than something to tidy up.
+      const key = criterium.searchKey ?? '';
+      searchKeys.push(this.isRegexOperand(criterium.operand) ? key : key.trim());
     });
     return { attributes, operands, searchKeys };
   }

@@ -19,9 +19,13 @@
     </mat-form-field>
 
     <mat-form-field class="field-term" subscriptSizing="dynamic" *ngIf="!isNullOperand()">
-      <mat-label>Search term</mat-label>
+      <mat-label>{{ isRegexOperand() ? 'Regular expression' : 'Search term' }}</mat-label>
       <input [(ngModel)]="attributeCondition.searchKey" id="searchKey" (keydown)="onKeyDown($event)"
-        class="text-sm" matInput #input placeholder="Enter a value">
+        class="text-sm" matInput #input
+        [placeholder]="isRegexOperand() ? 'e.g. .*Cyclin.*' : 'Enter a value'">
+      <mat-icon matSuffix class="regex-help-icon" *ngIf="isRegexOperand()"
+        [matTooltip]="regexTooltip" matTooltipPosition="above"
+        aria-label="How regular expressions are matched">help_outline</mat-icon>
     </mat-form-field>
   </div>
 
