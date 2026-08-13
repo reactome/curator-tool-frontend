@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpInterceptor, HttpEvent, HttpRequest, HttpHandler, HttpErrorResponse, HttpClient, HttpBackend, HttpContextToken } from '@angular/common/http';
+import { HttpInterceptor, HttpEvent, HttpRequest, HttpHandler, HttpErrorResponse, HttpContextToken } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, catchError, filter, finalize, switchMap, take, tap, throwError } from 'rxjs';
-import { JwtHelperService } from '@auth0/angular-jwt';
+import { BehaviorSubject, Observable, catchError, filter, finalize, of, switchMap, take, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
+import { TokenRefreshService } from '../services/token-refresh.service';
 
 // Marks a request that has already been transparently retried once after a 401 while the
 // stored JWT was still valid, so we never retry the same request in an endless loop.
@@ -13,14 +13,9 @@ const RETRIED_AFTER_401 = new HttpContextToken<boolean>(() => false);
 export class HeaderInterceptor implements HttpInterceptor {
   private isRefreshing = false;
   private refreshTokenSubject = new BehaviorSubject<string | null | false>(null);
-  private readonly refreshUrl = environment.authURL + '/refresh';
-  private readonly httpWithoutInterceptor: HttpClient;
 
-  constructor(private httpBackend: HttpBackend,
-              private jwtHelper: JwtHelperService,
-              private router: Router) {
-    this.httpWithoutInterceptor = new HttpClient(this.httpBackend);
-  }
+  constructor(private tokenRefreshService: TokenRefreshService,
+              private router: Router) {}
 
   intercept(httpRequest: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const token = localStorage.getItem('token');
@@ -96,15 +91,23 @@ export class HeaderInterceptor implements HttpInterceptor {
     this.isRefreshing = true;
     // Reset the refresh token subject to null so that subsequent requests will wait until the new token is available
     this.refreshTokenSubject.next(null);
+    // Snapshot the token this refresh starts from, so a failure can tell "the session is gone"
+    // apart from "another tab refreshed first and this cookie is simply spent" (see
+    // recoverFromRefreshFailure).
+    const tokenBeforeRefresh = localStorage.getItem('token');
 
-    return this.requestTokenRefresh().pipe(
-      switchMap(newToken => {
-        if (!newToken) {
-          return this.handleRefreshFailure(new HttpErrorResponse({ status: 401, statusText: 'Token refresh failed' }));
-        }
-        localStorage.setItem('token', newToken);
-        this.refreshTokenSubject.next(newToken);
-        return next.handle(this.addAuthHeader(request, newToken));
+    return this.tokenRefreshService.refresh().pipe(
+      switchMap(newToken => newToken
+        ? of(newToken)
+        : throwError(() => new HttpErrorResponse({ status: 401, statusText: 'Token refresh failed' }))),
+      // Deliberately placed before the retry below, so it only ever sees failures of the refresh
+      // itself - never an error from the retried request, which must be reported as-is.
+      catchError(error => this.recoverFromRefreshFailure(tokenBeforeRefresh, error)),
+      switchMap(token => {
+        // TokenRefreshService has already stored the token; publishing it here releases the
+        // requests that queued behind this refresh.
+        this.refreshTokenSubject.next(token);
+        return next.handle(this.addAuthHeader(request, token));
       }),
       finalize(() => {
         this.isRefreshing = false;
@@ -112,27 +115,36 @@ export class HeaderInterceptor implements HttpInterceptor {
     );
   }
 
-  private requestTokenRefresh(): Observable<string> {
-    console.debug('Requesting token refresh at', new Date().toLocaleString());
-    return this.httpWithoutInterceptor
-      .post<any>(this.refreshUrl, {}, { withCredentials: true}).pipe(
-        tap((token: string) => {
-          console.debug('Token refreshed at', new Date().toLocaleString());
-        }),
-        catchError((error: HttpErrorResponse) => this.handleRefreshFailure(error))
-      );
+  /**
+   * A failed refresh does not always mean a dead session. Refresh tokens are single-use and the
+   * cookie holding them is shared by every tab, so a tab that loses a refresh race is told
+   * "Invalid or expired refresh token" moments after a sibling tab minted a perfectly good
+   * token. Tearing the session down on that used to log every tab out - including the one the
+   * curator was working in, which reported it as being signed out in another window. So check
+   * for a newer, still-valid token before giving up; only a refresh failure that leaves us with
+   * nothing usable ends the session.
+   */
+  private recoverFromRefreshFailure(tokenBeforeRefresh: string | null, error: any): Observable<string> {
+    const currentToken = localStorage.getItem('token');
+    if (currentToken
+        && currentToken !== tokenBeforeRefresh
+        && this.tokenRefreshService.isTokenValid(currentToken)) {
+      console.warn('Token refresh failed, but another tab has already refreshed this session; continuing with its token.');
+      return of(currentToken);
+    }
+    return this.handleRefreshFailure(error);
   }
 
-  private handleRefreshFailure(error: HttpErrorResponse): Observable<never> {
+  private handleRefreshFailure(error: any): Observable<never> {
     this.refreshTokenSubject.next(false);
 
-    // We only reach here after the transient-race protection has already run: the
-    // original 401 was retried once with the same token (see handle401Error) and a
-    // token refresh was then attempted and failed. A failed refresh means the server
-    // will no longer accept our credentials, so the session is genuinely gone — tear
-    // it down and redirect to /login even if the locally stored JWT has not expired
-    // yet (a locally-valid-but-server-rejected token would otherwise loop on 401s
-    // forever without ever redirecting).
+    // We only reach here once every cheaper explanation has been ruled out: the original 401
+    // was retried once with the same token (see handle401Error), a token refresh was then
+    // attempted and failed, and no sibling tab has left a newer usable token behind (see
+    // recoverFromRefreshFailure). At that point the server will no longer accept our
+    // credentials, so the session is genuinely gone — tear it down and redirect to /login even
+    // if the locally stored JWT has not expired yet (a locally-valid-but-server-rejected token
+    // would otherwise loop on 401s forever without ever redirecting).
     localStorage.removeItem('token');
     this.redirectToLogin();
     return throwError(() => error);
@@ -149,14 +161,7 @@ export class HeaderInterceptor implements HttpInterceptor {
   }
 
   private isStoredTokenValid(): boolean {
-    const token = localStorage.getItem('token');
-    if (!token)
-      return false;
-    try {
-      return !this.jwtHelper.isTokenExpired(token);
-    } catch {
-      return false;
-    }
+    return this.tokenRefreshService.isTokenValid(localStorage.getItem('token'));
   }
 
   private isAuthRequest(url: string): boolean {
