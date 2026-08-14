@@ -57,8 +57,7 @@ export class ReferrersTableComponent {
   handleAction(actionEvent: { instance: Instance; action: string }) {
     switch (actionEvent.action) {
       case "launch": {
-        const dbId = actionEvent.instance.dbId;
-        window.open(`schema_view/instance/${dbId}`, '_blank');
+        this.openInstance(actionEvent.instance);
       }
     }
   }
@@ -75,8 +74,13 @@ export class ReferrersTableComponent {
     }
   }
 
+  // Clicking the dbId or display name opens the instance the same way the launch button does
   navigateUrl(instance: Instance) {
-    return window.open("/schema_view/instance/" + instance.dbId.toString())
+    this.openInstance(instance);
+  }
+
+  private openInstance(instance: Instance) {
+    window.open(`schema_view/instance/${instance.dbId}`, '_blank');
   }
 
   // For each referrer, check if changing the attribute would cause review status change

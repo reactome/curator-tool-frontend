@@ -18,8 +18,10 @@
         <button (click)="openTable(referrers.attributeName)" mat-button><mat-icon>{{isExpanded(referrers.attributeName) ? 'arrow_drop_down' : 'arrow_right'}}</mat-icon></button>
 
       </div>
-      <!-- isSelection so that we don't enable the links for dbIds and display name -->
+      <!-- isSelection to keep the plain selection layout, with enableSelectionLinks so the dbId and
+           display name open the instance in a new tab like the launch button does -->
       <app-instance-list-table [id]="referrers.attributeName" [hidden]="!isExpanded(referrers.attributeName)" [isSelection]="true"
+        [enableSelectionLinks]="true"
         [dataSource]="referrers.referrers" [showCheckMark]="false" [actionButtons]="actionButtons"
         [highlightRow]="isStructuralChange(referrers.referrers[0])" (actionEvent)="handleAction($event)"
         (urlClickEvent)="navigateUrl($event)">

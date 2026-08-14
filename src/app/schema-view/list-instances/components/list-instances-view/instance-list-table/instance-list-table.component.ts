@@ -25,6 +25,9 @@ export class InstanceListTableComponent implements OnInit, OnDestroy {
   @Input() actionButtons: Array<ActionButton> = [];
   @Input() secondaryActionButtons: Array<ActionButton> = [];
   @Input() isSelection: boolean = false;
+  // When isSelection is true, the dbId and display name are plain text. Set this to true to render
+  // them as links that emit urlClickEvent so the host can decide how to open the instance.
+  @Input() enableSelectionLinks: boolean = false;
   @Input() showHeader: boolean = true;
   displayedColumns: string[] = ['dbId', 'displayName', 'actionButtons'];
   @Output() selectionEvent = new EventEmitter<Instance>();
@@ -120,7 +123,9 @@ export class InstanceListTableComponent implements OnInit, OnDestroy {
     this.store.dispatch(BookmarkActions.add_bookmark(this.instUtils.makeShell(instance)));
   }
 
-  onInstanceLinkClicked(instance: Instance) {
+  onInstanceLinkClicked(instance: Instance, event?: MouseEvent) {
+    // Don't let the click bubble up to the row selection handler
+    event?.stopPropagation();
     //this.getInstanceUrl(instance);
     this.urlClickEvent.emit(instance);
     this.instUtils.setLastClickedDbId(instance.dbId);
