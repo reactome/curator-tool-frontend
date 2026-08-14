@@ -123,6 +123,13 @@ export class HeaderInterceptor implements HttpInterceptor {
    * curator was working in, which reported it as being signed out in another window. So check
    * for a newer, still-valid token before giving up; only a refresh failure that leaves us with
    * nothing usable ends the session.
+   *
+   * TokenRefreshService.reuseSiblingTokenOrRefresh performs this same check before it decides
+   * whether to hit the network at all. This is deliberate duplication, not an oversight: that
+   * check only ever runs behind the cross-tab Web Locks mutex, so it can't catch a race that
+   * happens where Web Locks is unavailable and refreshes go out unsynchronised. This check is
+   * what keeps that fallback path survivable, so do not remove it as "redundant" without also
+   * removing the Web-Locks-unavailable fallback in TokenRefreshService.refresh().
    */
   private recoverFromRefreshFailure(tokenBeforeRefresh: string | null, error: any): Observable<string> {
     const currentToken = localStorage.getItem('token');
