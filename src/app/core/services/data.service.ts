@@ -422,23 +422,34 @@ export class DataService {
   }
 
   /**
-   * The instance's current shell (dbId, schemaClassName, displayName) as it stands in the
-   * database right now, or undefined if it's been deleted. Always queries the server directly
-   * and never consults id2instance - the whole point is to catch changes (by this user in
-   * another tab, or by someone else) that this tab's cache doesn't know about yet, which
-   * fetchInstance() would miss since it returns a cached copy without a network round-trip.
+   * The instance's current shell (dbId, schemaClassName, displayName) as it stands right now,
+   * or undefined if it's gone. Used to refresh a bookmark: a bookmarked instance is stored as a
+   * shell snapshot (see InstanceUtilities.makeShell) that is only ever refreshed lazily while
+   * the app is open, so its schemaClassName/displayName can go stale if another user edits or
+   * reclassifies it after it was bookmarked - not just deleted.
    *
-   * Used to refresh a bookmark: a bookmarked instance is stored as a shell snapshot
-   * (see InstanceUtilities.makeShell) that is only ever refreshed lazily while the app is open,
-   * so its schemaClassName/displayName can go stale if another user edits or reclassifies it
-   * after it was bookmarked - not just deleted.
+   * For an already-committed instance (dbId > 0), this always queries the server directly and
+   * never consults id2instance - the whole point is to catch changes (by this user in another
+   * tab, or by someone else) that this tab's cache doesn't know about yet, which fetchInstance()
+   * would miss since it returns a cached copy without a network round-trip. Only a 404 is
+   * treated as "deleted" (returns undefined); any other failure (network blip, expired session,
+   * server error) is not treated as a deletion - it's surfaced the normal way (see
+   * handleErrorMessage) so callers can't mistake "we couldn't check" for "it's gone".
    *
-   * Only a 404 is treated as "deleted" (returns undefined); any other failure (network blip,
-   * expired session, server error) is not treated as a deletion - it's surfaced the normal way
-   * (see handleErrorMessage) so callers can't mistake "we couldn't check" for "it's gone".
+   * A new, not-yet-committed instance (dbId < 0) only ever exists locally - there is nothing to
+   * fetch from the server for it, and it is "gone" only once it has been discarded before ever
+   * being committed (see InstanceUtilities.isPermanentlyRemovedNewInstance). Otherwise this
+   * returns whatever shell is currently cached for it, so a bookmark on a curator's own
+   * in-progress new instance is treated the same as a bookmark on a committed one, rather than
+   * being unconditionally reported as gone.
    */
   fetchBookmarkShell(dbId: number): Observable<Instance | undefined> {
-    if (dbId < 0) return of(undefined);
+    if (dbId < 0) {
+      if (this.utils.isPermanentlyRemovedNewInstance(dbId))
+        return of(undefined);
+      const cached = this.getCachedInstance(dbId);
+      return of(cached ? this.utils.makeShell(cached) : undefined);
+    }
     return this.http.get<Instance>(this.entityDataUrl + `${dbId}`).pipe(
       map((data: Instance) => this.utils.makeShell(data)),
       catchError((err: any) => {
