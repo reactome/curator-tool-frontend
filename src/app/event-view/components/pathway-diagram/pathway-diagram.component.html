@@ -4,7 +4,8 @@
   <mat-icon *ngIf="isLockOwnedByMe" class="diagram-locked-icon" tooltip="Diagram is locked by you">lock</mat-icon>
   <span class="diagram-label-text" [title]="diagramLabel">{{ diagramLabel }}</span>
 </div>
-<app-diagram-toolbar (action)="onAction($event)" [isDiagramEditing]="isEditing" [isDiagramEdited]="isEdited"
+<app-diagram-toolbar (action)="onAction($event)" (findByDbId)="findObjectByDbId($event)"
+  [isDiagramEditing]="isEditing" [isDiagramEdited]="isEdited"
   [isLockAcquiring]="isLockAcquiring" [isLockOwnedByMe]="isLockOwnedByMe" [canUndo]="canUndo" [canRedo]="canRedo"
   [canAlign]="canAlign" [hasActiveResizing]="hasActiveResizing">
 </app-diagram-toolbar>
