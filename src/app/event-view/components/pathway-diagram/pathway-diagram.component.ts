@@ -646,6 +646,45 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   }
 
   /**
+   * "Find by dbId": look up an object among those currently displayed in this diagram and,
+   * if found, select it and zoom/pan the view to it. Reports why nothing happened (invalid
+   * input, or a dbId not on this diagram) rather than silently doing nothing, since a search
+   * that appears to do nothing is indistinguishable from one that hasn't run yet.
+   */
+  findObjectByDbId(rawValue: string) {
+    const trimmed = (rawValue ?? '').trim();
+    if (!trimmed)
+      return;
+    const dbId = Number(trimmed);
+    if (!Number.isInteger(dbId)) {
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Find by dbId',
+          message: `"${trimmed}" is not a valid dbId.`
+        }
+      });
+      return;
+    }
+    if (!this.diagramUtils.isDbIdInDiagram(this.diagram, dbId)) {
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Find by dbId',
+          message: `No object with dbId ${dbId} is displayed in this diagram.`
+        }
+      });
+      return;
+    }
+    // Route through the same ?select= query param the event tree uses to select objects in this
+    // diagram, rather than calling selectObjectsInDiagram directly, so this.select and the URL
+    // stay in sync with what is actually selected (see the NavigationEnd handling above).
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { select: dbId },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  /**
    * Select objects in cytoscape.js based on the passed dbId.
    * Note: dbId may be a list of ids separated by ','.
    * @param dbId

@@ -26,3 +26,29 @@
 .toolbar-spacer {
   flex: 1 1 auto;
 }
+
+// Replaces the search icon button once clicked; sized to match the 40px-tall icon buttons
+// around it rather than a full mat-form-field, so it reads as part of the same row.
+.dbid-search {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 8px;
+  box-sizing: border-box;
+}
+
+.dbid-search-input {
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.38);
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  width: 90px;
+  color: rgba(0, 0, 0, 0.87);
+  padding: 2px 0;
+}
+
+.dbid-search-input::placeholder {
+  color: rgba(0, 0, 0, 0.38);
+}

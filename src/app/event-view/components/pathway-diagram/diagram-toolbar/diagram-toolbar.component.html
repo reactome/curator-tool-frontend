@@ -21,6 +21,18 @@
     <mat-icon>zoom_out_map</mat-icon>
   </button>
 
+  <span class="toolbar-divider"></span>
+  <button mat-icon-button *ngIf="!showDbIdSearch" (click)="openDbIdSearch()" matTooltip="Find by dbId">
+    <mat-icon>search</mat-icon>
+  </button>
+  <div class="dbid-search" *ngIf="showDbIdSearch">
+    <input #dbIdInput type="text" class="dbid-search-input" placeholder="Find by dbId"
+      matTooltip="Enter a dbId and press Enter to select and zoom to that object in this diagram."
+      (keydown.enter)="onFindByDbId(dbIdInput.value)"
+      (keydown.escape)="showDbIdSearch = false"
+      (blur)="showDbIdSearch = false">
+  </div>
+
   <ng-container *ngIf="isDiagramEditing">
     <span class="toolbar-divider"></span>
     <button mat-icon-button [disabled]="!canUndo" (click)="onClick('undo')" matTooltip="Undo (Ctrl+Z)">

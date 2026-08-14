@@ -217,7 +217,18 @@ export class PathwayDiagramUtilService {
         const selectedElements = diagram.cy.$(':selected');
         const selectedDbIds = Array.from(new Set(selectedElements.map((element:any) => element.data('reactomeId'))));
         return selectedDbIds.includes(dbId);
-    }    
+    }
+
+    /**
+     * Whether an object with this dbId is currently displayed in the diagram (in either
+     * cy or, for a compared diagram, cyCompare), regardless of whether it is selected.
+     * Used by "Find by dbId" to tell "not on this diagram" apart from a failed selection.
+     */
+    isDbIdInDiagram(diagram: DiagramComponent, dbId: number): boolean {
+        if (diagram?.cy?.elements().some((element: any) => element.data('reactomeId') === dbId))
+            return true;
+        return !!diagram?.cyCompare?.elements().some((element: any) => element.data('reactomeId') === dbId);
+    }
 
     clearSelection(diagram: DiagramComponent) {
         if (diagram.cy) {
