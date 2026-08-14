@@ -578,6 +578,7 @@ A persistent toolbar sits above the diagram canvas with icon buttons (hover for 
 | `add` | **Zoom In** | Always |
 | `remove` | **Zoom Out** | Always |
 | `zoom_out_map` | **Fit to Screen** | Always |
+| `search` | **Find by dbId** | Always |
 | `undo` | **Undo** | While editing, and there is a step to undo |
 | `redo` | **Redo** | While editing, and there is a step to redo |
 | `add_box` | **Insert Compartment** | While editing |
@@ -589,7 +590,9 @@ A persistent toolbar sits above the diagram canvas with icon buttons (hover for 
 | `refresh` | **Reload Pathway Diagram** | Always |
 | `description` | **Edit/Create PathwayDiagram** | Always |
 
-**Right-click** also opens the classic context menu — it still offers most of the actions above (both access points work identically) plus every element-specific action, context-sensitive to what you clicked. Zoom In / Zoom Out / Fit to Screen are toolbar-only (view-level controls, not tied to any right-clicked element):
+**Find by dbId:** click the **search** icon to expand it into a small text field; type a dbId and press **Enter** to select that object and zoom/pan the view onto it, if it is currently displayed in this diagram. The field collapses back to the search icon once you search, or if you press **Escape** or click away without searching. If nothing in this diagram has that dbId, or what you typed isn't a valid number, you're told so directly rather than the search silently doing nothing.
+
+**Right-click** also opens the classic context menu — it still offers most of the actions above (both access points work identically) plus every element-specific action, context-sensitive to what you clicked. Zoom In / Zoom Out / Fit to Screen / Find by dbId are toolbar-only (view-level controls, not tied to any right-clicked element):
 
 *Always:*
 - **Enable Editing** / **Disable Editing**
