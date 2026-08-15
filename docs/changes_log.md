@@ -1,4 +1,4 @@
-### Build on August 14, 2026
+### Build on August 15, 2026
 
 - Added a "Find by dbId" search to the pathway diagram toolbar. Click the search icon, type the dbId of an object, and press Enter: if it is currently displayed in this diagram, it is selected and the view zooms/pans onto it. If it isn't on this diagram, or what you typed isn't a valid number, you're told so directly instead of the search doing nothing.
 
@@ -9,6 +9,8 @@
 - Bug fix: while working normally - often only minutes after logging in - you could be told you had been signed out in another Webbench window and be thrown back to the login page, with nothing having been signed out anywhere. Your session is kept alive by a token that all your windows share, and each window renewed it on its own. Because a renewal can only be spent once, two windows renewing at the same moment (which they tend to do, since the token expires for all of them at once) meant one of them was told its renewal was no longer valid - and it concluded the session was dead and signed every window out, moments after another window had renewed it perfectly successfully. Windows now take turns renewing rather than competing; a window that finds another has just renewed carries on with the new token; and the server honours a token that was replaced moments earlier instead of rejecting it. You are only signed out now when the session really has ended.
 
 - Bug fix: a second Webbench window left open in the background could log you out of the window you were actually working in. The 18-minute inactivity timeout was measured per window, and a window sitting behind the one in use sees no typing or mouse movement, so it timed itself out and ended the session for every window - its "you are about to be signed out" countdown having run invisibly behind the window you were using. Inactivity is now measured across all of your windows together: as long as you are working in any one of them, none of them times out. If a countdown is showing in a window you are not looking at and you start working in another, it is dismissed instead of signing you out.
+
+- In the referrers table (the list, under an attribute, of every other instance that refers to the one you're viewing), the dbId and display name are now clickable and open that instance in its own new tab, the same as the existing launch button already did. They used to be plain, unclickable text - opening a referrer meant hunting down its separate launch button.
 
 ### Build on August 7, 2026
 
