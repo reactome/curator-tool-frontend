@@ -6,6 +6,21 @@ import { MatDialog } from "@angular/material/dialog";
 import { Inject, inject, Injectable } from "@angular/core";
 import { InstanceUtilities } from "../services/instance.service";
 
+/**
+ * The following text is copied from the Java Desktop version of Reactome Curator Tool. It is used to check if the review status of an instance needs to be updated after an edit operation.
+ *
+ *
+ * This class is used to check if the assignment to the reviewStatus is correct by following the following:
+ * 1). Three stars: internalReviewed is assigned. Its datetime is later than the latest datetime of the InstanceEdits
+ * in the structureUpdate slot if any.
+ * 2). Four stars: both reviewed and internalReviewed are assigned. The latest datatime of the internalReviewed is later
+ * than the latest of the reviewed and the latest of the structureUpdate.
+ * 3). Five stars: reviewed must be assigned (authored will not be used). Its datetime is later than the latest datetime
+ * of the InstanceEdits in the structureUpdate slot if any.
+ * For more details, see https://docs.google.com/presentation/d/1Y3fxXS3DzE0aRZmPnE1K6PC51BHd5dak/edit#slide=id.p8.
+ * Note: Since one and two stars are not released, they are not checked.
+ *
+ */
 @Injectable({
     providedIn: 'root'
 })
