@@ -1,4 +1,11 @@
-#### Bugs
+### Bugs
+
+#### High priority
+
+- Bug: if you open multiple windows without activities for a while, all windows will be logged out automatically. If you come back and log in on window, the other windows stay at the logging page.
+
+#### Others
+
 - The autoscroll for the instance view in the event view scroll the whole instance view. But we need to scroll the table content only just like in the schemw view. (some fixed, but not fully ideal)
 - go to pathway in the diagram sometimes has weird selection: the pathway selected is stuck in the URL!
 - resizing the nodes cannot change the height of the background for selection. However, sometimes it does work!
