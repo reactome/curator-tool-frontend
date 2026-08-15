@@ -1,6 +1,6 @@
 import { Instance, ReviewStatus } from "../models/reactome-instance.model";
 import { DataService } from "../services/data.service";
-import { PostEditOperation } from "./PostEditOperation";
+import { PostEditListener, PostEditOperation } from "./PostEditOperation";
 import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
 import { MatDialog } from "@angular/material/dialog";
 import { Inject, inject, Injectable } from "@angular/core";
@@ -22,7 +22,7 @@ export class ReviewStatusCheck implements PostEditOperation {
         return true;
     }
 
-    // Check if the instance is of type Event and if the attributeValue is a structural attribute change
+    // Check if the instance is of type Event and if the attributeValue is a structural attribute change 
     // copy the InstanceEdit from the modified slot to the structureModified slot
 
     private isAttributeStructuralChange(instance: Instance, attributeName: string): boolean {
@@ -78,9 +78,7 @@ export class ReviewStatusCheck implements PostEditOperation {
     }
 
 
-    public handleReviewStatus(instance: Instance,
-        attributeName: string,
-        isActiveEdit: boolean = true): boolean {
+    public handleReviewStatus(instance: Instance, attributeName: string, isActiveEdit: boolean = true): boolean {
         let reviewStatusChanged = false;
         if (this.isAttributeStructuralChange(instance, attributeName)) {
             // Regardless of review status, mark structure modified
@@ -88,10 +86,10 @@ export class ReviewStatusCheck implements PostEditOperation {
             let reviewStatus = instance.attributes?.get('reviewStatus');
 
             if (reviewStatus === undefined || reviewStatus.dbId === ReviewStatus.oneStar.dbId || reviewStatus.dbId === ReviewStatus.twoStar.dbId) {
-                return false; // do nothing, review status for one and two stars are handled internally
+                return false; // do nothing, review status for one and two stars are handled internally 
             }
 
-            // Structural changes for a three star review should be demoted to a one star review status
+            // Structural changes for a three star review should be demoted to a one star review status 
             if (reviewStatus.dbId === ReviewStatus.threeStar.dbId) {
                 instance.attributes.set('previousReviewStatus', reviewStatus);
                 this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
@@ -134,11 +132,18 @@ export class ReviewStatusCheck implements PostEditOperation {
             let preStatus = instance.attributes?.get('reviewStatus');
             if (preStatus === null ||
                 preStatus?.dbId === ReviewStatus.oneStar.dbId) {
-                this.promoteReviewStatus(instance, ReviewStatus.threeStar, preStatus, isActiveEdit);
-                reviewStatusChanged = true;
+                instance.attributes.set('previousReviewStatus', preStatus);
+                this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
+
+                instance.attributes?.set('reviewStatus', ReviewStatus.threeStar);
+                this.addModifiedAttributes('reviewStatus', instance, isActiveEdit);
+
             }
             else if (preStatus?.dbId === ReviewStatus.twoStar.dbId) {
-                this.promoteReviewStatus(instance, ReviewStatus.fourStar, preStatus, isActiveEdit);
+                instance.attributes.set('previousReviewStatus', preStatus);
+                this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
+                instance.attributes?.set('reviewStatus', ReviewStatus.fourStar);
+                this.addModifiedAttributes('reviewStatus', instance, isActiveEdit);
                 reviewStatusChanged = true;
             }
 
@@ -150,22 +155,14 @@ export class ReviewStatusCheck implements PostEditOperation {
                 preStatus?.dbId === ReviewStatus.twoStar.dbId ||
                 preStatus?.dbId === ReviewStatus.threeStar.dbId ||
                 preStatus?.dbId === ReviewStatus.fourStar.dbId) {
-                this.promoteReviewStatus(instance, ReviewStatus.fiveStar, preStatus, isActiveEdit);
+                instance.attributes.set('previousReviewStatus', preStatus);
+                this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
+                instance.attributes?.set('reviewStatus', ReviewStatus.fiveStar);
+                this.addModifiedAttributes('reviewStatus', instance, isActiveEdit);
                 reviewStatusChanged = true;
             }
         }
         return reviewStatusChanged;
-    }
-
-    /** Move the reviewStatus up to the passed one, keeping the one it replaces in previousReviewStatus. */
-    private promoteReviewStatus(instance: Instance,
-        reviewStatus: Instance,
-        preStatus: Instance | undefined,
-        isActiveEdit: boolean) {
-        instance.attributes.set('previousReviewStatus', preStatus);
-        this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
-        instance.attributes?.set('reviewStatus', reviewStatus);
-        this.addModifiedAttributes('reviewStatus', instance, isActiveEdit);
     }
 
     addModifiedAttributes(attributeName: string, instance: Instance, isActiveEdit: boolean) {
