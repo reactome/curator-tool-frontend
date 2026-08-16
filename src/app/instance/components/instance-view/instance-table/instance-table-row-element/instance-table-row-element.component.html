@@ -42,7 +42,8 @@
           <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
             [queryParamsHandling]="'preserve'" class="padding span-menu-trigger"
             style="cursor: pointer; text-decoration: underline;">
-            <span *ngIf="stoichiometry > 1" class="stoichiometry-prefix">{{stoichiometry}} &times; </span>
+            <span *ngIf="stoichiometry > 1" class="stoichiometry-prefix">{{stoichiometry}} &times;</span>
+            <class-name-icon *ngIf="attribute?.name === 'hasEvent'" [className]="value.schemaClassName"></class-name-icon>
             {{value.displayName}}
             [{{value.dbId}}]
           </a><br>
@@ -60,13 +61,14 @@
               (so a single copy can still be increased). -->
               <button *ngIf="canEditStoichiometry && (stoichiometry > 1 || showActions)" type="button"
                 class="stoichiometry-chip" (click)="onEditStoichiometry($event)" matTooltip="Set stoichiometry">
-                &nbsp;{{stoichiometry}} &times;
+                {{stoichiometry}} &times;
               </button>
               <a [routerLink]="getInstanceUrlRoot(value)" (click)="onInstanceLinkClicked(value)"
                 #aTrigger="cdkContextMenuTriggerFor" [cdkContextMenuTriggerFor]="row_menu"
                 (contextmenu)="onContextMenu($event)" (cdkContextMenuOpened)="onMenuOpened(aTrigger)"
                 (cdkContextMenuClosed)="onMenuClosed()"
                 class="padding value-link" style="cursor: pointer; text-decoration: underline;">
+                <class-name-icon *ngIf="attribute?.name === 'hasEvent'" [className]="value.schemaClassName"></class-name-icon>
                 {{value.displayName}}
                 [{{value.dbId}}]
               </a>

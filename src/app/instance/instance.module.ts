@@ -43,6 +43,7 @@ import { HttpClientModule } from "@angular/common/http";
 import { AngularEditorModule } from "@kolkov/angular-editor";
 import { DeletionCommitModule } from "./deletion-commit/deletion-commit.module";
 import { MatchInstancesDialogComponent } from './components/match-instances-dialog/match-instances-dialog.component';
+import { ClassNameIconComponent } from '../event-view/components/event-tree/class-name-icon/class-name-icon.component';
 
 @NgModule({
     declarations: [
@@ -89,8 +90,9 @@ import { MatchInstancesDialogComponent } from './components/match-instances-dial
     CdkDragPlaceholder,
     TextCurationComponent,
     MatExpansionModule,
-    HttpClientModule, 
+    HttpClientModule,
     AngularEditorModule,
+    ClassNameIconComponent,
 ],
   exports: [
     InstanceTableComponent,

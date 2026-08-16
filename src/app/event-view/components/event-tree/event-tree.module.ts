@@ -13,7 +13,6 @@ import { ClassNameIconComponent } from './class-name-icon/class-name-icon.compon
 @NgModule({
   declarations: [
     EventTreeComponent,
-    ClassNameIconComponent,
     ReleaseFlagComponent
   ],
   imports: [
@@ -25,7 +24,8 @@ import { ClassNameIconComponent } from './class-name-icon/class-name-icon.compon
     SharedModule,
     MatTooltipModule,
     RouterLink,
-    EventFilterComponent
+    EventFilterComponent,
+    ClassNameIconComponent
   ],
   exports: [MaterialModule, EventTreeComponent]
 })

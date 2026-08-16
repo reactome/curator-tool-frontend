@@ -20,6 +20,7 @@
 .stoichiometry-prefix {
   font-weight: 600;
   color: rgba(0, 0, 0, 0.7);
+  margin-right: 4px;
 }
 
 // Clickable stoichiometry count on an editable stoichiometry row, shown as plain "N ×" text
@@ -37,19 +38,27 @@
 }
 
 // Wrap a populated instance value and its inline edit-action button. The wrapper is
-// positioned so the button can overlay the row without affecting its height.
+// positioned so the button can overlay the row without affecting its height. Left padding
+// lives here (rather than on .value-link, see below) so the row's content - whichever
+// element happens to be first, the stoichiometry chip or the value link - starts at the
+// same 16px inset as every other attribute row, instead of the chip sitting flush left
+// when it's shown.
 .instance-value-wrapper {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  padding-left: 16px;
   max-width: 100%;
 }
 
 // Populated value link should size to content so the action button stays right after text.
+// Left padding is suppressed here since .instance-value-wrapper already provides it - this
+// keeps the value link's own right padding (from .padding) for spacing before the mini-fab.
 .value-link {
   display: inline-block;
   width: auto;
   max-width: 100%;
+  padding-left: 0;
 }
 
 // Inline mini-FAB action button rendered on hover/menu-open. Kept compact so row height
