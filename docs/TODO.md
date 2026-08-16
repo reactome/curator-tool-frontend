@@ -4,7 +4,7 @@
 
 - Bug: if you open multiple windows without activities for a while, all windows will be logged out automatically. If you come back and log in on window, the other windows stay at the logging page.
 
-#### Others
+#### Low priority
 
 - The autoscroll for the instance view in the event view scroll the whole instance view. But we need to scroll the table content only just like in the schemw view. (some fixed, but not fully ideal)
 - go to pathway in the diagram sometimes has weird selection: the pathway selected is stuck in the URL!
@@ -63,12 +63,13 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 
 - Request to view only one pathway's realted instances (Karen requested)
 
-- quickly show if a "hasEvent" is a rxn or pathway 
-
 - a quick filter for species: 1. No filter, 2. Human only, 3. No human filter 
 
 
-#### TODO
+### TODO
+
+#### Low priority
+
 - Enable move inner part of the compartment during the pathway diagram editing
 - comments from Eliot and others during a demo on March 16, 2026: https://docs.google.com/document/d/1zlj3KKDwRQYUBCGIi4P3uqsb5X3JRfk8WoOqj2BXssI/edit?tab=t.0#heading=h.y6ik0la1wydu.
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.

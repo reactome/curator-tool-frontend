@@ -86,11 +86,29 @@ export class InactivityService implements OnDestroy {
               private userInstancesService: UserInstancesService,
               private tokenRefreshService: TokenRefreshService) {}
 
-  /** Begin tracking activity. Safe to call more than once. */
-  start(): void {
+  /**
+   * Begin tracking activity. Safe to call more than once.
+   *
+   * Returns whether the session was already idle past the timeout when this tab opened (in
+   * which case logout() has just been kicked off asynchronously). Callers should check this
+   * before firing anything that would otherwise use the about-to-be-invalidated token for an
+   * authenticated request - e.g. loading the user's staged instances at app startup - since
+   * that request would race the logout rather than being reliably skipped by it.
+   */
+  start(): boolean {
     if (this.started)
-      return;
+      return false;
     this.started = true;
+    // last_activity_at is only ever compared against the current time by a live timer, a
+    // visibilitychange handler, or this check - all of which need a tab open to run at all.
+    // If every tab was closed for longer than the timeout, nothing was watching to catch that
+    // in time, and the app would otherwise treat this fresh page load as if it were itself
+    // proof of recent activity. Catch that here instead, before anything else runs.
+    const wasAlreadyIdle = !!localStorage.getItem('token') && this.isAlreadyIdlePastTimeout();
+    if (wasAlreadyIdle) {
+      console.debug('[InactivityService] session was already idle past the timeout when this tab opened; logging out.');
+      this.logout();
+    }
     // Login just established a fresh refresh token - skip an immediate, redundant keep-alive.
     this.lastRefreshAt = Date.now();
     console.debug(`[InactivityService] started at ${new Date(this.lastRefreshAt).toISOString()}`);
@@ -109,6 +127,7 @@ export class InactivityService implements OnDestroy {
       window.addEventListener('storage', this.onStorage);
     });
     this.resetTimer();
+    return wasAlreadyIdle;
   }
 
   ngOnDestroy(): void {
@@ -196,6 +215,25 @@ export class InactivityService implements OnDestroy {
   /** How long the whole session (not just this tab) has been idle, in milliseconds. */
   private sessionIdleMs(): number {
     return Date.now() - this.lastSessionActivityAt();
+  }
+
+  /**
+   * Whether the persisted last-activity timestamp already shows the session idle for at
+   * least the full timeout, judged purely against wall-clock time.
+   *
+   * Deliberately not lastSessionActivityAt()/sessionIdleMs(): those floor against
+   * this.lastActivityAt, which is set to "now" the instant this service is constructed, so
+   * a live tab's own recent activity is never masked by a stale sibling-tab timestamp. That
+   * floor is exactly wrong for a cold start - there has been no activity yet in this tab, so
+   * it would treat "the app just loaded" as proof the session is fresh, defeating the very
+   * check this method exists for.
+   */
+  private isAlreadyIdlePastTimeout(): boolean {
+    const published = Number(localStorage.getItem(InactivityService.LAST_ACTIVITY_KEY));
+    const now = Date.now();
+    if (!Number.isFinite(published) || published <= 0 || published > now)
+      return false; // Nothing recorded yet, or a clock-skewed value - nothing to judge against.
+    return now - published >= InactivityService.INACTIVITY_TIMEOUT_MS;
   }
 
   /**

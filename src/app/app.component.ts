@@ -21,10 +21,16 @@ export class AppComponent {
   ) {}
 
   ngOnInit() {
-    this.userInstancesService.loadUserInstances();
-    // Start the inactivity watchdog: after 18 minutes without user activity the
-    // session is logged out (only takes effect while a user is actually logged in).
-    this.inactivityService.start();
+    // Start the inactivity watchdog first: after 18 minutes without user activity the
+    // session is logged out (only takes effect while a user is actually logged in). It also
+    // catches a session that was already idle past the timeout before this tab ever opened
+    // (e.g. every tab was closed for longer than that) and starts logging it out immediately -
+    // in which case loadUserInstances() below is skipped rather than firing an authenticated
+    // request with a token that's about to be invalidated.
+    const sessionWasAlreadyStale = this.inactivityService.start();
+    if (!sessionWasAlreadyStale) {
+      this.userInstancesService.loadUserInstances();
+    }
     // Log this tab out as soon as any other tab/window logs out, so a tab left open
     // behind a logout cannot keep presenting an editable, apparently-authenticated UI.
     this.sessionSyncService.start();

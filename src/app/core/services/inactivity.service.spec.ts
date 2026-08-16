@@ -113,6 +113,30 @@ describe('InactivityService', () => {
     expect(dialog.open).toHaveBeenCalled();
   }));
 
+  it('logs out immediately if the session was already idle past the timeout before this tab opened', fakeAsync(() => {
+    // Nothing was open to run the idle timer while every tab was closed, so the only sign
+    // this session is already stale is the last-activity timestamp left behind.
+    localStorage.setItem(ACTIVITY_KEY, String(Date.now() - 19 * MINUTE));
+
+    // The return value lets callers (AppComponent) skip firing an authenticated request - e.g.
+    // loading the user's staged instances - with a token that's about to be invalidated.
+    expect(service.start()).toBeTrue();
+
+    expect(userInstances.persistInstances).toHaveBeenCalledWith(true, jasmine.any(Function));
+    // The immediate logout doesn't stop start() from also scheduling the normal idle timer
+    // (harmless once logged out); retire it before fakeAsync checks the queue.
+    service.ngOnDestroy();
+  }));
+
+  it('does not log out on start when the last recorded activity is still within the timeout', fakeAsync(() => {
+    localStorage.setItem(ACTIVITY_KEY, String(Date.now() - 5 * MINUTE));
+
+    expect(service.start()).toBeFalse();
+
+    expect(userInstances.persistInstances).not.toHaveBeenCalled();
+    service.ngOnDestroy();
+  }));
+
   it('does nothing at all when nobody is logged in', fakeAsync(() => {
     localStorage.removeItem('token');
     service.start();
