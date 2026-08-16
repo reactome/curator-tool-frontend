@@ -1,4 +1,8 @@
-### Build on August 15, 2026
+### Build on August 16, 2026
+
+- Bug fix: closing every open Webbench window for longer than the 18-minute inactivity limit, then reopening the app, resumed the same session without asking you to log in again. The inactivity check only ever ran while a window was open to watch the clock, so however long passed while every window was closed was never counted against it. Reopening the app now checks how long it's actually been since the session was last active before doing anything else, and signs you out immediately if that already exceeds the limit - the same as if a window had been open the whole time.
+
+- Bug fix: after every window was signed out - by the inactivity timeout, or by one window logging out - logging back in on one of them left every other window still sitting at the login page, even though the session was valid again; there was no way for them to find out. Logging in on any one window now brings the others back in too, each returning to whichever page it was on before being signed out.
 
 - Added a "Find by dbId" search to the pathway diagram toolbar. Click the search icon, type the dbId of an object, and press Enter: if it is currently displayed in this diagram, it is selected and the view zooms/pans onto it. If it isn't on this diagram, or what you typed isn't a valid number, you're told so directly instead of the search doing nothing.
 

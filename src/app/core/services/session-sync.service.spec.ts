@@ -8,6 +8,7 @@ describe('SessionSyncService', () => {
   let service: SessionSyncService;
   let router: { url: string, navigate: jasmine.Spy };
   let dialog: jasmine.SpyObj<MatDialog>;
+  let reloadTo: jasmine.Spy;
 
   /** Fire the storage event a *sibling* tab's localStorage write would produce here. */
   const fireStorage = (key: string | null, newValue: string | null) =>
@@ -27,6 +28,8 @@ describe('SessionSyncService', () => {
       ]
     });
     service = TestBed.inject(SessionSyncService);
+    // A real assignment to window.location.href would navigate this test runner away.
+    reloadTo = spyOn(service as any, 'reloadTo');
     localStorage.removeItem('token');
     sessionStorage.removeItem('currentUrl');
     service.start();
@@ -52,12 +55,34 @@ describe('SessionSyncService', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });
 
-  it('ignores a sibling tab writing a new token (a login, not a logout)', () => {
+  it('ignores a sibling tab writing a new token when this tab is not at /login', () => {
     localStorage.setItem('token', 'fresh-token');
 
     fireStorage('token', 'fresh-token');
 
     expect(router.navigate).not.toHaveBeenCalled();
+    expect(reloadTo).not.toHaveBeenCalled();
+  });
+
+  it('reloads to the stashed URL when a sibling logs back in while this tab is at /login', () => {
+    router.url = '/login';
+    sessionStorage.setItem('currentUrl', '/schema_view/instance/456');
+    localStorage.setItem('token', 'fresh-token');
+
+    fireStorage('token', 'fresh-token');
+
+    expect(reloadTo).toHaveBeenCalledWith('/schema_view/instance/456');
+    // The stashed URL is one-shot, same as the normal post-login read in login.component.ts.
+    expect(sessionStorage.getItem('currentUrl')).toBeNull();
+  });
+
+  it('reloads to /home when a sibling logs back in while this tab is at /login with nothing stashed', () => {
+    router.url = '/login';
+    localStorage.setItem('token', 'fresh-token');
+
+    fireStorage('token', 'fresh-token');
+
+    expect(reloadTo).toHaveBeenCalledWith('/home');
   });
 
   it('ignores unrelated localStorage keys', () => {

@@ -16,10 +16,14 @@ import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-
  *
  * localStorage's 'storage' event fires in every *other* tab of the origin (never in the one
  * that made the change), which makes it the natural broadcast channel - the same mechanism
- * InstanceEffects and UserInstancesService already use to keep staged edits in sync. Here we
- * only care about the token disappearing; when it does, this tab tears itself down the same
- * way the auth interceptor does on a dead session: stash where the user was, close any open
- * dialogs, and send them to /login.
+ * InstanceEffects and UserInstancesService already use to keep staged edits in sync. When the
+ * token disappears, this tab tears itself down the same way the auth interceptor does on a
+ * dead session: stash where the user was, close any open dialogs, and send them to /login.
+ *
+ * The reverse also matters: a tab sitting at /login because it (or a sibling) was logged out
+ * has no way of knowing a sibling has since logged back in, and would otherwise sit there
+ * indefinitely even though the session is valid again. So a fresh token appearing while this
+ * tab is at /login brings it back in too (see resumeIfWaitingAtLogin()).
  */
 @Injectable({ providedIn: 'root' })
 export class SessionSyncService implements OnDestroy {
@@ -53,6 +57,15 @@ export class SessionSyncService implements OnDestroy {
     // also arrives under the 'token' key, hence the newValue check.
     const clearedEverything = event.key === null;
     const clearedToken = event.key === SessionSyncService.TOKEN_KEY && !event.newValue;
+    const restoredToken = event.key === SessionSyncService.TOKEN_KEY && !!event.newValue;
+
+    if (restoredToken) {
+      // Storage events fire outside Angular's zone in some browsers; reading router.url and
+      // navigating must run inside it.
+      this.zone.run(() => this.resumeIfWaitingAtLogin());
+      return;
+    }
+
     if (!clearedEverything && !clearedToken)
       return;
     // Re-read the current value rather than trusting the event: logout clears and then
@@ -62,6 +75,31 @@ export class SessionSyncService implements OnDestroy {
     // Storage events fire outside Angular's zone in some browsers; routing and dialogs
     // must run inside it.
     this.zone.run(() => this.endSession());
+  }
+
+  /**
+   * A sibling tab just wrote a fresh token (a login, or its own routine refresh). If this tab
+   * is the one sitting at /login - sent there by an earlier logout, its own idle timeout or a
+   * sibling's - bring it back in; otherwise it would sit there indefinitely even though the
+   * session is valid again, until the user thought to refresh it themselves.
+   *
+   * A full page reload, not a router navigation: this tab's in-memory state (the NgRx store,
+   * DataService's instance cache) still reflects the torn-down session - nothing clears it,
+   * endSession() only navigates - so resuming live risks showing a half-stale view. Reloading
+   * reruns the app's normal boot sequence (AppComponent.ngOnInit(), which loads the user's
+   * instances fresh) exactly as if the user had refreshed this tab themselves.
+   */
+  private resumeIfWaitingAtLogin(): void {
+    if (!this.router.url.startsWith('/login'))
+      return;
+    const url = sessionStorage.getItem('currentUrl') ?? '/home';
+    sessionStorage.removeItem('currentUrl');
+    this.reloadTo(url);
+  }
+
+  // Isolated purely so tests can intercept it without triggering a real navigation.
+  private reloadTo(url: string): void {
+    window.location.href = url;
   }
 
   private endSession(): void {
