@@ -24,6 +24,50 @@ th {
   //height: var(--bread-crumb-height, 40px) !important;
 }
 
+// The class name gives up its space first, so that a long one is cut short rather than
+// pushing the species filter off the right-hand end of the toolbar.
+.toolbar-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.species-filter {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+// The toolbar sets bold 16px for the class name; the filter is a control rather than a
+// heading, so it opts back out of that.
+.species-filter-label {
+  font-size: 12px;
+  font-weight: normal;
+}
+
+// Keep the group inside the toolbar's own height instead of stretching it: the default
+// toggle height is meant for a standalone control.
+:host ::ng-deep .species-filter-group {
+  height: 28px;
+  // The toolbar is filled with the primary colour, so the group carries its own surface to
+  // sit on rather than inheriting the on-primary text colour onto an unfilled control.
+  background-color: var(--surface, #fff);
+  color: var(--on-surface);
+  border-radius: 4px;
+
+  .mat-button-toggle-label-content {
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 26px;
+    padding: 0 10px;
+  }
+}
+
 .table-container {
   // height: calc(100vh - var(--bread-crumb-height) - var(--filter-height) - 2 * var(--body-margin));
   // Don't set overflow here. Otherwise, the paging controls will get

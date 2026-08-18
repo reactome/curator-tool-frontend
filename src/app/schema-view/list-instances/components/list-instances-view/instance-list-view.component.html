@@ -1,5 +1,17 @@
 <mat-toolbar style="position: sticky !important" color="primary" class="toolbar">
-  {{this.className }}{{this.isLocal ? '@Staged' : '@Database'}}
+  <span class="toolbar-title">{{this.className }}{{this.isLocal ? '@Staged' : '@Database'}}</span>
+  <span class="toolbar-spacer"></span>
+  <div *ngIf="hasSpeciesAttribute" class="species-filter">
+    <span class="species-filter-label">Species</span>
+    <mat-button-toggle-group class="species-filter-group" [value]="speciesFilter" aria-label="Species quick filter"
+      (change)="onSpeciesFilterChange($event.value)">
+      <mat-button-toggle value="all" matTooltip="No species filter">All</mat-button-toggle>
+      <mat-button-toggle value="human"
+        matTooltip="Only instances whose species is Homo sapiens">Human</mat-button-toggle>
+      <mat-button-toggle value="nonhuman"
+        matTooltip="Only instances with a species other than Homo sapiens">Non-human</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
 </mat-toolbar>
 
 <div *ngIf="!needAdvancedSearch">

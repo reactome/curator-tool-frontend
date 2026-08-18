@@ -1,3 +1,7 @@
+### Build on August 17, 2026
+
+- Lists of instances of a class that has a species slot - Pathway, Reaction, Complex, EntityWithAccessionedSequence, ReferenceGeneProduct and the rest - now have a species quick filter at the right-hand end of the toolbar naming the class, with three settings: All (no filtering, how a list starts out), Human, and Non-human. It narrows whatever the list is already showing rather than replacing it, so it can be combined with a term typed in the search box or with a set of advanced search conditions, and the download button gives you the filtered set. The setting travels in the URL, so reloading the page or sharing the link keeps it. Classes with no species slot don't show the filter at all. Note that "Non-human" means "has a species, and one of them is not Homo sapiens": an instance with no species at all appears under neither Human nor Non-human, and one curated for both human and another species appears under both.
+
 ### Build on August 16, 2026
 
 - Bug fix: closing every open Webbench window for longer than the 18-minute inactivity limit, then reopening the app, resumed the same session without asking you to log in again. The inactivity check only ever ran while a window was open to watch the clock, so however long passed while every window was closed was never counted against it. Reopening the app now checks how long it's actually been since the session was last active before doing anything else, and signs you out immediately if that already exceeds the limit - the same as if a window had been open the whole time.

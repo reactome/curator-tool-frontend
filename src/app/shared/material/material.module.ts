@@ -25,6 +25,7 @@ import { MatStepperModule } from '@angular/material/stepper';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 @NgModule({
   declarations: [],
@@ -58,6 +59,7 @@ import { MatChipsModule } from '@angular/material/chips';
     MatDividerModule,
     MatTooltipModule,
     MatChipsModule,
+    MatButtonToggleModule,
   ],
   exports: [
     MatTableModule,
@@ -88,6 +90,7 @@ import { MatChipsModule } from '@angular/material/chips';
     MatDividerModule,
     MatTooltipModule,
     MatChipsModule,
+    MatButtonToggleModule,
   ]
 })
 export class MaterialModule { }

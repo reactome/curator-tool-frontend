@@ -14,11 +14,23 @@ import { ActionButton } from './instance-list-table/instance-list-table.componen
 import { ListInstancesDialogService } from '../list-instances-dialog/list-instances-dialog.service';
 import { BatchEditDialogService } from './batch-edit-dialog/batch-edit-dialog-service';
 import { deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
-import { combineLatest, map, Observable, Subscription, take } from 'rxjs';
+import { catchError, combineLatest, forkJoin, map, Observable, of, Subscription, take } from 'rxjs';
 import { DeleteBulkDialogService } from '../delete-bulk-dialog/delete-bulk-dialog.service';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { InstanceNameGenerator } from 'src/app/core/post-edit/InstanceNameGenerator';
+
+/**
+ * The choices offered by the species quick filter. 'all' means no filtering at all, and is
+ * what a list starts out with.
+ */
+export type SpeciesFilter = 'all' | 'human' | 'nonhuman';
+
+/** The attribute the quick filter works on. Classes without it don't get the filter. */
+const SPECIES_ATTRIBUTE = 'species';
+
+/** The display name of the human species instance, as it is stored in the database. */
+const HUMAN_SPECIES_NAME = 'Homo sapiens';
 
 @Component({
   selector: 'app-instance-list-view',
@@ -54,6 +66,11 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   deletedDBIds: number[] = [];
   updatedDBIds: number[] = [];
   hasExecutedSearch: boolean = false;
+  // The species quick filter, and whether the class on display can be filtered by it at all.
+  // The filter narrows whatever the list is already showing, so it applies on top of both a
+  // simple search and a set of advanced search conditions.
+  speciesFilter: SpeciesFilter = 'all';
+  hasSpeciesAttribute: boolean = false;
 
   @Input() isLocal: boolean = false;
   @Input() showBatchEdit: boolean = true;
@@ -76,8 +93,9 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       this.className = inputClassName;
       this.skip = 0;
       this.showProgressSpinner = true;
-      this.loadInstances();
-      this.loadSchemaClassAttributes();
+      // The attributes have to be known before the instances are asked for: whether the new
+      // class can be filtered by species at all decides which query is sent.
+      this.loadSchemaClassAttributes().subscribe(() => this.loadInstances());
     }); // Delay to avoid the 'NG0100: ExpressionChangedAfterItHasBeenChecked' error
   }
 
@@ -137,7 +155,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       }
       else {
         // console.debug(this.searchKey);
-        this.dataService.listInstances(this.className, this.skip, this.pageSize, this.searchKey)
+        this.fetchInstancesForBasicSearch(this.skip, this.pageSize)
           .subscribe((instancesList) => {
             this.displayInstances(instancesList);
             this.showProgressSpinner = false;
@@ -186,16 +204,57 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       });
       const combined = Array.from(instanceMap.values());
 
+      this.displayLocalInstances(combined);
+    });
+  }
+
+  /**
+   * Apply the species quick filter, page, and display a set of staged instances. Both the
+   * plain listing and the advanced search over staged instances end here, so the filter is
+   * applied in exactly one place for either of them.
+   */
+  private displayLocalInstances(instances: Instance[]) {
+    this.filterLocalInstancesBySpecies(instances).subscribe(filtered => {
       // Apply skip and limit
-      const paged = combined.slice(this.skip, this.skip + this.pageSize);
+      const paged = filtered.slice(this.skip, this.skip + this.pageSize);
 
       const localInstList: InstanceList = {
         instances: paged,
-        totalCount: combined.length
+        totalCount: filtered.length
       };
       this.displayInstances(localInstList);
       this.showProgressSpinner = false;
     });
+  }
+
+  /**
+   * The staged-instance counterpart of the species condition sent to the server. It is done
+   * here rather than through the generic condition matching so that the two agree on the
+   * awkward case: an instance with no species at all belongs to neither the human nor the
+   * non-human list.
+   */
+  private filterLocalInstancesBySpecies(instances: Instance[]): Observable<Instance[]> {
+    if (!this.isSpeciesFilterActive() || instances.length === 0)
+      return of(instances);
+    return forkJoin(
+      // One instance whose species cannot be read is treated as having none rather than
+      // being allowed to fail the whole listing.
+      instances.map(inst => this.getAttributeValue(inst, SPECIES_ATTRIBUTE).pipe(
+        take(1),
+        catchError(() => of(null))
+      ))
+    ).pipe(
+      map(values => instances.filter((_, i) => this.matchesSpeciesFilter(values[i])))
+    );
+  }
+
+  private matchesSpeciesFilter(value: any): boolean {
+    const names: string[] = (Array.isArray(value) ? value : [value])
+      .filter(name => name != null)
+      .map(name => name.toString());
+    if (this.speciesFilter === 'human')
+      return names.some(name => name === HUMAN_SPECIES_NAME);
+    return names.some(name => name !== HUMAN_SPECIES_NAME);
   }
 
   private displayInstances(instancesList: InstanceList) {
@@ -268,11 +327,16 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
   /**
    * Load the schema class for this instance list so that we can do attribute-based
-   * search.
+   * search. The returned observable completes once the attributes are in place, so that a
+   * caller that needs to know about them (e.g. whether this class has a species attribute)
+   * can wait for it. The class is cached by the data service, so subscribing is cheap.
    */
-  loadSchemaClassAttributes() {
-    if (this.className && this.className.length > 0) {
-      this.dataService.fetchSchemaClass(this.className).subscribe(cls => {
+  loadSchemaClassAttributes(): Observable<string[]> {
+    if (!this.className || this.className.length === 0)
+      return of(this.schemaClassAttributes);
+    return this.dataService.fetchSchemaClass(this.className).pipe(
+      take(1),
+      map(cls => {
         if (cls && cls.attributes) {
           // Make a copy and then sort
           let attributes = [...cls.attributes];
@@ -282,17 +346,72 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
             this.schemaClassAttributes.push(attr.name);
           });
         }
-      });
-    }
+        this.hasSpeciesAttribute = this.schemaClassAttributes.includes(SPECIES_ATTRIBUTE);
+        // A filter carried over from a class that does have species would otherwise keep
+        // narrowing the list with no control on screen to switch it off again.
+        if (!this.hasSpeciesAttribute)
+          this.speciesFilter = 'all';
+        return this.schemaClassAttributes;
+      })
+    );
+  }
+
+  /**
+   * Switch the species quick filter and reload the list. The filter is applied on top of
+   * whatever search is currently in effect rather than replacing it.
+   */
+  onSpeciesFilterChange(filter: SpeciesFilter) {
+    if (this.speciesFilter === filter)
+      return;
+    this.speciesFilter = filter;
+    this.showProgressSpinner = true;
+    // With advanced conditions in play the advanced search has to be re-run so they are
+    // kept; otherwise (including advanced mode with no conditions yet) the simple path
+    // already knows how to send a species-only query.
+    if (this.needAdvancedSearch && this.searchCriteria.length > 0)
+      this.doAdvancedSearch(0);
+    else
+      this.doBasicSearch(0);
+  }
+
+  isSpeciesFilterActive(): boolean {
+    return this.hasSpeciesAttribute && this.speciesFilter !== 'all';
+  }
+
+  /**
+   * The species quick filter expressed as an ordinary search condition, which is how it
+   * reaches the server. 'Not Equal' on a relationship attribute asks for an instance that
+   * has a species other than human, so an instance with no species at all is in neither
+   * the human nor the non-human list.
+   */
+  private getSpeciesCriterium(): SearchCriterium | undefined {
+    if (!this.isSpeciesFilterActive())
+      return undefined;
+    return {
+      attributeName: SPECIES_ATTRIBUTE,
+      operand: this.speciesFilter === 'human' ? 'Equal' : 'Not Equal',
+      searchKey: HUMAN_SPECIES_NAME
+    };
+  }
+
+  private parseSpeciesFilter(value: any): SpeciesFilter {
+    return (value === 'human' || value === 'nonhuman') ? value : 'all';
   }
 
   doBasicSearch(skip: number) {
     this.skip = skip;
-    this.hasExecutedSearch = this.isBasicSearchActive();
+    this.hasExecutedSearch = this.isBasicSearchActive() || this.isSpeciesFilterActive();
     if (this.useRoute) {
       let url = this.getListInstancesURL();
+      const queryParams: Params = {};
       if (this.searchKey && this.searchKey.trim().length > 0)
-        this.router.navigate([url], { queryParams: { query: this.searchKey.trim() } });
+        queryParams['query'] = this.searchKey.trim();
+      // Carried in the URL so the filter survives a reload or a shared link, the same as
+      // the search term does.
+      if (this.isSpeciesFilterActive())
+        queryParams['species'] = this.speciesFilter;
+      if (Object.keys(queryParams).length > 0)
+        this.router.navigate([url], { queryParams: queryParams });
       else
         this.router.navigate([url]);
     } else
@@ -494,24 +613,26 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     }
     this.skip = skip;
     this.hasExecutedSearch = true;
-    // Need attributes, operands and keys separate
-    const { attributes, operands, searchKeys } = this.getAdvancedSearchParams();
+    // Need attributes, operands and keys separate. The species quick filter is deliberately
+    // left out here: it is its own control rather than one of the curator's conditions, so
+    // it travels as its own query parameter and is added back on the way to the server.
+    const { attributes, operands, searchKeys } = this.toSearchParams(this.searchCriteria);
 
     if (this.useRoute) {
       let url = this.getListInstancesURL();
-      this.router.navigate([url],
-        {
-          queryParams: {
-            attributes: attributes.toString(),
-            operands: operands.toString(),
-            // An array becomes a repeated query parameter, keeping terms that contain a
-            // comma intact instead of splitting them apart on the way back in.
-            searchKeys: searchKeys
-          },
-        });
+      const queryParams: Params = {
+        attributes: attributes.toString(),
+        operands: operands.toString(),
+        // An array becomes a repeated query parameter, keeping terms that contain a
+        // comma intact instead of splitting them apart on the way back in.
+        searchKeys: searchKeys
+      };
+      if (this.isSpeciesFilterActive())
+        queryParams['species'] = this.speciesFilter;
+      this.router.navigate([url], { queryParams: queryParams });
     }
     else
-      this.searchInstances(attributes, operands, searchKeys);
+      this.searchInstances(this.searchCriteria);
   }
 
   private getListInstancesURL() {
@@ -525,27 +646,64 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
   /**
    * Search instances based on a set of search criteria.
-   * @param attributeNames
-   * @param operands
-   * @param searchKeys
+   * @param criteria the conditions the curator built; the species quick filter, if one is
+   * set, is added to them here.
    */
-  private searchInstances(attributeNames: string[],
-    operands: string[],
-    searchKeys: string[]
-  ) {
+  private searchInstances(criteria: SearchCriterium[]) {
     this.showProgressSpinner = true;
 
     if (this.isLocal) {
-      this.advancedSearchForLocalInstances(attributeNames, operands, searchKeys);
+      // Staged instances are filtered by species once the criteria have been applied, in
+      // displayLocalInstances.
+      const { attributes, operands, searchKeys } = this.toSearchParams(criteria);
+      this.advancedSearchForLocalInstances(attributes, operands, searchKeys);
     }
     else {
-      this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributeNames, operands, searchKeys)
+      const { attributes, operands, searchKeys } = this.toSearchParams(this.withSpeciesFilter(criteria));
+      this.dataService.searchInstances(this.className, this.skip, this.pageSize, attributes, operands, searchKeys)
         .subscribe(instanceList => {
           this.displayInstances(instanceList);
           this.showProgressSpinner = false;
         })
     }
 
+  }
+
+  /**
+   * The conditions actually sent to the server: the given ones plus the species quick
+   * filter when it is set.
+   */
+  private withSpeciesFilter(criteria: SearchCriterium[]): SearchCriterium[] {
+    const speciesCriterium = this.getSpeciesCriterium();
+    return speciesCriterium ? [...criteria, speciesCriterium] : criteria;
+  }
+
+  /**
+   * The request behind a simple (non-advanced) listing. Without a species filter this is
+   * the plain listInstances call. With one, the two have to be combined into a single
+   * attribute-based query, since listInstances takes a search term and nothing else: the
+   * term is translated into the same condition the server would derive from it on its own,
+   * a number being a dbId and anything else a displayName substring.
+   */
+  private fetchInstancesForBasicSearch(skip: number, limit: number): Observable<InstanceList> {
+    if (!this.isSpeciesFilterActive())
+      return this.dataService.listInstances(this.className, skip, limit, this.searchKey);
+    const criteria = this.withSpeciesFilter(this.basicSearchAsCriteria());
+    const { attributes, operands, searchKeys } = this.toSearchParams(criteria);
+    return this.dataService.searchInstances(this.className, skip, limit, attributes, operands, searchKeys);
+  }
+
+  private basicSearchAsCriteria(): SearchCriterium[] {
+    // In advanced mode the search box shows the accumulated conditions rather than a term
+    // of its own, so there is nothing of the curator's to translate.
+    if (this.needAdvancedSearch)
+      return [];
+    const key = this.searchKey?.trim();
+    if (!key || key.length === 0)
+      return [];
+    return [/^\d+$/.test(key)
+      ? { attributeName: 'dbId', operand: 'Equal', searchKey: key }
+      : { attributeName: 'displayName', operand: 'Contains', searchKey: key }];
   }
 
   advancedSearchForLocalInstances(
@@ -607,15 +765,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       // Combine: updated, new, and deleted instances
       const combined = [...filteredUpdatedByKey, ...filteredNewByKey, ...filteredDeletedByKey];
 
-      // Apply skip and limit
-      const paged = combined.slice(this.skip, this.skip + this.pageSize);
-
-      const localInstList: InstanceList = {
-        instances: paged,
-        totalCount: combined.length
-      };
-      this.displayInstances(localInstList);
-      this.showProgressSpinner = false;
+      this.displayLocalInstances(combined);
     });
   }
 
@@ -869,7 +1019,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     this.showProgressSpinner = true;
     const request = this.needAdvancedSearch && this.searchCriteria.length > 0
       ? this.fetchAllAdvancedSearchResults()
-      : this.dataService.listInstances(this.className, 0, this.instanceCount, this.searchKey);
+      : this.fetchInstancesForBasicSearch(0, this.instanceCount);
 
     request.subscribe({
       next: (instanceList) => {
@@ -899,11 +1049,19 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       this.searchKey = queryParams['query'];
       this.hasExecutedSearch = true;
     }
+    this.speciesFilter = this.parseSpeciesFilter(queryParams['species']);
     // Give it a little bit delay to avoid ng0100 error.
     this.className = params['className'];
     let isChangedChanged = this.className !== params['className'];
     this.className = params['className'];
-    this.loadSchemaClassAttributes();
+    // Wait for the attributes: the species filter asked for in the URL is only honoured
+    // once we know whether this class has a species attribute at all.
+    this.loadSchemaClassAttributes().subscribe(() => this.loadForRoute(queryParams, isChangedChanged));
+  }
+
+  private loadForRoute(queryParams: Params, isChangedChanged: boolean) {
+    if (this.isSpeciesFilterActive())
+      this.hasExecutedSearch = true;
     if (queryParams['attributes'] && queryParams['operands'] && queryParams['searchKeys']) { // This is for search
       // Need to get attributes
       let attributes = queryParams['attributes'].split(',');
@@ -937,7 +1095,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     else
       this.loadInstances();
     if (isChangedChanged) {
-      this.loadSchemaClassAttributes();
+      this.loadSchemaClassAttributes().subscribe();
       // Clear out selected instances when class changes
       this.clearSelectedInstances();
     } // Need to force to reload attributes there.
@@ -952,11 +1110,11 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     return !!this.searchKey && this.searchKey.trim().length > 0;
   }
 
-  private getAdvancedSearchParams(): { attributes: string[]; operands: string[]; searchKeys: string[] } {
+  private toSearchParams(criteria: SearchCriterium[]): { attributes: string[]; operands: string[]; searchKeys: string[] } {
     let attributes: string[] = [];
     let operands: string[] = [];
     let searchKeys: string[] = [];
-    this.searchCriteria.forEach(criterium => {
+    criteria.forEach(criterium => {
       attributes.push(criterium.attributeName);
       operands.push(criterium.operand);
       // The three lists are zipped back together by position on the server, so every
@@ -973,7 +1131,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   }
 
   private fetchAllAdvancedSearchResults(): Observable<InstanceList> {
-    const { attributes, operands, searchKeys } = this.getAdvancedSearchParams();
+    const { attributes, operands, searchKeys } = this.toSearchParams(this.withSpeciesFilter(this.searchCriteria));
     return this.dataService.searchInstances(this.className, 0, this.instanceCount, attributes, operands, searchKeys);
   }
 

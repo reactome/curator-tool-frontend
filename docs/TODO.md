@@ -59,8 +59,6 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 
 - Request to view only one pathway's realted instances (Karen requested)
 
-- a quick filter for species: 1. No filter, 2. Human only, 3. No human filter 
-
 
 ### TODO
 
