@@ -1,4 +1,10 @@
 <h2 class="dialog_title" mat-dialog-title cdkdraghandle>Referrers of "{{instance.displayName}} [{{instance.dbId}}]"
+  <!-- A real anchor, not a button, so the URL can be copied with the browser's own
+       "copy link address" as well as opened. -->
+  <a class="permalink" [href]="referrersUrl" target="_blank" rel="noopener"
+     matTooltip="Open this referrer list in a new tab using a stable URL that can be bookmarked or shared">
+    <mat-icon>link</mat-icon>
+  </a>
 </h2>
 <mat-dialog-content style="width: 100%;">
 <app-referrers-table [instance]="instance"></app-referrers-table>

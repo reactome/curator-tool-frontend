@@ -17,6 +17,14 @@ export class ReferrersDialogComponent {
               public dialogRef: MatDialogRef<ReferrersDialogComponent>) {
   }
 
+  /**
+   * The stable URL of this referrer list, handled by ReferrersPageComponent. Absolute so it
+   * resolves the same regardless of the instance the dialog was opened from.
+   */
+  get referrersUrl(): string {
+    return `/schema_view/instance/${this.instance.dbId}/referrers`;
+  }
+
 
   onCancel() {
     this.dialogRef.close();

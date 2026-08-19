@@ -1,0 +1,72 @@
+.referrals-page {
+  padding: 16px 24px 32px;
+  color: var(--on-surface);
+}
+
+.referrals-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 8px 0 16px;
+}
+
+.referrals-subtitle,
+.referrals-note,
+.referrals-empty,
+.referrals-error {
+  margin: 0 0 16px;
+}
+
+.referrals-error {
+  color: var(--error);
+}
+
+.referrals-note {
+  font-style: italic;
+}
+
+.spinner {
+  margin: 16px 0;
+}
+
+.referrals-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  tr {
+    border-bottom: 1px solid var(--outline-variant);
+  }
+
+  // Shade every other group so the referrers of one attribute stay visually together
+  // even when a single group spans many wrapped lines.
+  tr.alt-row {
+    background-color: var(--surface-variant);
+  }
+
+  th,
+  td {
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+}
+
+.attribute-cell {
+  // The attribute name is schema vocabulary rather than prose, so it is set apart the same
+  // way attribute names are elsewhere in the tool.
+  font-family: monospace;
+  font-style: italic;
+  font-weight: normal;
+  white-space: nowrap;
+  padding-left: 32px !important;
+  width: 1%; // Shrink to the widest attribute name and give the rest of the row to the referrers
+}
+
+.referrer-link {
+  display: block;
+  color: var(--primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

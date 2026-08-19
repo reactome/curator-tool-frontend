@@ -1,0 +1,37 @@
+<div class="referrals-page">
+  <h2 class="referrals-title">Referrals</h2>
+
+  <ng-container *ngIf="showProgressSpinner">
+    <mat-spinner class="spinner" diameter="40"></mat-spinner>
+  </ng-container>
+
+  <p class="referrals-error" *ngIf="errorMessage">{{errorMessage}}</p>
+
+  <ng-container *ngIf="!showProgressSpinner && !errorMessage">
+    <p class="referrals-subtitle">
+      Other instances that reference
+      <a *ngIf="instance" [routerLink]="instanceLink(instance)">{{instanceLabel(instance)}}</a>,
+      grouped by attribute:
+    </p>
+
+    <p class="referrals-note" *ngIf="totalCount >= 1000">
+      Complete referrer list is too large to display.
+    </p>
+
+    <p class="referrals-empty" *ngIf="referrerGroups.length === 0">
+      No other instance references this one.
+    </p>
+
+    <table class="referrals-table" *ngIf="referrerGroups.length > 0">
+      <tbody>
+        <tr *ngFor="let group of referrerGroups; let odd = odd" [class.alt-row]="odd">
+          <th scope="row" class="attribute-cell">({{group.attributeName}})</th>
+          <td class="referrers-cell">
+            <a class="referrer-link" *ngFor="let referrer of group.referrers"
+              [routerLink]="instanceLink(referrer)">{{instanceLabel(referrer)}}</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </ng-container>
+</div>
