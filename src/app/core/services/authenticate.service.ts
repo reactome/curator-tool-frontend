@@ -84,6 +84,15 @@ export const authGuard: CanActivateFn = (route, state) => {
     return true; // Allow navigation
   }
 
+  // Remember where the user was trying to go so LoginComponent can send them there after
+  // they authenticate. Without this, a deep link (pasted URL, bookmark, or any in-app
+  // navigation made with an expired token) was blocked here and the saved-URL slot stayed
+  // empty, so login always fell back to /home. HeaderInterceptor and
+  // DataService.handleErrorMessage already do the same for the mid-session 401 case; this
+  // covers the case where the navigation never even gets as far as a request.
+  if (state.url && !state.url.startsWith('/login'))
+    sessionStorage.setItem('currentUrl', state.url);
+
   // Redirect to login if no valid token
   const router = inject(Router);
   router.navigate(['/login']);
