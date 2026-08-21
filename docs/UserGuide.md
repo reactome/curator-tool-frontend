@@ -225,6 +225,22 @@ Bookmarks give you fast access to instances you use repeatedly — and let you d
 
 - From an instance-list row: the `bookmark` button (tooltip **"add bookmark"**), disabled for deleted instances.
 - From the instance editor toolbar: the `bookmark` button (tooltip **"Add Bookmark"**).
+- In bulk: the `file_upload` button at the top of the BOOKMARKS panel (tooltip **"Add bookmarks in bulk: paste dbIds, or upload a CSV/TSV file of them"**) — see below.
+
+### Adding a list of dbIds in bulk
+
+The `file_upload` button at the top of the BOOKMARKS panel opens the **Add Bookmarks** dialog, which bookmarks a whole list of instances at once. It offers two ways of naming them, and you use whichever suits what you have:
+
+**1. Paste dbIds.** Paste the dbIds into the text box and press **Add pasted dbIds**. Anything that is not a digit separates one dbId from the next, so there is nothing to tidy up first: a column copied out of a spreadsheet, a comma-separated list out of an email, dbIds typed by hand with spaces between them, even a sentence with the dbIds embedded in it, all read the same. Two details worth knowing:
+
+- A minus sign standing on its own in front of the digits — at the start, or after a space, comma or newline — is read as the number's sign, so a new, not-yet-committed instance (whose dbId is negative) can be pasted exactly as it is shown.
+- A minus joined to what precedes it is just a separator, so `R-HSA-111` is read as the dbId `111`, not as `-111`. Pasting stable ids does not do what you want — they are separated into their number parts.
+
+**2. Upload a file.** Press **Choose a CSV or TSV file** and pick a file from your own computer. The only requirement is that the first column holds the dbIds; every other column is ignored, and a header row is skipped — so a CSV downloaded straight from an instance list (`dbId,displayName,schemaClass`) works as is, and so does a plain list of dbIds one per line. Quoted values, tab-separated cells, blank lines, CRLF line endings and a spreadsheet's byte-order mark are all handled.
+
+**What you are told afterwards.** Either way, a dialog reports how many bookmarks were added, and — where it applies — how many of the dbIds were already bookmarked, how many repeated dbIds were read once, and which dbIds no instance could be found for (a dbId that no longer exists, or a typo). For a file, lines holding no dbId at all are listed rather than passed over silently, so a file in an unexpected shape does not look like a successful upload.
+
+**Limits.** At most 500 dbIds are used at a time; if you give more, you are told how many were ignored. Instances already in the list are left where they are rather than moved to the end.
 
 ### The BOOKMARKS strip
 
@@ -232,6 +248,7 @@ A vertical **BOOKMARKS** handle is anchored to the right edge of Schema View and
 
 Inside the panel:
 
+- A toolbar row at the top holds the `file_upload` button that [uploads a list of dbIds](#uploading-a-list-of-dbids).
 - Bookmarks can be **reordered** by dragging.
 - Each row has an **open/navigate** button (`open_with` icon + the instance's display name; tooltip shows `<SchemaClass> [dbId]`) that navigates to the instance, and a **remove** button (`clear` icon, tooltip **"Remove Instance"**).
 - Empty state: **"No bookmarks to show"**.

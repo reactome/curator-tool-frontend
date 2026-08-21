@@ -1,0 +1,45 @@
+mat-dialog-content {
+  min-width: 380px;
+}
+
+.add-bookmarks-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px 0 16px 0;
+
+  // A rule between the two options rather than a divider component, so each option reads as its
+  // own container without pulling another Material module in.
+  & + .add-bookmarks-option {
+    border-top: solid 1px #ccc;
+    padding-top: 16px;
+  }
+}
+
+.option-title {
+  margin: 0 0 4px 0;
+}
+
+.option-hint {
+  margin: 0 0 12px 0;
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
+.paste-field {
+  width: 100%;
+
+  textarea {
+    // A pasted list is read down the page, so keep the wrapping off and let it scroll.
+    white-space: pre;
+    resize: vertical;
+  }
+}
+
+.option-action {
+  align-self: flex-start;
+}
+
+.hidden-file-input {
+  display: none;
+}

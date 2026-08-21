@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CdkDragDrop, moveItemInArray } from "@angular/cdk/drag-drop";
+import { MatDialog } from '@angular/material/dialog';
 import { Instance } from "../../../../core/models/reactome-instance.model";
 import { DragDropService } from "../../drag-drop.service";
 import { bookmarkedInstances } from "../../state/bookmark.selectors";
@@ -9,6 +10,8 @@ import { Router, ActivatedRoute } from "@angular/router";
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { DataService } from 'src/app/core/services/data.service';
 import { Subscription, take } from 'rxjs';
+import { BookmarkUploadService } from '../../bookmark-upload.service';
+import { AddBookmarksDialogComponent, AddBookmarksDialogResult } from '../add-bookmarks-dialog/add-bookmarks-dialog.component';
 
 @Component({
   selector: 'app-bookmark-list',
@@ -21,13 +24,15 @@ export class BookmarkListComponent implements OnInit {
   cachedBookmarks: any[] = [];
 
   private subscriptions: Subscription[] = [];
-  
+
   constructor(public dragDropService: DragDropService,
     public store: Store,
     private router: Router,
     private route: ActivatedRoute,
     private instUtils: InstanceUtilities,
-    private dataService: DataService) {
+    private dataService: DataService,
+    private bookmarkUploadService: BookmarkUploadService,
+    private dialog: MatDialog) {
     // Note: An instance that is marked as deleted should not be used and therefore is
     // dropped from the bookmark list. This is different from the instance view: an
     // instance is deleted but not commited can still be used in the attribute list!!!
@@ -91,6 +96,24 @@ export class BookmarkListComponent implements OnInit {
     moveItemInArray(this.bookmarks, event.previousIndex, event.currentIndex);
     let attributeName = event.container.id;
     console.log(attributeName)
+  }
+
+  /**
+   * Ask for the instances to bookmark in bulk - as pasted dbIds or as a CSV/TSV file of them - and
+   * bookmark whichever the curator gave. The heavy lifting - parsing the dbIds, looking the
+   * instances up and reporting what was added - is BookmarkUploadService's.
+   */
+  openAddBookmarks() {
+    this.dialog.open(AddBookmarksDialogComponent)
+      .afterClosed()
+      .subscribe((result: AddBookmarksDialogResult | null | undefined) => {
+        if (!result)
+          return; // Cancelled
+        if (result.file)
+          this.bookmarkUploadService.uploadFile(result.file);
+        else if (result.pastedText)
+          this.bookmarkUploadService.uploadPastedText(result.pastedText);
+      });
   }
 
   onRemove(instance: Instance) {

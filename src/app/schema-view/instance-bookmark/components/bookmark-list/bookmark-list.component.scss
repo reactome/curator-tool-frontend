@@ -1,12 +1,46 @@
 :host {
-  display: block;
+  // A fixed toolbar above the scrolling list: the toolbar keeps its own height and the
+  // list takes whatever is left of the hosting panel.
+  display: flex;
+  flex-direction: column;
   height: 100%;
 }
 
+.bookmark-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  align-items: center;
+  // Keep the button off the panel's top border instead of flush against it.
+  padding: 3px 4px;
+  border-bottom: solid 1px #ccc;
+}
+
+.upload_button {
+  // The panel is narrow, so keep the button tighter than a default icon button.
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  // An icon button lays its icon out on a text baseline, which leaves the glyph
+  // sitting high once the button is shortened, so center it explicitly.
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: normal;
+
+  .mat-icon {
+    margin: 0;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+  }
+}
+
 .bookmark-list {
-  // Fill whatever height the hosting panel gives us so the list stays inside
+  // Fill whatever height the hosting panel leaves us so the list stays inside
   // the panel's bounds instead of running past the toolbar / status bar.
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   // Fill the hosting panel rather than assuming its width, so the panel's border
   // and rounded corners stay visible.
   width: 100%;

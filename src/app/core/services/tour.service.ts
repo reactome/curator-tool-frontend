@@ -130,7 +130,7 @@ const SCHEMA_TOUR: TourStep[] = [
     id: 'schema-bookmarks',
     title: 'Bookmarks Strip',
     content:
-      'The right edge strip holds your bookmarked instances. Expand or collapse it by clicking the BOOKMARKS label. Drag a bookmarked instance onto a compatible attribute slot in the editor to assign it as a value.',
+      'The right edge strip holds your bookmarked instances. Expand or collapse it by clicking the BOOKMARKS label. Drag a bookmarked instance onto a compatible attribute slot in the editor to assign it as a value. Use the upload button at the top of the strip to bookmark a whole list of instances at once: paste their dbIds, or upload a CSV/TSV file whose first column holds them.',
     targetSelector: 'app-bookmark-list',
     position: 'left',
   },

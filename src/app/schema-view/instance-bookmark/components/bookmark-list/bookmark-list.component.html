@@ -1,3 +1,10 @@
+<div class="bookmark-toolbar">
+  <button mat-icon-button color="primary" class="upload_button" (click)="openAddBookmarks()"
+          matTooltip="Add bookmarks in bulk: paste dbIds, or upload a CSV/TSV file of them">
+    <mat-icon>file_upload</mat-icon>
+  </button>
+</div>
+
 <div cdkDropList class="bookmark-list"
      id="bookmark-list"
      [cdkDropListConnectedTo]="dragDropService.dropLists"

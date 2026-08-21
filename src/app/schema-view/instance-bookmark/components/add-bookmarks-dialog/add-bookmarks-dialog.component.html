@@ -1,0 +1,40 @@
+<h2 mat-dialog-title>Add Bookmarks</h2>
+
+<mat-dialog-content>
+  <div class="add-bookmarks-option">
+    <h3 class="option-title">Paste dbIds</h3>
+    <p class="option-hint">
+      Anything that is not a digit separates one dbId from the next, so a column copied out of a
+      spreadsheet, a comma-separated list out of an email, or dbIds typed by hand can be pasted
+      as they are.
+    </p>
+    <mat-form-field appearance="fill" class="paste-field">
+      <mat-label>dbIds</mat-label>
+      <textarea matInput rows="6" cdkFocusInitial [(ngModel)]="pastedText"
+                placeholder="111 222 333"></textarea>
+    </mat-form-field>
+    <button mat-stroked-button color="primary" class="option-action"
+            [disabled]="pastedTextIsEmpty" (click)="addPasted()">
+      Add pasted dbIds
+    </button>
+  </div>
+
+  <div class="add-bookmarks-option">
+    <h3 class="option-title">Upload a file</h3>
+    <p class="option-hint">
+      A CSV or TSV file whose first column holds the dbIds. Every other column is ignored, and a
+      header row is skipped.
+    </p>
+    <input #fileInput type="file" class="hidden-file-input"
+           accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+           (change)="onFileSelected($event)" />
+    <button mat-stroked-button color="primary" class="option-action" (click)="chooseFile()">
+      <mat-icon>file_upload</mat-icon>
+      Choose a CSV or TSV file
+    </button>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="null">Cancel</button>
+</mat-dialog-actions>
