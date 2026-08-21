@@ -43,12 +43,14 @@ describe('InactivityService', () => {
     service = TestBed.inject(InactivityService);
     localStorage.setItem('token', 'a-token');
     localStorage.removeItem(ACTIVITY_KEY);
+    sessionStorage.removeItem('currentUrl');
   });
 
   afterEach(() => {
     service.ngOnDestroy();
     localStorage.removeItem('token');
     localStorage.removeItem(ACTIVITY_KEY);
+    sessionStorage.removeItem('currentUrl');
   });
 
   it('warns and then logs out once every tab has gone quiet', fakeAsync(() => {
@@ -59,6 +61,19 @@ describe('InactivityService', () => {
 
     afterClosed.next('logout');
     expect(userInstances.persistInstances).toHaveBeenCalledWith(true, jasmine.any(Function));
+  }));
+
+  // The bug this covers: an idle logout replaced the tab's view with the login page without
+  // recording what that view was, so several tabs left to time out overnight - each on a
+  // different instance - all came back on /home with their links lost. Every other teardown
+  // path (the route guard, the interceptor, a sibling tab's logout) already saved it.
+  it('remembers the view it was showing so logging back in returns there', fakeAsync(() => {
+    service.start();
+
+    tick(17 * MINUTE);
+    afterClosed.next('logout');
+
+    expect(sessionStorage.getItem('currentUrl')).toBeTruthy();
   }));
 
   it('says nothing while the curator is working in another tab', fakeAsync(() => {

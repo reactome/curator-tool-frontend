@@ -1,13 +1,16 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { GeneLlmComponentComponent } from './gene-llm/gene-llm-component.component';
-import { authGuard } from './core/services/authenticate.service';
+import { authGuard, loginGuard } from './core/services/authenticate.service';
 
 export const routes: Routes = [
   {
     path: "login",
     loadChildren: () =>
       import("./auth/auth.module").then((m) => m.AuthModule),
+    // Send a tab that already has a valid session straight back to the view it was waiting
+    // to resume, rather than showing it a login form it does not need.
+    canActivate: [loginGuard],
   },
   {
     path: "home",

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, catchError, filter, finalize, of, switchMap, take, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { TokenRefreshService } from '../services/token-refresh.service';
+import { saveReturnUrl } from '../services/session-url';
 
 // Marks a request that has already been transparently retried once after a 401 while the
 // stored JWT was still valid, so we never retry the same request in an endless loop.
@@ -160,10 +161,7 @@ export class HeaderInterceptor implements HttpInterceptor {
   // Saves the page the user is currently on (so the login flow can send them back
   // there afterwards) and redirects to /login. Skips saving when already on /login.
   private redirectToLogin(): void {
-    const currentUrl = window.location.pathname + window.location.search + window.location.hash;
-    if (currentUrl !== '/login') {
-      sessionStorage.setItem('currentUrl', currentUrl);
-    }
+    saveReturnUrl();
     this.router.navigate(['/login']);
   }
 

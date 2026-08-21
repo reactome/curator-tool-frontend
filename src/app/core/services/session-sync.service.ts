@@ -2,6 +2,7 @@ import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
+import { saveReturnUrl, takeReturnUrl } from './session-url';
 
 /**
  * Propagates a logout to every other tab/window of this app.
@@ -92,9 +93,7 @@ export class SessionSyncService implements OnDestroy {
   private resumeIfWaitingAtLogin(): void {
     if (!this.router.url.startsWith('/login'))
       return;
-    const url = sessionStorage.getItem('currentUrl') ?? '/home';
-    sessionStorage.removeItem('currentUrl');
-    this.reloadTo(url);
+    this.reloadTo(takeReturnUrl());
   }
 
   // Isolated purely so tests can intercept it without triggering a real navigation.
@@ -112,7 +111,7 @@ export class SessionSyncService implements OnDestroy {
     console.debug('Session was ended in another tab; logging out this tab as well.');
     // Save where the user was so re-authenticating lands them back here, matching what
     // HeaderInterceptor does when it gives up on a session.
-    sessionStorage.setItem('currentUrl', currentUrl);
+    saveReturnUrl(currentUrl);
     // Close anything still open - a selection dialog, a wizard, the inactivity warning.
     // Leaving them up is what makes the tab look like it is still accepting work.
     this.dialog.closeAll();

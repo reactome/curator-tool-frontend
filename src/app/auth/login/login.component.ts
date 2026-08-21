@@ -7,6 +7,7 @@ import { catchError, of } from 'rxjs';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { UserInstancesService } from './user-instances.service';
+import { takeReturnUrl } from 'src/app/core/services/session-url';
 
 
 @Component({
@@ -45,10 +46,8 @@ export class LoginComponent{
       if (token) {
         localStorage.setItem('token', token);
         localStorage.setItem('login_username', data.username);
-        let url: string = sessionStorage.getItem('currentUrl') ?? '/home';
-        // todo: check login here.
-
-        sessionStorage.removeItem('currentUrl'); // Clear the saved URL after using it
+        // Where this tab was before its session ended, if anything remembered it.
+        const url: string = takeReturnUrl();
 
         // Initialize schema classes if they haven't been loaded yet
         if (!this.dataService.isSchemaClassesLoaded()) {

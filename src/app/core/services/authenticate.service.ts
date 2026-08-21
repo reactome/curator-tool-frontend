@@ -4,6 +4,7 @@ import { catchError, Observable, tap, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { CanActivateFn, Router } from "@angular/router";
+import { isReturnUrlResumable, saveReturnUrl, takeReturnUrl } from "./session-url";
 
 @Injectable({
   providedIn: 'root'
@@ -90,11 +91,37 @@ export const authGuard: CanActivateFn = (route, state) => {
   // empty, so login always fell back to /home. HeaderInterceptor and
   // DataService.handleErrorMessage already do the same for the mid-session 401 case; this
   // covers the case where the navigation never even gets as far as a request.
-  if (state.url && !state.url.startsWith('/login'))
-    sessionStorage.setItem('currentUrl', state.url);
+  saveReturnUrl(state.url);
 
   // Redirect to login if no valid token
   const router = inject(Router);
   router.navigate(['/login']);
   return false;
+};
+
+/**
+ * Keeps an already-authenticated tab off the login page, sending it to the view it was
+ * waiting to resume.
+ *
+ * A tab torn down by an idle logout sits at /login with its intended view remembered in
+ * sessionStorage, and SessionSyncService brings it back automatically once a sibling tab logs
+ * in - but only for as long as the tab stays open to hear that storage event. A curator who
+ * instead reloads the stale-looking window by hand (the natural reaction) short-circuits all
+ * of it: the reload lands on /login, the login form comes up even though the session is
+ * perfectly valid, and nothing ever consumes the remembered view. That is what "I logged in
+ * on one tab, refreshed the others, and the previous links were lost" looks like from here.
+ *
+ * Deliberately keyed on isReturnUrlResumable() rather than on isAuthenticated(): a tab holding
+ * a token the *server* has stopped accepting still looks authenticated from here, and bouncing
+ * it back to the view whose request just 401'd would only 401 again. See the comment on
+ * isReturnUrlResumable(). With no remembered view there is likewise nothing to resume, so the
+ * login form is shown as before.
+ *
+ * A UrlTree rather than a navigate() call so the router treats it as a redirect and the login
+ * page never renders.
+ */
+export const loginGuard: CanActivateFn = () => {
+  if (!isReturnUrlResumable())
+    return true;
+  return inject(Router).parseUrl(takeReturnUrl());
 };

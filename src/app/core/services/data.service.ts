@@ -15,6 +15,7 @@ import { InstanceNameGenerator } from "../post-edit/InstanceNameGenerator";
 import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 import { QAReport } from "../models/qa-report.model";
 import { ActivatedRoute, Router, UrlSegmentGroup } from "@angular/router";
+import { saveReturnUrl } from "./session-url";
 
 @Injectable({
   providedIn: 'root'
@@ -1588,10 +1589,8 @@ export class DataService {
       // session is genuinely gone. Redirect to /login regardless of whether the
       // locally stored JWT has expired yet — a server-rejected but locally-valid
       // token would otherwise keep the user on a broken page with repeated 401s.
-      const currentUrl = window.location.pathname + window.location.search + window.location.hash;
-      // Save the state to localStorage
-      if (currentUrl !== '/login')
-        sessionStorage.setItem('currentUrl', currentUrl);
+      // Remember where the user was so logging back in returns them here.
+      saveReturnUrl();
       this.router.navigate(['/login']);
       return throwError(() => normalizedError);
     }

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
 import { TokenRefreshService } from './token-refresh.service';
+import { saveReturnUrl } from './session-url';
 import {
   InactivityWarningDialogComponent,
   InactivityWarningResult
@@ -335,6 +336,15 @@ export class InactivityService implements OnDestroy {
       ref.close();
     }
     console.debug('Logging out after inactivity timeout.');
+    // Remember the view this tab is showing before it is replaced by the login page. An idle
+    // logout is not something the curator chose, so logging back in should return them to what
+    // they were reading - and with several tabs open, each on a different view, every one of
+    // them has to remember its own. Saved before persistInstances() rather than in its
+    // callback: that call clears the token, and once it is gone a sibling tab can navigate
+    // this one to /login (SessionSyncService) before the callback ever runs, leaving nothing
+    // here worth recording. A logout the curator asked for saves nothing, by contrast - there
+    // is no interrupted view to come back to.
+    saveReturnUrl();
     this.userInstancesService.persistInstances(true, () => {
       // Defensively clear the session identity even if the persist call failed
       // (the JWT has likely already expired), then send the user to /login.
