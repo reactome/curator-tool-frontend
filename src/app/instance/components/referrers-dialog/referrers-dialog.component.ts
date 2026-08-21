@@ -22,7 +22,7 @@ export class ReferrersDialogComponent {
    * resolves the same regardless of the instance the dialog was opened from.
    */
   get referrersUrl(): string {
-    return `/schema_view/instance/${this.instance.dbId}/referrers`;
+    return `/schema_view/referrers/${this.instance.dbId}`;
   }
 
 

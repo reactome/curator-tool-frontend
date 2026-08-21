@@ -11,7 +11,7 @@
     <mat-form-field appearance="fill" class="paste-field">
       <mat-label>dbIds</mat-label>
       <textarea matInput rows="6" cdkFocusInitial [(ngModel)]="pastedText"
-                placeholder="111 222 333"></textarea>
+                placeholder="111&#10;222&#10;333"></textarea>
     </mat-form-field>
     <button mat-stroked-button color="primary" class="option-action"
             [disabled]="pastedTextIsEmpty" (click)="addPasted()">

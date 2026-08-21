@@ -6,7 +6,7 @@ import { DataService } from 'src/app/core/services/data.service';
 
 /**
  * A routed, bookmarkable view of an instance's referrers, reached via
- * schema_view/instance/:dbId/referrers. Unlike ReferrersDialogComponent (a modal that
+ * schema_view/referrers/:dbId. Unlike ReferrersDialogComponent (a modal that
  * disappears with the instance being edited), this has a stable URL that can be shared or
  * bookmarked, so it renders the referrers as a flat two-column table: the referring
  * attribute on the left and the referring instances on the right.

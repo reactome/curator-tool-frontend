@@ -20,6 +20,11 @@ const routes: Routes = [
           import('../../instance/instance.module').then(m => m.InstanceModule),
       },
       {
+        path: 'referrers',
+        loadChildren: () =>
+          import('../../instance/components/referrers-page/referrers-page.module').then(m => m.ReferrersPageModule),
+      },
+      {
         path: 'class',
         loadChildren: () =>
           import('../schema-class/components/table/schema-class-table.module').then(m => m.SchemaClassTableModule),
