@@ -511,7 +511,14 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   updateTableContent(): void {
-    if (this._referenceInstance === undefined || this._referenceInstance?.dbId !== this._instance?.dbId) {
+    // Without a reference column the filter means "attributes I edited", which InstanceDataSource
+    // answers from the instance's own edit tracking (modifiedAttributes). Whenever a reference
+    // instance is shown the filter means "attributes whose values differ", and that has to be
+    // answered by diffing value against referenceValue: comparing two different instances has no
+    // edit tracking to filter on, so filtering by modifiedAttributes there emptied the table.
+    // InstanceComparisonDataSource does the diff, and unions both schema classes' attributes so
+    // attributes defined by only one of the two classes still show up.
+    if (this._referenceInstance === undefined) {
       this.instanceDataSource = new InstanceDataSource(
         this._instance,
         this.categories,
@@ -531,8 +538,6 @@ export class InstanceTableComponent implements PostEditListener {
         this.filterEdited,
         this._referenceInstance
       );
-      console.debug('updateTableContent - comparison data source: ', this.instanceDataSource);
-      console.log('updateTableContent - comparison data source: ', this.instanceDataSource);
       this.instanceDataSource.connect();
     }
   }

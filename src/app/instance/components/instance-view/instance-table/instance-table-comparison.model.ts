@@ -55,8 +55,8 @@ export class InstanceComparisonDataSource extends DataSource<AttributeValue> {
         // instance.schemaClass.attributes should be the union of the two instance's attributes
         let attributeValues: AttributeValue[] = [];
         allAttributes.forEach((attribute: SchemaAttribute) => {
-            let value = this.instance!.attributes!.get(attribute.name);
-            let refValue = this.referenceInstance!.attributes!.get(attribute.name);
+            let value = this.instance?.attributes?.get(attribute.name);
+            let refValue = this.referenceInstance?.attributes?.get(attribute.name);
 
             if (this.categories.get(attribute.category)) {
                 const attributeValue: AttributeValue = {
@@ -92,7 +92,11 @@ export class InstanceComparisonDataSource extends DataSource<AttributeValue> {
                     const val = values[i];
                     const refVal = referenceValues[i];
                     if (att.attribute.type === AttributeDataType.INSTANCE) {
-                        if (val?.dbId && refVal?.dbId && val.dbId !== refVal.dbId) {
+                        // Compare dbIds even when one side is missing: a value present on one
+                        // instance and absent on the other is a difference, and so is an unsaved
+                        // (dbId-less) instance sitting opposite a database one. Unsaved instances
+                        // have no dbId to compare, so fall back to identity for those.
+                        if ((val?.dbId ?? val) !== (refVal?.dbId ?? refVal)) {
                             return true; // once one value is different, add the whole attribute
                         }
                     } else {
@@ -104,7 +108,6 @@ export class InstanceComparisonDataSource extends DataSource<AttributeValue> {
                 }
                 return false;
             });
-            return of(attributeValues);
         }
 
         // Sort attributes alphabetically by name ascending, otherwise descending.
