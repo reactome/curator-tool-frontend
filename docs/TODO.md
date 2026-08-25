@@ -1,5 +1,7 @@
 ### Bugs
 
+- bug at the server-side: https://pubmed.ncbi.nlm.nih.gov/23872636/. There is an author listed as "UK10K", which is an organization. This may need to be handled. Right now it returns null for the author name.
+
 #### Low priority
 
 - The autoscroll for the instance view in the event view scroll the whole instance view. But we need to scroll the table content only just like in the schemw view. (some fixed, but not fully ideal)
