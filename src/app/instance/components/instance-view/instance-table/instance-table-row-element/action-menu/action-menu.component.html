@@ -19,4 +19,6 @@
     <mat-icon>tag</mat-icon> Stoichiometry</button>
   <button class="action-button" (click)="onClick(EDIT_ACTION.DELETE)">
     <mat-icon>delete</mat-icon> Delete</button>
+  <button *ngIf="canShowReferrers" class="action-button" (click)="onClick(EDIT_ACTION.SHOW_REFERRERS)">
+    <mat-icon>list_alt</mat-icon> Show Referrers</button>
 </mat-action-list>

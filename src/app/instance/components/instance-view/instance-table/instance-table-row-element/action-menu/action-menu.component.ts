@@ -21,6 +21,9 @@ export class ActionMenuComponent {
   // (input, output, hasComponent, repeatedUnit), where the same instance may be
   // repeated. Enables the "Stoichiometry" action to set how many copies exist.
   @Input() canEditStoichiometry: boolean = false;
+  // True when the menu is opened on an existing instance value, which is the only case where
+  // there is an instance whose referrers can be listed.
+  @Input() canShowReferrers: boolean = false;
   @Output() actionItem = new EventEmitter<EDIT_ACTION>();
   EDIT_ACTION = EDIT_ACTION;
   hidePanel: boolean = false;

@@ -22,7 +22,8 @@ export enum EDIT_ACTION {
     DELETE,
     EDIT,
     BOOKMARK,
-    EDIT_STOICHIOMETRY
+    EDIT_STOICHIOMETRY,
+    SHOW_REFERRERS
 }
 
 /**

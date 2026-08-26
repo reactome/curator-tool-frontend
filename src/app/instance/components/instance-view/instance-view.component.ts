@@ -529,9 +529,16 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     // Check if the passed instances has been added already
     // Note: The instance may be reloaded. Therefore, we need to check
     // dbId here
-    for (let tmp of this.viewHistory) {
-      if (tmp.dbId === instance.dbId)
-        return; // Nothing to do
+    const index = this.viewHistory.findIndex(tmp => tmp.dbId === instance.dbId);
+    if (index > -1) {
+      // Revisiting an instance already in the history: drop everything after it so that the
+      // bread-crumb ends at the instance being displayed. This is the same truncation the
+      // bread-crumb itself does when one of its links is clicked, and it is needed for the
+      // cases where the revisit comes from outside the bread-crumb (e.g. re-selecting the
+      // instance in the staged list or in the event tree) and would otherwise leave the
+      // trail pointing past the displayed instance.
+      this.viewHistory.splice(index + 1);
+      return;
     }
     // Use the managed, shell instance so that there is no need to reload when it is committed
     // via an reference graph
