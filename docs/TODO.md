@@ -32,7 +32,9 @@
 - bug when adding golgi apparatus to the inst 
 - TODO: Deleted instance generated displayname 
 
-- Can StructureModified attributes be flagged in events when the StructureModified date is more recent that the Reviewed or internalReviewed?
+- TODO: Can StructureModified attributes be flagged in events when the StructureModified date is more recent that the Reviewed or internalReviewed? Means the review status should be demoted. 
+* make InstanceEdit shell instances also have a dateTime attribute 
+
 - Maybe add curatorComments and replacement instance options directly on the deletion confirmation modal to encourage populating those fields?
 HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidue, Input, InputForReactionLikeEvent, RepeatedUnit, RepeatedUnitForPhysicalEntity
 
