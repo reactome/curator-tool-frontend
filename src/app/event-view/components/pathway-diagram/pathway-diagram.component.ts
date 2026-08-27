@@ -889,7 +889,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         this.isFlowLineAddable = this.diagramUtils.isFlowLineAddable(this.elementUnderMouse, this);
         this.isNodeDeletable = this.diagramUtils.isNodeDeletable(this.elementUnderMouse);
       }
-      else if (this.elementUnderMouse.hasClass("SUB")) { // This is for pathway
+      // Both process nodes (class "SUB") and encapsulated nodes (class "Interacting") are pathway
+      // nodes, so check "Pathway" rather than "SUB" to treat them alike. See isFlowLineAddable,
+      // which makes the same distinction.
+      else if (this.elementUnderMouse.hasClass("Pathway")) {
         this.elementTypeForPopup = ElementType.PATHWAY_NODE;
         this.isFlowLineAddable = this.diagramUtils.isFlowLineAddable(this.elementUnderMouse, this);
         this.isPathwayDeletable = this.diagramUtils.isPathwayDeletable(this.elementUnderMouse);
