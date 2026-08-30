@@ -800,8 +800,12 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     else {
       const matDialogRef = this.qaReportDialogService.openDialog(this.instance!);
       matDialogRef.afterClosed().subscribe((result) => {
-        this.qaReportPassed = result;
-
+        // This call site never supplies a pre-built report, so the dialog's
+        // "Auto-Fix" close result ('autofix') never applies here -- only the
+        // boolean qaReportPassed result is relevant.
+        if (typeof result === 'boolean') {
+          this.qaReportPassed = result;
+        }
       });
     }
   }

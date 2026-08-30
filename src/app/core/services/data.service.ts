@@ -11,6 +11,7 @@ import {
   SchemaClass
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
+import { Diagram } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { InstanceNameGenerator } from "../post-edit/InstanceNameGenerator";
 import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 import { QAReport } from "../models/qa-report.model";
@@ -55,6 +56,7 @@ export class DataService {
   private deleteByDeletedUrl = `${environment.ApiRoot}/deleteByDeleted/`;
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
   private fetchPathwayDiagramForPathwayUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
+  private diagramJsonUrl = `${environment.ApiRoot}/diagram`;
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
   private chebiAutoFillerUrl = `${environment.ApiRoot}/fillChEBI/`;
   private fillReferenceSequenceUrl = `${environment.ApiRoot}/fillRefSequence/`;
@@ -397,6 +399,19 @@ export class DataService {
           })
         );
       })
+    );
+  }
+
+  /**
+   * Fetch the raw pre-generated diagram layout JSON for a pathway (the same
+   * `{id}.json` endpoint the diagram library itself calls internally, but here
+   * fetched independently so the raw nodes/edges/compartments/displayNames are
+   * available uncorrupted by the library's cytoscape conversion, e.g. for
+   * validating drawn content against the live database).
+   */
+  fetchRawDiagram(pathwayId: string | number): Observable<Diagram> {
+    return this.http.get<Diagram>(`${this.diagramJsonUrl}/${pathwayId}.json`).pipe(
+      catchError((err: Error) => this.handleErrorMessage(err))
     );
   }
 
