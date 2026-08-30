@@ -1,6 +1,7 @@
 import { NgModule } from "@angular/core";
 import { PathwayDiagramUtilService } from "./utils/pathway-diagram-utils";
 import { PathwayDiagramValidator } from "./utils/pathway-diagram-validator";
+import { PathwayDiagramContentValidator } from "./utils/diagram-content-validator.service";
 import { InstanceConverter } from "./utils/instance-converter";
 import { DiagramEditorService } from "./utils/diagram-editor.service";
 
@@ -8,6 +9,7 @@ import { DiagramEditorService } from "./utils/diagram-editor.service";
 providers: [
     PathwayDiagramUtilService,
     PathwayDiagramValidator,
+    PathwayDiagramContentValidator,
     InstanceConverter,
     DiagramEditorService
 ]

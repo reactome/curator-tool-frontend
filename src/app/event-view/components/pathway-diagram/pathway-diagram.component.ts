@@ -21,6 +21,8 @@ import { AuthenticateService } from 'src/app/core/services/authenticate.service'
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Store } from '@ngrx/store';
 import { DiagramEditorService, EditingDiagramStoragePayload } from './utils/diagram-editor.service';
+import { PathwayDiagramContentValidator } from './utils/diagram-content-validator.service';
+import { QAReportDialogService } from 'src/app/instance/components/qa-report-dialog/qa-report-dialog.service';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { UnsavedUploadDialogComponent } from 'src/app/shared/components/unsaved-upload-dialog/unsaved-upload-dialog.component';
@@ -114,7 +116,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     private diagramUtils: PathwayDiagramUtilService,
     private authService: AuthenticateService,
     private instUtil: InstanceUtilities,
-    private diagramEditorService: DiagramEditorService
+    private diagramEditorService: DiagramEditorService,
+    private contentValidator: PathwayDiagramContentValidator,
+    private qaReportDialogService: QAReportDialogService
   ) {
   }
 
@@ -1111,6 +1115,40 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
 
       case 'unlockDiagram':
         this.unlockDiagram();
+        break;
+
+      case 'validateDiagram':
+        if (!this.isEditing) return;
+        this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
+          disableClose: true, hasBackdrop: true, autoFocus: false, restoreFocus: false,
+          data: { title: 'Validating Diagram', message: 'Please wait while the diagram is checked against the database...' }
+        });
+        this.contentValidator.validate(this.pathwayId).subscribe({
+          next: (result) => {
+            this.commitWaitDialogRef?.close();
+            this.commitWaitDialogRef = undefined;
+            this.qaReportDialogService.openDialog(result.report.instance, result.report)
+              .afterClosed().subscribe(dialogResult => {
+                if (dialogResult === 'autofix') {
+                  this.pushUndoSnapshot();
+                  this.contentValidator.autoFix(result, this.diagram.cy);
+                  this.markDiagramEdited();
+                }
+              });
+          },
+          error: (err) => {
+            console.error('Diagram content validation failed:', err);
+            this.commitWaitDialogRef?.close();
+            this.commitWaitDialogRef = undefined;
+            this.dialog.open(InfoDialogComponent, {
+              data: {
+                title: 'Error',
+                message: 'Failed to validate the diagram against the database.',
+                instanceInfo: err?.message ?? String(err)
+              }
+            });
+          }
+        });
         break;
 
       default:
