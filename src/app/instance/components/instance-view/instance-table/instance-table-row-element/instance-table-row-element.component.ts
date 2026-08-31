@@ -10,7 +10,7 @@ import {
   ViewChild
 } from '@angular/core';
 import { FormControl, Validators } from "@angular/forms";
-import { ActivatedRoute, Router } from "@angular/router";
+import { ActivatedRoute } from "@angular/router";
 import { Store } from "@ngrx/store";
 import { Observable, take } from "rxjs";
 import { AttributeCategory, AttributeDataType, SchemaAttribute, STOICHIOMETRY_RELATIONSHIP_TYPES } from 'src/app/core/models/reactome-schema.model';
@@ -93,7 +93,6 @@ export class InstanceTableRowElementComponent implements OnInit {
     private _ngZone: NgZone,
     private dataService: DataService,
     private route: ActivatedRoute,
-    private router: Router,
     public dragDropService: DragDropService,
     private instanceUtilities: InstanceUtilities,
     private dialog: MatDialog) {
@@ -212,12 +211,16 @@ export class InstanceTableRowElementComponent implements OnInit {
    * (schema_view/referrers/:dbId), whose URL is stable and can be bookmarked or shared, rather
    * than the referrers dialog opened from the instance view's toolbar. Opened in a new tab so
    * navigating away from the referrers list doesn't lose the current instance view.
+   *
+   * The path is deliberately relative (no leading slash), matching every other window.open()
+   * call in the app: a leading slash is resolved from the server root, bypassing the <base
+   * href> the deployed site is served under (e.g. "/curatortool/"), which opened the referrers
+   * page at the wrong, 404ing address in production.
    */
   private showReferrers() {
     if (this.value === undefined)
       return;
-    const url = this.router.serializeUrl(this.router.createUrlTree(['/schema_view', 'referrers', this.value.dbId]));
-    window.open(url, '_blank');
+    window.open(`schema_view/referrers/${this.value.dbId}`, '_blank');
   }
 
   // Clicking the inline stoichiometry badge opens the stoichiometry editor directly, without
