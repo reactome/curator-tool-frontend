@@ -101,7 +101,7 @@ export class AttributeEditService {
     }
 
     public addValueToAttributeInBatch(attributeValue: AttributeValue, result: any, data: Instance[], replace?: boolean) {
-        let objects = this.dataService.fetchInstanceInBatch(data.map(inst => inst.dbId));
+        let objects = this.dataService.fetchInstances(data.map(inst => inst.dbId));
         // for (let instance of objects) {
         //     this.addValueToAttribute(attributeValue, result, instance, replace);
         // }

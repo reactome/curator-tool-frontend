@@ -68,7 +68,7 @@ describe('BatchEditDialogComponent', () => {
   }
 
   beforeEach(() => {
-    dataService = jasmine.createSpyObj<DataService>('DataService', ['fetchSchemaClass', 'fetchInstanceInBatch']);
+    dataService = jasmine.createSpyObj<DataService>('DataService', ['fetchSchemaClass', 'fetchInstances']);
     newInstanceDialogService = jasmine.createSpyObj<NewInstanceDialogService>('NewInstanceDialogService', ['openDialog']);
     selectInstanceDialogService = jasmine.createSpyObj<SelectInstanceDialogService>('SelectInstanceDialogService', ['openDialog']);
     attributeEditService = jasmine.createSpyObj<AttributeEditService>('AttributeEditService', [
@@ -90,7 +90,7 @@ describe('BatchEditDialogComponent', () => {
 
     component.selectedAttribute = textAttribute;
     component.storeAggregatedAttributes = new Set(['old text', 'different text']);
-    dataService.fetchInstanceInBatch.and.returnValue(of([instance1, instance2]));
+    dataService.fetchInstances.and.returnValue(of([instance1, instance2]));
     attributeListDialogService.openDialog.and.returnValue({ afterClosed: () => of(['old text']) } as any);
 
     component.onSelectTextAction(EDIT_ACTION.REPLACE_NEW);
@@ -114,7 +114,7 @@ describe('BatchEditDialogComponent', () => {
 
     component.selectedAttribute = textAttribute;
     component.storeAggregatedAttributes = new Set(['obsolete', 'different text']);
-    dataService.fetchInstanceInBatch.and.returnValue(of([instance1, instance2]));
+    dataService.fetchInstances.and.returnValue(of([instance1, instance2]));
     attributeListDialogService.openDialog.and.returnValue({ afterClosed: () => of(['obsolete']) } as any);
 
     component.onSelectTextAction(EDIT_ACTION.DELETE);
@@ -140,7 +140,7 @@ describe('BatchEditDialogComponent', () => {
 
     component.selectedAttribute = instanceAttribute;
     component.storeAggregatedAttributes = new Set([oldReference, otherReference]);
-    dataService.fetchInstanceInBatch.and.returnValue(of([instance1, instance2]));
+    dataService.fetchInstances.and.returnValue(of([instance1, instance2]));
     attributeListDialogService.openDialog.and.returnValue({ afterClosed: () => of([oldReference]) } as any);
     newInstanceDialogService.openDialog.and.returnValue({ afterClosed: () => of(createdReference) } as any);
 
@@ -171,7 +171,7 @@ describe('BatchEditDialogComponent', () => {
 
     component.selectedAttribute = instanceAttribute;
     component.storeAggregatedAttributes = new Set([oldRef, otherRef]);
-    dataService.fetchInstanceInBatch.and.returnValue(of([instance1, instance2]));
+    dataService.fetchInstances.and.returnValue(of([instance1, instance2]));
     // List dialog: user selects only oldRef to replace
     attributeListDialogService.openDialog.and.returnValue({ afterClosed: () => of([oldRef]) } as any);
     // Select dialog: user picks selectedRef as replacement (dbId > 0 → routes through addInstanceViaSelect)

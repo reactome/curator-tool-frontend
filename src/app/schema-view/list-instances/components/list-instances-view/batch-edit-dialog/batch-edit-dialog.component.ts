@@ -315,7 +315,7 @@ export class BatchEditDialogComponent implements PostEditListener {
   }
 
   private aggregateAttributes() {
-    this.dataService.fetchInstanceInBatch(this.data.map(inst => inst.dbId)).subscribe((objects: any[]) => {
+    this.dataService.fetchInstances(this.data.map(inst => inst.dbId)).subscribe((objects: any[]) => {
       this._instances = [...objects]; // for editing
       let aggregatedAttributes: Set<any> = new Set();
       for (let instance of this._instances) {
@@ -492,7 +492,7 @@ export class BatchEditDialogComponent implements PostEditListener {
       }
     }
 
-    return this.dataService.fetchInstanceInBatch(Array.from(currentDbIds)).pipe(
+    return this.dataService.fetchInstances(Array.from(currentDbIds)).pipe(
       map((objects: Instance[]) => {
         this._instances = [...objects];
         return this._instances;

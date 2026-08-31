@@ -25,9 +25,9 @@ describe('BookmarkUploadService', () => {
     bookmarks = [];
     removedNewDbIds = [];
 
-    dataService = jasmine.createSpyObj<DataService>('DataService', ['fetchInstanceInBatch']);
+    dataService = jasmine.createSpyObj<DataService>('DataService', ['fetchInstances']);
     // The default stand-in for the server: every requested dbId exists.
-    dataService.fetchInstanceInBatch.and.callFake((dbIds: number[]) => of(dbIds.map(makeInstance)));
+    dataService.fetchInstances.and.callFake((dbIds: number[]) => of(dbIds.map(makeInstance)));
 
     instUtils = jasmine.createSpyObj<InstanceUtilities>('InstanceUtilities',
       ['makeShell', 'isPermanentlyRemovedNewInstance']);
@@ -192,7 +192,7 @@ describe('BookmarkUploadService', () => {
     it('bookmarks every dbId pasted, in the order they were pasted', () => {
       service.uploadPastedText('333, 111, 222');
 
-      expect(dataService.fetchInstanceInBatch).toHaveBeenCalledWith([333, 111, 222]);
+      expect(dataService.fetchInstances).toHaveBeenCalledWith([333, 111, 222]);
       expect(addedDbIds()).toEqual([333, 111, 222]);
       expect(dialogData().message).toContain('Added 3 bookmarks');
     });
@@ -200,7 +200,7 @@ describe('BookmarkUploadService', () => {
     it('adds nothing and explains itself when nothing usable was pasted', () => {
       service.uploadPastedText('no dbIds here');
 
-      expect(dataService.fetchInstanceInBatch).not.toHaveBeenCalled();
+      expect(dataService.fetchInstances).not.toHaveBeenCalled();
       expect(store.dispatch).not.toHaveBeenCalled();
       expect(dialogData().message).toContain('No bookmarks were added');
       // Worded for a paste rather than for a file, which is not what was given.
@@ -212,7 +212,7 @@ describe('BookmarkUploadService', () => {
     it('bookmarks every dbId in the file, in the file\'s order', () => {
       upload('dbId,displayName\n333,"C"\n111,"A"\n222,"B"');
 
-      expect(dataService.fetchInstanceInBatch).toHaveBeenCalledWith([333, 111, 222]);
+      expect(dataService.fetchInstances).toHaveBeenCalledWith([333, 111, 222]);
       expect(addedDbIds()).toEqual([333, 111, 222]);
       expect(dialogData().message).toContain('Added 3 bookmarks');
     });
@@ -228,8 +228,8 @@ describe('BookmarkUploadService', () => {
     });
 
     it('reports the dbIds with no instance behind them and bookmarks the rest', () => {
-      // findByDbIds leaves out a dbId it cannot find rather than failing the request.
-      dataService.fetchInstanceInBatch.and.returnValue(of([makeInstance(111)]));
+      // fetchInstances leaves out a dbId it cannot resolve rather than failing the request.
+      dataService.fetchInstances.and.returnValue(of([makeInstance(111)]));
 
       upload('111\n999');
 
@@ -243,7 +243,7 @@ describe('BookmarkUploadService', () => {
 
       upload('111\n222');
 
-      expect(dataService.fetchInstanceInBatch).toHaveBeenCalledWith([222]);
+      expect(dataService.fetchInstances).toHaveBeenCalledWith([222]);
       expect(addedDbIds()).toEqual([222]);
       expect(dialogData().message).toContain('1 of the dbIds was already bookmarked');
     });
@@ -253,14 +253,14 @@ describe('BookmarkUploadService', () => {
 
       upload('-1\n222');
 
-      expect(dataService.fetchInstanceInBatch).toHaveBeenCalledWith([222]);
+      expect(dataService.fetchInstances).toHaveBeenCalledWith([222]);
       expect(addedDbIds()).toEqual([222]);
     });
 
     it('adds nothing and explains itself when the file holds no dbIds', () => {
       upload('dbId,displayName\n');
 
-      expect(dataService.fetchInstanceInBatch).not.toHaveBeenCalled();
+      expect(dataService.fetchInstances).not.toHaveBeenCalled();
       expect(store.dispatch).not.toHaveBeenCalled();
       expect(dialogData().message).toContain('No bookmarks were added');
       expect(dialogData().instanceInfo).toContain('no dbIds');
@@ -269,7 +269,7 @@ describe('BookmarkUploadService', () => {
     it('does not report an upload that failed on the way to the server', () => {
       // The failure already raises the app-wide error banner; a "nothing was added" dialog
       // on top of it would be reporting a result the upload never reached.
-      dataService.fetchInstanceInBatch.and.returnValue(throwError(() => new Error('HTTP 500 error')));
+      dataService.fetchInstances.and.returnValue(throwError(() => new Error('HTTP 500 error')));
 
       upload('111');
 

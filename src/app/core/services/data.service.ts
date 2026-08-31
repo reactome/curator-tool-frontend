@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpResponse } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
-import { catchError, combineLatest, concatMap, EMPTY, forkJoin, from, map, Observable, of, Subject, switchMap, take, tap, throwError, toArray } from 'rxjs';
+import { catchError, combineLatest, concatMap, EMPTY, forkJoin, from, map, mergeMap, Observable, of, Subject, switchMap, take, tap, throwError, toArray } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
 import { DiagramLock, Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstanceBackupSummary, UserInstances } from "../models/reactome-instance.model";
@@ -51,7 +51,6 @@ export class DataService {
   private getReferrersUrl = `${environment.ApiRoot}/getReferrers/`;
   private deleteInstanceUrl = `${environment.ApiRoot}/delete/`;
   private fetchQAReportUrl = `${environment.ApiRoot}/qaReport/`;
-  private fetchInstancesInBatchUrl = `${environment.ApiRoot}/findByDbIds/`;
   private deleteByDeletedUrl = `${environment.ApiRoot}/deleteByDeleted/`;
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
   private fetchPathwayDiagramForPathwayUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
@@ -78,6 +77,12 @@ export class DataService {
   // Use this subject to force waiting for components to fetch instance
   // since we need to load changed instances from cached storage first
   private loadInstanceSubject: Subject<void> | undefined = undefined;
+  /**
+   * How many of fetchInstances()' per-instance requests are kept in flight at once. Six
+   * matches what a browser will open to one host anyway, so a higher number only queues
+   * requests in the browser instead of in rxjs.
+   */
+  private static readonly FETCH_INSTANCES_CONCURRENCY = 6;
 
   // Notify when there is an error due to failed api
   private errorMessage = new Subject<Error>();
@@ -324,13 +329,68 @@ export class DataService {
   }
 
   /**
-   * Fetch a list of intances for the provided dbIds list.
-   * @param dbIds 
+   * Fetch a list of instances for the provided dbIds list. Instances that are already cached
+   * are served from the cache and the remaining ones are fetched from the server. The returned
+   * list is positionally aligned with dbIds, so an instance that can be resolved neither from
+   * the cache nor from the server shows up as undefined.
+   * @param dbIds
    */
   fetchInstances(dbIds: number[]): Observable<Instance[]> {
-    if (!dbIds) return of([]); // Return an empty array if dbIds is undefined or null
-    const observables: Observable<Instance>[] = dbIds.map((dbId: number) => this.fetchInstance(dbId));
-    return forkJoin(observables);
+    if (!dbIds || dbIds.length === 0)
+      return of([]); // Return an empty array if dbIds is undefined, null or empty
+    // Wait once for the whole list rather than once per instance: during the load of changed
+    // instances we have to wait until that loading is finished so that the changed instances
+    // are used instead of the DB versions.
+    if (this.loadInstanceSubject) {
+      return this.loadInstanceSubject.pipe(concatMap(() => this._fetchInstances(dbIds)));
+    }
+    return this._fetchInstances(dbIds);
+  }
+
+  private _fetchInstances(dbIds: number[]): Observable<Instance[]> {
+    // Ask for each dbId once however many times it appears in the list: the cache is only
+    // populated once a response comes back, so duplicates would otherwise each start their
+    // own request.
+    const uniqueDbIds = [...new Set(dbIds)];
+    return from(uniqueDbIds).pipe(
+      // The server has no batch endpoint for fetching a list of instances, so the list is
+      // fetched one instance at a time. The concurrency cap keeps a long list - a batch edit
+      // over a whole selection, or a bookmark upload of hundreds of dbIds - from putting
+      // hundreds of requests in flight at once.
+      mergeMap(dbId => this._fetchInstanceInList(dbId).pipe(
+        map((instance: Instance) => [dbId, instance] as [number, Instance])
+      ), DataService.FETCH_INSTANCES_CONCURRENCY),
+      toArray(),
+      // mergeMap emits in completion order, so put the results back into the asked-for order.
+      map((fetched: [number, Instance][]) => {
+        const dbId2instance = new Map<number, Instance>(fetched);
+        return dbIds.map(dbId => dbId2instance.get(dbId)!);
+      })
+    );
+  }
+
+  /**
+   * One instance for fetchInstances(). A dbId with no instance behind it yields undefined
+   * rather than failing the whole list: a list of dbIds routinely holds ones that no longer
+   * exist - a pasted bookmark upload, a referrer of something just deleted - and the callers
+   * report those separately. Any other failure is surfaced the normal way (see
+   * handleErrorMessage), so "we couldn't check" is never mistaken for "it's gone".
+   */
+  private _fetchInstanceInList(dbId: number): Observable<Instance> {
+    const cached = this.getCachedInstance(dbId);
+    if (cached)
+      return of(cached);
+    // A negative dbId belongs to a new instance that exists locally only, so there is
+    // nothing for the server to resolve.
+    if (dbId < 0)
+      return of(undefined as unknown as Instance);
+    return this.getInstanceFromDatabase(dbId, true).pipe(
+      catchError((err: any) => {
+        if (err instanceof HttpErrorResponse && err.status === 404)
+          return of(undefined as unknown as Instance);
+        return this.handleErrorMessage(err);
+      })
+    );
   }
 
   /**
@@ -405,7 +465,21 @@ export class DataService {
     if (dbId < 0) {
       return of(undefined as unknown as Instance);
     }
-    // Fetch from the server
+    return this.getInstanceFromDatabase(dbId, cache)
+      .pipe(
+        catchError((err: Error) => {
+          return this.handleErrorMessage(err);
+        }),
+      );
+  }
+
+  /**
+   * The bare fetch of one instance from the server, with no error handling of its own, so that
+   * each caller can decide what a failure means: fetchInstanceFromDatabase() surfaces every
+   * failure, while _fetchInstanceInList() treats a 404 as "this dbId has no instance behind it"
+   * and carries on with the rest of the list.
+   */
+  private getInstanceFromDatabase(dbId: number, cache: boolean): Observable<Instance> {
     return this.http.get<Instance>(this.entityDataUrl + `${dbId}`)
       .pipe(
         map((data: Instance) => {
@@ -414,10 +488,6 @@ export class DataService {
           if (cache)
             this.id2instance.set(dbId, instance); // Cache this instance
           return instance;
-        }),
-
-        catchError((err: Error) => {
-          return this.handleErrorMessage(err);
         }),
       );
   }
@@ -1647,42 +1717,6 @@ export class DataService {
       });
       return obj;
     });
-  }
-
-  fetchInstanceInBatch(dbIds: number[]): Observable<Instance[]> {
-    if (dbIds.length === 0) {
-      return of([]);
-    }
-
-    const fromCache: { [key: number]: Instance } = {};
-    const toFetch: number[] = [];
-
-    dbIds.forEach(id => {
-      if (this.id2instance.has(id)) {
-        fromCache[id] = this.id2instance.get(id)!;
-      } else {
-        toFetch.push(id);
-      }
-    });
-
-    if (toFetch.length === 0) {
-      // All instances are in the cache
-      return of(dbIds.map(id => fromCache[id]));
-    }
-
-    // Fetch the rest from the backend
-    return this.http.post<Instance[]>(this.fetchInstancesInBatchUrl, toFetch).pipe(
-      map((fetched: Instance[]) => {
-        fetched.forEach(inst => {
-          this.handleInstanceAttributes(inst);
-          this.id2instance.set(inst.dbId, inst);
-        });
-        const fetchedMap = new Map(fetched.map(inst => [inst.dbId, inst]));
-        // Merge, preserving original order
-        return dbIds.map(id => fromCache[id] || fetchedMap.get(id)!);
-      }),
-      catchError((err: Error) => this.handleErrorMessage(err))
-    );
   }
 
 }

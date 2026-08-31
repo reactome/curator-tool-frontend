@@ -1,3 +1,9 @@
+### Build on August 27, 2026
+
+- Bug fix: on the deployed site, the two buttons that switch an event between the schema view and the event view opened a browser tab that was not Webbench at all - typically a "not found" page - instead of the other view of the instance you were looking at. The address they opened left out the `/curatortool/` part of it, so it pointed at the top of the server rather than into the app. This never showed up when the app was run locally, where there is no `/curatortool/` in the address to leave out. The link icon in the referrers dialog, which opens the referrers page in its own tab, was wrong in exactly the same way and is fixed with it.
+
+- Bug fix: on the deployed site, logging back in after your session ended returned you to the home page rather than to the instance you had been working on. Being signed out by the 18-minute inactivity timeout, by a lost connection to the server, or by another window logging out was supposed to remember the page that window was showing and take you straight back to it. What was remembered included the `/curatortool/` part of the address, which the app then could not make sense of as one of its own pages, so it quietly gave up and used the home page instead - meaning the several windows you had open on different instances all came back on `/home` with their views lost, the very thing remembering the page was added to prevent. Deep links you had followed or pasted yourself were remembered correctly and are unaffected.
+
 ### Build on August 21, 2026
 
 - A bug was reported for attribute value comparison of two different instances. Before the "show attributes having different values" would actually display no values. This has been fixed so that two different instances can be directly compared, and only varying attributes listed.
