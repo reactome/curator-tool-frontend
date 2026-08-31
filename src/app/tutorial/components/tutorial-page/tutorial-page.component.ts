@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { TourService } from '../../../core/services/tour.service';
+import { PageTitleService } from 'src/app/core/services/page-title.service';
 
 @Component({
   selector: 'app-tutorial-page',
@@ -103,7 +104,10 @@ export class TutorialPageComponent {
   constructor(
     private tourService: TourService,
     private router: Router,
-  ) { }
+    pageTitleService: PageTitleService,
+  ) {
+    pageTitleService.setTitle('Tutorial');
+  }
 
   startHomeTour(): void {
     this.tourService.startHomeTour();

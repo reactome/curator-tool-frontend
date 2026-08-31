@@ -1,9 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Title } from '@angular/platform-browser';
 import { Subscription, switchMap, of, catchError } from 'rxjs';
 import { Instance, Referrer } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
+import { PageTitleService } from 'src/app/core/services/page-title.service';
 
 /**
  * A routed, bookmarkable view of an instance's referrers, reached via
@@ -34,7 +34,7 @@ export class ReferrersPageComponent implements OnInit, OnDestroy {
 
   constructor(private route: ActivatedRoute,
     private dataService: DataService,
-    private titleService: Title) {
+    private pageTitleService: PageTitleService) {
   }
 
   ngOnInit() {
@@ -98,7 +98,7 @@ export class ReferrersPageComponent implements OnInit, OnDestroy {
         // Distinguish browser tabs/history entries between different referrers pages --
         // without this every referrers tab is titled identically after the static
         // index.html title.
-        this.titleService.setTitle(instance ? `Referrers of ${this.instanceLabel(instance)} - WebBench` : 'Reactome WebBench');
+        this.pageTitleService.setTitle(instance ? `Referrers of ${this.instanceLabel(instance)}` : undefined);
         return this.dataService.getReferrers(dbId);
       }),
       catchError(() => {

@@ -8,6 +8,7 @@ import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-
 import { MatDialog } from '@angular/material/dialog';
 import { UserInstancesService } from './user-instances.service';
 import { takeReturnUrl } from 'src/app/core/services/session-url';
+import { PageTitleService } from 'src/app/core/services/page-title.service';
 
 
 @Component({
@@ -16,7 +17,7 @@ import { takeReturnUrl } from 'src/app/core/services/session-url';
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent{
-  
+
   // To show information
   readonly dialog = inject(MatDialog);
 
@@ -25,10 +26,12 @@ export class LoginComponent{
   // concurrent login + bootstrap sequence).
   submitting = false;
 
-  constructor(private authService: AuthenticateService, 
+  constructor(private authService: AuthenticateService,
               private userInstancesService: UserInstancesService,
               private dataService: DataService,
-              private router: Router) {
+              private router: Router,
+              pageTitleService: PageTitleService) {
+    pageTitleService.setTitle('Sign In');
   }
 
   submit(data: User) {

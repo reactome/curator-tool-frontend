@@ -3,9 +3,9 @@ import { AfterViewChecked, AfterViewInit, ChangeDetectorRef, Component, OnDestro
 import { MatSidenav } from "@angular/material/sidenav";
 import { ReactomeEventTypes } from 'ngx-reactome-cytoscape-style';
 import { ActivatedRoute } from "@angular/router";
-import { Title } from '@angular/platform-browser';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
+import { PageTitleService } from 'src/app/core/services/page-title.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
 import { EventTreeComponent } from '../components/event-tree/event-tree.component';
@@ -45,7 +45,7 @@ export class MainEventComponent implements OnInit, AfterViewInit, AfterViewCheck
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
     private dataService: DataService,
-    private titleService: Title,
+    private pageTitleService: PageTitleService,
   ) {
     let sub = this.instanceUtilities.lastClickedDbId$.subscribe(dbId => {
       // Avoid using ngrx to avoid the complicated implementation
@@ -110,7 +110,7 @@ export class MainEventComponent implements OnInit, AfterViewInit, AfterViewCheck
       if (pathwayId && !isNaN(parseInt(pathwayId))) {
         this.updatePageTitle(parseInt(pathwayId));
       } else {
-        this.titleService.setTitle('Reactome WebBench');
+        this.pageTitleService.setTitle(undefined);
       }
     });
     this.subscriptions.add(paramSub);
@@ -119,7 +119,7 @@ export class MainEventComponent implements OnInit, AfterViewInit, AfterViewCheck
   private updatePageTitle(dbId: number) {
     this.dataService.fetchInstance(dbId).subscribe((instance: Instance) => {
       if (instance) {
-        this.titleService.setTitle(`${instance.schemaClassName}: ${instance.displayName} - WebBench`);
+        this.pageTitleService.setTitle(`${instance.schemaClassName}: ${instance.displayName}`);
       }
     });
   }

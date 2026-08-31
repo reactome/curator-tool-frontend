@@ -19,6 +19,7 @@ import { DeleteBulkDialogService } from '../delete-bulk-dialog/delete-bulk-dialo
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { InstanceNameGenerator } from 'src/app/core/post-edit/InstanceNameGenerator';
+import { PageTitleService } from 'src/app/core/services/page-title.service';
 
 /**
  * The choices offered by the species quick filter. 'all' means no filtering at all, and is
@@ -115,7 +116,8 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     private listInstancesDialogService: ListInstancesDialogService,
     private batchEditDialogService: BatchEditDialogService,
     private deleteBulkDialogService: DeleteBulkDialogService,
-    private matchResolutionService: MatchResolutionService) {
+    private matchResolutionService: MatchResolutionService,
+    private pageTitleService: PageTitleService) {
   }
 
   ngOnDestroy(): void {
@@ -1054,6 +1056,11 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
     this.className = params['className'];
     let isChangedChanged = this.className !== params['className'];
     this.className = params['className'];
+    // Placed inside this route-params handler, not ngOnInit's top level: navigating between
+    // classes (or between the database and staged list for the same class) reuses this
+    // component instance rather than re-creating it, so only this handler re-fires per
+    // navigation, not ngOnInit.
+    this.pageTitleService.setTitle(`${this.className}@${this.isLocal ? 'Staged' : 'Database'}`);
     // Wait for the attributes: the species filter asked for in the URL is only honoured
     // once we know whether this class has a species attribute at all.
     this.loadSchemaClassAttributes().subscribe(() => this.loadForRoute(queryParams, isChangedChanged));

@@ -18,6 +18,7 @@ import {
   Paper2pathService
 } from 'src/app/paper2path/services/paper2path.service';
 import { environment } from 'src/environments/environment.dev';
+import { PageTitleService } from 'src/app/core/services/page-title.service';
 
 export interface PaperItem {
   pmid: string;
@@ -100,8 +101,10 @@ export class Paper2pathComponent implements OnDestroy, AfterViewChecked {
     private store: Store,
     private dataService: DataService,
     private postEditService: PostEditService,
-    private instanceUtilities: InstanceUtilities
+    private instanceUtilities: InstanceUtilities,
+    pageTitleService: PageTitleService
   ) {
+    pageTitleService.setTitle('Paper2Path');
     this.initializeForms();
     this.loadMockAnnotationResult();
   }
