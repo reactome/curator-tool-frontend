@@ -1,5 +1,6 @@
 import { Component, inject, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from "@angular/router";
+import { PageTitleService } from 'src/app/core/services/page-title.service';
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { SchemaClass } from 'src/app/core/models/reactome-schema.model';
@@ -106,7 +107,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     private deletionService: DeletionService,
     private reviewStatusCheck: ReviewStatusCheck,
     private commitResultDialogService: CommitResultDialogService,
-    private mergeInstancesDialogService: MergeInstancesDialogService
+    private mergeInstancesDialogService: MergeInstancesDialogService,
+    private pageTitleService: PageTitleService
   ) {
     this.instanceViewFilters = this.setUpInstanceViewFilters();
 
@@ -550,6 +552,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.title = instance.schemaClass?.name + ": " + instance.displayName + " [" + instance.dbId + "]"
     else
       this.title = ""
+    this.pageTitleService.setTitle(this.title);
   }
 
   isChanged() {
@@ -800,8 +803,12 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     else {
       const matDialogRef = this.qaReportDialogService.openDialog(this.instance!);
       matDialogRef.afterClosed().subscribe((result) => {
-        this.qaReportPassed = result;
-
+        // This call site never supplies a pre-built report, so the dialog's
+        // "Auto-Fix" close result ('autofix') never applies here -- only the
+        // boolean qaReportPassed result is relevant.
+        if (typeof result === 'boolean') {
+          this.qaReportPassed = result;
+        }
       });
     }
   }

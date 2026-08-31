@@ -210,12 +210,14 @@ export class InstanceTableRowElementComponent implements OnInit {
   /**
    * List the referrers of the instance in this row. Uses the routed referrers page
    * (schema_view/referrers/:dbId), whose URL is stable and can be bookmarked or shared, rather
-   * than the referrers dialog opened from the instance view's toolbar.
+   * than the referrers dialog opened from the instance view's toolbar. Opened in a new tab so
+   * navigating away from the referrers list doesn't lose the current instance view.
    */
   private showReferrers() {
     if (this.value === undefined)
       return;
-    this.router.navigate(['/schema_view', 'referrers', this.value.dbId]);
+    const url = this.router.serializeUrl(this.router.createUrlTree(['/schema_view', 'referrers', this.value.dbId]));
+    window.open(url, '_blank');
   }
 
   // Clicking the inline stoichiometry badge opens the stoichiometry editor directly, without

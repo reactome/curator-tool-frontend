@@ -4,13 +4,14 @@ import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, EMPTY, forkJoin, from, map, mergeMap, Observable, of, Subject, switchMap, take, tap, throwError, toArray } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
-import { DiagramLock, Instance, InstanceList, NEW_DISPLAY_NAME, Referrer, UserInstanceBackupSummary, UserInstances } from "../models/reactome-instance.model";
+import { DbIdDisplayName, DiagramLock, Instance, InstanceList, NEW_DISPLAY_NAME, ReactionStructureDto, Referrer, UserInstanceBackupSummary, UserInstances } from "../models/reactome-instance.model";
 import {
   AttributeCategory,
   SchemaAttribute,
   SchemaClass
 } from '../models/reactome-schema.model';
 import { InstanceUtilities } from "./instance.service";
+import { Diagram } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { InstanceNameGenerator } from "../post-edit/InstanceNameGenerator";
 import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 import { QAReport } from "../models/qa-report.model";
@@ -54,6 +55,14 @@ export class DataService {
   private deleteByDeletedUrl = `${environment.ApiRoot}/deleteByDeleted/`;
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
   private fetchPathwayDiagramForPathwayUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
+  private diagramJsonUrl = `${environment.ApiRoot}/diagram`;
+  private findDisplayNamesByDbIdsUrl = `${environment.ApiRoot}/findDisplayNamesByDbIds`;
+  private findReactionStructuresByDbIdsUrl = `${environment.ApiRoot}/findReactionStructuresByDbIds`;
+
+  // Dedicated caches for the lightweight endpoints below -- deliberately NOT the shared
+  // id2instance cache, which other features rely on holding fully-attributed instances.
+  private id2displayName = new Map<number, string>();
+  private id2reactionStructure = new Map<number, ReactionStructureDto>();
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
   private chebiAutoFillerUrl = `${environment.ApiRoot}/fillChEBI/`;
   private fillReferenceSequenceUrl = `${environment.ApiRoot}/fillRefSequence/`;
@@ -457,6 +466,77 @@ export class DataService {
           })
         );
       })
+    );
+  }
+
+  /**
+   * Fetch the raw pre-generated diagram layout JSON for a pathway (the same
+   * `{id}.json` endpoint the diagram library itself calls internally, but here
+   * fetched independently so the raw nodes/edges/compartments/displayNames are
+   * available uncorrupted by the library's cytoscape conversion, e.g. for
+   * validating drawn content against the live database).
+   */
+  fetchRawDiagram(pathwayId: string | number): Observable<Diagram> {
+    return this.http.get<Diagram>(`${this.diagramJsonUrl}/${pathwayId}.json`).pipe(
+      catchError((err: Error) => this.handleErrorMessage(err))
+    );
+  }
+
+  /**
+   * Lightweight alternative to fetchInstance()/fetchInstanceInBatch() for callers that only
+   * need a displayName per dbId (e.g. the pathway diagram content validator). Backed by the
+   * findDisplayNamesByDbIds endpoint, which never traverses relationships or hydrates a full
+   * Instance, so it stays fast even for heavily cross-referenced entities (e.g. ATP, ADP) that
+   * can hang fetchInstance()/fetchInstanceInBatch().
+   */
+  fetchDisplayNamesByDbIds(dbIds: number[]): Observable<Map<number, string>> {
+    if (dbIds.length === 0) return of(new Map());
+    const result = new Map<number, string>();
+    const toFetch: number[] = [];
+    dbIds.forEach(id => {
+      const cached = this.id2displayName.get(id);
+      if (cached !== undefined) result.set(id, cached);
+      else toFetch.push(id);
+    });
+    if (toFetch.length === 0) return of(result);
+    return this.http.post<DbIdDisplayName[]>(this.findDisplayNamesByDbIdsUrl, toFetch).pipe(
+      map((fetched: DbIdDisplayName[]) => {
+        (fetched ?? []).forEach(entry => {
+          this.id2displayName.set(entry.dbId, entry.displayName);
+          result.set(entry.dbId, entry.displayName);
+        });
+        return result;
+      }),
+      catchError((err: Error) => this.handleErrorMessage(err))
+    );
+  }
+
+  /**
+   * Lightweight dbId-level structure (inputs, outputs, catalysts, regulators) for a set of
+   * reactions, for callers that need to compare a reaction's structure without loading full
+   * Instances (e.g. the pathway diagram content validator). Backed by the
+   * findReactionStructuresByDbIds endpoint, using targeted relationship queries instead of the
+   * generic "every relationship" traversal that fetchInstance()/fetchInstanceInBatch() use.
+   */
+  fetchReactionStructuresByDbIds(dbIds: number[]): Observable<Map<number, ReactionStructureDto>> {
+    if (dbIds.length === 0) return of(new Map());
+    const result = new Map<number, ReactionStructureDto>();
+    const toFetch: number[] = [];
+    dbIds.forEach(id => {
+      const cached = this.id2reactionStructure.get(id);
+      if (cached !== undefined) result.set(id, cached);
+      else toFetch.push(id);
+    });
+    if (toFetch.length === 0) return of(result);
+    return this.http.post<ReactionStructureDto[]>(this.findReactionStructuresByDbIdsUrl, toFetch).pipe(
+      map((fetched: ReactionStructureDto[]) => {
+        (fetched ?? []).forEach(entry => {
+          this.id2reactionStructure.set(entry.reactionDbId, entry);
+          result.set(entry.reactionDbId, entry);
+        });
+        return result;
+      }),
+      catchError((err: Error) => this.handleErrorMessage(err))
     );
   }
 

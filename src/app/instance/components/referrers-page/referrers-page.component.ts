@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { Subscription, switchMap, of, catchError } from 'rxjs';
 import { Instance, Referrer } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
+import { PageTitleService } from 'src/app/core/services/page-title.service';
 
 /**
  * A routed, bookmarkable view of an instance's referrers, reached via
@@ -32,7 +33,8 @@ export class ReferrersPageComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription = new Subscription();
 
   constructor(private route: ActivatedRoute,
-    private dataService: DataService) {
+    private dataService: DataService,
+    private pageTitleService: PageTitleService) {
   }
 
   ngOnInit() {
@@ -93,6 +95,10 @@ export class ReferrersPageComponent implements OnInit, OnDestroy {
     return this.dataService.fetchInstance(dbId).pipe(
       switchMap(instance => {
         this.instance = instance;
+        // Distinguish browser tabs/history entries between different referrers pages --
+        // without this every referrers tab is titled identically after the static
+        // index.html title.
+        this.pageTitleService.setTitle(instance ? `Referrers of ${this.instanceLabel(instance)}` : undefined);
         return this.dataService.getReferrers(dbId);
       }),
       catchError(() => {
