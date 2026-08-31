@@ -9,7 +9,7 @@
  */
 import { Injectable } from "@angular/core";
 import { Core } from "cytoscape";
-import { Observable, switchMap, map } from "rxjs";
+import { Observable, switchMap, map, from, mergeMap, toArray, of, catchError, timeout } from "rxjs";
 import { DataService } from "src/app/core/services/data.service";
 import { Instance } from "src/app/core/models/reactome-instance.model";
 import { QAReport, QAResults } from "src/app/core/models/qa-report.model";
@@ -55,12 +55,61 @@ export class PathwayDiagramContentValidator {
     return result;
   }
 
+  // DataService.fetchInstances() fires one GET findByDbId/{id} request per id
+  // via forkJoin, which subscribes to ALL of them essentially simultaneously and
+  // waits for every single one to complete -- none of these requests has a
+  // timeout, so a diagram with 50-100+ drawn instances can genuinely hang
+  // forever if the backend stalls on even one request (e.g. thread/connection
+  // pool exhaustion from the burst). Fetch with bounded concurrency and a
+  // per-request timeout instead: a stuck request is skipped (that entity's
+  // checks are just omitted, same as any other unresolvable dbId) rather than
+  // wedging the whole validation.
+  private static readonly FETCH_CONCURRENCY = 6;
+  private static readonly FETCH_TIMEOUT_MS = 15000;
+  // Some dbIds (e.g. ATP, ADP -- extremely heavily cross-referenced entities)
+  // deterministically hang on the backend's findByDbId endpoint until timeout.
+  // The same dbId can legitimately need fetching more than once across a single
+  // validate() run (e.g. once as a drawn node, again as a database-only
+  // reference), so remember a recent failure and skip re-attempting it for a
+  // while instead of paying the full timeout penalty every time it comes up.
+  private static readonly FAILED_ID_TTL_MS = 5 * 60 * 1000;
+  private failedIdAt = new Map<number, number>();
+
+  private fetchInstancesThrottled(dbIds: number[]): Observable<Instance[]> {
+    const now = Date.now();
+    const idsToFetch: number[] = [];
+    for (const dbId of dbIds) {
+      const failedAt = this.failedIdAt.get(dbId);
+      if (failedAt !== undefined && now - failedAt < PathwayDiagramContentValidator.FAILED_ID_TTL_MS) {
+        console.warn(`[diagram validation] instance ${dbId} recently failed to resolve, skipping retry.`);
+        continue;
+      }
+      idsToFetch.push(dbId);
+    }
+    if (idsToFetch.length === 0) return of([]);
+    return from(idsToFetch).pipe(
+      mergeMap(dbId => this.dataService.fetchInstance(dbId).pipe(
+        timeout(PathwayDiagramContentValidator.FETCH_TIMEOUT_MS),
+        catchError(err => {
+          console.warn(`[diagram validation] instance ${dbId} did not resolve in time, skipping:`, err);
+          this.failedIdAt.set(dbId, Date.now());
+          return of(undefined);
+        })
+      ), PathwayDiagramContentValidator.FETCH_CONCURRENCY),
+      toArray(),
+      map(results => results.filter((i): i is Instance => !!i))
+    );
+  }
+
   validate(pathwayId: string): Observable<DiagramValidationResult> {
     // Timing instrumentation to see whether wall-clock time is dominated by
     // network round trips or by the comparison logic itself. Remove once
     // performance has been characterized, or keep behind a debug flag.
     const t0 = performance.now();
     let tDiagramFetched = 0, tMainFetched = 0, tHelpersFetched = 0, tMissingFetched = 0;
+    const elapsed = () => `${(performance.now() - t0).toFixed(0)}ms`;
+
+    console.log(`[diagram validation] pathway=${pathwayId} starting...`);
 
     return this.dataService.fetchRawDiagram(pathwayId).pipe(
       switchMap((diagram: Diagram) => {
@@ -77,11 +126,18 @@ export class PathwayDiagramContentValidator {
         reactionEdges.forEach(e => allIds.add(e.reactomeId));
         compartments.forEach(c => allIds.add(c.reactomeId));
 
+        console.log(
+          `[diagram validation] ${elapsed()} raw diagram fetched: ` +
+          `${diagram.nodes.length} nodes (${peNodes.length} PE, ${subPathwayNodes.length} sub-pathway), ` +
+          `${diagram.edges.length} edges (${reactionEdges.length} reactions), ${compartments.length} compartments. ` +
+          `Fetching ${allIds.size} unique instances individually (GET findByDbId per id)...`
+        );
+
         // Note: DataService.fetchInstanceInBatch()/`POST findByDbIds` is a
         // deprecated, effectively-unsupported endpoint (confirmed not reliable) --
-        // use fetchInstances() instead, which fans out to the safe, supported
-        // singular `GET findByDbId/{id}` endpoint per id (still cache-aware).
-        return this.dataService.fetchInstances([...allIds]).pipe(
+        // use the safe, supported singular `GET findByDbId/{id}` endpoint per id
+        // instead (still cache-aware), via fetchInstancesThrottled() above.
+        return this.fetchInstancesThrottled([...allIds]).pipe(
           switchMap((instances: Instance[]) => {
             tMainFetched = performance.now();
             const idToInstance = new Map<number, Instance>(instances.map(i => [i.dbId, i]));
@@ -99,7 +155,13 @@ export class PathwayDiagramContentValidator {
               }
             }
 
-            return this.dataService.fetchInstances([...helperDbIds]).pipe(
+            console.log(
+              `[diagram validation] ${elapsed()} main fetch done (${instances.length}/${allIds.size} instances, ` +
+              `took ${(tMainFetched - tDiagramFetched).toFixed(0)}ms). ` +
+              `Fetching ${helperDbIds.size} catalyst/regulator helper instances...`
+            );
+
+            return this.fetchInstancesThrottled([...helperDbIds]).pipe(
               switchMap((helperInstances: Instance[]) => {
                 tHelpersFetched = performance.now();
                 const helperById = new Map<number, Instance>(helperInstances.map(h => [h.dbId, h]));
@@ -117,9 +179,20 @@ export class PathwayDiagramContentValidator {
                     }
                   }
                 }
-                return this.dataService.fetchInstances([...missingIds]).pipe(
+
+                console.log(
+                  `[diagram validation] ${elapsed()} helper fetch done (${helperInstances.length}/${helperDbIds.size} instances, ` +
+                  `took ${(tHelpersFetched - tMainFetched).toFixed(0)}ms). ` +
+                  `Fetching ${missingIds.size} DB-only (undrawn) referenced instances...`
+                );
+
+                return this.fetchInstancesThrottled([...missingIds]).pipe(
                   map((extraInstances: Instance[]) => {
                     tMissingFetched = performance.now();
+                    console.log(
+                      `[diagram validation] ${elapsed()} missing-entity fetch done (${extraInstances.length}/${missingIds.size} instances, ` +
+                      `took ${(tMissingFetched - tHelpersFetched).toFixed(0)}ms). Building report...`
+                    );
                     extraInstances.forEach(i => idToInstance.set(i.dbId, i));
                     const report = this.buildReport(
                       pathwayId, diagram, peNodes, subPathwayNodes, reactionEdges, compartments,
