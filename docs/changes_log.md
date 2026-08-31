@@ -1,3 +1,7 @@
+### Build on August 31, 2026
+
+- Bug fix: opening certain heavily-referenced instances in the instance editor - small molecules used by a huge number of reactions (for example ATP or ADP), or a species used by nearly every instance (for example Homo sapiens) - could hang or take a very long time to load, because the server was gathering every instance that refers to the one being opened, not just its own attributes. Loading now looks only at what the instance itself actually holds, so these instances open quickly and reliably, the same as any other.
+
 ### Build on August 30, 2026
 
 - Added a **Validate Diagram Against Database** button to the pathway diagram toolbar (shown while editing). It scans everything drawn - PhysicalEntity nodes, sub-Pathway nodes, Compartments, and reaction structure (inputs, outputs, catalysts, regulators) - against the live database, so a diagram whose saved layout has drifted from what's actually been committed (for example, after an entity was renamed or a reaction's inputs changed elsewhere, without the diagram being regenerated) is caught rather than silently shown as-is. Results are listed as a set of pass/fail checks, each failure as a table of mismatches with clickable instance links. When something fails, an **Auto-Fix** button corrects the live diagram to match the database - it only changes what's on screen and does not save on its own, so the result can be reviewed (and undone, like any other edit) before choosing to upload it.
