@@ -17,7 +17,7 @@
  * live cytoscape instance only; it never saves/persists.
  */
 import { Injectable } from "@angular/core";
-import { Core } from "cytoscape";
+import { DiagramComponent } from "ngx-reactome-diagram";
 import { Observable, switchMap, map, from, mergeMap, toArray, of, catchError, timeout } from "rxjs";
 import { DataService } from "src/app/core/services/data.service";
 import { Instance, ReactionStructureDto } from "src/app/core/models/reactome-instance.model";
@@ -25,6 +25,12 @@ import { QAReport, QAResults } from "src/app/core/models/qa-report.model";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import { Diagram, Node as DiagramNode, Edge as DiagramEdge, Compartment, EdgeConnector } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { PathwayDiagramValidator } from "./pathway-diagram-validator";
+import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
+
+// Shared between checkReactionStructure() (which writes it as the "Issue" cell) and
+// autoFix() (which reads it back to decide "delete the reaction" vs. "fix its structure"),
+// so the two can never drift out of sync with each other.
+const REACTION_DELETED_ISSUE = 'reaction deleted from database';
 
 const ROLE_ATTRIBUTES = ['input', 'output', 'catalyst', 'activator', 'inhibitor'] as const;
 type Role = typeof ROLE_ATTRIBUTES[number];
@@ -51,7 +57,8 @@ export class PathwayDiagramContentValidator {
   private physicalEntityClassCache = new Map<string, boolean>();
 
   constructor(private dataService: DataService,
-              private liveValidator: PathwayDiagramValidator) {
+              private liveValidator: PathwayDiagramValidator,
+              private diagramUtils: PathwayDiagramUtilService) {
   }
 
   private isPhysicalEntityClassMemoized(schemaClass: string): boolean {
@@ -180,12 +187,23 @@ export class PathwayDiagramContentValidator {
   private checkDisplayNames(checkName: string, entities: DisplayNameEntity[], idToDisplayName: Map<number, string>): QAResults {
     const rows: string[][] = [];
     for (const entity of entities) {
-      const dbDisplayNameRaw = idToDisplayName.get(entity.reactomeId);
-      if (dbDisplayNameRaw === undefined) continue;
       // The pre-generated diagram JSON bakes zero-width-space characters (U+200B)
       // into displayName after punctuation for word-wrapping -- invisible layout
       // hints, not semantic content -- so strip them before comparing/reporting.
       const diagramDisplayName = this.normalizeDrawnDisplayName(entity.displayName);
+      const dbDisplayNameRaw = idToDisplayName.get(entity.reactomeId);
+      if (dbDisplayNameRaw === undefined) {
+        // fetchDisplayNamesByDbIds() returns no row at all for a dbId that no longer
+        // exists -- e.g. the object was deleted from the database after the diagram was
+        // last generated/saved, without the diagram being regenerated to match. Flag this
+        // explicitly rather than silently treating "no data came back" as "no mismatch".
+        rows.push([
+          JSON.stringify({ dbId: entity.reactomeId, displayName: diagramDisplayName, deleted: true }),
+          diagramDisplayName,
+          '(deleted from database)'
+        ]);
+        continue;
+      }
       // Database displayNames also carry a trailing "[compartment]" suffix that
       // diagram-drawn labels never include (the same stripping
       // PathwayDiagramValidator.validateDisplayName already applies when writing
@@ -217,7 +235,14 @@ export class PathwayDiagramContentValidator {
 
     for (const edge of reactionEdges) {
       const dto = idToStructure.get(edge.reactomeId);
-      if (!dto) continue;
+      if (!dto) {
+        // findReactionStructuresByDbIds() returns no row at all for a dbId that no longer
+        // exists -- the reaction itself was deleted from the database after the diagram was
+        // last generated/saved. Flag it explicitly rather than silently skipping the whole
+        // reaction, which would otherwise report a clean pass for it.
+        rows.push([this.entityCell(edge.reactomeId, idToDisplayName), '', '', REACTION_DELETED_ISSUE]);
+        continue;
+      }
       const diagramStructure = this.deriveDiagramReactionStructure(edge, idToNode);
       const dbStructure = this.deriveDbReactionStructure(dto);
       // Reactions have no drawn label to compare (edge.displayName isn't reliably
@@ -346,18 +371,34 @@ export class PathwayDiagramContentValidator {
    * markDiagramEdited), leaving the actual save to the curator's existing,
    * separate Save action.
    */
-  autoFix(result: DiagramValidationResult, cy: Core): Observable<void> {
+  autoFix(result: DiagramValidationResult, diagramComponent: DiagramComponent): Observable<void> {
     const { report, diagram, idToDisplayName } = result;
+    const cy = diagramComponent.cy;
+
+    // Node-type-specific deletion, used when the drawn object's backing instance no longer
+    // exists in the database at all -- there is nothing valid to fix its label to, so the
+    // stale drawn object is removed instead. deleteNode()/deletePathwayNode() are both a
+    // plain cy.remove() under the hood (PathwayDiagramUtilService), kept separate here only
+    // so a future divergence between the two doesn't have to be rediscovered.
+    const NODE_DELETERS: Record<string, (elm: any) => void> = {
+      'PhysicalEntity Display Names': elm => this.diagramUtils.deleteNode(elm, diagramComponent),
+      'Sub-Pathway Display Names': elm => this.diagramUtils.deletePathwayNode(elm, diagramComponent),
+    };
 
     for (const checkName of ['PhysicalEntity Display Names', 'Sub-Pathway Display Names']) {
       const check = report.qaResults.find(r => r.checkName === checkName);
       if (!check || check.passed || !check.rows) continue;
       for (const row of check.rows) {
-        const { dbId } = JSON.parse(row[0]);
+        const { dbId, deleted } = JSON.parse(row[0]);
+        const elements = cy.elements(`[reactomeId = ${dbId}]`);
+        if (deleted) {
+          if (elements.length > 0) NODE_DELETERS[checkName](elements);
+          continue;
+        }
         const displayName = idToDisplayName.get(dbId);
         if (displayName === undefined) continue;
         const shell = { dbId, displayName, schemaClassName: '' } as Instance;
-        cy.elements(`[reactomeId = ${dbId}]`).forEach((elm: any) => this.liveValidator.validateDisplayName(elm, shell));
+        elements.forEach((elm: any) => this.liveValidator.validateDisplayName(elm, shell));
       }
     }
 
@@ -365,12 +406,18 @@ export class PathwayDiagramContentValidator {
     if (compartmentCheck && !compartmentCheck.passed && compartmentCheck.rows) {
       const reactomeIdToCompartment = new Map((diagram.compartments ?? []).map(c => [c.reactomeId, c]));
       for (const row of compartmentCheck.rows) {
-        const { dbId } = JSON.parse(row[0]);
-        const displayName = idToDisplayName.get(dbId);
+        const { dbId, deleted } = JSON.parse(row[0]);
         const compartment = reactomeIdToCompartment.get(dbId);
-        if (displayName === undefined || !compartment) continue;
+        if (!compartment) continue;
         const outer = cy.getElementById(`${compartment.id}-outer`);
-        if (outer && outer.length > 0) outer.data('displayName', displayName);
+        if (!outer || outer.length === 0) continue;
+        if (deleted) {
+          this.diagramUtils.deleteCompartment(outer, diagramComponent);
+          continue;
+        }
+        const displayName = idToDisplayName.get(dbId);
+        if (displayName === undefined) continue;
+        outer.data('displayName', displayName);
       }
     }
 
@@ -379,6 +426,15 @@ export class PathwayDiagramContentValidator {
     if (structureCheck && !structureCheck.passed && structureCheck.rows) {
       for (const row of structureCheck.rows) {
         const { dbId } = JSON.parse(row[0]);
+        if (row[3] === REACTION_DELETED_ISSUE) {
+          // The reaction's own dbId no longer exists in the database -- remove the whole
+          // drawn reaction (and its connectors/helper nodes) via the same HyperEdge-aware
+          // deletion the "Delete" context-menu action uses, rather than trying to patch a
+          // structure that has nothing left in the database to patch it against.
+          const edgeElm = cy.edges(`[reactomeId = ${dbId}]`);
+          if (edgeElm.length > 0) this.diagramUtils.deleteHyperEdge(edgeElm);
+          continue;
+        }
         flaggedReactionIds.add(dbId);
       }
     }
