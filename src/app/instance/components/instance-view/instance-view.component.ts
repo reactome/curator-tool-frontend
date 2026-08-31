@@ -1,5 +1,6 @@
 import { Component, inject, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from "@angular/router";
+import { Title } from '@angular/platform-browser';
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { SchemaClass } from 'src/app/core/models/reactome-schema.model';
@@ -106,7 +107,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     private deletionService: DeletionService,
     private reviewStatusCheck: ReviewStatusCheck,
     private commitResultDialogService: CommitResultDialogService,
-    private mergeInstancesDialogService: MergeInstancesDialogService
+    private mergeInstancesDialogService: MergeInstancesDialogService,
+    private titleService: Title
   ) {
     this.instanceViewFilters = this.setUpInstanceViewFilters();
 
@@ -550,6 +552,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.title = instance.schemaClass?.name + ": " + instance.displayName + " [" + instance.dbId + "]"
     else
       this.title = ""
+    // Distinguish browser tabs/history entries between different instances -- without this
+    // every instance view tab is titled identically after the static index.html title.
+    this.titleService.setTitle(this.title ? `${this.title} - WebBench` : 'Reactome WebBench');
   }
 
   isChanged() {
