@@ -4,14 +4,23 @@
  * reactions), plus a live-diagram auto-fix that reuses the existing
  * PathwayDiagramValidator reconciliation logic.
  *
- * This class must never mutate cached Instance objects during detection.
- * Auto-fix mutates the live cytoscape instance only; it never saves/persists.
+ * Detection is backed by two lightweight backend endpoints
+ * (findDisplayNamesByDbIds / findReactionStructuresByDbIds) that avoid the
+ * expensive "every relationship in both directions" query used by
+ * fetchInstance()/fetchInstanceInBatch(), which can hang for heavily
+ * cross-referenced entities (e.g. ATP, ADP). Auto-fix still needs full Instance
+ * objects for whichever reactions are actually flagged, so it uses the existing
+ * (small-scale, throttled+timeout-guarded) full-instance fetch for just that
+ * subset.
+ *
+ * This class must never mutate cached Instance objects. Auto-fix mutates the
+ * live cytoscape instance only; it never saves/persists.
  */
 import { Injectable } from "@angular/core";
 import { Core } from "cytoscape";
 import { Observable, switchMap, map, from, mergeMap, toArray, of, catchError, timeout } from "rxjs";
 import { DataService } from "src/app/core/services/data.service";
-import { Instance } from "src/app/core/models/reactome-instance.model";
+import { Instance, ReactionStructureDto } from "src/app/core/models/reactome-instance.model";
 import { QAReport, QAResults } from "src/app/core/models/qa-report.model";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import { Diagram, Node as DiagramNode, Edge as DiagramEdge, Compartment, EdgeConnector } from "ngx-reactome-diagram/lib/model/diagram.model";
@@ -29,8 +38,7 @@ interface DisplayNameEntity {
 export interface DiagramValidationResult {
   report: QAReport;
   diagram: Diagram;
-  instances: Instance[];
-  helperInstances: Instance[];
+  idToDisplayName: Map<number, string>;
 }
 
 @Injectable()
@@ -55,23 +63,13 @@ export class PathwayDiagramContentValidator {
     return result;
   }
 
-  // DataService.fetchInstances() fires one GET findByDbId/{id} request per id
-  // via forkJoin, which subscribes to ALL of them essentially simultaneously and
-  // waits for every single one to complete -- none of these requests has a
-  // timeout, so a diagram with 50-100+ drawn instances can genuinely hang
-  // forever if the backend stalls on even one request (e.g. thread/connection
-  // pool exhaustion from the burst). Fetch with bounded concurrency and a
-  // per-request timeout instead: a stuck request is skipped (that entity's
-  // checks are just omitted, same as any other unresolvable dbId) rather than
-  // wedging the whole validation.
+  // Only used by autoFix() now, to fetch full Instances for the (typically small)
+  // set of reactions actually flagged as mismatched -- detection itself no longer
+  // needs full Instance fetches at all. Kept throttled+timeout-guarded as extra
+  // insurance against the same class of hang seen with fetchInstance() for
+  // heavily cross-referenced entities.
   private static readonly FETCH_CONCURRENCY = 6;
   private static readonly FETCH_TIMEOUT_MS = 15000;
-  // Some dbIds (e.g. ATP, ADP -- extremely heavily cross-referenced entities)
-  // deterministically hang on the backend's findByDbId endpoint until timeout.
-  // The same dbId can legitimately need fetching more than once across a single
-  // validate() run (e.g. once as a drawn node, again as a database-only
-  // reference), so remember a recent failure and skip re-attempting it for a
-  // while instead of paying the full timeout penalty every time it comes up.
   private static readonly FAILED_ID_TTL_MS = 5 * 60 * 1000;
   private failedIdAt = new Map<number, number>();
 
@@ -102,115 +100,53 @@ export class PathwayDiagramContentValidator {
   }
 
   validate(pathwayId: string): Observable<DiagramValidationResult> {
-    // Timing instrumentation to see whether wall-clock time is dominated by
-    // network round trips or by the comparison logic itself. Remove once
-    // performance has been characterized, or keep behind a debug flag.
     const t0 = performance.now();
-    let tDiagramFetched = 0, tMainFetched = 0, tHelpersFetched = 0, tMissingFetched = 0;
     const elapsed = () => `${(performance.now() - t0).toFixed(0)}ms`;
-
-    console.log(`[diagram validation] pathway=${pathwayId} starting...`);
 
     return this.dataService.fetchRawDiagram(pathwayId).pipe(
       switchMap((diagram: Diagram) => {
-        tDiagramFetched = performance.now();
         const peNodes = diagram.nodes.filter(n => this.isPhysicalEntityClassMemoized(n.schemaClass));
         const subPathwayNodes = diagram.nodes.filter(n => n.schemaClass === 'Pathway');
         const reactionEdges = diagram.edges.filter(e => REACTION_TYPES.includes(e.schemaClass));
         const compartments = diagram.compartments ?? [];
         const idToNode = new Map<number, DiagramNode>(diagram.nodes.map(n => [n.id, n]));
 
-        const allIds = new Set<number>();
-        peNodes.forEach(n => allIds.add(n.reactomeId));
-        subPathwayNodes.forEach(n => allIds.add(n.reactomeId));
-        reactionEdges.forEach(e => allIds.add(e.reactomeId));
-        compartments.forEach(c => allIds.add(c.reactomeId));
-
         console.log(
           `[diagram validation] ${elapsed()} raw diagram fetched: ` +
           `${diagram.nodes.length} nodes (${peNodes.length} PE, ${subPathwayNodes.length} sub-pathway), ` +
-          `${diagram.edges.length} edges (${reactionEdges.length} reactions), ${compartments.length} compartments. ` +
-          `Fetching ${allIds.size} unique instances individually (GET findByDbId per id)...`
+          `${diagram.edges.length} edges (${reactionEdges.length} reactions), ${compartments.length} compartments.`
         );
 
-        // Note: DataService.fetchInstanceInBatch()/`POST findByDbIds` is a
-        // deprecated, effectively-unsupported endpoint (confirmed not reliable) --
-        // use the safe, supported singular `GET findByDbId/{id}` endpoint per id
-        // instead (still cache-aware), via fetchInstancesThrottled() above.
-        return this.fetchInstancesThrottled([...allIds]).pipe(
-          switchMap((instances: Instance[]) => {
-            tMainFetched = performance.now();
-            const idToInstance = new Map<number, Instance>(instances.map(i => [i.dbId, i]));
-            const reactionInstances = reactionEdges
-              .map(e => idToInstance.get(e.reactomeId))
-              .filter((i): i is Instance => !!i);
+        return this.dataService.fetchReactionStructuresByDbIds(reactionEdges.map(e => e.reactomeId)).pipe(
+          switchMap((idToStructure: Map<number, ReactionStructureDto>) => {
+            console.log(`[diagram validation] ${elapsed()} reaction structures fetched for ${idToStructure.size}/${reactionEdges.length} reactions.`);
 
-            const helperDbIds = new Set<number>();
-            for (const reaction of reactionInstances) {
-              for (const att of ['catalystActivity', 'regulatedBy']) {
-                const values: Instance[] = reaction.attributes?.get(att) ?? [];
-                for (const v of values) {
-                  if (v?.dbId) helperDbIds.add(v.dbId);
-                }
-              }
+            // Every dbId whose displayName we might need to show: drawn PE/sub-pathway/
+            // compartment nodes, AND every participant referenced by a reaction's DATABASE
+            // structure (which may include entities not drawn in the diagram at all).
+            const displayNameIds = new Set<number>();
+            peNodes.forEach(n => displayNameIds.add(n.reactomeId));
+            subPathwayNodes.forEach(n => displayNameIds.add(n.reactomeId));
+            compartments.forEach(c => displayNameIds.add(c.reactomeId));
+            for (const structure of idToStructure.values()) {
+              (structure.inputs ?? []).forEach(p => displayNameIds.add(p.dbId));
+              (structure.outputs ?? []).forEach(p => displayNameIds.add(p.dbId));
+              (structure.catalysts ?? []).forEach(dbId => displayNameIds.add(dbId));
+              (structure.regulators ?? []).forEach(r => displayNameIds.add(r.dbId));
             }
 
-            console.log(
-              `[diagram validation] ${elapsed()} main fetch done (${instances.length}/${allIds.size} instances, ` +
-              `took ${(tMainFetched - tDiagramFetched).toFixed(0)}ms). ` +
-              `Fetching ${helperDbIds.size} catalyst/regulator helper instances...`
-            );
-
-            return this.fetchInstancesThrottled([...helperDbIds]).pipe(
-              switchMap((helperInstances: Instance[]) => {
-                tHelpersFetched = performance.now();
-                const helperById = new Map<number, Instance>(helperInstances.map(h => [h.dbId, h]));
-                // The database side of a reaction's structure can reference entities
-                // that aren't drawn in the diagram at all (e.g. a regulator added to
-                // the DB after the diagram was last generated) -- those were never
-                // added to `allIds` above, so fetch their display names too, or the
-                // report has nothing to show but the bare dbId for them.
-                const missingIds = new Set<number>();
-                for (const reaction of reactionInstances) {
-                  const dbStructure = this.deriveReactionStructure(reaction, helperById);
-                  for (const role of ROLE_ATTRIBUTES) {
-                    for (const dbId of dbStructure[role].keys()) {
-                      if (!idToInstance.has(dbId)) missingIds.add(dbId);
-                    }
-                  }
-                }
-
+            return this.dataService.fetchDisplayNamesByDbIds([...displayNameIds]).pipe(
+              map((idToDisplayName: Map<number, string>) => {
                 console.log(
-                  `[diagram validation] ${elapsed()} helper fetch done (${helperInstances.length}/${helperDbIds.size} instances, ` +
-                  `took ${(tHelpersFetched - tMainFetched).toFixed(0)}ms). ` +
-                  `Fetching ${missingIds.size} DB-only (undrawn) referenced instances...`
+                  `[diagram validation] ${elapsed()} display names fetched for ${idToDisplayName.size}/${displayNameIds.size} entities. ` +
+                  `Building report...`
                 );
-
-                return this.fetchInstancesThrottled([...missingIds]).pipe(
-                  map((extraInstances: Instance[]) => {
-                    tMissingFetched = performance.now();
-                    console.log(
-                      `[diagram validation] ${elapsed()} missing-entity fetch done (${extraInstances.length}/${missingIds.size} instances, ` +
-                      `took ${(tMissingFetched - tHelpersFetched).toFixed(0)}ms). Building report...`
-                    );
-                    extraInstances.forEach(i => idToInstance.set(i.dbId, i));
-                    const report = this.buildReport(
-                      pathwayId, diagram, peNodes, subPathwayNodes, reactionEdges, compartments,
-                      idToInstance, idToNode, reactionInstances, helperInstances
-                    );
-                    const tDone = performance.now();
-                    console.log(
-                      `[diagram validation timing] pathway=${pathwayId} ` +
-                      `total=${(tDone - t0).toFixed(0)}ms | ` +
-                      `rawDiagramFetch=${(tDiagramFetched - t0).toFixed(0)}ms, ` +
-                      `mainFetch(${allIds.size} ids)=${(tMainFetched - tDiagramFetched).toFixed(0)}ms, ` +
-                      `helperFetch(${helperDbIds.size} ids)=${(tHelpersFetched - tMainFetched).toFixed(0)}ms, ` +
-                      `missingFetch(${missingIds.size} ids)=${(tMissingFetched - tHelpersFetched).toFixed(0)}ms, ` +
-                      `comparisonLogic=${(tDone - tMissingFetched).toFixed(0)}ms`
-                    );
-                    return { report, diagram, instances: [...idToInstance.values()], helperInstances };
-                  })
+                const report = this.buildReport(
+                  pathwayId, diagram, peNodes, subPathwayNodes, compartments,
+                  reactionEdges, idToNode, idToStructure, idToDisplayName
                 );
+                console.log(`[diagram validation] ${elapsed()} done.`);
+                return { report, diagram, idToDisplayName };
               })
             );
           })
@@ -224,17 +160,16 @@ export class PathwayDiagramContentValidator {
     diagram: Diagram,
     peNodes: DiagramNode[],
     subPathwayNodes: DiagramNode[],
-    reactionEdges: DiagramEdge[],
     compartments: Compartment[],
-    idToInstance: Map<number, Instance>,
+    reactionEdges: DiagramEdge[],
     idToNode: Map<number, DiagramNode>,
-    reactionInstances: Instance[],
-    helperInstances: Instance[]
+    idToStructure: Map<number, ReactionStructureDto>,
+    idToDisplayName: Map<number, string>
   ): QAReport {
-    const peCheck = this.checkDisplayNames('PhysicalEntity Display Names', peNodes, idToInstance);
-    const subPathwayCheck = this.checkDisplayNames('Sub-Pathway Display Names', subPathwayNodes, idToInstance);
-    const compartmentCheck = this.checkDisplayNames('Compartment Display Names', compartments, idToInstance);
-    const structureCheck = this.checkReactionStructure(reactionEdges, idToNode, idToInstance, reactionInstances, helperInstances);
+    const peCheck = this.checkDisplayNames('PhysicalEntity Display Names', peNodes, idToDisplayName);
+    const subPathwayCheck = this.checkDisplayNames('Sub-Pathway Display Names', subPathwayNodes, idToDisplayName);
+    const compartmentCheck = this.checkDisplayNames('Compartment Display Names', compartments, idToDisplayName);
+    const structureCheck = this.checkReactionStructure(reactionEdges, idToNode, idToStructure, idToDisplayName);
 
     return {
       instance: { dbId: Number(pathwayId), displayName: diagram.displayName, schemaClassName: 'Pathway' } as Instance,
@@ -242,11 +177,11 @@ export class PathwayDiagramContentValidator {
     };
   }
 
-  private checkDisplayNames(checkName: string, entities: DisplayNameEntity[], idToInstance: Map<number, Instance>): QAResults {
+  private checkDisplayNames(checkName: string, entities: DisplayNameEntity[], idToDisplayName: Map<number, string>): QAResults {
     const rows: string[][] = [];
     for (const entity of entities) {
-      const dbInstance = idToInstance.get(entity.reactomeId);
-      if (!dbInstance) continue;
+      const dbDisplayNameRaw = idToDisplayName.get(entity.reactomeId);
+      if (dbDisplayNameRaw === undefined) continue;
       // The pre-generated diagram JSON bakes zero-width-space characters (U+200B)
       // into displayName after punctuation for word-wrapping -- invisible layout
       // hints, not semantic content -- so strip them before comparing/reporting.
@@ -255,7 +190,7 @@ export class PathwayDiagramContentValidator {
       // diagram-drawn labels never include (the same stripping
       // PathwayDiagramValidator.validateDisplayName already applies when writing
       // a fixed label onto the diagram), so compare against the stripped form.
-      const dbDisplayName = this.stripCompartmentSuffix(dbInstance.displayName);
+      const dbDisplayName = this.stripCompartmentSuffix(dbDisplayNameRaw);
       if (dbDisplayName !== diagramDisplayName) {
         rows.push([
           JSON.stringify({ dbId: entity.reactomeId, displayName: diagramDisplayName }),
@@ -275,35 +210,32 @@ export class PathwayDiagramContentValidator {
   private checkReactionStructure(
     reactionEdges: DiagramEdge[],
     idToNode: Map<number, DiagramNode>,
-    idToInstance: Map<number, Instance>,
-    reactionInstances: Instance[],
-    helperInstances: Instance[]
+    idToStructure: Map<number, ReactionStructureDto>,
+    idToDisplayName: Map<number, string>
   ): QAResults {
-    const helperById = new Map<number, Instance>(helperInstances.map(h => [h.dbId, h]));
-    const reactionById = new Map<number, Instance>(reactionInstances.map(r => [r.dbId, r]));
     const rows: string[][] = [];
 
     for (const edge of reactionEdges) {
-      const reaction = reactionById.get(edge.reactomeId);
-      if (!reaction) continue;
+      const dto = idToStructure.get(edge.reactomeId);
+      if (!dto) continue;
       const diagramStructure = this.deriveDiagramReactionStructure(edge, idToNode);
-      const dbStructure = this.deriveReactionStructure(reaction, helperById);
+      const dbStructure = this.deriveDbReactionStructure(dto);
       // Reactions have no drawn label to compare (edge.displayName isn't reliably
       // populated in the raw diagram JSON, and reactions never render a label
       // anyway), so use the database instance's displayName just as a readable
       // identifier for this row -- not a comparison target.
-      const reactionCell = JSON.stringify({ dbId: edge.reactomeId, displayName: reaction.displayName ?? String(edge.reactomeId) });
+      const reactionCell = this.entityCell(edge.reactomeId, idToDisplayName);
 
       for (const role of ROLE_ATTRIBUTES) {
         const diff = this.diffMultisets(diagramStructure[role], dbStructure[role]);
         for (const dbId of diff.missingInDiagram) {
-          rows.push([reactionCell, role, this.entityCell(dbId, idToInstance), 'in database but not drawn']);
+          rows.push([reactionCell, role, this.entityCell(dbId, idToDisplayName), 'in database but not drawn']);
         }
         for (const dbId of diff.missingInDb) {
-          rows.push([reactionCell, role, this.entityCell(dbId, idToInstance), 'drawn but not in database']);
+          rows.push([reactionCell, role, this.entityCell(dbId, idToDisplayName), 'drawn but not in database']);
         }
         for (const mismatch of diff.mismatchedCounts) {
-          rows.push([reactionCell, role, this.entityCell(mismatch.dbId, idToInstance),
+          rows.push([reactionCell, role, this.entityCell(mismatch.dbId, idToDisplayName),
             `stoichiometry mismatch: diagram=${mismatch.diagramCount}, db=${mismatch.dbCount}`]);
         }
       }
@@ -317,8 +249,8 @@ export class PathwayDiagramContentValidator {
     };
   }
 
-  private entityCell(dbId: number, idToInstance: Map<number, Instance>): string {
-    return JSON.stringify({ dbId, displayName: idToInstance.get(dbId)?.displayName ?? String(dbId) });
+  private entityCell(dbId: number, idToDisplayName: Map<number, string>): string {
+    return JSON.stringify({ dbId, displayName: idToDisplayName.get(dbId) ?? String(dbId) });
   }
 
   /**
@@ -371,44 +303,25 @@ export class PathwayDiagramContentValidator {
   }
 
   /**
-   * Mirrors InstanceUtilities.addHelpersToReaction's classification exactly
-   * (CatalystActivity goes to catalyst; a Negative-named regulation goes to
-   * inhibitor; a Positive-named regulation or Requirement goes to activator)
-   * but returns fresh dbId-count Maps instead of mutating the reaction's
-   * attributes map, since fetchInstances' results are shared, cached Instance
-   * objects.
+   * Reshapes the backend's already-resolved ReactionStructureDto (catalysts and
+   * regulators are resolved to actual PhysicalEntity dbIds server-side) into the
+   * same dbId-count-per-role Map shape used for diffing. Regulator classification
+   * (activator vs. inhibitor) mirrors InstanceUtilities.addHelpersToReaction's
+   * logic exactly, just reading Neo4j labels instead of schemaClassName.
    */
-  private deriveReactionStructure(reaction: Instance, helperById: Map<number, Instance>): RoleMap {
+  private deriveDbReactionStructure(dto: ReactionStructureDto): RoleMap {
     const result = this.emptyRoleMap();
-    this.accumulate(result.input, reaction.attributes?.get('input'));
-    this.accumulate(result.output, reaction.attributes?.get('output'));
-
-    const catalystActivities: Instance[] = reaction.attributes?.get('catalystActivity') ?? [];
-    for (const ca of catalystActivities) {
-      const helper = helperById.get(ca.dbId);
-      const pe = helper?.attributes?.get('physicalEntity');
-      if (pe?.dbId) result.catalyst.set(pe.dbId, (result.catalyst.get(pe.dbId) ?? 0) + 1);
-    }
-
-    const regulations: Instance[] = reaction.attributes?.get('regulatedBy') ?? [];
-    for (const reg of regulations) {
-      const helper = helperById.get(reg.dbId);
-      if (!helper) continue;
-      const pe = helper.attributes?.get('regulator');
-      if (!pe?.dbId) continue;
-      if (helper.schemaClassName.includes('Negative')) {
-        result.inhibitor.set(pe.dbId, (result.inhibitor.get(pe.dbId) ?? 0) + 1);
-      } else if (helper.schemaClassName.includes('Positive') || helper.schemaClassName === 'Requirement') {
-        result.activator.set(pe.dbId, (result.activator.get(pe.dbId) ?? 0) + 1);
+    (dto.inputs ?? []).forEach(p => result.input.set(p.dbId, (result.input.get(p.dbId) ?? 0) + p.stoichiometry));
+    (dto.outputs ?? []).forEach(p => result.output.set(p.dbId, (result.output.get(p.dbId) ?? 0) + p.stoichiometry));
+    (dto.catalysts ?? []).forEach(dbId => result.catalyst.set(dbId, (result.catalyst.get(dbId) ?? 0) + 1));
+    (dto.regulators ?? []).forEach(reg => {
+      if ((reg.labels ?? []).some(l => l.includes('Negative'))) {
+        result.inhibitor.set(reg.dbId, (result.inhibitor.get(reg.dbId) ?? 0) + 1);
+      } else if ((reg.labels ?? []).some(l => l.includes('Positive') || l === 'Requirement')) {
+        result.activator.set(reg.dbId, (result.activator.get(reg.dbId) ?? 0) + 1);
       }
-    }
+    });
     return result;
-  }
-
-  private accumulate(map: Map<number, number>, values: Instance[] | undefined) {
-    for (const v of values ?? []) {
-      if (v?.dbId) map.set(v.dbId, (map.get(v.dbId) ?? 0) + 1);
-    }
   }
 
   private diffMultisets(diagramMap: Map<number, number>, dbMap: Map<number, number>) {
@@ -433,18 +346,18 @@ export class PathwayDiagramContentValidator {
    * markDiagramEdited), leaving the actual save to the curator's existing,
    * separate Save action.
    */
-  autoFix(result: DiagramValidationResult, cy: Core): void {
-    const { report, diagram, instances } = result;
-    const idToInstance = new Map<number, Instance>(instances.map(i => [i.dbId, i]));
+  autoFix(result: DiagramValidationResult, cy: Core): Observable<void> {
+    const { report, diagram, idToDisplayName } = result;
 
     for (const checkName of ['PhysicalEntity Display Names', 'Sub-Pathway Display Names']) {
       const check = report.qaResults.find(r => r.checkName === checkName);
       if (!check || check.passed || !check.rows) continue;
       for (const row of check.rows) {
         const { dbId } = JSON.parse(row[0]);
-        const dbInstance = idToInstance.get(dbId);
-        if (!dbInstance) continue;
-        cy.elements(`[reactomeId = ${dbId}]`).forEach((elm: any) => this.liveValidator.validateDisplayName(elm, dbInstance));
+        const displayName = idToDisplayName.get(dbId);
+        if (displayName === undefined) continue;
+        const shell = { dbId, displayName, schemaClassName: '' } as Instance;
+        cy.elements(`[reactomeId = ${dbId}]`).forEach((elm: any) => this.liveValidator.validateDisplayName(elm, shell));
       }
     }
 
@@ -453,28 +366,34 @@ export class PathwayDiagramContentValidator {
       const reactomeIdToCompartment = new Map((diagram.compartments ?? []).map(c => [c.reactomeId, c]));
       for (const row of compartmentCheck.rows) {
         const { dbId } = JSON.parse(row[0]);
-        const dbInstance = idToInstance.get(dbId);
+        const displayName = idToDisplayName.get(dbId);
         const compartment = reactomeIdToCompartment.get(dbId);
-        if (!dbInstance || !compartment) continue;
+        if (displayName === undefined || !compartment) continue;
         const outer = cy.getElementById(`${compartment.id}-outer`);
-        if (outer && outer.length > 0) outer.data('displayName', dbInstance.displayName);
+        if (outer && outer.length > 0) outer.data('displayName', displayName);
       }
     }
 
     const structureCheck = report.qaResults.find(r => r.checkName === 'Reaction Structure');
+    const flaggedReactionIds = new Set<number>();
     if (structureCheck && !structureCheck.passed && structureCheck.rows) {
-      const flaggedReactionIds = new Set<number>();
       for (const row of structureCheck.rows) {
         const { dbId } = JSON.parse(row[0]);
         flaggedReactionIds.add(dbId);
       }
-      for (const reactionDbId of flaggedReactionIds) {
-        const reaction = idToInstance.get(reactionDbId);
-        if (!reaction) continue;
-        for (const attribute of ['input', 'output', 'catalystActivity', 'regulatedBy']) {
-          this.liveValidator.handleInstanceEdit(reaction, attribute, cy);
-        }
-      }
     }
+    if (flaggedReactionIds.size === 0) return of(undefined);
+    // Only flagged reactions need a full Instance fetch here (not every reaction in
+    // the diagram), so the existing throttled/timeout-guarded fetch is more than
+    // sufficient even though it's the "slow path".
+    return this.fetchInstancesThrottled([...flaggedReactionIds]).pipe(
+      map((reactions: Instance[]) => {
+        for (const reaction of reactions) {
+          for (const attribute of ['input', 'output', 'catalystActivity', 'regulatedBy']) {
+            this.liveValidator.handleInstanceEdit(reaction, attribute, cy);
+          }
+        }
+      })
+    );
   }
 }

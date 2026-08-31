@@ -1145,8 +1145,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
               .afterClosed().subscribe(dialogResult => {
                 if (dialogResult === 'autofix') {
                   this.pushUndoSnapshot();
-                  this.contentValidator.autoFix(result, this.diagram.cy);
-                  this.markDiagramEdited();
+                  this.contentValidator.autoFix(result, this.diagram.cy).subscribe(() => {
+                    this.markDiagramEdited();
+                  });
                 }
               });
           },

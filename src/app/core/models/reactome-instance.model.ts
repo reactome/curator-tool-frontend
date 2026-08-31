@@ -109,6 +109,48 @@ export interface Referrer {
 }
 
 /**
+ * Lightweight dbId/displayName pair, returned by the backend's
+ * findDisplayNamesByDbIds endpoint for callers (e.g. the pathway diagram content
+ * validator) that only need a label, not a full Instance with attributes.
+ */
+export interface DbIdDisplayName {
+  dbId: number;
+  displayName: string;
+}
+
+/**
+ * A single input/output/catalyst participant of a reaction, as returned by the
+ * backend's findReactionStructuresByDbIds endpoint -- dbId plus stoichiometry.
+ */
+export interface ReactionParticipant {
+  dbId: number;
+  stoichiometry: number;
+}
+
+/**
+ * A single regulator (the actual regulating PhysicalEntity, already resolved through
+ * the Regulation helper node) of a reaction. `labels` are the raw Neo4j labels of the
+ * Regulation node (e.g. PositiveRegulation/NegativeRegulation/Requirement), so callers
+ * classify activator vs. inhibitor themselves.
+ */
+export interface ReactionRegulator {
+  dbId: number;
+  labels: string[];
+}
+
+/**
+ * The dbId-level structure of a single reaction (inputs, outputs, catalysts,
+ * regulators), returned by the backend's findReactionStructuresByDbIds endpoint.
+ */
+export interface ReactionStructureDto {
+  reactionDbId: number;
+  inputs: ReactionParticipant[];
+  outputs: ReactionParticipant[];
+  catalysts: number[];
+  regulators: ReactionRegulator[];
+}
+
+/**
  * This interface is to model a set of objects that are persisted before committed into
  * the database, such as new instances, changed instances, and deleted instances. These
  * objects also include bookmarks and some other user specific ones.
