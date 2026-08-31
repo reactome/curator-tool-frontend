@@ -303,6 +303,8 @@ The header toolbar shows the source:
 - **`{ClassName}@Database`** — the database-backed list.
 - **`{ClassName}@Staged`** — the local/staged list (only your changed/new/deleted instances for that class).
 
+**Species filter:** for classes with a species slot (Pathway, Reaction, Complex, EntityWithAccessionedSequence, ReferenceGeneProduct, and others), a filter at the right of the toolbar offers **All** (default), **Human**, and **Non-human**. It narrows whatever the list is already showing — combinable with the search box or an advanced search — and the download button exports the filtered set. The choice is kept in the URL, so reloading or sharing the link preserves it. An instance with no species at all appears under neither Human nor Non-human.
+
 **Table columns:** **dbId**, **Display Name**, and per-row **action buttons**.
 
 - In the **dbId** column, updated instances show a small gold `star` icon (tooltip **"Modified"**).
@@ -470,6 +472,7 @@ For instance-valued attributes, open the action menu by clicking the edit pencil
 - **Single-valued:** **Set via Creation** (`add_box`), **Set via Selection** (`search`), **Delete** (`delete`)
 - **Multi-valued:** **Add via Creation** (`add_box`), **Add via Selection** (`search`), **Replace via Creation** (`switch_access_shortcut_add`), **Replace via Selection** (`find_replace`), **Delete** (`delete`)
 - **Stoichiometry** (`tag`) — shown only for the multivalued stoichiometry attributes (`input`, `output`, `hasComponent`, `repeatedUnit`) on a populated value; opens the [Set Stoichiometry dialog](#98-supporting-dialogs).
+- **Show Referrers** (`list_alt`) — shown on any populated instance-valued slot; opens the [Referrers page](#98-supporting-dialogs) for that value in a new tab.
 
 "via Creation" opens the **Create a New Instance** dialog (pick a schema class, fill in attributes); "via Selection" opens the **Select an Instance** dialog.
 
@@ -496,7 +499,8 @@ Highlights are removed automatically when you click **OK** (keep changes) or **C
 
 ### 9.8 Supporting dialogs
 
-- **Referrers** — titled *Referrers of "{name} [{dbId}]"*, grouped by attribute with counts; each referrer has a **launch** button. Shows **"Total Referrers: {count}"** (very large lists are truncated). In a deletion context, instances that would be structurally affected are shown in red.
+- **Referrers** — titled *Referrers of "{name} [{dbId}]"*, grouped by attribute with counts; each referrer has a **launch** button. Shows **"Total Referrers: {count}"** (very large lists are truncated). In a deletion context, instances that would be structurally affected are shown in red. A link icon in the title bar (tooltip **"open in new tab"**) opens the same referrers as the standalone **Referrers page** below.
+- **Referrers page** — a routed, bookmarkable page at `schema_view/referrers/{dbId}`, opened via the dialog's link icon above or the **Show Referrers** (`list_alt`) action on an instance-valued slot (see [9.6](#96-instance-valued-slot-action-menu)). It always opens in a **new tab**, so it never replaces the view you were on. Unlike the dialog, its URL is stable — it can be reloaded, bookmarked, or shared — and it lays the referrers out as a plain two-column table (referring attribute on the left, referring instances on the right, each a clickable link). A dbId that isn't a number, or that names an instance which can no longer be loaded, is reported directly rather than showing an empty table.
 - **QA Report** — titled *QA Report for "{name}"*; passed checks show green **" Passed"**, failed checks render a table with clickable instance links.
 - **Delete** — titled *Delete "{name} [{dbId}]"*, with an optional structural-change warning and a **Show Referrers / Hide Referrers** toggle; **Delete** / **Cancel**. A separate **Confirm Delete** step notes that database instances are only removed after you commit the deletion. You may also be offered to **create a "Deleted" instance** to record the deletion.
 - **Match Instances** — titled *Matched instances for {name}*; select an existing instance and click **OK** to navigate to it.
@@ -602,12 +606,15 @@ A persistent toolbar sits above the diagram canvas with icon buttons (hover for 
 | `align_horizontal_center` | **Align Centers Vertically** | While editing, with 2+ alignable nodes selected |
 | `align_vertical_center` | **Align Centers Horizontally** | While editing, with 2+ alignable nodes selected |
 | `block` | **Disable All Resizing** | While editing, only appears if any compartment currently has resize widgets showing |
+| `fact_check` | **Validate Diagram Against Database** | While editing |
 | `brightness_4` | **Toggle Color Theme** | Always |
 | `cloud_upload` | **Upload Diagram** | There are unsaved edits |
 | `refresh` | **Reload Pathway Diagram** | Always |
 | `description` | **Edit/Create PathwayDiagram** | Always |
 
 **Find by dbId:** click the **search** icon to expand it into a small text field; type a dbId and press **Enter** to select that object and zoom/pan the view onto it, if it is currently displayed in this diagram. The field collapses back to the search icon once you search, or if you press **Escape** or click away without searching. If nothing in this diagram has that dbId, or what you typed isn't a valid number, you're told so directly rather than the search silently doing nothing.
+
+**Validate Diagram Against Database:** while editing, click the **Validate Diagram Against Database** (`fact_check`) icon to scan everything drawn — PhysicalEntity nodes, sub-Pathway nodes, Compartments, and reaction structure (inputs, outputs, catalysts, regulators) — against the live database, catching cases where the diagram's saved layout has drifted from what curators have since committed (e.g. after a delete or an edit elsewhere). A wait dialog shows while it runs, then a **QA Report**-style dialog lists each check as **Passed** or a table of mismatches, with clickable instance links. If anything failed, an **Auto-Fix** button corrects the live diagram to match the database — it does not save automatically, so you can review the result (and undo it, like any other edit) before choosing **Upload Diagram** yourself.
 
 **Right-click** also opens the classic context menu — it still offers most of the actions above (both access points work identically) plus every element-specific action, context-sensitive to what you clicked. Zoom In / Zoom Out / Fit to Screen / Find by dbId are toolbar-only (view-level controls, not tied to any right-clicked element):
 
@@ -625,7 +632,7 @@ A persistent toolbar sits above the diagram canvas with icon buttons (hover for 
 - **Resize** / **Disable Resizing** (nodes/compartments)
 - **Delete Compartment**, **Insert Compartment**
 - **Remove Edge Point**
-- On a pathway node: **Delete Pathway** (when deletable), **Go to Pathway**
+- On a pathway node (both process nodes and encapsulated/nested-diagram nodes): **Delete Pathway** (while editing, when deletable), **Go to Pathway** (always, navigation only)
 - With multiple nodes selected: **Align Centers Vertically**, **Align Centers Horizontally**
 - **Upload Diagram** (when there are unsaved edits)
 

@@ -1,3 +1,29 @@
+### Build on August 30, 2026
+
+- Added a **Validate Diagram Against Database** button to the pathway diagram toolbar (shown while editing). It scans everything drawn - PhysicalEntity nodes, sub-Pathway nodes, Compartments, and reaction structure (inputs, outputs, catalysts, regulators) - against the live database, so a diagram whose saved layout has drifted from what's actually been committed (for example, after an entity was renamed or a reaction's inputs changed elsewhere, without the diagram being regenerated) is caught rather than silently shown as-is. Results are listed as a set of pass/fail checks, each failure as a table of mismatches with clickable instance links. When something fails, an **Auto-Fix** button corrects the live diagram to match the database - it only changes what's on screen and does not save on its own, so the result can be reviewed (and undone, like any other edit) before choosing to upload it.
+
+- Bug fix: disabling editing on a pathway diagram while it had unsaved changes discarded them without warning, and re-enabling editing afterwards loaded the last-saved diagram as if the changes had never been made. The confirmation this is meant to go through - "This diagram has unsaved changes. Upload before disabling editing?" - existed in the code already (it is the same prompt used when unlocking a diagram) but had been left disconnected, so disabling editing always went ahead immediately. It is now asked every time, the same as unlocking.
+
+- Bug fix: right after auto-fixing a diagram (or, occasionally, right after any other live edit), the **Upload Diagram** button could fail to appear even though the diagram genuinely had unsaved changes. A background check that keeps the "unsaved changes" flag in sync with the editing lock could win a race against the edit that had just been made and reset the flag back to "nothing to save" before the next screen update, hiding Upload. That background check no longer overrides a change that is already known about locally.
+
+- The **Show Referrers** action on an instance-valued attribute slot now opens the referrers page in a new tab instead of navigating away from the instance you were looking at.
+
+- Browser tabs and history now show a title specific to what's displayed - the instance, the pathway, or the referrers page you're viewing - instead of every tab being titled "Reactome WebBench" and being indistinguishable from one another in your browser's tab bar or history.
+
+### Build on August 27, 2026
+
+- In the pathway diagram, **Go to Pathway** and **Delete Pathway** now work the same way for every kind of pathway node, including ones representing a nested sub-diagram (previously only one of the two kinds supported deletion). **Delete Pathway** is only offered while editing is enabled - deleting is an edit, so it no longer appears while you're just viewing a diagram.
+
+### Build on August 26, 2026
+
+- Added a **Show Referrers** entry to the action menu on an instance-valued attribute slot (in addition to the existing referrers access points), so you can check what refers to a value without first opening it.
+
+- Bug fix: revisiting an instance already earlier in your view history (for example, re-selecting it in the staged-changes list or the event tree, rather than clicking back through the bread-crumb) left the bread-crumb trail pointing past the instance actually being shown, instead of ending at it. Revisiting an instance already in the history now trims the trail to end there, the same as clicking that instance's own bread-crumb link would.
+
+### Build on August 24, 2026
+
+- Bug fix: opening a pathway diagram could crash outright - showing nothing at all - if its saved layout referred to a connector or a link whose entity or reaction no longer existed (for example, after a deletion that happened without the diagram being regenerated to match). One such stale reference used to take down the entire diagram; it is now skipped on its own, and the rest of the diagram is drawn correctly.
+
 ### Build on August 21, 2026
 
 - A bug was reported for attribute value comparison of two different instances. Before the "show attributes having different values" would actually display no values. This has been fixed so that two different instances can be directly compared, and only varying attributes listed.
