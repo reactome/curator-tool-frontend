@@ -151,6 +151,27 @@ export interface ReactionStructureDto {
 }
 
 /**
+ * A single hasModifiedResidue entry of an EntityWithAccessionedSequence (EWAS) -- the
+ * ModifiedResidue's own dbId plus its psiMod's label, the only piece of a modified residue
+ * actually drawn on the diagram (as a small "node feature" mark on the EWAS node). Residues
+ * with no psiMod/label are excluded server-side, matching what the diagram's own
+ * node-feature rendering already filters out client-side.
+ */
+export interface ModifiedResidueEntry {
+  dbId: number;
+  label: string;
+}
+
+/**
+ * An EWAS's full set of modified residues, as returned by the backend's
+ * findModifiedResiduesByDbIds endpoint.
+ */
+export interface EwasModifiedResiduesDto {
+  ewasDbId: number;
+  residues: ModifiedResidueEntry[];
+}
+
+/**
  * This interface is to model a set of objects that are persisted before committed into
  * the database, such as new instances, changed instances, and deleted instances. These
  * objects also include bookmarks and some other user specific ones.

@@ -17,10 +17,11 @@
  * live cytoscape instance only; it never saves/persists.
  */
 import { Injectable } from "@angular/core";
+import { Core } from "cytoscape";
 import { DiagramComponent } from "ngx-reactome-diagram";
 import { Observable, switchMap, map, from, mergeMap, toArray, of, catchError, timeout } from "rxjs";
 import { DataService } from "src/app/core/services/data.service";
-import { Instance, ReactionStructureDto } from "src/app/core/models/reactome-instance.model";
+import { Instance, ModifiedResidueEntry, ReactionStructureDto } from "src/app/core/models/reactome-instance.model";
 import { QAReport, QAResults } from "src/app/core/models/qa-report.model";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import { Diagram, Node as DiagramNode, Edge as DiagramEdge, Compartment, EdgeConnector } from "ngx-reactome-diagram/lib/model/diagram.model";
@@ -31,6 +32,12 @@ import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
 // autoFix() (which reads it back to decide "delete the reaction" vs. "fix its structure"),
 // so the two can never drift out of sync with each other.
 const REACTION_DELETED_ISSUE = 'reaction deleted from database';
+
+// Shared between checkModifiedResidues() and autoFix() for the same reason as
+// REACTION_DELETED_ISSUE above -- these decide add/remove/relabel, so they must match exactly.
+const RESIDUE_MISSING_ISSUE = 'in database but not drawn';
+const RESIDUE_EXTRA_ISSUE = 'drawn but not in database';
+const RESIDUE_LABEL_MISMATCH_ISSUE = 'label mismatch';
 
 const ROLE_ATTRIBUTES = ['input', 'output', 'catalyst', 'activator', 'inhibitor'] as const;
 type Role = typeof ROLE_ATTRIBUTES[number];
@@ -106,7 +113,7 @@ export class PathwayDiagramContentValidator {
     );
   }
 
-  validate(pathwayId: string): Observable<DiagramValidationResult> {
+  validate(pathwayId: string, cy: Core): Observable<DiagramValidationResult> {
     const t0 = performance.now();
     const elapsed = () => `${(performance.now() - t0).toFixed(0)}ms`;
 
@@ -116,11 +123,14 @@ export class PathwayDiagramContentValidator {
         const subPathwayNodes = diagram.nodes.filter(n => n.schemaClass === 'Pathway');
         const reactionEdges = diagram.edges.filter(e => REACTION_TYPES.includes(e.schemaClass));
         const compartments = diagram.compartments ?? [];
+        // hasModifiedResidue is only ever declared on EntityWithAccessionedSequence in the
+        // schema, so this is exact, not a heuristic -- no risk of missing or over-including.
+        const ewasNodes = peNodes.filter(n => n.schemaClass === 'EntityWithAccessionedSequence');
         const idToNode = new Map<number, DiagramNode>(diagram.nodes.map(n => [n.id, n]));
 
         console.log(
           `[diagram validation] ${elapsed()} raw diagram fetched: ` +
-          `${diagram.nodes.length} nodes (${peNodes.length} PE, ${subPathwayNodes.length} sub-pathway), ` +
+          `${diagram.nodes.length} nodes (${peNodes.length} PE, ${ewasNodes.length} EWAS, ${subPathwayNodes.length} sub-pathway), ` +
           `${diagram.edges.length} edges (${reactionEdges.length} reactions), ${compartments.length} compartments.`
         );
 
@@ -128,32 +138,38 @@ export class PathwayDiagramContentValidator {
           switchMap((idToStructure: Map<number, ReactionStructureDto>) => {
             console.log(`[diagram validation] ${elapsed()} reaction structures fetched for ${idToStructure.size}/${reactionEdges.length} reactions.`);
 
-            // Every dbId whose displayName we might need to show: drawn PE/sub-pathway/
-            // compartment nodes, AND every participant referenced by a reaction's DATABASE
-            // structure (which may include entities not drawn in the diagram at all).
-            const displayNameIds = new Set<number>();
-            peNodes.forEach(n => displayNameIds.add(n.reactomeId));
-            subPathwayNodes.forEach(n => displayNameIds.add(n.reactomeId));
-            compartments.forEach(c => displayNameIds.add(c.reactomeId));
-            for (const structure of idToStructure.values()) {
-              (structure.inputs ?? []).forEach(p => displayNameIds.add(p.dbId));
-              (structure.outputs ?? []).forEach(p => displayNameIds.add(p.dbId));
-              (structure.catalysts ?? []).forEach(dbId => displayNameIds.add(dbId));
-              (structure.regulators ?? []).forEach(r => displayNameIds.add(r.dbId));
-            }
+            return this.dataService.fetchModifiedResiduesByDbIds(ewasNodes.map(n => n.reactomeId)).pipe(
+              switchMap((idToResidues: Map<number, ModifiedResidueEntry[]>) => {
+                console.log(`[diagram validation] ${elapsed()} modified residues fetched for ${idToResidues.size}/${ewasNodes.length} EWAS.`);
 
-            return this.dataService.fetchDisplayNamesByDbIds([...displayNameIds]).pipe(
-              map((idToDisplayName: Map<number, string>) => {
-                console.log(
-                  `[diagram validation] ${elapsed()} display names fetched for ${idToDisplayName.size}/${displayNameIds.size} entities. ` +
-                  `Building report...`
+                // Every dbId whose displayName we might need to show: drawn PE/sub-pathway/
+                // compartment nodes, AND every participant referenced by a reaction's DATABASE
+                // structure (which may include entities not drawn in the diagram at all).
+                const displayNameIds = new Set<number>();
+                peNodes.forEach(n => displayNameIds.add(n.reactomeId));
+                subPathwayNodes.forEach(n => displayNameIds.add(n.reactomeId));
+                compartments.forEach(c => displayNameIds.add(c.reactomeId));
+                for (const structure of idToStructure.values()) {
+                  (structure.inputs ?? []).forEach(p => displayNameIds.add(p.dbId));
+                  (structure.outputs ?? []).forEach(p => displayNameIds.add(p.dbId));
+                  (structure.catalysts ?? []).forEach(dbId => displayNameIds.add(dbId));
+                  (structure.regulators ?? []).forEach(r => displayNameIds.add(r.dbId));
+                }
+
+                return this.dataService.fetchDisplayNamesByDbIds([...displayNameIds]).pipe(
+                  map((idToDisplayName: Map<number, string>) => {
+                    console.log(
+                      `[diagram validation] ${elapsed()} display names fetched for ${idToDisplayName.size}/${displayNameIds.size} entities. ` +
+                      `Building report...`
+                    );
+                    const report = this.buildReport(
+                      pathwayId, diagram, peNodes, subPathwayNodes, compartments,
+                      reactionEdges, idToNode, idToStructure, ewasNodes, cy, idToResidues, idToDisplayName
+                    );
+                    console.log(`[diagram validation] ${elapsed()} done.`);
+                    return { report, diagram, idToDisplayName };
+                  })
                 );
-                const report = this.buildReport(
-                  pathwayId, diagram, peNodes, subPathwayNodes, compartments,
-                  reactionEdges, idToNode, idToStructure, idToDisplayName
-                );
-                console.log(`[diagram validation] ${elapsed()} done.`);
-                return { report, diagram, idToDisplayName };
               })
             );
           })
@@ -171,16 +187,20 @@ export class PathwayDiagramContentValidator {
     reactionEdges: DiagramEdge[],
     idToNode: Map<number, DiagramNode>,
     idToStructure: Map<number, ReactionStructureDto>,
+    ewasNodes: DiagramNode[],
+    cy: Core,
+    idToResidues: Map<number, ModifiedResidueEntry[]>,
     idToDisplayName: Map<number, string>
   ): QAReport {
     const peCheck = this.checkDisplayNames('PhysicalEntity Display Names', peNodes, idToDisplayName);
     const subPathwayCheck = this.checkDisplayNames('Sub-Pathway Display Names', subPathwayNodes, idToDisplayName);
     const compartmentCheck = this.checkDisplayNames('Compartment Display Names', compartments, idToDisplayName);
     const structureCheck = this.checkReactionStructure(reactionEdges, idToNode, idToStructure, idToDisplayName);
+    const modifiedResidueCheck = this.checkModifiedResidues(ewasNodes, cy, idToResidues, idToDisplayName);
 
     return {
       instance: { dbId: Number(pathwayId), displayName: diagram.displayName, schemaClassName: 'Pathway' } as Instance,
-      qaResults: [peCheck, subPathwayCheck, structureCheck, compartmentCheck]
+      qaResults: [peCheck, subPathwayCheck, structureCheck, compartmentCheck, modifiedResidueCheck]
     };
   }
 
@@ -270,6 +290,56 @@ export class PathwayDiagramContentValidator {
       checkName: 'Reaction Structure',
       passed: rows.length === 0,
       columns: ['Reaction', 'Role', 'Entity', 'Issue'],
+      rows
+    };
+  }
+
+  /**
+   * Compares each drawn EWAS's "node feature" marks (small labeled marks representing
+   * hasModifiedResidue entries, e.g. phosphorylation sites -- see
+   * instance-converter.ts's createModificationNodes()) against the database. Unlike every
+   * other check here, modification marks are NOT part of the raw diagram JSON at all -- they
+   * are added purely client-side whenever an EWAS node is rendered -- so this is the one
+   * check that has to inspect live cytoscape elements (`cy`) rather than the fetched
+   * `Diagram` object.
+   */
+  private checkModifiedResidues(
+    ewasNodes: DiagramNode[],
+    cy: Core,
+    idToResidues: Map<number, ModifiedResidueEntry[]>,
+    idToDisplayName: Map<number, string>
+  ): QAResults {
+    const rows: string[][] = [];
+
+    for (const node of ewasNodes) {
+      const dbLabelById = new Map((idToResidues.get(node.reactomeId) ?? []).map(r => [r.dbId, r.label]));
+      const drawnLabelById = new Map<number, string>();
+      cy.elements('.Modification').forEach((elm: any) => {
+        if (elm.data('nodeReactomeId') === node.reactomeId) {
+          drawnLabelById.set(elm.data('reactomeId'), elm.data('displayName'));
+        }
+      });
+
+      const ewasCell = this.entityCell(node.reactomeId, idToDisplayName);
+      const allResidueIds = new Set<number>([...dbLabelById.keys(), ...drawnLabelById.keys()]);
+      for (const residueDbId of allResidueIds) {
+        const dbLabel = dbLabelById.get(residueDbId);
+        const drawnLabel = drawnLabelById.get(residueDbId);
+        const residueCell = JSON.stringify({ dbId: residueDbId, displayName: dbLabel ?? drawnLabel ?? String(residueDbId) });
+        if (dbLabel === undefined) {
+          rows.push([residueCell, ewasCell, drawnLabel ?? '', '', RESIDUE_EXTRA_ISSUE]);
+        } else if (drawnLabel === undefined) {
+          rows.push([residueCell, ewasCell, '', dbLabel, RESIDUE_MISSING_ISSUE]);
+        } else if (dbLabel !== drawnLabel) {
+          rows.push([residueCell, ewasCell, drawnLabel, dbLabel, RESIDUE_LABEL_MISMATCH_ISSUE]);
+        }
+      }
+    }
+
+    return {
+      checkName: 'Modified Residues',
+      passed: rows.length === 0,
+      columns: ['Modified Residue', 'EWAS', 'Drawn Label', 'Database Label', 'Issue'],
       rows
     };
   }
@@ -438,6 +508,31 @@ export class PathwayDiagramContentValidator {
         flaggedReactionIds.add(dbId);
       }
     }
+    // Unlike reaction structure, there is no existing handleInstanceEdit()-style resync
+    // function for modification marks (see checkModifiedResidues()'s doc comment) -- fixing
+    // has to add/remove/relabel individual marks itself. This needs no server round-trip:
+    // every row already carries the correct database label (if any), and residue removal
+    // needs no new instance fetch either.
+    const modifiedResidueCheck = report.qaResults.find(r => r.checkName === 'Modified Residues');
+    if (modifiedResidueCheck && !modifiedResidueCheck.passed && modifiedResidueCheck.rows) {
+      for (const row of modifiedResidueCheck.rows) {
+        const { dbId: residueDbId } = JSON.parse(row[0]);
+        const { dbId: ewasDbId } = JSON.parse(row[1]);
+        const [, , , dbLabel, issue] = row;
+        const markSelector = `.Modification[nodeReactomeId = ${ewasDbId}][reactomeId = ${residueDbId}]`;
+        if (issue === RESIDUE_EXTRA_ISSUE) {
+          const markElm = cy.elements(markSelector);
+          if (markElm.length > 0) cy.remove(markElm);
+        } else if (issue === RESIDUE_MISSING_ISSUE) {
+          const ewasElm = cy.elements(`[reactomeId = ${ewasDbId}]`).first();
+          if (ewasElm.length > 0) this.addModificationMark(ewasElm, residueDbId, dbLabel, cy);
+        } else if (issue === RESIDUE_LABEL_MISMATCH_ISSUE) {
+          const markElm = cy.elements(markSelector);
+          if (markElm.length > 0) markElm.data('displayName', dbLabel);
+        }
+      }
+    }
+
     if (flaggedReactionIds.size === 0) return of(undefined);
     // Only flagged reactions need a full Instance fetch here (not every reaction in
     // the diagram), so the existing throttled/timeout-guarded fetch is more than
@@ -451,5 +546,52 @@ export class PathwayDiagramContentValidator {
         }
       })
     );
+  }
+
+  /**
+   * Creates one new "node feature" mark for a modified residue that exists in the database
+   * but isn't drawn. Mirrors instance-converter.ts's createModificationNodes() perimeter
+   * placement (minus its random jitter, which is purely cosmetic) so a freshly-added mark
+   * looks consistent with the rest -- marks are draggable, so an approximate position spread
+   * evenly among however many marks the EWAS already has is enough, not pixel-perfect.
+   */
+  private addModificationMark(ewasElm: any, residueDbId: number, label: string, cy: Core): void {
+    const ewasReactomeId = ewasElm.data('reactomeId');
+    const parentWidth = ewasElm.data('width');
+    const parentHeight = ewasElm.data('height');
+    const parentPos = ewasElm.position();
+    const existingCount = cy.elements(`.Modification[nodeReactomeId = ${ewasReactomeId}]`).length;
+    const perimeter = 2 * (parentWidth + parentHeight);
+    const spacing = perimeter / (existingCount + 1);
+    const distanceAlongPerimeter = spacing * existingCount;
+
+    let modX: number, modY: number;
+    if (distanceAlongPerimeter < parentWidth) {
+      modX = parentPos.x - parentWidth / 2 + distanceAlongPerimeter;
+      modY = parentPos.y - parentHeight / 2;
+    } else if (distanceAlongPerimeter < parentWidth + parentHeight) {
+      modX = parentPos.x + parentWidth / 2;
+      modY = parentPos.y - parentHeight / 2 + (distanceAlongPerimeter - parentWidth);
+    } else if (distanceAlongPerimeter < 2 * parentWidth + parentHeight) {
+      modX = parentPos.x + parentWidth / 2 - (distanceAlongPerimeter - parentWidth - parentHeight);
+      modY = parentPos.y + parentHeight / 2;
+    } else {
+      modX = parentPos.x - parentWidth / 2;
+      modY = parentPos.y + parentHeight / 2 - (distanceAlongPerimeter - 2 * parentWidth - parentHeight);
+    }
+
+    const modNodeSize = 20;
+    const newModNode = cy.add({
+      data: {
+        id: `mod_${ewasReactomeId}_${residueDbId}`,
+        reactomeId: residueDbId,
+        displayName: label,
+        width: modNodeSize,
+        height: modNodeSize,
+        nodeReactomeId: ewasReactomeId,
+      },
+      position: { x: modX, y: modY }
+    } as any)[0];
+    newModNode.addClass('Modification');
   }
 }

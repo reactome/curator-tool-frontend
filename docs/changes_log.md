@@ -6,6 +6,8 @@
 
 - **Validate Diagram Against Database** now also catches drawn objects - entities, sub-pathways, compartments, or whole reactions - whose underlying database record has since been deleted (for example, after a curator deleted or merged something without regenerating the diagram). These are listed as failures rather than silently passing, and **Auto-Fix** removes them from the diagram along with any of their own connectors.
 
+- **Validate Diagram Against Database** now also checks modified-residue marks (the small labeled marks on a protein showing things like a phosphorylation site) against the database, catching ones that are missing, extra, or show the wrong label. **Auto-Fix** adds, removes, or relabels these marks to match.
+
 ### Build on August 30, 2026
 
 - Added a **Validate Diagram Against Database** button to the pathway diagram toolbar (shown while editing). It scans everything drawn - PhysicalEntity nodes, sub-Pathway nodes, Compartments, and reaction structure (inputs, outputs, catalysts, regulators) - against the live database, so a diagram whose saved layout has drifted from what's actually been committed (for example, after an entity was renamed or a reaction's inputs changed elsewhere, without the diagram being regenerated) is caught rather than silently shown as-is. Results are listed as a set of pass/fail checks, each failure as a table of mismatches with clickable instance links. When something fails, an **Auto-Fix** button corrects the live diagram to match the database - it only changes what's on screen and does not save on its own, so the result can be reviewed (and undone, like any other edit) before choosing to upload it.

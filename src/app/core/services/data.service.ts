@@ -4,7 +4,7 @@ import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, EMPTY, forkJoin, from, map, mergeMap, Observable, of, Subject, switchMap, take, tap, throwError, toArray } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
-import { DbIdDisplayName, DiagramLock, Instance, InstanceList, NEW_DISPLAY_NAME, ReactionStructureDto, Referrer, UserInstanceBackupSummary, UserInstances } from "../models/reactome-instance.model";
+import { DbIdDisplayName, DiagramLock, EwasModifiedResiduesDto, Instance, InstanceList, ModifiedResidueEntry, NEW_DISPLAY_NAME, ReactionStructureDto, Referrer, UserInstanceBackupSummary, UserInstances } from "../models/reactome-instance.model";
 import {
   AttributeCategory,
   SchemaAttribute,
@@ -58,11 +58,13 @@ export class DataService {
   private diagramJsonUrl = `${environment.ApiRoot}/diagram`;
   private findDisplayNamesByDbIdsUrl = `${environment.ApiRoot}/findDisplayNamesByDbIds`;
   private findReactionStructuresByDbIdsUrl = `${environment.ApiRoot}/findReactionStructuresByDbIds`;
+  private findModifiedResiduesByDbIdsUrl = `${environment.ApiRoot}/findModifiedResiduesByDbIds`;
 
   // Dedicated caches for the lightweight endpoints below -- deliberately NOT the shared
   // id2instance cache, which other features rely on holding fully-attributed instances.
   private id2displayName = new Map<number, string>();
   private id2reactionStructure = new Map<number, ReactionStructureDto>();
+  private id2modifiedResidues = new Map<number, ModifiedResidueEntry[]>();
   private exportEventDocxUrl = `${environment.ApiRoot}/exportEventDocx/`;
   private chebiAutoFillerUrl = `${environment.ApiRoot}/fillChEBI/`;
   private fillReferenceSequenceUrl = `${environment.ApiRoot}/fillRefSequence/`;
@@ -533,6 +535,37 @@ export class DataService {
         (fetched ?? []).forEach(entry => {
           this.id2reactionStructure.set(entry.reactionDbId, entry);
           result.set(entry.reactionDbId, entry);
+        });
+        return result;
+      }),
+      catchError((err: Error) => this.handleErrorMessage(err))
+    );
+  }
+
+  /**
+   * Lightweight hasModifiedResidue entries (dbId + psiMod label -- the "node feature" marks
+   * drawn on the diagram) for a set of EntityWithAccessionedSequence instances, for callers
+   * that need to compare drawn marks without loading full Instances (e.g. the pathway diagram
+   * content validator). Backed by the findModifiedResiduesByDbIds endpoint, using targeted
+   * relationship queries instead of the generic "every relationship" traversal that
+   * fetchInstance()/fetchInstanceInBatch() use.
+   */
+  fetchModifiedResiduesByDbIds(dbIds: number[]): Observable<Map<number, ModifiedResidueEntry[]>> {
+    if (dbIds.length === 0) return of(new Map());
+    const result = new Map<number, ModifiedResidueEntry[]>();
+    const toFetch: number[] = [];
+    dbIds.forEach(id => {
+      const cached = this.id2modifiedResidues.get(id);
+      if (cached !== undefined) result.set(id, cached);
+      else toFetch.push(id);
+    });
+    if (toFetch.length === 0) return of(result);
+    return this.http.post<EwasModifiedResiduesDto[]>(this.findModifiedResiduesByDbIdsUrl, toFetch).pipe(
+      map((fetched: EwasModifiedResiduesDto[]) => {
+        (fetched ?? []).forEach(entry => {
+          const residues = entry.residues ?? [];
+          this.id2modifiedResidues.set(entry.ewasDbId, residues);
+          result.set(entry.ewasDbId, residues);
         });
         return result;
       }),
