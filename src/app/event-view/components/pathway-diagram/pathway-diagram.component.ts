@@ -1146,7 +1146,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
           disableClose: true, hasBackdrop: true, autoFocus: false, restoreFocus: false,
           data: { title: 'Validating Diagram', message: 'Please wait while the diagram is checked against the database...' }
         });
-        this.contentValidator.validate(this.pathwayId, this.diagram.cy).subscribe({
+        this.contentValidator.validate(this.pathwayId, this.pathwayDiagramId, this.diagram.cy).subscribe({
           next: (result) => {
             this.commitWaitDialogRef?.close();
             this.commitWaitDialogRef = undefined;

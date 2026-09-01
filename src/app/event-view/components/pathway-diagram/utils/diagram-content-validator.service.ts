@@ -114,11 +114,26 @@ export class PathwayDiagramContentValidator {
     );
   }
 
-  validate(pathwayId: string, cy: Core): Observable<DiagramValidationResult> {
+  /**
+   * @param pathwayId the Pathway's own dbId -- used only as a fallback if pathwayDiagramId
+   *                  isn't available yet.
+   * @param pathwayDiagramId the PathwayDiagram instance's dbId -- the one that must be used to
+   *                  fetch the raw diagram JSON, and the one the resulting report is labeled
+   *                  with, since it's the actual instance whose JSON gets fetched and diffed.
+   *                  These are NOT interchangeable with the Pathway's own dbId: while editing,
+   *                  the "live" JSON text being edited is always keyed by the PathwayDiagram,
+   *                  not the Pathway (see disableEditing()'s doc comment) -- normally a
+   *                  server-side symlink makes the two resolve to the same file, but a diagram
+   *                  shared by more than one Pathway (e.g. a disease-vs-normal pair) has a
+   *                  PathwayDiagram whose dbId genuinely differs from the Pathway's, and fetching
+   *                  by the wrong one silently validates against the wrong (or stale) diagram.
+   */
+  validate(pathwayId: string, pathwayDiagramId: string, cy: Core): Observable<DiagramValidationResult> {
     const t0 = performance.now();
     const elapsed = () => `${(performance.now() - t0).toFixed(0)}ms`;
 
-    return this.dataService.fetchRawDiagram(pathwayId).pipe(
+    const diagramId = pathwayDiagramId || pathwayId;
+    return this.dataService.fetchRawDiagram(diagramId).pipe(
       switchMap((diagram: Diagram) => {
         const peNodes = diagram.nodes.filter(n => this.isPhysicalEntityClassMemoized(n.schemaClass));
         const subPathwayNodes = diagram.nodes.filter(n => n.schemaClass === 'Pathway');
@@ -164,7 +179,7 @@ export class PathwayDiagramContentValidator {
                       `Building report...`
                     );
                     const report = this.buildReport(
-                      pathwayId, diagram, peNodes, subPathwayNodes, compartments,
+                      diagramId, diagram, peNodes, subPathwayNodes, compartments,
                       reactionEdges, idToNode, idToStructure, ewasNodes, cy, idToResidues, idToDisplayName
                     );
                     console.log(`[diagram validation] ${elapsed()} done.`);
@@ -180,7 +195,7 @@ export class PathwayDiagramContentValidator {
   }
 
   private buildReport(
-    pathwayId: string,
+    diagramId: string,
     diagram: Diagram,
     peNodes: DiagramNode[],
     subPathwayNodes: DiagramNode[],
@@ -200,7 +215,9 @@ export class PathwayDiagramContentValidator {
     const modifiedResidueCheck = this.checkModifiedResidues(ewasNodes, cy, idToResidues, idToDisplayName);
 
     return {
-      instance: { dbId: Number(pathwayId), displayName: diagram.displayName, schemaClassName: 'Pathway' } as Instance,
+      // Labeled by the PathwayDiagram, not the Pathway -- that's the actual instance whose
+      // JSON was fetched and diffed against the database here.
+      instance: { dbId: Number(diagramId), displayName: diagram.displayName, schemaClassName: 'PathwayDiagram' } as Instance,
       qaResults: [peCheck, subPathwayCheck, structureCheck, compartmentCheck, modifiedResidueCheck]
     };
   }
