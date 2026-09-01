@@ -248,11 +248,6 @@ export class InstanceTableComponent implements PostEditListener {
     }
   }
 
-  //TODO: There is a bug here. If there is only one value in an attribute, delete
-  // this value will disable the action menu popup!
-  private newMap: any;
-
-
   private addNewInstanceAttribute(attributeValue: AttributeValue, replace: boolean
   ): void {
     const matDialogRef = this.dialogService.openDialog(attributeValue);
