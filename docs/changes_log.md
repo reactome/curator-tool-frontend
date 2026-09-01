@@ -1,3 +1,15 @@
+### Build on September 1, 2026
+
+- Turning off diagram editing now automatically backs up your unsaved changes instead of asking whether to upload first - it's meant to be a quick, reversible way to see how the diagram looks without the editing controls, not a commit point. Turn editing back on and your changes are still there, exactly as you left them.
+
+- Bug fix: for a pathway diagram shared between more than one pathway (for example a disease and normal variant of the same pathway), **Validate Diagram Against Database** could check a different, unrelated copy of the diagram instead of the one actually open for editing, making its results look inconsistent from one pathway to another. It now always checks the diagram actually being edited.
+
+- After **Auto-Fix** corrects a diagram, a reminder now tells you to upload it before running **Validate Diagram Against Database** again - otherwise validation checks the previously-published diagram and can appear to still show the same issues, even though the live diagram has already been corrected.
+
+- Bug fix: opening a reaction or complex where an ingredient appears more than once (for example a reaction using 4 molecules of ATP, or a tetramer made of 4 copies of the same protein) showed it only once, with the true count lost. This also meant **Auto-Fix** could not actually correct a stoichiometry mismatch flagged by **Validate Diagram Against Database** - it looked like nothing had changed after fixing it. Both are now fixed.
+
+- Bug fix: a modified-residue mark (for example a phosphorylation site) added or corrected during diagram editing - including via **Auto-Fix** - could silently fail to appear in the diagram actually published after uploading, even though it looked correct on screen while editing. These now upload correctly.
+
 ### Build on August 31, 2026
 
 - Bug fix: opening certain heavily-referenced instances in the instance editor - small molecules used by a huge number of reactions (for example ATP or ADP), or a species used by nearly every instance (for example Homo sapiens) - could hang or take a very long time to load, because the server was gathering every instance that refers to the one being opened, not just its own attributes. Loading now looks only at what the instance itself actually holds, so these instances open quickly and reliably, the same as any other.
