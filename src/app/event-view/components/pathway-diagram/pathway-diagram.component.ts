@@ -160,7 +160,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       };
       const isSwitchingDiagram = this.pathwayId.length > 0 && this.pathwayId !== id;
       if (isSwitchingDiagram) {
-        this.backupBeforeSwitchingDiagram(loadNewDiagram);
+        this.backupEditsThenProceed(loadNewDiagram);
         return;
       }
       loadNewDiagram();
@@ -378,7 +378,14 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     });
   }
 
-  private backupBeforeSwitchingDiagram(proceed: () => void): void {
+  /**
+   * Backs up any unsaved edits to the server (same mechanism as the periodic autosave) before
+   * proceeding, if there are any -- used wherever we're about to leave the current in-editing
+   * view (switching diagrams, disabling editing) so re-entering editing later can restore the
+   * work via resolveEditingLoadPlan()'s hasBackupDiagram check, without forcing the curator to
+   * actually commit/upload first.
+   */
+  private backupEditsThenProceed(proceed: () => void): void {
     if (!this.isEdited || !this.pathwayDiagramId || !this.diagram?.cy) {
       proceed();
       return;
@@ -492,13 +499,15 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       this.resizingNodes.length = 0; // reset to empty
       this.isEditing = false;
     };
-    // Without this guard, disabling editing with unsaved changes silently proceeds:
-    // re-enabling editing re-acquires the lock and rebuilds the network from
-    // resolveEditingLoadPlan(), which loads the stale canonical diagram (not the
-    // in-memory edits) whenever the server has no backup yet -- discarding the
-    // unsaved changes with no warning. Prompting here (same pattern as
-    // unlockDiagram()) lets the user upload or explicitly discard instead.
-    this.promptUploadBeforeDiscard('disabling editing', doDisable);
+    // Without a backup, disabling editing with unsaved changes would lose them: re-enabling
+    // editing re-acquires the lock and rebuilds the network from resolveEditingLoadPlan(),
+    // which loads the stale canonical diagram (not the in-memory edits) whenever the server
+    // has no backup yet. Backing up first (rather than prompting to upload, like
+    // unlockDiagram() does) means disabling editing needs no confirmation at all -- it's meant
+    // to be a quick, reversible way to see how the diagram looks without the editing chrome,
+    // toggled back and forth freely, not a commit point. resolveEditingLoadPlan() picks the
+    // backup back up automatically once editing is re-enabled.
+    this.backupEditsThenProceed(doDisable);
   }
 
   private unlockDiagram(): void {
@@ -1147,6 +1156,17 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
                   this.pushUndoSnapshot();
                   this.contentValidator.autoFix(result, this.diagram).subscribe(() => {
                     this.markDiagramEdited();
+                    // Validate Diagram always checks the persisted diagram JSON (what's
+                    // actually published), not this live in-memory fix, so re-running it
+                    // right now would still report the same issues -- not because the fix
+                    // didn't work, but because nothing has been uploaded yet to change what
+                    // gets checked.
+                    this.dialog.open(InfoDialogComponent, {
+                      data: {
+                        title: 'Diagram Corrected',
+                        message: 'The live diagram has been corrected. Upload it before re-running Validate Diagram -- otherwise validation will still check the previously-published diagram and report the same issues.'
+                      }
+                    });
                   });
                 }
               });

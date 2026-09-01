@@ -37,6 +37,7 @@ const REACTION_DELETED_ISSUE = 'reaction deleted from database';
 // REACTION_DELETED_ISSUE above -- these decide add/remove/relabel, so they must match exactly.
 const RESIDUE_MISSING_ISSUE = 'in database but not drawn';
 const RESIDUE_EXTRA_ISSUE = 'drawn but not in database';
+const RESIDUE_DUPLICATE_ISSUE = 'drawn more than once';
 const RESIDUE_LABEL_MISMATCH_ISSUE = 'label mismatch';
 
 const ROLE_ATTRIBUTES = ['input', 'output', 'catalyst', 'activator', 'inhibitor'] as const;
@@ -313,25 +314,35 @@ export class PathwayDiagramContentValidator {
 
     for (const node of ewasNodes) {
       const dbLabelById = new Map((idToResidues.get(node.reactomeId) ?? []).map(r => [r.dbId, r.label]));
+      // Count occurrences, not just presence -- a plain "is it drawn" Map would silently
+      // collapse two marks for the same residue into one (the second .set() overwriting the
+      // first), missing a genuine "drawn more than once" case entirely.
+      const drawnCountById = new Map<number, number>();
       const drawnLabelById = new Map<number, string>();
       cy.elements('.Modification').forEach((elm: any) => {
-        if (elm.data('nodeReactomeId') === node.reactomeId) {
-          drawnLabelById.set(elm.data('reactomeId'), elm.data('displayName'));
-        }
+        if (elm.data('nodeReactomeId') !== node.reactomeId) return;
+        const residueDbId = elm.data('reactomeId');
+        drawnCountById.set(residueDbId, (drawnCountById.get(residueDbId) ?? 0) + 1);
+        drawnLabelById.set(residueDbId, elm.data('displayName'));
       });
 
       const ewasCell = this.entityCell(node.reactomeId, idToDisplayName);
-      const allResidueIds = new Set<number>([...dbLabelById.keys(), ...drawnLabelById.keys()]);
+      const allResidueIds = new Set<number>([...dbLabelById.keys(), ...drawnCountById.keys()]);
       for (const residueDbId of allResidueIds) {
         const dbLabel = dbLabelById.get(residueDbId);
+        const drawnCount = drawnCountById.get(residueDbId) ?? 0;
         const drawnLabel = drawnLabelById.get(residueDbId);
         const residueCell = JSON.stringify({ dbId: residueDbId, displayName: dbLabel ?? drawnLabel ?? String(residueDbId) });
         if (dbLabel === undefined) {
+          // cy.remove() on an attribute-selector match removes every matching element, so one
+          // row here correctly cleans up all copies regardless of drawnCount.
           rows.push([residueCell, ewasCell, drawnLabel ?? '', '', RESIDUE_EXTRA_ISSUE]);
-        } else if (drawnLabel === undefined) {
+        } else if (drawnCount === 0) {
           rows.push([residueCell, ewasCell, '', dbLabel, RESIDUE_MISSING_ISSUE]);
+        } else if (drawnCount > 1) {
+          rows.push([residueCell, ewasCell, drawnLabel ?? '', dbLabel, RESIDUE_DUPLICATE_ISSUE]);
         } else if (dbLabel !== drawnLabel) {
-          rows.push([residueCell, ewasCell, drawnLabel, dbLabel, RESIDUE_LABEL_MISMATCH_ISSUE]);
+          rows.push([residueCell, ewasCell, drawnLabel ?? '', dbLabel, RESIDUE_LABEL_MISMATCH_ISSUE]);
         }
       }
     }
@@ -523,7 +534,10 @@ export class PathwayDiagramContentValidator {
         if (issue === RESIDUE_EXTRA_ISSUE) {
           const markElm = cy.elements(markSelector);
           if (markElm.length > 0) cy.remove(markElm);
-        } else if (issue === RESIDUE_MISSING_ISSUE) {
+        } else if (issue === RESIDUE_MISSING_ISSUE || issue === RESIDUE_DUPLICATE_ISSUE) {
+          // addModificationMark() removes every existing mark matching this exact (EWAS,
+          // residue) pair before adding one back, so this also correctly collapses a
+          // "drawn more than once" duplicate down to exactly one correctly-labeled mark.
           const ewasElm = cy.elements(`[reactomeId = ${ewasDbId}]`).first();
           if (ewasElm.length > 0) this.addModificationMark(ewasElm, residueDbId, dbLabel, cy);
         } else if (issue === RESIDUE_LABEL_MISMATCH_ISSUE) {
@@ -554,9 +568,20 @@ export class PathwayDiagramContentValidator {
    * placement (minus its random jitter, which is purely cosmetic) so a freshly-added mark
    * looks consistent with the rest -- marks are draggable, so an approximate position spread
    * evenly among however many marks the EWAS already has is enough, not pixel-perfect.
+   *
+   * Upserts rather than blindly adding: the same EWAS dbId can legitimately be drawn more
+   * than once in one diagram (e.g. the same small molecule/protein appearing at several
+   * spots), and modification marks are tagged only by dbId (nodeReactomeId/reactomeId), not
+   * by which specific drawn copy they belong to -- so checkModifiedResidues() can report the
+   * same missing residue once per drawn copy. Without removing a stale mark first, a second
+   * "add" for the same residue would try to create a cytoscape element with a duplicate id
+   * (mod_<ewasDbId>_<residueDbId>) instead of just leaving the one already-correct mark alone.
    */
   private addModificationMark(ewasElm: any, residueDbId: number, label: string, cy: Core): void {
     const ewasReactomeId = ewasElm.data('reactomeId');
+    const existing = cy.elements(`.Modification[nodeReactomeId = ${ewasReactomeId}][reactomeId = ${residueDbId}]`);
+    if (existing.length > 0) cy.remove(existing);
+
     const parentWidth = ewasElm.data('width');
     const parentHeight = ewasElm.data('height');
     const parentPos = ewasElm.position();
