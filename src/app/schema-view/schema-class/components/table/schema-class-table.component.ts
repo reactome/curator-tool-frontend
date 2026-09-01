@@ -5,6 +5,7 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { ActivatedRoute } from "@angular/router";
 import { Store } from '@ngrx/store';
 import { DataService } from 'src/app/core/services/data.service';
+import { PageTitleService } from 'src/app/core/services/page-title.service';
 import {
   AttributeCategory,
   AttributeDataType,
@@ -25,7 +26,8 @@ export class SchemaClassTableComponent implements OnInit {
   displayedColumns: string[] = ['name', 'cardinality', 'type', 'category', 'origin', 'definingType'];
   dataSource: any;
 
-  constructor(private store: Store, private route: ActivatedRoute, private dataService: DataService) {
+  constructor(private store: Store, private route: ActivatedRoute, private dataService: DataService,
+              private pageTitleService: PageTitleService) {
   }
 
   @ViewChild(MatSort) sort: MatSort | undefined;
@@ -35,6 +37,11 @@ export class SchemaClassTableComponent implements OnInit {
   ngOnInit(): void {
     this.route.params.subscribe((clsNameParams) => {
       this.className = clsNameParams['className'];
+      // Placed inside this subscription, not at ngOnInit's top level: navigating from one
+      // class page to another (class/A -> class/B) reuses this component instance rather than
+      // re-creating it, so ngOnInit itself only ever runs once -- only this params subscription
+      // re-fires per navigation.
+      this.pageTitleService.setTitle(`Class: ${this.className}`);
       this.dataService.fetchSchemaClass(this.className).subscribe((schemaClass: SchemaClass) => {
         // Do a sort first
         let sorted_attributes = [...schemaClass.attributes!];

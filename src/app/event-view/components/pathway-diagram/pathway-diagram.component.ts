@@ -21,6 +21,8 @@ import { AuthenticateService } from 'src/app/core/services/authenticate.service'
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { Store } from '@ngrx/store';
 import { DiagramEditorService, EditingDiagramStoragePayload } from './utils/diagram-editor.service';
+import { PathwayDiagramContentValidator } from './utils/diagram-content-validator.service';
+import { QAReportDialogService } from 'src/app/instance/components/qa-report-dialog/qa-report-dialog.service';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from 'src/app/instance/state/instance.selectors';
 import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
 import { UnsavedUploadDialogComponent } from 'src/app/shared/components/unsaved-upload-dialog/unsaved-upload-dialog.component';
@@ -114,7 +116,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     private diagramUtils: PathwayDiagramUtilService,
     private authService: AuthenticateService,
     private instUtil: InstanceUtilities,
-    private diagramEditorService: DiagramEditorService
+    private diagramEditorService: DiagramEditorService,
+    private contentValidator: PathwayDiagramContentValidator,
+    private qaReportDialogService: QAReportDialogService
   ) {
   }
 
@@ -156,7 +160,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       };
       const isSwitchingDiagram = this.pathwayId.length > 0 && this.pathwayId !== id;
       if (isSwitchingDiagram) {
-        this.backupBeforeSwitchingDiagram(loadNewDiagram);
+        this.backupEditsThenProceed(loadNewDiagram);
         return;
       }
       loadNewDiagram();
@@ -285,6 +289,14 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   }
 
   private syncIsEditedFromCurrentLockState(): void {
+    // If we already know locally that the diagram has been edited (e.g. a live edit,
+    // or Validate Diagram's Auto-Fix), don't let a lock-state broadcast override that.
+    // The server's hasBackupDiagram flag only updates once the periodic backup runs
+    // (up to backupIntervalMs later), so a broadcast arriving in that window would
+    // otherwise silently reset isEdited back to false right after a fresh edit, even
+    // though the diagram genuinely has unsaved local changes.
+    if (this.isEdited)
+      return;
     const candidate = this.pathwayDiagramId && this.pathwayDiagramId.length > 0
       ? this.pathwayDiagramId
       : this.diagram?.diagramId;
@@ -366,7 +378,14 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     });
   }
 
-  private backupBeforeSwitchingDiagram(proceed: () => void): void {
+  /**
+   * Backs up any unsaved edits to the server (same mechanism as the periodic autosave) before
+   * proceeding, if there are any -- used wherever we're about to leave the current in-editing
+   * view (switching diagrams, disabling editing) so re-entering editing later can restore the
+   * work via resolveEditingLoadPlan()'s hasBackupDiagram check, without forcing the curator to
+   * actually commit/upload first.
+   */
+  private backupEditsThenProceed(proceed: () => void): void {
     if (!this.isEdited || !this.pathwayDiagramId || !this.diagram?.cy) {
       proceed();
       return;
@@ -472,15 +491,23 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
    * overlaying etc.
    */
   private disableEditing() {
-    // const doDisable = () => {
+    const doDisable = () => {
       this.diagramUtils.disableEditing(this.diagram);
       // Sweep for all resize widgets rather than relying solely on resizingNodes bookkeeping,
       // which can miss widgets left over from a stale load/backup or an undo/redo restore.
       this.diagramUtils.disableAllResizing(this.diagram);
       this.resizingNodes.length = 0; // reset to empty
       this.isEditing = false;
-    // };
-    // this.promptUploadBeforeDiscard('disabling editing', doDisable);
+    };
+    // Without a backup, disabling editing with unsaved changes would lose them: re-enabling
+    // editing re-acquires the lock and rebuilds the network from resolveEditingLoadPlan(),
+    // which loads the stale canonical diagram (not the in-memory edits) whenever the server
+    // has no backup yet. Backing up first (rather than prompting to upload, like
+    // unlockDiagram() does) means disabling editing needs no confirmation at all -- it's meant
+    // to be a quick, reversible way to see how the diagram looks without the editing chrome,
+    // toggled back and forth freely, not a commit point. resolveEditingLoadPlan() picks the
+    // backup back up automatically once editing is re-enabled.
+    this.backupEditsThenProceed(doDisable);
   }
 
   private unlockDiagram(): void {
@@ -889,7 +916,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         this.isFlowLineAddable = this.diagramUtils.isFlowLineAddable(this.elementUnderMouse, this);
         this.isNodeDeletable = this.diagramUtils.isNodeDeletable(this.elementUnderMouse);
       }
-      else if (this.elementUnderMouse.hasClass("SUB")) { // This is for pathway
+      // Both process nodes (class "SUB") and encapsulated nodes (class "Interacting") are pathway
+      // nodes, so check "Pathway" rather than "SUB" to treat them alike. See isFlowLineAddable,
+      // which makes the same distinction.
+      else if (this.elementUnderMouse.hasClass("Pathway")) {
         this.elementTypeForPopup = ElementType.PATHWAY_NODE;
         this.isFlowLineAddable = this.diagramUtils.isFlowLineAddable(this.elementUnderMouse, this);
         this.isPathwayDeletable = this.diagramUtils.isPathwayDeletable(this.elementUnderMouse);
@@ -1108,6 +1138,52 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
 
       case 'unlockDiagram':
         this.unlockDiagram();
+        break;
+
+      case 'validateDiagram':
+        if (!this.isEditing) return;
+        this.commitWaitDialogRef = this.dialog.open(CommitWaitDialogComponent, {
+          disableClose: true, hasBackdrop: true, autoFocus: false, restoreFocus: false,
+          data: { title: 'Validating Diagram', message: 'Please wait while the diagram is checked against the database...' }
+        });
+        this.contentValidator.validate(this.pathwayId, this.pathwayDiagramId, this.diagram.cy).subscribe({
+          next: (result) => {
+            this.commitWaitDialogRef?.close();
+            this.commitWaitDialogRef = undefined;
+            this.qaReportDialogService.openDialog(result.report.instance, result.report)
+              .afterClosed().subscribe(dialogResult => {
+                if (dialogResult === 'autofix') {
+                  this.pushUndoSnapshot();
+                  this.contentValidator.autoFix(result, this.diagram).subscribe(() => {
+                    this.markDiagramEdited();
+                    // Validate Diagram always checks the persisted diagram JSON (what's
+                    // actually published), not this live in-memory fix, so re-running it
+                    // right now would still report the same issues -- not because the fix
+                    // didn't work, but because nothing has been uploaded yet to change what
+                    // gets checked.
+                    this.dialog.open(InfoDialogComponent, {
+                      data: {
+                        title: 'Diagram Corrected',
+                        message: 'The live diagram has been corrected. Upload it before re-running Validate Diagram -- otherwise validation will still check the previously-published diagram and report the same issues.'
+                      }
+                    });
+                  });
+                }
+              });
+          },
+          error: (err) => {
+            console.error('Diagram content validation failed:', err);
+            this.commitWaitDialogRef?.close();
+            this.commitWaitDialogRef = undefined;
+            this.dialog.open(InfoDialogComponent, {
+              data: {
+                title: 'Error',
+                message: 'Failed to validate the diagram against the database.',
+                instanceInfo: err?.message ?? String(err)
+              }
+            });
+          }
+        });
         break;
 
       default:

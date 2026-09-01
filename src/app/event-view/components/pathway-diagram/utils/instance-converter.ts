@@ -433,7 +433,15 @@ export class InstanceConverter {
                     displayName: label,
                     width: modNodeSize,
                     height: modNodeSize,
-                    nodeReactomeId: parentNode.data('reactomeId'), // Store the parent node reactomeId for later use
+                    // The parent's reactomeId (dbId) -- used by the diagram content validator for
+                    // its own database-identity checks (does this EWAS have this residue).
+                    nodeReactomeId: parentNode.data('reactomeId'),
+                    // The parent's own small internal cytoscape node id -- used by the backend
+                    // export converter (CytoscapJSToRenderableDiagramConverter.handleModifications)
+                    // to unambiguously identify which drawn occurrence this modification belongs
+                    // to, since the same reactomeId can legitimately be drawn more than once in one
+                    // diagram (e.g. ATP), which nodeReactomeId alone can't distinguish.
+                    nodeId: parentNode.data('id'),
                 },
                 position: {
                     x: modX,
