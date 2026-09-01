@@ -1,6 +1,58 @@
+### Build on September 1, 2026
+
+- **Validate Diagram Against Database** now also checks modified-residue marks (the small labeled marks on a protein showing things like a phosphorylation site) against the database, catching ones that are missing, extra, or show the wrong label. **Auto-Fix** adds, removes, or relabels these marks to match.
+
+- Turning off diagram editing now automatically backs up your unsaved changes instead of asking whether to upload first - it's meant to be a quick, reversible way to see how the diagram looks without the editing controls, not a commit point. Turn editing back on and your changes are still there, exactly as you left them.
+
+- Bug fix: for a pathway diagram shared between more than one pathway (for example a disease and normal variant of the same pathway), **Validate Diagram Against Database** could check a different, unrelated copy of the diagram instead of the one actually open for editing, making its results look inconsistent from one pathway to another. It now always checks the diagram actually being edited.
+
+- After **Auto-Fix** corrects a diagram, a reminder now tells you to upload it before running **Validate Diagram Against Database** again - otherwise validation checks the previously-published diagram and can appear to still show the same issues, even though the live diagram has already been corrected.
+
+- Bug fix: opening a reaction or complex where a participant appears more than once (for example a reaction using 4 molecules of ATP, or a tetramer made of 4 copies of the same protein) showed it only once, with the true count lost. This also meant **Auto-Fix** could not actually correct a stoichiometry mismatch flagged by **Validate Diagram Against Database** - it looked like nothing had changed after fixing it. Both are now fixed.
+
+- Bug fix: a modified-residue mark (for example a phosphorylation site) added or corrected during diagram editing - including via **Auto-Fix** - could silently fail to appear in the diagram actually published after uploading, even though it looked correct on screen while editing. These now upload correctly.
+
+### Build on August 31, 2026
+
+- Bug fix: opening certain heavily-referenced instances in the instance editor - small molecules used by a huge number of reactions (for example ATP or ADP), or a species used by nearly every instance (for example Homo sapiens) - could hang or take a very long time to load, because the server was gathering every instance that refers to the one being opened, not just its own attributes. Loading now looks only at what the instance itself actually holds, so these instances open quickly and reliably, the same as any other.
+
+- Bug fix: on the deployed site, the **Show Referrers** action item and the link icon in the referrers dialog opened a broken address that left out the `/curatortool/` part of the URL, so neither one worked (the link icon's address could also be copied and shared, but would fail for whoever opened it too). Both now open the referrers page correctly.
+
+- **Validate Diagram Against Database** now also catches drawn objects - entities, sub-pathways, compartments, or whole reactions - whose underlying database record has since been deleted (for example, after a curator deleted or merged something without regenerating the diagram). These are listed as failures rather than silently passing, and **Auto-Fix** removes them from the diagram along with any of their own connectors.
+
+- **Validate Diagram Against Database** now also checks modified-residue marks (the small labeled marks on a protein showing things like a phosphorylation site) against the database, catching ones that are missing, extra, or show the wrong label. **Auto-Fix** adds, removes, or relabels these marks to match.
+
+### Build on August 30, 2026
+
+- Added a **Validate Diagram Against Database** button to the pathway diagram toolbar (shown while editing). It scans everything drawn - PhysicalEntity nodes, sub-Pathway nodes, Compartments, and reaction structure (inputs, outputs, catalysts, regulators) - against the live database, so a diagram whose saved layout has drifted from what's actually been committed (for example, after an entity was renamed or a reaction's inputs changed elsewhere, without the diagram being regenerated) is caught rather than silently shown as-is. Results are listed as a set of pass/fail checks, each failure as a table of mismatches with clickable instance links. When something fails, an **Auto-Fix** button corrects the live diagram to match the database - it only changes what's on screen and does not save on its own, so the result can be reviewed (and undone, like any other edit) before choosing to upload it.
+
+- Bug fix: disabling editing on a pathway diagram while it had unsaved changes discarded them without warning, and re-enabling editing afterwards loaded the last-saved diagram as if the changes had never been made. The confirmation this is meant to go through - "This diagram has unsaved changes. Upload before disabling editing?" - existed in the code already (it is the same prompt used when unlocking a diagram) but had been left disconnected, so disabling editing always went ahead immediately. It is now asked every time, the same as unlocking.
+
+- Bug fix: right after auto-fixing a diagram (or, occasionally, right after any other live edit), the **Upload Diagram** button could fail to appear even though the diagram genuinely had unsaved changes. A background check that keeps the "unsaved changes" flag in sync with the editing lock could win a race against the edit that had just been made and reset the flag back to "nothing to save" before the next screen update, hiding Upload. That background check no longer overrides a change that is already known about locally.
+
+- The **Show Referrers** action on an instance-valued attribute slot now opens the referrers page in a new tab instead of navigating away from the instance you were looking at.
+
+- Browser tabs and history now show a title specific to what's displayed - the instance, the pathway, or the referrers page you're viewing - instead of every tab being titled "Reactome WebBench" and being indistinguishable from one another in your browser's tab bar or history.
+
+### Build on August 27, 2026
+
+- In the pathway diagram, **Go to Pathway** and **Delete Pathway** now work the same way for every kind of pathway node, including ones representing a nested sub-diagram (previously only one of the two kinds supported deletion). **Delete Pathway** is only offered while editing is enabled - deleting is an edit, so it no longer appears while you're just viewing a diagram.
+
 ### Build on August 26, 2026
 
-- Bug fix: the advanced search over your own staged instances - the list of NEW, UPDATED and DELETED instances - did not agree with the same search run against the database, and the disagreement was always about instances that have nothing in the attribute being searched. Such an instance came back for "Not Equal", for "Contains", and for a regex pattern such as `.*`, because a missing value was compared as though it were an empty piece of text, and empty text satisfies those conditions; and it failed to come back for "IS NULL" if the attribute was a multi-value one that had been emptied rather than never filled in. A missing value now matches "IS NULL" and nothing else, exactly as it does when the search runs against the database. Separately, "Not Equal" on an attribute that holds several values now means what it means on the server - that *no* value equals what you typed - so searching a reaction's input for "Not Equal ATP" no longer returns reactions that do have ATP as an input alongside something else. Finally, the search could return the wrong list entirely when it was run in the moments after login while your staged instances were still being loaded: every condition was evaluated against a value that had not arrived yet, that is, against nothing. It now waits for the values it needs before deciding what matches.
+- Added a **Show Referrers** entry to the action menu on an instance-valued attribute slot (in addition to the existing referrers access points), so you can check what refers to a value without first opening it.
+
+- Bug fix: revisiting an instance already earlier in your view history (for example, re-selecting it in the staged-changes list or the event tree, rather than clicking back through the bread-crumb) left the bread-crumb trail pointing past the instance actually being shown, instead of ending at it. Revisiting an instance already in the history now trims the trail to end there, the same as clicking that instance's own bread-crumb link would.
+
+### Build on August 24, 2026
+
+- Bug fix: opening a pathway diagram could crash outright - showing nothing at all - if its saved layout referred to a connector or a link whose entity or reaction no longer existed (for example, after a deletion that happened without the diagram being regenerated to match). One such stale reference used to take down the entire diagram; it is now skipped on its own, and the rest of the diagram is drawn correctly.
+
+### Build on August 27, 2026
+
+- Bug fix: on the deployed site, the two buttons that switch an event between the schema view and the event view opened a browser tab that was not Webbench at all - typically a "not found" page - instead of the other view of the instance you were looking at. The address they opened left out the `/curatortool/` part of it, so it pointed at the top of the server rather than into the app. This never showed up when the app was run locally, where there is no `/curatortool/` in the address to leave out. The link icon in the referrers dialog, which opens the referrers page in its own tab, was wrong in exactly the same way and is fixed with it.
+
+- Bug fix: on the deployed site, logging back in after your session ended returned you to the home page rather than to the instance you had been working on. Being signed out by the 18-minute inactivity timeout, by a lost connection to the server, or by another window logging out was supposed to remember the page that window was showing and take you straight back to it. What was remembered included the `/curatortool/` part of the address, which the app then could not make sense of as one of its own pages, so it quietly gave up and used the home page instead - meaning the several windows you had open on different instances all came back on `/home` with their views lost, the very thing remembering the page was added to prevent. Deep links you had followed or pasted yourself were remembered correctly and are unaffected.
 
 ### Build on August 21, 2026
 

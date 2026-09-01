@@ -18,11 +18,13 @@ export class ReferrersDialogComponent {
   }
 
   /**
-   * The stable URL of this referrer list, handled by ReferrersPageComponent. Absolute so it
-   * resolves the same regardless of the instance the dialog was opened from.
+   * The stable URL of this referrer list, handled by ReferrersPageComponent. Deliberately
+   * relative (no leading slash): a leading slash is resolved from the server root, bypassing
+   * the <base href> the deployed site is served under (e.g. "/curatortool/") and opening this
+   * link at the wrong, 404ing address in production.
    */
   get referrersUrl(): string {
-    return `/schema_view/referrers/${this.instance.dbId}`;
+    return `schema_view/referrers/${this.instance.dbId}`;
   }
 
 

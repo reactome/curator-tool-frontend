@@ -4,6 +4,7 @@ import { catchError, concatMap, interval, of, Subscription, throwError } from 'r
 import { environment } from 'src/environments/environment.dev';
 import { Configuration, DEFAULT_LLM_CONFIG } from "./components/configuration-component/configuration-component.component";
 import { NavigationData } from './components/navigation-menu/navigation-menu.component';
+import { PageTitleService } from 'src/app/core/services/page-title.service';
 
 @Component({
   selector: 'app-gene-llm-component',
@@ -38,7 +39,8 @@ export class GeneLlmComponentComponent {
   showConfiguration: boolean = false;
   ppiTableData: AbstractTableData[] | undefined;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, pageTitleService: PageTitleService) {
+    pageTitleService.setTitle('Gene2Path');
   }
 
   ngOnDestroy(): void {

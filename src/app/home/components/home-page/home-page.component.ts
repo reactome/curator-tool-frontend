@@ -1,6 +1,7 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormControl } from "@angular/forms";
 import { Observable, map, startWith } from "rxjs";
+import { PageTitleService } from 'src/app/core/services/page-title.service';
 
 @Component({
   selector: 'app-home-page',
@@ -12,9 +13,12 @@ export class HomePageComponent implements OnInit{
   options: string[] = ['One', 'Two', 'Three'];
   filteredOptions: Observable<string[]> | undefined;
   @Output() viewChangeEvent = new EventEmitter<string>();
-  
+
+  constructor(private pageTitleService: PageTitleService) {
+  }
 
   ngOnInit() {
+    this.pageTitleService.setTitle('Home');
     this.filteredOptions = this.myControl.valueChanges.pipe(
       startWith(''),
       map((value: any) => this._filter(value || '')),

@@ -60,7 +60,9 @@
   <button (click)="onClick('removePoint')" *ngIf="elmType === elmTypes.EDGE_POINT">Remove Edge Point</button>
 
   <ng-container *ngIf="elmType === elmTypes.PATHWAY_NODE">
-    <button (click)="onClick('deletePathway')" *ngIf="isPathwayDeletable">Delete Pathway</button>
+    <!-- Deleting is an edit, so it is offered in editing mode only. Go to Pathway is navigation and
+         stays available in both modes. -->
+    <button (click)="onClick('deletePathway')" *ngIf="isDiagramEditing && isPathwayDeletable">Delete Pathway</button>
     <button (click)="onClick('goToPathway')">Go to Pathway</button>
   </ng-container>
 

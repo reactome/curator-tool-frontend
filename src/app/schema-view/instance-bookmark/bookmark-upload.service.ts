@@ -217,10 +217,10 @@ export class BookmarkUploadService {
       const notFound = parsed.dbIds.filter(dbId => !bookmarked.has(dbId));
       return of({ added: [], alreadyBookmarked, notFound, parsed });
     }
-    return this.dataService.fetchInstanceInBatch(toFetch).pipe(
+    return this.dataService.fetchInstances(toFetch).pipe(
       map((instances: Instance[]) => {
-        // findByDbIds simply leaves out a dbId it cannot find, so what came back is the set
-        // that exists and everything else in the request is gone (or never existed).
+        // fetchInstances leaves an undefined hole for a dbId it cannot resolve, so what came
+        // back is the set that exists and everything else in the request is gone (or never existed).
         const found = new Map<number, Instance>();
         (instances || []).forEach(inst => {
           if (inst && inst.dbId !== undefined && inst.dbId !== null)

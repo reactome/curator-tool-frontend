@@ -13,5 +13,6 @@
   </ng-container>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
+  <button mat-button color="warn" *ngIf="!qaReportPassed && data.report" (click)="onAutoFix()">Auto-Fix</button>
   <button mat-button (click)="onCancel()">Close</button>
 </mat-dialog-actions>

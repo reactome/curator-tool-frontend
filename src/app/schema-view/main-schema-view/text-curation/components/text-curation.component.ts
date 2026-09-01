@@ -1,5 +1,5 @@
 import { NgIf } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { MatLabel } from '@angular/material/form-field';
 import { MatTooltip } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
@@ -19,6 +19,7 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { InstanceViewComponent } from 'src/app/instance/components/instance-view/instance-view.component';
 import { MatMenu, MatMenuTrigger } from "@angular/material/menu";
 import { EventTreeModule } from "src/app/event-view/components/event-tree/event-tree.module";
+import { PageTitleService } from 'src/app/core/services/page-title.service';
 
 @Component({
   selector: 'app-text-curation',
@@ -27,7 +28,7 @@ import { EventTreeModule } from "src/app/event-view/components/event-tree/event-
   templateUrl: './text-curation.component.html',
   styleUrl: './text-curation.component.scss',
 })
-export class TextCurationComponent {
+export class TextCurationComponent implements OnInit {
 
   @Input() embedded: boolean = false;
   //Instead of refer to a table, here we refer to the view to avoid NG0100 error: view changed after checking!
@@ -60,7 +61,8 @@ export class TextCurationComponent {
   constructor(private dataService: DataService,
     private objectStore: Store,
     private router: Router,
-    private http: HttpClient) {
+    private http: HttpClient,
+    private pageTitleService: PageTitleService) {
     // Fetch OpenAI API key
     // const llm_url_openai_key = 'http://127.0.0.1:5000/openai_key';
     // if (!environment.llmOn) 
@@ -77,6 +79,14 @@ export class TextCurationComponent {
     //   )
     // });
 
+  }
+
+  ngOnInit(): void {
+    // This component is also used embedded inside other pages (e.g. the diagram's LLM
+    // panel), where it must not clobber the host page's title.
+    if (!this.embedded) {
+      this.pageTitleService.setTitle('Schema View');
+    }
   }
 
   // The following implementation is based on:
