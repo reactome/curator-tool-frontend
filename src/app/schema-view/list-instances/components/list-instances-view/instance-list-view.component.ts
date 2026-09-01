@@ -718,66 +718,98 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       this.store.select(deleteInstances()).pipe(take(1))
     ]).subscribe(([updated, newlyCreated, deleted]) => {
       // Only include instances with matching className
-      const filteredUpdated = updated.filter(inst => inst.schemaClassName === this.className);
-      const filteredNew = newlyCreated.filter(inst => inst.schemaClassName === this.className);
-      const filteredDeleted = deleted.filter(inst => inst.schemaClassName === this.className);
-
-      const filterByAdvancedCriteria = (arr: Instance[]) => {
-        if (
-          attributeNames.length === 0 ||
-          operands.length !== attributeNames.length ||
-          searchKeys.length !== attributeNames.length
-        ) {
-          return arr;
-        }
-
-        return arr.filter(inst => {
-          // For each criterium, check if the instance matches
-          return attributeNames.every((attrName: string, i: number) => {
-            const operand = operands[i];
-            const pattern = searchKeys[i];
-            let value: any;
-            this.getAttributeValue(inst, attrName).subscribe(val => {
-              value = val;
-            });
-
-            // TODO: this is a bug, will never check the null case
-            //if (value == null) return;
-
-            if (Array.isArray(value)) {
-              // Check each element in the array
-              if (value.some(val => this.checkOperand(val, operand, pattern))) {
-                return inst;
-              };
-            } else {
-              // Single value
-              if (this.checkOperand(value, operand, pattern)) {
-                return inst;
-              }
-            }
-            return false;
-          });
-        });
-      };
-
-      const filteredUpdatedByKey = filterByAdvancedCriteria(filteredUpdated);
-      const filteredNewByKey = filterByAdvancedCriteria(filteredNew);
-      const filteredDeletedByKey = filterByAdvancedCriteria(filteredDeleted);
-
-      // Combine: updated, new, and deleted instances
-      const combined = [...filteredUpdatedByKey, ...filteredNewByKey, ...filteredDeletedByKey];
-
-      this.displayLocalInstances(combined);
+      const candidates = [...updated, ...newlyCreated, ...deleted]
+        .filter(inst => inst.schemaClassName === this.className);
+      this.matchLocalInstances(candidates, attributeNames, operands, searchKeys)
+        .subscribe(matched => this.displayLocalInstances(matched));
     });
   }
 
+  /**
+   * The staged-instance counterpart of the server's attribute search: keep the instances
+   * that satisfy every criterium.
+   *
+   * The attribute values are read through forkJoin rather than by subscribing and assigning
+   * to a local variable inside the filter callback. That older shape only worked while
+   * fetchInstance happened to answer synchronously from the cache; whenever DataService was
+   * still loading changed instances (`loadInstanceSubject` is set) fetchInstance turns
+   * asynchronous, the local stayed undefined, and every criterium was silently evaluated
+   * against a missing value. It also leaked one subscription per instance per criterium.
+   */
+  private matchLocalInstances(instances: Instance[],
+    attributeNames: string[],
+    operands: string[],
+    searchKeys: string[]): Observable<Instance[]> {
+    if (instances.length === 0)
+      return of([]);
+    if (attributeNames.length === 0 ||
+      operands.length !== attributeNames.length ||
+      searchKeys.length !== attributeNames.length)
+      return of(instances);
+    return forkJoin(
+      // One instance whose attributes cannot be read is treated as having no value rather
+      // than being allowed to fail the whole search, as in filterLocalInstancesBySpecies.
+      instances.map(inst => forkJoin(
+        attributeNames.map(attrName => this.getAttributeValue(inst, attrName).pipe(
+          take(1),
+          catchError(() => of(null))
+        ))
+      ))
+    ).pipe(
+      map(valuesPerInstance => instances.filter((_, i) =>
+        attributeNames.every((_, j) =>
+          this.matchesCriterium(valuesPerInstance[i][j], operands[j], searchKeys[j]))))
+    );
+  }
+
+  /**
+   * Match one attribute value, which may hold several values, against one criterium.
+   *
+   * The quantifier over a multi-valued attribute follows the Cypher the server builds: ANY()
+   * for the operands that look for a value, NONE() for Not Equal, and size() == 0 for
+   * IS NULL. So "Not Equal x" means *no* value equals x, not "some value differs from x" —
+   * an instance with values [a, b] does not match "Not Equal a".
+   *
+   * One deliberate divergence: the server's list clause for Not Equal is
+   * "attr IS NOT NULL AND NONE(...)", which an empty list satisfies. Here an empty list is
+   * treated as no value at all, the same as a null scalar, so that both shapes of "this
+   * attribute has nothing in it" behave alike in the staged list.
+   */
+  private matchesCriterium(value: any, operand: string, pattern: string): boolean {
+    if (!Array.isArray(value))
+      return this.checkOperand(value, operand, pattern);
+    if (value.length === 0)
+      return this.checkOperand(null, operand, pattern);
+    return this.isNoneOperand(operand)
+      ? value.every(val => this.checkOperand(val, operand, pattern))
+      : value.some(val => this.checkOperand(val, operand, pattern));
+  }
+
+  /** Operands that must hold for every value of a multi-valued attribute, not just one. */
+  private isNoneOperand(operand: string): boolean {
+    return operand === 'Not Equal' || operand === 'IS NULL';
+  }
+
   checkOperand(val: any, operand: string, pattern: string): boolean {
+    // A value that is not there matches the two null operands and nothing else. Every other
+    // clause the server builds is "inst.attr IS NOT NULL AND ...", so a missing value must
+    // not fall through to a comparison against '': that is what made "Not Equal x" and
+    // "Regex .*" match staged instances that have no value for the attribute at all, while
+    // the same search against the database excluded them.
+    const isEmpty = val == null || val.toString() === '';
+    if (operand === 'IS NULL')
+      return isEmpty;
+    if (operand === 'IS NOT NULL')
+      return !isEmpty;
+    if (isEmpty)
+      return false;
+
     // Regex is handled before the values are folded to lower case: a pattern such as
     // \D or [A-Z] means something else entirely once it has been lower-cased.
     if (this.isRegexOperand(operand))
-      return this.matchesRegex(val != null ? val.toString() : '', pattern);
+      return this.matchesRegex(val.toString(), pattern);
 
-    const valStr = val != null ? val.toString().toLowerCase() : '';
+    const valStr = val.toString().toLowerCase();
     const patStr = pattern != null ? pattern.toString().toLowerCase() : '';
 
     switch (operand) {
@@ -787,10 +819,6 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
         return valStr === patStr;
       case 'Not Equal':
         return valStr !== patStr;
-      case 'IS NULL':
-        return val == null || valStr === '';
-      case 'IS NOT NULL':
-        return val != null && valStr !== '';
       default:
         return false;
     }
