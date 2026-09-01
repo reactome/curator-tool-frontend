@@ -630,7 +630,13 @@ export class PathwayDiagramContentValidator {
         displayName: label,
         width: modNodeSize,
         height: modNodeSize,
+        // The parent's reactomeId (dbId) -- matches instance-converter.ts's
+        // createModificationNodes(), used by this validator's own database-identity checks.
         nodeReactomeId: ewasReactomeId,
+        // The parent's own small internal cytoscape node id -- used by the backend export
+        // converter to unambiguously identify which drawn occurrence this belongs to (see
+        // instance-converter.ts's createModificationNodes() for the full rationale).
+        nodeId: ewasElm.data('id'),
       },
       position: { x: modX, y: modY }
     } as any)[0];
