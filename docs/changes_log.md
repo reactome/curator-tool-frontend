@@ -1,3 +1,13 @@
+### Build on September 2, 2026
+
+- Bug fix: **Validate Diagram Against Database** could keep reporting the exact same reaction-structure problems (a catalyst, activator, or inhibitor shown as missing or extra) no matter how many times **Auto-Fix** and **Upload Diagram** were run in a row. The published diagram file it checked against is regenerated under the pathway's own identifier rather than the diagram's, so for diagrams where those two differ, uploading never actually reached the copy being checked - it stayed stuck showing whatever the diagram looked like before the fix. Validate Diagram Against Database now checks the diagram actually open in the editor instead, so a fix shows up as fixed the moment you re-run it, without having to upload first just to confirm it worked.
+
+- Because of the change above, running Validate Diagram Against Database no longer by itself means the currently-published version is up to date - only **Upload Diagram** does that now. Validate Diagram Against Database and Auto-Fix each show a reminder to upload whenever there's something unsaved, so a fix - or a clean report - doesn't quietly fail to make it into the next release.
+
+- Bug fix: when a catalyst's or a regulator's connecting line had a bend in it rather than running straight to the reaction, **Auto-Fix** could fail to recognize the connector was already there and add a second, duplicate link for the same catalyst or regulator. Fixed.
+
+- Bug fix: **Validate Diagram Against Database** failed outright on a pathway diagram that had never been through **Upload Diagram** before. It now checks reaction structure, PhysicalEntity names, Sub-Pathway names, and Compartment names correctly for a brand-new diagram too.
+
 ### Build on September 1, 2026
 
 - **Validate Diagram Against Database** now also checks modified-residue marks (the small labeled marks on a protein showing things like a phosphorylation site) against the database, catching ones that are missing, extra, or show the wrong label. **Auto-Fix** adds, removes, or relabels these marks to match.
