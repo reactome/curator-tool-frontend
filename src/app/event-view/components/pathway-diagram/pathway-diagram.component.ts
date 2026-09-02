@@ -289,6 +289,31 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   }
 
   private syncIsEditedFromCurrentLockState(): void {
+    const candidate = this.pathwayDiagramId && this.pathwayDiagramId.length > 0
+      ? this.pathwayDiagramId
+      : this.diagram?.diagramId;
+    const diagramDbId = Number(candidate);
+    if (!Number.isFinite(diagramDbId) || diagramDbId <= 0)
+      return;
+
+    // The diagram we're actively editing had its lock released somewhere other than this
+    // component's own Unlock/unlockDiagram() button -- most notably the status panel's lock
+    // list, which can unlock any diagram directly without it being open here at all. Editing
+    // must stop the moment that happens, regardless of isEdited: the curator no longer holds
+    // the lock, so continuing to allow interactive edits here would be editing without one.
+    // This has to run before the isEdited early-return below, which exists for a different,
+    // narrower purpose and must not suppress this check.
+    if (this.isEditing && !this.diagramEditorService.isDiagramLockedByMe(diagramDbId)) {
+      // Also resets isEdited and reloads the canonical diagram (see
+      // disableEditingAndReloadCanonical's doc comment). Resetting isEdited in particular stops
+      // the periodic background backup (backupEditedDiagram(), gated on isEdited, not isEditing)
+      // from continuing to fire against a diagram this session no longer holds the lock for --
+      // which the server rejects, surfacing as a repeating backupCyNetwork failure every
+      // backupIntervalMs.
+      this.disableEditingAndReloadCanonical();
+      return;
+    }
+
     // If we already know locally that the diagram has been edited (e.g. a live edit,
     // or Validate Diagram's Auto-Fix), don't let a lock-state broadcast override that.
     // The server's hasBackupDiagram flag only updates once the periodic backup runs
@@ -296,12 +321,6 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     // otherwise silently reset isEdited back to false right after a fresh edit, even
     // though the diagram genuinely has unsaved local changes.
     if (this.isEdited)
-      return;
-    const candidate = this.pathwayDiagramId && this.pathwayDiagramId.length > 0
-      ? this.pathwayDiagramId
-      : this.diagram?.diagramId;
-    const diagramDbId = Number(candidate);
-    if (!Number.isFinite(diagramDbId) || diagramDbId <= 0)
       return;
     const lockInfo = this.diagramEditorService.getCachedDiagramLock(diagramDbId);
     this.applyLockStateForIsEdited(lockInfo);
@@ -490,15 +509,40 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
    * upload the edited pathway diagram to the JSON text for the Pathway instance, which is post-processed at the server side for 
    * overlaying etc.
    */
+  /**
+   * The actual, synchronous cytoscape-level work of turning editing off: stop nodes/edges from
+   * being draggable, clear resize widgets, and flip isEditing. Split out from disableEditing()
+   * so callers that have already resolved what to do with any unsaved changes through their own
+   * gate (unlockDiagram(), via its own promptUploadBeforeDiscard()) can apply it directly and
+   * immediately, without disableEditing()'s own (asynchronous) backup step running redundantly
+   * and racing whatever the caller does next.
+   */
+  private applyDisabledEditingState(): void {
+    this.diagramUtils.disableEditing(this.diagram);
+    // Sweep for all resize widgets rather than relying solely on resizingNodes bookkeeping,
+    // which can miss widgets left over from a stale load/backup or an undo/redo restore.
+    this.diagramUtils.disableAllResizing(this.diagram);
+    this.resizingNodes.length = 0; // reset to empty
+    this.isEditing = false;
+  }
+
+  /**
+   * Used wherever editing stops because the lock is gone -- this session explicitly unlocked
+   * (unlockDiagram()), or another session/tab took it over (the external-lock-loss branch of
+   * syncIsEditedFromCurrentLockState()). Unlike the curator's own Disable Editing toggle, which
+   * deliberately keeps showing the in-progress edit (it's backed up and resumable the moment
+   * editing is re-enabled), losing the lock means there is no guarantee of that: someone else
+   * may already hold the lock and be editing their own version. So rather than leave an orphaned
+   * local edit on screen, this pulls the display back to the current canonical/published
+   * diagram, the same one a curator would see just viewing it without ever having edited.
+   */
+  private disableEditingAndReloadCanonical(): void {
+    this.applyDisabledEditingState();
+    this.isEdited = false;
+    this.loadPathwayDiagram();
+  }
+
   private disableEditing() {
-    const doDisable = () => {
-      this.diagramUtils.disableEditing(this.diagram);
-      // Sweep for all resize widgets rather than relying solely on resizingNodes bookkeeping,
-      // which can miss widgets left over from a stale load/backup or an undo/redo restore.
-      this.diagramUtils.disableAllResizing(this.diagram);
-      this.resizingNodes.length = 0; // reset to empty
-      this.isEditing = false;
-    };
     // Without a backup, disabling editing with unsaved changes would lose them: re-enabling
     // editing re-acquires the lock and rebuilds the network from resolveEditingLoadPlan(),
     // which loads the stale canonical diagram (not the in-memory edits) whenever the server
@@ -507,15 +551,22 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     // to be a quick, reversible way to see how the diagram looks without the editing chrome,
     // toggled back and forth freely, not a commit point. resolveEditingLoadPlan() picks the
     // backup back up automatically once editing is re-enabled.
-    this.backupEditsThenProceed(doDisable);
+    this.backupEditsThenProceed(() => this.applyDisabledEditingState());
   }
 
   private unlockDiagram(): void {
     const lockToRelease = this.diagramEditorService.getCachedDiagramLock(this.pathwayDiagramId);
     const finalizeUnlock = () => {
-      this.disableEditing();
-      this.isEditing = false;
-      this.isEdited = false;
+      // Apply directly and synchronously here, NOT via disableEditing()'s backup-then-proceed
+      // wrapper: this is already past unlockDiagram()'s own promptUploadBeforeDiscard() below,
+      // which already resolved what to do with any unsaved changes, so a second, asynchronous
+      // backup attempt here is redundant at best. At worst (this was the actual bug) it defers
+      // actually disabling cytoscape interactivity until after the lock is released a few lines
+      // down, leaving the diagram still visibly editable even though isEditing/isEdited already
+      // say otherwise. Also reloads the canonical diagram (see disableEditingAndReloadCanonical's
+      // doc comment): once unlocked, this session has no guarantee its in-progress edits are
+      // preserved anywhere, so the display shouldn't keep showing them as if they still were.
+      this.disableEditingAndReloadCanonical();
 
       if (!lockToRelease)
         return;

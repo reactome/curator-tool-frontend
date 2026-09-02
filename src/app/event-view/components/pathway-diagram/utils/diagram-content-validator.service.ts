@@ -159,12 +159,13 @@ export class PathwayDiagramContentValidator {
                 console.log(`[diagram validation] ${elapsed()} modified residues fetched for ${idToResidues.size}/${ewasNodes.length} EWAS.`);
 
                 // Every dbId whose displayName we might need to show: drawn PE/sub-pathway/
-                // compartment nodes, AND every participant referenced by a reaction's DATABASE
-                // structure (which may include entities not drawn in the diagram at all).
+                // compartment/reaction nodes, AND every participant referenced by a reaction's
+                // DATABASE structure (which may include entities not drawn in the diagram at all).
                 const displayNameIds = new Set<number>();
                 peNodes.forEach(n => displayNameIds.add(n.reactomeId));
                 subPathwayNodes.forEach(n => displayNameIds.add(n.reactomeId));
                 compartments.forEach(c => displayNameIds.add(c.reactomeId));
+                reactionEdges.forEach(e => displayNameIds.add(e.reactomeId));
                 for (const structure of idToStructure.values()) {
                   (structure.inputs ?? []).forEach(p => displayNameIds.add(p.dbId));
                   (structure.outputs ?? []).forEach(p => displayNameIds.add(p.dbId));

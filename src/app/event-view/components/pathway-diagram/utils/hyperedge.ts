@@ -323,18 +323,32 @@ export class HyperEdge {
             let target = targetNode;
             let firstEdge = undefined;
             const role = this.getPointRole(edge);
+            // The connector's true semantic role (matching PathwayDiagramValidator.getRole()'s
+            // naming), recorded as plain data rather than a CSS class - internal segments are
+            // deliberately restyled to a plain, arrow-less "consumption" look below (see the
+            // comment on that line), which would otherwise be the only class validation has to
+            // go on. For input/output that accident is harmless (the "consumption" restyle
+            // already matches input's true class, and output's true class survives on the last
+            // segment next to its own PhysicalEntity target), but for catalyst/regulator
+            // connectors the segment nearest the reaction has the real "catalysis" class yet its
+            // source is an intermediate edge-point node, not a PhysicalEntity - so without this,
+            // a multi-segment catalyst/regulator connector is invisible to validation, which
+            // reports the catalyst/regulator as missing and re-adds a duplicate edge for it.
+            const connectorRole = this.getConnectorRole(edge);
             for (let point of points) {
                 let nodeId = this.createPointNode(edgeData, point, role);
                 target = nodeId;
                 // Use input for any internal edges to avoid showing arrows.
                 let newEdge = this.createNewEdge(source, target, edgeData, this.utils.diagramService!.edgeTypeMap.get("INPUT"));
                 source = target;
-                if (!firstEdge) 
+                if (!firstEdge)
                     firstEdge = newEdge;
                 newEdge?.removeData('stoichiometry'); // Internal edges do not need stoichiometry
+                if (connectorRole) newEdge?.data('role', connectorRole);
             }
             let lastEdge = this.createNewEdge(source, targetNode, edgeData, edge.classes());
             lastEdge?.removeData('stoichiometry');
+            if (connectorRole) lastEdge?.data('role', connectorRole);
             // A hack to call data
             let newEdge: any = undefined;
             if (edge.classes().includes('consumption'))
@@ -493,11 +507,31 @@ export class HyperEdge {
         const targetId = edge.data('target');
         // Split the original edge as two: Use INPUT so that no arrow will show for the first,
         // and the second should take whatever the original edge has
-        this.createNewEdge(srcId, pointNodeId, edge.data(), this.utils.diagramService!.edgeTypeMap.get("INPUT"))
-        this.createNewEdge(pointNodeId, targetId, edge.data(), edge.classes());
+        const connectorRole = this.getConnectorRole(edge);
+        const firstEdge = this.createNewEdge(srcId, pointNodeId, edge.data(), this.utils.diagramService!.edgeTypeMap.get("INPUT"));
+        const lastEdge = this.createNewEdge(pointNodeId, targetId, edge.data(), edge.classes());
+        // See the comment in expandEdges() on why the true role needs to be recorded on both
+        // halves as data rather than relying on the (deliberately arrow-suppressing) CSS classes.
+        if (connectorRole) {
+            firstEdge?.data('role', connectorRole);
+            lastEdge?.data('role', connectorRole);
+        }
         this.cy.remove(edge);
         this.id2object.delete(edge.data('id'));
         return pointNodeId;
+    }
+
+    /**
+     * The connector's true semantic role from its own (pre-split) classes, matching the naming
+     * PathwayDiagramValidator.getRole() uses for reaction attributes.
+     */
+    private getConnectorRole(edge: any): string | undefined {
+        if (edge.hasClass('consumption')) return 'input';
+        if (edge.hasClass('production')) return 'output';
+        if (edge.hasClass('catalysis')) return 'catalystActivity';
+        if (edge.hasClass('positive-regulation')) return 'regulatedBy';
+        if (edge.hasClass('negative-regulation')) return 'regulatedBy';
+        return undefined;
     }
 
     private getPointRole(edge: any): string {
