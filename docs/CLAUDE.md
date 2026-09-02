@@ -14,6 +14,92 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Active TODO List
 
+Last scan: 2026-08-26. Sources: inline `TODO` tags under `src/`, plus `TODO:`-prefixed items in
+[docs/TODO.md](docs/TODO.md) (that file remains the source of truth for curator-reported items; this
+list is the working checklist). Line numbers drift — re-grep before starting an item.
+
+### A. Known bugs called out in code
+
+- [x] `instance-list-view.component.ts:742` — "this is a bug, will never check the null case". Fixed 2026-08-26 on branch `fix/local-advanced-search-null-operands`. The commented-out `if (value == null) return;` would have broken `IS NULL`; the real defect was that a missing value fell through to a comparison against `''`, so `Not Equal` / `Contains` / `Regex` matched instances with no value at all, unlike the server's `IS NOT NULL AND ...` clauses. Also aligned `Not Equal` over a multi-valued attribute with the server's `NONE()`, and replaced the subscribe-into-a-local read of attribute values (which saw `undefined` whenever `fetchInstance` was asynchronous) with `forkJoin`. 7 specs added.
+- [x] `instance-table.component.ts:251` — "if there is only one value in an attribute, delete this value will disable the action menu popup". **Was already fixed in 2024**; only the comment survived. Closed 2026-08-26 on branch `fix/stale-action-menu-todo-empty-slot-guard`. Written 2024-04-15 (7cf06e84); the empty-slot right-click target is an empty `<span>` that collapsed to zero height, so the slot left behind by the deleted value could not be right-clicked. Uncommenting `height: 20px` on `.span-menu-trigger` fixed it on 2024-04-23 (5c3817ca). Verified by removing that line and watching the new guard fail (`Expected 0 to be greater than 0`). Removed the stale TODO and the dead `private newMap: any` field it was stranded above; added 6 specs pinning the empty slot's hit area and menu.
+- [ ] `instance-table.component.ts:448` — adding a new value resets the scroll position.
+- [ ] `instance-view.component.ts:637` — add-then-delete of a new attribute value needs better tracking.
+- [ ] `pathway-diagram-validator.ts:120` — in editing mode an attribute may map to more than one element.
+- [ ] `hyperedge.ts:536` — unresolved: should `outputEdge` or `inputEdge` data be used?
+- [ ] `hyperedge.ts:404` — edge-point node checking not finished.
+- [ ] `instance-converter.ts:33` — compartment text not selectable when the compartment is created first.
+- [ ] `pathway-diagram-utils.ts:87` — compartment label offset from the original label.
+- [ ] `event-tree.component.ts:61` — `node.attributes` typed as `Object`, not `Map` (typing bug).
+
+### B. Refactors / cleanup
+
+- [ ] `data.service.ts:343` — multiple redundant rounds of instance loading across `DataService` and `InstanceUtilities`.
+- [ ] `data.service.ts:1309` — split instance/attribute logic out of `DataService` into its own service.
+- [ ] `data.service.ts:971` — persist only changed attributes for updated instances (performance).
+- [ ] `data.service.ts:36` — move URL construction to an Angular ConfigService.
+- [ ] `text-curation.component.ts:185` — code copied from `schema-class-tree.component.ts`; extract a shared service.
+- [ ] Shared: `action-menu.component.ts` is triplicated (instance-table row element, batch-edit attribute-edit, qa-reports) — refactor into one generic menu.
+- [ ] `bread-crumb.component.ts:4` — manage breadcrumb state in NgRx instead of ad hoc.
+- [ ] `instance-list-view.component.ts:831` — move helper into `InstanceUtilities`.
+- [ ] `instance-list-view.component.ts:867` — `take(1)` vs. re-subscribe needs a decision.
+- [ ] `pathway-diagram.component.ts:258` — drop the `reason` param, rename to `backupEditedDiagram`.
+- [ ] `hyperedge.ts:114` / TODO.md — replace the aStar hack for all-paths-between-two-nodes.
+- [ ] `InstanceNameGenerator.ts:10` — ensure it is a singleton; `:313` — untested code path.
+- [ ] `user-instances.service.ts:58` — load via `APP_INITIALIZER`, like the schema tree; `:69` — value must be updated at deployment.
+- [ ] `instance.effects.ts:342` — decide whether `handleInstanceAttributes()` is needed here; `:139` — check whether that block is needed at all.
+- [ ] `instance-view.component.ts:49` — derive from `dbInstance` instead of `showReferenceColumn`; `:429` — verify the `resetCache && dbId >= 0` guard has no side effects; `:963` — schema view is hardcoded as the back target.
+- [ ] TODO.md — audit every component for unsubscribed subscriptions on destroy; use `take(1)` or explicit teardown for `DataService` query subscriptions.
+
+### C. Features / enhancements (front end)
+
+- [ ] TODO.md — action on attribute-table links to open the referred instance in a new tab/window; make the reference table clickable the same way.
+- [ ] TODO.md — list a curator's updated + newly committed instances over a chosen time range (day / week / custom).
+- [ ] TODO.md — port the preceding/following Event inference feature from the Java version.
+- [ ] TODO.md — batch creation of instances from a list (PubMed IDs → LiteratureReference, UniProt → EWAS).
+- [ ] TODO.md — regex-based text search.
+- [ ] TODO.md — sticky/persisted attribute-table sort option, applied to subsequently opened tables.
+- [ ] TODO.md — demote review status when `structureModified` is newer than `reviewed`/`internalReviewed`; give InstanceEdit shell instances a `dateTime` attribute.
+- [ ] TODO.md — refresh the displayed stable identifier after a species change (server side already correct).
+- [ ] TODO.md — post-processing for UniProt, ChEBI, external ontology (ReferenceMolecule).
+- [ ] TODO.md — add a circular-reference check for the event tree / `precedingEvent` (flagged high importance).
+- [ ] TODO.md — deleted-instance generated display name.
+- [ ] TODO.md — add an InstanceEdit to referrers of a deleted instance and merge it into locally loaded referrers.
+- [ ] `referrers-table.component.ts:53` — omit instances marked for deletion from the referrer list.
+- [ ] `instance-view.component.ts:706` — show a confirmation dialog when the operation completes.
+- [ ] `local-instance-list.component.ts:440` — emit the collected list back to the table.
+- [ ] `batch-edit-dialog.component.ts:243` — collect values selected in the aggregated-attributes dialog; `:610` — display-name update on batch edit unfinished.
+- [ ] `schema-class-table.component.ts:21` — richer table display.
+- [ ] `bookmark-list.component.ts:39` — bookmark behavior is confusing; needs a design decision.
+- [ ] `status.component.html:76` — placeholder marked "to be implemented soon".
+- [ ] `instance-table-row-element.component.html:56` — also determine required/disabled state.
+- [ ] `instance-list-table.component.html:78` — build the tooltip in the component instead of the template.
+- [ ] `new-instance-dialog.component.html:5` — verify touch works for the `click` event; `:12` — convert to a case statement.
+- [ ] `instance.service.ts:1080` — open question for Guanming: merging passive edits into the event tree.
+
+### D. UI / styling
+
+- [ ] TODO.md — Boolean sliders read as `false` when they are `true` but disabled (gray styling).
+- [ ] TODO.md — event-tree icons are black and invisible in dark mode.
+- [ ] TODO.md — adopt the new Reactome icon set from Figma (EBI design; confirm with Eliott).
+- [ ] `styles.scss:15` — choose custom styles; `:51` — replace the hardcoded `min-height: 12px` with a calculation.
+- [ ] `main-event.component.ts:20` — size the table as a ratio of the window instead of a fixed size; `:185` — pick a default pathway for the diagram when nothing is selected.
+- [ ] `pathway-diagram-utils.ts:781` / `:789` — node sizes to be determined; add a CSS class for resizing.
+- [ ] `instance-converter.ts:291` — compute node size to wrap all text.
+- [ ] `editor-actions.component.html:12` — possibly check all objects related to an object-specific reaction.
+
+### E. Pathway diagram behavior (from TODO.md)
+
+- [ ] Remove a reaction from the diagram when the reaction is marked for deletion (likely needs a validation step, as in the Java tool).
+- [ ] Disable dragging of nodes/edges in the diagram legend.
+- [ ] Allow diagram edits without a lock, but block committing them without one.
+- [ ] Resetting an input/output change does not reset the demoted review status, and `structureChanged` stays stuck.
+
+### F. Auth (from TODO.md)
+
+- [ ] Let users change their password; expire generated passwords after first use.
+- [ ] Support special characters (`@#$%&*`) in passwords (lowest priority).
+
+Excluded from the list: `custom-theme.scss:17` is an Angular Material scaffold comment, not our work.
 
 ## What this is
 

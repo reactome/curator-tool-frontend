@@ -4,6 +4,11 @@
   /* Adjust the width to your preference
   TODO: Make sure this is the same height as the link in other cells! */
   // Have to set some height for this. Otherwise, popup cannot appear!
+  // Do not remove this height. The empty-slot trigger is an empty <span>, so without a height
+  // of its own it collapses to nothing and there is no longer anything to right-click: deleting
+  // the only value of an attribute then left a slot that could not be given a value again. That
+  // was a real bug (2024-04-15), fixed by uncommenting this very line (5c3817ca, 2024-04-23).
+  // instance-table-row-element.component.spec.ts measures the hit area to keep it that way.
   height: 20px;
   margin-top: 6px;
   /* Adjust the height to your preference */
