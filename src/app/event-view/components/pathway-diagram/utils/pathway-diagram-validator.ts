@@ -135,44 +135,96 @@ export class PathwayDiagramValidator{
         }
         // Now it is time to validate
         // Need to validate stoichiemtry too
+        // Resolve every attValue to its underlying PE/regulator dbId FIRST, and aggregate both
+        // the desired stoichiometry and one representative attValue per unique dbId, before
+        // touching the diagram. This must happen up front rather than inline in the loop below,
+        // for two reasons:
+        // 1) For catalystActivity/regulatedBy, attValue is the CatalystActivity/Regulation
+        //    helper instance, not the catalyst/regulator itself - keying by attValue.dbId (as
+        //    this used to) rather than the resolved pe.dbId meant this map was never actually
+        //    looked up successfully for those two attributes, so an already-correct edge's
+        //    stoichiometry got stomped to undefined on every single validation pass.
+        // 2) attValues can legitimately contain the same resolved dbId more than once - input/
+        //    output arrays are stoichiometry-expanded (the same participant appears once per
+        //    unit of stoichiometry), and a reaction can have more than one CatalystActivity/
+        //    Regulation helper resolving to the same physicalEntity/regulator. Deduping here
+        //    means the add/update loop below visits each dbId exactly once.
         const newReactomeId2Stoi = new Map<number, number>();
+        const newReactomeId2AttValue = new Map<number, any>();
+        // For catalystActivity/regulatedBy, attValue is the CatalystActivity/Regulation helper
+        // instance, and getPEFromInstance() has to drill into its physicalEntity/regulator
+        // attribute to find the actual PhysicalEntity - that attribute is only populated once the
+        // helper instance has been fully fetched (see validateReaction() above). If that fetch
+        // hasn't resolved it for one of the attValues (a slow/failed fetchInstances() call, a
+        // helper instance with the attribute genuinely still unset, etc.), getPEFromInstance()
+        // returns undefined - the raw, unresolved CatalystActivity/Regulation is NOT a
+        // PhysicalEntity and must never be substituted for one. Silently skipping just that
+        // attValue would drop it out of attDbIds below, and the edge already correctly drawn for
+        // its real (but now unresolved) PhysicalEntity would then look "extra" and get removed by
+        // the from-edges-to-instance pass, only to be re-added as a brand new edge (in a new
+        // position) on a later pass once it resolves - exactly the "extra catalyst link" symptom.
+        // Bailing out of the whole attribute validation here instead leaves the diagram untouched
+        // until every participant resolves.
+        let hasUnresolvedParticipant = false;
         attValues.forEach(attValue => {
-            newReactomeId2Stoi.set(attValue.dbId, (newReactomeId2Stoi.get(attValue.dbId) ?? 0) + 1);
+            const pe = this.getPEFromInstance(attValue, attribute);
+            if (!pe) {
+                hasUnresolvedParticipant = true;
+                return;
+            }
+            newReactomeId2Stoi.set(pe.dbId, (newReactomeId2Stoi.get(pe.dbId) ?? 0) + 1);
+            if (!newReactomeId2AttValue.has(pe.dbId))
+                newReactomeId2AttValue.set(pe.dbId, attValue);
         });
+        if (hasUnresolvedParticipant) {
+            console.warn(`Skipping reaction structure validation for ${reaction.dbId}'s ${attribute}: ` +
+                `could not resolve the physicalEntity/regulator for one or more entries.`);
+            return;
+        }
         // From instance to edges: make sure all are displayed
-        const attDbIds = new Set();
-        if (attValues.length > 0) {
-            for (let attValue of attValues) {
-                // Need to get the dbId of a PE
-                const pe = this.getPEFromInstance(attValue, attribute);
-                if (!pe)
-                    continue;
-                attDbIds.add(pe.dbId);
-                // Make sure this attribute is there
-                if (!reactomeId2elm.has(pe.dbId)) {
-                    const newEdge = this.addInstanceToReaction(elms, attValue, attribute, cy, reaction);
-                    if (newReactomeId2Stoi.get(pe.dbId)! > 1) {
-                        newEdge?.data('stoichiometry', newReactomeId2Stoi.get(pe.dbId));
-                    }
+        const attDbIds = new Set<number>(newReactomeId2Stoi.keys());
+        for (const [peDbId, attValue] of newReactomeId2AttValue) {
+            const newCount = newReactomeId2Stoi.get(peDbId)!;
+            // Make sure this attribute is there
+            if (!reactomeId2elm.has(peDbId)) {
+                const newEdge = this.addInstanceToReaction(elms, attValue, attribute, cy, reaction);
+                if (newCount > 1) {
+                    newEdge?.data('stoichiometry', newCount);
                 }
-                else { // Just check the stoichiometry. We only need to check from instance to edge 
-                       // for stoichiometry. No need from edge to instance
-                    const oldStoi = reactomeId2Stoi.get(pe.dbId) ?? 1;
-                    if (oldStoi !== newReactomeId2Stoi.get(pe.dbId))
-                        // the map is from pe's dbId to the connected edge
-                        reactomeId2elm.get(pe.dbId).data('stoichiometry', newReactomeId2Stoi.get(pe.dbId));
-                }
+                // Register the just-added edge immediately so a later dbId in this same pass
+                // (there won't be one now that attValues is deduped above, but keep this in
+                // case addInstanceToReaction is ever reused elsewhere) is never re-added.
+                if (newEdge) reactomeId2elm.set(peDbId, newEdge);
+            }
+            else { // Just check the stoichiometry. We only need to check from instance to edge
+                   // for stoichiometry. No need from edge to instance
+                const oldStoi = reactomeId2Stoi.get(peDbId) ?? 1;
+                if (oldStoi !== newCount)
+                    // the map is from pe's dbId to the connected edge
+                    reactomeId2elm.get(peDbId).data('stoichiometry', newCount);
             }
         }
-        // From edges to instance: make sure nothing extra are displayed 
+        // From edges to instance: make sure nothing extra are displayed
         for (let reactomeId of reactomeId2elm.keys()) {
             if (!attDbIds.has(reactomeId)) {
                 // Need to delete it
                 const edge = reactomeId2elm.get(reactomeId);
                 const peNode = this.getConnectedPENode(edge, attribute);
+                // The edge tracked here is only the segment directly touching peNode - for a
+                // multi-segment connector (see getRole()'s comment) that's just one link in a
+                // chain of edge-point-mediated edges leading to the reaction. Removing only this
+                // segment would leave the rest of the chain (intermediate edge-point nodes and
+                // their edges) dangling in the diagram, connected to the reaction but going
+                // nowhere. Collect and remove the whole chain instead.
+                const chainPoints = this.collectConnectorChainPoints(edge, peNode);
                 cy.remove(edge);
                 if (this.hyperEdge)
                     this.hyperEdge.deRegisterObject(edge);
+                for (const point of chainPoints) {
+                    cy.remove(point); // Also removes any edge still touching this point
+                    if (this.hyperEdge)
+                        this.hyperEdge.deRegisterObject(point);
+                }
                 if (!peNode.connectedEdges() || peNode.connectedEdges().length === 0) {
                     cy.remove(peNode); // Don't leave a node hanging there!
                     if (this.hyperEdge)
@@ -180,6 +232,28 @@ export class PathwayDiagramValidator{
                 }
             }
         }
+    }
+
+    /**
+     * Walk a multi-segment connector's chain of intermediate edge-point nodes, starting from the
+     * segment directly touching peNode, until reaching a node that isn't an edge point (normally
+     * the reaction node). Returns an empty array for a plain single-segment connector.
+     */
+    private collectConnectorChainPoints(startEdge: any, peNode: any): any[] {
+        const points: any[] = [];
+        let current = startEdge.source().id() === peNode.id() ? startEdge.target() : startEdge.source();
+        let cameFromEdgeId = startEdge.id();
+        const MAX_HOPS = 50; // Safety guard - a real chain is never this long
+        for (let i = 0; i < MAX_HOPS && current.hasClass(EDGE_POINT_CLASS); i++) {
+            points.push(current);
+            const nextEdges = current.connectedEdges().filter((e: any) => e.id() !== cameFromEdgeId);
+            if (nextEdges.length !== 1)
+                break; // A hub (3+ edges) or a dead end - stop walking rather than guess
+            const nextEdge = nextEdges[0];
+            cameFromEdgeId = nextEdge.id();
+            current = nextEdge.source().id() === current.id() ? nextEdge.target() : nextEdge.source();
+        }
+        return points;
     }
 
     private getPEFromInstance(inst: Instance, attName: string) {
@@ -370,6 +444,14 @@ export class PathwayDiagramValidator{
 
     // Note: This method is very similar to getEdgeType in HyperEdge.
     private getRole(edge: any): string | undefined {
+        // HyperEdge.expandEdges()/insertNode() split one connector into a chain of edges through
+        // intermediate edge-point nodes, and deliberately restyle every segment but the one next
+        // to the reaction node to a plain, arrow-less "consumption" look (see the comments there)
+        // -- that segment carries this data field with the connector's true role instead, so it
+        // isn't lost. Edges that were never split (freshly added ones, or single-segment
+        // connectors) never get this field and fall through to the class-based checks below.
+        const role = edge.data('role');
+        if (role) return role;
         // Based on the original definition
         if (edge.hasClass('consumption')) return "input";
         if (edge.hasClass('positive-regulation')) return "regulatedBy";
