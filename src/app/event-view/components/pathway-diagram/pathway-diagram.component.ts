@@ -1207,17 +1207,29 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
                   this.pushUndoSnapshot();
                   this.contentValidator.autoFix(result, this.diagram).subscribe(() => {
                     this.markDiagramEdited();
-                    // Validate Diagram always checks the persisted diagram JSON (what's
-                    // actually published), not this live in-memory fix, so re-running it
-                    // right now would still report the same issues -- not because the fix
-                    // didn't work, but because nothing has been uploaded yet to change what
-                    // gets checked.
+                    // Reaction structure is now checked straight from this live cytoscape
+                    // network, so the fix is already reflected the next time Validate Diagram
+                    // runs -- but the publicly released diagram (the one everyone else sees)
+                    // only changes on "Upload Diagram", so that step still can't be skipped.
                     this.dialog.open(InfoDialogComponent, {
                       data: {
                         title: 'Diagram Corrected',
-                        message: 'The live diagram has been corrected. Upload it before re-running Validate Diagram -- otherwise validation will still check the previously-published diagram and report the same issues.'
+                        message: 'The live diagram has been corrected. Remember to upload the diagram -- this fix won\'t be part of the next release until you do.'
                       }
                     });
+                  });
+                }
+                else if (this.isEdited) {
+                  // Reaction structure was checked against the currently open diagram, not
+                  // necessarily what's been published -- so a clean report here doesn't by
+                  // itself mean the release is up to date. Only worth saying when there's
+                  // actually something unsaved: if nothing has been edited this session, the
+                  // open diagram and the published one are the same thing already.
+                  this.dialog.open(InfoDialogComponent, {
+                    data: {
+                      title: 'Validation Complete',
+                      message: 'This report reflects the currently open diagram. Remember to upload the diagram so these results are included in the next release.'
+                    }
                   });
                 }
               });

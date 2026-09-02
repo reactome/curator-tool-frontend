@@ -443,7 +443,10 @@ export class PathwayDiagramValidator{
     }
 
     // Note: This method is very similar to getEdgeType in HyperEdge.
-    private getRole(edge: any): string | undefined {
+    // Public: also reused by PathwayDiagramContentValidator to derive a reaction's structure
+    // straight from the live cytoscape network, rather than from the server-generated Diagram
+    // JSON (which is only ever as fresh as the last successful "Upload Diagram").
+    getRole(edge: any): string | undefined {
         // HyperEdge.expandEdges()/insertNode() split one connector into a chain of edges through
         // intermediate edge-point nodes, and deliberately restyle every segment but the one next
         // to the reaction node to a plain, arrow-less "consumption" look (see the comments there)
@@ -462,7 +465,8 @@ export class PathwayDiagramValidator{
         return undefined; // The default
     }
 
-    private getConnectedPEId(edge: any, attribute: string): number | undefined {
+    // Public: see getRole()'s doc comment.
+    getConnectedPEId(edge: any, attribute: string): number | undefined {
         const peElm = this.getConnectedPENode(edge, attribute);
         if (peElm)
             return peElm.data('reactomeId');
@@ -471,15 +475,42 @@ export class PathwayDiagramValidator{
 
     /**
      * This should return a node representing a PhysicalEntity instance.
-     * @param edge 
-     * @param attribute 
-     * @returns 
+     * Public: see getRole()'s doc comment.
+     * @param edge
+     * @param attribute
+     * @returns
      */
-    private getConnectedPENode(edge: any, attribute: string): any {
+    getConnectedPENode(edge: any, attribute: string): any {
         let peNode = (attribute === 'output') ? edge.target() : edge.source();
         // Only need PE
         if (peNode.hasClass('PhysicalEntity')) {
             return peNode
+        }
+        return undefined;
+    }
+
+    /**
+     * Distinguishes activator (PositiveRegulation/Requirement) from inhibitor
+     * (NegativeRegulation) for an edge whose role is 'regulatedBy'. Unlike getRole(), which
+     * HyperEdge.expandEdges()/insertNode() preserve via the 'role' data field across a split
+     * connector's segments, the positive/negative distinction is NOT preserved that way (both
+     * collapse to the same 'regulatedBy' role) - only the segment nearest the reaction keeps the
+     * real "positive-regulation"/"negative-regulation" class; the segment nearest the regulator
+     * (the one getConnectedPEId() actually resolves a PE from) gets the plain, arrow-suppressing
+     * restyle instead. So: check this edge's own class first, and if that's inconclusive (this is
+     * the restyled segment of a chain), look at the other segment(s) reachable through the
+     * intermediate edge-point node.
+     */
+    getRegulationSign(edge: any): 'positive' | 'negative' | undefined {
+        if (edge.hasClass('positive-regulation')) return 'positive';
+        if (edge.hasClass('negative-regulation')) return 'negative';
+        for (const node of [edge.source(), edge.target()]) {
+            if (!node.hasClass(EDGE_POINT_CLASS)) continue;
+            for (const other of node.connectedEdges()) {
+                if (other.id() === edge.id()) continue;
+                if (other.hasClass('positive-regulation')) return 'positive';
+                if (other.hasClass('negative-regulation')) return 'negative';
+            }
         }
         return undefined;
     }
