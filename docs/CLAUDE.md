@@ -14,40 +14,66 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Active TODO List
 
-Last scan: 2026-08-26. Sources: inline `TODO` tags under `src/`, plus `TODO:`-prefixed items in
-[docs/TODO.md](docs/TODO.md) (that file remains the source of truth for curator-reported items; this
-list is the working checklist). Line numbers drift — re-grep before starting an item.
+Last scan: 2026-09-01. Sources: every inline `TODO`/`FIXME` tag under `src/` (58 hits), plus **every
+item** in [docs/TODO.md](docs/TODO.md) — not only the `TODO:`-prefixed lines, which is what the
+2026-08-26 scan covered. [docs/TODO.md](docs/TODO.md) remains the source of truth for
+curator-reported items and keeps their original wording; this list is the working checklist and
+paraphrases them. Priority notes from TODO.md ("low priority", "high important", "most important")
+are carried over verbatim, since they are the curators' own triage. Line numbers drift — re-grep
+before starting an item.
 
-### A. Known bugs called out in code
+### A. Known bugs
+
+#### Called out in code
 
 - [x] `instance-list-view.component.ts:742` — "this is a bug, will never check the null case". Fixed 2026-08-26 on branch `fix/local-advanced-search-null-operands`. The commented-out `if (value == null) return;` would have broken `IS NULL`; the real defect was that a missing value fell through to a comparison against `''`, so `Not Equal` / `Contains` / `Regex` matched instances with no value at all, unlike the server's `IS NOT NULL AND ...` clauses. Also aligned `Not Equal` over a multi-valued attribute with the server's `NONE()`, and replaced the subscribe-into-a-local read of attribute values (which saw `undefined` whenever `fetchInstance` was asynchronous) with `forkJoin`. 7 specs added.
 - [x] `instance-table.component.ts:251` — "if there is only one value in an attribute, delete this value will disable the action menu popup". **Was already fixed in 2024**; only the comment survived. Closed 2026-08-26 on branch `fix/stale-action-menu-todo-empty-slot-guard`. Written 2024-04-15 (7cf06e84); the empty-slot right-click target is an empty `<span>` that collapsed to zero height, so the slot left behind by the deleted value could not be right-clicked. Uncommenting `height: 20px` on `.span-menu-trigger` fixed it on 2024-04-23 (5c3817ca). Verified by removing that line and watching the new guard fail (`Expected 0 to be greater than 0`). Removed the stale TODO and the dead `private newMap: any` field it was stranded above; added 6 specs pinning the empty slot's hit area and menu.
-- [ ] `instance-table.component.ts:448` — adding a new value resets the scroll position.
-- [ ] `instance-view.component.ts:637` — add-then-delete of a new attribute value needs better tracking.
+- [ ] `instance-table.component.ts:443` — adding a new value resets the scroll position.
+- [ ] `instance-view.component.ts:640` — add-then-delete of a new attribute value needs better tracking.
 - [ ] `pathway-diagram-validator.ts:120` — in editing mode an attribute may map to more than one element.
 - [ ] `hyperedge.ts:536` — unresolved: should `outputEdge` or `inputEdge` data be used?
-- [ ] `hyperedge.ts:404` — edge-point node checking not finished.
+- [ ] `hyperedge.ts:404` — edge-point node checking not finished; `:419` — no known use cases yet.
 - [ ] `instance-converter.ts:33` — compartment text not selectable when the compartment is created first.
 - [ ] `pathway-diagram-utils.ts:87` — compartment label offset from the original label.
 - [ ] `event-tree.component.ts:61` — `node.attributes` typed as `Object`, not `Map` (typing bug).
 
+#### From docs/TODO.md (non-diagram; diagram bugs are in section E)
+
+- [ ] **Server side** — PubMed records whose author is an organization return a null author name, e.g.
+      "UK10K" in https://pubmed.ncbi.nlm.nih.gov/23872636/. Fix belongs in `curator-tool-ws`.
+- [ ] Comparison mode: turning it off and selecting comparison again uses the database version instead
+      of the instance previously compared against.
+- [ ] Duplicate pathway diagrams are not checked on commit — two users can each create a diagram for
+      the same pathway and both commit, producing duplicate PathwayDiagram instances.
+- [ ] LLM text generation leaves the `[PMID: 123456]` template unreplaced (seen for ALDOB). See
+      Peter's email, 2024-11-13.
+- [ ] Autoscroll in the event view scrolls the whole instance view; it should scroll only the table
+      content, as the schema view does. (Partially fixed, not yet ideal.)
+- [ ] *Low priority* — in the event view the mouse position is offset low while scrolling the
+      instance view up/down.
+- [ ] *Low priority, judged hard to fix* — listing InstanceEdit and typing `2025` in the search box
+      returns nothing, while advanced search on `DisplayName contains 2025` returns instances.
+- [x] **Fixed; kept for regression testing.** A PE used as both input and catalyst lost the input or
+      the catalyst when diagram editing was toggled off and on:
+      `http://localhost:4200/event_view/instance/453279?select=8848436`.
+
 ### B. Refactors / cleanup
 
-- [ ] `data.service.ts:343` — multiple redundant rounds of instance loading across `DataService` and `InstanceUtilities`.
-- [ ] `data.service.ts:1309` — split instance/attribute logic out of `DataService` into its own service.
-- [ ] `data.service.ts:971` — persist only changed attributes for updated instances (performance).
-- [ ] `data.service.ts:36` — move URL construction to an Angular ConfigService.
-- [ ] `text-curation.component.ts:185` — code copied from `schema-class-tree.component.ts`; extract a shared service.
+- [ ] `data.service.ts:414` — multiple redundant rounds of instance loading across `DataService` and `InstanceUtilities`.
+- [ ] `data.service.ts:1492` — split instance/attribute logic out of `DataService` into its own service.
+- [ ] `data.service.ts:1154` — persist only changed attributes for updated instances (performance).
+- [ ] `data.service.ts:37` — move URL construction to an Angular ConfigService.
+- [ ] `text-curation.component.ts:195` — code copied from `schema-class-tree.component.ts`; extract a shared service; `:154` — the injected customization point is hardcoded.
 - [ ] Shared: `action-menu.component.ts` is triplicated (instance-table row element, batch-edit attribute-edit, qa-reports) — refactor into one generic menu.
 - [ ] `bread-crumb.component.ts:4` — manage breadcrumb state in NgRx instead of ad hoc.
-- [ ] `instance-list-view.component.ts:831` — move helper into `InstanceUtilities`.
-- [ ] `instance-list-view.component.ts:867` — `take(1)` vs. re-subscribe needs a decision.
-- [ ] `pathway-diagram.component.ts:258` — drop the `reason` param, rename to `backupEditedDiagram`.
+- [ ] `instance-list-view.component.ts:861` — move helper into `InstanceUtilities`.
+- [ ] `instance-list-view.component.ts:897` — `take(1)` vs. re-subscribe needs a decision.
+- [ ] `pathway-diagram.component.ts:262` — drop the `reason` param, rename to `backupEditedDiagram`.
 - [ ] `hyperedge.ts:114` / TODO.md — replace the aStar hack for all-paths-between-two-nodes.
 - [ ] `InstanceNameGenerator.ts:10` — ensure it is a singleton; `:313` — untested code path.
 - [ ] `user-instances.service.ts:58` — load via `APP_INITIALIZER`, like the schema tree; `:69` — value must be updated at deployment.
 - [ ] `instance.effects.ts:342` — decide whether `handleInstanceAttributes()` is needed here; `:139` — check whether that block is needed at all.
-- [ ] `instance-view.component.ts:49` — derive from `dbInstance` instead of `showReferenceColumn`; `:429` — verify the `resetCache && dbId >= 0` guard has no side effects; `:963` — schema view is hardcoded as the back target.
+- [ ] `instance-view.component.ts:50` — derive from `dbInstance` instead of `showReferenceColumn`; `:431` — verify the `resetCache && dbId >= 0` guard has no side effects; `:970` — schema view is hardcoded as the back target.
 - [ ] TODO.md — audit every component for unsubscribed subscriptions on destroy; use `take(1)` or explicit teardown for `DataService` query subscriptions.
 
 ### C. Features / enhancements (front end)
@@ -64,11 +90,21 @@ list is the working checklist). Line numbers drift — re-grep before starting a
 - [ ] TODO.md — add a circular-reference check for the event tree / `precedingEvent` (flagged high importance).
 - [ ] TODO.md — deleted-instance generated display name.
 - [ ] TODO.md — add an InstanceEdit to referrers of a deleted instance and merge it into locally loaded referrers.
+- [ ] TODO.md, **flagged most important** — write privileges on log-in: decide and implement how they
+      are granted and enforced.
+- [ ] TODO.md — offer `curatorComments` and a replacement-instance picker directly on the deletion
+      confirmation modal, to encourage populating those fields. (An attribute list is stranded under
+      this item in TODO.md — see section I.)
+- [ ] TODO.md — MCP server / interface for staged instances.
+- [ ] TODO.md — let a curator view only one pathway's related instances (Karen's request).
+- [ ] TODO.md — customized view for Figure instances that displays the figure.
+- [ ] TODO.md — triage the demo feedback from Eliot and others, 2026-03-16:
+      https://docs.google.com/document/d/1zlj3KKDwRQYUBCGIi4P3uqsb5X3JRfk8WoOqj2BXssI/edit?tab=t.0#heading=h.y6ik0la1wydu
 - [ ] `referrers-table.component.ts:53` — omit instances marked for deletion from the referrer list.
-- [ ] `instance-view.component.ts:706` — show a confirmation dialog when the operation completes.
+- [ ] `instance-view.component.ts:709` — show a confirmation dialog when the operation completes.
 - [ ] `local-instance-list.component.ts:440` — emit the collected list back to the table.
 - [ ] `batch-edit-dialog.component.ts:243` — collect values selected in the aggregated-attributes dialog; `:610` — display-name update on batch edit unfinished.
-- [ ] `schema-class-table.component.ts:21` — richer table display.
+- [ ] `schema-class-table.component.ts:22` — richer table display.
 - [ ] `bookmark-list.component.ts:39` — bookmark behavior is confusing; needs a design decision.
 - [ ] `status.component.html:76` — placeholder marked "to be implemented soon".
 - [ ] `instance-table-row-element.component.html:56` — also determine required/disabled state.
@@ -82,24 +118,91 @@ list is the working checklist). Line numbers drift — re-grep before starting a
 - [ ] TODO.md — event-tree icons are black and invisible in dark mode.
 - [ ] TODO.md — adopt the new Reactome icon set from Figma (EBI design; confirm with Eliott).
 - [ ] `styles.scss:15` — choose custom styles; `:51` — replace the hardcoded `min-height: 12px` with a calculation.
-- [ ] `main-event.component.ts:20` — size the table as a ratio of the window instead of a fixed size; `:185` — pick a default pathway for the diagram when nothing is selected.
+- [ ] `main-event.component.ts:22` — size the table as a ratio of the window instead of a fixed size; `:206` — pick a default pathway for the diagram when nothing is selected.
 - [ ] `pathway-diagram-utils.ts:781` / `:789` — node sizes to be determined; add a CSS class for resizing.
 - [ ] `instance-converter.ts:291` — compute node size to wrap all text.
 - [ ] `editor-actions.component.html:12` — possibly check all objects related to an object-specific reaction.
+- [ ] `main-schema-view.component.html:22` — "fix the dragging after the SAB". *(Missed by the
+      2026-08-26 scan.)*
+- [ ] `instance-table-row-element.component.scss:5` and
+      `batch-edit-dialog/attribute-edit/attribute-edit.component.scss:5` — the same "make sure this is
+      the same height as the link in other cells" TODO, duplicated in both files. *(Missed by the
+      2026-08-26 scan.)* Both sit beside the `height: 20px` rule whose history is documented in the
+      closed `instance-table.component.ts:251` item above — read that before changing either.
 
-### E. Pathway diagram behavior (from TODO.md)
+### E. Pathway diagram (from docs/TODO.md)
+
+#### Bugs
+
+- [ ] Compartment layer ordering is effectively random, so some compartments cannot be selected —
+      e.g. the nested compartments in `http://localhost:4200/event_view/instance/157858`. Caused by the
+      order in which compartments are plotted. (Listed twice in TODO.md; merged here.)
+- [ ] The diagram for `http://localhost:4200/event_view/instance/6787011` does not appear until editing
+      is enabled, and disappears again when editing is disabled. These are all rice pathways; some of
+      their reactions have no inputs or outputs, the converter drops the hanging ends, and then the
+      backbone no longer matches the position points and the conversion errors out. The converter
+      should run cleanly for every pathway diagram.
+- [ ] Rounded edges become square after enabling editing on
+      `http://localhost:4200/event_view/instance/397014`; only a page refresh restores them.
+- [ ] Resizing a node does not change the height of the selection background — though sometimes it
+      does work.
+- [ ] Inner shapes are not updated when nodes are resized.
+- [ ] Connecting positions are not updated for helper nodes when they are dragged during editing.
+- [ ] A newly added compartment drags too fast, probably from a stale previous drag position.
+- [ ] "Go to pathway" in the diagram sometimes selects oddly — the selected pathway gets stuck in the
+      URL.
+- [ ] Empty reactions cannot be deleted or edited in the pathway diagram.
+
+#### Behavior / unimplemented
 
 - [ ] Remove a reaction from the diagram when the reaction is marked for deletion (likely needs a validation step, as in the Java tool).
+- [ ] The converse: deleting a reaction in the diagram should delete that reaction instance, and the
+      same for other objects (e.g. a PE linked to a reaction).
 - [ ] Disable dragging of nodes/edges in the diagram legend.
 - [ ] Allow diagram edits without a lock, but block committing them without one.
 - [ ] Resetting an input/output change does not reset the demoted review status, and `structureChanged` stays stuck.
+- [ ] Stoichiometry is not yet updated when the diagram is refreshed after instance editing.
+- [ ] Central management of compartment ids — the same compartment can be added several times.
+- [ ] Allow moving the inner part of a compartment during diagram editing. *(Low priority.)*
 
 ### F. Auth (from TODO.md)
 
 - [ ] Let users change their password; expire generated passwords after first use.
-- [ ] Support special characters (`@#$%&*`) in passwords (lowest priority).
+- [ ] Support special characters (`@#$%&*`) in passwords (lowest priority). TODO.md also reports this
+      as a bug ("special characters cannot work in the password") — same work.
 
-Excluded from the list: `custom-theme.scss:17` is an Angular Material scaffold comment, not our work.
+### G. Testing / QA (from TODO.md)
+
+- [ ] Walk through the event view on the dev environment: create a new event, add a new subpathway,
+      create a new diagram for an event.
+- [ ] QA check for a staged instance, per the Reactome team meeting of 8/4 (2025).
+
+### H. Documentation (from TODO.md)
+
+- [ ] Move the deletion-behavior specification at the bottom of [docs/TODO.md](docs/TODO.md) into a
+      proper test-case document under `docs/`. It enumerates the expected behavior of local deletion
+      vs. committed deletion (store lists, cache, schema-tree counts, page counts, referrer
+      InstanceEdits) and ends with an open question — step 5.4 needs the server to return the referrer
+      list on update, because referrers may be cached in the front end. That server change pairs with
+      the section C item on merging a deleted instance's InstanceEdit into loaded referrers.
+
+### I. Unclear — needs the author's clarification
+
+- [ ] TODO.md — "bug when adding golgi apparatus to the inst": the line is truncated, and there is no
+      instance or step to reproduce from.
+- [ ] TODO.md — a bare list of attribute names sits under the deletion-modal item: `HasMember`,
+      `HasCandidate`, `HasComponent`, `HasComponentForComplex`, `HasModifiedResidue`, `Input`,
+      `InputForReactionLikeEvent`, `RepeatedUnit`, `RepeatedUnitForPhysicalEntity`. These are the
+      stoichiometry-bearing relationship types, but what was intended for them is not recorded.
+
+### Excluded, with reasons
+
+- `custom-theme.scss:17` — an Angular Material scaffold comment, not our work.
+- `instance-table-row-element.component.spec.ts:37` — references the closed
+  `instance-table.component.ts:251` TODO in a spec docblock; it is history, not an open item.
+- TODO.md's deletion-confirmation `NOTE` (dated 10/24/25) records a **decision already taken**: keep
+  the first dialog with "no referrers to show" rather than fetching referrers up front to choose which
+  dialog to show, because getting referrers is a heavy transaction. Do not "fix" this.
 
 ## What this is
 
