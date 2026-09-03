@@ -9,6 +9,7 @@ import { DiagramComponent } from 'ngx-reactome-diagram';
 import { combineLatest, filter, map, Observable, Subscription, take } from 'rxjs';
 import { EditorActionsComponent, ElementType } from './editor-actions/editor-actions.component';
 import { DiagramToolbarComponent } from './diagram-toolbar/diagram-toolbar.component';
+import { DiagramNavigatorComponent } from './diagram-navigator/diagram-navigator.component';
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
@@ -30,7 +31,7 @@ import { UnsavedUploadDialogComponent } from 'src/app/shared/components/unsaved-
 @Component({
   selector: 'app-pathway-diagram',
   standalone: true,
-  imports: [DiagramComponent, CommonModule, EditorActionsComponent, DiagramToolbarComponent, MatIconModule],
+  imports: [DiagramComponent, CommonModule, EditorActionsComponent, DiagramToolbarComponent, DiagramNavigatorComponent, MatIconModule],
   templateUrl: './pathway-diagram.component.html',
   styleUrl: './pathway-diagram.component.scss',
   providers: [PathwayDiagramUtilService]
@@ -38,6 +39,7 @@ import { UnsavedUploadDialogComponent } from 'src/app/shared/components/unsaved-
 export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy {
   private readonly pendingDiagramDraftSessionKey = 'pendingPathwayDiagramDraft';
   private readonly backupIntervalMs = 60 * 1000;
+  private readonly thumbnailRefreshDelayMs = 400;
   private readonly editingSyncIntervalMs = 1 * 1000;
   // Special case to navigate away from the current event
   @Output() goToPathwayEvent = new EventEmitter<number>();
@@ -56,6 +58,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   
   @ViewChild('diagramComponent')
   diagram!: DiagramComponent;
+
+  // Thumbnail and navigation wheel overlaid on the diagram.
+  @ViewChild('navigator')
+  navigator?: DiagramNavigatorComponent;
 
   // Try to control the popup menu
   showMenu: boolean = false;
@@ -905,6 +911,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     this.restoreViewport();
     // The graph was just (re)created, so any previous selection is gone.
     this.updateAlignableSelectionCount();
+    // Point the thumbnail and navigation wheel at the new cytoscape instance.
+    this.navigator?.attach(this.diagram.cy, this.diagram.cytoscapeContainer!.nativeElement);
   }
 
   private normalizeCompartmentZIndex() {
@@ -1380,6 +1388,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     this.localEditVersion += 1;
     if (this.lastBackupAtMs === 0)
       this.lastBackupAtMs = Date.now();
+    // Called on every drag tick, so the thumbnail is redrawn once the gesture
+    // settles rather than for each intermediate position.
+    this.navigator?.refreshThumbnail(this.thumbnailRefreshDelayMs);
   }
 
   get canUndo(): boolean {

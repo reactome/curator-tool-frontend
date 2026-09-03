@@ -1,0 +1,83 @@
+// The overlays float over the diagram, so the host covers it and lets every
+// pointer event through except where a control actually is -- otherwise the
+// whole canvas would stop responding to clicks and drags.
+//
+// Inset 40px at the bottom because the library's own diagram root reserves that
+// strip for a controls bar it no longer renders; matching it keeps these
+// controls on the canvas rather than hanging off the bottom of it.
+:host {
+  position: absolute;
+  inset: 0 0 40px 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.thumbnail {
+  position: absolute;
+  right: 0;
+  bottom: 10px;
+  pointer-events: all;
+
+  // The thumbnail pans the diagram, so it has to look draggable and must not
+  // let a touch drag scroll the page instead.
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  background: color-mix(in srgb, var(--surface) 95%, transparent);
+  backdrop-filter: blur(5px);
+  border-left: 1px solid var(--outline-variant);
+  border-top: 1px solid var(--outline-variant);
+  border-bottom: 1px solid var(--outline-variant);
+  padding: 5px;
+  border-radius: 5px 0 0 5px;
+  height: 70px;
+
+  img {
+    max-height: 70px;
+    display: block;
+  }
+
+  svg.overlay {
+    pointer-events: none;
+    position: absolute;
+    inset: 5px;
+    height: calc(100% - 2 * 5px);
+    width: calc(100% - 2 * 5px);
+  }
+}
+
+// Navigation control for the diagram.
+#controls {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  pointer-events: all;
+
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  backdrop-filter: blur(5px);
+  border-right: 1px solid var(--outline-variant);
+  border-top: 1px solid var(--outline-variant);
+  border-bottom: 1px solid var(--outline-variant);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding-right: 5px;
+  border-radius: 0 50px 50px 0;
+
+  #nav-wheel {
+    .button:hover,
+    .button:focus {
+      cursor: pointer;
+      outline: none;
+
+      .bg {
+        filter: brightness(1.2);
+      }
+    }
+  }
+}

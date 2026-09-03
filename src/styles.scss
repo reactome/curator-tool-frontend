@@ -24,6 +24,11 @@ body {
   color: black;
   --body-margin: 8px;
   margin: var(--body-margin, 8px);
+  // Take the margins out of the height. A full 100vh body plus its top and bottom margins
+  // overflows the document by 2 * --body-margin, which leaves the page itself scrollable by
+  // those few pixels: enough to shift anything pinned to the top of a view (the instance
+  // view's bread crumb, tool bar and table headers) up and down while scrolling.
+  height: calc(100vh - 2 * var(--body-margin, 8px));
 }
 
 @media (prefers-color-scheme: light) {

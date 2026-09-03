@@ -142,6 +142,9 @@
     flex: 1 1 auto;
     min-height: 0;
     max-height: none;
+    // Keep a scroll that runs off the end of the table from chaining out to the pane or the
+    // page, which would move the header rows this table's sticky header sticks to.
+    overscroll-behavior: contain;
   }
 }
 

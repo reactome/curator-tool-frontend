@@ -1,0 +1,77 @@
+<!-- Press and drag to move the diagram: people were using the thumbnail to
+     navigate and finding it inert. -->
+<div class="thumbnail" role="presentation" *ngIf="thumbnailImg()" (pointerdown)="onThumbnailPointerDown($event)">
+  <img [src]="thumbnailImg()" #thumbnail (load)="thumbnailLoaded()" draggable="false"/>
+  <svg class="overlay" [attr.viewBox]="thumbnailViewBox()">
+    <mask id="viewportMask" mask-type="luminance">
+      <rect [attr.width]="thumbnailSize().width" [attr.height]="thumbnailSize().height" fill="white"></rect>
+      <rect id="viewportRect" fill="black"
+            [attr.height]="shrunkViewport().height"
+            [attr.width]="shrunkViewport().width"
+            [attr.x]="shrunkViewport().x"
+            [attr.y]="shrunkViewport().y"
+            [attr.rx]="thumbnailRx()"></rect>
+    </mask>
+    <!-- Everything outside the viewport is dimmed, so the bright part of the
+         thumbnail is the part currently on screen. -->
+    <rect x="0" y="0"
+          [attr.width]="thumbnailSize().width" [attr.height]="thumbnailSize().height"
+          fill="var(--surface, white)" opacity="0.5" mask="url(#viewportMask)"></rect>
+    <rect stroke="var(--primary)" stroke-width="1" fill="none"
+          [attr.height]="shrunkViewport().height"
+          [attr.width]="shrunkViewport().width"
+          [attr.x]="shrunkViewport().x"
+          [attr.y]="shrunkViewport().y"
+          [attr.rx]="thumbnailRx()"></rect>
+  </svg>
+</div>
+
+<div id="controls">
+  <svg id="nav-wheel" width="70" height="70" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g class="button" id="fit" (click)="fitScreen()" matTooltip="Fit to screen" tabindex="0">
+      <circle class="bg" cx="24.9999" cy="24.9999" r="11.475" fill="var(--primary, #006782)"/>
+      <g class="icon">
+        <path
+          d="M30.8393 26.2193C31.1984 26.2195 31.4936 26.4924 31.5292 26.8421L31.5326 26.9132V30.8391C31.5325 31.2221 31.2223 31.5328 30.8393 31.533H26.9135C26.5303 31.533 26.2197 31.2222 26.2195 30.8391C26.2195 30.4558 26.5302 30.1451 26.9135 30.1451H30.1454V26.9132L30.1488 26.8421C30.1844 26.4923 30.4801 26.2193 30.8393 26.2193Z"
+          fill="var(--on-primary, white)"/>
+        <path
+          d="M19.1607 26.2193C19.544 26.2193 19.8547 26.53 19.8547 26.9132V30.1451H23.0866L23.1577 30.1485C23.5076 30.1842 23.7805 30.4798 23.7805 30.8391C23.7804 31.1982 23.5075 31.4933 23.1577 31.529L23.0866 31.5324H19.1607C18.7776 31.5322 18.4668 31.2216 18.4668 30.8384V26.9132C18.4668 26.5301 18.7776 26.2194 19.1607 26.2193Z"
+          fill="var(--on-primary, white)"/>
+        <path
+          d="M23.0866 18.4666C23.4698 18.4666 23.7804 18.7774 23.7805 19.1605C23.7805 19.5438 23.4698 19.8545 23.0866 19.8545H19.8547V23.0863L19.8513 23.1575C19.8157 23.5073 19.52 23.7803 19.1607 23.7803C18.8017 23.7801 18.5065 23.5072 18.4709 23.1575L18.4675 23.0863V19.1605C18.4676 18.7774 18.7783 18.4666 19.1614 18.4666H23.0866Z"
+          fill="var(--on-primary, white)"/>
+        <path
+          d="M30.8393 18.4666C31.2224 18.4667 31.5332 18.7774 31.5333 19.1605V23.0863C31.5332 23.4695 31.2224 23.7802 30.8393 23.7803C30.4561 23.7803 30.1454 23.4696 30.1454 23.0863V19.8545H26.9135L26.8423 19.8504C26.4925 19.8147 26.2195 19.5197 26.2195 19.1605C26.2196 18.8014 26.4926 18.5063 26.8423 18.4706L26.9135 18.4666H30.8393Z"
+          fill="var(--on-primary, white)"/>
+      </g>
+    </g>
+    <g class="button" id="up" (click)="move('up')" matTooltip="Move up" matTooltipPosition="above" tabindex="0">
+      <path class="bg"
+        d="M25.0003 0C31.4785 0 37.3812 2.46403 41.8224 6.506L33.9132 14.4152C33.3113 13.9078 32.6654 13.4509 31.9823 13.0508C31.9104 13.0087 31.838 12.9673 31.7653 12.9265C31.7517 12.9188 31.738 12.9111 31.7243 12.9035C31.7166 12.8992 31.7088 12.8949 31.7011 12.8906C31.6374 12.8553 31.5734 12.8205 31.5091 12.7861C31.4938 12.7779 31.4784 12.7697 31.463 12.7616C31.4492 12.7543 31.4354 12.7471 31.4217 12.7398C30.1598 12.0775 28.783 11.6043 27.3291 11.3579C27.2746 11.3487 27.2199 11.3398 27.1652 11.3311C27.0658 11.3155 26.9662 11.301 26.8662 11.2875C26.7156 11.2672 26.5643 11.2493 26.4122 11.2339C26.3613 11.2288 26.3104 11.2239 26.2595 11.2193C26.0522 11.2006 25.8434 11.1865 25.6336 11.177C25.4827 11.1702 25.3312 11.1659 25.1791 11.1639C25.1196 11.1632 25.0601 11.1628 25.0005 11.1628C23.7272 11.1628 22.494 11.3348 21.323 11.6568C19.7372 12.0929 18.2654 12.804 16.9621 13.7358C16.6613 13.9507 16.3696 14.1775 16.0875 14.4153L8.17822 6.50604C12.6193 2.46404 18.5221 0 25.0003 0Z"
+        fill="var(--primary, #006782)"/>
+      <path class="icon" d="M19.3945 8.50366L24.9461 2.95205L30.4978 8.50366"
+        stroke="var(--on-primary, white)" stroke-width="1.3879" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g class="button" id="right" (click)="move('right')" matTooltip="Move right" matTooltipPosition="after" tabindex="0">
+      <path class="bg"
+        d="M35.585 16.0872C37.6145 18.4949 38.8374 21.6048 38.8374 25.0002L38.8363 25.1789C38.8336 25.3867 38.8264 25.5935 38.8147 25.7991C38.6848 28.081 38.002 30.215 36.8981 32.069C36.5104 32.7201 36.0709 33.3367 35.585 33.9131L43.4942 41.8222C47.5361 37.381 50.0002 31.4783 50.0002 25.0001C50.0002 18.5218 47.5361 12.6191 43.4941 8.17798L35.585 16.0872Z"
+        fill="var(--primary, #006782)"/>
+      <path class="icon" d="M41.6011 30.7102L47.1527 25.1586L41.6011 19.607"
+        stroke="var(--on-primary, white)" stroke-width="1.3879" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g class="button" id="down" (click)="move('down')" matTooltip="Move down" matTooltipPosition="below" tabindex="0">
+      <path class="bg"
+        d="M25.0003 49.9999C18.5221 49.9999 12.6193 47.5359 8.17822 43.4939L16.0874 35.5847C18.4528 37.5785 21.4958 38.7939 24.8215 38.836L25.0005 38.8372C28.3958 38.8371 31.5056 37.6143 33.9132 35.5848L41.8224 43.4939C37.3812 47.5359 31.4785 49.9999 25.0003 49.9999Z"
+        fill="var(--primary, #006782)"/>
+      <path class="icon" d="M19.3945 41.8135L24.9461 47.3651L30.4978 41.8135"
+        stroke="var(--on-primary, white)" stroke-width="1.3879" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g class="button" id="left" (click)="move('left')" matTooltip="Move left" matTooltipPosition="before" tabindex="0">
+      <path class="bg"
+        d="M6.50602 8.17798C2.46403 12.6191 0 18.5218 0 25C0 31.4783 2.46403 37.381 6.50601 41.8221L14.4152 33.9129C12.4214 31.5475 11.206 28.5046 11.1639 25.1788L11.1628 25.0002C11.1628 21.6048 12.3858 18.4949 14.4153 16.0872L6.50602 8.17798Z"
+        fill="var(--primary, #006782)"/>
+      <path class="icon" d="M8.2915 19.6069L2.7399 25.1585L8.2915 30.7102"
+        stroke="var(--on-primary, white)" stroke-width="1.3879" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </svg>
+</div>
