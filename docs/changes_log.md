@@ -1,5 +1,11 @@
 ### Build on September 3, 2026
 
+- Added navigation controls to the pathway diagram, ported from the public pathway browser: a thumbnail of the whole diagram in the bottom-right corner, with the part currently on screen drawn as a bright rectangle against the dimmed rest of it, and a wheel of pan buttons plus **Fit to screen** in the bottom-left. Press anywhere on the thumbnail - or press and drag across it - to bring that part of the diagram into view, which is quicker than scrolling for a large pathway where what you want is off screen. Both work whether or not editing is enabled, and the thumbnail redraws itself as you edit, so it always shows the diagram as it now stands rather than as it was when opened.
+
+- In both the event view and the schema view, the bread crumb, the toolbar, and the attribute table's own header row now stay in place while the attribute table scrolls, instead of scrolling away with it. On a long instance you no longer have to scroll back to the top to see which attribute a column belongs to, or to reach the toolbar and the bread-crumb trail.
+
+- Bug fix: on the deployed site, the two buttons that switch an event between the schema view and the event view were again opening an address outside the app - typically a "not found" page - rather than the other view of the instance you were looking at. This is the same symptom fixed on August 27: the address left out the `/curatortool/` part the deployed site sits under. It came back because the change on August 7 that gave each of the two views its own dedicated tab built the address a different way, one that is resolved from the top of the server rather than from inside the app. Neither way of building it shows the problem when the app is run locally, where there is no `/curatortool/` to leave out. Both buttons now build the address the same way as every other link in the app that opens a new tab, so the two cannot drift apart again.
+
 - Bug fix: for a reaction with two or more inputs (or outputs) that share a single connecting point in the diagram, using **Auto-Fix** after one of them was replaced with a different one could remove every input or output sharing that point - not just the one being corrected - leaving the reaction looking like it had lost its connections entirely. Fixed.
 
 ### Build on September 2, 2026
