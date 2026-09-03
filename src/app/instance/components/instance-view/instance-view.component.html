@@ -1,4 +1,4 @@
-<div>
+<div class="view-header">
   <app-bread-crumb [viewHistory]="viewHistory" (clickEvent)="changeTable($event)" *ngIf="needHistory">
   </app-bread-crumb>
   <ng-container *ngIf="showProgressSpinner">
@@ -99,7 +99,7 @@
   </mat-toolbar>
   <!-- <app-text-curation style="height: 80px;" [embedded]="true" [instanceView]="this" *ngIf="instance"></app-text-curation> -->
 </div>
-<app-instance-table style="overflow: scroll; height: 100%" [instance]="instance" [referenceInstance]="dbInstance"
+<app-instance-table class="fill-height" [instance]="instance" [referenceInstance]="dbInstance"
   (editedInstance)="updateTitle($event)" *ngIf="!showProgressSpinner && instance"
   [blockRouter]="blockRoute"></app-instance-table>
 <!--<iframe [src]="'https://reactome.github.io/PathwayBrowser/' + '453279' | safe" width="1980" height="1020" title="Diagram Editor"></iframe>-->

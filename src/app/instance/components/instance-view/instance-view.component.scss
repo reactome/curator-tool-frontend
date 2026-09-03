@@ -1,7 +1,28 @@
+// Split the view into a fixed header (bread crumb + tool bar) and a table that takes the
+// rest of the height and scrolls on its own, so the header never scrolls out of sight.
+// The host is stretched to its container by both the schema view (mat-sidenav-content) and
+// the event view (.table-pane).
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.view-header {
+  flex: 0 0 auto;
+  z-index: 2;
+}
+
+app-instance-table.fill-height {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .toolbar {
   font-size: 16px;
   height: var(--title-height, 40px);
-  position: sticky;
 }
 
 .title {

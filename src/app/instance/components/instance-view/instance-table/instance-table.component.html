@@ -1,4 +1,4 @@
-<div style="overflow: scroll;">
+<div class="table-wrapper">
   <ng-template #valueColTemplate let-element>
     <ng-container *ngIf="element.attribute.cardinality === '1'">
       <app-instance-table-row-element [disable]="isInstanceDeleted()" [attribute]="element.attribute"

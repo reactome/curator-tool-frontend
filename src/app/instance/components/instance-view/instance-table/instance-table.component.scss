@@ -108,6 +108,10 @@
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
+.table-wrapper {
+  overflow: auto;
+}
+
 .table-container {
   // Only cap the height; don't force it, so the box shrinks to fit the
   // current instance's attribute count instead of always reserving a
@@ -116,6 +120,29 @@
   max-height: calc(100vh - var(--bread-crumb-height) - var(--title-height) - var(--body-margin) - 15px);
   overflow: auto;
   border: none;
+}
+
+// The instance view stretches the table to the height left over by its header (the dialogs
+// that embed this table instead let it size to its content). Passing that height down to
+// .table-container makes it the one scrolling box, which is what the sticky header row and
+// the sticky column headers below stick to.
+:host(.fill-height) {
+  display: flex;
+  min-height: 0;
+
+  .table-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .table-container {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+  }
 }
 
 .mat-icon {
