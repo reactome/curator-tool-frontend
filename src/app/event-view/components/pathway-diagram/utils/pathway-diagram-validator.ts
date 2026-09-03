@@ -238,6 +238,15 @@ export class PathwayDiagramValidator{
      * Walk a multi-segment connector's chain of intermediate edge-point nodes, starting from the
      * segment directly touching peNode, until reaching a node that isn't an edge point (normally
      * the reaction node). Returns an empty array for a plain single-segment connector.
+     *
+     * A node is only ever added to the returned list once it's confirmed to be a genuine,
+     * single-path interior point of THIS connector's own chain (exactly one edge leading
+     * onward, besides the one just arrived from) - never before that check. A hub node (an
+     * edge-point with 3+ connected edges, e.g. shared by several inputs converging on one
+     * reaction) must never be added: the caller removes every node in the returned list via
+     * cy.remove(), which cascades to remove every edge touching that node - for a hub, that
+     * would tear out every OTHER connector sharing it (including one just added in the same
+     * validation pass), not just the one actually being cleaned up here.
      */
     private collectConnectorChainPoints(startEdge: any, peNode: any): any[] {
         const points: any[] = [];
@@ -245,10 +254,11 @@ export class PathwayDiagramValidator{
         let cameFromEdgeId = startEdge.id();
         const MAX_HOPS = 50; // Safety guard - a real chain is never this long
         for (let i = 0; i < MAX_HOPS && current.hasClass(EDGE_POINT_CLASS); i++) {
-            points.push(current);
             const nextEdges = current.connectedEdges().filter((e: any) => e.id() !== cameFromEdgeId);
             if (nextEdges.length !== 1)
-                break; // A hub (3+ edges) or a dead end - stop walking rather than guess
+                break; // A hub (3+ edges, shared by other connectors) or a dead end - never safe
+                       // to remove, so stop walking without adding this node at all.
+            points.push(current);
             const nextEdge = nextEdges[0];
             cameFromEdgeId = nextEdge.id();
             current = nextEdge.source().id() === current.id() ? nextEdge.target() : nextEdge.source();

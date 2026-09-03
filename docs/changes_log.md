@@ -1,3 +1,7 @@
+### Build on September 3, 2026
+
+- Bug fix: for a reaction with two or more inputs (or outputs) that share a single connecting point in the diagram, using **Auto-Fix** after one of them was replaced with a different one could remove every input or output sharing that point - not just the one being corrected - leaving the reaction looking like it had lost its connections entirely. Fixed.
+
 ### Build on September 2, 2026
 
 - Bug fix: **Validate Diagram Against Database** could keep reporting the exact same reaction-structure problems (a catalyst, activator, or inhibitor shown as missing or extra) no matter how many times **Auto-Fix** and **Upload Diagram** were run in a row. The published diagram file it checked against is regenerated under the pathway's own identifier rather than the diagram's, so for diagrams where those two differ, uploading never actually reached the copy being checked - it stayed stuck showing whatever the diagram looked like before the fix. Validate Diagram Against Database now checks the diagram actually open in the editor instead, so a fix shows up as fixed the moment you re-run it, without having to upload first just to confirm it worked.
