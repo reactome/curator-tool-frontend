@@ -64,7 +64,6 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 
 #### Low priority
 
-- Enable move inner part of the compartment during the pathway diagram editing
 - comments from Eliot and others during a demo on March 16, 2026: https://docs.google.com/document/d/1zlj3KKDwRQYUBCGIi4P3uqsb5X3JRfk8WoOqj2BXssI/edit?tab=t.0#heading=h.y6ik0la1wydu.
 - bug: the layers of compartment are not right now. Some compartments cannot get selected: http://localhost:4200/event_view/instance/157858, inside compartments, caused by the order of plotting compartments. This needs to be fixed.
 - TODO: Set the color of icons in the event tree for dark mode. Right now, they are all black, which cannot be seen in the dark mode.
@@ -80,15 +79,9 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 - TODO: Add an IE to referrers for the deleted instance at the server-side, return this IE so that we can manually add it to the local loaded referrers, including updated and deleted instances.
 - TODO: When a data service's query method is called via subscribe, the generated subscription cannot be subsribed autmoatically. Make sure use take(1) or manually unscribte it: https://devzilla.io/manage-rxjs-subscriptions-in-angular
 - TODO: When a reaction is marked for deleted, this reaction in the diagram should be removed too. However, this may be difficult to handle since the reaction may not be displayed. Therefore, we will need some validation step to validate deleted or updated objects like this as in the Java curator tool.
-- TODO: Need to disable the drag of nodes and edges in the legdend for the diagram view.
+
 
 - TODO: change input/output or other may cause structure change and demoted the review status. However, reset the change will not reset the changed review status. Also a structureChanged flag is stuck, which results a new structureEdit value. This may need to be udpated in the future.
-
-- TODO: a user may make pathway diagram edits without a lock, but they cannot commit these edits without a lock.
-
-- TODO: implement post-processing for Uniprot, ChEBI, external ontology (ReferenceMolecule)
-
-- TODO: Enable regex-based search for text
 
 - TODO: batch creation of instances, e.g. a list of PubMed ids for LiteratureReference or a list of UniProt for EWAS.
 

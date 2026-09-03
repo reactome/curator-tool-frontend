@@ -995,11 +995,12 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   private openInNamedWindow(view: "event_view" | "schema_view") {
-    const url = this.router.serializeUrl(
-      this.router.createUrlTree(["/" + view + "/instance/" + this.instance!.dbId])
-    );
+    // The path is deliberately relative (no leading slash), matching every other window.open()
+    // call in the app: a leading slash - as produced by Router.serializeUrl() - is resolved from
+    // the server root, bypassing the <base href> the deployed site is served under (e.g.
+    // "/curatortool/"), which opened the other view at the wrong, 404ing address in production.
     // A window having the same name is re-used and re-pointed to the new instance.
-    window.open(url, view)?.focus();
+    window.open(`${view}/instance/${this.instance!.dbId}`, view)?.focus();
   }
 
   openCuratorGraph() {
