@@ -3,7 +3,7 @@
  */
 
 import { DataSource } from "@angular/cdk/collections";
-import { Observable, of } from "rxjs";
+import { BehaviorSubject, Observable } from "rxjs";
 import { AttributeValue, Instance } from "src/app/core/models/reactome-instance.model";
 import { AttributeCategory, SchemaAttribute } from "src/app/core/models/reactome-schema.model";
 
@@ -33,6 +33,16 @@ export interface DragHoverStatus {
  */
 export class InstanceDataSource extends DataSource<AttributeValue> {
 
+  /**
+   * Rows are pushed through a subject rather than handed out as a fresh `of(...)` per connect, so
+   * that the content can be refreshed without the table having to swap the DataSource itself.
+   * Swapping it makes CdkTable diff an entirely new set of rows, which destroys every row and
+   * re-creates it; tearing down that many rows forces a layout while the table body is
+   * momentarily empty, and the browser then clamps the scroll position to the top. That is what
+   * put a curator back at the top of a long instance after each edit. See refresh().
+   */
+  private readonly rows = new BehaviorSubject<AttributeValue[]>([]);
+
   constructor(private instance: Instance | undefined,
               private categories: Map<AttributeCategory, boolean>,
               public sort: boolean,
@@ -43,6 +53,22 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
   }
 
   override connect(): Observable<AttributeValue[]> {
+    this.rows.next(this.buildRows());
+    return this.rows.asObservable();
+  }
+
+  /**
+   * Recompute the rows and push them to the table, which diffs them against what it is already
+   * showing (keyed by attribute name - see InstanceTableComponent.trackByAttributeName) and
+   * updates the affected rows in place instead of rebuilding all of them.
+   */
+  refresh(instance: Instance | undefined, referenceInstance?: Instance): void {
+    this.instance = instance;
+    this.referenceInstance = referenceInstance;
+    this.rows.next(this.buildRows());
+  }
+
+  private buildRows(): AttributeValue[] {
     const attributeValues: AttributeValue[] = [];
     // Just in case
     let instAtts = this.instance?.attributes;
@@ -72,7 +98,7 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
             editedAtts.push(att);
           }
         })
-        return of(editedAtts);
+        return editedAtts;
       }
 
       // Sort attributes alphabetically by name ascending, otherwise descending.
@@ -88,7 +114,7 @@ export class InstanceDataSource extends DataSource<AttributeValue> {
           -1 : 1)
       }
     }
-    return of(attributeValues);
+    return attributeValues;
   }
 
   override disconnect(): void {

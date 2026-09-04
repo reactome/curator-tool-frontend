@@ -1,3 +1,9 @@
+### Build on September 4, 2026
+
+- Bug fix: adding a value to a slot near the bottom of a long instance - a summation or the species of a pathway, say - jumped the attribute table back to the top, so you had to scroll down again to carry on with the lower slots. After every edit the table was rebuilt by discarding all of its rows and creating them again from scratch; on an instance with enough attributes to scroll, the browser sees the table empty for an instant during that and resets the scroll position to the top. The table now updates just the rows that changed and leaves the rest alone, so your position is kept - and the edit is quicker to apply, since a long instance no longer re-renders in full for a one-slot change. Opening a different instance still starts at the top.
+
+- Bug fix: refreshing the instance already on display - which happens by itself after an edit, or when an auto-filler regenerates a display name - briefly replaced the whole attribute table with the loading spinner, discarding your scroll position and flickering. It is now refreshed in place. Switching to a different instance still shows the spinner. This also fixes an error that could interrupt such a refresh part way through, leaving the spinner up.
+
 ### Build on September 3, 2026
 
 - Added navigation controls to the pathway diagram, ported from the public pathway browser: a thumbnail of the whole diagram in the bottom-right corner, with the part currently on screen drawn as a bright rectangle against the dimmed rest of it, and a wheel of pan buttons plus **Fit to screen** in the bottom-left. Press anywhere on the thumbnail - or press and drag across it - to bring that part of the diagram into view, which is quicker than scrolling for a large pathway where what you want is off screen. Both work whether or not editing is enabled, and the thumbnail redraws itself as you edit, so it always shows the diagram as it now stands rather than as it was when opened.

@@ -4,7 +4,7 @@ import {
   moveItemInArray,
   transferArrayItem,
 } from '@angular/cdk/drag-drop';
-import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { PostEditListener } from 'src/app/core/post-edit/PostEditOperation';
@@ -440,7 +440,10 @@ export class InstanceTableComponent implements PostEditListener {
     this.inEditing = true;
     //Only add attribute name if value was added
     this.postEdit(attName);
-    //TODO: Add a new value may reset the scroll position. This needs to be changed!
+    // This used to throw the curator back to the top of a long instance. The table content is
+    // refreshed in place (see updateTableContent and trackByAttributeName) precisely so that it
+    // does not: destroying and re-creating every row forces a layout while the table body is
+    // empty, and the browser clamps the scroll position of .table-container to the top.
     this.updateTableContent();
     // Register the updated instances
     this.registerUpdatedInstance(attName);
@@ -505,7 +508,44 @@ export class InstanceTableComponent implements PostEditListener {
     return true;
   }
 
+  /**
+   * Identify a row by the attribute it shows. Without this the table has no way to tell that a
+   * refreshed row set describes the same attributes as the one already rendered - the AttributeValue
+   * objects are rebuilt every time - so it would destroy every row and re-create it. Doing that for
+   * a long instance forces a layout while the table body is empty, and the browser clamps the scroll
+   * position to the top: the curator was thrown back to the top of the table after every edit.
+   * Matching on the attribute name lets the table update the affected rows in place, which also
+   * keeps the DOM (and so the focus) of the row being edited alive.
+   */
+  trackByAttributeName = (_index: number, row: AttributeValue): string => row.attribute.name;
+
+  /** dbId whose rows the current data source holds; a different instance starts a fresh table. */
+  private renderedDbId?: number;
+
+  /** The element that scrolls. Held so a new instance can be shown from the top. */
+  @ViewChild('tableContainer') private tableContainer?: ElementRef<HTMLElement>;
+
   updateTableContent(): void {
+    // Refresh the rows in place whenever the table is already showing this instance in this mode.
+    // A different instance, or a switch into or out of comparison, is a different table and is
+    // rebuilt from scratch so that it starts at the top.
+    const wantsComparison = this._referenceInstance !== undefined;
+    const current = this.instanceDataSource;
+    const sameMode = (current instanceof InstanceComparisonDataSource) === wantsComparison;
+    if (current !== undefined && sameMode && this.renderedDbId === this._instance?.dbId) {
+      current.sort = this.sortAttNames;
+      current.sortAttDefined = this.sortAttDefined;
+      current.filterEdited = this.filterEdited;
+      current.refresh(this._instance, this._referenceInstance);
+      return;
+    }
+    // A different instance (or a switch into or out of comparison) is shown from the top. This has
+    // to be said explicitly: rows are matched by attribute name, so two instances of the same class
+    // reuse each other's rows and the scroll position would otherwise carry over from the previous
+    // instance to an unrelated one.
+    if (this.renderedDbId !== undefined && this.tableContainer)
+      this.tableContainer.nativeElement.scrollTop = 0;
+    this.renderedDbId = this._instance?.dbId;
     // Without a reference column the filter means "attributes I edited", which InstanceDataSource
     // answers from the instance's own edit tracking (modifiedAttributes). Whenever a reference
     // instance is shown the filter means "attributes whose values differ", and that has to be
