@@ -60,7 +60,7 @@ describe('InactivityService', () => {
     expect(dialog.open).toHaveBeenCalled();
 
     afterClosed.next('logout');
-    expect(userInstances.persistInstances).toHaveBeenCalledWith(true, jasmine.any(Function));
+    expect(userInstances.persistInstances).toHaveBeenCalledWith(true, jasmine.any(Function), false, 'a-token');
   }));
 
   // The bug this covers: an idle logout replaced the tab's view with the login page without
@@ -137,9 +137,29 @@ describe('InactivityService', () => {
     // loading the user's staged instances - with a token that's about to be invalidated.
     expect(service.start()).toBeTrue();
 
-    expect(userInstances.persistInstances).toHaveBeenCalledWith(true, jasmine.any(Function));
+    expect(userInstances.persistInstances).toHaveBeenCalledWith(true, jasmine.any(Function), false, 'a-token');
     // The immediate logout doesn't stop start() from also scheduling the normal idle timer
     // (harmless once logged out); retire it before fakeAsync checks the queue.
+    service.ngOnDestroy();
+  }));
+
+  it('does not clear a fresh login or redirect it to /login if it replaced the stale session while logging out', fakeAsync(() => {
+    // The stale session detected at open is still being logged out (persistInstances is async
+    // and has not called back yet) when the curator finishes logging back in - in production,
+    // its server round trip is slow enough for that to happen for real.
+    localStorage.setItem(ACTIVITY_KEY, String(Date.now() - 19 * MINUTE));
+    expect(service.start()).toBeTrue();
+
+    const [, onComplete] = userInstances.persistInstances.calls.mostRecent().args as
+      [boolean, (loggedOut: boolean) => void, boolean, string];
+
+    // The fresh login has since replaced the stale token this logout was for.
+    localStorage.setItem('token', 'a-fresh-token');
+    const router = TestBed.inject(Router);
+    onComplete(false);
+
+    expect(localStorage.getItem('token')).toBe('a-fresh-token');
+    expect(router.navigate).not.toHaveBeenCalledWith(['/login']);
     service.ngOnDestroy();
   }));
 

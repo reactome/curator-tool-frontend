@@ -345,14 +345,31 @@ export class InactivityService implements OnDestroy {
     // here worth recording. A logout the curator asked for saves nothing, by contrast - there
     // is no interrupted view to come back to.
     saveReturnUrl();
-    this.userInstancesService.persistInstances(true, () => {
+    // Snapshot the token this logout is for: persistInstances()'s server round trip takes long
+    // enough in production that a curator can log back in (a fresh, valid session) while it is
+    // still in flight - most easily hit right here, since this logout can itself be kicked off
+    // from start() by a stale session sitting in localStorage from before the tab was even
+    // opened, racing the login form the user is about to submit on a freshly-loaded /login page.
+    // Passing it through as expectedToken makes persistInstances() skip its destructive cleanup
+    // (and the callback below skip clearing/redirecting) if that new session has since replaced
+    // this one, rather than clobbering it.
+    const staleToken = localStorage.getItem('token');
+    this.userInstancesService.persistInstances(true, (loggedOut) => {
+      this.loggingOut = false;
+      if (!loggedOut) {
+        // The stale session this logout targeted has already been replaced - most likely by a
+        // fresh login while the persist/delete call above was in flight. Nothing left to tear
+        // down or redirect; leave the new session alone.
+        console.debug('[InactivityService] logout skipped: the session changed while logging out.');
+        this.resetTimer();
+        return;
+      }
       // Defensively clear the session identity even if the persist call failed
       // (the JWT has likely already expired), then send the user to /login.
       localStorage.removeItem('token');
       localStorage.removeItem('login_username');
-      this.loggingOut = false;
       this.resetTimer();
       this.router.navigate(['/login']);
-    });
+    }, false, staleToken);
   }
 }

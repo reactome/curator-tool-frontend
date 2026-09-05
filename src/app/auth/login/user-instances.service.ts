@@ -348,12 +348,21 @@ export class UserInstancesService {
      * rather than risking a wipe of a sibling tab's not-yet-broadcast changes. Clearing/
      * deleting the backup when everything is genuinely empty is left to the normal (non-beacon)
      * persist path below.
+     * @param expectedToken Only meaningful together with removeToken. If given, the destructive
+     * part of the logout (localStorage.clear() and the backend logout call) is skipped unless
+     * the token in localStorage is still this one by the time the (asynchronous) persist/delete
+     * call completes. This is for a logout that was decided upon *before* that asynchronous call
+     * was started (e.g. an inactivity timeout) - by the time it finishes, a fresh login elsewhere
+     * in the same tab may already have replaced the stale session this logout was for, and
+     * tearing down local state at that point would clobber the new session instead of the stale
+     * one. Callers that want an unconditional logout (e.g. a user-initiated "Log out") should
+     * leave this unset. onComplete is passed whether the logout actually happened.
      */
-    persistInstances(removeToken: boolean = false, onComplete?: () => void, useBeacon: boolean = false): void {
+    persistInstances(removeToken: boolean = false, onComplete?: (loggedOut: boolean) => void, useBeacon: boolean = false, expectedToken?: string | null): void {
         console.debug('Calling persist instance before window closing...');
-        const done = () => {
+        const done = (loggedOut: boolean = false) => {
             if (onComplete)
-                onComplete();
+                onComplete(loggedOut);
         };
         const user = this.authService.getUser();
         if (!user) {
@@ -361,9 +370,17 @@ export class UserInstancesService {
             done();
             return;
         }
-        const clearLocalStateForLogout = () => {
+        const clearLocalStateForLogout = (): boolean => {
             if (!removeToken)
-                return;
+                return false;
+            if (expectedToken !== undefined && localStorage.getItem('token') !== expectedToken) {
+                // The session this logout was decided for has already been replaced (most likely
+                // a fresh login that happened while the persist/delete call above was in flight).
+                // Leave the new session's local state alone rather than clearing it out from
+                // under the user.
+                console.debug('Skipping logout cleanup: the session has changed since this logout was requested.');
+                return false;
+            }
             // Tell the backend to invalidate the session and expire the HttpOnly refresh cookie.
             // This is best-effort and fire-and-forget: the local session is torn down regardless
             // of the result, so the user is always logged out client-side even if the call fails.
@@ -384,6 +401,7 @@ export class UserInstancesService {
             localStorage.removeItem('login_username');
             // Clear diagram draft persisted in session storage so stale drafts are not auto-recovered after re-login.
             sessionStorage.removeItem(this.pendingPathwayDiagramDraftSessionKey);
+            return true;
         };
         combineLatest([
             this.store.select(updatedInstances()),
@@ -430,13 +448,11 @@ export class UserInstancesService {
                     this.dataService.deletePersistedInstances(user).subscribe({
                         next: () => {
                             console.debug('Delete any persisted instance at the server.');
-                            clearLocalStateForLogout();
-                            done();
+                            done(clearLocalStateForLogout());
                         },
                         error: (err) => {
                             console.warn('Failed to delete persisted instances; logging out anyway.', err);
-                            clearLocalStateForLogout();
-                            done();
+                            done(clearLocalStateForLogout());
                         }
                     });
                     return;
@@ -444,13 +460,11 @@ export class UserInstancesService {
                 this.dataService.persitUserInstances(local, user).subscribe({
                     next: () => {
                         console.debug('userInstances have been persisted at the server.');
-                        clearLocalStateForLogout();
-                        done();
+                        done(clearLocalStateForLogout());
                     },
                     error: (err) => {
                         console.warn('Failed to persist user instances; logging out anyway.', err);
-                        clearLocalStateForLogout();
-                        done();
+                        done(clearLocalStateForLogout());
                     }
                 });
             });
