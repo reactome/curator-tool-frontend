@@ -4,12 +4,55 @@
   font-size: 20px;
 }
 
-.dialog_area {
-  width: 1000px;
-  height: 3000px;
+// Split the dialog body into a fixed class picker and a table that takes the rest of the
+// height and scrolls on its own - the same split InstanceViewComponent uses for its header and
+// .fill-height table (see instance-view.component.scss and instance-table.component.scss).
+// mat-dialog-content's own overflow:auto (Angular Material's default) would otherwise make IT
+// the scrolling element for the whole dialog body, so bringing a slot into view scrolled the
+// class picker away along with the table instead of just moving the table's rows.
+:host ::ng-deep .mat-mdc-dialog-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  // A little breathing room between the title and .content-panel's own border below - see
+  // that rule for why the bulk of the clearance the class picker's floating label needs lives
+  // there instead of here now.
+  padding-top: 4px !important;
 }
 
-.drop_down {
-  max-width: 150px;
-  margin: auto;
+// Frames the class picker and the table as one panel, the way .etched-content does in
+// select-instance-dialog.component.scss - previously there was no visual boundary at all
+// between the dialog's chrome and its actual content, which read as unfinished.
+.content-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 12px 16px;
+  border: 1px solid var(--outline-variant);
+  border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 0 rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.class-select-field {
+  flex: 0 0 auto;
+  width: 360px;
+  max-width: 100%;
+  // mat-form-field reserves space below itself for validation/hint text by default; there's
+  // none here, and the gap just pushes the table down for no reason.
+  margin-bottom: -1.25em;
+}
+
+app-instance-table.fill-height {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+app-instance-selection {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }

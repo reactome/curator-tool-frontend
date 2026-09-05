@@ -29,22 +29,22 @@ describe('AuthenticateService', () => {
 });
 
 describe('authGuard', () => {
-  let routerSpy: jasmine.SpyObj<Router>;
-
   const runGuard = (url: string) => TestBed.runInInjectionContext(() =>
     authGuard({} as ActivatedRouteSnapshot, { url } as RouterStateSnapshot));
 
+  // A real Router, not a spy: the guard's redirect is a UrlTree for the router to resolve as
+  // part of the navigation already in progress, rather than an imperative router.navigate()
+  // call - see the comment on authGuard for why that distinction matters (it used to leave a
+  // blank page on the app's very first navigation for a signed-out visitor).
   const configure = (token: string | null) => {
     if (token === null)
       localStorage.removeItem('token');
     else
       localStorage.setItem('token', token);
 
-    routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
+      imports: [HttpClientTestingModule, RouterTestingModule],
       providers: [
-        { provide: Router, useValue: routerSpy },
         { provide: JwtHelperService, useValue: {
           isTokenExpired: (t: string) => t === 'expired-token',
           getTokenExpirationDate: () => null
@@ -64,7 +64,6 @@ describe('authGuard', () => {
     configure('good-token');
 
     expect(runGuard('/schema_view/instance/123')).toBeTrue();
-    expect(routerSpy.navigate).not.toHaveBeenCalled();
     expect(sessionStorage.getItem('currentUrl')).toBeNull();
   });
 
@@ -73,23 +72,28 @@ describe('authGuard', () => {
   it('saves the attempted url before redirecting to login when unauthenticated', () => {
     configure(null);
 
-    expect(runGuard('/schema_view/instance/123?tab=referrers')).toBeFalse();
+    const result = runGuard('/schema_view/instance/123?tab=referrers');
+
     expect(sessionStorage.getItem('currentUrl')).toBe('/schema_view/instance/123?tab=referrers');
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
+    expect(TestBed.inject(Router).serializeUrl(result as UrlTree)).toBe('/login');
   });
 
   it('saves the attempted url when the stored token has expired', () => {
     configure('expired-token');
 
-    expect(runGuard('/event_view/instance/456')).toBeFalse();
+    const result = runGuard('/event_view/instance/456');
+
     expect(sessionStorage.getItem('currentUrl')).toBe('/event_view/instance/456');
+    expect(TestBed.inject(Router).serializeUrl(result as UrlTree)).toBe('/login');
   });
 
   it('does not save /login as the post-login destination', () => {
     configure(null);
 
-    expect(runGuard('/login')).toBeFalse();
+    const result = runGuard('/login');
+
     expect(sessionStorage.getItem('currentUrl')).toBeNull();
+    expect(TestBed.inject(Router).serializeUrl(result as UrlTree)).toBe('/login');
   });
 });
 

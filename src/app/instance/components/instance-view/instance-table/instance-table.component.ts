@@ -581,6 +581,37 @@ export class InstanceTableComponent implements PostEditListener {
     }
   }
 
+  /**
+   * Scroll the row for the given attribute into view, just below the sticky header. Used by the
+   * "Create a New Instance" dialog to bring the name slot into view as soon as a class is picked
+   * - it's the slot almost every new instance needs filled in first, and otherwise easy to miss
+   * below the fold on a class with many attributes.
+   *
+   * Goes through row.scrollIntoView() rather than setting .table-container's own scrollTop
+   * directly: .table-container's max-height is a `calc(100vh - ...)` meant for the full-page
+   * instance view (see instance-table.component.scss) - inside the compact new-instance dialog
+   * it's typically larger than the space actually available, so .table-container never overflows
+   * itself there and the real clipping/scrolling element is Material's own .mat-mdc-dialog-content
+   * (max-height: 65vh) further up the DOM. scrollIntoView() finds and scrolls whichever ancestor
+   * chain is actually clipping the row, in either context, without having to know which one that
+   * is. scroll-margin-top (set here to the sticky header's current height, since that isn't fixed
+   * - see instance-table.component.html) is what keeps the row from landing back underneath it.
+   *
+   * No-op if the row isn't there (the class has no such attribute, or the table hasn't rendered
+   * it yet - callers should wait a tick after changing the bound instance before calling this).
+   */
+  scrollToAttribute(attributeName: string): void {
+    const container = this.tableContainer?.nativeElement;
+    if (!container)
+      return;
+    const row = container.querySelector<HTMLElement>(`tr[data-attribute="${CSS.escape(attributeName)}"]`);
+    if (!row)
+      return;
+    const header = container.querySelector<HTMLElement>('tr.mat-mdc-header-row');
+    row.style.scrollMarginTop = `${header?.getBoundingClientRect().height ?? 0}px`;
+    row.scrollIntoView({ block: 'start' });
+  }
+
   private registerUpdatedInstance(attName: string): void {
     if (this.preventEvent)
       return;

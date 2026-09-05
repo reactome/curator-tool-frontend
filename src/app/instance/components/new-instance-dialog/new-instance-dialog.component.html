@@ -1,23 +1,27 @@
 <h2 class="dialog_title" mat-dialog-title cdkdraghandle>Create a New Instance</h2>
-<mat-dialog-content style="width: 100%">
-  <mat-label>Select a Schema Class: </mat-label>
-  <mat-select [(value)]="selected" class="drop_down" (selectionChange)="onSelectionChange()">
+<mat-dialog-content>
+  <div class="content-panel">
+    <mat-form-field appearance="outline" class="class-select-field">
+      <mat-label>Schema Class</mat-label>
+      <mat-select [(value)]="selected" (selectionChange)="onSelectionChange()">
 <!--   TODO: Check on touchscreen if touch works for 'click' event-view -->
-    <ng-container>
-      <mat-option *ngFor="let value of candidateClasses" [value]="value">
-        {{value}}
-      </mat-option>
-    </ng-container>
-  </mat-select>
+        <ng-container>
+          <mat-option *ngFor="let value of candidateClasses" [value]="value">
+            {{value}}
+          </mat-option>
+        </ng-container>
+      </mat-select>
+    </mat-form-field>
 <!--  TODO: change to case statement-->
-  <ng-container *ngIf="attributeValue.editAction === 0 || attributeValue.editAction === 2">
-    <!-- Don't fire any editing event to the ngrx store during creating and before committing -->
-    <app-instance-table [instance]="instance" [preventEvent]="true"></app-instance-table>
-  </ng-container>
-  <ng-container *ngIf="attributeValue.editAction === 1">
-    <app-instance-selection [setClassName]="candidateClasses[0]" [isSelection]="true"
-    ></app-instance-selection>
-  </ng-container>
+    <ng-container *ngIf="attributeValue.editAction === 0 || attributeValue.editAction === 2">
+      <!-- Don't fire any editing event to the ngrx store during creating and before committing -->
+      <app-instance-table #instanceTable class="fill-height" [instance]="instance" [preventEvent]="true"></app-instance-table>
+    </ng-container>
+    <ng-container *ngIf="attributeValue.editAction === 1">
+      <app-instance-selection [setClassName]="candidateClasses[0]" [isSelection]="true"
+      ></app-instance-selection>
+    </ng-container>
+  </div>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-button (click)="onOK()" cdkFocusInitial>OK</button>

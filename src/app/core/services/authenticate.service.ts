@@ -93,10 +93,16 @@ export const authGuard: CanActivateFn = (route, state) => {
   // covers the case where the navigation never even gets as far as a request.
   saveReturnUrl(state.url);
 
-  // Redirect to login if no valid token
-  const router = inject(Router);
-  router.navigate(['/login']);
-  return false;
+  // Redirect to login if no valid token. Returning a UrlTree - rather than imperatively calling
+  // router.navigate() and returning false - matters most on the very first navigation of a
+  // fresh page load: "" redirectTo "home" lands here as part of the app's *initial* navigation,
+  // and calling navigate() from inside a guard while that initial navigation is still resolving
+  // raced it, silently cancelling both and leaving a blank page - at https://.../curatortool/
+  // and .../curatortool/home alike, exactly the two URLs redirectTo chains through here for an
+  // unauthenticated visitor. A later, already-settled navigation (e.g. a session expiring while
+  // using the app) isn't in that race, which is why this was easy to miss. loginGuard already
+  // returns a UrlTree for the same reason - see its own comment.
+  return inject(Router).parseUrl('/login');
 };
 
 /**
