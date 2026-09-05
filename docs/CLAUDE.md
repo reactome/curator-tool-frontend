@@ -29,21 +29,31 @@ before starting an item.
 - [x] `instance-list-view.component.ts:742` — "this is a bug, will never check the null case". Fixed 2026-08-26 on branch `fix/local-advanced-search-null-operands`. The commented-out `if (value == null) return;` would have broken `IS NULL`; the real defect was that a missing value fell through to a comparison against `''`, so `Not Equal` / `Contains` / `Regex` matched instances with no value at all, unlike the server's `IS NOT NULL AND ...` clauses. Also aligned `Not Equal` over a multi-valued attribute with the server's `NONE()`, and replaced the subscribe-into-a-local read of attribute values (which saw `undefined` whenever `fetchInstance` was asynchronous) with `forkJoin`. 7 specs added.
 - [x] `instance-table.component.ts:251` — "if there is only one value in an attribute, delete this value will disable the action menu popup". **Was already fixed in 2024**; only the comment survived. Closed 2026-08-26 on branch `fix/stale-action-menu-todo-empty-slot-guard`. Written 2024-04-15 (7cf06e84); the empty-slot right-click target is an empty `<span>` that collapsed to zero height, so the slot left behind by the deleted value could not be right-clicked. Uncommenting `height: 20px` on `.span-menu-trigger` fixed it on 2024-04-23 (5c3817ca). Verified by removing that line and watching the new guard fail (`Expected 0 to be greater than 0`). Removed the stale TODO and the dead `private newMap: any` field it was stranded above; added 6 specs pinning the empty slot's hit area and menu.
 - [x] `instance-table.component.ts:443` — adding a new value resets the scroll position. Fixed
-      2026-09-04; 4 specs in `instance-view-scroll.spec.ts`. Two independent causes, and the second
-      one is only observable in the real app — **do not trust a `fakeAsync` spec here**, it says the
-      scroll survives when in the browser it does not:
-    1. `updateTableContent()` assigned a **new** `DataSource` every time. CdkTable then diffs a
+      2026-09-04, revised 2026-09-05; 4 specs in `instance-view-scroll.spec.ts`. Two independent
+      causes:
+    1. `updateTableContent()` assigns a **new** `DataSource` every time. CdkTable then diffs a
        brand-new row set, and `_DisposeViewRepeaterStrategy` destroys all ~100 rows before
        re-inserting them; tearing down that many `mat-form-field`/tooltip/ripple rows forces a
        layout while `<tbody>` is empty, so the browser clamps `.table-container.scrollTop` to 0.
        Confirmed from a live `[scroll-diag]` trace: a `scroll` event `1845 -> 0` two ms after
        `finishEdit`, with **no** stack (so not a programmatic write, `focus()` or `scrollIntoView()`)
-       and `scrollHeight` unchanged at 2588 (so not a permanent height collapse). Both data sources
-       now push rows through a `BehaviorSubject` and expose `refresh()`, and the table has
-       `[trackBy]="trackByAttributeName"`, so an edit updates the affected rows in place.
-       Consequence to remember: rows are keyed on attribute name only, so two instances of the same
-       class reuse each other's rows — a *switch* no longer resets the scroll as a side effect, which
-       is why `updateTableContent` sets `scrollTop = 0` explicitly when `renderedDbId` changes.
+       and `scrollHeight` unchanged at 2588 (so not a permanent height collapse).
+       The 2026-09-04 fix tried to avoid the rebuild altogether: both data sources pushed rows
+       through a `BehaviorSubject` with a `refresh()` method, and the table gained
+       `[trackBy]="trackByAttributeName"` so CdkTable would update rows in place instead of
+       recreating them. **That introduced a worse bug**: trackBy keys rows by attribute name only,
+       with no regard to which instance they belong to, so switching the bound instance (e.g. after
+       creating a new one, or navigating to a different instance of the same class) let CdkTable
+       reuse the outgoing instance's row views — including any live editable-cell component state —
+       for the incoming instance's data. That could bleed an attribute value from one instance onto
+       another. Reverted the trackBy/BehaviorSubject/refresh machinery entirely; `connect()` is back
+       to returning a fresh `of(...)` per call and every reload gets a brand-new `DataSource`, same
+       as before this TODO was opened.
+       The scroll position is instead saved and restored explicitly in
+       `InstanceTableComponent.updateTableContent()`: before rebuilding, if the reload is for the
+       same instance (and same comparison mode) already on display, the current `scrollTop` is
+       captured and reapplied in a `setTimeout` once CdkTable has re-created the rows; a genuine
+       switch to a different instance (or into/out of comparison) resets `scrollTop` to 0 instead.
     2. `InstanceViewComponent`'s template guards `app-instance-table` with
        `*ngIf="!showProgressSpinner && instance"`, and a post-edit notification (`refreshViewDbId$` /
        `lastUpdatedInstance$` — the `inEditing` guards there only cover the synchronous part of
@@ -52,6 +62,7 @@ before starting an item.
        re-fetch takes a tick that unmounts the scrolling element and remounts it at the top, and it
        left `this.instanceTable` undefined, which `_loadIntance` dereferenced (`TypeError: Cannot
        read properties of undefined`). Same-dbId non-comparison reloads are now refreshes in place.
+       This part of the 2026-09-04 fix was unaffected by the trackBy revert and is kept as-is.
 - [ ] `instance-view.component.ts:640` — add-then-delete of a new attribute value needs better tracking.
 - [ ] `pathway-diagram-validator.ts:120` — in editing mode an attribute may map to more than one element.
 - [ ] `hyperedge.ts:536` — unresolved: should `outputEdge` or `inputEdge` data be used?

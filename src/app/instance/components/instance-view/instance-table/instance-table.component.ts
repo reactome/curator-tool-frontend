@@ -440,10 +440,8 @@ export class InstanceTableComponent implements PostEditListener {
     this.inEditing = true;
     //Only add attribute name if value was added
     this.postEdit(attName);
-    // This used to throw the curator back to the top of a long instance. The table content is
-    // refreshed in place (see updateTableContent and trackByAttributeName) precisely so that it
-    // does not: destroying and re-creating every row forces a layout while the table body is
-    // empty, and the browser clamps the scroll position of .table-container to the top.
+    // Rebuilding the row set here used to throw the curator back to the top of a long instance;
+    // updateTableContent() now saves and restores the scroll position for a reload like this one.
     this.updateTableContent();
     // Register the updated instances
     this.registerUpdatedInstance(attName);
@@ -509,43 +507,40 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   /**
-   * Identify a row by the attribute it shows. Without this the table has no way to tell that a
-   * refreshed row set describes the same attributes as the one already rendered - the AttributeValue
-   * objects are rebuilt every time - so it would destroy every row and re-create it. Doing that for
-   * a long instance forces a layout while the table body is empty, and the browser clamps the scroll
-   * position to the top: the curator was thrown back to the top of the table after every edit.
-   * Matching on the attribute name lets the table update the affected rows in place, which also
-   * keeps the DOM (and so the focus) of the row being edited alive.
+   * dbId (and comparison mode) that the table is currently showing. Used only to tell an edit's
+   * reload of the instance already on display apart from a switch to a different instance - see
+   * updateTableContent().
    */
-  trackByAttributeName = (_index: number, row: AttributeValue): string => row.attribute.name;
-
-  /** dbId whose rows the current data source holds; a different instance starts a fresh table. */
   private renderedDbId?: number;
+  private renderedComparison: boolean = false;
 
-  /** The element that scrolls. Held so a new instance can be shown from the top. */
+  /**
+   * The element that scrolls. Held so its position can be saved before a reload and restored
+   * after - see updateTableContent().
+   */
   @ViewChild('tableContainer') private tableContainer?: ElementRef<HTMLElement>;
 
   updateTableContent(): void {
-    // Refresh the rows in place whenever the table is already showing this instance in this mode.
-    // A different instance, or a switch into or out of comparison, is a different table and is
-    // rebuilt from scratch so that it starts at the top.
+    // A rebuild (below) always assigns a brand-new DataSource, which makes CdkTable destroy and
+    // re-create every row; for a long instance that forces a layout while the table body is
+    // momentarily empty, and the browser responds by clamping .table-container's scrollTop to 0.
+    // When this reload is for the instance already on display - an edit, typically - restore the
+    // position the curator was at instead of leaving them at the top. A switch to a different
+    // instance, or into or out of comparison, is a different table and is left at the top.
     const wantsComparison = this._referenceInstance !== undefined;
-    const current = this.instanceDataSource;
-    const sameMode = (current instanceof InstanceComparisonDataSource) === wantsComparison;
-    if (current !== undefined && sameMode && this.renderedDbId === this._instance?.dbId) {
-      current.sort = this.sortAttNames;
-      current.sortAttDefined = this.sortAttDefined;
-      current.filterEdited = this.filterEdited;
-      current.refresh(this._instance, this._referenceInstance);
-      return;
-    }
-    // A different instance (or a switch into or out of comparison) is shown from the top. This has
-    // to be said explicitly: rows are matched by attribute name, so two instances of the same class
-    // reuse each other's rows and the scroll position would otherwise carry over from the previous
-    // instance to an unrelated one.
-    if (this.renderedDbId !== undefined && this.tableContainer)
-      this.tableContainer.nativeElement.scrollTop = 0;
+    const hadPreviousTable = this.renderedDbId !== undefined;
+    const isReloadOfSameTable = this.renderedDbId === this._instance?.dbId
+      && this.renderedComparison === wantsComparison;
+    const container = this.tableContainer?.nativeElement;
+    const previousScrollTop = isReloadOfSameTable ? container?.scrollTop : undefined;
     this.renderedDbId = this._instance?.dbId;
+    this.renderedComparison = wantsComparison;
+    // A switch away from a previously-shown table is not guaranteed to leave the browser's own
+    // clamping behavior to reset the scroll position (it is timing-dependent), so it is reset
+    // explicitly here.
+    if (hadPreviousTable && !isReloadOfSameTable && container)
+      container.scrollTop = 0;
+
     // Without a reference column the filter means "attributes I edited", which InstanceDataSource
     // answers from the instance's own edit tracking (modifiedAttributes). Whenever a reference
     // instance is shown the filter means "attributes whose values differ", and that has to be
@@ -574,6 +569,15 @@ export class InstanceTableComponent implements PostEditListener {
         this._referenceInstance
       );
       this.instanceDataSource.connect();
+    }
+
+    if (previousScrollTop !== undefined) {
+      // Wait for CdkTable to finish re-creating the rows and the browser to settle the layout
+      // that clamped the scroll position, then put it back.
+      setTimeout(() => {
+        if (this.tableContainer)
+          this.tableContainer.nativeElement.scrollTop = previousScrollTop;
+      });
     }
   }
 

@@ -194,32 +194,22 @@ describe('InstanceViewComponent scroll position', () => {
       expect(el.scrollTop).toBe(before);
     }));
 
-  it('updates the edited row in place instead of rebuilding every row', fakeAsync(() => {
+  it('restores the scroll position after an edit rebuilds the rows', fakeAsync(() => {
     const el = showReactionScrolledToBottom();
     const table = host.view.instanceTable;
-
-    const rowOf = (attribute: string): HTMLElement => {
-      const rows = Array.from(el.querySelectorAll('tr[mat-row]')) as HTMLElement[];
-      const row = rows.find(r => r.querySelector('.attColumn')?.textContent?.trim() === attribute);
-      expect(row).withContext(`a row for ${attribute}`).toBeTruthy();
-      return row!;
-    };
-    const untouchedBefore = rowOf('strAtt0');
-    const editedBefore = rowOf('species');
+    const before = el.scrollTop;
 
     reaction.attributes.get('species').push({ dbId: 48895, schemaClassName: 'Species', displayName: 'Mus musculus' });
     table.finishEdit('species', undefined);
     fixture.detectChanges();
+    // updateTableContent() saves the pre-edit scroll position and restores it in a setTimeout,
+    // once CdkTable has re-created the rows and the browser has settled the layout that clamps
+    // scrollTop to 0 in the meantime.
     flush();
     fixture.detectChanges();
 
-    // Re-creating these rows is what forces the layout that clamps the scroll position to the top,
-    // so the fix is that they are the very same elements afterwards.
-    expect(rowOf('strAtt0')).toBe(untouchedBefore);
-    expect(rowOf('species')).toBe(editedBefore);
-    // ...while still showing the value that was just added.
-    expect(rowOf('species').textContent).toContain('Mus musculus');
-    expect(el.scrollTop).toBeGreaterThan(0);
+    expect(el.textContent).toContain('Mus musculus');
+    expect(el.scrollTop).toBe(before);
   }));
 
   it('shows a different instance from the top', fakeAsync(() => {
@@ -232,9 +222,9 @@ describe('InstanceViewComponent scroll position', () => {
     flush();
     fixture.detectChanges();
 
-    // Rows are matched by attribute name, so they are reused rather than rebuilt even here. That
-    // means the scroll position does not reset itself and has to be reset deliberately, otherwise
-    // an unrelated instance would open scrolled to wherever the previous one was left.
+    // A switch to a different instance is not a reload of the table already on display, so the
+    // scroll position is not restored - it is left at the top, where the row rebuild's layout
+    // clamp put it.
     expect(el.scrollTop).toBe(0);
     expect(el.textContent).toContain('a different value');
   }));

@@ -89,7 +89,7 @@
     </ng-container>
   </ng-template>
   <section class="table-container" #tableContainer>
-    <table mat-table [dataSource]="instanceDataSource" [trackBy]="trackByAttributeName" matSort
+    <table mat-table [dataSource]="instanceDataSource" matSort
       class="instance-table" [cdkDropListData]="_instance"
       (cdkDropListEntered)="dragEntering($event)" (cdkDropListExited)="stopDragging()"
       (cdkDropListDropped)="bookmarkDrop($event)" cdkDropList cdkDropListConnectedTo="bookmark-list"

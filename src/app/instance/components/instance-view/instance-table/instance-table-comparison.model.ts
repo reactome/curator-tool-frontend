@@ -3,7 +3,7 @@
  */
 
 import { DataSource } from "@angular/cdk/collections";
-import { BehaviorSubject, Observable } from "rxjs";
+import { Observable, of } from "rxjs";
 import { AttributeValue, Instance } from "src/app/core/models/reactome-instance.model";
 import { AttributeCategory, AttributeDataType, SchemaAttribute } from "src/app/core/models/reactome-schema.model";
 
@@ -31,9 +31,6 @@ export enum EDIT_ACTION {
  */
 export class InstanceComparisonDataSource extends DataSource<AttributeValue> {
 
-    /** See the note on InstanceDataSource.rows: the table is refreshed without being replaced. */
-    private readonly rows = new BehaviorSubject<AttributeValue[]>([]);
-
     constructor(private instance: Instance | undefined,
         private categories: Map<AttributeCategory, boolean>,
         public sort: boolean,
@@ -44,18 +41,6 @@ export class InstanceComparisonDataSource extends DataSource<AttributeValue> {
     }
 
     override connect(): Observable<AttributeValue[]> {
-        this.rows.next(this.buildRows());
-        return this.rows.asObservable();
-    }
-
-    /** Recompute the rows and push them to the table, which updates them in place. */
-    refresh(instance: Instance | undefined, referenceInstance?: Instance): void {
-        this.instance = instance;
-        this.referenceInstance = referenceInstance;
-        this.rows.next(this.buildRows());
-    }
-
-    private buildRows(): AttributeValue[] {
 
         // Create a union of attributes from both instance and referenceInstance schema classes
         const allAttributes = new Map<string, SchemaAttribute>();
@@ -138,7 +123,7 @@ export class InstanceComparisonDataSource extends DataSource<AttributeValue> {
             attributeValues.sort((a, b) => a.attribute.definingType < b.attribute.definingType ?
                 -1 : 1)
         }
-        return attributeValues;
+        return of(attributeValues);
     }
 
     override disconnect(): void {
