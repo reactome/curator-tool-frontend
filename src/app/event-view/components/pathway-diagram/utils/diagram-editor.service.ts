@@ -3,6 +3,7 @@ import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, catchError, finalize, forkJoin, map, Observable, of, shareReplay, Subject, switchMap, tap, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { DataService } from 'src/app/core/services/data.service';
+import { AuthenticateService } from 'src/app/core/services/authenticate.service';
 import { DiagramLock, Instance } from 'src/app/core/models/reactome-instance.model';
 
 export interface DiagramLockViewModel {
@@ -56,9 +57,19 @@ export class DiagramEditorService implements OnDestroy {
   private lastEditingDiagramFingerprint: string = '';
   private readonly editingSourceWindowId: string = this.generateEditingSourceWindowId();
 
+  // The user diagramLocks was populated for, so the cache can be dropped when the signed-in
+  // user changes. See discardLockCacheIfUserChanged().
+  private lockCacheOwner: string | undefined = undefined;
+  // Memoizes the username decoded from the JWT, keyed on the raw token, so the ownership check
+  // can sit on synchronous read paths (getCachedDiagramLock()/isDiagramLockedByMe() are called
+  // from template bindings on every change detection pass) without re-decoding the token each time.
+  private lastSeenToken: string | null = null;
+  private lastSeenUsername: string | undefined = undefined;
+
   constructor(
     private http: HttpClient,
-    private dataService: DataService
+    private dataService: DataService,
+    private authService: AuthenticateService
   ) {
     // Don't call this. We will use the server data when the browser starts.
     //this.syncLocksFromLocalStorage();
@@ -105,6 +116,7 @@ export class DiagramEditorService implements OnDestroy {
   }
 
   getCachedDiagramLock(pathwayDiagramId: string | number | undefined): DiagramLock | null {
+    this.discardLockCacheIfUserChanged();
     if (!pathwayDiagramId)      return null;
     const numericId = Number(pathwayDiagramId);
     if (!Number.isFinite(numericId) || numericId <= 0)
@@ -282,6 +294,7 @@ export class DiagramEditorService implements OnDestroy {
    * @returns 
    */
   isDiagramLockedByMe(pathwayDiagramId: number | string | undefined): boolean {
+    this.discardLockCacheIfUserChanged();
     if (!pathwayDiagramId)
       return false;
     const lock = this.diagramLocks.find(candidate => Number(candidate?.diagramDbId) === Number(pathwayDiagramId));
@@ -290,6 +303,7 @@ export class DiagramEditorService implements OnDestroy {
 
 
   getDiagramLocks() {
+    this.discardLockCacheIfUserChanged();
     if (this.diagramLocks.length > 0)
       return of([...this.diagramLocks]);
     if (this.getDiagramLocksInFlight$)
@@ -323,6 +337,7 @@ export class DiagramEditorService implements OnDestroy {
   }
 
   getCytoscapeNetwork(pathwayDiagramId: any) {
+    this.discardLockCacheIfUserChanged();
     const numericId = Number(pathwayDiagramId);
     const lock = this.diagramLocks.find(candidate => Number(candidate?.diagramDbId) === numericId);
     const loadBackup = !!(lock && lock.hasBackupDiagram);
@@ -478,8 +493,58 @@ export class DiagramEditorService implements OnDestroy {
 
   private setDiagramLocks(locks: DiagramLock[]): void {
     this.diagramLocks = this.normalizeDiagramLocks(locks);
+    this.lockCacheOwner = this.currentUsername();
     this.persistDiagramLocks();
     this.emitLockCacheRevision();
+  }
+
+  /**
+   * Throws away the cached locks once they no longer belong to the signed-in user.
+   *
+   * diagramLocks holds the locks *this* user owns - isDiagramLockedByMe() answers purely from it,
+   * and getDiagramLocks() short-circuits on it rather than asking the server again. The service is
+   * provided by PathwayDiagramModule, which AppModule imports eagerly, so the instance lives in the
+   * root injector for as long as the page does: logging out only navigates to /login, it never tears
+   * this cache down. Signing in as somebody else therefore inherited the previous curator's locks -
+   * the status panel listed their diagrams, and the editor believed it already held a lock it never
+   * acquired, so it skipped the server check and let the new user edit a diagram locked by the old one.
+   *
+   * Keyed on the signed-in username rather than hooked into a logout path on purpose: a session ends
+   * in several places (the Log out button, InactivityService's idle timeout, HeaderInterceptor giving
+   * up on a refresh) and every one of them has to invalidate this cache, so the invariant is checked
+   * where the cache is *read* instead. Logging out clears the token, which reads as "no user" here and
+   * empties the cache just the same.
+   */
+  private discardLockCacheIfUserChanged(): void {
+    const currentUser = this.currentUsername();
+    if (currentUser === this.lockCacheOwner)
+      return;
+
+    this.lockCacheOwner = currentUser;
+    // Any fetch already in flight was issued for the previous user; don't let its result
+    // (or a late subscriber replaying it) repopulate the cache.
+    this.getDiagramLocksInFlight$ = null;
+    if (this.diagramLocks.length === 0)
+      return;
+
+    this.diagramLocks = [];
+    this.persistDiagramLocks();
+    this.emitLockCacheRevision();
+  }
+
+  /**
+   * The signed-in username, memoized against the raw token so this stays cheap on the synchronous
+   * read paths. Compares tokens rather than decoding every call, and re-decodes only when the token
+   * itself changes; comparing tokens *instead of* usernames wouldn't work, because TokenRefreshService
+   * hands the same user a new token periodically and that would look like a user change.
+   */
+  private currentUsername(): string | undefined {
+    const token = typeof localStorage === 'undefined' ? null : localStorage.getItem('token');
+    if (token === this.lastSeenToken)
+      return this.lastSeenUsername;
+    this.lastSeenToken = token;
+    this.lastSeenUsername = token ? this.authService.getUser() : undefined;
+    return this.lastSeenUsername;
   }
 
 
@@ -534,6 +599,10 @@ export class DiagramEditorService implements OnDestroy {
       return;
 
     this.diagramLocks = nextLocks;
+    // Sibling tabs share this tab's localStorage, so what they wrote belongs to the user signed in
+    // here. Tagging it keeps discardLockCacheIfUserChanged() from immediately discarding it as if it
+    // had been left behind by a previous session.
+    this.lockCacheOwner = this.currentUsername();
     this.emitLockCacheRevision();
   };
 
