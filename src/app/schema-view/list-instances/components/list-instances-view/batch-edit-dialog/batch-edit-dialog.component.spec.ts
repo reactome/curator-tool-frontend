@@ -7,6 +7,7 @@ import { NewInstanceDialogService } from 'src/app/instance/components/new-instan
 import { PostEditService } from 'src/app/core/services/post-edit.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { AttributeListDialogService } from './attribute-list-dialog/attribute-list-dialog.service';
+import { EventCycleCheck } from 'src/app/core/services/event-cycle-check.service';
 import { SelectInstanceDialogService } from '../../select-instance-dialog/select-instance-dialog.service';
 import { BatchEditDialogComponent } from './batch-edit-dialog.component';
 
@@ -41,6 +42,7 @@ describe('BatchEditDialogComponent', () => {
   let postEditService: jasmine.SpyObj<PostEditService>;
   let instUtil: jasmine.SpyObj<InstanceUtilities>;
   let attributeListDialogService: jasmine.SpyObj<AttributeListDialogService>;
+  let eventCycleCheck: jasmine.SpyObj<EventCycleCheck>;
   let dialogRef: { close: jasmine.Spy };
 
   function makeInstance(dbId: number, attributes: Map<string, any>): Instance {
@@ -64,11 +66,16 @@ describe('BatchEditDialogComponent', () => {
       postEditService,
       instUtil,
       attributeListDialogService,
+      eventCycleCheck,
     );
   }
 
   beforeEach(() => {
-    dataService = jasmine.createSpyObj<DataService>('DataService', ['fetchSchemaClass', 'fetchInstances']);
+    dataService = jasmine.createSpyObj<DataService>('DataService', ['fetchSchemaClass', 'fetchInstances', 'fetchInstance']);
+    // finishEdit() re-reads the edited instance to refresh the display name in the dialog's own
+    // list. Without this the very first edit of a batch threw, and the rest of the batch never
+    // ran - which is why the cases below only ever saw one instance edited.
+    dataService.fetchInstance.and.callFake((dbId: number) => of(makeInstance(dbId, new Map<string, any>())));
     newInstanceDialogService = jasmine.createSpyObj<NewInstanceDialogService>('NewInstanceDialogService', ['openDialog']);
     selectInstanceDialogService = jasmine.createSpyObj<SelectInstanceDialogService>('SelectInstanceDialogService', ['openDialog']);
     attributeEditService = jasmine.createSpyObj<AttributeEditService>('AttributeEditService', [
@@ -77,9 +84,18 @@ describe('BatchEditDialogComponent', () => {
       'onNoInstanceAttributeEdit',
       'deleteInstanceAttribute',
     ]);
+    // The component only counts an instance as edited - and only then flags it as modified and
+    // registers it - when the edit service reports that it changed something. These doubles must
+    // therefore say so; left at the default undefined, every case below looks like an instance
+    // that already had the value, which is what made five of them fail.
+    attributeEditService.addValueToAttribute.and.returnValue(true);
+    attributeEditService.addInstanceViaSelect.and.returnValue(true);
+    attributeEditService.onNoInstanceAttributeEdit.and.returnValue(true);
     postEditService = jasmine.createSpyObj<PostEditService>('PostEditService', ['postEdit']);
     instUtil = jasmine.createSpyObj<InstanceUtilities>('InstanceUtilities', ['addToModifiedAttributes', 'registerUpdatedInstance']);
     attributeListDialogService = jasmine.createSpyObj<AttributeListDialogService>('AttributeListDialogService', ['openDialog']);
+    eventCycleCheck = jasmine.createSpyObj<EventCycleCheck>('EventCycleCheck', ['checkAddition']);
+    eventCycleCheck.checkAddition.and.returnValue(undefined);
     dialogRef = { close: jasmine.createSpy('close') };
   });
 
@@ -223,6 +239,32 @@ describe('BatchEditDialogComponent', () => {
     expect(editedInstances).toContain(instance2);
     // replace flag must be false for an ADD action
     callArgs.forEach(args => expect(args[3]).toBeFalse());
+  });
+
+  it('leaves out the instances a batch edit would make contain themselves', () => {
+    // A batch edit puts one value on many instances at once, so hasEvent is where a circular
+    // reference is easiest to create unnoticed. The instances that would end up containing
+    // themselves are left untouched and reported, and the rest of the batch still goes through.
+    const selectedEvent = { dbId: 20, schemaClassName: 'Pathway', displayName: 'Glycolysis' } as Instance;
+    const instance1 = makeInstance(1, new Map<string, any>([['referenceEntity', null]]));
+    const instance2 = makeInstance(2, new Map<string, any>([['referenceEntity', null]]));
+    const component = createComponent([instance1, instance2]);
+
+    component.selectedAttribute = instanceAttribute;
+    component._instances = [instance1, instance2];
+    selectInstanceDialogService.openDialog.and.returnValue({ afterClosed: () => of([selectedEvent]) } as any);
+    eventCycleCheck.checkAddition.and.callFake((instance?: Instance) =>
+      instance?.dbId === 1 ? 'would contain itself' : undefined);
+
+    component.onInstanceAttributeEdit({
+      attribute: instanceAttribute,
+      value: undefined,
+      editAction: EDIT_ACTION.ADD_VIA_SELECT,
+    });
+
+    expect(attributeEditService.addInstanceViaSelect).toHaveBeenCalledTimes(1);
+    expect(attributeEditService.addInstanceViaSelect.calls.mostRecent().args[2]).toBe(instance2);
+    expect(component.lastEditSummary).toContain('1 instance was not modified because the value');
   });
 
   it('applies a boolean attribute edit only on instances whose current value matches', () => {

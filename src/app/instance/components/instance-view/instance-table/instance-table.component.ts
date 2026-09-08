@@ -35,6 +35,8 @@ import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/boo
 import { AttributeValue, EDIT_ACTION } from 'src/app/core/models/reactome-instance.model';
 import { InstanceComparisonDataSource } from './instance-table-comparison.model';
 import { MatDialog } from '@angular/material/dialog';
+import { EventCycleCheck } from 'src/app/core/services/event-cycle-check.service';
+import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { StoichiometryDialogComponent } from './stoichiometry-dialog/stoichiometry-dialog.component';
 
 /**
@@ -141,6 +143,7 @@ export class InstanceTableComponent implements PostEditListener {
     private postEditService: PostEditService, // This is used to perform post-edit actions
     private dataService: DataService,
     private dialog: MatDialog,
+    private eventCycleCheck: EventCycleCheck,
   ) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
@@ -329,6 +332,10 @@ export class InstanceTableComponent implements PostEditListener {
       this.selectInstanceDialogService.openDialog(attributeValue);
     matDialogRef.afterClosed().subscribe((result) => {
       if (result === undefined || result.length === 0) return; // Do nothing
+      // Refuse an event that would end up containing itself before anything is changed: the edit
+      // is applied to two objects (the displayed instance and its source), so there is no clean
+      // point to undo it from afterwards.
+      if (this.refuseCircularReference(attributeValue, result)) return;
       // Replacing a collapsed stoichiometry group swaps out every old copy for the selected
       // instance(s) in the old group's position, rather than replacing a single copy.
       if (replace && this.isStoichiometryAttribute(attributeValue.attribute)) {
@@ -479,12 +486,33 @@ export class InstanceTableComponent implements PostEditListener {
         this.store.dispatch(BookmarkActions.add_bookmark(fresh));
       }
 
+      if (this.refuseCircularReference(attributeValue, fresh)) return;
+
       if (this._instance!.source)
         this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(fresh), this._instance!.source, false, true, true);
       this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(fresh), this._instance!, false, true, true);
       this.finishEdit(attributeValue.attribute.name, attributeValue.value);
       this.cdr.detectChanges();
     });
+  }
+
+  /**
+   * True when the values being added would make an event contain itself, in which case the
+   * curator is told why and the attribute is left alone. See EventCycleCheck for what is
+   * refused - hasEvent containment and a self-referential precedingEvent - and what is
+   * deliberately not.
+   */
+  private refuseCircularReference(attributeValue: AttributeValue, values: any): boolean {
+    const message = this.eventCycleCheck.checkAddition(this._instance, attributeValue.attribute.name, values);
+    if (!message)
+      return false;
+    this.dialog.open(InfoDialogComponent, {
+      data: {
+        title: 'Circular Reference',
+        message: message
+      }
+    });
+    return true;
   }
 
   donePostEdit(

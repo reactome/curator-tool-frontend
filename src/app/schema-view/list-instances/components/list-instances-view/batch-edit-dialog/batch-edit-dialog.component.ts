@@ -6,6 +6,7 @@ import { DataService } from 'src/app/core/services/data.service';
 import { Observable } from 'rxjs/internal/Observable';
 import { forkJoin } from 'rxjs/internal/observable/forkJoin';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
+import { EventCycleCheck } from 'src/app/core/services/event-cycle-check.service';
 import { NewInstanceDialogService } from 'src/app/instance/components/new-instance-dialog/new-instance-dialog.service';
 import { PostEditListener } from 'src/app/core/post-edit/PostEditOperation';
 import { PostEditService } from 'src/app/core/services/post-edit.service';
@@ -58,7 +59,7 @@ export class BatchEditDialogComponent implements PostEditListener {
     private postEditService: PostEditService,
     private instUtil: InstanceUtilities,
     private attributeListDialogService: AttributeListDialogService,
-
+    private eventCycleCheck: EventCycleCheck,
   ) {
     // Initialize the list of attributes based on the schema classes of the instances
     this.setCandidateAttributes();
@@ -440,10 +441,19 @@ export class BatchEditDialogComponent implements PostEditListener {
       const isInstanceAttribute = attributeValues[0].attribute.type === this.DATA_TYPES.INSTANCE;
       const affectedDbIds = new Set<number>();
       const skippedDbIds = new Set<number>();
+      // Instances left alone because the edit would have made an event contain itself. Counted
+      // separately from skippedDbIds, which means "already had this value".
+      const circularDbIds = new Set<number>();
 
       for (let instance of instances) {
         for (let attributeValue of attributeValues) {
           if (replace && !this.matchesReplaceTarget(instance, attributeValue)) {
+            continue;
+          }
+          // A batch edit puts the same value on many instances at once, so hasEvent is exactly
+          // where a circular reference is easy to create without noticing. See EventCycleCheck.
+          if (this.eventCycleCheck.checkAddition(instance, attributeValue.attribute.name, result)) {
+            circularDbIds.add(instance.dbId);
             continue;
           }
 
@@ -476,6 +486,13 @@ export class BatchEditDialogComponent implements PostEditListener {
         let value = attributeValues[0].value;
         const skippedText = `${skippedDbIds.size} instance${skippedDbIds.size === 1 ? '' : 's'}`;
         this.lastEditSummary += ` ${skippedText} already have the value '${value}' and were not modified.`;
+      }
+      if (circularDbIds.size > 0) {
+        const circularText = circularDbIds.size === 1
+          ? '1 instance was'
+          : `${circularDbIds.size} instances were`;
+        this.lastEditSummary += ` ${circularText} not modified because the value would have`
+          + ` made the event contain itself.`;
       }
     });
   }

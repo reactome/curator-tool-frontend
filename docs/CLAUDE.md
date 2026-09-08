@@ -121,7 +121,32 @@ before starting an item.
 - [ ] TODO.md — demote review status when `structureModified` is newer than `reviewed`/`internalReviewed`; give InstanceEdit shell instances a `dateTime` attribute.
 - [ ] TODO.md — refresh the displayed stable identifier after a species change (server side already correct).
 - [ ] TODO.md — post-processing for UniProt, ChEBI, external ontology (ReferenceMolecule).
-- [ ] TODO.md — add a circular-reference check for the event tree / `precedingEvent` (flagged high importance).
+- [x] TODO.md — add a circular-reference check for the event tree / `precedingEvent` (flagged high
+      importance). Done 2026-09-08 on branch `feat/event-circular-reference-check`; new
+      `EventCycleCheck` (`core/services/event-cycle-check.service.ts`), 13 specs, plus one in
+      `batch-edit-dialog.component.spec.ts`. **Read this before extending it — the two attributes
+      are deliberately treated differently**, on evidence from the curation database (queried over
+      Bolt; credentials in the backend's `application.properties`):
+    - `hasEvent` — an event may not be added to itself, nor to any event that already contains it
+      (the message names the containment path). There are **no** `hasEvent` cycles in the database,
+      so this forbids nothing curators do.
+    - `precedingEvent` — **only a self-reference is refused.** Longer cycles are ordinary biology
+      and the database is full of them: 593 events sit in a two-event `precedingEvent` cycle and
+      1369 in a cycle of ≤6 (a kinase and the phosphatase that reverses it precede each other; the
+      POU5F1/SOX2/NANOG loop is a cycle by design). Blocking those would refuse legitimate edits,
+      so TODO.md's "this should be avoided in any case" is not implemented as written. Whether a
+      longer `precedingEvent` cycle deserves a *warning* is a curation question for the curators.
+      (The 7 events in the database that precede themselves are data errors — a server-side
+      cleanup, not a front-end fix.)
+      Coverage: the containment check reads the event tree `DataService` has already loaded (the
+      only complete hasEvent hierarchy the front end holds, kept current by `EventTreeComponent`);
+      if nothing has loaded it yet — possible in the schema view — only the self-reference check
+      runs, rather than pulling the whole tree over the wire to validate one edit. Wired into the
+      attribute table's add-via-selection and bookmark-drop paths and into batch edit; creation
+      paths need no check, since a brand-new event contains nothing. `grepId2Event` and
+      `_mergeLocalChangesToEventTree` now track the recursion path (like
+      `cloneInstanceForCommitInternal`), so a cycle arriving from another tab or from the database
+      warns instead of exhausting the stack.
 - [ ] TODO.md — deleted-instance generated display name.
 - [ ] TODO.md — add an InstanceEdit to referrers of a deleted instance and merge it into locally loaded referrers.
 - [ ] TODO.md, **flagged most important** — write privileges on log-in: decide and implement how they
