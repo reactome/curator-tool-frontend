@@ -2,8 +2,6 @@
 
 - Bug fix: an instance you had already marked for deletion could still be listed among the referrers of another instance - including in the list of affected instances shown when deleting - if you had also edited it before marking it for deletion. Referrers marked for deletion were already left out of the list; this one slipped back in through the separate pass that adds the referrers only staged locally. Such an instance is now left out for good.
 
-### Build on September 8, 2026
-
 - Bug fix: adding an event to a pathway's **hasEvent** slot showed it in the event tree as if it had no sub-events of its own - no expand arrow, no release flag, no diagram highlight - and it vanished from the tree as soon as a species was picked in the species filter. This only happened for an event that was not already somewhere in the tree: a pathway that no top-level pathway leads to, or one just created. It righted itself on the next page reload. Marking one of that event's own sub-events for deletion could also fail part way through, leaving the tree showing an event that had been deleted. Such an event now appears in the tree with its sub-events, its release flag, and its species, the same as any other.
 
 ### Build on September 5, 2026
