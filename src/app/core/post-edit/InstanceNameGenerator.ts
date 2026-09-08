@@ -310,15 +310,27 @@ export class InstanceNameGenerator implements PostEditOperation {
     return releaseNumber + " on " + releaseDate;
   }
 
-  // TODO: Need to test this code
+  /**
+   * The name of a Deleted instance, which records the deletion of one or more instances from the
+   * database. The wording follows what is already in the database, where all 8040 Deleted
+   * instances are named "Deletion of instance: <dbId>" for a single deletion and "Deletion of
+   * instances: <dbId>, <dbId>, ..." for several - the plural included, with no exceptions either
+   * way. The Deleted instance's own display name is generated here and nowhere else: the
+   * back-end's deleteByDeleted persists whatever name it is sent (it generates the names of the
+   * DeletedInstance objects it creates, but not this one).
+   */
   private generateDeletedName(instance: Instance) {
-    let deletedIds = instance.attributes?.get('deletedInstanceDbId');
-    let displayName = undefined;
-    if (!deletedIds || deletedIds.length === 0)
-      displayName = "Deletion of instance: unknown";
-    else if (deletedIds.length >= 1)
-      displayName = "Deletion of instance: " + deletedIds.join(", ");
-    return displayName;
+    const value = instance.attributes?.get('deletedInstanceDbId');
+    // Multi-valued in the schema, so normally an array - but tolerate a single id, since the name
+    // must not come out as "unknown" for a deletion that does record what it deleted.
+    const deletedIds = value === undefined || value === null
+      ? []
+      : (Array.isArray(value) ? value : [value]);
+    if (deletedIds.length === 0)
+      return "Deletion of instance: unknown";
+    if (deletedIds.length === 1)
+      return "Deletion of instance: " + deletedIds[0];
+    return "Deletion of instances: " + deletedIds.join(", ");
   }
 
   private generateDeletedInstanceName(instance: Instance) {

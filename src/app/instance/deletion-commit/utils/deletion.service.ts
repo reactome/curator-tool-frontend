@@ -13,6 +13,7 @@ import { CommitResultDialogService, CommitResult } from "src/app/status/componen
 import { MatDialog, MatDialogRef } from "@angular/material/dialog";
 import { CommitWaitDialogComponent } from "src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component";
 import { concatMap, finalize, from, map, tap, toArray } from "rxjs";
+import { InstanceNameGenerator } from "src/app/core/post-edit/InstanceNameGenerator";
 
 @Injectable({
     providedIn: 'any'
@@ -116,6 +117,16 @@ export class DeletionService {
     createDeletedObject(instanceToDelete: Instance[]) {
         this.createDeletedDialogService.openDialog(instanceToDelete).afterClosed().subscribe(deletedObject => {
             if (deletedObject) {
+                // The Deleted instance is assembled by the dialog, which sets deletedInstanceDbId
+                // directly rather than through the attribute table, so the post-edit pipeline -
+                // and with it display name generation - never runs for it. It was therefore
+                // committed carrying the "To be generated" placeholder it was created with; six
+                // Deleted instances in the database are named that way. Generate the name here,
+                // after the dialog has closed, so that it accounts for anything the curator
+                // changed in it. The back-end will not do this for us: it generates the names of
+                // the DeletedInstance objects it creates, but persists this instance's name as
+                // sent.
+                new InstanceNameGenerator(this.dataService, this.instanceUtilities).updateDisplayName(deletedObject);
                 this.dataService.synchronizeDeletedReferrers(instanceToDelete).subscribe(() => {
                     // Submit the Deleted instance, the selected instances are handled in this component
                     this.openCommitWaitDialog(

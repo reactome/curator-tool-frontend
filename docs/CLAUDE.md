@@ -123,7 +123,13 @@ before starting an item.
 - [ ] `instance-list-view.component.ts:897` — `take(1)` vs. re-subscribe needs a decision.
 - [ ] `pathway-diagram.component.ts:262` — drop the `reason` param, rename to `backupEditedDiagram`.
 - [ ] `hyperedge.ts:114` / TODO.md — replace the aStar hack for all-paths-between-two-nodes.
-- [ ] `InstanceNameGenerator.ts:10` — ensure it is a singleton; `:313` — untested code path.
+- [ ] `InstanceNameGenerator.ts:10` — ensure it is a singleton. (Still open: nine call sites
+      `new` it — `PostEditService`, `DisplayNameViewFilter`, the four auto-fillers,
+      `DataService`, `InstanceMergeService`, `InstanceListViewComponent`, `InstanceViewComponent`
+      — and the class is stateless, so the duplication is untidy rather than harmful. Making it
+      `@Injectable({providedIn: 'root'})` like `ReviewStatusCheck` only helps the call sites that
+      have an injector; the post-edit operations are constructed by hand.) `:313` — untested code
+      path: **done** 2026-09-08 on branch `fix/deleted-display-name`, see section C.
 - [ ] `user-instances.service.ts:58` — load via `APP_INITIALIZER`, like the schema tree; `:69` — value must be updated at deployment.
 - [ ] `instance.effects.ts:342` — decide whether `handleInstanceAttributes()` is needed here; `:139` — check whether that block is needed at all.
 - [ ] `instance-view.component.ts:50` — derive from `dbInstance` instead of `showReferenceColumn`; `:431` — verify the `resetCache && dbId >= 0` guard has no side effects; `:970` — schema view is hardcoded as the back target.
@@ -141,7 +147,31 @@ before starting an item.
 - [ ] TODO.md — refresh the displayed stable identifier after a species change (server side already correct).
 - [ ] TODO.md — post-processing for UniProt, ChEBI, external ontology (ReferenceMolecule).
 - [ ] TODO.md — add a circular-reference check for the event tree / `precedingEvent` (flagged high importance).
-- [ ] TODO.md — deleted-instance generated display name.
+- [x] TODO.md — deleted-instance generated display name. Fixed 2026-09-08 on branch
+      `fix/deleted-display-name`, together with the `InstanceNameGenerator.ts:313` "need to test
+      this code" TODO; 6 specs in `InstanceNameGenerator.spec.ts` and 3 in
+      `deletion.service.spec.ts`, 4 of which fail on the previous behaviour. Two defects, both
+      checked against the curation database (8040 `Deleted` instances, queried directly over Bolt
+      — see the local Neo4j credentials in the backend's `application.properties`):
+    1. `generateDeletedName` always wrote "Deletion of instance:", singular. Every `Deleted`
+       instance in the database with more than one deleted dbId is named "Deletion of
+       **instances**: …" and every one with a single dbId is singular, with no exceptions in
+       either direction (7461 single, ~580 multiple). Now pluralized; a lone non-array value is
+       also tolerated rather than named "unknown".
+    2. The name was never generated at all for a `Deleted` instance created through the deletion
+       flow. `DeletedObjectCreationDialogComponent` sets `deletedInstanceDbId` straight onto the
+       attributes map instead of going through the attribute table, so `PostEditService` — and
+       with it the name generation — never runs, and the instance was committed carrying
+       `NEW_DISPLAY_NAME`. Six `Deleted` instances in the database are named "To be generated" as
+       a result. The back-end does not cover for this: `CurationRepository.deleteByDeleted`
+       generates the display names of the `DeletedInstance` objects it creates (via its own port
+       of `generateDeletedInstanceName`), but persists the `Deleted` instance's name as sent.
+       `DeletionService.createDeletedObject` now generates it after the dialog closes, which also
+       picks up anything the curator changed in the dialog.
+       Note for anyone comparing `generateDeletedInstanceName` against the database: its output
+       deliberately differs from the older rows there (`… - Species N/A]`, `… - [Species:48887]
+       Homo sapiens]`). Those predate the current port; the front end matches the back-end's
+       `DatabaseObjectDisplayNameGenerator`, which is the live convention. Do not "fix" it.
 - [ ] TODO.md — add an InstanceEdit to referrers of a deleted instance and merge it into locally loaded referrers.
 - [ ] TODO.md, **flagged most important** — write privileges on log-in: decide and implement how they
       are granted and enforced.
