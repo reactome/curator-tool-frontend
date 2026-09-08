@@ -57,10 +57,18 @@ export class EventTreeComponent implements OnDestroy {
   // Cache tree nodes for editing
   private dbId2node = new Map<number, EventNode[]>();
 
+  // Every instance reaching this transformer holds its attributes as a plain object, indexed
+  // below, and not as the Map that an instance from DataService's cache carries. That is not an
+  // inconsistency to be tidied away: the tree is built from the JSON `fetchEventTree` returns,
+  // which never goes through registerInstance()/handleInstanceAttributes(), so the two really are
+  // different shapes. This component therefore reads `attributes['hasEvent']` on anything taken
+  // out of the tree and `attributes.get('hasEvent')` on anything handed to it by the edit bus or
+  // fetchInstance, and the invariant it depends on is that *only* plain-object-attribute instances
+  // are ever put into the tree - see InstanceUtilities.toEventTreeInstance, which is how a cached
+  // instance is converted before being placed here. A Map slipping through reads as undefined on
+  // every line below, i.e. as an event with no children, no diagram, no species and doRelease off.
+  // (Wrapping the instance in EventNode instead would make this interface simpler.)
   private _transformer = (node: Instance, level: number) => {
-    // TODO: Why does Typescript think that node.attributes is an Object and not a Map (has/get/set methods don't work)
-    // The reason is that attributes are converted directly from JSON in the data service!!! Need to think about it!
-    // Consider to wrap instance inside EventNode to make this interface simpler.
     return {
       expandable: node.attributes && (node.attributes["hasEvent"] ?? []).length > 0,
       name: node.displayName ?? "",
@@ -167,9 +175,18 @@ export class EventTreeComponent implements OnDestroy {
       const parentInst = treeNode.parent?.instance;
       if (!parentInst)
         continue;
-      const index = parentInst.attributes['hasEvent'].indexOf(treeNode.instance);
+      // A parent in the tree always has a hasEvent array - it is what made it a parent. Guarded
+      // anyway so that a violation of the plain-object-attributes invariant (see _transformer)
+      // shows up as an event that cannot be removed from the tree, rather than as a TypeError
+      // that aborts the deletion half way through the nodes.
+      const hasEvent = parentInst.attributes?.['hasEvent'];
+      if (!hasEvent) {
+        console.warn('handleInstanceDeletion: no hasEvent on the parent of ' + dbId, parentInst);
+        continue;
+      }
+      const index = hasEvent.indexOf(treeNode.instance);
       if (index >= 0) {
-        parentInst.attributes['hasEvent'].splice(index, 1);
+        hasEvent.splice(index, 1);
         needUpdate = true;
       }
     }
@@ -263,8 +280,12 @@ export class EventTreeComponent implements OnDestroy {
             tmpTreeInst = tmpNodes[0].instance;
           }
           else {
-            // Just use itself
-            tmpTreeInst = tmpInst;
+            // Not in the tree yet - an event that no top-level pathway leads to, or one just
+            // created. It comes off the edited instance, so its attributes are a Map and it
+            // cannot be placed into the tree as it is: it would render as a childless leaf with
+            // no release flag, hidden by any species filter, and marking one of its own children
+            // for deletion would throw in handleInstanceDeletion. Convert it first.
+            tmpTreeInst = this.instUtils.toEventTreeInstance(tmpInst);
           }
           treeInstHasEvent.push(tmpTreeInst);
         }

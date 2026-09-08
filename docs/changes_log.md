@@ -1,5 +1,11 @@
 ### Build on September 8, 2026
 
+- Bug fix: an instance you had already marked for deletion could still be listed among the referrers of another instance - including in the list of affected instances shown when deleting - if you had also edited it before marking it for deletion. Referrers marked for deletion were already left out of the list; this one slipped back in through the separate pass that adds the referrers only staged locally. Such an instance is now left out for good.
+
+- Bug fix: adding an event to a pathway's **hasEvent** slot showed it in the event tree as if it had no sub-events of its own - no expand arrow, no release flag, no diagram highlight - and it vanished from the tree as soon as a species was picked in the species filter. This only happened for an event that was not already somewhere in the tree: a pathway that no top-level pathway leads to, or one just created. It righted itself on the next page reload. Marking one of that event's own sub-events for deletion could also fail part way through, leaving the tree showing an event that had been deleted. Such an event now appears in the tree with its sub-events, its release flag, and its species, the same as any other.
+
+### Build on September 8, 2026
+
 - Bug fix: a Boolean slot you cannot edit - a NoManualEdit attribute such as `_doRelease`, an instance marked for deletion, or any row of the comparison column - looked switched off whether it was `true` or `false`, because a switch that cannot be operated is drawn in grey at a fraction of its normal strength. A `true` value therefore read as `false`, which matters most in the comparison column, where the whole point is to see what the database says. The value is now written out as `true` or `false` beside the switch in those cases, and a switch that is on keeps its colour rather than going grey. A Boolean that was never given a value shows nothing beside the switch, so it is not mistaken for one deliberately set to `false`. Editable Boolean slots are unchanged.
 
 ### Build on September 5, 2026

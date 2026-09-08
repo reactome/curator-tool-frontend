@@ -69,7 +69,26 @@ before starting an item.
 - [ ] `hyperedge.ts:404` — edge-point node checking not finished; `:419` — no known use cases yet.
 - [ ] `instance-converter.ts:33` — compartment text not selectable when the compartment is created first.
 - [ ] `pathway-diagram-utils.ts:87` — compartment label offset from the original label.
-- [ ] `event-tree.component.ts:61` — `node.attributes` typed as `Object`, not `Map` (typing bug).
+- [x] `event-tree.component.ts:61` — `node.attributes` typed as `Object`, not `Map` (typing bug).
+      Closed 2026-09-08 on branch `fix/event-tree-node-attributes-typing`; 5 specs in
+      `event-tree.component.spec.ts` (which replaces the failing CLI stub) and 5 in
+      `instance.service.spec.ts`. **Not a typing bug**: the tree is built straight from the JSON
+      `DataService.fetchEventTree` returns, which never goes through
+      `registerInstance`/`handleInstanceAttributes`, so instances in the tree really do hold their
+      attributes as a plain object while anything from the cache or the edit bus holds a `Map`.
+      Both shapes reach the component, which is why it indexes in some places and calls `.get()` in
+      others. The invariant is that only plain-object-attribute instances go **into** the tree, and
+      `InstanceUtilities.replaceHasEvent` already honoured it — but
+      `EventTreeComponent.handleHasEventEdit` did not: an event added to a pathway's `hasEvent` that
+      was not already in the tree (a pathway no top-level pathway leads to, or a brand-new one) was
+      pushed in straight from the cache, so every read came back `undefined` and it rendered as a
+      childless leaf with no release flag, no diagram and no species — hidden by any species
+      filter, its own sub-events invisible until a page reload. Marking one of those sub-events for
+      deletion then threw in `handleInstanceDeletion` (`undefined.indexOf`), which aborted the
+      deletion part way through the nodes. Added `InstanceUtilities.toEventTreeInstance` (carries
+      the four attributes the tree displays, copying the `hasEvent` array so the tree's splice
+      cannot silently edit the staged instance), used from both call sites; replaced the TODO with
+      the explanation, and guarded the splice.
 
 #### From docs/TODO.md (non-diagram; diagram bugs are in section E)
 
@@ -134,7 +153,21 @@ before starting an item.
 - [ ] TODO.md — customized view for Figure instances that displays the figure.
 - [ ] TODO.md — triage the demo feedback from Eliot and others, 2026-03-16:
       https://docs.google.com/document/d/1zlj3KKDwRQYUBCGIi4P3uqsb5X3JRfk8WoOqj2BXssI/edit?tab=t.0#heading=h.y6ik0la1wydu
-- [ ] `referrers-table.component.ts:53` — omit instances marked for deletion from the referrer list.
+- [x] `referrers-table.component.ts:53` — omit instances marked for deletion from the referrer list.
+      Closed 2026-09-08 on branch `fix/referrers-list-marked-for-deletion`; 5 specs in
+      `data.service.spec.ts` (which replaces the failing CLI stub). Mostly already done, but not
+      quite: `DataService._getReferrers` drops instances in the `delete_instances` store from the
+      server's answer and drops an attribute group left empty (`filterDeletedReferrers`), and the
+      component's counts follow from that list, so the deletion dialog's referrer count was right
+      too. The gap was the local-referrer pass immediately after: it re-adds referrers from the
+      cache for every dbId in `updated_instances` + `new_instances`, without excluding the deleted
+      ones — so an instance in both the updated and the deleted list was filtered out and then
+      added straight back. The deletion dialogs do dispatch `remove_updated_instance`, but only
+      when the instance has modified attributes, and both stores are also written by the
+      cross-tab `storage` effects and by the staged work restored at login, so the overlap is not
+      excluded by construction. `candidateDBIds` now filters out the deleted dbIds (one line; the
+      spec case fails without it). The TODO comment is replaced with a note on where the filtering
+      actually happens.
 - [ ] `instance-view.component.ts:709` — show a confirmation dialog when the operation completes.
 - [ ] `local-instance-list.component.ts:440` — emit the collected list back to the table.
 - [ ] `batch-edit-dialog.component.ts:243` — collect values selected in the aggregated-attributes dialog; `:610` — display-name update on batch edit unfinished.
