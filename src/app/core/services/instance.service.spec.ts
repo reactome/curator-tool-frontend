@@ -376,3 +376,110 @@ describe('InstanceUtilities commit danger: a referenced partner switched to a di
     expect(interactorClone.attributes).toBeUndefined();
   });
 });
+
+/**
+ * Anything placed into the event tree has to carry its attributes as a plain object, because the
+ * tree is built straight from the JSON `fetchEventTree` returns and MatTreeFlattener indexes that
+ * object. An instance from DataService's cache carries a Map instead, and on a Map every one of
+ * those reads comes back undefined - the event would render as a childless leaf with no release
+ * flag, hidden by any species filter. toEventTreeInstance is the conversion.
+ */
+describe('InstanceUtilities.toEventTreeInstance', () => {
+  let utils: InstanceUtilities;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        InstanceUtilities,
+        { provide: Store, useValue: jasmine.createSpyObj<Store>('Store', ['dispatch']) },
+        { provide: MatDialog, useValue: jasmine.createSpyObj<MatDialog>('MatDialog', ['open']) },
+        {
+          provide: CommitResultDialogService,
+          useValue: jasmine.createSpyObj<CommitResultDialogService>('CommitResultDialogService', ['openDialog'])
+        },
+        {
+          provide: MatchedInstancesDialogService,
+          useValue: jasmine.createSpyObj<MatchedInstancesDialogService>('MatchedInstancesDialogService', ['openDialog'])
+        },
+      ]
+    });
+    utils = TestBed.inject(InstanceUtilities);
+  });
+
+  const child: Instance = { dbId: 200, displayName: 'A child reaction', schemaClassName: 'Reaction' };
+
+  function cachedPathway(): Instance {
+    return {
+      dbId: 100,
+      displayName: 'A pathway outside the tree',
+      schemaClassName: 'Pathway',
+      attributes: new Map<string, any>([
+        ['hasEvent', [child]],
+        ['hasDiagram', true],
+        ['doRelease', true],
+        ['speciesName', 'Homo sapiens'],
+        ['summation', [{ dbId: 300, displayName: 'A summation', schemaClassName: 'Summation' }]],
+      ]),
+    };
+  }
+
+  it('turns a cached instance into one the tree can read', () => {
+    const treeInstance = utils.toEventTreeInstance(cachedPathway());
+
+    expect(treeInstance.attributes instanceof Map).toBeFalse();
+    // The four attributes the tree itself displays, read the way the tree reads them.
+    expect(treeInstance.attributes['hasEvent'].length).toBe(1);
+    expect(treeInstance.attributes['hasEvent'][0]).toBe(child); // Same event, for identity lookups
+    expect(treeInstance.attributes['hasDiagram']).toBeTrue();
+    expect(treeInstance.attributes['doRelease']).toBeTrue();
+    expect(treeInstance.attributes['speciesName']).toBe('Homo sapiens');
+    expect(treeInstance.dbId).toBe(100);
+    expect(treeInstance.displayName).toBe('A pathway outside the tree');
+    expect(treeInstance.schemaClassName).toBe('Pathway');
+  });
+
+  it('carries nothing the tree does not display', () => {
+    // The full instance stays in the cache; the tree only ever looks up these four.
+    const treeInstance = utils.toEventTreeInstance(cachedPathway());
+
+    expect(Object.keys(treeInstance.attributes).sort())
+      .toEqual(['doRelease', 'hasDiagram', 'hasEvent', 'speciesName']);
+  });
+
+  it('does not let the tree splice the cached instance own hasEvent list', () => {
+    // The tree removes an event from its parent's hasEvent by splicing that array in place
+    // (EventTreeComponent.handleInstanceDeletion). Sharing the array would turn marking an event
+    // for deletion into an unregistered edit of the staged instance.
+    const cached = cachedPathway();
+    const treeInstance = utils.toEventTreeInstance(cached);
+
+    treeInstance.attributes['hasEvent'].splice(0, 1);
+
+    expect(treeInstance.attributes['hasEvent'].length).toBe(0);
+    expect(cached.attributes.get('hasEvent').length).toBe(1);
+  });
+
+  it('leaves out an attribute the instance does not have', () => {
+    const shell: Instance = { dbId: -1, displayName: 'A new pathway', schemaClassName: 'Pathway' };
+
+    const treeInstance = utils.toEventTreeInstance(shell);
+
+    expect(treeInstance.attributes).toEqual({});
+    // What the tree reads off a childless node, without throwing on the missing attributes.
+    expect(treeInstance.attributes['hasEvent']).toBeUndefined();
+  });
+
+  it('is a no-op in shape for an instance already in the tree', () => {
+    const treeShaped: Instance = {
+      dbId: 100,
+      displayName: 'A pathway in the tree',
+      schemaClassName: 'Pathway',
+      attributes: { hasEvent: [child], doRelease: false },
+    };
+
+    const treeInstance = utils.toEventTreeInstance(treeShaped);
+
+    expect(treeInstance.attributes['hasEvent'][0]).toBe(child);
+    expect(treeInstance.attributes['doRelease']).toBeFalse();
+  });
+});

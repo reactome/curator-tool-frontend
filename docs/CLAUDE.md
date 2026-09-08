@@ -69,7 +69,26 @@ before starting an item.
 - [ ] `hyperedge.ts:404` — edge-point node checking not finished; `:419` — no known use cases yet.
 - [ ] `instance-converter.ts:33` — compartment text not selectable when the compartment is created first.
 - [ ] `pathway-diagram-utils.ts:87` — compartment label offset from the original label.
-- [ ] `event-tree.component.ts:61` — `node.attributes` typed as `Object`, not `Map` (typing bug).
+- [x] `event-tree.component.ts:61` — `node.attributes` typed as `Object`, not `Map` (typing bug).
+      Closed 2026-09-08 on branch `fix/event-tree-node-attributes-typing`; 5 specs in
+      `event-tree.component.spec.ts` (which replaces the failing CLI stub) and 5 in
+      `instance.service.spec.ts`. **Not a typing bug**: the tree is built straight from the JSON
+      `DataService.fetchEventTree` returns, which never goes through
+      `registerInstance`/`handleInstanceAttributes`, so instances in the tree really do hold their
+      attributes as a plain object while anything from the cache or the edit bus holds a `Map`.
+      Both shapes reach the component, which is why it indexes in some places and calls `.get()` in
+      others. The invariant is that only plain-object-attribute instances go **into** the tree, and
+      `InstanceUtilities.replaceHasEvent` already honoured it — but
+      `EventTreeComponent.handleHasEventEdit` did not: an event added to a pathway's `hasEvent` that
+      was not already in the tree (a pathway no top-level pathway leads to, or a brand-new one) was
+      pushed in straight from the cache, so every read came back `undefined` and it rendered as a
+      childless leaf with no release flag, no diagram and no species — hidden by any species
+      filter, its own sub-events invisible until a page reload. Marking one of those sub-events for
+      deletion then threw in `handleInstanceDeletion` (`undefined.indexOf`), which aborted the
+      deletion part way through the nodes. Added `InstanceUtilities.toEventTreeInstance` (carries
+      the four attributes the tree displays, copying the `hasEvent` array so the tree's splice
+      cannot silently edit the staged instance), used from both call sites; replaced the TODO with
+      the explanation, and guarded the splice.
 
 #### From docs/TODO.md (non-diagram; diagram bugs are in section E)
 
