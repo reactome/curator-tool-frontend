@@ -460,7 +460,7 @@ Hovering the attribute name shows a tooltip explaining its state. Hovering colum
 - **String:** an auto-sizing textarea. **Enter commits** the edit; **Ctrl+Enter / ⌘+Enter inserts a newline** instead. On a Summation `text` attribute, an inline **Edit Text** (`edit`) pencil opens the rich [Text Editor dialog](#96-text-editor-dialog).
 - **Integer:** numeric input, digits only (leading `-` allowed).
 - **Float:** numeric input, one decimal point (leading `-` allowed).
-- **Boolean:** a slide toggle; commits immediately.
+- **Boolean:** a slide toggle; commits immediately. Where the toggle cannot be operated - a NoManualEdit attribute, an instance marked for deletion, or the comparison column - the value is also written out as `true` or `false` beside it, and the toggle keeps its colour when on. A Boolean that has never been set shows an off toggle with no label.
 - **NoManualEdit** attributes are read-only.
 - **Undo/reset:** for an actively edited attribute, an `undo` icon appears in the value cell when the comparison column is shown; it resets the attribute to the reference value (tooltip **"reset to the db value"** or **"set to the right value"**).
 - **Multi-valued** attributes support **drag-to-reorder** (except NoManualEdit) and an extra empty row to add a new value.

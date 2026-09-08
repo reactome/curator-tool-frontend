@@ -1,8 +1,19 @@
 <ng-container *ngIf="showField">
   <ng-container [ngSwitch]="attribute?.type">
     <ng-template [ngSwitchCase]="DATA_TYPES.BOOLEAN">
-      <mat-slide-toggle [formControl]="control" color="primary" class="padding" (change)="onChange()">
-      </mat-slide-toggle>
+      <!-- Material greys a disabled switch out and drops its track to 12% opacity, so a checked
+      one is barely distinguishable from an unchecked one - curators reported reading `true`
+      values as `false`. A Boolean row is disabled in three ordinary situations (a NOMANUALEDIT
+      attribute, an instance marked for deletion, and every row of the comparison column), so
+      this is the common case, not an edge case. Two things are done about it: the selected
+      track/handle keeps its colour while disabled (see the .scss), and the value is spelled out
+      next to the switch so that it never has to be read from the styling alone. -->
+      <div class="boolean-value">
+        <mat-slide-toggle [formControl]="control" color="primary" class="padding" (change)="onChange()"
+          [attr.aria-label]="attribute?.name">
+        </mat-slide-toggle>
+        <span *ngIf="control.disabled && booleanStateLabel" class="boolean-state-label">{{booleanStateLabel}}</span>
+      </div>
     </ng-template>
 
     <!-- Hide the tooltip. It is quite annoying. matTooltip="control+enter to commit the change" -->

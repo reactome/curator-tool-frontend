@@ -148,7 +148,21 @@ before starting an item.
 
 ### D. UI / styling
 
-- [ ] TODO.md — Boolean sliders read as `false` when they are `true` but disabled (gray styling).
+- [x] TODO.md — Boolean sliders read as `false` when they are `true` but disabled (gray styling).
+      Fixed 2026-09-08 on branch `fix/readonly-boolean-toggle-state`; 5 specs in
+      `instance-table-row-element-boolean.spec.ts`. Material renders a disabled switch with the
+      selected track/handle grey and `--mdc-switch-disabled-track-opacity: 0.12`, so the checked
+      state is nearly invisible. Boolean rows are disabled in three ordinary situations, not just
+      NOMANUALEDIT attributes: an instance marked for deletion, and *every* row of the comparison
+      (reference) column, which is where reading the database value wrongly matters most. Two
+      changes: the value is spelled out beside the switch when the control is disabled (that is
+      what the specs pin — an unset slot deliberately shows no label, so it is not read as a
+      deliberate `false`), and `.boolean-value` re-declares the four
+      `--mdc-switch-disabled-*`/`--mat-switch-disabled-*` tokens so a disabled-but-on switch keeps
+      `var(--primary)`. The theme declares those tokens on `html` and leaves `color="primary"` on
+      those defaults (only `.mat-accent`/`.mat-warn` get their own), so overriding them on an
+      ancestor element reaches the toggle's own stylesheet without `::ng-deep` and without
+      affecting any other switch in the app.
 - [ ] TODO.md — event-tree icons are black and invisible in dark mode.
 - [ ] TODO.md — adopt the new Reactome icon set from Figma (EBI design; confirm with Eliott).
 - [ ] `styles.scss:15` — choose custom styles; `:51` — replace the hardcoded `min-height: 12px` with a calculation.

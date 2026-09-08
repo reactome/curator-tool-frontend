@@ -20,6 +20,38 @@
   padding: 0 16px;
 }
 
+// Boolean attribute row. Material's theme declares the switch's disabled colours as custom
+// properties on `html` (--mdc-switch-disabled-*, read by the slide-toggle's own stylesheet),
+// which means they can be re-declared on any ancestor - no ::ng-deep needed, and nothing else
+// in the app is affected. `color="primary"` is left on the html defaults by the theme, so
+// there is no competing .mat-primary declaration to lose to.
+//
+// What is overridden: a disabled *selected* switch is normally grey (#424242-ish) with the
+// track at 12% opacity, so `true` reads as `false`. Keep the primary colour and enough track
+// opacity to see it, while holding the handle below full opacity so the row still looks
+// read-only rather than editable. The disabled colours are per-state tokens, so `false` keeps
+// its grey handle and track - only the shared track opacity is raised, which makes the
+// unselected track a little more visible too.
+.boolean-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  --mdc-switch-disabled-selected-track-color: var(--primary);
+  --mdc-switch-disabled-selected-handle-color: var(--primary);
+  --mdc-switch-disabled-track-opacity: 0.38;
+  --mat-switch-disabled-selected-handle-opacity: 0.6;
+}
+
+// The read-only value, spelled out beside the switch. Italic and slightly muted to match the
+// other read-only text in the table and to keep it clearly secondary to the switch itself.
+.boolean-state-label {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--on-surface-variant);
+  white-space: nowrap;
+}
+
 // "N ×" prefix shown before a stoichiometry instance value that appears more than once
 // (read-only contexts such as the comparison column).
 .stoichiometry-prefix {

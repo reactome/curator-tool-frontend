@@ -114,6 +114,24 @@ export class InstanceTableRowElementComponent implements OnInit {
   }
 
 
+  /**
+   * The value of a Boolean attribute spelled out, shown beside the switch when the row is
+   * read-only (see the template for why). An unset slot returns '' rather than 'false', so
+   * that a Boolean that was never given a value is not reported as having been set to false.
+   *
+   * The label reports what the switch is showing - i.e. the truthiness of the value, which is
+   * what mat-slide-toggle keys its checked state off - rather than re-interpreting the value.
+   * Boolean attributes arrive as real booleans, but were something ever to put a string like
+   * 'false' in the slot, the switch would show it as checked; the label saying otherwise would
+   * hide that, and this is not the place to paper over it.
+   */
+  get booleanStateLabel(): string {
+    const value = this.control.value;
+    if (value === undefined || value === null || value === '')
+      return '';
+    return value ? 'true' : 'false';
+  }
+
   onChange() {
     if (this.control.value === this.value) {
       return; // No change, do nothing

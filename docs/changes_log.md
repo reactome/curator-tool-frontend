@@ -1,3 +1,7 @@
+### Build on September 8, 2026
+
+- Bug fix: a Boolean slot you cannot edit - a NoManualEdit attribute such as `_doRelease`, an instance marked for deletion, or any row of the comparison column - looked switched off whether it was `true` or `false`, because a switch that cannot be operated is drawn in grey at a fraction of its normal strength. A `true` value therefore read as `false`, which matters most in the comparison column, where the whole point is to see what the database says. The value is now written out as `true` or `false` beside the switch in those cases, and a switch that is on keeps its colour rather than going grey. A Boolean that was never given a value shows nothing beside the switch, so it is not mistaken for one deliberately set to `false`. Editable Boolean slots are unchanged.
+
 ### Build on September 5, 2026
 
 - Bug fix: visiting the site itself (`/curatortool/`) or `/curatortool/home` directly - rather than arriving there via login - showed a blank page instead of either the login form or the home page, even though logging in and navigating around afterward both worked fine. The route guard that sends a signed-out visitor to `/login` was redirecting by calling the router directly instead of returning its result the way Angular expects; on this particular path that redirect landed while the app's very first navigation was still being resolved, and the two silently cancelled each other out. It now hands the redirect back the way the router expects instead, which resolves cleanly as part of that first navigation.
