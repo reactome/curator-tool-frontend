@@ -1681,10 +1681,16 @@ export class DataService {
     ]).pipe(
       map(([updated, created, deleted]) => {
         const deletedDBIds = new Set(deleted.map(inst => inst.dbId));
+        // An instance marked for deletion is not a referrer, whichever list it is also in. The
+        // deletion dialogs do take it out of the updated list, but only when it has modified
+        // attributes, and the store is also written to from other tabs and from the staged work
+        // restored at login - so the two lists can overlap. Without this, such an instance is
+        // filtered out of the server's list below and then added straight back from the cache by
+        // the local-referrer pass, which is the one way a deleted instance can still be listed.
         const candidateDBIds = [
           ...updated.map(inst => inst.dbId),
           ...created.map(inst => inst.dbId)
-        ];
+        ].filter(id => !deletedDBIds.has(id));
 
         // Remove deleted and candidate instances from referrers
         referrers = this.filterDeletedReferrers(referrers, deletedDBIds);
