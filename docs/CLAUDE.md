@@ -71,6 +71,26 @@ before starting an item.
 - [ ] `pathway-diagram-utils.ts:87` — compartment label offset from the original label.
 - [ ] `event-tree.component.ts:61` — `node.attributes` typed as `Object`, not `Map` (typing bug).
 
+#### Found while working, not from either list
+
+- [x] `batch-edit-dialog.component.ts:520` `matchesReplaceTarget` compared instance values with
+      `toString()`, and every instance stringifies to `[object Object]` — so any two instances
+      compared equal. A batch **Set / Replace** on an instance-valued attribute therefore hit
+      *every* instance in the batch rather than only those holding the value picked in the
+      aggregated-values dialog, and inside a multi-valued attribute it always landed on index 0
+      rather than on the value picked. Both silently overwrote values the curator had not
+      selected, and the overwrite is staged and committable like any other edit. Fixed 2026-09-08
+      on branch `fix/batch-edit-replace-target-matching` (stacked on
+      `feat/event-circular-reference-check`): instance values compare by dbId, scalars keep the
+      loose comparison (5 vs `'5'`). Found because two specs in that suite asserted the correct
+      behaviour and had been failing since they were written; 3 specs cover it now.
+      The other 3 failures in that suite were stale doubles, fixed with the same branches: the
+      `AttributeEditService` spies returned `undefined`, so every instance looked like one that
+      already had the value; `DataService.fetchInstance` (called by `finishEdit`) was not stubbed
+      at all, so the first edit of a batch threw and the rest never ran; and the new-instance
+      dialog double returned the bare instance rather than a `NewInstanceDialogResult`. That suite
+      is now green — worth keeping that way, since it is the only coverage batch edit has.
+
 #### From docs/TODO.md (non-diagram; diagram bugs are in section E)
 
 - [ ] **Server side** — PubMed records whose author is an organization return a null author name, e.g.

@@ -522,7 +522,7 @@ export class BatchEditDialogComponent implements PostEditListener {
 
     if (Array.isArray(existingValue)) {
       const targetValue = attributeValue.value;
-      const index = existingValue.findIndex((val: any) => val == targetValue || val?.toString?.() === targetValue?.toString?.());
+      const index = existingValue.findIndex((val: any) => this.isSameAttributeValue(val, targetValue));
       if (index === -1) {
         return false;
       }
@@ -531,11 +531,35 @@ export class BatchEditDialogComponent implements PostEditListener {
       return true;
     }
 
-    if (existingValue !== undefined && (existingValue === attributeValue.value || existingValue?.toString?.() === attributeValue.value?.toString?.())) {
+    if (existingValue !== undefined && this.isSameAttributeValue(existingValue, attributeValue.value)) {
       return true;
     }
 
     return false;
+  }
+
+  /**
+   * Whether an instance's current attribute value is the value the curator chose to replace.
+   *
+   * Instance values are compared by dbId. They must not be compared with toString(): every
+   * instance stringifies to "[object Object]", so a toString comparison makes any two of them
+   * look like the same value. That had two consequences for a batch Set/Replace on an
+   * instance-valued attribute - it was applied to every instance in the batch rather than only
+   * to those holding the value being replaced, and within a multi-valued attribute it always
+   * landed on the first value rather than the one picked. Either way it silently overwrote values
+   * the curator had not selected. Three specs in this component's suite pin it down.
+   *
+   * The loose comparison is kept for scalars, where the same value can arrive as a number in one
+   * place and a string in another (5 vs '5').
+   */
+  private isSameAttributeValue(value: any, target: any): boolean {
+    if (value === target)
+      return true;
+    if (value === undefined || value === null || target === undefined || target === null)
+      return false;
+    if (value.dbId !== undefined || target.dbId !== undefined)
+      return value.dbId === target.dbId;
+    return value.toString?.() === target.toString?.();
   }
 
   private deleteInstanceAttribute(attributeValue: AttributeValue) {

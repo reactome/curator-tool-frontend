@@ -30,9 +30,18 @@ describe('BatchEditDialogComponent', () => {
     type: AttributeDataType.INSTANCE,
   };
 
+  const multiInstanceAttribute: SchemaAttribute = {
+    name: 'hasComponent',
+    cardinality: '+',
+    origin: 'TestClass',
+    category: AttributeCategory.OPTIONAL,
+    definingType: AttributeDefiningType.NONE_DEFINING,
+    type: AttributeDataType.INSTANCE,
+  };
+
   const schemaClass: SchemaClass = {
     name: 'TestClass',
-    attributes: [textAttribute, instanceAttribute],
+    attributes: [textAttribute, instanceAttribute, multiInstanceAttribute],
   };
 
   let dataService: jasmine.SpyObj<DataService>;
@@ -158,7 +167,8 @@ describe('BatchEditDialogComponent', () => {
     component.storeAggregatedAttributes = new Set([oldReference, otherReference]);
     dataService.fetchInstances.and.returnValue(of([instance1, instance2]));
     attributeListDialogService.openDialog.and.returnValue({ afterClosed: () => of([oldReference]) } as any);
-    newInstanceDialogService.openDialog.and.returnValue({ afterClosed: () => of(createdReference) } as any);
+    // The dialog closes with a NewInstanceDialogResult, not the bare instance.
+    newInstanceDialogService.openDialog.and.returnValue({ afterClosed: () => of({ instance: createdReference }) } as any);
 
     component.onInstanceAttributeEdit({
       attribute: instanceAttribute,
@@ -210,6 +220,35 @@ describe('BatchEditDialogComponent', () => {
     expect(attributeEditService.addValueToAttribute).not.toHaveBeenCalled();
     expect(instUtil.addToModifiedAttributes).toHaveBeenCalledWith('referenceEntity', instance1);
     expect(instUtil.registerUpdatedInstance).toHaveBeenCalledWith('referenceEntity', instance1);
+  });
+
+  it('replaces the chosen value of a multi-valued instance attribute, not the first one', () => {
+    // Within one instance the replacement has to land on the value the curator picked. Comparing
+    // instance values with toString() made every value in the list look like the one selected, so
+    // the first value was always the one replaced - here that would have overwritten refA while
+    // leaving the refB the curator chose in place.
+    const refA = { dbId: 10, schemaClassName: 'Ref', displayName: 'Component A' } as Instance;
+    const refB = { dbId: 11, schemaClassName: 'Ref', displayName: 'Component B' } as Instance;
+    const selectedRef = { dbId: 20, schemaClassName: 'Ref', displayName: 'Selected Ref' } as Instance;
+    const instance1 = makeInstance(1, new Map<string, any>([['hasComponent', [refA, refB]]]));
+    const component = createComponent([instance1]);
+
+    component.selectedAttribute = multiInstanceAttribute;
+    component.storeAggregatedAttributes = new Set([refA, refB]);
+    component._instances = [instance1];
+    attributeListDialogService.openDialog.and.returnValue({ afterClosed: () => of([refB]) } as any);
+    selectInstanceDialogService.openDialog.and.returnValue({ afterClosed: () => of([selectedRef]) } as any);
+
+    component.onInstanceAttributeEdit({
+      attribute: multiInstanceAttribute,
+      value: undefined,
+      editAction: EDIT_ACTION.REPLACE_VIA_SELECT,
+    });
+
+    expect(attributeEditService.addInstanceViaSelect).toHaveBeenCalledTimes(1);
+    const [replaced] = attributeEditService.addInstanceViaSelect.calls.mostRecent().args;
+    expect((replaced as AttributeValue).value).toBe(refB);
+    expect((replaced as AttributeValue).index).withContext('the index of the value picked').toBe(1);
   });
 
   it('adds an instance attribute to all instances via selection dialog (ADD_VIA_SELECT)', () => {

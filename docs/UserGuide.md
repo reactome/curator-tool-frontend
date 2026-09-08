@@ -391,7 +391,7 @@ The dialog is titled **"Batch Edit for Selected Instances"**:
 
 **Boolean:** a **True / False** radio group plus a **Set** button (disabled until you pick a value; tooltip *"Select True or False first"*).
 
-For **Delete**, **Replace…**, and **Replace Text**, the tool first opens an **aggregated-values** dialog (*"Values of '{attribute}' for selected instances:"*) so you can pick exactly **which existing values** to target (with checkboxes, or launchable rows for instance values); **OK** / **Cancel**.
+For **Delete**, **Replace…**, and **Replace Text**, the tool first opens an **aggregated-values** dialog (*"Values of '{attribute}' for selected instances:"*) so you can pick exactly **which existing values** to target (with checkboxes, or launchable rows for instance values); **OK** / **Cancel**. Only the instances that actually hold a value you picked are changed; the others are left alone and counted in the edit summary.
 
 ---
 
