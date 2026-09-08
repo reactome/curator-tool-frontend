@@ -1,3 +1,7 @@
+### Build on September 8, 2026
+
+- Bug fix: an instance you had already marked for deletion could still be listed among the referrers of another instance - including in the list of affected instances shown when deleting - if you had also edited it before marking it for deletion. Referrers marked for deletion were already left out of the list; this one slipped back in through the separate pass that adds the referrers only staged locally. Such an instance is now left out for good.
+
 ### Build on September 5, 2026
 
 - Bug fix: visiting the site itself (`/curatortool/`) or `/curatortool/home` directly - rather than arriving there via login - showed a blank page instead of either the login form or the home page, even though logging in and navigating around afterward both worked fine. The route guard that sends a signed-out visitor to `/login` was redirecting by calling the router directly instead of returning its result the way Angular expects; on this particular path that redirect landed while the app's very first navigation was still being resolved, and the two silently cancelled each other out. It now hands the redirect back the way the router expects instead, which resolves cleanly as part of that first navigation.
