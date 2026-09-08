@@ -153,7 +153,21 @@ before starting an item.
 - [ ] TODO.md — customized view for Figure instances that displays the figure.
 - [ ] TODO.md — triage the demo feedback from Eliot and others, 2026-03-16:
       https://docs.google.com/document/d/1zlj3KKDwRQYUBCGIi4P3uqsb5X3JRfk8WoOqj2BXssI/edit?tab=t.0#heading=h.y6ik0la1wydu
-- [ ] `referrers-table.component.ts:53` — omit instances marked for deletion from the referrer list.
+- [x] `referrers-table.component.ts:53` — omit instances marked for deletion from the referrer list.
+      Closed 2026-09-08 on branch `fix/referrers-list-marked-for-deletion`; 5 specs in
+      `data.service.spec.ts` (which replaces the failing CLI stub). Mostly already done, but not
+      quite: `DataService._getReferrers` drops instances in the `delete_instances` store from the
+      server's answer and drops an attribute group left empty (`filterDeletedReferrers`), and the
+      component's counts follow from that list, so the deletion dialog's referrer count was right
+      too. The gap was the local-referrer pass immediately after: it re-adds referrers from the
+      cache for every dbId in `updated_instances` + `new_instances`, without excluding the deleted
+      ones — so an instance in both the updated and the deleted list was filtered out and then
+      added straight back. The deletion dialogs do dispatch `remove_updated_instance`, but only
+      when the instance has modified attributes, and both stores are also written by the
+      cross-tab `storage` effects and by the staged work restored at login, so the overlap is not
+      excluded by construction. `candidateDBIds` now filters out the deleted dbIds (one line; the
+      spec case fails without it). The TODO comment is replaced with a note on where the filtering
+      actually happens.
 - [ ] `instance-view.component.ts:709` — show a confirmation dialog when the operation completes.
 - [ ] `local-instance-list.component.ts:440` — emit the collected list back to the table.
 - [ ] `batch-edit-dialog.component.ts:243` — collect values selected in the aggregated-attributes dialog; `:610` — display-name update on batch edit unfinished.

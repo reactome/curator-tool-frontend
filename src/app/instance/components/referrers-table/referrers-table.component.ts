@@ -50,7 +50,11 @@ export class ReferrersTableComponent {
         this.showProgressSpinner = false;
         this.numberOfRefs.emit(this.totalCount);
       })
-      // TODO: Remove instances from referral list that are marked to be deleted.
+      // Instances marked for deletion are already left out of what getReferrers returns: the
+      // server knows nothing about local deletions, so DataService._getReferrers drops them from
+      // its answer (and drops an attribute group that is left empty) before merging in the
+      // referrers that only exist locally. Nothing to do here - and the counts above, which the
+      // deletion dialog shows, are then right by construction.
     });
   }
 
