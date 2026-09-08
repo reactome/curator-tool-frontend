@@ -1119,6 +1119,52 @@ export class InstanceUtilities {
         }
     }
 
+    /**
+     * The attributes the event tree itself reads off the instance behind a node. Anything else the
+     * tree needs about an event is looked up from DataService's cache by dbId.
+     */
+    private static readonly EVENT_TREE_ATTRIBUTES = ['hasEvent', 'hasDiagram', 'doRelease', 'speciesName'];
+
+    /**
+     * Copies an instance into the shape the event tree requires, so that it can be placed into the
+     * tree's data.
+     *
+     * The event tree is built directly from the JSON that `DataService.fetchEventTree` returns:
+     * unlike everything that goes through `registerInstance` / `handleInstanceAttributes`, the
+     * instances in it carry their attributes as a **plain object**, not a `Map`. That is why
+     * EventTreeComponent reads `attributes['hasEvent']` on nodes it took out of the tree and
+     * `attributes.get('hasEvent')` on instances handed to it by the edit bus - the two are
+     * genuinely different shapes, not one shape read inconsistently.
+     *
+     * So an instance from the cache cannot simply be pushed into the tree: `MatTreeFlattener`
+     * indexes the object both to find children and to build the node, and on a `Map` every one of
+     * those reads comes back `undefined` - the event would silently render as a childless leaf
+     * with no release flag and no species, and marking one of its children for deletion would
+     * throw when the missing `hasEvent` array is spliced.
+     *
+     * Only the attributes the tree displays are carried over ({@link EVENT_TREE_ATTRIBUTES}); the
+     * full instance stays in the cache, and this copy is never edited through - edits arrive on the
+     * bus and are applied to the tree copy from the cached instance.
+     *
+     * The hasEvent list is copied rather than shared, because the tree splices its own copy when a
+     * child is marked for deletion (EventTreeComponent.handleInstanceDeletion) and that must not
+     * reach into the cached instance's attribute value, which would drop a relationship the
+     * curator never edited. The events in the list are the same objects, which is what the tree's
+     * own identity lookups rely on.
+     */
+    toEventTreeInstance(instance: Instance): Instance {
+        const attributes: any = {};
+        for (const att of InstanceUtilities.EVENT_TREE_ATTRIBUTES) {
+            const value = instance.attributes instanceof Map
+                ? instance.attributes.get(att)
+                : instance.attributes?.[att];
+            if (value === undefined)
+                continue;
+            attributes[att] = Array.isArray(value) ? [...value] : value;
+        }
+        return { ...instance, attributes: attributes };
+    }
+
     private replaceHasEvent(localEvent: Instance, dbEvent: Instance, id2event: Map<number, Instance>) {
         const newHasEvent = [];
         if (localEvent.attributes.get('hasEvent')) {
@@ -1127,17 +1173,12 @@ export class InstanceUtilities {
                 if (childEvent)
                     newHasEvent.push(childEvent);
                 else {
-                    // This is a new instance
-                    // Make a copy
-                    // The new instance's hasEvent points to shell instances
-                    // that are not in the event tree. However, calling this function
-                    // _mergeLocalChanesToEventTree recursively will fix this issue.
-                    // since hasEvent will
-                    const newEvent = {
-                        ...tmpInst,
-                        attributes: { 'hasEvent': tmpInst.attributes?.get('hasEvent') }
-                    };
-                    newHasEvent.push(newEvent);
+                    // Not in the tree yet, so a tree-shaped copy has to be made for it (see
+                    // toEventTreeInstance). Its own hasEvent still points at instances outside the
+                    // tree - shell instances for a new event - but the recursive call in
+                    // _mergeLocalChangesToEventTree walks into them and gives them the same
+                    // treatment.
+                    newHasEvent.push(this.toEventTreeInstance(tmpInst));
                 }
             }
         }
