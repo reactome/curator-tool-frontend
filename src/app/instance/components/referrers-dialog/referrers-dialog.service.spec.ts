@@ -1,17 +1,33 @@
 import { TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 
-import {ReferrersDialogService } from './referrers-dialog.service';
-import {ReferrersDialogComponent} from "./referrers-dialog.component";
+import { createMatDialogSpy, expectDialogService, makeInstance } from 'src/testing';
+import { ReferrersDialogComponent } from './referrers-dialog.component';
+import { ReferrersDialogService } from './referrers-dialog.service';
 
-describe('ReferrersDialogComponent', () => {
-  let service: ReferrersDialogComponent;
+describe('ReferrersDialogService', () => {
+  let service: ReferrersDialogService;
+  let dialog: ReturnType<typeof createMatDialogSpy>;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(ReferrersDialogComponent);
+    dialog = createMatDialogSpy();
+    TestBed.configureTestingModule({
+      providers: [ReferrersDialogService, { provide: MatDialog, useValue: dialog }]
+    });
+    service = TestBed.inject(ReferrersDialogService);
   });
 
-  it('should be created', () => {
-    expect(service).toBeTruthy();
+  it('opens the referrers dialog with the instance as its data', () => {
+    const instance = makeInstance({ dbId: 100, displayName: 'Glycolysis' });
+
+    const ref = service.openDialog(instance);
+
+    expectDialogService(dialog, ref, ReferrersDialogComponent, instance);
+  });
+
+  it('opens the dialog wide enough for the referrer table', () => {
+    service.openDialog(makeInstance());
+
+    expect(dialog.open.calls.mostRecent().args[1].width).toEqual('1000px');
   });
 });

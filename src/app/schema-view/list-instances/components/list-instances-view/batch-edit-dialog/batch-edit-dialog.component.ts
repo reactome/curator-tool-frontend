@@ -505,7 +505,7 @@ export class BatchEditDialogComponent implements PostEditListener {
 
     if (Array.isArray(existingValue)) {
       const targetValue = attributeValue.value;
-      const index = existingValue.findIndex((val: any) => val == targetValue || val?.toString?.() === targetValue?.toString?.());
+      const index = existingValue.findIndex((val: any) => this.isReplaceTargetValue(val, targetValue));
       if (index === -1) {
         return false;
       }
@@ -514,11 +514,39 @@ export class BatchEditDialogComponent implements PostEditListener {
       return true;
     }
 
-    if (existingValue !== undefined && (existingValue === attributeValue.value || existingValue?.toString?.() === attributeValue.value?.toString?.())) {
+    if (existingValue !== undefined && this.isReplaceTargetValue(existingValue, attributeValue.value)) {
       return true;
     }
 
     return false;
+  }
+
+  /**
+   * Whether an existing attribute value is the one a replace was aimed at.
+   *
+   * Instances compare by dbId, matching AttributeEditService.isSameValue and
+   * InstanceMergeService.isSameValue. The loose `==`/`toString()` comparison is kept only for
+   * scalars, where it is what makes the number 5 match the string '5' coming back from a form
+   * field. Applying `toString()` to instances collapsed every one of them to
+   * '[object Object]', so every selected instance matched every replace target and a batch
+   * "replace X with Y" rewrote the slot on instances that never held X.
+   */
+  private isReplaceTargetValue(value: any, target: any): boolean {
+    if (value === target) {
+      return true;
+    }
+    const bothObjects = value && target && typeof value === 'object' && typeof target === 'object';
+    if (bothObjects) {
+      if ('dbId' in value && 'dbId' in target) {
+        return value.dbId === target.dbId;
+      }
+      return JSON.stringify(value) === JSON.stringify(target);
+    }
+    // Exactly one side is an object: an instance never equals a scalar.
+    if (typeof value === 'object' || typeof target === 'object') {
+      return false;
+    }
+    return value == target || value?.toString?.() === target?.toString?.();
   }
 
   private deleteInstanceAttribute(attributeValue: AttributeValue) {

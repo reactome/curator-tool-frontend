@@ -106,11 +106,24 @@ describe('MatchedInstancesDialogComponent (via MatDialog.open, real overlay path
     // button's centre must resolve to the button itself (nothing overlapping it).
     const actionCell = launchButton!.closest('td') as HTMLElement;
     expect(getComputedStyle(actionCell).position).toBe('static');
+
+    // Scroll the button into view before hit-testing it. The karma browser window is far
+    // narrower than the 1100px this dialog asks for, so the content wraps and the table
+    // overflows the scroll panel: without this the button sits below the dialog's visible
+    // area and elementFromPoint resolves to whatever clips it, failing for a reason that has
+    // nothing to do with the overlap this is meant to catch.
+    launchButton!.scrollIntoView({ block: 'center', inline: 'center' });
+    flush();
     const btnRect = launchButton!.getBoundingClientRect();
-    const hit = document.elementFromPoint(
-      btnRect.left + btnRect.width / 2,
-      btnRect.top + btnRect.height / 2
-    ) as HTMLElement;
+    const centre = {
+      x: btnRect.left + btnRect.width / 2,
+      y: btnRect.top + btnRect.height / 2
+    };
+    expect(btnRect.width).toBeGreaterThan(0);
+    expect(btnRect.height).toBeGreaterThan(0);
+    expect(centre.y).toBeGreaterThanOrEqual(0);
+    expect(centre.y).toBeLessThanOrEqual(window.innerHeight);
+    const hit = document.elementFromPoint(centre.x, centre.y) as HTMLElement;
     expect(launchButton!.contains(hit)).toBe(true);
 
     // Wiring: click -> table.actionEvent -> handleAction -> openInstance -> window.open
