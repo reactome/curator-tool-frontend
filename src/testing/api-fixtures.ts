@@ -233,42 +233,43 @@ function entity(dbId: number, displayName: string) {
 }
 
 /**
- * The event tree, as `/getEventTree/{species}` returns it: a synthetic root whose `hasEvent`
- * nests the real hierarchy. `hasDiagram` marks which pathways can open a diagram.
+ * The event tree, as `/getEventTree/{species}` returns it.
+ *
+ * A **flat array of top-level events**, not a single root: `DataService.fetchEventTree` wraps
+ * whatever comes back in a synthetic `TopLevelPathway` root of its own
+ * (`attributes: { hasEvent: data }`). Returning one object here instead of an array makes that
+ * wrapper's `hasEvent` a non-iterable object, and the tree then dies in
+ * `mergeLocalChangesToEventTree` with "event.attributes.hasEvent is not iterable", leaving the
+ * event view stuck on its loading spinner.
+ *
+ * `hasDiagram` marks which pathways can open a diagram; children nest under `attributes.hasEvent`.
  */
-export const EVENT_TREE = {
-  dbId: -1,
-  displayName: 'Homo sapiens',
-  schemaClassName: 'Pathway',
-  attributes: {
-    hasEvent: [
-      {
-        dbId: 100,
-        displayName: 'Glycolysis',
-        schemaClassName: 'Pathway',
-        attributes: {
-          hasDiagram: true,
-          speciesName: 'Homo sapiens',
-          doRelease: true,
-          hasEvent: [
-            {
-              dbId: 101,
-              displayName: 'Glucose + ATP => Glucose-6-phosphate + ADP',
-              schemaClassName: 'Reaction',
-              attributes: { speciesName: 'Homo sapiens', doRelease: true }
-            },
-            {
-              dbId: 102,
-              displayName: 'Glucose-6-phosphate => Fructose-6-phosphate',
-              schemaClassName: 'Reaction',
-              attributes: { speciesName: 'Homo sapiens', doRelease: true }
-            }
-          ]
+export const EVENT_TREE = [
+  {
+    dbId: 100,
+    displayName: 'Glycolysis',
+    schemaClassName: 'Pathway',
+    attributes: {
+      hasDiagram: true,
+      speciesName: 'Homo sapiens',
+      doRelease: true,
+      hasEvent: [
+        {
+          dbId: 101,
+          displayName: 'Glucose + ATP => Glucose-6-phosphate + ADP',
+          schemaClassName: 'Reaction',
+          attributes: { speciesName: 'Homo sapiens', doRelease: true, hasEvent: [] }
+        },
+        {
+          dbId: 102,
+          displayName: 'Glucose-6-phosphate => Fructose-6-phosphate',
+          schemaClassName: 'Reaction',
+          attributes: { speciesName: 'Homo sapiens', doRelease: true, hasEvent: [] }
         }
-      }
-    ]
+      ]
+    }
   }
-};
+];
 
 /** A page of instances, as `/listInstances/` and `/searchInstances/` return it. */
 export function instanceListPage(dbIds: number[], totalCount?: number) {

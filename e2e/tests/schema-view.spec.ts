@@ -41,7 +41,8 @@ test.describe('the schema class tree', () => {
 
   test('offers a create button on a concrete class but not an abstract one', async ({ page }) => {
     // An abstract class cannot be instantiated, so offering the button would be a dead end.
-    await expect(treeNode(page, 'Pathway').getByRole('button')).toBeVisible();
+    // Matched on the icon rather than by role: a node also carries an expand/collapse button.
+    await expect(treeNode(page, 'Pathway').getByText('add_box')).toBeVisible();
     await expect(treeNode(page, 'Event').getByText('add_box')).toHaveCount(0);
   });
 
@@ -54,10 +55,11 @@ test.describe('the schema class tree', () => {
     await expect(treeNode(page, 'PhysicalEntity')).toBeVisible();
   });
 
-  test('navigates to a class listing when a class is clicked', async ({ page }) => {
+  test('opens the class browser when a class name is clicked', async ({ page }) => {
     await treeNode(page, 'Reaction').getByText('Reaction').click();
 
-    await expect(page).toHaveURL(/list_instances\/Reaction/);
+    await expect(page).toHaveURL(/\/schema_view\/class\/Reaction/);
+    await expect(page.getByText("Attributes of class 'Reaction'")).toBeVisible();
   });
 });
 
@@ -102,17 +104,31 @@ test.describe('the instance listing', () => {
     await expect(page).toHaveURL(/\/schema_view\/instance\/100/);
   });
 
-  test('searches within the class', async ({ page, api }) => {
-    const search = page.locator('app-instance-list-view input[type="text"]').first();
-    await search.fill('Glyco');
-    await search.press('Enter');
+  test('offers the species quick filter', async ({ page }) => {
+    await expect(page.locator('mat-button-toggle')).toHaveText(['All', 'Human', 'Non-human']);
+  });
 
-    // Either endpoint is a legitimate implementation of the search box; what matters is that
-    // typing a term sends a query rather than filtering only what is already on screen.
-    await expect
-      .poll(() => api.requestedPaths.some(p =>
-        p.includes('searchInstances') || p.includes('findByDisplayName')))
+  test('re-queries the server when the species filter is narrowed', async ({ page, api }) => {
+    // The filter is a server-side query, not a filter over the page already on screen --
+    // narrowing it while only re-filtering the current page would hide most of the matches.
+    const before = api.requestedPaths.length;
+
+    await page.locator('mat-button-toggle').filter({ hasText: 'Human' }).first().click();
+
+    await expect.poll(() => api.requestedPaths.slice(before)
+      .some(p => p.includes('searchInstances'))).toBeTruthy();
+  });
+
+  test('goes back to the plain listing when the filter is cleared', async ({ page, api }) => {
+    await page.locator('mat-button-toggle').filter({ hasText: 'Human' }).first().click();
+    await expect.poll(() => api.requestedPaths.some(p => p.includes('searchInstances')))
       .toBeTruthy();
+    const before = api.requestedPaths.length;
+
+    await page.locator('mat-button-toggle').filter({ hasText: 'All' }).first().click();
+
+    await expect.poll(() => api.requestedPaths.slice(before)
+      .some(p => p.includes('listInstances'))).toBeTruthy();
   });
 });
 

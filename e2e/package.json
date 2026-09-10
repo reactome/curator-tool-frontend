@@ -1,0 +1,15 @@
+{
+  "name": "curator-tool-frontend-e2e",
+  "private": true,
+  "description": "Playwright end-to-end suite for the curator tool. Kept as its own package so that it installs independently of the app's package.json, which pins local ngx-reactome-base tarballs and cannot always be resolved.",
+  "scripts": {
+    "install-browsers": "playwright install chromium",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

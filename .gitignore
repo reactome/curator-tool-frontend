@@ -53,3 +53,19 @@ package-lock copy.json
 .gitignore
 dist.tgz
 package.json
+
+# The rule above is deliberately unanchored so it covers the root package.json, which holds
+# per-developer settings. That also swallowed e2e/package.json, which is the E2E suite's
+# dependency manifest and does need to be shared -- without it a checkout gets the committed
+# node_modules but nothing describing them.
+!e2e/package.json
+
+# Same story for line 53's unanchored `.gitignore`: it hid e2e/.gitignore, which is what keeps
+# e2e/node_modules and the Playwright run artifacts out of the repo. Without this negation that
+# file could not be committed and those artifacts would come straight back.
+!e2e/.gitignore
+
+# Playwright run artifacts, written wherever the runner happens to be invoked from.
+test-results/
+playwright-report/
+blob-report/
