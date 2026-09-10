@@ -2,10 +2,13 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { NO_ERRORS_SCHEMA } from '@angular/core';
+
+import { commonTestProviders } from 'src/testing';
 import { Paper2pathComponent } from './paper2path.component';
 import { Paper2pathService } from './services/paper2path.service';
 
@@ -22,7 +25,11 @@ describe('Paper2pathComponent', () => {
         HttpClientTestingModule,
         BrowserAnimationsModule
       ],
-      providers: [Paper2pathService]
+      // The component picked up Store, DataService, PostEditService, InstanceUtilities, and
+      // PageTitleService after this spec was first written, which is what had it failing on
+      // "No provider for Store". commonTestProviders() covers all of them.
+      providers: [...commonTestProviders(), Paper2pathService],
+      schemas: [NO_ERRORS_SCHEMA]
     })
     .compileComponents();
 
@@ -59,17 +66,43 @@ describe('Paper2pathComponent', () => {
     expect(paper.selected).toBe(false);
   });
 
-  it('should extract meaningful error messages', () => {
-    // Test string error
-    expect((component as any).extractErrorMessage('Simple error')).toBe('Simple error');
-    
-    // Test error object with message
-    const errorWithMessage = { message: 'Test error message' };
-    expect((component as any).extractErrorMessage(errorWithMessage)).toBe('Test error message');
-    
-    // Test HTTP error format
-    const httpError = { error: { message: 'HTTP error' } };
-    expect((component as any).extractErrorMessage(httpError)).toBe('HTTP error');
+  // The component used to own an extractErrorMessage() helper, which this spec asserted on.
+  // Error handling has since moved to reading err.message at the call site and surfacing it
+  // through showError(), so these cover the surviving behaviour instead.
+  it('surfaces an error in a dismissible snackbar that does not auto-close', () => {
+    const open = TestBed.inject(MatSnackBar).open as jasmine.Spy;
+
+    (component as any).showError('Failed to submit annotation: backend down');
+
+    expect(open).toHaveBeenCalled();
+    const [message, action, config] = open.calls.mostRecent().args;
+    expect(message).toEqual('Failed to submit annotation: backend down');
+    expect(action).toEqual('Close');
+    expect(config!.panelClass).toEqual(['error-snackbar']);
+    // No duration: an error stays until the curator dismisses it.
+    expect(config!.duration).toBeUndefined();
+  });
+
+  it('auto-dismisses a success message after a few seconds', () => {
+    const open = TestBed.inject(MatSnackBar).open as jasmine.Spy;
+
+    (component as any).showSuccess('Annotation complete');
+
+    const config = open.calls.mostRecent().args[2];
+    expect(config!.duration).toEqual(5000);
+    expect(config!.panelClass).toEqual(['success-snackbar']);
+  });
+
+  it('requires a target gene when literature search is enabled', () => {
+    const open = TestBed.inject(MatSnackBar).open as jasmine.Spy;
+    component.configForm.patchValue({ enableLiteratureSearch: true, targetGene: '' });
+    component.addPmidField('12345678');
+
+    component.submitAnnotation();
+
+    expect(open).toHaveBeenCalled();
+    expect(open.calls.mostRecent().args[0])
+      .toContain('Target gene is required when literature search is enabled');
   });
 
   it('should correctly determine submit disabled state', () => {

@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { AuthenticateService } from 'src/app/core/services/authenticate.service';
 import { DataService } from 'src/app/core/services/data.service';
 import { User } from 'src/app/core/models/user';
-import { catchError, of } from 'rxjs';
+import { EMPTY, catchError } from 'rxjs';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { UserInstancesService } from './user-instances.service';
@@ -43,7 +43,11 @@ export class LoginComponent{
     this.authService.login(data).pipe(
       catchError(error => {
         this.handleError(error); // Custom error handling
-        return of(null); // Return an observable to complete the stream
+        // Complete without emitting, so the subscriber below does not also run. Returning
+        // of(null) here emitted a falsy token, which fell into the "no usable token" branch
+        // and reported the same failure a second time - stacking two identical error dialogs
+        // that the curator then had to dismiss one after the other.
+        return EMPTY;
       })
     ).subscribe(token => {
       if (token) {

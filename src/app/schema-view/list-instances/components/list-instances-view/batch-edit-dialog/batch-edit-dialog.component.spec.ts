@@ -71,11 +71,8 @@ describe('BatchEditDialogComponent', () => {
   }
 
   beforeEach(() => {
-    dataService = jasmine.createSpyObj<DataService>('DataService', ['fetchSchemaClass', 'fetchInstances', 'fetchInstance']);
-    // finishEdit() re-reads the edited instance to refresh the display name in the dialog's own
-    // list. Without this the very first edit of a batch threw, and the rest of the batch never
-    // ran - which is why the cases below only ever saw one instance edited.
-    dataService.fetchInstance.and.callFake((dbId: number) => of(makeInstance(dbId, new Map<string, any>())));
+    dataService = jasmine.createSpyObj<DataService>('DataService',
+      ['fetchSchemaClass', 'fetchInstances', 'fetchInstance']);
     newInstanceDialogService = jasmine.createSpyObj<NewInstanceDialogService>('NewInstanceDialogService', ['openDialog']);
     selectInstanceDialogService = jasmine.createSpyObj<SelectInstanceDialogService>('SelectInstanceDialogService', ['openDialog']);
     attributeEditService = jasmine.createSpyObj<AttributeEditService>('AttributeEditService', [
@@ -84,10 +81,10 @@ describe('BatchEditDialogComponent', () => {
       'onNoInstanceAttributeEdit',
       'deleteInstanceAttribute',
     ]);
-    // The component only counts an instance as edited - and only then flags it as modified and
-    // registers it - when the edit service reports that it changed something. These doubles must
-    // therefore say so; left at the default undefined, every case below looks like an instance
-    // that already had the value, which is what made five of them fail.
+    // These have to return true. The component gates finishEdit() on the result, treating a
+    // falsy one as "the instance already held this value" and counting the instance as
+    // skipped -- so spies left returning undefined make every edit below look like a no-op
+    // and the assertions fail on the step after the edit.
     attributeEditService.addValueToAttribute.and.returnValue(true);
     attributeEditService.addInstanceViaSelect.and.returnValue(true);
     attributeEditService.onNoInstanceAttributeEdit.and.returnValue(true);
@@ -97,6 +94,10 @@ describe('BatchEditDialogComponent', () => {
     eventCycleCheck = jasmine.createSpyObj<EventCycleCheck>('EventCycleCheck', ['checkAddition']);
     eventCycleCheck.checkAddition.and.returnValue(undefined);
     dialogRef = { close: jasmine.createSpy('close') };
+    // finishEdit() -> refreshDisplayedInstance() re-fetches the edited instance, so the first
+    // edit of a batch throws unless this is stubbed.
+    dataService.fetchInstance.and.callFake((dbId: number) =>
+      of({ dbId, schemaClassName: 'TestClass', displayName: `Instance ${dbId}`, attributes: new Map() }));
   });
 
   it('replaces selected text values across matching instances', () => {
@@ -158,7 +159,11 @@ describe('BatchEditDialogComponent', () => {
     component.storeAggregatedAttributes = new Set([oldReference, otherReference]);
     dataService.fetchInstances.and.returnValue(of([instance1, instance2]));
     attributeListDialogService.openDialog.and.returnValue({ afterClosed: () => of([oldReference]) } as any);
-    newInstanceDialogService.openDialog.and.returnValue({ afterClosed: () => of(createdReference) } as any);
+    // The dialog closes with a NewInstanceDialogResult wrapper, not a bare Instance. This
+    // spec used to hand back the instance directly, so the component's `!result.instance`
+    // guard returned early and no edit was ever attempted.
+    newInstanceDialogService.openDialog.and.returnValue(
+      { afterClosed: () => of({ instance: createdReference }) } as any);
 
     component.onInstanceAttributeEdit({
       attribute: instanceAttribute,
@@ -210,6 +215,80 @@ describe('BatchEditDialogComponent', () => {
     expect(attributeEditService.addValueToAttribute).not.toHaveBeenCalled();
     expect(instUtil.addToModifiedAttributes).toHaveBeenCalledWith('referenceEntity', instance1);
     expect(instUtil.registerUpdatedInstance).toHaveBeenCalledWith('referenceEntity', instance1);
+  });
+
+  it('leaves instances holding a different reference untouched on a replace', () => {
+    // matchesReplaceTarget used to fall back to comparing values with toString(), which
+    // collapses every instance to '[object Object]'. Every selected instance therefore
+    // matched every replace target, so a batch "replace X with Y" rewrote the slot on
+    // instances that never held X. Instances have to compare by dbId.
+    const oldRef = { dbId: 10, schemaClassName: 'Ref', displayName: 'Old Ref' } as Instance;
+    const otherRef = { dbId: 11, schemaClassName: 'Ref', displayName: 'Other Ref' } as Instance;
+    const selectedRef = { dbId: 20, schemaClassName: 'Ref', displayName: 'Selected Ref' } as Instance;
+    const holdsOldRef = makeInstance(1, new Map<string, any>([['referenceEntity', oldRef]]));
+    const holdsOtherRef = makeInstance(2, new Map<string, any>([['referenceEntity', otherRef]]));
+    const component = createComponent([holdsOldRef, holdsOtherRef]);
+
+    component.selectedAttribute = instanceAttribute;
+    component.storeAggregatedAttributes = new Set([oldRef, otherRef]);
+    dataService.fetchInstances.and.returnValue(of([holdsOldRef, holdsOtherRef]));
+    attributeListDialogService.openDialog.and.returnValue({ afterClosed: () => of([oldRef]) } as any);
+    selectInstanceDialogService.openDialog.and.returnValue({ afterClosed: () => of([selectedRef]) } as any);
+
+    component.onInstanceAttributeEdit({
+      attribute: instanceAttribute,
+      value: undefined,
+      editAction: EDIT_ACTION.REPLACE_VIA_SELECT,
+    });
+
+    const edited = attributeEditService.addInstanceViaSelect.calls.allArgs().map(args => args[2]);
+    expect(edited).toEqual([holdsOldRef]);
+    expect(edited).not.toContain(holdsOtherRef);
+  });
+
+  it('matches a replace target across a multivalued slot by dbId, not by toString', () => {
+    const oldRef = { dbId: 10, schemaClassName: 'Ref', displayName: 'Old Ref' } as Instance;
+    const otherRef = { dbId: 11, schemaClassName: 'Ref', displayName: 'Other Ref' } as Instance;
+    const selectedRef = { dbId: 20, schemaClassName: 'Ref', displayName: 'Selected Ref' } as Instance;
+    const multiInstanceAttribute: SchemaAttribute = { ...instanceAttribute, cardinality: '+' };
+    const holdsOldRef = makeInstance(1, new Map<string, any>([['referenceEntity', [oldRef]]]));
+    const holdsOtherRef = makeInstance(2, new Map<string, any>([['referenceEntity', [otherRef]]]));
+    const component = createComponent([holdsOldRef, holdsOtherRef]);
+
+    component.selectedAttribute = multiInstanceAttribute;
+    component.storeAggregatedAttributes = new Set([oldRef, otherRef]);
+    dataService.fetchInstances.and.returnValue(of([holdsOldRef, holdsOtherRef]));
+    attributeListDialogService.openDialog.and.returnValue({ afterClosed: () => of([oldRef]) } as any);
+    selectInstanceDialogService.openDialog.and.returnValue({ afterClosed: () => of([selectedRef]) } as any);
+
+    component.onInstanceAttributeEdit({
+      attribute: multiInstanceAttribute,
+      value: undefined,
+      editAction: EDIT_ACTION.REPLACE_VIA_SELECT,
+    });
+
+    const edited = attributeEditService.addInstanceViaSelect.calls.allArgs().map(args => args[2]);
+    expect(edited).toEqual([holdsOldRef]);
+  });
+
+  it('still matches a scalar replace target loosely across string and number forms', () => {
+    // The toString() comparison is what makes the number 5 match the '5' a form field
+    // hands back, so tightening the instance case must not tighten this one.
+    const intAttribute: SchemaAttribute = {
+      ...textAttribute, name: 'startCoordinate', cardinality: '1', type: AttributeDataType.INTEGER
+    };
+    const instance1 = makeInstance(1, new Map<string, any>([['startCoordinate', 5]]));
+    const component = createComponent([instance1]);
+
+    component.selectedAttribute = intAttribute;
+    component.selectedAggregatedValues = new Set([{ attribute: intAttribute, value: '5' }]);
+    dataService.fetchInstances.and.returnValue(of([instance1]));
+
+    component.onNonInstanceAttributeEdit({ attribute: intAttribute, value: 7 }, true);
+
+    expect(attributeEditService.onNoInstanceAttributeEdit).toHaveBeenCalledTimes(1);
+    expect(attributeEditService.onNoInstanceAttributeEdit.calls.mostRecent().args[2])
+      .toBe(instance1);
   });
 
   it('adds an instance attribute to all instances via selection dialog (ADD_VIA_SELECT)', () => {

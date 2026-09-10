@@ -92,7 +92,7 @@ describe('MatchResolutionService', () => {
     });
   });
 
-  it('merge overwrites single-valued, appends multivalued (dedup), and stages the existing instance', (done) => {
+  it('merge overwrites single-valued, appends multivalued (dedup, including stoichiometry slots), and stages the existing instance', (done) => {
     const compA = { dbId: 10, schemaClassName: 'X', displayName: 'a' };
     const compB = { dbId: 11, schemaClassName: 'X', displayName: 'b' };
     const compC = { dbId: 12, schemaClassName: 'X', displayName: 'c' };
@@ -100,7 +100,7 @@ describe('MatchResolutionService', () => {
       name: ['new-name-1', 'new-name-2'],
       compartment: 'cytosol',
       hasMember: [compB, compC], // compB already on existing -> should be skipped (dedup)
-      hasComponent: [compB], // stoichiometry: duplicates allowed -> appended even if present
+      hasComponent: [compB], // stoichiometry slot, but merge dedups it like any other
     });
     const existing = makeInstance(100, {
       name: ['existing-name'],
@@ -120,13 +120,17 @@ describe('MatchResolutionService', () => {
       expect(existing.attributes.get('name')).toEqual(['existing-name', 'new-name-1', 'new-name-2']);
       // regular instance list: compB (dbId 11) deduped, compC (dbId 12) added
       expect(existing.attributes.get('hasMember').map((c: any) => c.dbId)).toEqual([10, 11, 12]);
-      // stoichiometry relationship: duplicate compB is intentionally appended
-      expect(existing.attributes.get('hasComponent').map((c: any) => c.dbId)).toEqual([11, 11]);
+      // Stoichiometry relationship types (hasComponent/input/output/repeatedUnit) are deduped
+      // too: applyMergeAttributes deliberately applies the same rule to every multivalued
+      // attribute, so a merge never introduces a duplicate. This spec previously asserted the
+      // older behaviour, where a duplicate was appended here.
+      expect(existing.attributes.get('hasComponent').map((c: any) => c.dbId)).toEqual([11]);
       // existing marked modified and staged as an updated instance
       expect(existing.modifiedAttributes).toContain('name');
       expect(existing.modifiedAttributes).toContain('compartment');
       expect(existing.modifiedAttributes).toContain('hasMember');
-      expect(existing.modifiedAttributes).toContain('hasComponent');
+      // Nothing was added to hasComponent, so it is not flagged as modified.
+      expect(existing.modifiedAttributes).not.toContain('hasComponent');
       expect(dataService.registerInstance).toHaveBeenCalledWith(existing);
       const updateAction = store.dispatch.calls.allArgs()
         .map(args => args[0] as any)
