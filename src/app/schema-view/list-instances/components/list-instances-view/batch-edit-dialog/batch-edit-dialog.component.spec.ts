@@ -91,8 +91,8 @@ describe('BatchEditDialogComponent', () => {
     postEditService = jasmine.createSpyObj<PostEditService>('PostEditService', ['postEdit']);
     instUtil = jasmine.createSpyObj<InstanceUtilities>('InstanceUtilities', ['addToModifiedAttributes', 'registerUpdatedInstance']);
     attributeListDialogService = jasmine.createSpyObj<AttributeListDialogService>('AttributeListDialogService', ['openDialog']);
-    eventCycleCheck = jasmine.createSpyObj<EventCycleCheck>('EventCycleCheck', ['checkAddition']);
-    eventCycleCheck.checkAddition.and.returnValue(undefined);
+    eventCycleCheck = jasmine.createSpyObj<EventCycleCheck>('EventCycleCheck', ['checkAdditions']);
+    eventCycleCheck.checkAdditions.and.returnValue(of(new Map<number, string>()));
     dialogRef = { close: jasmine.createSpy('close') };
     // finishEdit() -> refreshDisplayedInstance() re-fetches the edited instance, so the first
     // edit of a batch throws unless this is stubbed.
@@ -332,8 +332,7 @@ describe('BatchEditDialogComponent', () => {
     component.selectedAttribute = instanceAttribute;
     component._instances = [instance1, instance2];
     selectInstanceDialogService.openDialog.and.returnValue({ afterClosed: () => of([selectedEvent]) } as any);
-    eventCycleCheck.checkAddition.and.callFake((instance?: Instance) =>
-      instance?.dbId === 1 ? 'would contain itself' : undefined);
+    eventCycleCheck.checkAdditions.and.returnValue(of(new Map([[1, 'would contain itself']])));
 
     component.onInstanceAttributeEdit({
       attribute: instanceAttribute,

@@ -13,7 +13,7 @@ import { PostEditService } from 'src/app/core/services/post-edit.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { AttributeListDialogService } from './attribute-list-dialog/attribute-list-dialog.service';
 import { MatSelect } from '@angular/material/select';
-import { take, map, of } from 'rxjs';
+import { take, map, of, switchMap } from 'rxjs';
 import { SelectInstanceDialogService } from '../../select-instance-dialog/select-instance-dialog.service';
 import { ActionButton } from '../instance-list-table/instance-list-table.component';
 
@@ -437,7 +437,15 @@ export class BatchEditDialogComponent implements PostEditListener {
       return;
     }
 
-    this.getInstancesForEdit().pipe(take(1)).subscribe((instances: Instance[]) => {
+    // A batch edit puts the same value on many instances at once, so hasEvent is exactly where a
+    // circular reference is easy to create without noticing. Checked for the whole batch up front,
+    // since establishing what already contains an event takes a request. See EventCycleCheck.
+    this.getInstancesForEdit().pipe(
+      take(1),
+      switchMap((instances: Instance[]) =>
+        this.eventCycleCheck.checkAdditions(instances, attributeValues[0].attribute.name, result).pipe(
+          map(circular => ({ instances, circular }))))
+    ).subscribe(({ instances, circular }) => {
       const isInstanceAttribute = attributeValues[0].attribute.type === this.DATA_TYPES.INSTANCE;
       const affectedDbIds = new Set<number>();
       const skippedDbIds = new Set<number>();
@@ -450,9 +458,7 @@ export class BatchEditDialogComponent implements PostEditListener {
           if (replace && !this.matchesReplaceTarget(instance, attributeValue)) {
             continue;
           }
-          // A batch edit puts the same value on many instances at once, so hasEvent is exactly
-          // where a circular reference is easy to create without noticing. See EventCycleCheck.
-          if (this.eventCycleCheck.checkAddition(instance, attributeValue.attribute.name, result)) {
+          if (circular.has(instance.dbId)) {
             circularDbIds.add(instance.dbId);
             continue;
           }

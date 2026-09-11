@@ -243,16 +243,6 @@ export class DataService {
    * @param clsName 
    * @returns 
    */
-  /**
-   * The event tree as currently held, without fetching it. The complete hasEvent hierarchy, kept
-   * up to date by EventTreeComponent as the curator edits it, but undefined until something has
-   * asked for it (fetchEventTree) - so a caller that only wants to consult it, rather than display
-   * it, must cope with not having it. Used by EventCycleCheck.
-   */
-  getLoadedEventTree(): Instance | undefined {
-    return this.rootEvent;
-  }
-
   getSchemaClass(clsName: string): SchemaClass {
     // Ensure simple-class map is built if we have the root
     if ((!this.name2SimpleClass || this.name2SimpleClass.size === 0) && this.rootClass) {
