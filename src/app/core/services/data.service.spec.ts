@@ -147,3 +147,100 @@ describe('DataService.getReferrers and local staging', () => {
     expect(referrers).toEqual([]);
   });
 });
+
+/**
+ * The event tree response, and the circular hasEvent relationships that come with it.
+ *
+ * Editing hasEvent is no longer refused - establishing what already contains an event cost a
+ * request per ancestor on every edit - so `/getEventTree` reports the cyclic relationships it had
+ * to drop to build the hierarchy, and the event view tells the curator. That made the endpoint
+ * return `{events, cycles}` where it used to return a bare array of top-level events, so this has
+ * to read both: a front end deployed ahead of the backend still has to show the tree.
+ */
+describe('DataService.fetchEventTree', () => {
+  let service: DataService;
+  let http: HttpTestingController;
+
+  const TOP_EVENTS = [
+    { dbId: 10, displayName: 'Metabolism', schemaClassName: 'Pathway', attributes: { hasEvent: [] } },
+  ];
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [
+        HttpClientTestingModule,
+        RouterTestingModule,
+        StoreModule.forRoot({
+          [UPDATE_INSTANCES_STATE_NAME]: updatedInstancesReducer,
+          [NEW_INSTANCES_STATE_NAME]: newInstancesReducer,
+          [DELETE_INSTANCES_STATE_NAME]: deletedInstancesReducer,
+        }),
+      ],
+      providers: [
+        DataService,
+        InstanceUtilities,
+        { provide: MatDialog, useValue: jasmine.createSpyObj<MatDialog>('MatDialog', ['open']) },
+        {
+          provide: CommitResultDialogService,
+          useValue: jasmine.createSpyObj<CommitResultDialogService>('CommitResultDialogService', ['openDialog'])
+        },
+        {
+          provide: MatchedInstancesDialogService,
+          useValue: jasmine.createSpyObj<MatchedInstancesDialogService>('MatchedInstancesDialogService', ['openDialog'])
+        },
+      ]
+    });
+    service = TestBed.inject(DataService);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    http.verify();
+  });
+
+  /** Fetches the tree and answers the request with what the server would return. */
+  function fetchEventTree(serverAnswer: any): Instance {
+    let root: Instance | undefined;
+    service.fetchEventTree(false, 'all').subscribe(result => root = result);
+    http.expectOne(request => request.url.includes('getEventTree/all')).flush(serverAnswer);
+    return root!;
+  }
+
+  it('reads the events and the cycles out of the response', () => {
+    const cycle = { path: [{ dbId: 10, displayName: 'Metabolism' }, { dbId: 20, displayName: 'Glycolysis' }] };
+
+    const root = fetchEventTree({ events: TOP_EVENTS, cycles: [cycle] });
+
+    // The synthetic root the tree is built from, holding the top events unchanged.
+    expect(root.dbId).toBe(0);
+    expect(root.attributes['hasEvent'].map((event: Instance) => event.dbId)).toEqual([10]);
+    expect(service.getEventTreeCycles()).toEqual([cycle]);
+  });
+
+  it('reports no cycles for a sound hierarchy', () => {
+    fetchEventTree({ events: TOP_EVENTS, cycles: [] });
+
+    expect(service.getEventTreeCycles()).toEqual([]);
+  });
+
+  it('still reads a bare array from a backend that does not report cycles', () => {
+    // The old wire shape. The tree has to load; there is simply nothing to report.
+    const root = fetchEventTree(TOP_EVENTS);
+
+    expect(root.attributes['hasEvent'].map((event: Instance) => event.dbId)).toEqual([10]);
+    expect(service.getEventTreeCycles()).toEqual([]);
+  });
+
+  it('keeps reporting the cycles of the tree it is handing back from cache', () => {
+    // fetchEventTree answers a second caller from its cache without a request, and that caller
+    // still has to be told about the cycles in the tree it was given.
+    const cycle = { path: [{ dbId: 10, displayName: 'Metabolism' }] };
+    fetchEventTree({ events: TOP_EVENTS, cycles: [cycle] });
+
+    let root: Instance | undefined;
+    service.fetchEventTree(false, 'all').subscribe(result => root = result);
+
+    expect(root).toBeDefined(); // No request to flush: answered from the cache.
+    expect(service.getEventTreeCycles()).toEqual([cycle]);
+  });
+});

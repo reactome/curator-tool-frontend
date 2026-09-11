@@ -7,7 +7,7 @@ import { forkJoin, Subscription, take } from "rxjs";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
-import { Instance } from "../../../core/models/reactome-instance.model";
+import { EventTreeCycle, Instance } from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
 
 /** Tree node with expandable and level information */
@@ -133,9 +133,11 @@ export class EventTreeComponent implements OnDestroy {
           this.processEventTreeData(eventTree, params['id']);
           // console.log('Second call response:', schemaTree);
           // Both server calls are now completed
+          this.reportCircularReferences(this.dataService.getEventTreeCycles());
         },
         error: (error) => {
           console.error('Error occurred:', error);
+          this.reportEventTreeFailure(error);
         }
       });
     });
@@ -158,10 +160,71 @@ export class EventTreeComponent implements OnDestroy {
   }
 
   // Only when this tree is removed from the DOM. Currently the tree is controlled
-  // by hidden so that this function will not be called when the tree is hidden. This 
+  // by hidden so that this function will not be called when the tree is hidden. This
   // is important to keep the state of the tree to be synchronized with edit.
   ngOnDestroy() {
     this.subscriptions.unsubscribe();
+  }
+
+  /**
+   * Tells the curator about any circular hasEvent relationship that had to be left out of the
+   * hierarchy to render it as a tree.
+   *
+   * This is the only place a cycle is reported. Editing hasEvent is not refused any more -
+   * establishing what already contains an event cost a request per ancestor on every edit - so a
+   * curator can create one from the schema view and only finds out here, which is also the only
+   * view where it matters. The tree itself is complete apart from the named relationship, so they
+   * can navigate to the event holding it and remove it straight away.
+   */
+  private reportCircularReferences(cycles: EventTreeCycle[]) {
+    if (cycles.length === 0)
+      return;
+    const lines = cycles.map(cycle => {
+      const events = cycle.path.map(event => `${event.displayName} [${event.dbId}]`);
+      // A single-entry path is an event listed in its own hasEvent; anything longer closes back on
+      // the first event, so naming it again is what makes the cycle readable as a cycle.
+      const path = events.length === 1 ? `${events[0]} > itself` : [...events, events[0]].join(' > ');
+      const holder = cycle.path[cycle.path.length - 1];
+      return `• ${path}\n  (remove "${cycle.path[0].displayName}" from the hasEvent of`
+        + ` "${holder.displayName}" [${holder.dbId}]${cycle.local ? ', an uncommitted edit' : ''})`;
+    });
+    const count = cycles.length === 1
+      ? 'A circular hasEvent relationship'
+      : `${cycles.length} circular hasEvent relationships`;
+    this.dialog.open(InfoDialogComponent, {
+      data: {
+        title: 'Circular Reference in the Event Hierarchy',
+        message: `${count} put an event inside itself, which cannot be shown as a hierarchy.`
+          + ` The rest of the tree below is complete, but ${cycles.length === 1 ? 'this' : 'these'}`
+          + ` relationship${cycles.length === 1 ? ' has' : 's have'} been left out of it and`
+          + ` need${cycles.length === 1 ? 's' : ''} removing:`,
+        instanceInfo: lines.join('\n')
+      }
+    });
+  }
+
+  /**
+   * The event tree could not be loaded at all. A backend that has no guard against a cyclic
+   * hasEvent recurses until the stack runs out while building the hierarchy, so a circular
+   * reference is the one cause worth naming here - an up-to-date backend drops and reports the
+   * relationship instead (see reportCircularReferences), but this front end may be running against
+   * one that does not.
+   */
+  private reportEventTreeFailure(error: any) {
+    // An expired session fails every request, and DataService.handleErrorMessage is already
+    // redirecting to the login page. Blaming a circular reference for that would send the curator
+    // looking for a data problem that isn't there.
+    if (error?.status === 401 || error?.message?.includes('401'))
+      return;
+    this.dialog.open(InfoDialogComponent, {
+      data: {
+        title: 'The Event Hierarchy Could Not Be Loaded',
+        message: 'The event hierarchy could not be loaded. If an event has recently been added to'
+          + ' a pathway that already contained it, that circular reference is the likely cause and'
+          + ' has to be removed before the hierarchy can be built.',
+        instanceInfo: error?.message ?? ''
+      }
+    });
   }
 
   private handleInstanceDeletion(dbId: number) {

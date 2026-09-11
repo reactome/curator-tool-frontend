@@ -146,13 +146,13 @@ before starting an item.
       `batch-edit-dialog.component.spec.ts`. **Read this before extending it — the two attributes
       are deliberately treated differently**, on evidence from the curation database (queried over
       Bolt; credentials in the backend's `application.properties`):
-    - `hasEvent` — an event may not be added to itself, nor to any event that already contains it
-      (the message names the containment path). A `hasEvent` cycle is not survivable: the backend
-      builds the whole hierarchy in one recursive pass, so one cyclic relationship failed
-      `getEventTree` for every user and left no event tree to remove it through. The backend now
-      drops the relationship that closes a cycle and logs it
-      (`CurationRepository.populateChildren`, `CurationRepositoryEventTreeCycleTest`), but that is
-      damage limitation — the edit has to be refused here.
+    - `hasEvent` — a `hasEvent` cycle is not survivable as a *hierarchy*: the backend builds the
+      whole thing in one recursive pass, so one cyclic relationship originally failed
+      `getEventTree` for every user and left no event tree to remove it through.
+      `CurationRepository.populateChildren` now drops the relationship that closes a cycle
+      (`CurationRepositoryEventTreeCycleTest`) so the rest still loads. An event added to *itself*
+      is still refused at edit time; containment further down is reported instead — see the
+      superseded note below, and read it before reinstating any check that needs a lookup.
     - `precedingEvent` — **only a self-reference is refused.** Longer cycles are ordinary biology
       and the database is full of them: 593 events sit in a two-event `precedingEvent` cycle and
       1369 in a cycle of ≤6 (a kinase and the phosphatase that reverses it precede each other; the
@@ -161,24 +161,34 @@ before starting an item.
       longer `precedingEvent` cycle deserves a *warning* is a curation question for the curators.
       (The 7 events in the database that precede themselves are data errors — a server-side
       cleanup, not a front-end fix.)
-      Coverage: containment is decided by walking **up** from the event being edited through its
-      `hasEvent` referrers (`DataService.getReferrers`, which merges the session's staged edits), so
-      it works wherever the curator is editing. It first read the loaded event tree instead — but
-      only `EventTreeComponent` ever loads that, so an edit made from the schema view had no tree
-      to consult and skipped the containment check entirely; **that is how a cycle was committed on
-      2026-09-10**, so don't reintroduce the tree as the source. Walking up is also the cheap
-      direction: an event's ancestors are a handful of pathways (≤13 levels, ≤11 parents each in the
-      database), where walking down from the event being added covers everything beneath it. If
-      ancestry can't be established — lookup failed, or the walk hit its level/visit cap — the edit
-      is **refused**, not allowed. The check is therefore asynchronous; `checkAdditions` answers for
-      a whole batch off one shared lookup cache. Wired into the attribute table's add-via-selection
-      and bookmark-drop paths and into batch edit; creation paths need no check, since a brand-new
-      event contains nothing. `grepId2Event` and `_mergeLocalChangesToEventTree` also track the
-      recursion path (like `cloneInstanceForCommitInternal`), so a cycle arriving from another tab
-      warns instead of exhausting the stack.
-      One trap worth knowing: RxJS **silently drops** the result of a synchronous chain a few
-      hundred levels deep — no emission, no completion, no error — so the walk's level cap has to
-      stay small (30). See the spec's "stops climbing a hierarchy deeper than any real one".
+      **Superseded 2026-09-11 — detect-and-report, not refuse.** Containment at any depth used to
+      be refused here, decided by walking **up** from the edited event through its `hasEvent`
+      referrers (`DataService.getReferrers`). Correct, but a request per ancestor on *every*
+      `hasEvent` edit (hundreds for a batch edit over a list), and it had to refuse the edit
+      whenever the ancestry couldn't be read, so a network blip blocked legitimate curation. That
+      walk is gone. What replaced it:
+    - `EventCycleCheck` keeps only what a dbId comparison settles — an event put **directly** into
+      its own `hasEvent`/`precedingEvent`. It is now **synchronous** and has no `DataService`
+      dependency at all, which is the invariant to preserve: don't reintroduce a lookup here.
+    - The backend's `getEventTree` returns `EventTree` = `{events, cycles}` instead of a bare array
+      of top events, reporting the cyclic relationships `populateChildren` dropped (deduplicated by
+      parent>child, since one cycle is reached once per route down to it). `DataService.fetchEventTree`
+      reads **both** wire shapes — a bare array means a backend that predates this — and exposes
+      them through `getEventTreeCycles()`.
+    - `InstanceUtilities.mergeLocalChangesToEventTree` returns the cycles the session's
+      *uncommitted* edits created, which the backend cannot know about, and — this is the part that
+      matters — **drops** the relationship rather than just declining to follow it. `MatTreeFlattener`
+      flattens the whole tree, not only expanded nodes, so a cycle left in the data hangs the event
+      view instead of showing anything. Its ancestor path is keyed by **dbId**, not object
+      identity: the same event is a distinct object at each place it appears (the backend clones
+      it), so identity misses a cycle formed through two copies.
+    - `EventTreeComponent.reportCircularReferences` is the only place a curator is told; it names
+      the path closed back on itself and the one edit that breaks it. `reportEventTreeFailure`
+      covers a backend with no guard at all, where the tree simply fails to load.
+      Docs: `docs/changes_log.md` (2026-09-11) and UserGuide §10.3 "Circular references in the
+      hierarchy". One trap worth keeping in mind if a lookup is ever reintroduced: RxJS **silently
+      drops** the result of a synchronous chain a few hundred levels deep — no emission, no
+      completion, no error — which is why the old walk capped at 30 levels.
 - [ ] TODO.md — deleted-instance generated display name.
 - [ ] TODO.md — add an InstanceEdit to referrers of a deleted instance and merge it into locally loaded referrers.
 - [ ] TODO.md, **flagged most important** — write privileges on log-in: decide and implement how they

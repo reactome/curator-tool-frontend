@@ -2,7 +2,6 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
-import { of } from 'rxjs';
 
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
@@ -137,8 +136,9 @@ describe('ConfirmDeleteDialogComponent', () => {
     it('repairs referrers immediately', () => {
       // Nothing in the database ever pointed here, so the local references have to be
       // fixed up now rather than at commit time.
-      dataService.synchronizeDeletedReferrers.and.returnValue(of([]));
-
+      // Nothing is stubbed before build(): `dataService` is only assigned by build(), and
+      // createDataServiceSpy already returns of([]) for this, so reaching for it first made this
+      // spec throw whenever Jasmine's random order ran it before any other spec in this file.
       build(brandNew).onDelete();
 
       expect(dataService.synchronizeDeletedReferrers).toHaveBeenCalledWith([brandNew]);

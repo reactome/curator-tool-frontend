@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { MatDialog, MatDialogRef } from "@angular/material/dialog";
-import { Instance, MatchResolution, NEW_DISPLAY_NAME } from "../models/reactome-instance.model";
+import { DbIdDisplayName, EventTreeCycle, Instance, MatchResolution, NEW_DISPLAY_NAME } from "../models/reactome-instance.model";
 import { DataService } from "./data.service";
 import type { MatchResolutionService } from "./match-resolution.service";
 import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttribute, SchemaClass } from "../models/reactome-schema.model";
@@ -1065,36 +1065,51 @@ export class InstanceUtilities {
             instance.modifiedAttributes!.splice(index, 1);
     }
 
-    mergeLocalChangesToEventTree(rootEvent: Instance, id2instance: Map<number, Instance>) {
-        // For quick search 
+    /**
+     * Applies this session's uncommitted edits to the event tree just fetched, and returns any
+     * circular hasEvent relationship those edits created - dropped from the tree so it can still
+     * be rendered, and reported so the event view can tell the curator. A cycle already committed
+     * to the database is reported by the backend instead; see EventTreeCycle for why both matter.
+     */
+    mergeLocalChangesToEventTree(rootEvent: Instance, id2instance: Map<number, Instance>): EventTreeCycle[] {
+        // For quick search
         const id2event = new Map<number, Instance>();
         this.grepId2Event(rootEvent, id2event);
+        // Keyed by "parentDbId>childDbId" so a cycle reached by several routes down the hierarchy -
+        // an event legitimately sits under more than one parent - is reported once, since it is one
+        // thing for the curator to fix.
+        const cycles = new Map<string, EventTreeCycle>();
         // Event deletion may impact the tree structure
         // therefore, we need to check it too
+        // Note this emits synchronously (an NgRx store hands out its current state on subscribe),
+        // which is what lets the cycles found below be returned rather than reported through a
+        // callback - the same thing the caller already relies on to use rootEvent straight after.
         this.store.select(deleteInstances()).pipe(take(1)).subscribe(insts => {
             const deletedDbIds = insts ? insts.map(i => i.dbId) : [];
-            this._mergeLocalChangesToEventTree(rootEvent, id2event, deletedDbIds, id2instance);
+            this._mergeLocalChangesToEventTree(rootEvent, id2event, deletedDbIds, id2instance,
+                new Map<number, Instance>(), cycles);
         });
+        return [...cycles.values()];
     }
 
     // TODO: ask Guanming about merging passive edits to the event tree
     /**
-     * @param ancestors the events this call is nested inside, used only to stop a cycle in
-     * hasEvent from recursing until the stack runs out. An event that is its own ancestor is a
-     * circular reference (docs/TODO.md asks for a check on these, and EventCycleCheck refuses the
-     * edits that would create one); the same event appearing under two different parents is not,
-     * and must still be merged, which is why the path is tracked rather than every event seen.
+     * @param ancestors the events this call is nested inside, keyed by dbId in path order. An
+     * event that is its own ancestor is a circular reference; the same event appearing under two
+     * different parents is not, and must still be merged, which is why the path is tracked rather
+     * than every event seen. Keyed by dbId rather than by object identity because the same event
+     * is a distinct object at each place it appears in the tree (the backend clones it), so
+     * identity would miss a cycle formed through two such copies.
+     * @param cycles the circular relationships these local edits created, recorded for the event
+     * view to report - see EventTreeCycle. Editing hasEvent is no longer refused, so this is how a
+     * curator finds out.
      */
     private _mergeLocalChangesToEventTree(event: Instance,
         id2event: Map<number, Instance>,
         deletedDbIds: number[],
         id2instance: Map<number, Instance>,
-        ancestors: Set<Instance> = new Set<Instance>()) {
-        if (ancestors.has(event)) {
-            console.warn('mergeLocalChangesToEventTree: hasEvent is circular at '
-                + event.displayName + ' [' + event.dbId + ']; not following it further.');
-            return;
-        }
+        ancestors: Map<number, Instance>,
+        cycles: Map<string, EventTreeCycle>) {
         const local = id2instance.get(event.dbId);
         if (local) {
             if (local.dbId < 0) {
@@ -1118,20 +1133,48 @@ export class InstanceUtilities {
         }
         // Recursive calling
         if (event.attributes?.hasEvent) {
-            ancestors.add(event);
+            ancestors.set(event.dbId, event);
             for (let i = 0; i < event.attributes.hasEvent.length; i++) {
                 let child = event.attributes.hasEvent[i];
                 if (deletedDbIds.includes(child.dbId)) {
                     event.attributes.hasEvent.splice(i, 1);
                     i--; // This is important: need to adjust the index after removal to check the next one
                 }
+                else if (ancestors.has(child.dbId)) {
+                    // A local edit has put an event inside something it already contains. Drop the
+                    // relationship that closes the cycle, exactly as the backend does with a
+                    // committed one, rather than only declining to follow it: the event tree is
+                    // flattened in full when it is rendered, so a cycle left in the data would not
+                    // show the curator anything, it would hang the event view.
+                    cycles.set(event.dbId + '>' + child.dbId,
+                        { path: this.containmentPath(ancestors, child.dbId), local: true });
+                    event.attributes.hasEvent.splice(i, 1);
+                    i--;
+                }
                 else {
                     // Recursively process the child
-                    this._mergeLocalChangesToEventTree(child, id2event, deletedDbIds, id2instance, ancestors);
+                    this._mergeLocalChangesToEventTree(child, id2event, deletedDbIds, id2instance,
+                        ancestors, cycles);
                 }
             }
-            ancestors.delete(event);
+            ancestors.delete(event.dbId);
         }
+    }
+
+    /**
+     * The cycle itself, as the stretch of the current path running from the event about to be put
+     * inside itself down to the event whose hasEvent points back at it. Anything above that event
+     * in the path is how the walk reached the cycle, not part of it, and naming it would only make
+     * the message harder to act on.
+     */
+    private containmentPath(ancestors: Map<number, Instance>, childDbId: number): DbIdDisplayName[] {
+        const path: DbIdDisplayName[] = [];
+        for (const [dbId, ancestor] of ancestors) {
+            if (path.length === 0 && dbId !== childDbId)
+                continue;
+            path.push({ dbId: dbId, displayName: ancestor.displayName ?? String(dbId) });
+        }
+        return path;
     }
 
     /**
@@ -1200,7 +1243,11 @@ export class InstanceUtilities {
         dbEvent.attributes['hasEvent'] = newHasEvent;
     }
 
-    /** @param ancestors see _mergeLocalChangesToEventTree - guards against a cycle in hasEvent. */
+    /**
+     * @param ancestors see _mergeLocalChangesToEventTree - guards against a cycle in hasEvent.
+     * The tree this walks has come straight from the backend, which drops cyclic relationships
+     * before returning it, so this is only a belt-and-braces guard against recursing for ever.
+     */
     private grepId2Event(event: Instance, id2event: Map<number, Instance>,
         ancestors: Set<Instance> = new Set<Instance>()) {
         if (ancestors.has(event))

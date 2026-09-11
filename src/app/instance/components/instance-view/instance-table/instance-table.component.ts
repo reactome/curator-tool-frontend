@@ -30,7 +30,7 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { DataService } from 'src/app/core/services/data.service';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
 import { deleteInstances } from 'src/app/instance/state/instance.selectors';
-import { Observable, Subscription, catchError, map, of, switchMap } from 'rxjs';
+import { Subscription, catchError, map, of, switchMap } from 'rxjs';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 import { AttributeValue, EDIT_ACTION } from 'src/app/core/models/reactome-instance.model';
 import { InstanceComparisonDataSource } from './instance-table-comparison.model';
@@ -330,16 +330,12 @@ export class InstanceTableComponent implements PostEditListener {
   private addInstanceViaSelect(attributeValue: AttributeValue, replace: boolean) {
     const matDialogRef =
       this.selectInstanceDialogService.openDialog(attributeValue);
-    matDialogRef.afterClosed().pipe(
-      // Refuse an event that would end up containing itself before anything is changed: the edit
-      // is applied to two objects (the displayed instance and its source), so there is no clean
-      // point to undo it from afterwards.
-      switchMap((result) => result === undefined || result.length === 0
-        ? of(undefined)
-        : this.refuseCircularReference(attributeValue, result).pipe(
-          map(refused => refused ? undefined : result)))
-    ).subscribe((result) => {
-      if (result === undefined) return; // Do nothing
+    matDialogRef.afterClosed().subscribe((result) => {
+      if (result === undefined || result.length === 0) return; // Do nothing
+      // Refuse an event listed in its own hasEvent before anything is changed: the edit is applied
+      // to two objects (the displayed instance and its source), so there is no clean point to undo
+      // it from afterwards.
+      if (this.refuseCircularReference(attributeValue, result)) return;
       // Replacing a collapsed stoichiometry group swaps out every old copy for the selected
       // instance(s) in the old group's position, rather than replacing a single copy.
       if (replace && this.isStoichiometryAttribute(attributeValue.attribute)) {
@@ -489,8 +485,7 @@ export class InstanceTableComponent implements PostEditListener {
           this.instUtil.refreshShellInstance(fresh);
           this.store.dispatch(BookmarkActions.add_bookmark(fresh));
         }
-        return this.refuseCircularReference(attributeValue, fresh).pipe(
-          map(refused => refused ? undefined : fresh));
+        return of(this.refuseCircularReference(attributeValue, fresh) ? undefined : fresh);
       })
     ).subscribe(fresh => {
       if (!fresh) return;
@@ -504,26 +499,22 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   /**
-   * Emits true when the values being added would make an event contain itself, in which case the
-   * curator is told why and the attribute is left alone. See EventCycleCheck for what is
-   * refused - hasEvent containment and a self-referential precedingEvent - and what is
-   * deliberately not. Containment is established from the events above the one being edited, which
-   * takes a request, so this answers asynchronously even where the answer needs no lookup.
+   * True when the values being added would put an event directly inside itself, in which case the
+   * curator is told why and the attribute is left alone. Only that much is refused here, because
+   * only that much can be answered without a request; containment at any depth is reported by the
+   * event view once the hierarchy is built. See EventCycleCheck.
    */
-  private refuseCircularReference(attributeValue: AttributeValue, values: any): Observable<boolean> {
-    return this.eventCycleCheck.checkAddition(this._instance, attributeValue.attribute.name, values).pipe(
-      map(message => {
-        if (!message)
-          return false;
-        this.dialog.open(InfoDialogComponent, {
-          data: {
-            title: 'Circular Reference',
-            message: message
-          }
-        });
-        return true;
-      })
-    );
+  private refuseCircularReference(attributeValue: AttributeValue, values: any): boolean {
+    const message = this.eventCycleCheck.checkAddition(this._instance, attributeValue.attribute.name, values);
+    if (!message)
+      return false;
+    this.dialog.open(InfoDialogComponent, {
+      data: {
+        title: 'Circular Reference',
+        message: message
+      }
+    });
+    return true;
   }
 
   donePostEdit(

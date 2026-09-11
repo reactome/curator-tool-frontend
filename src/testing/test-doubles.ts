@@ -36,6 +36,7 @@ export function createDataServiceSpy(overrides: Partial<DataService> = {}): jasm
   const spy = jasmine.createSpyObj<DataService>('DataService', [
     'initialize', 'isSchemaClassesLoaded', 'flagSchemaTreeForReload',
     'fetchSchemaClass', 'fetchSchemaClasses', 'fetchSchemaClassTree', 'fetchEventTree',
+    'getEventTreeCycles',
     'getSchemaClass', 'isEventClass', 'isPhysicalEntityClass', 'isRegulationClass',
     'isReferenceGeneProductClass', 'isSchemaClass',
     'fetchInstance', 'fetchInstances', 'fetchInstanceFromDatabase', 'fetchReactionParticipants',
@@ -66,6 +67,9 @@ export function createDataServiceSpy(overrides: Partial<DataService> = {}): jasm
   spy.initialize.and.returnValue(Promise.resolve());
   spy.isSchemaClassesLoaded.and.returnValue(true);
   spy.fetchSchemaClassTree.and.returnValue(of(tree));
+  // A sound hierarchy: nothing for the event view to report. A spec about circular hasEvent
+  // overrides this (see EventTreeComponent's "circular reference" tests).
+  spy.getEventTreeCycles.and.returnValue([]);
   spy.fetchSchemaClass.and.callFake((name: string) => of(byName.get(name) ?? makeSchemaClass(name)));
   spy.fetchSchemaClasses.and.callFake((names: string[]) =>
     of(names.map(n => byName.get(n) ?? makeSchemaClass(n))));

@@ -9,7 +9,7 @@ import { MatTreeModule } from '@angular/material/tree';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Store } from '@ngrx/store';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
@@ -86,10 +86,11 @@ describe('EventTreeComponent hasEvent edit', () => {
     };
 
     const dataService = jasmine.createSpyObj<DataService>('DataService',
-      ['fetchEventTree', 'fetchSchemaClassTree', 'fetchInstance']);
+      ['fetchEventTree', 'fetchSchemaClassTree', 'fetchInstance', 'getEventTreeCycles']);
     dataService.fetchEventTree.and.returnValue(of(root));
     dataService.fetchSchemaClassTree.and.returnValue(of({} as any));
     dataService.fetchInstance.and.returnValue(of(cachedEditedPathway));
+    dataService.getEventTreeCycles.and.returnValue([]); // A sound hierarchy
 
     await TestBed.configureTestingModule({
       declarations: [EventTreeComponent, ReleaseFlagIconStubComponent, ClassNameIconStubComponent],
@@ -180,5 +181,132 @@ describe('EventTreeComponent hasEvent edit', () => {
     // The tree splices its own copy of hasEvent. Reaching into the cached instance instead would
     // make marking an event for deletion an unregistered edit of the staged pathway.
     expect(cachedAddedPathway.attributes.get('hasEvent')).toContain(cachedAddedChild);
+  });
+});
+
+/**
+ * Telling the curator about a circular hasEvent relationship.
+ *
+ * The event view is now the only place this is reported. Editing hasEvent used to be refused
+ * outright, which cost a request per ancestor of the edited event to establish what already
+ * contained it - on every edit, and hundreds of requests for a batch edit. That check is gone
+ * except for the free part (an event put directly in its own hasEvent; see EventCycleCheck), so a
+ * curator can create a cycle from the schema view and finds out here, where the hierarchy has to
+ * be a hierarchy. The relationship is already dropped by then - by the backend if it is committed,
+ * by mergeLocalChangesToEventTree if it is not - so the tree is complete apart from it and the
+ * curator can navigate to the event holding it and remove it.
+ */
+describe('EventTreeComponent circular reference reporting', () => {
+  let dataService: jasmine.SpyObj<DataService>;
+  let dialog: jasmine.SpyObj<MatDialog>;
+
+  const root: Instance = {
+    dbId: 0, displayName: 'TopLevelPathway', schemaClassName: 'TopLevelPathway',
+    attributes: { hasEvent: [{ dbId: 10, displayName: 'Metabolism', schemaClassName: 'Pathway', attributes: {} }] },
+  };
+
+  async function build(cycles: any[], treeFails = false, failure: any = new Error('500 Internal Server Error')) {
+    dataService = jasmine.createSpyObj<DataService>('DataService',
+      ['fetchEventTree', 'fetchSchemaClassTree', 'fetchInstance', 'getEventTreeCycles']);
+    dataService.fetchEventTree.and.returnValue(treeFails
+      ? throwError(() => failure)
+      : of(root));
+    dataService.fetchSchemaClassTree.and.returnValue(of({} as any));
+    dataService.getEventTreeCycles.and.returnValue(cycles);
+    dialog = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
+
+    await TestBed.configureTestingModule({
+      declarations: [EventTreeComponent, ReleaseFlagIconStubComponent, ClassNameIconStubComponent],
+      imports: [
+        MatTreeModule, MatIconModule, MatButtonModule, MatTooltipModule,
+        MatProgressSpinnerModule, RouterTestingModule,
+      ],
+      providers: [
+        InstanceUtilities,
+        { provide: DataService, useValue: dataService },
+        { provide: Store, useValue: jasmine.createSpyObj<Store>('Store', ['dispatch', 'select']) },
+        { provide: MatDialog, useValue: dialog },
+        {
+          provide: CommitResultDialogService,
+          useValue: jasmine.createSpyObj<CommitResultDialogService>('CommitResultDialogService', ['openDialog'])
+        },
+        {
+          provide: MatchedInstancesDialogService,
+          useValue: jasmine.createSpyObj<MatchedInstancesDialogService>('MatchedInstancesDialogService', ['openDialog'])
+        },
+        { provide: ActivatedRoute, useValue: { params: of({ id: '0' }), snapshot: { queryParams: {} } } },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(EventTreeComponent);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  /** What the dialog was given, as one string. */
+  function reported(): string {
+    const data = dialog.open.calls.mostRecent().args[1]!.data as any;
+    return `${data.title}\n${data.message}\n${data.instanceInfo}`;
+  }
+
+  it('says nothing when the hierarchy is sound', async () => {
+    await build([]);
+
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
+  it('names the containment path and the event to remove it from', async () => {
+    await build([{ path: [{ dbId: 10, displayName: 'Metabolism' }, { dbId: 20, displayName: 'Glycolysis' }] }]);
+
+    expect(dialog.open).toHaveBeenCalledTimes(1);
+    const message = reported();
+    // Closed back on the first event, so it reads as a cycle rather than a list.
+    expect(message).toContain('Metabolism [10] > Glycolysis [20] > Metabolism [10]');
+    // And the one edit that breaks it, which is not obvious from the path alone.
+    expect(message).toContain('remove "Metabolism" from the hasEvent of "Glycolysis" [20]');
+  });
+
+  it('reads an event listed in its own hasEvent as itself, not as a one-event path', async () => {
+    await build([{ path: [{ dbId: 10, displayName: 'Metabolism' }] }]);
+
+    expect(reported()).toContain('Metabolism [10] > itself');
+  });
+
+  it('says which cycles are uncommitted edits the curator can still undo', async () => {
+    await build([
+      { path: [{ dbId: 10, displayName: 'Metabolism' }, { dbId: 20, displayName: 'Glycolysis' }] },
+      { path: [{ dbId: 30, displayName: 'Signaling' }, { dbId: 40, displayName: 'MAPK cascade' }], local: true },
+    ]);
+
+    const message = reported();
+    expect(message).toContain('2 circular hasEvent relationships');
+    expect(message).toContain('"MAPK cascade" [40], an uncommitted edit');
+    // The committed one is not labelled as an edit of this session's.
+    expect(message).toContain('"Glycolysis" [20])');
+  });
+
+  it('still builds the tree it was given', async () => {
+    // The cycle is already out of the hierarchy, so everything else must still be usable - it is
+    // how the curator navigates to the event they have to edit.
+    const fixture = await build([{ path: [{ dbId: 10, displayName: 'Metabolism' }] }]);
+
+    expect(fixture.componentInstance.treeControl.dataNodes.some(node => node.dbId === 10)).toBeTrue();
+  });
+
+  it('does not blame a circular reference for an expired session', async () => {
+    // A 401 fails every request and DataService is already redirecting to the login page; saying
+    // the hierarchy is circular would send the curator hunting a data problem that is not there.
+    await build([], true, { status: 401, message: '401 Unauthorized' });
+
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
+  it('names a circular reference as the likely cause when the tree cannot be loaded at all', async () => {
+    // A backend with no guard recurses until the stack runs out while building the hierarchy, so
+    // there is no tree and no cycle list - only a failed request to explain.
+    await build([], true);
+
+    expect(dialog.open).toHaveBeenCalledTimes(1);
+    expect(reported()).toContain('circular reference');
   });
 });

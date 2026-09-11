@@ -485,7 +485,9 @@ For the multivalued attributes **`input`**, **`output`**, **`hasComponent`**, an
 
 > **Species warning:** editing the `species` attribute first shows a warning that changing species may change the `stId` / `stableIdentifier`.
 
-> **Circular reference:** an event cannot be put inside itself. Adding an event to **`hasEvent`** is refused — with a **Circular Reference** dialog naming the containment path — when the event you picked is the one being edited, or already contains it somewhere below. Adding an event to its own **`precedingEvent`** is refused too. A precedingEvent *loop* between different events is allowed: two reactions that reverse each other legitimately precede one another. In a [batch edit](#84-batch-edit) the affected instances are left unchanged and counted in the edit summary instead of being reported one by one. Checking `hasEvent` means looking up the events above the one you are editing, so if that lookup fails the edit is refused and you are asked to try again — an event put inside itself cannot be undone from the tool, since the hierarchy you would fix it through is what breaks.
+> **Circular reference:** putting an event directly into its own **`hasEvent`** or **`precedingEvent`** is refused, with a **Circular Reference** dialog. A precedingEvent *loop* between different events is allowed: two reactions that reverse each other legitimately precede one another. In a [batch edit](#84-batch-edit) the affected instances are left unchanged and counted in the edit summary instead of being reported one by one.
+>
+> Adding an event to a pathway that **already contains it somewhere below** is *not* refused — working that out meant asking the server about every pathway above the event, on every edit, and the edit was refused outright if any of those requests failed. You are told about it in the [Event View](#10-event-view) instead, which is the one place the hierarchy has to be a hierarchy: see [Circular references in the hierarchy](#circular-references-in-the-hierarchy).
 
 **Bookmark drag-and-drop:** drag a bookmark onto a compatible slot to add/set it (valid targets highlight green, invalid red).
 
@@ -582,6 +584,20 @@ Each node row provides, left to right:
 
 - Clicking an event name navigates to the nearest ancestor that has a diagram and selects the clicked object in it. If no diagram exists in that branch, an info dialog explains you must create an empty diagram first.
 - Adding a reaction to a diagram is blocked (with an info dialog) if the reaction is not contained by the displayed pathway.
+
+#### Circular references in the hierarchy
+
+An event that contains itself — directly, or through a chain of `hasEvent` relationships — has no meaning as a hierarchy and cannot be drawn as a tree. Such a relationship is **left out of the tree** and reported when the Event View opens, in a **Circular Reference in the Event Hierarchy** dialog. For each one it names:
+
+- the containment path, closed back on the event it starts from, e.g. *"Metabolism [10] > Glycolysis [20] > Metabolism [10]"*;
+- the single edit that breaks it — *remove "Metabolism" from the hasEvent of "Glycolysis" [20]*;
+- whether it is an **uncommitted edit** of yours (one you can still reset) or already in the database.
+
+Everything else in the tree loads as usual, so you can navigate straight to the event named and remove the value. Until you do, that one relationship stays invisible in the tree — the events themselves are still there, under their other parents.
+
+This is where you find out, rather than at the moment of editing: [adding an event to a pathway that already contains it](#96-instance-valued-slot-action-menu) is not refused, because establishing what already contains an event took a request for every pathway above it.
+
+> If the event hierarchy **cannot be loaded at all**, the dialog names a circular reference as the likely cause. An event recently added to a pathway that already contained it has to be removed from the database before the hierarchy can be built.
 
 ### 10.4 Pathway diagram
 

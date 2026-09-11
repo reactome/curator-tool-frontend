@@ -119,6 +119,38 @@ export interface DbIdDisplayName {
 }
 
 /**
+ * One circular hasEvent relationship that had to be left out of the event tree, because a cycle
+ * has no meaning as a hierarchy and cannot be rendered as a tree.
+ *
+ * Editing hasEvent is not refused any more - establishing what already contains an event took a
+ * request per edit - so the event view is where a curator finds out that an edit created a cycle.
+ * These come from two places and are reported together: the backend's getEventTree reports what it
+ * dropped from the committed hierarchy, and InstanceUtilities.mergeLocalChangesToEventTree reports
+ * what this session's uncommitted edits added on top of it.
+ */
+export interface EventTreeCycle {
+  /**
+   * The events forming the cycle, from the event that ends up inside itself down to the event
+   * whose hasEvent points back at it. The relationship left out is the one from the last entry
+   * back to the first, so `[Metabolism, Glycolysis]` means "Glycolysis has Metabolism in its
+   * hasEvent, and Metabolism already contains Glycolysis". A single entry is an event listed in
+   * its own hasEvent.
+   */
+  path: DbIdDisplayName[];
+  /** True when this session's uncommitted edits created it, rather than the database holding it. */
+  local?: boolean;
+}
+
+/**
+ * The getEventTree response: the top-level events, plus whatever circular hasEvent relationships
+ * the backend had to drop to build the hierarchy.
+ */
+export interface EventTreeResponse {
+  events: Instance[];
+  cycles?: EventTreeCycle[];
+}
+
+/**
  * A single input/output/catalyst participant of a reaction, as returned by the
  * backend's findReactionStructuresByDbIds endpoint -- dbId plus stoichiometry.
  */

@@ -11,6 +11,7 @@ import {
 @Component({
   selector: 'app-info-dialog',
   templateUrl: 'info-dialog.component.html',
+  styleUrls: ['info-dialog.component.scss'],
   standalone: true,
   imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose, MatButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -4,7 +4,7 @@ import { Store } from "@ngrx/store";
 import { catchError, combineLatest, concatMap, EMPTY, forkJoin, from, map, mergeMap, Observable, of, Subject, switchMap, take, tap, throwError, toArray } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
-import { DbIdDisplayName, DiagramLock, EwasModifiedResiduesDto, Instance, InstanceList, ModifiedResidueEntry, NEW_DISPLAY_NAME, ReactionStructureDto, Referrer, UserInstanceBackupSummary, UserInstances } from "../models/reactome-instance.model";
+import { DbIdDisplayName, DiagramLock, EventTreeCycle, EventTreeResponse, EwasModifiedResiduesDto, Instance, InstanceList, ModifiedResidueEntry, NEW_DISPLAY_NAME, ReactionStructureDto, Referrer, UserInstanceBackupSummary, UserInstances } from "../models/reactome-instance.model";
 import {
   AttributeCategory,
   SchemaAttribute,
@@ -84,6 +84,13 @@ export class DataService {
   // The root class is cached for performance
   private rootClass: SchemaClass | undefined;
   private rootEvent: Instance | undefined;
+  /**
+   * The circular hasEvent relationships that had to be left out of the event tree last time it
+   * was built - the backend's, plus any this session's uncommitted edits added. Cached alongside
+   * rootEvent so that a cache hit reports them too, and read by EventTreeComponent, which is where
+   * the curator is told (see EventTreeCycle).
+   */
+  private eventTreeCycles: EventTreeCycle[] = [];
 
   // Use this subject to force waiting for components to fetch instance
   // since we need to load changed instances from cached storage first
@@ -219,22 +226,40 @@ export class DataService {
       return of(this.rootEvent!);
     }
     // Otherwise call the restful API
-    return this.http.get<Array<Instance>>(this.eventsTreeUrl + speciesName)
+    return this.http.get<EventTreeResponse | Array<Instance>>(this.eventsTreeUrl + speciesName)
       .pipe(
-        map((data: Array<Instance>) => {
+        map((data: EventTreeResponse | Array<Instance>) => {
+          // The endpoint used to return the top events as a bare array and now returns
+          // {events, cycles}. Both are accepted so that this front end still works against a
+          // backend that has not been updated yet - it just has no cycles to report.
+          const response: EventTreeResponse = Array.isArray(data) ? { events: data } : data;
           let rootEvent: Instance = {
             dbId: 0,
             displayName: "TopLevelPathway",
             schemaClassName: "TopLevelPathway",
-            attributes: { "hasEvent": data }
+            attributes: { "hasEvent": response.events ?? [] }
           };
-          this.utils.mergeLocalChangesToEventTree(rootEvent, this.id2instance);
+          // The backend reports what it dropped from the committed hierarchy; the merge reports
+          // what this session's uncommitted edits added on top of it. Both have to be shown, and
+          // the merge has to happen here rather than in the event view because it is what makes
+          // a locally created cycle safe to render at all.
+          const localCycles = this.utils.mergeLocalChangesToEventTree(rootEvent, this.id2instance);
+          this.eventTreeCycles = [...(response.cycles ?? []), ...localCycles];
           this.rootEvent = rootEvent;
           return rootEvent;
         }),
         catchError((err: Error) => {
           return this.handleErrorMessage(err);
         }));
+  }
+
+  /**
+   * The circular hasEvent relationships left out of the event tree returned by the most recent
+   * fetchEventTree, in the order the backend found them followed by any this session's
+   * uncommitted edits created. Empty when the hierarchy is sound, which is the normal case.
+   */
+  getEventTreeCycles(): EventTreeCycle[] {
+    return this.eventTreeCycles;
   }
 
   /**

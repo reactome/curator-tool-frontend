@@ -353,21 +353,12 @@ describe('InstanceTableComponent', () => {
   });
 
   describe('refusing a circular reference', () => {
-    // The check itself is covered in event-cycle-check.service.spec.ts; what is covered here is
-    // the wiring, which is where it went wrong: the check used to consult the loaded event tree,
-    // so an edit made from the schema view - where nothing has loaded it - skipped the
-    // containment test and a pathway was committed inside itself on 2026-09-10. Establishing
-    // containment now takes a lookup, so the edit is applied from a subscription; if these two
-    // paths are ever made synchronous again, the edit lands before the answer arrives.
+    // Only the free half of this check is left: an event put directly into its own hasEvent is a
+    // comparison of two dbIds. Containment at any depth used to be refused here too, established
+    // by walking up the edited event's hasEvent referrers - a request per ancestor on every
+    // hasEvent edit - and is reported by the event view instead, once the hierarchy is built. See
+    // EventCycleCheck for why, and event-tree.component.spec.ts for the reporting.
     const metabolism = { dbId: 10, displayName: 'Metabolism', schemaClassName: 'Pathway' };
-
-    /** Glycolysis [100] sits under Metabolism [10], as the referrers endpoint reports it. */
-    function glycolysisUnderMetabolism(): Instance {
-      const dataService = TestBed.inject(DataService) as jasmine.SpyObj<DataService>;
-      dataService.getReferrers.and.returnValue(
-        of([{ attributeName: 'hasEvent', referrers: [metabolism as Instance] }]));
-      return pathway();
-    }
 
     function addViaSelect(instance: Instance, selected: any) {
       const selectDialog = TestBed.inject(SelectInstanceDialogService) as jasmine.SpyObj<SelectInstanceDialogService>;
@@ -380,22 +371,35 @@ describe('InstanceTableComponent', () => {
       });
     }
 
-    it('leaves hasEvent alone when the selected event already contains this one', () => {
+    it('leaves hasEvent alone when the event is added to itself', () => {
       const attributeEdit = TestBed.inject(AttributeEditService) as jasmine.SpyObj<AttributeEditService>;
       const dialog = TestBed.inject(MatDialog) as jasmine.SpyObj<MatDialog>;
 
-      addViaSelect(glycolysisUnderMetabolism(), metabolism);
+      addViaSelect(pathway(), { dbId: 100, displayName: 'Glycolysis', schemaClassName: 'Pathway' });
 
       expect(attributeEdit.addInstanceViaSelect).not.toHaveBeenCalled();
       expect(dialog.open).toHaveBeenCalled();
       expect((dialog.open.calls.mostRecent().args[1]?.data as any).title).toBe('Circular Reference');
     });
 
-    it('adds an event that does not contain this one', () => {
+    it('allows an event that already contains this one, without a request to find out', () => {
+      // Metabolism containing Glycolysis is a genuine circular reference, and is deliberately let
+      // through: answering it here cost a lookup per ancestor, and the event view names the
+      // containment path once the hierarchy is built. Nothing may be read to decide this.
+      const attributeEdit = TestBed.inject(AttributeEditService) as jasmine.SpyObj<AttributeEditService>;
+      const dataService = TestBed.inject(DataService) as jasmine.SpyObj<DataService>;
+
+      addViaSelect(pathway(), metabolism);
+
+      expect(attributeEdit.addInstanceViaSelect).toHaveBeenCalled();
+      expect(dataService.getReferrers).not.toHaveBeenCalled();
+    });
+
+    it('adds an unrelated event', () => {
       const attributeEdit = TestBed.inject(AttributeEditService) as jasmine.SpyObj<AttributeEditService>;
       const disease = { dbId: 40, displayName: 'Disease', schemaClassName: 'Pathway' };
 
-      addViaSelect(glycolysisUnderMetabolism(), disease);
+      addViaSelect(pathway(), disease);
 
       expect(attributeEdit.addInstanceViaSelect).toHaveBeenCalled();
     });

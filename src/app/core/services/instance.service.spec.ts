@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
+import { of } from 'rxjs';
 import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
 import { CommitResultDialogService } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
 import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
@@ -481,5 +482,166 @@ describe('InstanceUtilities.toEventTreeInstance', () => {
 
     expect(treeInstance.attributes['hasEvent'][0]).toBe(child);
     expect(treeInstance.attributes['doRelease']).toBeFalse();
+  });
+});
+
+/**
+ * Reporting a circular hasEvent that this session's uncommitted edits created.
+ *
+ * Editing hasEvent is no longer refused - establishing what already contains an event cost a
+ * request per ancestor on every edit (see EventCycleCheck) - so a curator can create a cycle from
+ * the schema view and is told about it when the event view next builds the hierarchy. A cycle
+ * already in the database is reported by the backend's getEventTree; this covers the other half,
+ * the edits that have not been committed yet and that only this front end knows about.
+ *
+ * Dropping the relationship matters as much as reporting it: the event tree is flattened in full
+ * when it is rendered (MatTreeFlattener walks every node, not just the expanded ones), so a cycle
+ * left in the data would hang the event view rather than show the curator anything.
+ */
+describe('InstanceUtilities.mergeLocalChangesToEventTree circular hasEvent', () => {
+  let utils: InstanceUtilities;
+
+  beforeEach(() => {
+    const store = jasmine.createSpyObj<Store>('Store', ['dispatch', 'select']);
+    // Nothing marked for deletion. An NgRx store emits its current state on subscribe, which is
+    // what lets the merge report synchronously.
+    store.select.and.returnValue(of([]));
+    TestBed.configureTestingModule({
+      providers: [
+        InstanceUtilities,
+        { provide: Store, useValue: store },
+        { provide: MatDialog, useValue: jasmine.createSpyObj<MatDialog>('MatDialog', ['open']) },
+        {
+          provide: CommitResultDialogService,
+          useValue: jasmine.createSpyObj<CommitResultDialogService>('CommitResultDialogService', ['openDialog'])
+        },
+        {
+          provide: MatchedInstancesDialogService,
+          useValue: jasmine.createSpyObj<MatchedInstancesDialogService>('MatchedInstancesDialogService', ['openDialog'])
+        },
+      ]
+    });
+    utils = TestBed.inject(InstanceUtilities);
+  });
+
+  /** A node of the event tree: attributes are a plain object here, not a Map. */
+  function treeEvent(dbId: number, displayName: string, children: Instance[] = []): Instance {
+    return { dbId, displayName, schemaClassName: 'Pathway', attributes: { hasEvent: children } as any };
+  }
+
+  /** A cached instance carrying an uncommitted hasEvent edit: attributes are a Map. */
+  function editedEvent(dbId: number, displayName: string, hasEvent: { dbId: number }[]): Instance {
+    return {
+      dbId, displayName, schemaClassName: 'Pathway',
+      modifiedAttributes: ['hasEvent'],
+      attributes: new Map<string, any>([['hasEvent', hasEvent]]),
+    };
+  }
+
+  /** The reported cycle as the event view renders it. */
+  function pathOf(cycle: { path: { dbId: number, displayName: string }[] }): string {
+    return cycle.path.map(event => `${event.displayName} [${event.dbId}]`).join(' > ');
+  }
+
+  function childDbIds(event: Instance): number[] {
+    return (event.attributes['hasEvent'] as Instance[]).map(child => child.dbId);
+  }
+
+  it('drops and reports an event given a pathway that already contains it', () => {
+    // Metabolism [10] > Glycolysis [20], and the curator has just added Metabolism to Glycolysis'
+    // hasEvent from the schema view.
+    const glycolysis = treeEvent(20, 'Glycolysis');
+    const metabolism = treeEvent(10, 'Metabolism', [glycolysis]);
+    const root = treeEvent(0, 'TopLevelPathway', [metabolism]);
+    const id2instance = new Map<number, Instance>([[20, editedEvent(20, 'Glycolysis', [{ dbId: 10 }])]]);
+
+    const cycles = utils.mergeLocalChangesToEventTree(root, id2instance);
+
+    expect(cycles.length).toBe(1);
+    expect(pathOf(cycles[0])).toBe('Metabolism [10] > Glycolysis [20]');
+    expect(cycles[0].local).withContext('an uncommitted edit, not the database').toBeTrue();
+    // The tree is otherwise intact, so the curator can navigate to Glycolysis and remove it.
+    expect(childDbIds(root)).toEqual([10]);
+    expect(childDbIds(metabolism)).toEqual([20]);
+    expect(childDbIds(glycolysis)).withContext('the cycle must not be left in the data').toEqual([]);
+  });
+
+  it('drops and reports an event added to its own hasEvent', () => {
+    const metabolism = treeEvent(10, 'Metabolism');
+    const root = treeEvent(0, 'TopLevelPathway', [metabolism]);
+    const id2instance = new Map<number, Instance>([[10, editedEvent(10, 'Metabolism', [{ dbId: 10 }])]]);
+
+    const cycles = utils.mergeLocalChangesToEventTree(root, id2instance);
+
+    expect(cycles.length).toBe(1);
+    expect(pathOf(cycles[0])).toBe('Metabolism [10]');
+    expect(childDbIds(metabolism)).toEqual([]);
+  });
+
+  it('reports the cycle without the branch that led down to it', () => {
+    // The walk reaches the cycle through Disease [1], but Disease is not part of it and naming it
+    // would only make the message harder to act on.
+    const mapk = treeEvent(20, 'MAPK cascade');
+    const signaling = treeEvent(10, 'Signaling', [mapk]);
+    const root = treeEvent(1, 'Disease', [signaling]);
+    const id2instance = new Map<number, Instance>([[20, editedEvent(20, 'MAPK cascade', [{ dbId: 10 }])]]);
+
+    const cycles = utils.mergeLocalChangesToEventTree(root, id2instance);
+
+    expect(cycles.length).toBe(1);
+    expect(pathOf(cycles[0])).toBe('Signaling [10] > MAPK cascade [20]');
+  });
+
+  it('reports one cycle per relationship however many routes reach it', () => {
+    // Signaling sits under two branches, so the merge visits the cyclic relationship twice. It is
+    // one thing for the curator to fix.
+    const signalingA = treeEvent(30, 'Signaling', [treeEvent(40, 'MAPK cascade')]);
+    const signalingB = treeEvent(30, 'Signaling', [treeEvent(40, 'MAPK cascade')]);
+    const root = treeEvent(1, 'TopLevelPathway', [
+      treeEvent(10, 'Branch A', [signalingA]),
+      treeEvent(20, 'Branch B', [signalingB]),
+    ]);
+    const id2instance = new Map<number, Instance>([[40, editedEvent(40, 'MAPK cascade', [{ dbId: 30 }])]]);
+
+    const cycles = utils.mergeLocalChangesToEventTree(root, id2instance);
+
+    expect(cycles.length).toBe(1);
+    expect(pathOf(cycles[0])).toBe('Signaling [30] > MAPK cascade [40]');
+    // Both occurrences have to be repaired, not just the one the cycle was reported from:
+    // each is a separate object with its own hasEvent array.
+    expect(childDbIds(signalingA)).toEqual([40]);
+    expect(childDbIds(signalingB)).toEqual([40]);
+    expect(childDbIds((signalingA.attributes['hasEvent'] as Instance[])[0])).toEqual([]);
+    expect(childDbIds((signalingB.attributes['hasEvent'] as Instance[])[0])).toEqual([]);
+  });
+
+  it('reports nothing for an event that legitimately sits under several parents', () => {
+    // Cell Cycle Checkpoints is listed in two branches. A DAG is not a cycle, and both occurrences
+    // must still be merged - which is why the path is tracked rather than every event seen.
+    const checkpointsA = treeEvent(30, 'Cell Cycle Checkpoints', [treeEvent(40, 'G2/M Checkpoints')]);
+    const checkpointsB = treeEvent(30, 'Cell Cycle Checkpoints', [treeEvent(40, 'G2/M Checkpoints')]);
+    const root = treeEvent(1, 'TopLevelPathway', [
+      treeEvent(10, 'Mitotic Cell Cycle', [checkpointsA]),
+      treeEvent(20, 'Meiotic Cell Cycle', [checkpointsB]),
+    ]);
+    const id2instance = new Map<number, Instance>([
+      [30, { dbId: 30, displayName: 'Checkpoints renamed', schemaClassName: 'Pathway',
+             modifiedAttributes: ['name'], attributes: new Map<string, any>() }],
+    ]);
+
+    const cycles = utils.mergeLocalChangesToEventTree(root, id2instance);
+
+    expect(cycles).toEqual([]);
+    expect(childDbIds(checkpointsA)).toEqual([40]);
+    expect(childDbIds(checkpointsB)).toEqual([40]);
+    // The rename still reached both occurrences.
+    expect(checkpointsA.displayName).toBe('Checkpoints renamed');
+    expect(checkpointsB.displayName).toBe('Checkpoints renamed');
+  });
+
+  it('reports nothing for a sound hierarchy with no local edits', () => {
+    const root = treeEvent(0, 'TopLevelPathway', [treeEvent(10, 'Metabolism', [treeEvent(20, 'Glycolysis')])]);
+
+    expect(utils.mergeLocalChangesToEventTree(root, new Map<number, Instance>())).toEqual([]);
   });
 });

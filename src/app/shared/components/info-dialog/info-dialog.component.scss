@@ -1,0 +1,9 @@
+// Messages are interpolated as text, so a caller that wants to list several things (e.g. the
+// event view reporting each circular hasEvent relationship on its own line) has no markup to do
+// it with. Honouring the newlines it puts in the string is enough, and leaves the single-line
+// messages every other caller passes looking exactly as before.
+mat-dialog-content {
+  h3, h4 {
+    white-space: pre-line;
+  }
+}

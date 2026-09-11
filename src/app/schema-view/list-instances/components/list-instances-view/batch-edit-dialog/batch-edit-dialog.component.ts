@@ -13,7 +13,7 @@ import { PostEditService } from 'src/app/core/services/post-edit.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { AttributeListDialogService } from './attribute-list-dialog/attribute-list-dialog.service';
 import { MatSelect } from '@angular/material/select';
-import { take, map, of, switchMap } from 'rxjs';
+import { take, map, of } from 'rxjs';
 import { SelectInstanceDialogService } from '../../select-instance-dialog/select-instance-dialog.service';
 import { ActionButton } from '../instance-list-table/instance-list-table.component';
 
@@ -437,15 +437,11 @@ export class BatchEditDialogComponent implements PostEditListener {
       return;
     }
 
-    // A batch edit puts the same value on many instances at once, so hasEvent is exactly where a
-    // circular reference is easy to create without noticing. Checked for the whole batch up front,
-    // since establishing what already contains an event takes a request. See EventCycleCheck.
-    this.getInstancesForEdit().pipe(
-      take(1),
-      switchMap((instances: Instance[]) =>
-        this.eventCycleCheck.checkAdditions(instances, attributeValues[0].attribute.name, result).pipe(
-          map(circular => ({ instances, circular }))))
-    ).subscribe(({ instances, circular }) => {
+    this.getInstancesForEdit().pipe(take(1)).subscribe((instances: Instance[]) => {
+      // Skip any instance that the value would put directly inside itself - a batch edit puts the
+      // same value on many instances at once, so that is easy to do without noticing. Containment
+      // at any depth is no longer checked here; the event view reports it. See EventCycleCheck.
+      const circular = this.eventCycleCheck.checkAdditions(instances, attributeValues[0].attribute.name, result);
       const isInstanceAttribute = attributeValues[0].attribute.type === this.DATA_TYPES.INSTANCE;
       const affectedDbIds = new Set<number>();
       const skippedDbIds = new Set<number>();

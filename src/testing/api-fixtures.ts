@@ -233,7 +233,8 @@ function entity(dbId: number, displayName: string) {
 }
 
 /**
- * The event tree, as `/getEventTree/{species}` returns it.
+ * The top-level events of the event tree. `/getEventTree/{species}` returns these under `events`,
+ * alongside the `cycles` it had to drop to build the hierarchy (see the route below).
  *
  * A **flat array of top-level events**, not a single root: `DataService.fetchEventTree` wraps
  * whatever comes back in a synthetic `TopLevelPathway` root of its own
@@ -453,7 +454,11 @@ export const DEFAULT_API_ROUTES: ApiRouteFixture[] = [
   {
     name: 'event tree',
     match: p => p.includes('/getEventTree'),
-    body: EVENT_TREE
+    // A sound hierarchy, so `cycles` is empty. The endpoint reports the circular hasEvent
+    // relationships it dropped here, which is how the event view learns about one - editing
+    // hasEvent is not refused any more. `fetchEventTree` also still accepts a bare array, for a
+    // backend that predates the change.
+    body: { events: EVENT_TREE, cycles: [] }
   },
   {
     name: 'list instances',
