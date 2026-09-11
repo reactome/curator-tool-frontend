@@ -140,7 +140,45 @@ before starting an item.
 - [ ] TODO.md — demote review status when `structureModified` is newer than `reviewed`/`internalReviewed`; give InstanceEdit shell instances a `dateTime` attribute.
 - [ ] TODO.md — refresh the displayed stable identifier after a species change (server side already correct).
 - [ ] TODO.md — post-processing for UniProt, ChEBI, external ontology (ReferenceMolecule).
-- [ ] TODO.md — add a circular-reference check for the event tree / `precedingEvent` (flagged high importance).
+- [x] TODO.md — add a circular-reference check for the event tree / `precedingEvent` (flagged high
+      importance). Done 2026-09-08 on branch `feat/event-circular-reference-check`; new
+      `EventCycleCheck` (`core/services/event-cycle-check.service.ts`), 16 specs, plus one in
+      `batch-edit-dialog.component.spec.ts`. **Read this before extending it — the two attributes
+      are deliberately treated differently**, on evidence from the curation database (queried over
+      Bolt; credentials in the backend's `application.properties`):
+    - `hasEvent` — an event may not be added to itself, nor to any event that already contains it
+      (the message names the containment path). A `hasEvent` cycle is not survivable: the backend
+      builds the whole hierarchy in one recursive pass, so one cyclic relationship failed
+      `getEventTree` for every user and left no event tree to remove it through. The backend now
+      drops the relationship that closes a cycle and logs it
+      (`CurationRepository.populateChildren`, `CurationRepositoryEventTreeCycleTest`), but that is
+      damage limitation — the edit has to be refused here.
+    - `precedingEvent` — **only a self-reference is refused.** Longer cycles are ordinary biology
+      and the database is full of them: 593 events sit in a two-event `precedingEvent` cycle and
+      1369 in a cycle of ≤6 (a kinase and the phosphatase that reverses it precede each other; the
+      POU5F1/SOX2/NANOG loop is a cycle by design). Blocking those would refuse legitimate edits,
+      so TODO.md's "this should be avoided in any case" is not implemented as written. Whether a
+      longer `precedingEvent` cycle deserves a *warning* is a curation question for the curators.
+      (The 7 events in the database that precede themselves are data errors — a server-side
+      cleanup, not a front-end fix.)
+      Coverage: containment is decided by walking **up** from the event being edited through its
+      `hasEvent` referrers (`DataService.getReferrers`, which merges the session's staged edits), so
+      it works wherever the curator is editing. It first read the loaded event tree instead — but
+      only `EventTreeComponent` ever loads that, so an edit made from the schema view had no tree
+      to consult and skipped the containment check entirely; **that is how a cycle was committed on
+      2026-09-10**, so don't reintroduce the tree as the source. Walking up is also the cheap
+      direction: an event's ancestors are a handful of pathways (≤13 levels, ≤11 parents each in the
+      database), where walking down from the event being added covers everything beneath it. If
+      ancestry can't be established — lookup failed, or the walk hit its level/visit cap — the edit
+      is **refused**, not allowed. The check is therefore asynchronous; `checkAdditions` answers for
+      a whole batch off one shared lookup cache. Wired into the attribute table's add-via-selection
+      and bookmark-drop paths and into batch edit; creation paths need no check, since a brand-new
+      event contains nothing. `grepId2Event` and `_mergeLocalChangesToEventTree` also track the
+      recursion path (like `cloneInstanceForCommitInternal`), so a cycle arriving from another tab
+      warns instead of exhausting the stack.
+      One trap worth knowing: RxJS **silently drops** the result of a synchronous chain a few
+      hundred levels deep — no emission, no completion, no error — so the walk's level cap has to
+      stay small (30). See the spec's "stops climbing a hierarchy deeper than any real one".
 - [ ] TODO.md — deleted-instance generated display name.
 - [ ] TODO.md — add an InstanceEdit to referrers of a deleted instance and merge it into locally loaded referrers.
 - [ ] TODO.md, **flagged most important** — write privileges on log-in: decide and implement how they

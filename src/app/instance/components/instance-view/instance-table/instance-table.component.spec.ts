@@ -4,8 +4,12 @@
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
+import { of } from 'rxjs';
 
-import { AttributeValue, Instance } from 'src/app/core/models/reactome-instance.model';
+import { AttributeValue, EDIT_ACTION, Instance } from 'src/app/core/models/reactome-instance.model';
+import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
+import { DataService } from 'src/app/core/services/data.service';
 import {
   AttributeCategory,
   AttributeDataType,
@@ -345,6 +349,55 @@ describe('InstanceTableComponent', () => {
       component.dropStoichiometry(drop(0, 0), element);
 
       expect(instance.attributes.get('input')).toBe(before);
+    });
+  });
+
+  describe('refusing a circular reference', () => {
+    // The check itself is covered in event-cycle-check.service.spec.ts; what is covered here is
+    // the wiring, which is where it went wrong: the check used to consult the loaded event tree,
+    // so an edit made from the schema view - where nothing has loaded it - skipped the
+    // containment test and a pathway was committed inside itself on 2026-09-10. Establishing
+    // containment now takes a lookup, so the edit is applied from a subscription; if these two
+    // paths are ever made synchronous again, the edit lands before the answer arrives.
+    const metabolism = { dbId: 10, displayName: 'Metabolism', schemaClassName: 'Pathway' };
+
+    /** Glycolysis [100] sits under Metabolism [10], as the referrers endpoint reports it. */
+    function glycolysisUnderMetabolism(): Instance {
+      const dataService = TestBed.inject(DataService) as jasmine.SpyObj<DataService>;
+      dataService.getReferrers.and.returnValue(
+        of([{ attributeName: 'hasEvent', referrers: [metabolism as Instance] }]));
+      return pathway();
+    }
+
+    function addViaSelect(instance: Instance, selected: any) {
+      const selectDialog = TestBed.inject(SelectInstanceDialogService) as jasmine.SpyObj<SelectInstanceDialogService>;
+      selectDialog.openDialog.and.returnValue({ afterClosed: () => of([selected]) } as any);
+      component.instance = instance;
+      component.onInstanceAttributeEdit({
+        attribute: makeInstanceAttribute('hasEvent', ['Event']),
+        value: undefined,
+        editAction: EDIT_ACTION.ADD_VIA_SELECT,
+      });
+    }
+
+    it('leaves hasEvent alone when the selected event already contains this one', () => {
+      const attributeEdit = TestBed.inject(AttributeEditService) as jasmine.SpyObj<AttributeEditService>;
+      const dialog = TestBed.inject(MatDialog) as jasmine.SpyObj<MatDialog>;
+
+      addViaSelect(glycolysisUnderMetabolism(), metabolism);
+
+      expect(attributeEdit.addInstanceViaSelect).not.toHaveBeenCalled();
+      expect(dialog.open).toHaveBeenCalled();
+      expect((dialog.open.calls.mostRecent().args[1]?.data as any).title).toBe('Circular Reference');
+    });
+
+    it('adds an event that does not contain this one', () => {
+      const attributeEdit = TestBed.inject(AttributeEditService) as jasmine.SpyObj<AttributeEditService>;
+      const disease = { dbId: 40, displayName: 'Disease', schemaClassName: 'Pathway' };
+
+      addViaSelect(glycolysisUnderMetabolism(), disease);
+
+      expect(attributeEdit.addInstanceViaSelect).toHaveBeenCalled();
     });
   });
 

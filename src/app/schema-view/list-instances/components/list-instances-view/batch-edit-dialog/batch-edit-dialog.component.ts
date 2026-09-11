@@ -6,13 +6,14 @@ import { DataService } from 'src/app/core/services/data.service';
 import { Observable } from 'rxjs/internal/Observable';
 import { forkJoin } from 'rxjs/internal/observable/forkJoin';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
+import { EventCycleCheck } from 'src/app/core/services/event-cycle-check.service';
 import { NewInstanceDialogService } from 'src/app/instance/components/new-instance-dialog/new-instance-dialog.service';
 import { PostEditListener } from 'src/app/core/post-edit/PostEditOperation';
 import { PostEditService } from 'src/app/core/services/post-edit.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { AttributeListDialogService } from './attribute-list-dialog/attribute-list-dialog.service';
 import { MatSelect } from '@angular/material/select';
-import { take, map, of } from 'rxjs';
+import { take, map, of, switchMap } from 'rxjs';
 import { SelectInstanceDialogService } from '../../select-instance-dialog/select-instance-dialog.service';
 import { ActionButton } from '../instance-list-table/instance-list-table.component';
 
@@ -58,7 +59,7 @@ export class BatchEditDialogComponent implements PostEditListener {
     private postEditService: PostEditService,
     private instUtil: InstanceUtilities,
     private attributeListDialogService: AttributeListDialogService,
-
+    private eventCycleCheck: EventCycleCheck,
   ) {
     // Initialize the list of attributes based on the schema classes of the instances
     this.setCandidateAttributes();
@@ -436,14 +437,29 @@ export class BatchEditDialogComponent implements PostEditListener {
       return;
     }
 
-    this.getInstancesForEdit().pipe(take(1)).subscribe((instances: Instance[]) => {
+    // A batch edit puts the same value on many instances at once, so hasEvent is exactly where a
+    // circular reference is easy to create without noticing. Checked for the whole batch up front,
+    // since establishing what already contains an event takes a request. See EventCycleCheck.
+    this.getInstancesForEdit().pipe(
+      take(1),
+      switchMap((instances: Instance[]) =>
+        this.eventCycleCheck.checkAdditions(instances, attributeValues[0].attribute.name, result).pipe(
+          map(circular => ({ instances, circular }))))
+    ).subscribe(({ instances, circular }) => {
       const isInstanceAttribute = attributeValues[0].attribute.type === this.DATA_TYPES.INSTANCE;
       const affectedDbIds = new Set<number>();
       const skippedDbIds = new Set<number>();
+      // Instances left alone because the edit would have made an event contain itself. Counted
+      // separately from skippedDbIds, which means "already had this value".
+      const circularDbIds = new Set<number>();
 
       for (let instance of instances) {
         for (let attributeValue of attributeValues) {
           if (replace && !this.matchesReplaceTarget(instance, attributeValue)) {
+            continue;
+          }
+          if (circular.has(instance.dbId)) {
+            circularDbIds.add(instance.dbId);
             continue;
           }
 
@@ -476,6 +492,13 @@ export class BatchEditDialogComponent implements PostEditListener {
         let value = attributeValues[0].value;
         const skippedText = `${skippedDbIds.size} instance${skippedDbIds.size === 1 ? '' : 's'}`;
         this.lastEditSummary += ` ${skippedText} already have the value '${value}' and were not modified.`;
+      }
+      if (circularDbIds.size > 0) {
+        const circularText = circularDbIds.size === 1
+          ? '1 instance was'
+          : `${circularDbIds.size} instances were`;
+        this.lastEditSummary += ` ${circularText} not modified because the value would have`
+          + ` made the event contain itself.`;
       }
     });
   }

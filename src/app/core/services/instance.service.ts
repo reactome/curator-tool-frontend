@@ -1078,10 +1078,23 @@ export class InstanceUtilities {
     }
 
     // TODO: ask Guanming about merging passive edits to the event tree
+    /**
+     * @param ancestors the events this call is nested inside, used only to stop a cycle in
+     * hasEvent from recursing until the stack runs out. An event that is its own ancestor is a
+     * circular reference (docs/TODO.md asks for a check on these, and EventCycleCheck refuses the
+     * edits that would create one); the same event appearing under two different parents is not,
+     * and must still be merged, which is why the path is tracked rather than every event seen.
+     */
     private _mergeLocalChangesToEventTree(event: Instance,
         id2event: Map<number, Instance>,
         deletedDbIds: number[],
-        id2instance: Map<number, Instance>) {
+        id2instance: Map<number, Instance>,
+        ancestors: Set<Instance> = new Set<Instance>()) {
+        if (ancestors.has(event)) {
+            console.warn('mergeLocalChangesToEventTree: hasEvent is circular at '
+                + event.displayName + ' [' + event.dbId + ']; not following it further.');
+            return;
+        }
         const local = id2instance.get(event.dbId);
         if (local) {
             if (local.dbId < 0) {
@@ -1105,17 +1118,19 @@ export class InstanceUtilities {
         }
         // Recursive calling
         if (event.attributes?.hasEvent) {
+            ancestors.add(event);
             for (let i = 0; i < event.attributes.hasEvent.length; i++) {
                 let child = event.attributes.hasEvent[i];
                 if (deletedDbIds.includes(child.dbId)) {
                     event.attributes.hasEvent.splice(i, 1);
-                    i--; // This is important: need to adjust the index after removal to check the next one 
+                    i--; // This is important: need to adjust the index after removal to check the next one
                 }
                 else {
                     // Recursively process the child
-                    this._mergeLocalChangesToEventTree(child, id2event, deletedDbIds, id2instance);
+                    this._mergeLocalChangesToEventTree(child, id2event, deletedDbIds, id2instance, ancestors);
                 }
             }
+            ancestors.delete(event);
         }
     }
 
@@ -1185,12 +1200,18 @@ export class InstanceUtilities {
         dbEvent.attributes['hasEvent'] = newHasEvent;
     }
 
-    private grepId2Event(event: Instance, id2event: Map<number, Instance>) {
+    /** @param ancestors see _mergeLocalChangesToEventTree - guards against a cycle in hasEvent. */
+    private grepId2Event(event: Instance, id2event: Map<number, Instance>,
+        ancestors: Set<Instance> = new Set<Instance>()) {
+        if (ancestors.has(event))
+            return; // Circular hasEvent; _mergeLocalChangesToEventTree reports it
         id2event.set(event.dbId, event);
         if (event.attributes?.hasEvent) {
+            ancestors.add(event);
             for (let child of event.attributes.hasEvent) {
-                this.grepId2Event(child, id2event);
+                this.grepId2Event(child, id2event, ancestors);
             }
+            ancestors.delete(event);
         }
     }
 

@@ -30,11 +30,13 @@ import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { DataService } from 'src/app/core/services/data.service';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
 import { deleteInstances } from 'src/app/instance/state/instance.selectors';
-import { Subscription, catchError, of } from 'rxjs';
+import { Observable, Subscription, catchError, map, of, switchMap } from 'rxjs';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 import { AttributeValue, EDIT_ACTION } from 'src/app/core/models/reactome-instance.model';
 import { InstanceComparisonDataSource } from './instance-table-comparison.model';
 import { MatDialog } from '@angular/material/dialog';
+import { EventCycleCheck } from 'src/app/core/services/event-cycle-check.service';
+import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { StoichiometryDialogComponent } from './stoichiometry-dialog/stoichiometry-dialog.component';
 
 /**
@@ -141,6 +143,7 @@ export class InstanceTableComponent implements PostEditListener {
     private postEditService: PostEditService, // This is used to perform post-edit actions
     private dataService: DataService,
     private dialog: MatDialog,
+    private eventCycleCheck: EventCycleCheck,
   ) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
@@ -327,8 +330,16 @@ export class InstanceTableComponent implements PostEditListener {
   private addInstanceViaSelect(attributeValue: AttributeValue, replace: boolean) {
     const matDialogRef =
       this.selectInstanceDialogService.openDialog(attributeValue);
-    matDialogRef.afterClosed().subscribe((result) => {
-      if (result === undefined || result.length === 0) return; // Do nothing
+    matDialogRef.afterClosed().pipe(
+      // Refuse an event that would end up containing itself before anything is changed: the edit
+      // is applied to two objects (the displayed instance and its source), so there is no clean
+      // point to undo it from afterwards.
+      switchMap((result) => result === undefined || result.length === 0
+        ? of(undefined)
+        : this.refuseCircularReference(attributeValue, result).pipe(
+          map(refused => refused ? undefined : result)))
+    ).subscribe((result) => {
+      if (result === undefined) return; // Do nothing
       // Replacing a collapsed stoichiometry group swaps out every old copy for the selected
       // instance(s) in the old group's position, rather than replacing a single copy.
       if (replace && this.isStoichiometryAttribute(attributeValue.attribute)) {
@@ -467,17 +478,22 @@ export class InstanceTableComponent implements PostEditListener {
     // to the bookmark's current shell unchanged, so it isn't mistaken for the instance being
     // gone or having changed.
     this.dataService.fetchBookmarkShell(result.dbId).pipe(
-      catchError(() => of(result))
+      catchError(() => of(result)),
+      switchMap(fresh => {
+        if (!fresh) {
+          this.store.dispatch(BookmarkActions.remove_bookmark(this.instUtil.makeShell(result)));
+          window.alert(`"${result.displayName ?? result.dbId}" no longer exists in the database and has been removed from your bookmarks.`);
+          return of(undefined);
+        }
+        if (fresh.schemaClassName !== result.schemaClassName || fresh.displayName !== result.displayName) {
+          this.instUtil.refreshShellInstance(fresh);
+          this.store.dispatch(BookmarkActions.add_bookmark(fresh));
+        }
+        return this.refuseCircularReference(attributeValue, fresh).pipe(
+          map(refused => refused ? undefined : fresh));
+      })
     ).subscribe(fresh => {
-      if (!fresh) {
-        this.store.dispatch(BookmarkActions.remove_bookmark(this.instUtil.makeShell(result)));
-        window.alert(`"${result.displayName ?? result.dbId}" no longer exists in the database and has been removed from your bookmarks.`);
-        return;
-      }
-      if (fresh.schemaClassName !== result.schemaClassName || fresh.displayName !== result.displayName) {
-        this.instUtil.refreshShellInstance(fresh);
-        this.store.dispatch(BookmarkActions.add_bookmark(fresh));
-      }
+      if (!fresh) return;
 
       if (this._instance!.source)
         this.attributeEditService.addValueToAttribute(attributeValue, this.instUtil.getShellInstance(fresh), this._instance!.source, false, true, true);
@@ -485,6 +501,29 @@ export class InstanceTableComponent implements PostEditListener {
       this.finishEdit(attributeValue.attribute.name, attributeValue.value);
       this.cdr.detectChanges();
     });
+  }
+
+  /**
+   * Emits true when the values being added would make an event contain itself, in which case the
+   * curator is told why and the attribute is left alone. See EventCycleCheck for what is
+   * refused - hasEvent containment and a self-referential precedingEvent - and what is
+   * deliberately not. Containment is established from the events above the one being edited, which
+   * takes a request, so this answers asynchronously even where the answer needs no lookup.
+   */
+  private refuseCircularReference(attributeValue: AttributeValue, values: any): Observable<boolean> {
+    return this.eventCycleCheck.checkAddition(this._instance, attributeValue.attribute.name, values).pipe(
+      map(message => {
+        if (!message)
+          return false;
+        this.dialog.open(InfoDialogComponent, {
+          data: {
+            title: 'Circular Reference',
+            message: message
+          }
+        });
+        return true;
+      })
+    );
   }
 
   donePostEdit(
