@@ -587,7 +587,7 @@ Each node row provides, left to right:
 
 #### Circular references in the hierarchy
 
-An event that contains itself — directly, or through a chain of `hasEvent` relationships — has no meaning as a hierarchy and cannot be drawn as a tree. Such a relationship is **left out of the tree** and reported when the Event View opens, in a **Circular Reference in the Event Hierarchy** dialog. For each one it names:
+An event that contains itself — directly, or through a chain of `hasEvent` relationships — has no meaning as a hierarchy and cannot be drawn as a tree. Such a relationship is **left out of the tree** and reported in a **Circular Reference in the Event Hierarchy** dialog: when the Event View opens, and also straight away if one of your own `hasEvent` edits creates one while the tree is on screen. For each one it names:
 
 - the containment path, closed back on the event it starts from, e.g. *"Metabolism [10] > Glycolysis [20] > Metabolism [10]"*;
 - the single edit that breaks it — *remove "Metabolism" from the hasEvent of "Glycolysis" [20]*;
@@ -595,7 +595,7 @@ An event that contains itself — directly, or through a chain of `hasEvent` rel
 
 Everything else in the tree loads as usual, so you can navigate straight to the event named and remove the value. Until you do, that one relationship stays invisible in the tree — the events themselves are still there, under their other parents.
 
-This is where you find out, rather than at the moment of editing: [adding an event to a pathway that already contains it](#96-instance-valued-slot-action-menu) is not refused, because establishing what already contains an event took a request for every pathway above it.
+This is where you find out, rather than at the moment of editing: [adding an event to a pathway that already contains it](#96-instance-valued-slot-action-menu) is not refused, because establishing what already contains an event took a request for every pathway above it. The edit stays staged either way — the rest of the tree, including anything else added in the same edit, updates as usual.
 
 > If the event hierarchy **cannot be loaded at all**, the dialog names a circular reference as the likely cause. An event recently added to a pathway that already contained it has to be removed from the database before the hierarchy can be built.
 

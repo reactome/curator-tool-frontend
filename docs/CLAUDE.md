@@ -182,6 +182,16 @@ before starting an item.
       view instead of showing anything. Its ancestor path is keyed by **dbId**, not object
       identity: the same event is a distinct object at each place it appears (the backend clones
       it), so identity misses a cycle formed through two copies.
+    - `InstanceUtilities.dropEventTreeCycles` is the same walk with no local state to merge, for an
+      edit applied to a tree **already on screen**: `EventTreeComponent.handleHasEventEdit` puts the
+      new `hasEvent` straight into the tree's data, so it goes through neither the backend's check
+      nor that merge. Until 2026-09-14 a cyclic edit therefore reached `MatTreeFlattener` and blew
+      the stack — the tree kept its *previous* data (so the added event simply never appeared) and,
+      because every later rebuild hit the same cycle, stopped responding to any further edit until
+      the page was reloaded. The symptom read as "the tree is not re-loaded after a hasEvent edit",
+      with nothing to see but a `RangeError` on the console (Angular's error handler, not a page
+      error). Don't re-derive `hasEvent` from the cache here instead: a reset hands the tree the
+      instance as the database has it, with no `modifiedAttributes` left to merge from.
     - `EventTreeComponent.reportCircularReferences` is the only place a curator is told; it names
       the path closed back on itself and the one edit that breaks it. `reportEventTreeFailure`
       covers a backend with no guard at all, where the tree simply fails to load.

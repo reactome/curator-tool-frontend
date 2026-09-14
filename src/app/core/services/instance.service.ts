@@ -1092,6 +1092,34 @@ export class InstanceUtilities {
         return [...cycles.values()];
     }
 
+    /**
+     * Drops from an event tree already in use every hasEvent relationship that closes a cycle,
+     * and returns them for the event view to report - see EventTreeCycle.
+     *
+     * The load path gets this as part of mergeLocalChangesToEventTree, but an edit applied while
+     * the tree is on screen is put into the tree directly (EventTreeComponent.handleHasEventEdit)
+     * and so goes through neither that merge nor the backend's own check. A cyclic hasEvent left
+     * in the data is not something the tree renders badly - MatTreeFlattener recurses until the
+     * stack runs out, which leaves the tree still showing its previous data and, because every
+     * later rebuild hits the same cycle, silently stops it responding to any further edit at all.
+     *
+     * Nothing is merged here: the tree has just been given the edited hasEvent by its caller, and
+     * re-deriving it from the cache would undo a reset (which hands over the instance as the
+     * database has it, with no modifiedAttributes left to merge from). Passing the walk empty
+     * local state is what reduces it to dropping cycles, and keeps the two paths on one
+     * implementation so they cannot drift.
+     */
+    dropEventTreeCycles(rootEvent: Instance): EventTreeCycle[] {
+        const cycles = new Map<string, EventTreeCycle>();
+        this._mergeLocalChangesToEventTree(rootEvent,
+            new Map<number, Instance>(), // No tree index: nothing is re-pointed at a tree copy
+            [], // No deletions: removing an event cannot create a cycle
+            new Map<number, Instance>(), // No local edits to merge
+            new Map<number, Instance>(),
+            cycles);
+        return [...cycles.values()];
+    }
+
     // TODO: ask Guanming about merging passive edits to the event tree
     /**
      * @param ancestors the events this call is nested inside, keyed by dbId in path order. An

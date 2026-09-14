@@ -644,4 +644,51 @@ describe('InstanceUtilities.mergeLocalChangesToEventTree circular hasEvent', () 
 
     expect(utils.mergeLocalChangesToEventTree(root, new Map<number, Instance>())).toEqual([]);
   });
+
+  /**
+   * dropEventTreeCycles is the same walk given no local state, for a cycle that reached the tree
+   * some other way than the load path: EventTreeComponent puts an edited hasEvent straight into
+   * the tree it is already showing, so it never goes past the merge above.
+   */
+  describe('dropEventTreeCycles', () => {
+    it('drops and reports a cycle already in the tree', () => {
+      const glycolysis = treeEvent(20, 'Glycolysis');
+      const metabolism = treeEvent(10, 'Metabolism', [glycolysis]);
+      const root = treeEvent(0, 'TopLevelPathway', [metabolism]);
+      // As the tree holds it after the edit: the very object that contains Glycolysis, so
+      // following hasEvent goes round for ever.
+      glycolysis.attributes['hasEvent'] = [metabolism];
+
+      const cycles = utils.dropEventTreeCycles(root);
+
+      expect(cycles.length).toBe(1);
+      expect(pathOf(cycles[0])).toBe('Metabolism [10] > Glycolysis [20]');
+      // Reported as this session's, which is the only way it can have got in here.
+      expect(cycles[0].local).toBeTrue();
+      expect(childDbIds(glycolysis)).toEqual([]);
+      // And the rest of the hierarchy is left exactly as it was.
+      expect(childDbIds(metabolism)).toEqual([20]);
+    });
+
+    it('leaves a sound hierarchy alone', () => {
+      const shared = treeEvent(30, 'Signaling', [treeEvent(40, 'MAPK cascade')]);
+      const root = treeEvent(0, 'TopLevelPathway', [
+        treeEvent(10, 'Branch A', [shared]),
+        treeEvent(20, 'Branch B', [shared]), // The same object under two parents is not a cycle
+      ]);
+
+      expect(utils.dropEventTreeCycles(root)).toEqual([]);
+      expect(childDbIds(shared)).toEqual([40]);
+    });
+
+    it('does not merge anything, so a reset value is not overwritten', () => {
+      // The caller has just put the reset hasEvent into the tree - as the database has it, with
+      // no modifiedAttributes left to merge from - and it has to survive this pass.
+      const glycolysis = treeEvent(20, 'Glycolysis', [treeEvent(30, 'A reaction')]);
+      const root = treeEvent(0, 'TopLevelPathway', [treeEvent(10, 'Metabolism', [glycolysis])]);
+
+      expect(utils.dropEventTreeCycles(root)).toEqual([]);
+      expect(childDbIds(glycolysis)).toEqual([30]);
+    });
+  });
 });

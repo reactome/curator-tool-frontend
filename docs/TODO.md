@@ -2,6 +2,16 @@
 
 - bug at the server-side: https://pubmed.ncbi.nlm.nih.gov/23872636/. There is an author listed as "UK10K", which is an organization. This may need to be handled. Right now it returns null for the author name.
 
+- bug (found 2026-09-14 while fixing the cyclic-hasEvent tree freeze, not fixed): a `hasEvent` edit
+  made while the event view is **not** open never reaches the event tree. `DataService.fetchEventTree`
+  caches `rootEvent` and returns it on a cache hit without re-running
+  `mergeLocalChangesToEventTree`, and leaving the event view destroys `EventTreeComponent` (its edit
+  bus subscription with it). So: edit `hasEvent` in the schema view, navigate to the event view, and
+  the hierarchy is as it was, with no cycle re-check either. Only a page reload fixes it. The merge
+  is idempotent, so re-running it on a cache hit is most of the fix; an edit that was *reset* while
+  the view was closed still needs the pristine backend tree to recover, since there are no
+  `modifiedAttributes` left to merge from.
+
 #### Low priority
 
 - The autoscroll for the instance view in the event view scroll the whole instance view. But we need to scroll the table content only just like in the schemw view. (some fixed, but not fully ideal)

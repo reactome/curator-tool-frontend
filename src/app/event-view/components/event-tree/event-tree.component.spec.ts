@@ -310,3 +310,159 @@ describe('EventTreeComponent circular reference reporting', () => {
     expect(reported()).toContain('circular reference');
   });
 });
+
+/**
+ * A hasEvent edit that puts an event inside something that already contains it, made while the
+ * tree is on screen.
+ *
+ * This edit is not refused (see above), and it does not arrive through the load path either: the
+ * tree is handed the new hasEvent on the edit bus and puts it straight into its data. A cycle
+ * left in there is not a rendering nuisance - MatTreeFlattener follows hasEvent until the stack
+ * runs out, and the tree is then left showing the data it had before, with the added event
+ * missing, and stops responding to every later edit as well, because each rebuild hits the same
+ * cycle. So the relationship has to be dropped and reported here exactly as it is at load time.
+ */
+describe('EventTreeComponent hasEvent edit creating a cycle', () => {
+  let fixture: ComponentFixture<EventTreeComponent>;
+  let component: EventTreeComponent;
+  let utils: InstanceUtilities;
+  let dialog: jasmine.SpyObj<MatDialog>;
+
+  /** The hierarchy as fetchEventTree returns it: Metabolism > Glycolysis > one reaction. */
+  let reactionInTree: Instance;
+  let glycolysisInTree: Instance;
+  let metabolismInTree: Instance;
+  let root: Instance;
+
+  /** A shell, which is all the tree needs to find an event it already holds. */
+  function shell(dbId: number, displayName: string, schemaClassName = 'Pathway'): Instance {
+    return { dbId, displayName, schemaClassName };
+  }
+
+  /** The edited event as the edit bus hands it over: attributes are a Map. */
+  function edited(dbId: number, displayName: string, hasEvent: Instance[]): Instance {
+    return {
+      dbId, displayName, schemaClassName: 'Pathway',
+      modifiedAttributes: ['hasEvent'],
+      attributes: new Map<string, any>([['hasEvent', hasEvent]]),
+    };
+  }
+
+  beforeEach(async () => {
+    reactionInTree = {
+      dbId: 30, displayName: 'A reaction of Glycolysis', schemaClassName: 'Reaction',
+      attributes: { doRelease: true, speciesName: 'Homo sapiens' },
+    };
+    glycolysisInTree = {
+      dbId: 20, displayName: 'Glycolysis', schemaClassName: 'Pathway',
+      attributes: { hasEvent: [reactionInTree], doRelease: true, speciesName: 'Homo sapiens' },
+    };
+    metabolismInTree = {
+      dbId: 10, displayName: 'Metabolism', schemaClassName: 'Pathway',
+      attributes: { hasEvent: [glycolysisInTree], doRelease: true, speciesName: 'Homo sapiens' },
+    };
+    root = {
+      dbId: 0, displayName: 'TopLevelPathway', schemaClassName: 'TopLevelPathway',
+      attributes: { hasEvent: [metabolismInTree] },
+    };
+
+    const dataService = jasmine.createSpyObj<DataService>('DataService',
+      ['fetchEventTree', 'fetchSchemaClassTree', 'fetchInstance', 'getEventTreeCycles']);
+    dataService.fetchEventTree.and.returnValue(of(root));
+    dataService.fetchSchemaClassTree.and.returnValue(of({} as any));
+    dataService.getEventTreeCycles.and.returnValue([]); // The fetched hierarchy is sound
+    dialog = jasmine.createSpyObj<MatDialog>('MatDialog', ['open']);
+
+    await TestBed.configureTestingModule({
+      declarations: [EventTreeComponent, ReleaseFlagIconStubComponent, ClassNameIconStubComponent],
+      imports: [
+        MatTreeModule, MatIconModule, MatButtonModule, MatTooltipModule,
+        MatProgressSpinnerModule, RouterTestingModule,
+      ],
+      providers: [
+        InstanceUtilities, // The real one: its edit bus is how the component is driven here
+        { provide: DataService, useValue: dataService },
+        { provide: Store, useValue: jasmine.createSpyObj<Store>('Store', ['dispatch', 'select']) },
+        { provide: MatDialog, useValue: dialog },
+        {
+          provide: CommitResultDialogService,
+          useValue: jasmine.createSpyObj<CommitResultDialogService>('CommitResultDialogService', ['openDialog'])
+        },
+        {
+          provide: MatchedInstancesDialogService,
+          useValue: jasmine.createSpyObj<MatchedInstancesDialogService>('MatchedInstancesDialogService', ['openDialog'])
+        },
+        { provide: ActivatedRoute, useValue: { params: of({ id: '0' }), snapshot: { queryParams: {} } } },
+      ],
+    }).compileComponents();
+
+    utils = TestBed.inject(InstanceUtilities);
+    fixture = TestBed.createComponent(EventTreeComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  function nodes(dbId: number) {
+    return component.treeControl.dataNodes.filter(node => node.dbId === dbId);
+  }
+
+  /** The curator added Metabolism, which contains Glycolysis, to Glycolysis's hasEvent. */
+  function addTheContainerToItsOwnSubPathway() {
+    utils.setLastUpdatedInstance('hasEvent',
+      edited(20, 'Glycolysis', [shell(30, 'A reaction of Glycolysis', 'Reaction'), shell(10, 'Metabolism')]));
+    fixture.detectChanges();
+  }
+
+  /** What the dialog was given, as one string. */
+  function reported(): string {
+    const data = dialog.open.calls.mostRecent().args[1]!.data as any;
+    return `${data.title}\n${data.message}\n${data.instanceInfo}`;
+  }
+
+  it('keeps the hierarchy usable rather than leaving it as it was', () => {
+    addTheContainerToItsOwnSubPathway();
+
+    expect(nodes(10).length).withContext('Metabolism must still be in the tree').toBe(1);
+    expect(nodes(20).length).withContext('Glycolysis must still be in the tree').toBe(1);
+    expect(nodes(30).length).withContext('and so must its reaction').toBe(1);
+  });
+
+  it('leaves the circular relationship out of the tree', () => {
+    addTheContainerToItsOwnSubPathway();
+
+    // Metabolism must not appear a second time as a child of the pathway it contains.
+    expect(nodes(10)[0].level).toBe(1);
+    expect(nodes(20)[0].children?.map(child => child.dbId) ?? []).toEqual([30]);
+  });
+
+  it('tells the curator which relationship has to be removed', () => {
+    addTheContainerToItsOwnSubPathway();
+
+    expect(dialog.open).toHaveBeenCalledTimes(1);
+    const message = reported();
+    expect(message).toContain('Metabolism [10] > Glycolysis [20] > Metabolism [10]');
+    expect(message).toContain('remove "Metabolism" from the hasEvent of "Glycolysis" [20]');
+    expect(message).toContain('an uncommitted edit');
+  });
+
+  it('says nothing when the edit creates no cycle', () => {
+    utils.setLastUpdatedInstance('hasEvent',
+      edited(20, 'Glycolysis', [shell(30, 'A reaction of Glycolysis', 'Reaction')]));
+    fixture.detectChanges();
+
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
+  it('still shows the next event added, having survived the cyclic edit', () => {
+    // The regression this guards: one cyclic edit used to stop the tree updating for good, so
+    // every edit after it silently did nothing until the page was reloaded.
+    addTheContainerToItsOwnSubPathway();
+
+    utils.setLastUpdatedInstance('hasEvent',
+      edited(10, 'Metabolism', [shell(20, 'Glycolysis'), shell(40, 'A newly added reaction', 'Reaction')]));
+    fixture.detectChanges();
+
+    expect(nodes(40).length).withContext('the event added after the cyclic edit should appear').toBe(1);
+    expect(nodes(40)[0].name).toBe('A newly added reaction');
+  });
+});

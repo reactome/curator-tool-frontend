@@ -356,7 +356,15 @@ export class EventTreeComponent implements OnDestroy {
       treeNode.instance.attributes['hasEvent'] = treeInstHasEvent;
     }
     const root = this.dbId2node.get(0)![0].instance;
+    // The edit may have put an event inside something that already contains it. That has to be
+    // taken back out of the tree before it is flattened, exactly as the load path does with a
+    // cycle: MatTreeFlattener follows hasEvent until the stack runs out, and the tree is then
+    // left showing its previous data - the added event missing - and stops updating on every
+    // later edit too, since each rebuild hits the same cycle. The edit itself stands; it is the
+    // hierarchy that cannot show it, which is what the curator is told below.
+    const cycles = this.instUtils.dropEventTreeCycles(root);
     this.processEventTreeData(root, '');
+    this.reportCircularReferences(cycles);
   }
 
   private copyNodesInfo() {

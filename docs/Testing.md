@@ -157,6 +157,22 @@ Use `{ anonymousPage }` for a page with no session (login and route-guard specs)
   own `OK` button, so scope form locators (e.g. to `app-auth-form`).
 - An edit is staged to `localStorage` via the ngrx effects; nothing is sent to the server until
   commit, a five-minute idle auto-persist, or page unload. Don't wait for a request after typing.
+- Instance-valued slots reveal their `edit` FAB (`button.row-action-fab`) on hover only, so hover
+  the value's `a.value-link` before clicking it. Right-click on the value opens the same menu.
+
+### Catching a thrown error
+
+`page.on('pageerror')` does **not** see an exception thrown inside Angular: `ErrorHandler` catches
+it and logs it, so the only trace is a console message. Listen for both, or a component that has
+quietly stopped working looks like a passing test:
+
+```ts
+page.on('pageerror', e => errors.push(e.message));
+page.on('console', m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
+```
+
+This is how the cyclic-`hasEvent` bug in `event-tree-edit.spec.ts` was found — a `RangeError` from
+`MatTreeFlattener` that left the event tree showing stale data and nothing else to see.
 
 ---
 
