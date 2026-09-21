@@ -119,8 +119,6 @@ export class HyperEdge {
                     root: '#' + reactionNode.data('id'),
                     goal: '#' + elm.data('id')
                 });
-                // console.debug(reactionNode.data('id') + ' - ' +  elm.data('id'));
-                // console.debug(path.path);
                 this.createRoundSegmentEdgeForPath(path, toBeRemoved);
                 for (let element of toBeRemoved) {
                     if (element.isEdge() && (element.source() === elm || element.target() === elm)) {
@@ -226,6 +224,20 @@ export class HyperEdge {
             target = sourceNode;
             edgeClasses = firstEdge.classes();
             points = points.reverse();
+        }
+        // A collapsed edge is a terminal PE<->reaction connector now, not an internal chain
+        // segment, so it needs the full semantic role classes (e.g. 'incoming'/'consumption'
+        // for INPUT) regardless of what the segment we copied edgeClasses from actually had.
+        // In particular, convertReactionToHyperEdge() resets an input/output hub-to-reaction
+        // edge's own classes down to just ['reaction','input']/['reaction','output'] (to
+        // suppress its arrow while the hub exists) - once that edge's role classes propagate
+        // here via firstEdge/lastEdge.classes(), the CSS rule
+        // edge[stoichiometry > 1].incoming/.outgoing never matches again, so the stoichiometry
+        // label silently stops rendering on every future edit/collapse cycle even though
+        // data.stoichiometry above is correctly preserved.
+        const roleClasses = this.utils.diagramService?.edgeTypeMap.get(edgeType);
+        if (roleClasses) {
+            edgeClasses = Array.from(new Set([...edgeClasses, ...roleClasses]));
         }
         data.source = source.data('id');
         data.target = target.data('id');

@@ -185,8 +185,13 @@ export class InstanceConverter {
             // Create an edge from inputHubNode to reactionNode
             const edge = this.createEdge(inputHubNode, reactionNode, instance, 'INPUT', utils.diagramService!, cy);
             hyperEdge.registerObject(edge);
-            // Update the classes
-            edge.classes(['reaction', 'input']); // reset it
+            // Reset the classes to suppress this trunk segment's own arrow/endpoint styling
+            // (from 'consumption'), but keep 'incoming' - it has no visual effect of its own,
+            // it only gates the edge[stoichiometry > 1].incoming stoichiometry-label rule, and
+            // dropping it here would propagate into every future edit/collapse cycle (see
+            // HyperEdge.createRoundSegmentEdgeForPath()), permanently hiding the stoichiometry
+            // label for every input on this reaction.
+            edge.classes(['reaction', 'input', 'incoming']);
         }
         // Create edges
         inputStoichiometry.forEach((stoichiometry, inputNode) => {
@@ -203,7 +208,8 @@ export class InstanceConverter {
         if (outputStoichiometry.size > 1) {
             outputHubNode = this.createHubNode(instance, cy, 'output');
             const edge = this.createEdge(reactionNode, outputHubNode, instance, 'OUTPUT', utils.diagramService!, cy);
-            edge.classes(['reaction', 'output']);
+            // See the matching input-hub comment above: keep 'outgoing' for the same reason.
+            edge.classes(['reaction', 'output', 'outgoing']);
             hyperEdge.registerObject(outputHubNode);
             hyperEdge.registerObject(edge);
         }
