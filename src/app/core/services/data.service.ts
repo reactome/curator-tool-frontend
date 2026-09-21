@@ -733,6 +733,12 @@ export class DataService {
           const attributes = new Map();
           attributes.set('dbId', dbId);
           attributes.set('displayName', NEW_DISPLAY_NAME);
+          // Mirror InstanceEditManager.createInstanceEdit() on the server side, which stamps
+          // dateTime with the current time in GMT (not the curator's local time zone) so every
+          // curator's InstanceEdits are comparable regardless of where they're working from.
+          if (schemaClassName === 'InstanceEdit') {
+            attributes.set('dateTime', this.getCurrentGMTDateTime());
+          }
           let instance: Instance = {
             dbId: attributes.get('dbId'),
             displayName: attributes.get('displayName'),
@@ -749,6 +755,16 @@ export class DataService {
     );
   }
 
+  /**
+   * Format the current time as "yyyy-MM-dd HH:mm:ss" in GMT, matching the format and time zone
+   * CuratorToolWSUtils.getDateTime() uses on the server side.
+   */
+  private getCurrentGMTDateTime(): string {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} `
+      + `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
+  }
 
   /**
    * Create a new instance from an existing instance.
