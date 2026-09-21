@@ -74,11 +74,6 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 
 ### TODO
 
-#### High priority
-
-- Automatically set dateTime when a new InstanceEdit is created 
-- Set attribute types in InstanceEdit: dateType and author should be mandatory, note is optional
-
 #### Low priority
 
 - comments from Eliot and others during a demo on March 16, 2026: https://docs.google.com/document/d/1zlj3KKDwRQYUBCGIi4P3uqsb5X3JRfk8WoOqj2BXssI/edit?tab=t.0#heading=h.y6ik0la1wydu.
