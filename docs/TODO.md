@@ -12,6 +12,8 @@
   the view was closed still needs the pristine backend tree to recover, since there are no
   `modifiedAttributes` left to merge from.
 
+- bug: PathwayDiagram QA check detects extra catalysts but autofix cannot remove extra lines for catalysts (should never have stoichiometry > 1); QA check finds missing inhibitors in pathway R-HSA-453279 or R-HSA-2559586 (need to check which one), however, these inhibitors are there. 
+
 #### Low priority
 
 - The autoscroll for the instance view in the event view scroll the whole instance view. But we need to scroll the table content only just like in the schemw view. (some fixed, but not fully ideal)
@@ -71,6 +73,11 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 
 
 ### TODO
+
+#### High priority
+
+- Automatically set dateTime when a new InstanceEdit is created 
+- Set attribute types in InstanceEdit: dateType and author should be mandatory, note is optional
 
 #### Low priority
 
