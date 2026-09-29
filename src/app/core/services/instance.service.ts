@@ -525,7 +525,7 @@ export class InstanceUtilities {
                     if (this.isInstance(element)) {
                         arrayValue.push(this.getShellInstance(element));
                     }
-                    else
+                    else if (element !== null) // JSON.stringify writes an empty (undefined) slot as null; drop it since it cannot be edited
                         arrayValue.push(element);
                 }
                 attributeMap.set(key, arrayValue);
@@ -1350,7 +1350,7 @@ export class InstanceUtilities {
     }
 
     isInstance(value: any): boolean {
-        if (typeof value === 'object' && 'dbId' in value)
+        if (value !== null && typeof value === 'object' && 'dbId' in value)
             return true;
         return false;
     }
