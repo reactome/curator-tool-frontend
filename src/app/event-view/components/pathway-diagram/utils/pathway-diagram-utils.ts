@@ -855,6 +855,29 @@ export class PathwayDiagramUtilService {
     }
 
     /**
+     * Fix (or unfix) all compartment nodes, including their inner/outer layers and label nodes,
+     * so they stay put while other nodes are moved around. A fixed compartment pans the view when
+     * dragged, the same as the background. Use ungrabify() rather than lock(): cytoscape skips
+     * ungrabbable nodes even when they are part of a dragged multi-selection, and lock() would be
+     * serialized into the uploaded JSON by jsons().
+     * @param diagram
+     * @param fixed
+     */
+    setCompartmentsFixed(diagram: DiagramComponent, fixed: boolean): void {
+        const compartments = diagram.cy.nodes('.Compartment');
+        if (!fixed) {
+            compartments.grabify().unpanify();
+            return;
+        }
+        compartments.ungrabify().panify();
+        // A fixed compartment should not be resized either
+        const compartmentIds = new Set(compartments.map((node: any) => node.id()));
+        const widgets = diagram.cy.nodes('.resizing').filter((widget: any) => compartmentIds.has(widget.data('compartment')));
+        if (widgets.length > 0)
+            diagram.cy.remove(widgets);
+    }
+
+    /**
      * Remove a node representing a connecting point from the diagram.
      * @param diagram
      * @param element the node to be removed.

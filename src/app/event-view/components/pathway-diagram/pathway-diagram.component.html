@@ -7,7 +7,7 @@
 <app-diagram-toolbar (action)="onAction($event)" (findByDbId)="findObjectByDbId($event)"
   [isDiagramEditing]="isEditing" [isDiagramEdited]="isEdited"
   [isLockAcquiring]="isLockAcquiring" [isLockOwnedByMe]="isLockOwnedByMe" [canUndo]="canUndo" [canRedo]="canRedo"
-  [canAlign]="canAlign" [hasActiveResizing]="hasActiveResizing">
+  [canAlign]="canAlign" [hasActiveResizing]="hasActiveResizing" [isCompartmentFixed]="isCompartmentFixed">
 </app-diagram-toolbar>
 <div class="cytoscape-container">
   <cr-diagram #diagramComponent (reactomeEvents$)="handleReactomeEvent($event)" [usedbId]="true"
@@ -17,7 +17,8 @@
       [isFlowLineAddable]="isFlowLineAddable" [isPathwayDeletable]="isPathwayDeletable"
       [isNodeDeletable]="isNodeDeletable"
       [isNodeResizing]="isNodeResizing()" [isNodeResizable]="isNodeResizable()" [isEdgeEditable]="isEdgeEditable"
-      [isDiagramEdited]="isEdited" [isLockAcquiring]="isLockAcquiring" [canUndo]="canUndo" [canRedo]="canRedo">
+      [isDiagramEdited]="isEdited" [isLockAcquiring]="isLockAcquiring" [canUndo]="canUndo" [canRedo]="canRedo"
+      [isCompartmentFixed]="isCompartmentFixed">
     </app-editor-actions>
   </div>
   <app-diagram-navigator #navigator></app-diagram-navigator>

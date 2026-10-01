@@ -52,3 +52,8 @@
 .dbid-search-input::placeholder {
   color: rgba(0, 0, 0, 0.38);
 }
+
+// Marks an on/off toggle button (e.g. Fix Compartments) as currently on.
+.toggle-active {
+  background-color: rgba(0, 0, 0, 0.12);
+}

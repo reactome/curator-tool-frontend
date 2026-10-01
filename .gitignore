@@ -60,6 +60,13 @@ package.json
 # node_modules but nothing describing them.
 !e2e/package.json
 
+# The root lockfile pins ngx-reactome-* as file: tarballs built from a sibling checkout, so its
+# integrity hashes are per-machine and will never agree between developers. Anchored with a
+# leading slash so it stays clear of e2e/package-lock.json, which is shared.
+# NOTE: this entry is inert on its own -- the file is tracked. The flag that actually suppresses
+# it is `git update-index --skip-worktree package-lock.json`, which is local to this clone.
+/package-lock.json
+
 # Same story for line 53's unanchored `.gitignore`: it hid e2e/.gitignore, which is what keeps
 # e2e/node_modules and the Playwright run artifacts out of the repo. Without this negation that
 # file could not be committed and those artifacts would come straight back.

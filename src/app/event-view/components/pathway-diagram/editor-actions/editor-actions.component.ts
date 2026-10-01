@@ -33,6 +33,8 @@ export class EditorActionsComponent {
   @Input() isLockAcquiring: boolean = false;
   @Input() canUndo: boolean = false;
   @Input() canRedo: boolean = false;
+  // Fixed compartments cannot be moved, resized, or deleted
+  @Input() isCompartmentFixed: boolean = false;
   // Include this so that we can compare in the html template
   elmTypes = ElementType;
 

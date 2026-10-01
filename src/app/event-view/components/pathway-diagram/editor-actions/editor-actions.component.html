@@ -46,9 +46,15 @@
       *ngIf="elmType === elmTypes.PE_Node && isNodeDeletable">Delete Node</button>
 
     <!-- The compartment can be added or removed directly -->
-    <button (click)="onClick('deleteCompartment')" *ngIf="elmType === elmTypes.COMPARTMENT">Delete
+    <button (click)="onClick('deleteCompartment')" *ngIf="elmType === elmTypes.COMPARTMENT && !isCompartmentFixed">Delete
       Compartment</button>
     <button (click)="onClick('insertCompartment')" *ngIf="elmType === elmTypes.CYTOSCAPE">Insert Compartment</button>
+
+    <!-- Fixed compartments stay put while other nodes are moved around -->
+    <ng-container *ngIf="elmType === elmTypes.COMPARTMENT || elmType === elmTypes.CYTOSCAPE">
+      <button (click)="onClick('fixCompartments')" *ngIf="!isCompartmentFixed">Fix Compartments</button>
+      <button (click)="onClick('unfixCompartments')" *ngIf="isCompartmentFixed">Unfix Compartments</button>
+    </ng-container>
 
     <!-- Actions for multiple selected nodes -->
     <ng-container *ngIf="elmType === elmTypes.MULTIPLE_NODES">

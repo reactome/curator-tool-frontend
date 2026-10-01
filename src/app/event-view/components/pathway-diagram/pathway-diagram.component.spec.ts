@@ -18,6 +18,7 @@ import { PathwayDiagramContentValidator } from './utils/diagram-content-validato
 import { DiagramEditorService } from './utils/diagram-editor.service';
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { PathwayDiagramComponent } from './pathway-diagram.component';
+import { ElementType } from './editor-actions/editor-actions.component';
 
 describe('PathwayDiagramComponent', () => {
   let component: PathwayDiagramComponent;
@@ -48,7 +49,8 @@ describe('PathwayDiagramComponent', () => {
           useValue: jasmine.createSpyObj('PathwayDiagramUtilService',
             ['handleInstanceEdit', 'handleInstanceReset', 'select', 'clearSelection',
               'isDbIdInDiagram', 'isDbIdSelected', 'disableAllResizing', 'enableEditing',
-              'disableEditing', 'addNewEvent', 'isEventAdded', 'getDataService'])
+              'disableEditing', 'addNewEvent', 'isEventAdded', 'getDataService',
+              'setCompartmentsFixed'])
         },
         { provide: InstanceUtilities, useValue: createInstanceUtilitiesSpy() },
         { provide: DiagramEditorService, useValue: diagramEditor },
@@ -295,6 +297,73 @@ describe('PathwayDiagramComponent', () => {
 
     it('reports no active resize without a live graph', () => {
       expect(component.hasActiveResizing).toBeFalse();
+    });
+  });
+
+  describe('fixing compartments', () => {
+    const node = (id: string, cls: string) => ({ id, hasClass: (c: string) => c === cls });
+    let diagramUtils: jasmine.SpyObj<PathwayDiagramUtilService>;
+
+    beforeEach(() => {
+      diagramUtils = TestBed.inject(PathwayDiagramUtilService) as jasmine.SpyObj<PathwayDiagramUtilService>;
+      internals.diagram = { cy: {} };
+    });
+
+    it('fixes the compartments in the graph while editing', () => {
+      component.isEditing = true;
+
+      component.onAction('fixCompartments');
+
+      expect(component.isCompartmentFixed).toBeTrue();
+      expect(diagramUtils.setCompartmentsFixed).toHaveBeenCalledWith(internals.diagram, true);
+    });
+
+    it('forgets compartments that were being resized, but not other nodes', () => {
+      // Their resize widgets are removed when they are fixed.
+      const compartment = node('c1', 'Compartment');
+      const protein = node('p1', 'Protein');
+      component.isEditing = true;
+      component.resizingNodes = [compartment, protein];
+
+      component.onAction('fixCompartments');
+
+      expect(component.resizingNodes).toEqual([protein]);
+    });
+
+    it('unfixes the compartments in the graph', () => {
+      component.isEditing = true;
+      component.isCompartmentFixed = true;
+
+      component.onAction('unfixCompartments');
+
+      expect(component.isCompartmentFixed).toBeFalse();
+      expect(diagramUtils.setCompartmentsFixed).toHaveBeenCalledWith(internals.diagram, false);
+    });
+
+    it('only records the choice when not editing', () => {
+      // Nothing is draggable outside editing; initDiagram() applies it once editing starts.
+      component.onAction('fixCompartments');
+
+      expect(component.isCompartmentFixed).toBeTrue();
+      expect(diagramUtils.setCompartmentsFixed).not.toHaveBeenCalled();
+    });
+
+    it('does not offer resizing for a fixed compartment', () => {
+      component.elementUnderMouse = node('c1', 'Compartment');
+      component.elementTypeForPopup = ElementType.COMPARTMENT;
+      expect(component.isNodeResizable()).toBeTrue();
+
+      component.isCompartmentFixed = true;
+
+      expect(component.isNodeResizable()).toBeFalse();
+    });
+
+    it('still offers resizing for other nodes while compartments are fixed', () => {
+      component.elementUnderMouse = node('p1', 'PhysicalEntity');
+      component.elementTypeForPopup = ElementType.PE_Node;
+      component.isCompartmentFixed = true;
+
+      expect(component.isNodeResizable()).toBeTrue();
     });
   });
 

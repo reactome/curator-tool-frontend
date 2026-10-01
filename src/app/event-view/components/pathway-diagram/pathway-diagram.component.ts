@@ -90,6 +90,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   previousDragPos: Position = { x: 0, y: 0 };
   // Track a list of nodes that are under resizing
   resizingNodes: any[] = [];
+  // When true, compartments cannot be moved, resized, or deleted during editing so that
+  // other nodes can be rearranged without disturbing them. Kept across reloads.
+  isCompartmentFixed: boolean = false;
   // Tracking the last viewport for restoring after reloading
   private storedViewport: { zoom: number, pan: { x: number, y: number } } | null = null;
   private lastLoadedNetworkId: string = '';
@@ -907,6 +910,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     this.diagramUtils.id2hyperEdge.clear();
     if (this.isEditing) {
       this.diagramUtils.enableEditing(this.diagram);
+      // enableEditing() makes every compartment draggable, and the network may have just
+      // been rebuilt (e.g. by undo/redo), so reapply the fixed state.
+      if (this.isCompartmentFixed)
+        this.diagramUtils.setCompartmentsFixed(this.diagram, true);
     }
     this.restoreViewport();
     // The graph was just (re)created, so any previous selection is gone.
@@ -1010,11 +1017,21 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       return false;
     const elmType = this.elementTypeForPopup;
     // A compartment label is compartment for deletion. But it should not be resized.
-    if ((elmType == ElementType.COMPARTMENT && !this.elementUnderMouse.hasClass(LABEL_CLASS)) ||
+    if ((elmType == ElementType.COMPARTMENT && !this.elementUnderMouse.hasClass(LABEL_CLASS) && !this.isCompartmentFixed) ||
       elmType === ElementType.PE_Node ||
       elmType === ElementType.PATHWAY_NODE)
       return true;
     return false;
+  }
+
+  private setCompartmentsFixed(fixed: boolean) {
+    this.isCompartmentFixed = fixed;
+    if (!this.isEditing || !this.diagram?.cy)
+      return; // Applied in initDiagram() once editing is enabled
+    this.diagramUtils.setCompartmentsFixed(this.diagram, fixed);
+    // setCompartmentsFixed() removes the resize widgets of fixed compartments
+    if (fixed)
+      this.resizingNodes = this.resizingNodes.filter((node: any) => !node.hasClass('Compartment'));
   }
 
   onAction(action: string) {
@@ -1074,6 +1091,14 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       case 'disableAllResizing':
         this.diagramUtils.disableAllResizing(this.diagram);
         this.resizingNodes.length = 0;
+        break;
+
+      case 'fixCompartments':
+        this.setCompartmentsFixed(true);
+        break;
+
+      case 'unfixCompartments':
+        this.setCompartmentsFixed(false);
         break;
 
       case 'toggleDarkMode':

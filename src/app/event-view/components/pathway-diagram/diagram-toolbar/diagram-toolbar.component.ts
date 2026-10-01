@@ -39,6 +39,8 @@ export class DiagramToolbarComponent {
   @Input() canAlign: boolean = false;
   // Whether any compartment currently has resize widgets showing.
   @Input() hasActiveResizing: boolean = false;
+  // Whether compartments are fixed in place (not movable, resizable, or deletable).
+  @Input() isCompartmentFixed: boolean = false;
 
   onClick(action: string) {
     this.action.emit(action);

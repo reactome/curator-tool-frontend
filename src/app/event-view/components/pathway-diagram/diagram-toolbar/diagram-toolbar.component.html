@@ -44,6 +44,12 @@
     <button mat-icon-button (click)="onClick('insertCompartment')" matTooltip="Insert Compartment">
       <mat-icon>add_box</mat-icon>
     </button>
+    <!-- Highlighted while compartments are fixed so the current state is visible at a glance -->
+    <button mat-icon-button [class.toggle-active]="isCompartmentFixed"
+      (click)="onClick(isCompartmentFixed ? 'unfixCompartments' : 'fixCompartments')"
+      [matTooltip]="isCompartmentFixed ? 'Unfix Compartments' : 'Fix Compartments'">
+      <mat-icon>push_pin</mat-icon>
+    </button>
     <button mat-icon-button [disabled]="!canAlign" (click)="onClick('alignCentersVertically')"
       matTooltip="Align Centers Vertically">
       <mat-icon>align_horizontal_center</mat-icon>
