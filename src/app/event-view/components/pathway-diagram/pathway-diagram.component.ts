@@ -1380,7 +1380,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     // Resize widgets are transient UI helpers, not part of the diagram model, and must
     // never be persisted (backup/upload) or captured in an undo/redo snapshot - otherwise
     // they can reappear on reload/undo with no way left to dismiss them.
-    const nodes = this.diagram.cy.nodes().not('.resizing').jsons();
+    // Likewise, whether a node can be dragged or pans the view is editing state (e.g. Fix
+    // Compartments), reapplied by initDiagram() and enableEditing(), so it is not kept either.
+    const nodes = this.diagram.cy.nodes().not('.resizing').jsons().map((node: any) => {
+      const { grabbable, pannable, ...rest } = node;
+      return rest;
+    });
     const edges = this.diagram.cy.edges().jsons();
     const elements = {
       nodes: nodes,

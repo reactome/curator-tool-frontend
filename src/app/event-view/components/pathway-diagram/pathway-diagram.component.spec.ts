@@ -4,6 +4,7 @@
 // and the popup-menu predicates.
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import * as cytoscapeModule from 'cytoscape';
 import { of } from 'rxjs';
 
 import { AuthenticateService } from 'src/app/core/services/authenticate.service';
@@ -19,6 +20,10 @@ import { DiagramEditorService } from './utils/diagram-editor.service';
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { PathwayDiagramComponent } from './pathway-diagram.component';
 import { ElementType } from './editor-actions/editor-actions.component';
+
+// allowSyntheticDefaultImports is off (see tsconfig.json), so reach the callable default export
+// by hand; the bundled ESM build puts it on `default`.
+const cytoscape: typeof cytoscapeModule = (cytoscapeModule as any).default ?? cytoscapeModule;
 
 describe('PathwayDiagramComponent', () => {
   let component: PathwayDiagramComponent;
@@ -364,6 +369,23 @@ describe('PathwayDiagramComponent', () => {
       component.isCompartmentFixed = true;
 
       expect(component.isNodeResizable()).toBeTrue();
+    });
+
+    it('does not save the fixed state into the uploaded diagram', () => {
+      // Fixing is editing state only; initDiagram() reapplies it after every load.
+      const cy = cytoscape({
+        headless: true,
+        elements: [{ data: { id: 'c1' }, classes: ['Compartment'] }]
+      });
+      cy.nodes().ungrabify().panify(); // As setCompartmentsFixed(true) leaves them
+      internals.diagram = { cy };
+
+      const [saved] = internals.generateNetworkJson().elements.nodes;
+
+      expect(saved.data.id).toEqual('c1');
+      expect('grabbable' in saved).toBeFalse();
+      expect('pannable' in saved).toBeFalse();
+      cy.destroy();
     });
   });
 
