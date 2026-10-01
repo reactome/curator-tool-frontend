@@ -887,8 +887,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         if (idx >= 0) this.resizingNodes.splice(idx, 1);
       }
 
-      if (node.hasClass('Modification') && !e.target.hasClass('resizing'))
-        return; // Modification nodes are handled in moveModifications. No need to handle here.
+      if (node.hasClass('Modification') && !e.target.hasClass('resizing')) {
+        // Modification nodes follow their parent in moveModifications. When dragged by
+        // themselves, they can only slide along the parent's boundary.
+        this.diagramUtils.snapModificationToParentBoundary(node, this.diagram.cy);
+        return;
+      }
       if (node.hasClass('resizing')) {
         // This may be used for both compartment and PE node
         this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);

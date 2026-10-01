@@ -528,6 +528,67 @@ export class PathwayDiagramUtilService {
         }
     }
 
+    /**
+     * Constrain a dragged Modification node so that it can only slide along the
+     * boundary of the node it is attached to.
+     * @param modNode the Modification node being dragged
+     * @param cy
+     */
+    snapModificationToParentBoundary(modNode: any, cy: Core) {
+        const parent = this.getModificationParent(modNode, cy);
+        if (!parent)
+            return;
+        const newPos = this.getClosestPointOnBoundary(modNode.position(),
+            parent.position(),
+            parent.data('width'),
+            parent.data('height'));
+        // Have to give it a new position object so that the label
+        // can be updated. Don't modify the position directly!!!
+        modNode.position(newPos);
+    }
+
+    private getModificationParent(modNode: any, cy: Core): any {
+        // nodeId is the parent's cytoscape id. Prefer it over nodeReactomeId since
+        // the same entity may be drawn more than once in a diagram.
+        const nodeId = modNode.data('nodeId');
+        if (nodeId !== undefined && nodeId !== null) {
+            const parent = cy.getElementById(String(nodeId));
+            if (parent && parent.length > 0)
+                return parent;
+        }
+        const nodeReactomeId = modNode.data('nodeReactomeId');
+        if (nodeReactomeId === undefined || nodeReactomeId === null)
+            return undefined;
+        const parents = cy.nodes().filter((n: any) => n.data('reactomeId') === nodeReactomeId && !n.hasClass('Modification'));
+        return parents.length > 0 ? parents[0] : undefined;
+    }
+
+    /**
+     * Find the point on the boundary of the rectangle, defined by its center, width and height,
+     * that is closest to the passed point.
+     */
+    private getClosestPointOnBoundary(point: Position, center: Position, width: number, height: number): Position {
+        const left = center.x - width / 2.0;
+        const right = center.x + width / 2.0;
+        const top = center.y - height / 2.0;
+        const bottom = center.y + height / 2.0;
+        const x = Math.min(Math.max(point.x, left), right);
+        const y = Math.min(Math.max(point.y, top), bottom);
+        // Outside the rectangle: the clamped point is already on the boundary
+        if (x !== point.x || y !== point.y)
+            return { x, y };
+        // Inside the rectangle: project to the nearest edge
+        const toLeft = x - left;
+        const toRight = right - x;
+        const toTop = y - top;
+        const toBottom = bottom - y;
+        const min = Math.min(toLeft, toRight, toTop, toBottom);
+        if (min === toLeft) return { x: left, y };
+        if (min === toRight) return { x: right, y };
+        if (min === toTop) return { x, y: top };
+        return { x, y: bottom };
+    }
+
     resizeCompartment(node: any, e: any, previousDragPos: Position) {
         // Used to determine the direction
         const nodeId = node.data('id') as string;
@@ -617,8 +678,10 @@ export class PathwayDiagramUtilService {
                 moved = true;
             }
 
-            if (moved) {
-                mod.position(newMPos);
+            // Keep the modification on the boundary (e.g. when shrinking moves an edge past it)
+            const snapped = this.getClosestPointOnBoundary(newMPos, newPos, newW, newH);
+            if (moved || snapped.x !== mPos.x || snapped.y !== mPos.y) {
+                mod.position(snapped);
             }
         }
     }
