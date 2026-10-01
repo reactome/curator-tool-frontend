@@ -809,7 +809,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     if (!this.pathwayId || this.pathwayId.length == 0)
       return;
     this.diagramUtils.diagramService = this.diagram.getDiagramService();
-    this.normalizeCompartmentZIndex();
+    this.diagramUtils.updateCompartmentZOrder(this.diagram.cy, this.diagram.diagramId);
     // Any resizing widgets are transient UI state and must never survive a (re)load - otherwise
     // a compartment can end up stuck showing resize widgets with no reachable "Disable Resizing" action.
     this.diagramUtils.disableAllResizing(this.diagram);
@@ -920,18 +920,6 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     this.updateAlignableSelectionCount();
     // Point the thumbnail and navigation wheel at the new cytoscape instance.
     this.navigator?.attach(this.diagram.cy, this.diagram.cytoscapeContainer!.nativeElement);
-  }
-
-  private normalizeCompartmentZIndex() {
-    if (!this.diagram?.cy)
-      return;
-    const compartments = this.diagram.cy.nodes('.Compartment');
-    compartments.forEach((node: any) => {
-      if (node.hasClass('inner'))
-        node.style('z-index', 10);
-      else if (node.hasClass('outer'))
-        node.style('z-index', 0);
-    });
   }
 
   private restoreViewport() {

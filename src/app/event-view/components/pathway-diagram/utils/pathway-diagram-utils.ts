@@ -12,6 +12,9 @@ import { PathwayDiagramComponent } from "../pathway-diagram.component";
 import { PathwayDiagramValidator } from "./pathway-diagram-validator";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { SelectInstanceDialogService } from "src/app/schema-view/list-instances/components/select-instance-dialog/select-instance-dialog.service";
+import { assignCompartmentZOrder, COMPARTMENT_LABEL_Z_INDEX, getCompartmentDepths } from "./compartment-z-order";
+import { catchError, forkJoin, map, Observable, of, shareReplay } from "rxjs";
+import { Diagram } from "ngx-reactome-diagram/lib/model/diagram.model";
 
 @Injectable()
 export class PathwayDiagramUtilService {
@@ -20,6 +23,9 @@ export class PathwayDiagramUtilService {
     id2hyperEdge : Map<number|string, HyperEdge> = new Map();
     // For resizing
     private readonly RESIZE_NODE_LOCATIONS: string[] = ['ne', 'nw', 'se', 'sw'];
+    // For stacking compartments: the diagram being shown, and the dbIds of its compartments by layer key
+    private compartmentDiagramId: string | undefined;
+    private diagramId2compartmentDbIds = new Map<string, Observable<Map<string, number>>>();
     
     constructor(private dataService: DataService,
         private validator: PathwayDiagramValidator,
@@ -30,6 +36,50 @@ export class PathwayDiagramUtilService {
 
     getDataService(): DataService {
         return this.dataService;
+    }
+
+    /**
+     * Stack the compartments in cy by the compartment hierarchy (see compartment-z-order.ts). The
+     * order is applied from the drawing straight away and then from the tree once it has been
+     * fetched, which is immediate after the first time.
+     * @param cy
+     * @param diagramId the pathway whose diagram cy shows; defaults to the one passed last time
+     */
+    updateCompartmentZOrder(cy: Core, diagramId?: string) {
+        if (diagramId)
+            this.compartmentDiagramId = diagramId;
+        assignCompartmentZOrder(cy);
+        forkJoin([
+            this.dataService.fetchCompartmentTree(),
+            this.fetchCompartmentDbIds(this.compartmentDiagramId)
+        ]).subscribe(([tree, layerKey2dbId]) => {
+            if (tree && !cy.destroyed())
+                assignCompartmentZOrder(cy, getCompartmentDepths(tree), layerKey2dbId);
+        });
+    }
+
+    /**
+     * The dbIds of the compartments in the diagram JSON, by node id without '-outer'/'-inner'.
+     * The library builds compartment nodes without a reactomeId, so this is the only way to
+     * find a loaded compartment in the compartment tree. Empty when there is no diagram JSON.
+     */
+    private fetchCompartmentDbIds(diagramId: string | undefined): Observable<Map<string, number>> {
+        if (!diagramId)
+            return of(new Map());
+        let dbIds$ = this.diagramId2compartmentDbIds.get(diagramId);
+        if (!dbIds$) {
+            dbIds$ = this.dataService.fetchRawDiagram(diagramId, false).pipe(
+                map((diagram: Diagram) => new Map((diagram?.compartments ?? [])
+                    .map(compartment => [`${compartment.id}`, compartment.reactomeId] as [string, number]))),
+                catchError(() => {
+                    this.diagramId2compartmentDbIds.delete(diagramId);
+                    return of(new Map<string, number>());
+                }),
+                shareReplay(1)
+            );
+            this.diagramId2compartmentDbIds.set(diagramId, dbIds$);
+        }
+        return dbIds$;
     }
 
     private assignLabelToCompartment(node: any, cy: Core) {
@@ -121,7 +171,7 @@ export class PathwayDiagramUtilService {
             {
                 'text-valign': 'center',
                 'text-halign': 'center',
-                'z-index': 20, // inner 10 and outer 0.
+                'z-index': COMPARTMENT_LABEL_Z_INDEX, // Above every compartment layer
                 'background-opacity': 0,     // Hide the node's background
                 'border-width': 0 // Don't show border for the label node
             },

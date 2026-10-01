@@ -31,7 +31,6 @@ export class InstanceConverter {
             compartmentNode.data('textX', -compartmentNode.data('width') / 2);
             compartmentNode.data('textY', -compartmentNode.data('height') / 2);
             //TODO: The txt cannot be selected when the compartment is created first.
-            compartmentNode.style('z-index', 0); // Give it a smaller z-index so that we can select the text.
             newNodes.push(compartmentNode);
         }
         else {
@@ -46,8 +45,6 @@ export class InstanceConverter {
             outerNode.data('textX', -outerNode.data('width') / 2);
             outerNode.data('textY', -outerNode.data('height') / 2);
 
-            outerNode.style('z-index', 0); // Give it a smaller z-index so that we can select the inner one first
-
             newNodes.push(outerNode);
 
             const innerNode = this.createNodeForInstance(compartment, cy, utils.diagramService!, nodeId + '-inner', false);
@@ -55,10 +52,11 @@ export class InstanceConverter {
             // Need to expand the node width
             innerNode.data('width', RENDERING_CONSTS.DEFAULT_COMPARTMENT_WIDTH);
             innerNode.data('height', RENDERING_CONSTS.DEFAULT_COMPARTMENT_HEIGHT);
-            innerNode.style('z-index', 10); // To be selected first
             newNodes.push(innerNode);
         }
         newNodes.forEach(node => this.centerNode(node, cy))
+        // Stack it among the other compartments; this also puts the inner layer above the outer one
+        utils.updateCompartmentZOrder(cy);
         const collection = cy.collection(newNodes);
         // De-select whatever
         cy.$(':selected').unselect();

@@ -1,10 +1,10 @@
 import { HttpClient, HttpErrorResponse, HttpResponse } from "@angular/common/http";
 import { Injectable } from '@angular/core';
 import { Store } from "@ngrx/store";
-import { catchError, combineLatest, concatMap, EMPTY, forkJoin, from, map, mergeMap, Observable, of, Subject, switchMap, take, tap, throwError, toArray } from 'rxjs';
+import { catchError, combineLatest, concatMap, EMPTY, forkJoin, from, map, mergeMap, Observable, of, shareReplay, Subject, switchMap, take, tap, throwError, toArray } from 'rxjs';
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { environment } from 'src/environments/environment.dev';
-import { DbIdDisplayName, DiagramLock, EventTreeCycle, EventTreeResponse, EwasModifiedResiduesDto, Instance, InstanceList, ModifiedResidueEntry, NEW_DISPLAY_NAME, ReactionStructureDto, Referrer, UserInstanceBackupSummary, UserInstances } from "../models/reactome-instance.model";
+import { CompartmentTreeNode, DbIdDisplayName, DiagramLock, EventTreeCycle, EventTreeResponse, EwasModifiedResiduesDto, Instance, InstanceList, ModifiedResidueEntry, NEW_DISPLAY_NAME, ReactionStructureDto, Referrer, UserInstanceBackupSummary, UserInstances } from "../models/reactome-instance.model";
 import {
   AttributeCategory,
   SchemaAttribute,
@@ -69,6 +69,15 @@ export class DataService {
   private chebiAutoFillerUrl = `${environment.ApiRoot}/fillChEBI/`;
   private fillReferenceSequenceUrl = `${environment.ApiRoot}/fillRefSequence/`;
   private fillExternalOntologyUrl = `${environment.ApiRoot}/fillExternalOntology/`;
+  private compartmentTreeUrl = `${environment.ApiRoot}/getCompartmentTree`;
+  /**
+   * Root of the requested compartment tree: extracellular region. The backend defaults to cytosol,
+   * which would leave out extracellular region and plasma membrane - the outermost compartments in
+   * most diagrams - since cytosol is surroundedBy (the sides of) plasma membrane, not the other way.
+   */
+  static readonly COMPARTMENT_TREE_ROOT_DB_ID = 984;
+  // The compartment hierarchy hardly ever changes, so one request per session is enough.
+  private compartmentTree$: Observable<CompartmentTreeNode | undefined> | undefined;
 
 
   // Serialized snapshot of the last user-instances payload sent to (or loaded from) the
@@ -251,6 +260,26 @@ export class DataService {
         catchError((err: Error) => {
           return this.handleErrorMessage(err);
         }));
+  }
+
+  /**
+   * The surroundedBy hierarchy of compartments below extracellular region, used to stack
+   * compartments in the pathway diagram. Fetched once and shared. A failure emits undefined rather
+   * than an error dialog: callers only lose the hierarchy-based ordering, and the next call retries.
+   */
+  fetchCompartmentTree(): Observable<CompartmentTreeNode | undefined> {
+    if (!this.compartmentTree$) {
+      this.compartmentTree$ = this.http.get<CompartmentTreeNode>(this.compartmentTreeUrl,
+        { params: { rootDbId: DataService.COMPARTMENT_TREE_ROOT_DB_ID } }).pipe(
+          catchError((err: Error) => {
+            console.error('Cannot fetch the compartment tree:', err);
+            this.compartmentTree$ = undefined;
+            return of(undefined);
+          }),
+          shareReplay(1)
+        );
+    }
+    return this.compartmentTree$;
   }
 
   /**
@@ -503,9 +532,9 @@ export class DataService {
    * available uncorrupted by the library's cytoscape conversion, e.g. for
    * validating drawn content against the live database).
    */
-  fetchRawDiagram(pathwayId: string | number): Observable<Diagram> {
+  fetchRawDiagram(pathwayId: string | number, showError = true): Observable<Diagram> {
     return this.http.get<Diagram>(`${this.diagramJsonUrl}/${pathwayId}.json`).pipe(
-      catchError((err: Error) => this.handleErrorMessage(err))
+      catchError((err: Error) => showError ? this.handleErrorMessage(err) : throwError(() => err))
     );
   }
 
