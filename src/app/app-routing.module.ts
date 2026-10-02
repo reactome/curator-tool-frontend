@@ -43,7 +43,7 @@ export const routes: Routes = [
   {
     path: "paper2path",
     loadChildren: () =>
-      import("./paper2path/paper2path.module").then((m) => m.Paper2pathModule),
+      import("./paper-annotation/paper-annotation.module").then((m) => m.PaperAnnotationModule),
     canActivate: [authGuard], // Protect the route
   },
   {

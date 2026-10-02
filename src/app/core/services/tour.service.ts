@@ -64,7 +64,7 @@ const HOME_TOUR: TourStep[] = [
     id: 'paper2path',
     title: 'Paper2Path',
     content:
-      'Use Paper2Path to run a multi-agent literature annotation workflow from PMIDs, PDFs, and/or a target gene, then register generated instances into Schema View for review.',
+      'Use Paper2Path to draft a Reactome annotation from one paper, review what needs attention, refine it by chat, and load it into your staged instances.',
     targetSelector: '[routerLink="/paper2path"], a[href*="paper2path"]',
     position: 'bottom',
   },
@@ -245,54 +245,37 @@ const PAPER2PATH_TOUR: TourStep[] = [
     id: 'paper2path-welcome',
     title: 'Paper2Path App Tour',
     content:
-      'Welcome to Paper2Path. This tool runs a multi-agent literature annotation workflow and can register generated entities, reactions, and pathways into Schema View.',
+      'Paper2Path drafts a Reactome annotation from one paper: reactions with their participants, the quotes that support them, and a list of what needs your attention.',
     position: 'center',
   },
   {
-    id: 'paper2path-banner',
-    title: 'Header and Configuration',
+    id: 'paper2path-start',
+    title: 'Start from a PubMed ID or a PDF',
     content:
-      'Use the Configure button in the header to open annotation settings, including max papers, quality threshold, and dashboard toggles for phases, agents, and tools.',
-    targetSelector: '.app-banner',
+      'Enter a PubMed ID (the paper must be open access in PubMed Central) or upload a PDF. Optionally give a focus gene. Extraction takes about 10 to 15 minutes and you can leave the page meanwhile.',
+    targetSelector: '.starters',
     position: 'bottom',
   },
   {
-    id: 'paper2path-gene',
-    title: 'Target Gene Input',
+    id: 'paper2path-sessions',
+    title: 'Your Annotations',
     content:
-      'Provide a target gene symbol (for example TP53 or BRCA1). You can run annotation from a gene only, papers only, or both together.',
-    targetSelector: '.gene-bar',
-    position: 'bottom',
-  },
-  {
-    id: 'paper2path-papers',
-    title: 'Paper Sources',
-    content:
-      'Use Enter Papers to provide PMIDs or upload a PDF. Use Preloaded Papers to select documents already available on the server.',
-    targetSelector: '.paper-tabs',
-    position: 'bottom',
-  },
-  {
-    id: 'paper2path-submit',
-    title: 'Run Annotation',
-    content:
-      'Click Start Annotation to submit a job. Runtime logs and phase progress appear in the Results tab while the CrewAI pipeline executes.',
-    targetSelector: '.section-footer',
+      'Every annotation you start is listed here with its status, number of reactions and open issues. Open one to review it.',
+    targetSelector: 'table.sessions, .empty',
     position: 'top',
   },
   {
-    id: 'paper2path-results',
-    title: 'Review and Register Results',
+    id: 'paper2path-review',
+    title: 'Review, Chat, Load',
     content:
-      'After completion, review the JSON output, download results, then click Add to Schema View to create and stage new instances for curation.',
-    targetSelector: '.paper-tabs',
-    position: 'top',
+      'Inside an annotation you can read each reaction with its evidence (page, section and figure), work through the Issues tab, check a reaction, and chat to ask for changes. Chat only proposes edits; nothing changes until you accept them. Load into staged instances puts the result in Schema View, after backing up what you have staged.',
+    position: 'center',
   },
   {
     id: 'paper2path-caution',
     title: 'Curation Reminder',
     content:
-      'Paper2Path output is assistant-generated content. Always review evidence and instance relationships before committing staged changes.',
+      'Paper2Path output is assistant-generated content. Always review the evidence and the relationships between instances before committing staged changes.',
     position: 'center',
   },
 ];
