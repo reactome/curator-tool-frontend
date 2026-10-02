@@ -16,7 +16,7 @@ import { bookmarkedInstances } from "src/app/schema-view/instance-bookmark/state
 
 /** What loadAnnotationInstances() did, so the caller can tell the curator. */
 export interface AnnotationLoadResult {
-    /** How many staged instances (new, updated, deleted, bookmarks, default person) were replaced. */
+    /** How many staged items (new, updated, deleted instances and bookmarks, default person) were replaced. */
     replaced: number;
     /** True when the replaced state was saved to the server first (or the server already held it). */
     backedUp: boolean;
@@ -24,6 +24,20 @@ export interface AnnotationLoadResult {
     backupFile?: string;
     /** How many new instances the annotation brought in. */
     loaded: number;
+    /** True when the curator's staged default person was kept through the load. */
+    keptDefaultPerson: boolean;
+    /** How many of the curator's bookmarks were kept through the load. */
+    keptBookmarks: number;
+}
+
+/** What a load would replace, for the confirmation shown before it happens. */
+export interface AnnotationLoadSummary {
+    /** Staged items that would be replaced (everything staged except the default person and bookmarks that are kept). */
+    replaced: number;
+    /** True when the staged default person would be kept. */
+    keepsDefaultPerson: boolean;
+    /** How many bookmarks would be kept. */
+    keepsBookmarks: number;
 }
 
 /**
@@ -200,9 +214,34 @@ export class UserInstancesService {
         );
     }
 
-    /** How many staged items (new, updated, deleted, bookmarks, default person) this tab holds now. */
-    stagedCount(): Observable<number> {
-        return this.currentStaged().pipe(map(local => this.countStagedInstances(local)));
+    /**
+     * What replacing the staged instances with `incoming` would do. The default person and the bookmarks are the
+     * curator's own, not part of an annotation, so the ones staged now are kept - unless `incoming` brings its own
+     * (a default person, or a non-empty list of bookmarks), which then wins, as in any staged-instances file.
+     */
+    private loadPlan(local: UserInstances, incoming: UserInstances) {
+        const keepDefaultPerson = !incoming.defaultPerson && !!local.defaultPerson;
+        const keptBookmarks = (incoming.bookmarks?.length ?? 0) === 0 ? (local.bookmarks?.length ?? 0) : 0;
+        const payload: UserInstances = { ...incoming };
+        if (keepDefaultPerson)
+            payload.defaultPerson = local.defaultPerson;
+        if (keptBookmarks > 0)
+            payload.bookmarks = local.bookmarks;
+        return {
+            keepDefaultPerson,
+            keptBookmarks,
+            replaced: this.countStagedInstances(local) - (keepDefaultPerson ? 1 : 0) - keptBookmarks,
+            // untouched when there is nothing to carry over, so the caller's own object goes through as it is
+            payload: keepDefaultPerson || keptBookmarks > 0 ? payload : incoming,
+        };
+    }
+
+    /** What loading `incoming` would replace right now, so the curator can confirm with real numbers. */
+    stagedSummary(incoming: UserInstances): Observable<AnnotationLoadSummary> {
+        return this.currentStaged().pipe(map(local => {
+            const plan = this.loadPlan(local, incoming);
+            return { replaced: plan.replaced, keepsDefaultPerson: plan.keepDefaultPerson, keepsBookmarks: plan.keptBookmarks };
+        }));
     }
 
     /**
@@ -213,14 +252,17 @@ export class UserInstancesService {
      * same save persistInstances() makes, which keeps it in the list of restorable backups). If that
      * save fails, nothing is replaced. There is deliberately no merging with the existing staged
      * instances, and no renumbering: the annotation's ids are used as they are, so an instance keeps
-     * the id the annotation session knows it by (which is how its evidence is found).
+     * the id the annotation session knows it by (which is how its evidence is found). What is carried
+     * over is the curator's own default person and bookmarks (see loadPlan).
      */
     loadAnnotationInstances(incoming: UserInstances): Observable<AnnotationLoadResult> {
         return this.currentStaged().pipe(
             switchMap(local => {
-                const replaced = this.countStagedInstances(local);
-                if (replaced === 0)
-                    return of({ replaced, backedUp: false } as Omit<AnnotationLoadResult, 'loaded'>);
+                const plan = this.loadPlan(local, incoming);
+                const kept = { keptDefaultPerson: plan.keepDefaultPerson, keptBookmarks: plan.keptBookmarks };
+                // Nothing is lost when all that is staged is kept (a default person, bookmarks), so nothing to back up.
+                if (plan.replaced === 0)
+                    return of({ b: { replaced: 0, backedUp: false, ...kept }, payload: plan.payload });
                 const user = this.authService.getUser();
                 if (!user)
                     return throwError(() => new Error('You are not signed in, so the staged instances cannot be backed up. Nothing was changed.'));
@@ -228,10 +270,10 @@ export class UserInstancesService {
                     switchMap(() => this.dataService.listUserInstanceBackups().pipe(
                         map(list => [...list].sort((a, b) => b.lastModified - a.lastModified)[0]?.fileName),
                         catchError(() => of(undefined)))),
-                    map(backupFile => ({ replaced, backedUp: true, backupFile })));
+                    map(backupFile => ({ b: { replaced: plan.replaced, backedUp: true, backupFile, ...kept }, payload: plan.payload })));
             }),
-            switchMap(backup => this.importUserInstancesFromFile(incoming).pipe(
-                map(() => ({ ...backup, loaded: incoming.newInstances?.length ?? 0 }))))
+            switchMap(({ b, payload }) => this.importUserInstancesFromFile(payload).pipe(
+                map(() => ({ ...b, loaded: incoming.newInstances?.length ?? 0 }))))
         );
     }
 

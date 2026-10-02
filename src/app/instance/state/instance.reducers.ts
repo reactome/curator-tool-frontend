@@ -95,8 +95,13 @@ export const defaultPersonReducer = createReducer(
   defaultPersonAdaptor.getInitialState(),
   on(DefaultPersonActions.set_default_person,
      DefaultPersonActions.ls_set_default_person,
-    (state, instance) => {
-      return defaultPersonAdaptor.setAll([instance], state)
+    (state, action) => {
+      // The action is the instance props plus "type". The default person may be cleared
+      // (undefined props), in which case there is no dbId and nothing should be stored.
+      const {type, ...instance} = action as Instance & {type: string};
+      if (!instance.dbId)
+        return defaultPersonAdaptor.removeAll(state);
+      return defaultPersonAdaptor.setAll([instance as Instance], state)
     }
   )
 )

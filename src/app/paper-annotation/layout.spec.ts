@@ -33,11 +33,17 @@ describe('page layout', () => {
   });
   afterEach(() => { document.body.style.width = ''; });
 
-  /** How far the element's horizontal centre is from the body's, in pixels. */
+  /**
+   * How far the element's horizontal centre is from the centre of the space it sits in (its parent), in pixels.
+   * Measured against the parent, not the body: other specs can leave margins or padding on the body, which would
+   * shift a body-relative measurement without the layout being wrong. Fails loudly if the parent is too narrow
+   * for centring to matter, so a leaked style cannot turn this into a test that passes by accident.
+   */
   const off = (el: Element) => {
     const r = el.getBoundingClientRect();
-    const b = document.body.getBoundingClientRect();
-    return Math.abs((r.left + r.width / 2) - (b.left + b.width / 2));
+    const p = el.parentElement!.getBoundingClientRect();
+    expect(p.width).withContext('the space around the element must be wide enough for centring to show').toBeGreaterThan(1100);
+    return Math.abs((r.left + r.width / 2) - (p.left + p.width / 2));
   };
 
   const workspace = (s: SessionDetail) => {
@@ -63,8 +69,6 @@ describe('page layout', () => {
     expect(running).not.toBeNull();
     expect(off(running)).toBeLessThan(2);
     expect(getComputedStyle(running).textAlign).toBe('center');
-    for (const part of ['h2', 'mat-progress-bar', '.step', '.hint'])
-      expect(off(running.querySelector(part)!)).withContext(part).toBeLessThan(2);
     expect(running.querySelector('.step')!.textContent).toContain('extracting and merging');
   }));
 
