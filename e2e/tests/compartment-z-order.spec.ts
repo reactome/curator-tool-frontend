@@ -3,9 +3,10 @@
  * the inner one without first moving the one around it out of the way. Cytoscape grabs the
  * topmost node under the pointer, so this checks which node its hit test finds.
  *
- * The compartment nodes the diagram library builds from the diagram JSON carry no reactomeId,
- * which is what this regressed on: the order fell back to the drawing, and that fallback treated
- * every compartment as layers of the same one.
+ * The order comes from the layout alone. The compartment nodes the diagram library builds from the
+ * diagram JSON carry no reactomeId, which this once regressed on: the two layers of a compartment
+ * are told apart from other compartments by node id, and keying them by reactomeId treated every
+ * compartment as layers of the same one.
  */
 
 import { expect, test } from '../fixtures/test';
@@ -42,25 +43,25 @@ test.describe('compartment stacking in the pathway diagram', () => {
     await expect(page.locator('app-pathway-diagram')).toBeAttached();
   });
 
-  /** Runs fn against the live cytoscape instance once the compartments are stacked by the tree. */
+  /** Runs fn against the live cytoscape instance once the compartments are stacked. */
   async function inDiagram<T>(page: any, fn: (cy: any) => T): Promise<T> {
     await expect.poll(() => page.evaluate(() => {
       const cy = (window as any).ng.getComponent(document.querySelector('app-pathway-diagram'))?.diagram?.cy;
       return cy?.getElementById('2-outer').data('z');
-    })).toBe(30);
+    })).toBe(10);
     return page.evaluate((source: string) => {
       const cy = (window as any).ng.getComponent(document.querySelector('app-pathway-diagram')).diagram.cy;
       return new Function('cy', `return (${source})(cy)`)(cy);
     }, fn.toString());
   }
 
-  test('orders compartments by the compartment tree', async ({ page }) => {
+  test('orders compartments by which one lies inside which', async ({ page }) => {
     const z = await inDiagram(page, cy => cy.nodes('.Compartment')
       .map((node: any) => [node.id(), node.data('z'), Number(node.style('z-index'))]));
 
-    // cytosol is at depth 2 and nucleoplasm at depth 3 of the fixture tree
+    // cytosol surrounds nothing else's bounds; nucleoplasm lies inside it
     expect(z).toEqual([
-      ['2-outer', 30, 30], ['2-inner', 35, 35], ['1-outer', 20, 20], ['1-inner', 25, 25]
+      ['2-outer', 10, 10], ['2-inner', 15, 15], ['1-outer', 0, 0], ['1-inner', 5, 5]
     ]);
   });
 

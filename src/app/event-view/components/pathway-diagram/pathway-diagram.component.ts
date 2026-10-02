@@ -809,7 +809,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     if (!this.pathwayId || this.pathwayId.length == 0)
       return;
     this.diagramUtils.diagramService = this.diagram.getDiagramService();
-    this.diagramUtils.updateCompartmentZOrder(this.diagram.cy, this.diagram.diagramId);
+    this.diagramUtils.updateCompartmentZOrder(this.diagram.cy);
     // Any resizing widgets are transient UI state and must never survive a (re)load - otherwise
     // a compartment can end up stuck showing resize widgets with no reachable "Disable Resizing" action.
     this.diagramUtils.disableAllResizing(this.diagram);
@@ -858,6 +858,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     this.diagram.cy.on('grab', 'node', () => {
       if (this.isEditing)
         this.pushUndoSnapshot();
+    });
+    // Compartments are stacked by which one lies inside which, so restack once one has been moved or resized.
+    this.diagram.cy.on('dragfree', 'node', (e: any) => {
+      const node = e.target;
+      if ((node.hasClass('Compartment') && !node.hasClass(LABEL_CLASS)) || node.hasClass('resizing'))
+        this.diagramUtils.updateCompartmentZOrder(this.diagram.cy);
     });
     // Keep the toolbar's "Align Centers" buttons in sync with the current selection.
     this.diagram.cy.on('select unselect', 'node', () => {

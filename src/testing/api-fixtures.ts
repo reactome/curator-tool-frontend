@@ -400,19 +400,6 @@ function diagramEdge(reactomeId: number, x: number, y: number) {
 }
 
 /**
- * The surroundedBy compartment hierarchy `/getCompartmentTree` returns, trimmed to
- * extracellular region > plasma membrane > cytosol > nucleus. The pathway diagram stacks its
- * compartments by it.
- */
-export const COMPARTMENT_TREE = (() => {
-  const node = (dbId: number, displayName: string, depth: number, children: any[] = []): any =>
-    ({ dbId, displayName, schemaClassName: 'Compartment', depth, parent: null, siblings: [], children, componentOf: [], components: [] });
-  return node(984, 'extracellular region', 0, [
-    node(876, 'plasma membrane', 1, [node(70101, 'cytosol', 2, [node(7660, 'nucleoplasm', 3)])])
-  ]);
-})();
-
-/**
  * A single place to describe every endpoint the app calls, so the Playwright router and any
  * `HttpTestingController`-based spec can be built from the same list rather than from
  * hand-written URL strings that silently stop matching.
@@ -513,7 +500,6 @@ export const DEFAULT_API_ROUTES: ApiRouteFixture[] = [
     match: p => p.includes('/fetchPathwayDiagramForPathway') || p.includes('/diagram'),
     body: PATHWAY_DIAGRAM
   },
-  { name: 'compartment tree', match: p => p.includes('/getCompartmentTree'), body: COMPARTMENT_TREE },
   { name: 'display names by dbIds', match: p => p.includes('/findDisplayNamesByDbIds'), body: [] },
   { name: 'reaction structures', match: p => p.includes('/findReactionStructuresByDbIds'), body: [] },
   { name: 'modified residues', match: p => p.includes('/findModifiedResiduesByDbIds'), body: [] },

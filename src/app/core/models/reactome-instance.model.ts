@@ -151,27 +151,6 @@ export interface EventTreeResponse {
 }
 
 /**
- * One node of the compartment hierarchy returned by the backend's getCompartmentTree endpoint.
- * children are the GO_CellularComponents surroundedBy this node, populated recursively. A
- * compartment surroundedBy several others (e.g. cytosol) appears once under each of them, at
- * possibly different depths.
- */
-export interface CompartmentTreeNode {
-  dbId: number;
-  displayName: string;
-  /** Compartment or GO_CellularComponent: only Compartments can be used in a compartment slot. */
-  schemaClassName: string;
-  /** 0 for the root. */
-  depth: number;
-  /** The node this one is surroundedBy in the tree; null for the root. */
-  parent?: DbIdDisplayName | null;
-  siblings: DbIdDisplayName[];
-  children: CompartmentTreeNode[];
-  componentOf: DbIdDisplayName[];
-  components: DbIdDisplayName[];
-}
-
-/**
  * A single input/output/catalyst participant of a reaction, as returned by the
  * backend's findReactionStructuresByDbIds endpoint -- dbId plus stoichiometry.
  */
