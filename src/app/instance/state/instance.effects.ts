@@ -145,6 +145,28 @@ export class InstanceEffects {
     { dispatch: false }
   );
 
+  // A wholesale replacement (loading an annotation, restoring a backup or importing a file) sets whole lists
+  // at once instead of registering instances one at a time, so none of the effects above run. Without this, the
+  // snapshots a new tab reads on start (see UserInstancesService.checkLocalStorage) would still hold the
+  // previous staged instances and a new Schema View would show none of the loaded ones.
+  replacedInstancesSnapshot$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(NewInstanceActions.set_new_instances,
+          UpdateInstanceActions.set_updated_instances,
+          DeleteInstanceActions.set_deleted_instances),
+        tap((action) => {
+          if (action.type === NewInstanceActions.set_new_instances.type)
+            this.storeNewInstances();
+          else if (action.type === UpdateInstanceActions.set_updated_instances.type)
+            this.storeUpdatedInstances();
+          else
+            this.storeDeletedInstances();
+        })
+      ),
+    { dispatch: false }
+  );
+
   newInstanceCommit$ = createEffect(
     () =>
       this.actions$.pipe(
