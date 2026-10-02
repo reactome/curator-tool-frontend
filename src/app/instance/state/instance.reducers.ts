@@ -78,7 +78,7 @@ export const deletedInstancesReducer = createReducer(
     (state, instance) => deletedInstancesAdaptor.removeOne(instance.dbId, state)
   ),
   on(DeleteInstanceActions.set_deleted_instances,
-    (state, {instances}) => deletedInstancesAdaptor.setMany(instances, state)
+    (state, {instances}) => deletedInstancesAdaptor.setAll(instances, state)
   )
 )
 

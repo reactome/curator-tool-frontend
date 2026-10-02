@@ -1,3 +1,7 @@
+### Build on October 2, 2026
+
+- Fixed: after **Load into staged instances**, or restoring a backup or loading a file, a Schema View opened afterwards now lists the loaded instances; before, only the tabs that were already open showed them. Loading or restoring a list with no staged deletions now clears the deletions staged before it instead of keeping them.
+
 ### Build on October 1, 2026
 
 - Added: **Paper2Path** now drafts a Reactome annotation from a single paper. Give it a PubMed ID (the paper must be open access in PubMed Central) or upload a PDF, and optionally a focus gene, and after about 10 to 15 minutes you get the paper's reactions with their participants, catalysts and regulators, each supported by quotes from the paper shown with their page, section and figure and marked as found word for word or as a close match. The **Issues** tab lists everything that needs your attention - identifiers that could not be resolved, reactions Reactome already has, quotes that could not be found - and **Check this reaction** runs a review of one reaction. A chat beside it answers questions about the paper and can propose changes; a proposal shows exactly what it would change and the quotes behind it, and nothing changes until you accept it. The earlier annotations are listed on the Paper2Path page, so you can leave while one is running and come back to it.
