@@ -2,6 +2,7 @@ import { HttpErrorResponse, HttpEvent, HttpHandler, HttpRequest, HttpResponse } 
 import { Router } from '@angular/router';
 import { Observable, defer, firstValueFrom, of, throwError } from 'rxjs';
 
+import { environment } from 'src/environments/environment.dev';
 import { TokenRefreshService } from '../services/token-refresh.service';
 import { HeaderInterceptor } from './header.interceptor';
 
@@ -126,5 +127,43 @@ describe('HeaderInterceptor', () => {
 
     expect(tokenRefresh.refresh).not.toHaveBeenCalled();
     expect(handled[0].headers.has('Authorization')).toBeFalse();
+  });
+
+  describe('requests to the curator-tool-llm service', () => {
+    const llmUrl = `${environment.llmApiURL}/sessions`;
+    const handlerFailingWithStatus = (status: number): HttpHandler => ({
+      handle: (request: HttpRequest<any>): Observable<HttpEvent<any>> => {
+        handled.push(request);
+        return throwError(() => new HttpErrorResponse({ status }));
+      }
+    });
+
+    it('sends the bearer token', async () => {
+      await firstValueFrom(interceptor.intercept(new HttpRequest('GET', llmUrl), handlerFailingWith401(0)));
+      expect(handled[0].headers.get('Authorization')).toBe('Bearer old-token');
+    });
+
+    it('does not log the curator out when the service is unreachable', async () => {
+      // status 0 on a curation request means the connection is lost and sends the curator to /login;
+      // the annotation service being down must not do that.
+      await expectAsync(firstValueFrom(
+        interceptor.intercept(new HttpRequest('GET', llmUrl), handlerFailingWithStatus(0)))).toBeRejected();
+      expect(router.navigate).not.toHaveBeenCalled();
+      expect(localStorage.getItem('token')).toBe('old-token');
+    });
+
+    it('does not refresh or end the session on a 401 (LlmApiService does one refresh and reports the rest)', async () => {
+      await expectAsync(firstValueFrom(
+        interceptor.intercept(new HttpRequest('GET', llmUrl), handlerFailingWithStatus(401)))).toBeRejected();
+      expect(tokenRefresh.refresh).not.toHaveBeenCalled();
+      expect(router.navigate).not.toHaveBeenCalled();
+      expect(handled.length).toBe(1);
+    });
+
+    it('still treats a lost connection on a curation request as a lost session', async () => {
+      await expectAsync(firstValueFrom(
+        interceptor.intercept(new HttpRequest('GET', url), handlerFailingWithStatus(0)))).toBeRejected();
+      expect(router.navigate).toHaveBeenCalledWith(['/login']);
+    });
   });
 });

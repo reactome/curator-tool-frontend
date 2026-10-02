@@ -1,0 +1,15 @@
+<p class="none" *ngIf="!evidence.length">No evidence is attached to this reaction.</p>
+<article class="ev" *ngFor="let e of evidence; trackBy: trackById">
+  <blockquote>{{ e.quote }}</blockquote>
+  <div class="meta">
+    <span class="verify" [ngClass]="'v-' + e.verified" [matTooltip]="verifyHint(e)">{{ verifyLabel(e) }}</span>
+    <span *ngIf="e.page !== null">page {{ e.page }}</span>
+    <span *ngIf="e.section">{{ e.section }}</span>
+    <span *ngIf="e.figure">Fig. {{ e.figure }}</span>
+    <span *ngIf="e.experimental_species" class="chip">{{ e.experimental_species }}</span>
+    <span *ngIf="e.system" class="chip">{{ e.system }}</span>
+    <span *ngIf="origin(e) as o" class="chip warn">{{ o }}</span>
+    <span *ngFor="let s of e.supports" class="chip supports">supports {{ supportLabel(s) }}</span>
+    <span class="id">{{ e.id }}</span>
+  </div>
+</article>

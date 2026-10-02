@@ -1,0 +1,71 @@
+<div class="error" *ngIf="error" role="alert"><mat-icon>error_outline</mat-icon> {{ error }}</div>
+<p *ngIf="loading && !detail">Loading…</p>
+
+<div *ngIf="detail as d" class="reaction">
+  <h2>{{ d.reaction.name }}</h2>
+  <p class="type">{{ d.reaction.reaction_type }}</p>
+
+  <section class="existing" *ngFor="let m of myMatches">
+    <mat-icon>content_copy</mat-icon>
+    <div>
+      <strong>{{ m.level === 'same' ? 'Reactome appears to have this reaction already' : 'Similar to an existing reaction' }}:</strong>
+      {{ m.display_name }} <span class="stid">({{ m.st_id }})</span>
+      <span class="why">{{ m.reasons.join(' · ') }}</span>
+    </div>
+  </section>
+
+  <section *ngIf="myIssues.length" class="open-issues">
+    <h3>Needs attention</h3>
+    <ul>
+      <li *ngFor="let i of myIssues"><span class="dot" [ngClass]="'sev-' + i.severity"></span>{{ i.message }}</li>
+    </ul>
+  </section>
+
+  <section>
+    <h3>Participants</h3>
+    <div class="cols">
+      <div>
+        <h4>Inputs</h4>
+        <ul><li *ngFor="let p of participants(d.reaction.inputs)">{{ describe(p) }}
+          <span class="detail" *ngFor="let x of details(p)">{{ x }}</span>
+          <span class="flag" *ngFor="let f of p.needs_resolution">needs {{ f }}</span></li></ul>
+      </div>
+      <div>
+        <h4>Outputs</h4>
+        <ul><li *ngFor="let p of participants(d.reaction.outputs)">{{ describe(p) }}
+          <span class="detail" *ngFor="let x of details(p)">{{ x }}</span>
+          <span class="flag" *ngFor="let f of p.needs_resolution">needs {{ f }}</span></li></ul>
+      </div>
+    </div>
+    <p *ngIf="d.reaction.catalyst as c"><strong>Catalyst:</strong>
+      {{ participant(c.entity) ? describe(participant(c.entity)!) : c.entity }}
+      <span *ngIf="c.activity?.name"> ({{ c.activity?.name }})</span></p>
+    <ul class="regs" *ngIf="d.reaction.regulations.length">
+      <li *ngFor="let g of d.reaction.regulations">
+        <strong>{{ regulationLabel(g.kind) }}</strong>
+        {{ participant(g.regulator) ? describe(participant(g.regulator)!) : g.regulator }}
+        <em *ngIf="g.note">: {{ g.note }}</em>
+      </li>
+    </ul>
+  </section>
+
+  <section *ngIf="d.reaction.summation">
+    <h3>Summary</h3>
+    <p>{{ d.reaction.summation }}</p>
+  </section>
+
+  <section>
+    <div class="qa-head">
+      <h3>Evidence ({{ d.evidence.length }})</h3>
+      <button mat-stroked-button [disabled]="qaBusy" (click)="runQa()"><mat-icon>fact_check</mat-icon> Check this reaction</button>
+    </div>
+    <mat-progress-bar *ngIf="qaBusy" mode="indeterminate"></mat-progress-bar>
+    <div class="qa" *ngIf="qa as q">
+      <p><strong>{{ q.verdict === 'ok' ? 'No blocking problems found' : 'Needs work' }}</strong>
+        <span *ngIf="q.score !== null"> · reviewer confidence {{ q.score * 100 | number:'1.0-0' }}%</span>
+        <span *ngIf="!q.llm_used"> · rule checks only</span></p>
+      <ul><li *ngFor="let f of q.findings"><span class="dot" [ngClass]="'sev-' + f.severity"></span>{{ f.message }}</li></ul>
+    </div>
+    <app-evidence-list [evidence]="d.evidence"></app-evidence-list>
+  </section>
+</div>

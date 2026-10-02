@@ -1,0 +1,17 @@
+.page { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
+.intro, .hint, .empty { color: #555; }
+.starters { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin: 16px 0; }
+mat-card mat-form-field { width: 100%; }
+.file-name { margin-left: 8px; color: #333; }
+.focus { margin-top: 12px; }
+.error { display: flex; align-items: center; gap: 8px; background: #fdecea; color: #7a1c14; padding: 10px 12px; border-radius: 4px; margin: 12px 0; }
+table.sessions { width: 100%; border-collapse: collapse; }
+table.sessions th { text-align: left; font-weight: 500; color: #555; border-bottom: 1px solid #ddd; padding: 8px; }
+table.sessions td { padding: 10px 8px; border-bottom: 1px solid #eee; }
+table.sessions tbody tr { cursor: pointer; }
+table.sessions tbody tr:hover, table.sessions tbody tr:focus { background: #f5f7fa; outline: none; }
+.status { padding: 2px 10px; border-radius: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+.status-ready { background: #e3f4e6; color: #1b5e20; }
+.status-running, .status-queued { background: #e3effa; color: #0d47a1; }
+.status-failed { background: #fdecea; color: #7a1c14; }
+.progress { margin-left: 8px; color: #666; font-size: 12px; }

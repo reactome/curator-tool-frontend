@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Store } from "@ngrx/store";
-import { combineLatest, defaultIfEmpty, finalize, forkJoin, Observable, of, take } from "rxjs";
-import { catchError, map, tap } from "rxjs/operators";
+import { combineLatest, defaultIfEmpty, finalize, forkJoin, Observable, of, take, throwError } from "rxjs";
+import { catchError, map, switchMap, tap } from "rxjs/operators";
 import { DiagramLock, Instance, UserInstances } from "src/app/core/models/reactome-instance.model";
 import { AuthenticateService } from "src/app/core/services/authenticate.service";
 import { DataService } from "src/app/core/services/data.service";
@@ -13,6 +13,18 @@ import { bookmarkedInstances } from "src/app/schema-view/instance-bookmark/state
 // import { PathwayDiagramObjectActions } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.actions";
 // import { pathwayDiagramObjects } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.selectors";
 // import { PathwayDiagramObject } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.model";
+
+/** What loadAnnotationInstances() did, so the caller can tell the curator. */
+export interface AnnotationLoadResult {
+    /** How many staged instances (new, updated, deleted, bookmarks, default person) were replaced. */
+    replaced: number;
+    /** True when the replaced state was saved to the server first (or the server already held it). */
+    backedUp: boolean;
+    /** The newest server backup after saving, when it could be looked up. */
+    backupFile?: string;
+    /** How many new instances the annotation brought in. */
+    loaded: number;
+}
 
 /**
  * Group a set of utility methods here for easy access to all other classes.
@@ -163,6 +175,63 @@ export class UserInstancesService {
                 this.applyUserInstancesToEditingSession(userInstances);
                 this.broadcastUserInstances(userInstances);
             })
+        );
+    }
+
+    /** This tab's currently staged state, as persistInstances() would send it. */
+    private currentStaged(): Observable<UserInstances> {
+        return combineLatest([
+            this.store.select(updatedInstances()),
+            this.store.select(newInstances()),
+            this.store.select(deleteInstances()),
+            this.store.select(bookmarkedInstances()),
+            this.store.select(defaultPerson()),
+        ]).pipe(
+            take(1),
+            map(([updated, newInst, deleted, bookmarked, defaultPersonInstances]) => ({
+                newInstances: newInst || [],
+                updatedInstances: updated || [],
+                deletedInstances: deleted || [],
+                bookmarks: bookmarked || [],
+                defaultPerson: (defaultPersonInstances && defaultPersonInstances.length > 0)
+                    ? defaultPersonInstances[0]
+                    : undefined,
+            }))
+        );
+    }
+
+    /** How many staged items (new, updated, deleted, bookmarks, default person) this tab holds now. */
+    stagedCount(): Observable<number> {
+        return this.currentStaged().pipe(map(local => this.countStagedInstances(local)));
+    }
+
+    /**
+     * Replace the staged instances with the ones an annotation session (curator-tool-llm) produced.
+     *
+     * This is the same replace-everything load as importUserInstancesFromFile(), made safe for a
+     * curator who already has work staged: whatever is staged now is first saved to the server (the
+     * same save persistInstances() makes, which keeps it in the list of restorable backups). If that
+     * save fails, nothing is replaced. There is deliberately no merging with the existing staged
+     * instances, and no renumbering: the annotation's ids are used as they are, so an instance keeps
+     * the id the annotation session knows it by (which is how its evidence is found).
+     */
+    loadAnnotationInstances(incoming: UserInstances): Observable<AnnotationLoadResult> {
+        return this.currentStaged().pipe(
+            switchMap(local => {
+                const replaced = this.countStagedInstances(local);
+                if (replaced === 0)
+                    return of({ replaced, backedUp: false } as Omit<AnnotationLoadResult, 'loaded'>);
+                const user = this.authService.getUser();
+                if (!user)
+                    return throwError(() => new Error('You are not signed in, so the staged instances cannot be backed up. Nothing was changed.'));
+                return this.dataService.persitUserInstances(local, user).pipe(
+                    switchMap(() => this.dataService.listUserInstanceBackups().pipe(
+                        map(list => [...list].sort((a, b) => b.lastModified - a.lastModified)[0]?.fileName),
+                        catchError(() => of(undefined)))),
+                    map(backupFile => ({ replaced, backedUp: true, backupFile })));
+            }),
+            switchMap(backup => this.importUserInstancesFromFile(incoming).pipe(
+                map(() => ({ ...backup, loaded: incoming.newInstances?.length ?? 0 }))))
         );
     }
 

@@ -1,0 +1,18 @@
+h2 { margin: 0 0 2px; font-weight: 500; }
+h3 { margin: 18px 0 6px; font-size: 15px; font-weight: 500; }
+h4 { margin: 4px 0; font-size: 13px; color: #555; font-weight: 500; }
+.type { margin: 0; color: #666; font-size: 13px; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+ul { margin: 0; padding-left: 18px; }
+.detail { margin-left: 8px; color: #666; font-size: 12px; }
+.flag { margin-left: 8px; background: #fff3e0; color: #8a4b00; border-radius: 10px; padding: 0 8px; font-size: 12px; }
+.existing { display: flex; gap: 10px; align-items: flex-start; background: #fff8e1; border: 1px solid #ffe082; border-radius: 4px; padding: 8px 12px; margin: 10px 0; }
+.existing mat-icon { color: #b26a00; flex-shrink: 0; }
+.stid, .why { color: #666; font-size: 12px; margin-left: 6px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; background: #9e9e9e; }
+.dot.sev-action { background: #c62828; }
+.dot.sev-warning { background: #ef6c00; }
+.open-issues ul, .qa ul { list-style: none; padding-left: 0; }
+.qa-head { display: flex; justify-content: space-between; align-items: center; }
+.qa { background: #f5f7fa; border-radius: 4px; padding: 8px 12px; margin: 8px 0; }
+.error { display: flex; align-items: center; gap: 8px; background: #fdecea; color: #7a1c14; padding: 10px 12px; border-radius: 4px; }
