@@ -19,7 +19,8 @@ describe('ReferrersPageComponent', () => {
 
   beforeEach(() => {
     params = new Subject<any>();
-    dataService = jasmine.createSpyObj<DataService>('DataService', ['fetchInstance', 'getReferrers']);
+    dataService = jasmine.createSpyObj<DataService>('DataService', ['fetchInstance', 'getReferrers', 'isSchemaClass']);
+    dataService.isSchemaClass.and.returnValue(false);
     dataService.fetchInstance.and.returnValue(of(instance));
     dataService.getReferrers.and.returnValue(of([]));
 
@@ -63,6 +64,19 @@ describe('ReferrersPageComponent', () => {
 
     expect(component.referrerGroups.map(group => group.attributeName)).toEqual(['hasEvent', 'precedingEvent']);
     expect(component.totalCount).toBe(3);
+  });
+
+  it('leaves out ReferenceEntity referrers via physicalEntity, keeping the rest', () => {
+    dataService.isSchemaClass.and.callFake((inst: Instance, name: string) =>
+      name === 'ReferenceEntity' && inst.schemaClassName.startsWith('Reference'));
+    dataService.getReferrers.and.returnValue(of([
+      { attributeName: 'physicalEntity', referrers: [shell(1, 'a', 'ReferenceGeneProduct'), shell(2, 'b', 'CatalystActivity')] },
+    ] as Referrer[]));
+
+    params.next({ dbId: '71553' });
+
+    expect(component.referrerGroups[0].referrers.map(i => i.dbId)).toEqual([2]);
+    expect(component.totalCount).toBe(1);
   });
 
   it('reloads when the route moves to another instance', () => {

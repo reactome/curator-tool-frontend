@@ -4,6 +4,7 @@ import { Subscription, switchMap, of, catchError } from 'rxjs';
 import { Instance, Referrer } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { PageTitleService } from 'src/app/core/services/page-title.service';
+import { omitReferenceEntityPhysicalEntityReferrers } from '../referrers-table/referrers-table.component';
 
 /**
  * A routed, bookmarkable view of an instance's referrers, reached via
@@ -55,7 +56,7 @@ export class ReferrersPageComponent implements OnInit, OnDestroy {
         return this.loadReferrers(dbId);
       })
     ).subscribe(referrers => {
-      this.referrerGroups = referrers
+      this.referrerGroups = omitReferenceEntityPhysicalEntityReferrers(referrers, this.dataService)
         .filter(group => group.referrers.length > 0)
         .sort((a, b) => a.attributeName.localeCompare(b.attributeName));
       this.totalCount = this.referrerGroups.reduce((count, group) => count + group.referrers.length, 0);

@@ -7,6 +7,20 @@ import { ActionButton } from 'src/app/schema-view/list-instances/components/list
 import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
 
 /**
+ * Drops ReferenceEntity instances (of any subclass) that refer via physicalEntity, and any
+ * physicalEntity group left empty by that. Shared by the referrers dialog and page.
+ */
+export function omitReferenceEntityPhysicalEntityReferrers(referrers: Referrer[],
+  dataService: DataService): Referrer[] {
+  return referrers
+    .map(ref => ref.attributeName !== 'physicalEntity' ? ref : {
+      ...ref,
+      referrers: ref.referrers.filter(inst => !dataService.isSchemaClass(inst, 'ReferenceEntity'))
+    })
+    .filter(ref => ref.attributeName !== 'physicalEntity' || ref.referrers.length > 0);
+}
+
+/**
  * A dialog component to show referrers of an instance.
  */
 @Component({
@@ -34,6 +48,10 @@ export class ReferrersTableComponent {
       // Wrap them together to avoid NG0100 error
       this.showProgressSpinner = true;
       this.dataService.getReferrers(this.instance!.dbId).subscribe(referrers => {
+        // A deletion still shows them: deleting this instance changes them.
+        if (!this.deletion) {
+          referrers = omitReferenceEntityPhysicalEntityReferrers(referrers, this.dataService);
+        }
         referrers.forEach(ref => {
           this.totalCount += ref.referrers.length
           for (let inst of ref.referrers) {

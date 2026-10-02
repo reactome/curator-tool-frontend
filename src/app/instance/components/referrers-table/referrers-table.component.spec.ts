@@ -97,6 +97,56 @@ describe('ReferrersTableComponent', () => {
     expect(component.isExpanded('input')).toBeFalse();
   }));
 
+  describe('ReferenceEntity referrers via physicalEntity', () => {
+    const refGeneProduct = makeInstance({ dbId: 301, schemaClassName: 'ReferenceGeneProduct' });
+    const catalyst = makeInstance({ dbId: 302, schemaClassName: 'CatalystActivity' });
+
+    // The shared schema tree has no ReferenceEntity, so answer for it here
+    function buildWithReferenceEntity(deletion: boolean): ReferrersTableComponent {
+      const component = build(makeInstance({ dbId: 202 }), deletion);
+      dataService.isSchemaClass.and.callFake((inst: Instance, name: string) =>
+        name === 'ReferenceEntity' && inst.schemaClassName === 'ReferenceGeneProduct');
+      return component;
+    }
+
+    it('are left out, while other physicalEntity referrers stay', fakeAsync(() => {
+      referrerGroups.push(makeReferrer('physicalEntity', [refGeneProduct, catalyst]));
+      const component = buildWithReferenceEntity(false);
+      tick();
+
+      const group = component.instanceList.find(r => r.attributeName === 'physicalEntity');
+      expect(group!.referrers.map(i => i.dbId)).toEqual([302]);
+      expect(component.totalCount).toEqual(5);
+    }));
+
+    it('drop the physicalEntity group when they were all it held', fakeAsync(() => {
+      referrerGroups.push(makeReferrer('physicalEntity', [refGeneProduct]));
+      const component = buildWithReferenceEntity(false);
+      tick();
+
+      expect(component.instanceList.map(r => r.attributeName))
+        .toEqual(['hasEvent', 'input', 'output']);
+      expect(component.totalCount).toEqual(4);
+    }));
+
+    it('are only left out via physicalEntity', fakeAsync(() => {
+      referrerGroups.push(makeReferrer('inferredFrom', [refGeneProduct]));
+      const component = buildWithReferenceEntity(false);
+      tick();
+
+      expect(component.instanceList.map(r => r.attributeName)).toContain('inferredFrom');
+    }));
+
+    it('are kept for a deletion, since deleting changes them', fakeAsync(() => {
+      referrerGroups.push(makeReferrer('physicalEntity', [refGeneProduct]));
+      const component = buildWithReferenceEntity(true);
+      tick();
+
+      expect(component.instanceList.map(r => r.attributeName)).toContain('physicalEntity');
+      expect(component.totalCount).toEqual(5);
+    }));
+  });
+
   it('reports a total of zero and expands nothing when there are no referrers', fakeAsync(() => {
     referrerGroups = [];
     const component = build(makeInstance({ dbId: 202 }));
