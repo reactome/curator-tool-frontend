@@ -59,9 +59,14 @@
         <app-issues-panel [sessionId]="id" [issues]="issues" (changed)="onIssueChanged($event)"
                           (openReaction)="openReaction($event)"></app-issues-panel>
       </mat-tab>
+      <mat-tab label="Usage">
+        <ng-template matTabContent>
+          <app-usage-panel [sessionId]="id" [stamp]="usageStamp"></app-usage-panel>
+        </ng-template>
+      </mat-tab>
     </mat-tab-group>
    </div>
    <app-chat-panel [sessionId]="id" [contextLabel]="selectedReaction?.name ?? null" [contextDbIds]="contextDbIds"
-                   (proposalDecided)="onProposalDecided($event)"></app-chat-panel>
+                   (proposalDecided)="onProposalDecided($event)" (turnDone)="onTurnDone()"></app-chat-panel>
   </div>
 </div>

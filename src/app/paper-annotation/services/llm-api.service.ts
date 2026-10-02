@@ -5,7 +5,8 @@ import { environment } from 'src/environments/environment.dev';
 import { TokenRefreshService } from 'src/app/core/services/token-refresh.service';
 import {
   AcceptResponse, ChatEvent, ExistingMatch, InstanceEvidence, Issue, IssueStatus, Job, Passage, Proposal,
-  ProposalRequest, QAResult, ReactionDetail, SessionDetail, SessionSummary, SessionUserInstances, StartResponse, StoredChatMessage
+  ProposalRequest, QAResult, ReactionDetail, SessionDetail, SessionSummary, SessionUserInstances, StartResponse, StoredChatMessage,
+  UsageReport
 } from '../models/llm-api.models';
 import { parseSse } from './sse-parser';
 
@@ -113,6 +114,11 @@ export class LlmApiService {
 
   instanceEvidence(id: string, dbId: number): Observable<InstanceEvidence[]> {
     return this.call(() => this.http.get<InstanceEvidence[]>(this.url(`/sessions/${id}/instances/${dbId}/evidence`)));
+  }
+
+  /** Language-model tokens spent on this annotation, per step. */
+  usage(id: string): Observable<UsageReport> {
+    return this.call(() => this.http.get<UsageReport>(this.url(`/sessions/${id}/usage`)));
   }
 
   exportInstances(id: string): Observable<SessionUserInstances> {

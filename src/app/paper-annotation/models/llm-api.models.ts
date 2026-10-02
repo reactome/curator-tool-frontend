@@ -191,13 +191,49 @@ export interface QAResult {
   llm_used: boolean;
 }
 
+/** Language-model tokens, as the provider reports them. Cache reads and writes are reported separately. */
+export interface UsageCounts {
+  calls: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_write_tokens: number;
+}
+
+export type UsageStep = 'extraction' | 'merge' | 'review' | 'draft' | 'qa' | 'chat';
+
+/** One step's totals. `saved` marks a step whose numbers come from the saved run a replayed annotation was made from. */
+export interface UsageStepRow extends UsageCounts {
+  step: UsageStep;
+  total_tokens: number;
+  saved: boolean;
+}
+
+/** One recording: a pipeline step, a chat turn ("turn 3"), or a reaction check (the reaction's key). */
+export interface UsageEntry extends UsageCounts {
+  step: UsageStep;
+  model: string | null;
+  detail: string | null;
+  at: number;
+}
+
+export interface UsageReport {
+  source: 'run' | 'saved';
+  entries: UsageEntry[];
+  steps: UsageStepRow[];
+  /** Everything listed, saved rows included. */
+  totals: UsageCounts & { total_tokens: number };
+  /** Only what was spent in this session (saved rows left out). */
+  spent_now: UsageCounts & { total_tokens: number };
+}
+
 /** What POST /sessions/{id}/chat streams (server-sent events). */
 export type ChatEvent =
   | { event: 'text'; data: { delta: string } }
   | { event: 'tool'; data: { name: string; input: Record<string, unknown> } }
   | { event: 'proposal'; data: Proposal }
   | { event: 'error'; data: { message: string } }
-  | { event: 'done'; data: { proposalIds: string[] } };
+  | { event: 'done'; data: { proposalIds: string[]; usage?: UsageCounts } };
 
 /** The instances a session wants staged: new instances with negative dbIds, shells for references. */
 export interface SessionUserInstances {

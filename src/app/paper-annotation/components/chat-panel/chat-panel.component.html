@@ -12,6 +12,9 @@
       <div class="thinking" *ngIf="t.streaming && !t.text" role="status">Thinking<span class="dots" aria-hidden="true"></span></div>
       <div class="text" *ngIf="t.text">{{ t.text }}<span class="cursor" *ngIf="t.streaming" aria-hidden="true">▍</span></div>
       <div class="err" *ngIf="t.error">{{ t.error }}</div>
+      <div class="tokens" *ngIf="t.usage" [attr.aria-label]="'Tokens used by this reply'">
+        {{ t.usage.input_tokens | number }} in · {{ t.usage.output_tokens | number }} out tokens
+      </div>
       <ng-container *ngFor="let id of t.proposalIds">
         <app-proposal-card *ngIf="proposals.get(id) as p" [sessionId]="sessionId" [proposal]="p" (decided)="onDecided($event)"></app-proposal-card>
       </ng-container>

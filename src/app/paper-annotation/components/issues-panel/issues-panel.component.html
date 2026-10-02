@@ -41,7 +41,7 @@
       </div>
       <div class="actions">
         <ng-container *ngIf="i.status === 'open'; else reopen">
-          <button mat-button [disabled]="busy.has(i.id)" (click)="setStatus(i, 'resolved')">Resolved</button>
+          <button mat-button [disabled]="busy.has(i.id)" (click)="setStatus(i, 'resolved')">Resolve</button>
           <button mat-button [disabled]="busy.has(i.id)" (click)="setStatus(i, 'dismissed')">Dismiss</button>
         </ng-container>
         <ng-template #reopen>

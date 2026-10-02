@@ -31,6 +31,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   private restart$ = new Subject<void>();
 
   loading = false;
+  /** Bumped when something that spends tokens may have happened, so the usage tab reloads. */
+  usageStamp = 0;
 
   constructor(private api: LlmApiService, private route: ActivatedRoute, private location: Location,
               private dialog: MatDialog, private snack: MatSnackBar, private userInstances: UserInstancesService) {}
@@ -78,6 +80,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   /** Re-read the session, its issues and its existing-reaction matches (after an edit, QA, or a status change). */
   reload(): void {
+    this.usageStamp++;
     forkJoin({ session: this.api.session(this.id), issues: this.api.issues(this.id), existing: this.api.existing(this.id) })
       .subscribe({
         next: r => { this.session = r.session; this.issues = r.issues; this.existing = r.existing; this.error = null; },
@@ -137,6 +140,11 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
    */
   openSchemaView(): void {
     window.open(this.location.prepareExternalUrl('/schema_view'), '_blank', 'noopener');
+  }
+
+  /** A chat turn ended: its tokens are now recorded. */
+  onTurnDone(): void {
+    this.usageStamp++;
   }
 
   select(key: string): void {

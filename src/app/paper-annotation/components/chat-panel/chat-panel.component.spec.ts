@@ -152,6 +152,42 @@ describe('ChatPanelComponent', () => {
     expect(el().querySelector('app-proposal-card')?.textContent).toContain('accepted');
   });
 
+  describe('token usage of a reply', () => {
+    const tokens = () => el().querySelector('.tokens');
+    const usage = { calls: 2, input_tokens: 5878, output_tokens: 48, cache_read_tokens: 0, cache_write_tokens: 0 };
+
+    it('shows what the reply used once the turn ends, and tells the workspace', () => {
+      create();
+      let ended = 0;
+      component.turnDone.subscribe(() => ended++);
+      component.draft = 'go';
+      component.send();
+      fixture.detectChanges();
+      emit({ event: 'text', data: { delta: 'Hello' } });
+      expect(tokens()).toBeNull();                                           // not known until the turn ends
+      emit({ event: 'done', data: { proposalIds: [], usage } });
+      expect(tokens()!.textContent!.replace(/\s+/g, ' ').trim()).toBe('5,878 in · 48 out tokens');
+      expect(ended).toBe(1);
+    });
+
+    it('shows nothing, but still reports the turn as done, when no usage came back', () => {
+      create();
+      let ended = 0;
+      component.turnDone.subscribe(() => ended++);
+      component.draft = 'go';
+      component.send();
+      emit({ event: 'text', data: { delta: 'Hello' } });
+      emit({ event: 'done', data: { proposalIds: [] } });
+      expect(tokens()).toBeNull();
+      expect(ended).toBe(1);
+    });
+
+    it('is not shown for stored history, whose per-reply usage is not kept', () => {
+      create([{ role: 'user', text: 'hi', at: 1, proposal_ids: [] }, { role: 'assistant', text: 'hello', at: 2, proposal_ids: [] }]);
+      expect(tokens()).toBeNull();
+    });
+  });
+
   describe('the thinking indicator', () => {
     const thinking = () => el().querySelector('.thinking');
 

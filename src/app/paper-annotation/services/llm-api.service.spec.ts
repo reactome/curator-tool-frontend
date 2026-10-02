@@ -78,6 +78,15 @@ describe('LlmApiService', () => {
       expect(http.expectOne(`${base}/sessions/s1/proposals/p-002/reject`).request.method).toBe('POST');
     });
 
+    it('reads the token usage of a session', () => {
+      let got: any;
+      service.usage('s1').subscribe(r => got = r);
+      const req = http.expectOne(`${base}/sessions/s1/usage`);
+      expect(req.request.method).toBe('GET');
+      req.flush({ source: 'run', entries: [], steps: [], totals: {}, spent_now: {} });
+      expect(got.source).toBe('run');
+    });
+
     it('reads evidence by instance dbId, including a negative one', () => {
       service.instanceEvidence('s1', -7).subscribe();
       http.expectOne(`${base}/sessions/s1/instances/-7/evidence`).flush([]);

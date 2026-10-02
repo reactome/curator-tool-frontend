@@ -1,6 +1,6 @@
 import { AfterViewChecked, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 import { Subscription, forkJoin } from 'rxjs';
-import { ChatEvent, Proposal } from '../../models/llm-api.models';
+import { ChatEvent, Proposal, UsageCounts } from '../../models/llm-api.models';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
 
 interface Turn {
@@ -11,6 +11,8 @@ interface Turn {
   proposalIds: string[];
   streaming?: boolean;
   error?: string;
+  /** Tokens this reply used, reported when the turn ends. */
+  usage?: UsageCounts;
 }
 
 const STEP_LABELS: Record<string, string> = {
@@ -35,6 +37,8 @@ export class ChatPanelComponent implements OnInit, OnDestroy, AfterViewChecked {
   @Input() contextDbIds: number[] = [];
   /** An edit was accepted or rejected: the workspace should reload. */
   @Output() proposalDecided = new EventEmitter<Proposal>();
+  /** A turn ended, so the tokens it used are recorded and a usage view can refresh. */
+  @Output() turnDone = new EventEmitter<void>();
 
   @ViewChild('log') log?: ElementRef<HTMLElement>;
 
@@ -118,7 +122,11 @@ export class ChatPanelComponent implements OnInit, OnDestroy, AfterViewChecked {
         reply.proposalIds.push(ev.data.id);
         break;
       case 'error': reply.error = ev.data.message; break;
-      case 'done': reply.streaming = false; break;
+      case 'done':
+        reply.streaming = false;
+        if (ev.data.usage) reply.usage = ev.data.usage;
+        this.turnDone.emit();
+        break;
     }
   }
 

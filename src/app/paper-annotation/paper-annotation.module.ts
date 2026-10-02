@@ -23,12 +23,13 @@ import { PaperAnnotationRoutingModule } from './paper-annotation-routing.module'
 import { ProposalCardComponent } from './components/proposal-card/proposal-card.component';
 import { ReactionDetailComponent } from './components/reaction-detail/reaction-detail.component';
 import { SessionListComponent } from './components/session-list/session-list.component';
+import { UsagePanelComponent } from './components/usage-panel/usage-panel.component';
 import { WorkspaceComponent } from './components/workspace/workspace.component';
 
 @NgModule({
   declarations: [
     SessionListComponent, WorkspaceComponent, ReactionDetailComponent, IssuesPanelComponent,
-    ChatPanelComponent, ProposalCardComponent, LoadStagingDialogComponent
+    ChatPanelComponent, ProposalCardComponent, LoadStagingDialogComponent, UsagePanelComponent
   ],
   imports: [
     CommonModule, FormsModule, PaperAnnotationRoutingModule, EvidenceListComponent,

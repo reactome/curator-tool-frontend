@@ -217,6 +217,19 @@ describe('WorkspaceComponent', () => {
     });
   });
 
+  it('asks the usage tab to reload when a chat turn ends and when the session is reloaded', fakeAsync(() => {
+    make();
+    component.ngOnInit();
+    tick(0);
+    const before = component.usageStamp;
+    component.onTurnDone();
+    expect(component.usageStamp).toBe(before + 1);
+    component.reload();
+    expect(component.usageStamp).toBe(before + 2);                        // a reaction check or an edit also goes through reload()
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
   it('marks staging stale only when an accepted edit arrives, and reloads either way', fakeAsync(() => {
     make();
     component.ngOnInit();

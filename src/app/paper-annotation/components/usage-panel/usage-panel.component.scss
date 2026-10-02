@@ -1,0 +1,14 @@
+.usage { max-width: 900px; padding: 16px 4px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; font-weight: 400; }
+thead th { color: #555; font-weight: 500; border-bottom: 1px solid #ccc; }
+th.n, td.n { text-align: right; }
+tbody th { font-weight: 400; }
+tr.saved { color: #555; }
+.badge { margin-left: 8px; font-size: 11px; background: #eceff1; color: #455a64; border-radius: 10px; padding: 1px 8px; white-space: nowrap; }
+tfoot tr.total th, tfoot tr.total td { font-weight: 500; border-top: 1px solid #ccc; border-bottom: none; }
+tfoot tr.now th, tfoot tr.now td { color: #0d47a1; }
+.hint, .none { color: #666; font-size: 13px; line-height: 1.45; }
+.details { margin-top: 16px; }
+.details summary { cursor: pointer; color: #1a3f8f; margin-bottom: 8px; }
+.error { background: #fdecea; color: #7a1c14; padding: 10px 12px; border-radius: 4px; margin-bottom: 8px; }

@@ -1,0 +1,81 @@
+<div class="usage">
+  <div class="error" *ngIf="error" role="alert">{{ error }}</div>
+  <p *ngIf="loading && !report">Loading…</p>
+
+  <p class="none" *ngIf="report && !report.steps.length">
+    No model usage was recorded for this annotation.
+  </p>
+
+  <table *ngIf="report?.steps?.length" aria-label="Tokens used by each step">
+    <thead>
+      <tr>
+        <th scope="col">Step</th>
+        <th scope="col" class="n">Calls</th>
+        <th scope="col" class="n">Input</th>
+        <th scope="col" class="n">Output</th>
+        <th scope="col" class="n" *ngIf="hasCache">Cache read</th>
+        <th scope="col" class="n" *ngIf="hasCache">Cache write</th>
+        <th scope="col" class="n">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let r of report!.steps" [class.saved]="r.saved">
+        <th scope="row">
+          {{ label(r.step) }}
+          <span class="badge" *ngIf="r.saved" title="These numbers are from the run this annotation was saved from; nothing was spent on them now.">saved run</span>
+        </th>
+        <td class="n">{{ r.calls | number }}</td>
+        <td class="n">{{ r.input_tokens | number }}</td>
+        <td class="n">{{ r.output_tokens | number }}</td>
+        <td class="n" *ngIf="hasCache">{{ r.cache_read_tokens | number }}</td>
+        <td class="n" *ngIf="hasCache">{{ r.cache_write_tokens | number }}</td>
+        <td class="n">{{ r.total_tokens | number }}</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr class="total">
+        <th scope="row">{{ anySaved ? 'All steps' : 'Total' }}</th>
+        <td class="n">{{ report!.totals.calls | number }}</td>
+        <td class="n">{{ report!.totals.input_tokens | number }}</td>
+        <td class="n">{{ report!.totals.output_tokens | number }}</td>
+        <td class="n" *ngIf="hasCache">{{ report!.totals.cache_read_tokens | number }}</td>
+        <td class="n" *ngIf="hasCache">{{ report!.totals.cache_write_tokens | number }}</td>
+        <td class="n">{{ report!.totals.total_tokens | number }}</td>
+      </tr>
+      <tr class="total now" *ngIf="anySaved">
+        <th scope="row">Spent in this session</th>
+        <td class="n">{{ report!.spent_now.calls | number }}</td>
+        <td class="n">{{ report!.spent_now.input_tokens | number }}</td>
+        <td class="n">{{ report!.spent_now.output_tokens | number }}</td>
+        <td class="n" *ngIf="hasCache">{{ report!.spent_now.cache_read_tokens | number }}</td>
+        <td class="n" *ngIf="hasCache">{{ report!.spent_now.cache_write_tokens | number }}</td>
+        <td class="n">{{ report!.spent_now.total_tokens | number }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <p class="hint" *ngIf="anySaved">
+    This annotation was reused from a saved result, so the rows marked <em>saved run</em> show what the original run
+    used and nothing was spent on them now. Chat and reaction checks done here are counted as spent now.
+  </p>
+  <p class="hint" *ngIf="report?.steps?.length">
+    Total is input plus output tokens; cache reads and writes are reported separately by the provider. Checking quotes
+    against the paper, resolving identifiers, finding reactions Reactome already has and loading into staged instances
+    use no model, so they are not listed.
+  </p>
+
+  <details class="details" *ngIf="details.length">
+    <summary>Reaction checks and chat turns, one by one</summary>
+    <table aria-label="Tokens used by each reaction check and chat turn">
+      <thead><tr><th scope="col">What</th><th scope="col" class="n">Calls</th><th scope="col" class="n">Input</th><th scope="col" class="n">Output</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let e of details">
+          <th scope="row">{{ detailLabel(e) }}</th>
+          <td class="n">{{ e.calls | number }}</td>
+          <td class="n">{{ e.input_tokens | number }}</td>
+          <td class="n">{{ e.output_tokens | number }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </details>
+</div>

@@ -153,6 +153,7 @@ const HELP_CONTENT: Record<string, HelpContext> = {
           'A quote marked verbatim was found word for word in the paper; close match means it differs slightly, usually in PDF symbols.',
           'The Issues tab lists everything that needs your attention. Mark issues resolved or dismiss them.',
           'Check this reaction runs rule checks and a model review of one reaction.',
+          'The Usage tab shows how many model tokens each step used, including each reaction check and chat turn. Steps that call no model are not listed; for an annotation reused from a saved result, steps marked "saved run" show what the original run used.',
         ],
       },
       {
