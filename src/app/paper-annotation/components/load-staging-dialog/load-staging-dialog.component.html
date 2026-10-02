@@ -5,7 +5,8 @@
     It <strong>replaces</strong> the {{ data.staged }} item{{ data.staged === 1 ? '' : 's' }} you have staged now.
     Those are saved to a backup first, so you can restore them from the staged-instances backups. If the backup cannot be saved, nothing is replaced.
   </p>
-  <p *ngIf="data.staged === 0">You have nothing staged at the moment, so nothing is replaced.</p>
+  <p *ngIf="data.staged === 0">You have nothing staged at the moment{{ kept ? ' apart from your ' + kept : '' }}, so nothing is replaced.</p>
+  <p *ngIf="kept">Kept as they are: your {{ kept }}.</p>
   <p class="warn" *ngIf="data.stale">Edits you accepted in the chat are included. Anything you changed by hand in the staged copies of this annotation will be lost.</p>
   <p class="warn" *ngIf="overLimit">
     That is more than the {{ limit }} staged instances the tool is designed for. You will be asked to commit before batch editing.

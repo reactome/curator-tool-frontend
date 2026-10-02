@@ -3,7 +3,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
-import { Subject, forkJoin, merge, switchMap, takeUntil, takeWhile, timer } from 'rxjs';
+import { Subject, forkJoin, map, merge, switchMap, takeUntil, takeWhile, timer } from 'rxjs';
 import { ExistingMatch, Issue, Proposal, SessionDetail } from '../../models/llm-api.models';
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
 import { UserInstances } from 'src/app/core/models/reactome-instance.model';
@@ -103,10 +103,13 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   loadIntoStaging(): void {
     if (this.loading) return;
     this.loading = true;
-    forkJoin({ exported: this.api.exportInstances(this.id), staged: this.userInstances.stagedCount() }).subscribe({
-      next: ({ exported, staged }) => {
+    this.api.exportInstances(this.id).pipe(
+      switchMap(exported => this.userInstances.stagedSummary(exported as UserInstances).pipe(map(summary => ({ exported, summary }))))
+    ).subscribe({
+      next: ({ exported, summary }) => {
         this.dialog.open(LoadStagingDialogComponent, {
-          data: { staged, incoming: exported.newInstances.length, stale: this.stagingStale }
+          data: { staged: summary.replaced, keepsDefaultPerson: summary.keepsDefaultPerson,
+                  keepsBookmarks: summary.keepsBookmarks, incoming: exported.newInstances.length, stale: this.stagingStale }
         }).afterClosed().subscribe(confirmed => {
           if (!confirmed) { this.loading = false; return; }
           this.userInstances.loadAnnotationInstances(exported as UserInstances).subscribe({
@@ -115,7 +118,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
               this.stagingStale = false;
               localStorage.setItem(LOADED_SESSION_KEY, this.id);
               const backup = r.backedUp ? ` Your previous ${r.replaced} staged item(s) were backed up${r.backupFile ? ' (' + r.backupFile + ')' : ''}.` : '';
-              this.snack.open(`Loaded ${r.loaded} instances.${backup}`, 'Open schema view', { duration: 12000 })
+              const mine = [r.keptDefaultPerson ? 'default person' : '', r.keptBookmarks ? `${r.keptBookmarks} bookmark${r.keptBookmarks === 1 ? '' : 's'}` : ''].filter(Boolean);
+              const kept = mine.length ? ` Kept as they are: your ${mine.join(' and ')}.` : '';
+              this.snack.open(`Loaded ${r.loaded} instances.${backup}${kept}`, 'Open schema view', { duration: 12000 })
                 .onAction().subscribe(() => this.openSchemaView());
             },
             error: (e: Error) => { this.loading = false; this.error = e.message; }

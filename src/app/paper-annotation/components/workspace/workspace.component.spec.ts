@@ -41,9 +41,9 @@ describe('WorkspaceComponent', () => {
     snack = jasmine.createSpyObj('MatSnackBar', ['open']);
     snackAction = new Subject<void>();
     snack.open.and.returnValue({ onAction: () => snackAction } as any);
-    userInstances = jasmine.createSpyObj('UserInstancesService', ['stagedCount', 'loadAnnotationInstances']);
-    userInstances.stagedCount.and.returnValue(of(4));
-    userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 4, backedUp: true, backupFile: 'b.json', loaded: 2 }));
+    userInstances = jasmine.createSpyObj('UserInstancesService', ['stagedSummary', 'loadAnnotationInstances']);
+    userInstances.stagedSummary.and.returnValue(of({ replaced: 4, keepsDefaultPerson: false, keepsBookmarks: 0 }));
+    userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 4, backedUp: true, backupFile: 'b.json', loaded: 2, keptDefaultPerson: false, keptBookmarks: 0 }));
     location = jasmine.createSpyObj('Location', ['prepareExternalUrl']);
     location.prepareExternalUrl.and.callFake((path: string) => `/curatortool${path}`);
     openSpy = spyOn(window, 'open');
@@ -138,13 +138,39 @@ describe('WorkspaceComponent', () => {
       answer(true);
       component.stagingStale = true;
       component.loadIntoStaging();
-      expect(dialog.open.calls.mostRecent().args[1]!.data).toEqual({ staged: 4, incoming: 2, stale: true });
+      expect(dialog.open.calls.mostRecent().args[1]!.data).toEqual({ staged: 4, keepsDefaultPerson: false, keepsBookmarks: 0, incoming: 2, stale: true });
+      expect(userInstances.stagedSummary).toHaveBeenCalledWith(exported as any);          // judged against what is about to be loaded
       expect(userInstances.loadAnnotationInstances).toHaveBeenCalledWith(exported as any);
       expect(localStorage.getItem(LOADED_SESSION_KEY)).toBe('s1');
       expect(component.stagingStale).toBeFalse();
       expect(component.loading).toBeFalse();
       expect(snack.open.calls.mostRecent().args[0]).toContain('Loaded 2 instances');
       expect(snack.open.calls.mostRecent().args[0]).toContain('b.json');
+    });
+
+    it('tells the curator what was kept, in the dialog and afterwards', () => {
+      answer(true);
+      userInstances.stagedSummary.and.returnValue(of({ replaced: 4, keepsDefaultPerson: true, keepsBookmarks: 3 }));
+      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 4, backedUp: true, backupFile: 'b.json', loaded: 2, keptDefaultPerson: true, keptBookmarks: 3 }));
+      component.loadIntoStaging();
+      expect(dialog.open.calls.mostRecent().args[1]!.data).toEqual(jasmine.objectContaining({ staged: 4, keepsDefaultPerson: true, keepsBookmarks: 3 }));
+      expect(snack.open.calls.mostRecent().args[0]).toContain('Kept as they are: your default person and 3 bookmarks.');
+    });
+
+    it('words a single kept bookmark, and a kept default person alone', () => {
+      answer(true);
+      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 0, backedUp: false, loaded: 2, keptDefaultPerson: false, keptBookmarks: 1 }));
+      component.loadIntoStaging();
+      expect(snack.open.calls.mostRecent().args[0]).toContain('Kept as they are: your 1 bookmark.');
+      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 0, backedUp: false, loaded: 2, keptDefaultPerson: true, keptBookmarks: 0 }));
+      component.loadIntoStaging();
+      expect(snack.open.calls.mostRecent().args[0]).toContain('Kept as they are: your default person.');
+    });
+
+    it('says nothing about kept items when there were none', () => {
+      answer(true);
+      component.loadIntoStaging();
+      expect(snack.open.calls.mostRecent().args[0]).not.toContain('Kept as they are');
     });
 
     it('opens Schema View in a new tab when the curator asks, so the annotation stays open', () => {
