@@ -1,0 +1,53 @@
+<div class="panel">
+  <div class="toolbar">
+    <span class="summary">
+      <strong>{{ count('action') }}</strong> need action ·
+      <strong>{{ count('warning') }}</strong> warnings ·
+      <strong>{{ count('info') }}</strong> notes
+    </span>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Show</mat-label>
+      <mat-select [(ngModel)]="status" aria-label="Filter by status">
+        <mat-option value="open">Open</mat-option>
+        <mat-option value="resolved">Resolved</mat-option>
+        <mat-option value="dismissed">Dismissed</mat-option>
+        <mat-option value="all">All</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Severity</mat-label>
+      <mat-select [(ngModel)]="severity" aria-label="Filter by severity">
+        <mat-option value="all">All</mat-option>
+        <mat-option value="action">Needs action</mat-option>
+        <mat-option value="warning">Warning</mat-option>
+        <mat-option value="info">Note</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="error" *ngIf="error" role="alert"><mat-icon>error_outline</mat-icon> {{ error }}</div>
+  <p class="empty" *ngIf="!shown.length">Nothing to show here.</p>
+
+  <ul class="issues">
+    <li *ngFor="let i of shown" [class.done]="i.status !== 'open'">
+      <mat-icon [ngClass]="'sev-' + i.severity" [attr.aria-label]="i.severity">{{ icon(i) }}</mat-icon>
+      <div class="text">
+        <div>{{ i.message }}</div>
+        <div class="meta">
+          <button mat-button class="link" *ngIf="i.reaction_key" (click)="openReaction.emit(i.reaction_key)">reaction {{ i.reaction_key }}</button>
+          <span>{{ i.source }}</span>
+          <span *ngIf="i.status !== 'open'">· {{ i.status }}</span>
+        </div>
+      </div>
+      <div class="actions">
+        <ng-container *ngIf="i.status === 'open'; else reopen">
+          <button mat-button [disabled]="busy.has(i.id)" (click)="setStatus(i, 'resolved')">Resolved</button>
+          <button mat-button [disabled]="busy.has(i.id)" (click)="setStatus(i, 'dismissed')">Dismiss</button>
+        </ng-container>
+        <ng-template #reopen>
+          <button mat-button [disabled]="busy.has(i.id)" (click)="setStatus(i, 'open')">Reopen</button>
+        </ng-template>
+      </div>
+    </li>
+  </ul>
+</div>

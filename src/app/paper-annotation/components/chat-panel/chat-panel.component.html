@@ -1,0 +1,33 @@
+<aside class="chat" aria-label="Chat about this annotation">
+  <h2>Chat</h2>
+  <div class="error" *ngIf="error" role="alert">{{ error }}</div>
+
+  <div class="log" #log role="log" aria-live="polite">
+    <p class="empty" *ngIf="!turns.length">
+      Ask about the paper, or ask for a change. For example: "Add the damage condition to the Parkin ubiquitination reaction."
+      Edits are only proposed here; nothing changes until you accept them.
+    </p>
+    <div class="turn" *ngFor="let t of turns" [ngClass]="t.role">
+      <div class="steps" *ngIf="t.steps.length"><span *ngFor="let s of t.steps">{{ s }}…</span></div>
+      <div class="thinking" *ngIf="t.streaming && !t.text" role="status">Thinking<span class="dots" aria-hidden="true"></span></div>
+      <div class="text" *ngIf="t.text">{{ t.text }}<span class="cursor" *ngIf="t.streaming" aria-hidden="true">▍</span></div>
+      <div class="err" *ngIf="t.error">{{ t.error }}</div>
+      <ng-container *ngFor="let id of t.proposalIds">
+        <app-proposal-card *ngIf="proposals.get(id) as p" [sessionId]="sessionId" [proposal]="p" (decided)="onDecided($event)"></app-proposal-card>
+      </ng-container>
+    </div>
+  </div>
+
+  <label class="context" *ngIf="contextLabel">
+    <input type="checkbox" [(ngModel)]="useContext"> About the selected reaction: <em>{{ contextLabel }}</em>
+  </label>
+  <div class="composer">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Message</mat-label>
+      <textarea matInput rows="2" [(ngModel)]="draft" [disabled]="sending" (keydown.enter)="onEnter($event)"
+                placeholder="Enter to send, Shift+Enter for a new line"></textarea>
+    </mat-form-field>
+    <button mat-flat-button color="primary" *ngIf="!sending" [disabled]="!draft.trim()" (click)="send()">Send</button>
+    <button mat-stroked-button *ngIf="sending" (click)="stop()">Stop</button>
+  </div>
+</aside>

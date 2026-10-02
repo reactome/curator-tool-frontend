@@ -1,0 +1,22 @@
+<div class="card" [ngClass]="'st-' + proposal.status">
+  <div class="head">
+    <mat-icon>edit_note</mat-icon>
+    <strong>Proposed edit {{ proposal.id }}</strong>
+    <span class="status">{{ statusLabel }}</span>
+  </div>
+  <p class="reason" *ngIf="proposal.reason">{{ proposal.reason }}</p>
+  <ul class="diff">
+    <li *ngFor="let line of proposal.summary">{{ line }}</li>
+  </ul>
+  <div class="evidence" *ngIf="proposal.evidence.length">
+    <button mat-button class="toggle" (click)="showEvidence = !showEvidence" [attr.aria-expanded]="showEvidence">
+      {{ showEvidence ? 'Hide' : 'Show' }} {{ proposal.evidence.length }} supporting quote{{ proposal.evidence.length === 1 ? '' : 's' }}
+    </button>
+    <app-evidence-list *ngIf="showEvidence" [evidence]="proposal.evidence"></app-evidence-list>
+  </div>
+  <div class="error" *ngIf="error" role="alert">{{ error }}</div>
+  <div class="actions" *ngIf="proposal.status === 'pending'">
+    <button mat-flat-button color="primary" [disabled]="busy" (click)="accept()">Accept</button>
+    <button mat-button [disabled]="busy" (click)="reject()">Reject</button>
+  </div>
+</div>

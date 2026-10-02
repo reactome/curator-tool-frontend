@@ -140,28 +140,35 @@ const HELP_CONTENT: Record<string, HelpContext> = {
     title: 'Paper2Path Help',
     sections: [
       {
-        heading: 'Inputs',
+        heading: 'Starting an annotation',
         items: [
-          'Provide a target gene, PMIDs, uploaded PDFs, or any combination of these inputs.',
-          'Use Enter Papers for manual PMIDs/PDF upload, or Preloaded Papers to select server-hosted documents.',
-          'At least one PMID, selected preloaded paper, or target gene is required to start annotation.',
+          'Enter a PubMed ID (the paper must be open access in PubMed Central) or upload a PDF, and optionally a focus gene.',
+          'Extraction takes about 10 to 15 minutes. You can leave the page; the annotation stays in your list.',
         ],
       },
       {
-        heading: 'Configuration',
+        heading: 'Reviewing',
         items: [
-          'Click Configure in the header to adjust max papers, quality threshold, and analysis toggles.',
-          'Enable or disable execution phases, agents, and tools in Agent Dashboard Controls for targeted runs.',
-          'Use Full Text Analysis only when PDFs are available and quality review is needed.',
+          'Select a reaction to see its participants, regulations and the quotes from the paper, with page, section and figure.',
+          'A quote marked verbatim was found word for word in the paper; close match means it differs slightly, usually in PDF symbols.',
+          'The Issues tab lists everything that needs your attention. Mark issues resolved or dismiss them.',
+          'Check this reaction runs rule checks and a model review of one reaction.',
         ],
       },
       {
-        heading: 'Results and Curation',
+        heading: 'Chat and edits',
         items: [
-          'Open the Results tab to monitor runtime logs, status, and final JSON output.',
-          'Use Download Results to export the generated payload for review.',
-          'Click Add to Schema View to stage generated instances for curation, then validate in Schema View before commit.',
-          'Treat Paper2Path output as assistant-generated suggestions; always verify biological correctness and evidence.',
+          'Ask about the paper or ask for a change. The assistant only proposes edits; nothing changes until you accept a proposal.',
+          'A proposal shows what it changes and the quotes behind it. A change to what a reaction is needs a quote from the paper.',
+        ],
+      },
+      {
+        heading: 'Loading into staged instances',
+        items: [
+          'Load into staged instances replaces your staged instances with the annotation. What you have staged is saved to a backup first, and nothing is replaced if the backup fails.',
+          'After you accept edits, load again to bring them into your staged instances. Changes you made by hand to the loaded copies are overwritten.',
+          'In Schema View, a loaded reaction, catalyst or regulation has an Evidence button that shows its quotes.',
+          'Treat Paper2Path output as assistant-generated suggestions; always verify biological correctness and evidence before committing.',
         ],
       },
     ],

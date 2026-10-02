@@ -1,0 +1,67 @@
+<div class="workspace">
+  <header>
+    <a mat-icon-button routerLink="/paper2path" matTooltip="All annotations" aria-label="Back to all annotations"><mat-icon>arrow_back</mat-icon></a>
+    <div class="title" *ngIf="session">
+      <h1>{{ session.pmid ? 'PMID ' + session.pmid : session.source }}</h1>
+      <span class="meta" *ngIf="session.focus">focus: {{ session.focus }}</span>
+      <span class="status" [ngClass]="'status-' + session.status">{{ session.status }}</span>
+    </div>
+    <span class="spacer"></span>
+    <button mat-flat-button color="primary" *ngIf="session?.status === 'ready'" [disabled]="loading" (click)="loadIntoStaging()"
+            matTooltip="Replace your staged instances with this annotation (your current ones are backed up first)">
+      <mat-icon>playlist_add</mat-icon> Load into staged instances
+    </button>
+  </header>
+  <div class="stale" *ngIf="stagingStale" role="status">
+    <mat-icon>info</mat-icon> You accepted edits since the instances were last loaded. Load them again to bring the edits into your staged instances.
+  </div>
+
+  <div class="error" *ngIf="error" role="alert"><mat-icon>error_outline</mat-icon> {{ error }}</div>
+
+  <section class="running" *ngIf="active" role="status">
+    <mat-icon class="big">hourglass_top</mat-icon>
+    <h2>Annotating this paper</h2>
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p class="step">{{ session?.progress || 'starting' }}</p>
+    <p class="hint">Extracting and merging reactions takes about 10 to 15 minutes. You can leave this page; it will be here when you come back.</p>
+  </section>
+
+  <section class="failed" *ngIf="session?.status === 'failed'" role="alert">
+    <mat-icon class="big">error_outline</mat-icon>
+    <h2>This annotation failed</h2>
+    <p>{{ session?.error }}</p>
+  </section>
+
+  <div class="body" *ngIf="session?.status === 'ready'">
+   <div class="main">
+    <mat-tab-group [(selectedIndex)]="tab" animationDuration="0ms">
+      <mat-tab [label]="'Reactions (' + (session?.reactions?.length ?? 0) + ')'">
+        <div class="reactions">
+          <ul class="reaction-list" role="listbox" aria-label="Reactions">
+            <li *ngFor="let r of session?.reactions" role="option" tabindex="0"
+                [class.selected]="r.key === selectedKey" [attr.aria-selected]="r.key === selectedKey"
+                (click)="select(r.key)" (keyup.enter)="select(r.key)">
+              <span class="name">{{ r.name }}</span>
+              <span class="badges">
+                <mat-icon *ngIf="hasSameMatch(r.key)" class="badge same" matTooltip="Reactome appears to have this reaction already">content_copy</mat-icon>
+                <span *ngIf="openCount(r.key)" class="count" [ngClass]="'sev-' + worstSeverity(r.key)"
+                      [matTooltip]="openCount(r.key) + ' open issue(s)'">{{ openCount(r.key) }}</span>
+              </span>
+            </li>
+          </ul>
+          <div class="detail">
+            <app-reaction-detail *ngIf="selectedKey" [sessionId]="id" [reactionKey]="selectedKey"
+                                 [matches]="existing" [issues]="issues" (changed)="reload()"></app-reaction-detail>
+          </div>
+        </div>
+      </mat-tab>
+      <mat-tab [label]="'Issues (' + openIssues.length + ')'">
+        <app-issues-panel [sessionId]="id" [issues]="issues" (changed)="onIssueChanged($event)"
+                          (openReaction)="openReaction($event)"></app-issues-panel>
+      </mat-tab>
+    </mat-tab-group>
+   </div>
+   <app-chat-panel [sessionId]="id" [contextLabel]="selectedReaction?.name ?? null" [contextDbIds]="contextDbIds"
+                   (proposalDecided)="onProposalDecided($event)"></app-chat-panel>
+  </div>
+</div>
