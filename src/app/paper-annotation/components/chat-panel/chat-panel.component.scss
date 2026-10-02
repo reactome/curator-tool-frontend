@@ -1,0 +1,21 @@
+.chat { display: flex; flex-direction: column; height: 78vh; border: 1px solid #e0e0e0; border-radius: 4px; padding: 8px 12px; }
+h2 { margin: 4px 0 8px; font-size: 16px; font-weight: 500; }
+.log { flex: 1; overflow: auto; padding-right: 4px; }
+.empty { color: #666; font-size: 13px; }
+.turn { margin: 10px 0; }
+.turn .text { white-space: pre-wrap; line-height: 1.45; }
+.turn.user .text { background: #e8f0fe; border-radius: 8px; padding: 6px 10px; display: inline-block; max-width: 95%; }
+.steps { display: flex; flex-direction: column; font-size: 12px; color: #777; margin-bottom: 4px; }
+.cursor { animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.err, .error { color: #7a1c14; font-size: 13px; margin-top: 4px; }
+.context { font-size: 12px; color: #555; margin: 6px 0 0; display: block; }
+.composer { display: flex; gap: 8px; align-items: flex-end; margin-top: 6px; }
+.composer mat-form-field { flex: 1; }
+.thinking { color: #666; font-size: 13px; font-style: italic; }
+.dots::after { content: ''; animation: dots 1.4s steps(4, end) infinite; }
+@keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75%, 100% { content: '...'; } }
+@media (prefers-reduced-motion: reduce) {
+  .dots::after { animation: none; content: '...'; }
+  .cursor { animation: none; }
+}

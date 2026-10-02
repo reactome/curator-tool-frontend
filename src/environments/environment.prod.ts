@@ -3,5 +3,7 @@ export const environment = {
     ApiRoot: "/api/curation",
     authURL: "/api/auth",
   curatorGraphBaseUrl: "https://newcurator.reactome.org/curatorgraph",
-    llmURL: "/llm"
+    llmURL: "/llm",
+    // curator-tool-llm REST service; adjust to wherever the reverse proxy exposes it
+    llmApiURL: "/llm/api/llm"
   };

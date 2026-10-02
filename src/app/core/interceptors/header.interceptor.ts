@@ -31,7 +31,8 @@ export class HeaderInterceptor implements HttpInterceptor {
         // requests are excluded so a failed login/refresh doesn't loop us back
         // to a page we're already on.
         if (error.status === 0 &&
-            !this.isAuthRequest(secureRequest.url)) {
+            !this.isAuthRequest(secureRequest.url) &&
+            !this.isLlmRequest(secureRequest.url)) {
           console.warn('Connection to the server was lost; redirecting to login.');
           this.redirectToLogin();
           return throwError(() => error);
@@ -47,7 +48,7 @@ export class HeaderInterceptor implements HttpInterceptor {
   }
 
   private addAuthHeader(request: HttpRequest<any>, token: string | null): HttpRequest<any> {
-    if (token && request.url.includes('api/curation')) {
+    if (token && (request.url.includes('api/curation') || this.isLlmRequest(request.url))) {
       return request.clone({
         headers: request.headers.set('Authorization', `Bearer ${token}`)
       });
@@ -175,6 +176,16 @@ export class HeaderInterceptor implements HttpInterceptor {
 
   private isProtectedApiRequest(url: string): boolean {
     return url.includes('api/curation');
+  }
+
+  /**
+   * The curator-tool-llm service. It gets the bearer token, but its failures are deliberately not
+   * treated like curation-API failures: it being down (status 0) must not log the curator out, and
+   * a 401 from it (it checks tokens through ws, and fails closed when ws is unreachable) must not
+   * tear the session down. LlmApiService refreshes the token once on a 401 and reports the rest.
+   */
+  private isLlmRequest(url: string): boolean {
+    return url.startsWith(environment.llmApiURL);
   }
 }
 

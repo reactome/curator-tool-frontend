@@ -1,0 +1,64 @@
+<div class="page">
+  <h1>Paper annotation</h1>
+  <p class="intro">Draft a Reactome annotation from one paper, review what needs attention, refine it by chat, and load it into your staged instances.</p>
+
+  <div class="error" *ngIf="error" role="alert"><mat-icon>error_outline</mat-icon> {{ error }}</div>
+
+  <div class="starters">
+    <mat-card>
+      <mat-card-title>From a PubMed ID</mat-card-title>
+      <mat-card-content>
+        <p class="hint">The paper must be open access in PubMed Central.</p>
+        <mat-form-field appearance="outline">
+          <mat-label>PubMed ID</mat-label>
+          <input matInput [(ngModel)]="pmid" name="pmid" inputmode="numeric" placeholder="24751536" (keyup.enter)="startFromPmid()">
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Focus gene (optional)</mat-label>
+          <input matInput [(ngModel)]="pmidFocus" name="pmidFocus" placeholder="PINK1">
+        </mat-form-field>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-flat-button color="primary" [disabled]="!pmidValid || starting" (click)="startFromPmid()">Annotate</button>
+      </mat-card-actions>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-title>From a PDF</mat-card-title>
+      <mat-card-content>
+        <p class="hint">For papers that are not in PubMed Central. Up to 50 MB.</p>
+        <input #fileInput type="file" accept="application/pdf,.pdf" hidden (change)="onFileChosen($event)">
+        <button mat-stroked-button type="button" (click)="fileInput.click()"><mat-icon>upload_file</mat-icon> Choose a PDF</button>
+        <span class="file-name" *ngIf="file">{{ file.name }}</span>
+        <mat-form-field appearance="outline" class="focus">
+          <mat-label>Focus gene (optional)</mat-label>
+          <input matInput [(ngModel)]="pdfFocus" name="pdfFocus" placeholder="PINK1">
+        </mat-form-field>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-flat-button color="primary" [disabled]="!file || starting" (click)="startFromPdf()">Annotate</button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <mat-progress-bar *ngIf="starting" mode="indeterminate"></mat-progress-bar>
+
+  <h2>Your annotations</h2>
+  <p *ngIf="loading">Loading…</p>
+  <p *ngIf="!loading && !sessions.length && !error" class="empty">Nothing yet. Start one above.</p>
+  <table class="sessions" *ngIf="sessions.length">
+    <thead><tr><th>Paper</th><th>Status</th><th>Reactions</th><th>Open issues</th><th>Started</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let s of sessions" (click)="open(s)" tabindex="0" (keyup.enter)="open(s)">
+        <td>{{ label(s) }}</td>
+        <td>
+          <span class="status" [ngClass]="'status-' + s.status">{{ s.status }}</span>
+          <span class="progress" *ngIf="s.status === 'running' || s.status === 'queued'">{{ s.progress }}</span>
+        </td>
+        <td>{{ s.status === 'ready' ? s.n_reactions : '' }}</td>
+        <td>{{ s.status === 'ready' ? s.n_open_issues : '' }}</td>
+        <td>{{ s.created * 1000 | date:'medium' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

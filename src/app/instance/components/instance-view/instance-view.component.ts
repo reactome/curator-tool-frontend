@@ -16,6 +16,8 @@ import { combineLatest, Observable, of, Subscription, take, concatMap, finalize 
 import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/components/list-instances-dialog/list-instances-dialog.service';
 import { deleteInstances, newInstances, updatedInstances } from '../../state/instance.selectors';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { EvidenceDialogComponent } from 'src/app/paper-annotation/components/evidence-dialog/evidence-dialog.component';
+import { LOADED_SESSION_KEY } from 'src/app/paper-annotation/services/staging';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { DeletionService } from '../../deletion-commit/utils/deletion.service';
 import { DeletedInstanceAttributeFilter } from 'src/app/core/instance-view-filters/DeletedInstanceAttributeFilter';
@@ -915,6 +917,27 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.dataService.registerInstance(ewas);
       this.store.dispatch(NewInstanceActions.register_new_instance(this.instUtils.makeShell(ewas)));
       this.router.navigate(["/schema_view/instance/" + ewas.dbId.toString()]);
+    });
+  }
+
+  /** Instance classes the paper annotation attaches quotes to. */
+  private static readonly EVIDENCE_CLASSES = new Set(['Reaction', 'BlackBoxEvent', 'CatalystActivity',
+    'PositiveRegulation', 'NegativeRegulation', 'Requirement']);
+
+  /** True for a staged instance that came from an annotation session that has been loaded into staging. */
+  hasAnnotationEvidence(): boolean {
+    return !!this.instance && this.instance.dbId < 0
+      && InstanceViewComponent.EVIDENCE_CLASSES.has(this.instance.schemaClassName)
+      && !!localStorage.getItem(LOADED_SESSION_KEY);
+  }
+
+  showAnnotationEvidence(): void {
+    const sessionId = localStorage.getItem(LOADED_SESSION_KEY);
+    if (!this.instance || !sessionId)
+      return;
+    this.dialog.open(EvidenceDialogComponent, {
+      width: '720px',
+      data: { sessionId, dbId: this.instance.dbId, title: this.instance.displayName ?? this.title }
     });
   }
 
