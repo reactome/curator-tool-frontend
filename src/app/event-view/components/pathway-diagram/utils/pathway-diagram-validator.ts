@@ -350,9 +350,8 @@ export class PathwayDiagramValidator{
                 reactionNode = this.ensureHubNode(reactionNode, hubClass, cy);
             }
         }
-        const peElm = this.converter.createPENode(this.getPEFromInstance(attValue, attribute), cy, undefined, this.diagramService);
-        if (this.hyperEdge)
-            this.hyperEdge.registerObject(peElm);
+        // createPENode() registers the node with the hyperEdge, and needs it to find a small molecule's node in this reaction
+        const peElm = this.converter.createPENode(this.getPEFromInstance(attValue, attribute), cy, this.hyperEdge, this.diagramService);
         if (peElm.position().x === RENDERING_CONSTS.INIT_POSITION.x && peElm.position().y === RENDERING_CONSTS.INIT_POSITION.y) {
             const newPos = this.getPositionForNewNode(peElm, reactionNode, elms, attribute);
             peElm.position(newPos);

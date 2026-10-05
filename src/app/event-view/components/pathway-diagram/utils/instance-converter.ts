@@ -6,6 +6,7 @@ import { Core, EdgeDefinition, NodeDefinition } from 'cytoscape';
 import { DiagramService } from "ngx-reactome-diagram";
 import { EDGE_POINT_CLASS, INPUT_HUB_CLASS, Instance, OUTPUT_HUB_CLASS, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { HyperEdge } from "./hyperedge";
+import { getFreeNodeId } from "./node-alias";
 import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
 import { Injectable } from '@angular/core';
 
@@ -294,16 +295,28 @@ export class InstanceConverter {
 
     // TODO: How to calculate the size of the node to wrap all text?
     createPENode(pe: Instance, cy: Core, hyperedge: HyperEdge | undefined, service: DiagramService) {
-        // Check if this node has been created already
-        // In the old pathway diagram, PE nodes have their own ids based on the order
-        // To make it backward compatible, we do the search like this
-        let exitedNode = cy.nodes().filter(node => node.data('reactomeId') === pe.dbId);
-        if (exitedNode.length > 0) { // Always returns something
-            // Just register it regardless it has been registered before.
-            // Let hyperedge handle duplication
-            if (hyperedge) // During editing
-                hyperedge.registerObject(exitedNode[0]);
-            return exitedNode[0];
+        // Small molecules (SimpleEntity) get a node of their own in each reaction that uses them, so
+        // that ATP, water, etc. don't tie every reaction into one knot; any other entity gets one node
+        // shared by all reactions. This is the class check the desktop curator tool's automatic layout
+        // makes (PathwayByPathwayNoGUI.insertNonSimpleEntitiesOnce()). Within a reaction the node is
+        // still shared, so convertReactionToHyperEdge() can count stoichiometry.
+        if (pe.schemaClassName === 'SimpleEntity') {
+            const reactionNode = hyperedge?.getRegisteredNodeForEntity(pe.dbId);
+            if (reactionNode)
+                return reactionNode;
+        }
+        else {
+            // Check if this node has been created already
+            // In the old pathway diagram, PE nodes have their own ids based on the order
+            // To make it backward compatible, we do the search like this
+            let exitedNode = cy.nodes().filter(node => node.data('reactomeId') === pe.dbId);
+            if (exitedNode.length > 0) { // Always returns something
+                // Just register it regardless it has been registered before.
+                // Let hyperedge handle duplication
+                if (hyperedge) // During editing
+                    hyperedge.registerObject(exitedNode[0]);
+                return exitedNode[0];
+            }
         }
         // This is kind of arbitray
         const newNode = this.createNodeForInstance(pe, cy, service);
@@ -318,7 +331,7 @@ export class InstanceConverter {
                                   id: string|undefined = undefined,
                                   needFormatLabel: boolean = true) {
         if (!id)
-            id = inst.dbId + '';
+            id = getFreeNodeId(inst.dbId, cy);
         const node: NodeDefinition = {
             data: {
                 id: id,

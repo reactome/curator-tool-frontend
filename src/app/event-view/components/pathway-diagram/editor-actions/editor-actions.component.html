@@ -41,6 +41,14 @@
       <button (click)="onClick('disableResize')" *ngIf="isNodeResizing">Disable Resizing</button>
     </ng-container>
 
+    <!-- Aliases: copy an entity or sub-pathway, paste it as a second node for the same instance, then move
+         links to it by selecting the alias and right-clicking a link of the original -->
+    <button (click)="onClick('copyNode')"
+      *ngIf="elmType === elmTypes.PE_Node || elmType === elmTypes.PATHWAY_NODE">Copy</button>
+    <button (click)="onClick('pasteAsAlias')" *ngIf="isAliasPastable">Paste as Alias</button>
+    <button (click)="onClick('moveLinkToAlias')"
+      *ngIf="(elmType === elmTypes.EDGE || elmType === elmTypes.FLOWLINE) && isLinkMovable">Move Link to Selected Alias</button>
+
     <!-- A PE node with no edges connected to it is safe to remove directly -->
     <button (click)="onClick('deleteNode')"
       *ngIf="elmType === elmTypes.PE_Node && isNodeDeletable">Delete Node</button>

@@ -3,6 +3,7 @@ import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { EDGE_POINT_CLASS, INPUT_HUB_CLASS, Instance, OUTPUT_HUB_CLASS, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { InstanceConverter } from "./instance-converter";
+import { getModificationNodes } from "./node-alias";
 import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
 
 /**
@@ -54,10 +55,7 @@ export class HyperEdge {
                     return;
                 
                 // Remove associated modification nodes before removing the PE node
-                const reactomeId = value.data('reactomeId');
-                const modificationNodes = this.cy.nodes().filter((modNode: any) => {
-                    return modNode.hasClass('Modification') && modNode.data('nodeReactomeId') === reactomeId;
-                });
+                const modificationNodes = getModificationNodes(value, this.cy);
                 modificationNodes.forEach((modNode: any) => {
                     this.cy.remove(modNode);
                     this.id2object.delete(modNode.id());
@@ -654,6 +652,18 @@ export class HyperEdge {
     }
 
     /**
+     * The node registered with this HyperEdge for a PhysicalEntity, if one is still in the diagram.
+     * @param reactomeId dbId of the PhysicalEntity
+     */
+    getRegisteredNodeForEntity(reactomeId: number) {
+        for (const object of this.id2object.values()) {
+            if (object.isNode() && !object.removed() && !object.hasClass('reaction') && object.data('reactomeId') === reactomeId)
+                return object;
+        }
+        return undefined;
+    }
+
+    /**
      * Layout this HyperEdge in a horizonal way. This layout can be used only for a nascent HyperEdge when no extra
      * points have been added. For HyperEdge having extra points added, use another method. 
      * Note: This method is ported from Java version, https://github.com/reactome/CuratorTool/blob/022fc5a7cfee990f9ee4e3b696a8317f2aa05d36/src/org/gk/render/HyperEdge.java#L71.
@@ -753,10 +763,7 @@ export class HyperEdge {
         node.position(newPos);
         
         // Find and move all modification nodes associated with this parent
-        const parentReactomeId = node.data('reactomeId');
-        const modificationNodes = this.cy.nodes().filter((modNode: any) => {
-            return modNode.hasClass('Modification') && modNode.data('nodeReactomeId') === parentReactomeId;
-        });
+        const modificationNodes = getModificationNodes(node, this.cy);
         
         if (!modificationNodes) return;
         

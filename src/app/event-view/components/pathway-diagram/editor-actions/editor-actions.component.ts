@@ -25,6 +25,10 @@ export class EditorActionsComponent {
   @Input() isPathwayDeletable: boolean = false;
   // Check if a clicked PE node has no edges connected to it and can be deleted
   @Input() isNodeDeletable: boolean = false;
+  // Flag if a copied node can be pasted as an alias here
+  @Input() isAliasPastable: boolean = false;
+  // Flag if the link under the mouse can be moved to the selected alias
+  @Input() isLinkMovable: boolean = false;
   // Flag if a selected node is resizing
   @Input() isNodeResizing: boolean = false;
   // Flag is a selected node is resizable

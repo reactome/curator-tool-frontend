@@ -8,6 +8,7 @@ import { DataService } from "src/app/core/services/data.service";
 import { HyperEdge } from "./hyperedge";
 import { InstanceConverter } from "./instance-converter";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
+import { getModificationNodes } from "./node-alias";
 import { PathwayDiagramComponent } from "../pathway-diagram.component";
 import { PathwayDiagramValidator } from "./pathway-diagram-validator";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
@@ -463,10 +464,7 @@ export class PathwayDiagramUtilService {
 
     moveModifications(node: any, event: any, previousDragPos: Position) {
         // Find if there is any Modification nodes for the passed node
-        const reactomeId = node.data('reactomeId');
-        const modificationNodes = event.cy.nodes().filter((modNode: any) => {
-            return modNode.data('nodeReactomeId') === reactomeId && modNode.hasClass('Modification');
-        });
+        const modificationNodes = getModificationNodes(node, event.cy);
         if (!modificationNodes || modificationNodes.length === 0)
             return;
         // If node and any modification nodes are selected together, we will bypass.
@@ -598,9 +596,8 @@ export class PathwayDiagramUtilService {
         oldPos: Position, oldW: number, oldH: number,
         newPos: Position, newW: number, newH: number,
         cy: Core) {
-        const reactomeId = compartment.data('reactomeId');
-        if (!reactomeId) return;
-        const mods = cy.nodes().filter((n: any) => n.data('nodeReactomeId') === reactomeId && n.hasClass('Modification') && !n.hasClass('resizing'));
+        if (!compartment.data('reactomeId')) return;
+        const mods = getModificationNodes(compartment, cy).filter((n: any) => !n.hasClass('resizing'));
         if (!mods || mods.length === 0) return;
 
         const tol = 8; // tolerance in pixels to consider alignment

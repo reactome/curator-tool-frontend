@@ -13,6 +13,8 @@ import { DiagramNavigatorComponent } from './diagram-navigator/diagram-navigator
 import { PathwayDiagramUtilService } from './utils/pathway-diagram-utils';
 import { ReactomeEvent } from 'ngx-reactome-cytoscape-style';
 import { Position } from 'ngx-reactome-diagram/lib/model/diagram.model';
+import { REACTION_TYPES } from 'src/app/core/models/reactome-schema.model';
+import { createAlias, getModificationNodes, hasAliasableEnd, isAliasable, moveLinkToAlias } from './utils/node-alias';
 import { EDGE_POINT_CLASS, LABEL_CLASS, Instance, DiagramLock } from 'src/app/core/models/reactome-instance.model';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -86,6 +88,15 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   isPathwayDeletable: boolean = false;
   // flag is the clicked PE node has no edges connected to it and can be deleted
   isNodeDeletable: boolean = false;
+  // Id of the node copied by the "Copy" action, to be pasted as an alias. An id, not the node, since undo/redo
+  // rebuilds the network.
+  private copiedNodeId: string | undefined = undefined;
+  // Flag if a copied node can be pasted as an alias where the menu was opened
+  isAliasPastable: boolean = false;
+  // Flag if the link under the mouse can be moved to the selected node, an alias of one of its ends
+  isLinkMovable: boolean = false;
+  // Where the popup menu was opened, in model coordinates: an alias is pasted there
+  private popupPosition: Position = { x: 0, y: 0 };
   // Tracking the previous dragging position: should cytoscape provides this?
   previousDragPos: Position = { x: 0, y: 0 };
   // Track a list of nodes that are under resizing
@@ -998,6 +1009,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     else
       this.elementTypeForPopup = ElementType.CYTOSCAPE;
     this.isEdgeEditable = this.diagramUtils.isEdgeEditable(this.elementUnderMouse);
+    this.popupPosition = { x: event.position.x, y: event.position.y };
+    this.isAliasPastable = this.isEditing && this.getCopiedNode() !== undefined &&
+      (this.elementTypeForPopup === ElementType.CYTOSCAPE || this.elementTypeForPopup === ElementType.COMPARTMENT);
+    this.isLinkMovable = this.isEditing && hasAliasableEnd(this.elementUnderMouse) && this.getSelectedAlias() !== undefined;
     // The offset set 5px is important to prevent the native popup menu appear
     this.menuPositionX = (event.renderedPosition.x + this.MENU_POSITION_BUFFER) + "px";
     this.menuPositionY = (event.renderedPosition.y + this.MENU_POSITION_BUFFER) + "px";
@@ -1113,6 +1128,18 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
 
       case 'fitToScreen':
         this.fitDiagram();
+        break;
+
+      case 'copyNode':
+        this.copiedNodeId = this.elementUnderMouse.id();
+        break;
+
+      case 'pasteAsAlias':
+        this.pasteAsAlias();
+        break;
+
+      case 'moveLinkToAlias':
+        this.moveLinkToAlias();
         break;
 
       case 'addFlowLine':
@@ -1567,8 +1594,64 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     this.diagram.applyEvent(event, affectedElms);
   }
 
+  /** The node copied by the "Copy" action, if it is still in the diagram. */
+  private getCopiedNode(): any {
+    if (!this.copiedNodeId || !this.diagram?.cy)
+      return undefined;
+    const node = this.diagram.cy.getElementById(this.copiedNodeId);
+    return node.nonempty() && isAliasable(node) ? node : undefined;
+  }
+
+  /** The single selected node, if it is one that a link could be moved to. */
+  private getSelectedAlias(): any {
+    const selected = this.diagram.cy.$('node:selected');
+    return selected.length === 1 && isAliasable(selected[0]) ? selected[0] : undefined;
+  }
+
+  private pasteAsAlias() {
+    const node = this.getCopiedNode();
+    if (!node)
+      return;
+    this.pushUndoSnapshot();
+    const alias = createAlias(node, this.popupPosition, this.diagram.cy);
+    // Draggable, as enableEditing() makes every node: pasting is offered in editing mode only
+    alias.grabify().unpanify();
+    getModificationNodes(alias, this.diagram.cy).grabify().unpanify();
+    this.diagram.cy.$(':selected').unselect();
+    alias.select();
+    this.markDiagramEdited();
+  }
+
+  private moveLinkToAlias() {
+    const edge = this.elementUnderMouse;
+    const alias = this.getSelectedAlias();
+    if (!edge || !alias)
+      return;
+    if (!(isAliasable(edge.source()) && edge.source().data('reactomeId') === alias.data('reactomeId')) &&
+        !(isAliasable(edge.target()) && edge.target().data('reactomeId') === alias.data('reactomeId'))) {
+      this.dialog.open(InfoDialogComponent, {
+        data: {
+          title: 'Error in Linking',
+          message: 'A link can only be moved to an alias of the entity or pathway it is linked to.'
+        }
+      });
+      return;
+    }
+    this.pushUndoSnapshot();
+    const hyperEdge = this.diagramUtils.id2hyperEdge.get(this.diagramUtils.getHyperEdgeId(edge));
+    const newEdge = moveLinkToAlias(edge, alias, this.diagram.cy);
+    if (hyperEdge && newEdge) {
+      hyperEdge.deRegisterObject(edge);
+      hyperEdge.registerObject(newEdge);
+      hyperEdge.registerObject(alias);
+    }
+    this.markDiagramEdited();
+  }
+
   addEvent(event: Instance) {
-    if (this.diagramUtils.isEventAdded(event, this.diagram.cy)) {
+    // A sub-pathway may be drawn more than once, but a reaction only once (ElvInstanceEditHandler.isInsertable()
+    // in the desktop tool).
+    if (REACTION_TYPES.includes(event.schemaClassName) && this.diagramUtils.isEventAdded(event, this.diagram.cy)) {
       this.dialog.open(InfoDialogComponent, {
         data: {
           title: 'Error',
@@ -1617,10 +1700,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       node.position('x', averageX);
 
       // Move associated modification nodes
-      const reactomeId = node.data('reactomeId');
-      const modificationNodes = this.diagram.cy.nodes().filter((modNode: any) => {
-        return modNode.data('nodeReactomeId') === reactomeId && modNode.hasClass('Modification');
-      });
+      const modificationNodes = getModificationNodes(node, this.diagram.cy);
 
       modificationNodes.forEach((modNode: any) => {
         const modPos = modNode.position();
@@ -1655,10 +1735,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       node.position('y', averageY);
 
       // Move associated modification nodes
-      const reactomeId = node.data('reactomeId');
-      const modificationNodes = this.diagram.cy.nodes().filter((modNode: any) => {
-        return modNode.data('nodeReactomeId') === reactomeId && modNode.hasClass('Modification');
-      });
+      const modificationNodes = getModificationNodes(node, this.diagram.cy);
 
       modificationNodes.forEach((modNode: any) => {
         const modPos = modNode.position();
