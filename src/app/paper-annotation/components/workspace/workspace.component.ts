@@ -33,6 +33,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   loading = false;
   /** Bumped when something that spends tokens may have happened, so the usage tab reloads. */
   usageStamp = 0;
+  /** Bumped when the draft may have changed, so the network tab redraws. */
+  networkStamp = 0;
 
   constructor(private api: LlmApiService, private route: ActivatedRoute, private location: Location,
               private dialog: MatDialog, private snack: MatSnackBar, private userInstances: UserInstancesService) {}
@@ -81,6 +83,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   /** Re-read the session, its issues and its existing-reaction matches (after an edit, QA, or a status change). */
   reload(): void {
     this.usageStamp++;
+    this.networkStamp++;
     forkJoin({ session: this.api.session(this.id), issues: this.api.issues(this.id), existing: this.api.existing(this.id) })
       .subscribe({
         next: r => { this.session = r.session; this.issues = r.issues; this.existing = r.existing; this.error = null; },

@@ -1,0 +1,23 @@
+<div class="network">
+  <div class="toolbar">
+    <button mat-stroked-button (click)="layout()" [disabled]="!network"><mat-icon>auto_fix_high</mat-icon> Re-layout</button>
+    <button mat-stroked-button (click)="fit()" [disabled]="!network"><mat-icon>fit_screen</mat-icon> Fit</button>
+    <span class="focus" *ngIf="focusLabel">Reactions of <b>{{ focusLabel }}</b> (click the background to clear)</span>
+    <span class="spacer"></span>
+    <span class="hint">Click an entity to see its reactions. Click a reaction to select it; double-click for details.</span>
+  </div>
+  <div class="error" *ngIf="error" role="alert"><mat-icon>error_outline</mat-icon> {{ error }}</div>
+  <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>
+  <p class="none" *ngIf="empty">This annotation has no reactions to draw.</p>
+  <div #canvas class="canvas" role="img" aria-label="Network of the extracted reactions and their entities"></div>
+  <ul class="legend" aria-label="Legend">
+    <li><span class="swatch ewas"></span> protein</li>
+    <li><span class="swatch simple"></span> small molecule</li>
+    <li><span class="swatch complex"></span> complex</li>
+    <li><span class="swatch set"></span> set</li>
+    <li><span class="swatch reaction"></span> reaction</li>
+    <li><span class="swatch unresolved"></span> identifier not resolved</li>
+    <li><span class="swatch match"></span> Reactome has it already</li>
+    <li *ngFor="let l of legend"><span class="line" [ngClass]="l.type"></span> {{ l.label }}</li>
+  </ul>
+</div>

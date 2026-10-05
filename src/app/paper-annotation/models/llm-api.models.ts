@@ -131,6 +131,39 @@ export interface ReactionSpec {
   existing: ExistingRef | null;
 }
 
+/** The reactions and their entities as a graph (GET /sessions/{id}/network). Ids are prefixed: `e:` entity, `r:` reaction. */
+export interface NetworkNode {
+  id: string;
+  type: 'entity' | 'reaction';
+  key: string;
+  label: string;
+  openIssues: number;
+  /** entity only */
+  kind?: Participant['kind'];
+  compartment?: string | null;
+  unresolved?: string[];
+  /** reaction only */
+  reactionType?: string;
+  dbId?: number | null;
+  existingMatch?: 'same' | 'similar' | null;
+}
+
+export type NetworkEdgeType =
+  'input' | 'output' | 'catalyst' | 'positive' | 'negative' | 'requirement' | 'component' | 'member' | 'precedes';
+
+export interface NetworkEdge {
+  id: string;
+  type: NetworkEdgeType;
+  source: string;
+  target: string;
+  label?: string | null;
+}
+
+export interface Network {
+  nodes: NetworkNode[];
+  edges: NetworkEdge[];
+}
+
 export interface ReactionDetail {
   reaction: ReactionSpec;
   dbId: number | null;

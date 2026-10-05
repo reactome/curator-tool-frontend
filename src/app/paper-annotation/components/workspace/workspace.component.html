@@ -59,6 +59,12 @@
         <app-issues-panel [sessionId]="id" [issues]="issues" (changed)="onIssueChanged($event)"
                           (openReaction)="openReaction($event)"></app-issues-panel>
       </mat-tab>
+      <mat-tab label="Network">
+        <ng-template matTabContent>
+          <app-reaction-network [sessionId]="id" [stamp]="networkStamp" [selectedKey]="selectedKey"
+                                (reactionSelected)="select($event)" (reactionOpened)="openReaction($event)"></app-reaction-network>
+        </ng-template>
+      </mat-tab>
       <mat-tab label="Usage">
         <ng-template matTabContent>
           <app-usage-panel [sessionId]="id" [stamp]="usageStamp"></app-usage-panel>
