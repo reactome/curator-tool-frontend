@@ -21,6 +21,7 @@ import { LoadStagingDialogComponent } from './components/load-staging-dialog/loa
 import { IssuesPanelComponent } from './components/issues-panel/issues-panel.component';
 import { PaperAnnotationRoutingModule } from './paper-annotation-routing.module';
 import { ProposalCardComponent } from './components/proposal-card/proposal-card.component';
+import { ReactionNetworkComponent } from './components/reaction-network/reaction-network.component';
 import { ReactionDetailComponent } from './components/reaction-detail/reaction-detail.component';
 import { SessionListComponent } from './components/session-list/session-list.component';
 import { UsagePanelComponent } from './components/usage-panel/usage-panel.component';
@@ -29,7 +30,7 @@ import { WorkspaceComponent } from './components/workspace/workspace.component';
 @NgModule({
   declarations: [
     SessionListComponent, WorkspaceComponent, ReactionDetailComponent, IssuesPanelComponent,
-    ChatPanelComponent, ProposalCardComponent, LoadStagingDialogComponent, UsagePanelComponent
+    ChatPanelComponent, ProposalCardComponent, LoadStagingDialogComponent, UsagePanelComponent, ReactionNetworkComponent
   ],
   imports: [
     CommonModule, FormsModule, PaperAnnotationRoutingModule, EvidenceListComponent,

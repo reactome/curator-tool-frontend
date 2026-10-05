@@ -4,7 +4,7 @@ import { Observable, firstValueFrom, switchMap, takeWhile, throwError, timer, ca
 import { environment } from 'src/environments/environment.dev';
 import { TokenRefreshService } from 'src/app/core/services/token-refresh.service';
 import {
-  AcceptResponse, ChatEvent, ExistingMatch, InstanceEvidence, Issue, IssueStatus, Job, Passage, Proposal,
+  AcceptResponse, ChatEvent, ExistingMatch, InstanceEvidence, Issue, IssueStatus, Job, Network, Passage, Proposal,
   ProposalRequest, QAResult, ReactionDetail, SessionDetail, SessionSummary, SessionUserInstances, StartResponse, StoredChatMessage,
   UsageReport
 } from '../models/llm-api.models';
@@ -110,6 +110,11 @@ export class LlmApiService {
 
   reaction(id: string, key: string): Observable<ReactionDetail> {
     return this.call(() => this.http.get<ReactionDetail>(this.url(`/sessions/${id}/reactions/${key}`)));
+  }
+
+  /** The reactions and their entities as nodes and edges, for drawing. */
+  network(id: string): Observable<Network> {
+    return this.call(() => this.http.get<Network>(this.url(`/sessions/${id}/network`)));
   }
 
   instanceEvidence(id: string, dbId: number): Observable<InstanceEvidence[]> {

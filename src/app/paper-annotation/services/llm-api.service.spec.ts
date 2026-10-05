@@ -87,6 +87,15 @@ describe('LlmApiService', () => {
       expect(got.source).toBe('run');
     });
 
+    it('reads the reaction network of a session', () => {
+      let got: any;
+      service.network('s1').subscribe(r => got = r);
+      const req = http.expectOne(`${base}/sessions/s1/network`);
+      expect(req.request.method).toBe('GET');
+      req.flush({ nodes: [{ id: 'r:r0' }], edges: [] });
+      expect(got.nodes.length).toBe(1);
+    });
+
     it('reads evidence by instance dbId, including a negative one', () => {
       service.instanceEvidence('s1', -7).subscribe();
       http.expectOne(`${base}/sessions/s1/instances/-7/evidence`).flush([]);
