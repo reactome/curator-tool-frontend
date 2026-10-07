@@ -32,7 +32,8 @@ export class HeaderInterceptor implements HttpInterceptor {
         // to a page we're already on.
         if (error.status === 0 &&
             !this.isAuthRequest(secureRequest.url) &&
-            !this.isLlmRequest(secureRequest.url)) {
+            !this.isLlmRequest(secureRequest.url) &&
+            !this.isNLQueryRequest(secureRequest.url)) {
           console.warn('Connection to the server was lost; redirecting to login.');
           this.redirectToLogin();
           return throwError(() => error);
@@ -48,7 +49,8 @@ export class HeaderInterceptor implements HttpInterceptor {
   }
 
   private addAuthHeader(request: HttpRequest<any>, token: string | null): HttpRequest<any> {
-    if (token && (request.url.includes('api/curation') || this.isLlmRequest(request.url))) {
+    if (token && (request.url.includes('api/curation') || this.isLlmRequest(request.url) ||
+                  this.isNLQueryRequest(request.url))) {
       return request.clone({
         headers: request.headers.set('Authorization', `Bearer ${token}`)
       });
@@ -175,7 +177,16 @@ export class HeaderInterceptor implements HttpInterceptor {
   }
 
   private isProtectedApiRequest(url: string): boolean {
-    return url.includes('api/curation');
+    return url.includes('api/curation') || this.isNLQueryRequest(url);
+  }
+
+  /**
+   * The natural-language graph query sidecar. Its 401 means curator-tool-ws rejected the token (it
+   * answers 503 when ws is unreachable), so it gets the usual refresh handling. But the sidecar
+   * being down (status 0) must not log the curator out.
+   */
+  private isNLQueryRequest(url: string): boolean {
+    return url.includes(environment.nlQueryURL);
   }
 
   /**

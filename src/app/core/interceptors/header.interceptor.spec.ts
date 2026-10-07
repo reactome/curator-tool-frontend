@@ -166,4 +166,40 @@ describe('HeaderInterceptor', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/login']);
     });
   });
+
+  describe('requests to the natural-language graph query service', () => {
+    const nlQueryUrl = environment.nlQueryURL;
+
+    it('sends the bearer token', async () => {
+      await firstValueFrom(interceptor.intercept(new HttpRequest('POST', nlQueryUrl, {}), handlerFailingWith401(0)));
+      expect(handled[0].headers.get('Authorization')).toBe('Bearer old-token');
+    });
+
+    it('does not log the curator out when the service is unreachable', async () => {
+      const unreachable: HttpHandler = {
+        handle: (request: HttpRequest<any>): Observable<HttpEvent<any>> => {
+          handled.push(request);
+          return throwError(() => new HttpErrorResponse({ status: 0 }));
+        }
+      };
+      await expectAsync(firstValueFrom(
+        interceptor.intercept(new HttpRequest('POST', nlQueryUrl, {}), unreachable))).toBeRejected();
+      expect(router.navigate).not.toHaveBeenCalled();
+      expect(localStorage.getItem('token')).toBe('old-token');
+    });
+
+    it('refreshes the token on a 401, like a curation request', async () => {
+      // The sidecar answers 401 only when curator-tool-ws rejected the token (503 when ws is down).
+      localStorage.setItem('token', 'dead-token');
+      tokenRefresh.refresh.and.callFake(() => {
+        localStorage.setItem('token', 'new-token');
+        return of('new-token');
+      });
+
+      await firstValueFrom(interceptor.intercept(new HttpRequest('POST', nlQueryUrl, {}), handlerFailingWith401(1)));
+
+      expect(tokenRefresh.refresh).toHaveBeenCalledTimes(1);
+      expect(handled[1].headers.get('Authorization')).toBe('Bearer new-token');
+    });
+  });
 });

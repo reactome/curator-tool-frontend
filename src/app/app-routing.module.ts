@@ -47,6 +47,12 @@ export const routes: Routes = [
     canActivate: [authGuard], // Protect the route
   },
   {
+    path: "graph_query",
+    loadComponent: () =>
+      import("./nl-query/nl-query-page.component").then((m) => m.NLQueryPageComponent),
+    canActivate: [authGuard], // Protect the route
+  },
+  {
     path: "tutorial",
     loadChildren: () =>
       import("./tutorial/tutorial.module").then((m) => m.TutorialModule),

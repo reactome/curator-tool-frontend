@@ -1,3 +1,7 @@
+### Build on October 7, 2026
+
+- Added: **Ask the Graph**, a new card on the home page, lets you ask questions about the curation database in plain English, such as "Which reactions in R-HSA-109582 have no catalyst?". A language model writes a database query for the question, runs it, and replies with an answer, a table of the results and the queries it ran, which you can copy. Clicking a dbId in the table opens that instance in a new tab. Follow-up questions such as "only the human ones" build on the earlier ones, and **Clear** starts over. It only reads the database and cannot change anything. It needs the graph query service on the server; if that service is down, the page says so and your session is not affected.
+
 ### Build on October 6, 2026
 
 - Changed: when a reaction is added to a pathway diagram, only these common molecules now get a node of their own for that reaction: ATP, ADP, H2O, H+, O2, electron, H2, NAD and NADH. That is the list the desktop Curator Tool's automatic layout hides. Every other small molecule, such as glucose, now reuses the node already in the diagram, like a protein or complex; in the October 5 build every small molecule got its own node. The match is on the name without its compartment, so ATP [cytosol] and ATP [mitochondrial matrix] both count, but NAD+ and NADP do not. Diagrams already drawn are not changed.
