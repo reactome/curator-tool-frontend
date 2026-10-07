@@ -1,3 +1,7 @@
+### Build on October 6, 2026
+
+- Changed: when a reaction is added to a pathway diagram, only these common molecules now get a node of their own for that reaction: ATP, ADP, H2O, H+, O2, electron, H2, NAD and NADH. That is the list the desktop Curator Tool's automatic layout hides. Every other small molecule, such as glucose, now reuses the node already in the diagram, like a protein or complex; in the October 5 build every small molecule got its own node. The match is on the name without its compartment, so ATP [cytosol] and ATP [mitochondrial matrix] both count, but NAD+ and NADP do not. Diagrams already drawn are not changed.
+
 ### Build on October 5, 2026
 
 - Changed: when a reaction is added to a pathway diagram, a small molecule (a SimpleEntity, such as ATP or water) now gets a node of its own for that reaction instead of reusing a node already in the diagram, so the common small molecules no longer pull every reaction that uses them into one tangle. Any other kind of entity - a protein, complex or set, say - still gets one node shared by all the reactions that use it. This is the same rule the desktop Curator Tool's automatic layout uses: a check on the class, not a list of common molecules. A small molecule listed more than once in the same reaction still gets a single node with its count shown, and removing a reaction now also removes its own small-molecule nodes. Diagrams already drawn are not changed; the rule applies to reactions added from now on.

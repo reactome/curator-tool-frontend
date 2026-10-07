@@ -10,6 +10,16 @@ import { getFreeNodeId } from "./node-alias";
 import { PathwayDiagramUtilService } from "./pathway-diagram-utils";
 import { Injectable } from '@angular/core';
 
+// Entities that are not shared between reactions. This is the list the desktop curator tool's automatic
+// layout hides (org.gk.pathwaylayout.Utils.fetchHiddenEntities()).
+const UNSHARED_ENTITY_NAMES = new Set(['ATP', 'ADP', 'H2O', 'H+', 'O2', 'electron', 'H2', 'NAD', 'NADH']);
+
+// Match on the displayName with its trailing compartment (e.g., "ATP [cytosol]") removed.
+export function isUnsharedEntity(pe: Instance): boolean {
+    const name = pe.displayName?.replace(/\s*\[[^\]]*\]$/, '');
+    return name !== undefined && UNSHARED_ENTITY_NAMES.has(name);
+}
+
 @Injectable()
 export class InstanceConverter {
     
@@ -295,12 +305,11 @@ export class InstanceConverter {
 
     // TODO: How to calculate the size of the node to wrap all text?
     createPENode(pe: Instance, cy: Core, hyperedge: HyperEdge | undefined, service: DiagramService) {
-        // Small molecules (SimpleEntity) get a node of their own in each reaction that uses them, so
-        // that ATP, water, etc. don't tie every reaction into one knot; any other entity gets one node
-        // shared by all reactions. This is the class check the desktop curator tool's automatic layout
-        // makes (PathwayByPathwayNoGUI.insertNonSimpleEntitiesOnce()). Within a reaction the node is
-        // still shared, so convertReactionToHyperEdge() can count stoichiometry.
-        if (pe.schemaClassName === 'SimpleEntity') {
+        // Common cofactors (ATP, water, etc.; see UNSHARED_ENTITY_NAMES) get a node of their own in each
+        // reaction that uses them, so that they don't tie every reaction into one knot; any other entity,
+        // including other small molecules, gets one node shared by all reactions. Within a reaction the
+        // node is still shared, so convertReactionToHyperEdge() can count stoichiometry.
+        if (isUnsharedEntity(pe)) {
             const reactionNode = hyperedge?.getRegisteredNodeForEntity(pe.dbId);
             if (reactionNode)
                 return reactionNode;
