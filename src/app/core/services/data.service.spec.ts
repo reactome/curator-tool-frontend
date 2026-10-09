@@ -157,6 +157,52 @@ describe('DataService.getReferrers and local staging', () => {
  * return `{events, cycles}` where it used to return a bare array of top-level events, so this has
  * to read both: a front end deployed ahead of the backend still has to show the tree.
  */
+/**
+ * After a new instance is committed, every cached reference to its local (negative) dbId has to
+ * move to the persisted one, and the cached copy under the local dbId has to go. The server creates
+ * a new instance for any negative dbId it is sent, so a leftover one is committed again as a
+ * duplicate - e.g. a new Reaction that was already created when its new Pathway was committed.
+ */
+describe('DataService.remapNewInstanceReferenceDbId', () => {
+  let service: DataService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule, RouterTestingModule, StoreModule.forRoot({})],
+      providers: [
+        DataService,
+        InstanceUtilities,
+        { provide: MatDialog, useValue: jasmine.createSpyObj<MatDialog>('MatDialog', ['open']) },
+        {
+          provide: CommitResultDialogService,
+          useValue: jasmine.createSpyObj<CommitResultDialogService>('CommitResultDialogService', ['openDialog'])
+        },
+        {
+          provide: MatchedInstancesDialogService,
+          useValue: jasmine.createSpyObj<MatchedInstancesDialogService>('MatchedInstancesDialogService', ['openDialog'])
+        },
+      ]
+    });
+    service = TestBed.inject(DataService);
+  });
+
+  it('points referrers at the persisted dbId and drops the local copy', () => {
+    const reaction: Instance = { dbId: -1, displayName: 'A -> B', schemaClassName: 'Reaction', attributes: new Map() };
+    const pathway: Instance = {
+      dbId: 50, displayName: 'My pathway', schemaClassName: 'Pathway',
+      attributes: new Map<string, any>([['hasEvent', [{ dbId: -1, displayName: 'A -> B', schemaClassName: 'Reaction' }]]])
+    };
+    service.registerInstance(reaction);
+    service.registerInstance(pathway);
+
+    const changed = service.remapNewInstanceReferenceDbId(-1, 200);
+
+    expect(pathway.attributes.get('hasEvent')[0].dbId).toBe(200);
+    expect(changed).toEqual([pathway]);
+    expect(service.getCachedInstance(-1)).toBeUndefined();
+  });
+});
+
 describe('DataService.fetchEventTree', () => {
   let service: DataService;
   let http: HttpTestingController;

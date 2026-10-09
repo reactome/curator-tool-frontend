@@ -176,7 +176,14 @@ export class InstanceEffects {
           this.setLocalStorageItem(action.type, JSON.stringify(obj));
           // call here so that we don't have any side effect in this tab
           this.instUtils.setCommittedNewInstDbId(action.oldDbId, action.newDbId);
-          this.dataService.remapNewInstanceReferenceDbId(action.oldDbId, action.newDbId);
+          const changedReferrers = this.dataService.remapNewInstanceReferenceDbId(action.oldDbId, action.newDbId);
+          // The staged snapshots still hold the local dbId in the changed referrers. Re-write them,
+          // or a reload restores the stale reference and committing the referrer creates the
+          // referred instance a second time.
+          if (changedReferrers.some(inst => inst.dbId > 0))
+            this.storeUpdatedInstances();
+          if (changedReferrers.some(inst => inst.dbId < 0))
+            this.storeNewInstances();
           this.instUtils.setRefreshViewDbId(action.oldDbId);
         })
       ),

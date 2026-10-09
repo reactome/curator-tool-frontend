@@ -692,3 +692,62 @@ describe('InstanceUtilities.mergeLocalChangesToEventTree circular hasEvent', () 
     });
   });
 });
+
+// The reported duplicate: committing a batch holding both a new Pathway and the new Reaction in its
+// hasEvent. The Pathway's commit creates the Reaction on the server as well, but the batch still
+// held the Reaction's local (negative) dbId, so it was committed a second time as another new
+// Reaction.
+describe('InstanceUtilities.commitNewInstances', () => {
+  let utils: InstanceUtilities;
+  let dataService: jasmine.SpyObj<DataService>;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        InstanceUtilities,
+        { provide: Store, useValue: jasmine.createSpyObj<Store>('Store', ['dispatch']) },
+        { provide: MatDialog, useValue: jasmine.createSpyObj<MatDialog>('MatDialog', ['open']) },
+        {
+          provide: CommitResultDialogService,
+          useValue: jasmine.createSpyObj<CommitResultDialogService>('CommitResultDialogService', ['openDialog'])
+        },
+        {
+          provide: MatchedInstancesDialogService,
+          useValue: jasmine.createSpyObj<MatchedInstancesDialogService>('MatchedInstancesDialogService', ['openDialog'])
+        },
+      ]
+    });
+    utils = TestBed.inject(InstanceUtilities);
+    dataService = jasmine.createSpyObj<DataService>('DataService',
+      ['commit', 'matchInstances', 'shouldCheckForMatches', 'flagSchemaTreeForReload', 'getCachedInstance']);
+    dataService.shouldCheckForMatches.and.returnValue(true);
+    dataService.matchInstances.and.returnValue(of([]));
+    dataService.getCachedInstance.and.returnValue(undefined);
+  });
+
+  it('does not commit a new instance again after it was committed with its referrer', () => {
+    const pathway: Instance = { dbId: -2, displayName: 'My pathway', schemaClassName: 'Pathway' };
+    const reaction: Instance = { dbId: -1, displayName: 'A -> B', schemaClassName: 'Reaction' };
+    dataService.commit.and.callFake(inst => of(inst.dbId === pathway.dbId
+      ? { dbId: 100, displayName: 'My pathway', schemaClassName: 'Pathway', newInstOld2NewId: { '-1': 200 } as any }
+      : { dbId: 300, displayName: 'A -> B', schemaClassName: 'Reaction' }));
+
+    // Store shells, as the list views pass them: not re-keyed by processCommit.
+    utils.commitNewInstances([pathway, reaction], dataService, {} as any);
+
+    expect(dataService.commit.calls.allArgs().map(args => args[0].dbId)).toEqual([pathway.dbId]);
+    expect(dataService.matchInstances.calls.allArgs().map(args => args[0].dbId)).toEqual([pathway.dbId]);
+  });
+
+  it('still commits a referred new instance first when it is listed first', () => {
+    const pathway: Instance = { dbId: -2, displayName: 'My pathway', schemaClassName: 'Pathway' };
+    const reaction: Instance = { dbId: -1, displayName: 'A -> B', schemaClassName: 'Reaction' };
+    dataService.commit.and.callFake(inst => of(inst.dbId === pathway.dbId
+      ? { dbId: 100, displayName: 'My pathway', schemaClassName: 'Pathway' }
+      : { dbId: 200, displayName: 'A -> B', schemaClassName: 'Reaction' }));
+
+    utils.commitNewInstances([reaction, pathway], dataService, {} as any);
+
+    expect(dataService.commit.calls.allArgs().map(args => args[0].dbId)).toEqual([reaction.dbId, pathway.dbId]);
+  });
+});

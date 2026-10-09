@@ -841,10 +841,18 @@ export class DataService {
   /**
    * Replace references to a committed local new instance id across cached instances.
    * This keeps tabs in sync when a negative dbId is committed to a positive dbId.
+   *
+   * The cached copy under the local dbId is dropped too. commit() only drops the instance it was
+   * called on, so a new instance committed together with its referrer (e.g. the new Reaction in a
+   * new Pathway's hasEvent) would otherwise stay cached under its negative dbId, and the server
+   * creates a new instance for every negative dbId it is sent - committing it again duplicates it.
+   *
+   * @returns the referrer instances that were changed.
    */
-  remapNewInstanceReferenceDbId(oldDbId: number, newDbId: number): void {
-    if (!oldDbId || !newDbId || oldDbId === newDbId) return;
+  remapNewInstanceReferenceDbId(oldDbId: number, newDbId: number): Instance[] {
+    if (!oldDbId || !newDbId || oldDbId === newDbId) return [];
 
+    const changedReferrers: Instance[] = [];
     for (const inst of this.id2instance.values()) {
       if (!inst.attributes) continue;
       let changed = false;
@@ -866,9 +874,14 @@ export class DataService {
         }
       }
 
-      if (changed)
+      if (changed) {
         this.registerInstance(inst);
+        changedReferrers.push(inst);
+      }
     }
+    if (oldDbId < 0)
+      this.removeInstanceInCache(oldDbId);
+    return changedReferrers;
   }
 
   /**

@@ -1476,16 +1476,29 @@ export class InstanceUtilities {
 
         const results: CommitResult[] = [];
         const matchedGroups: MatchedNewInstanceGroup[] = [];
+        // Local dbIds of the instances committed so far in this batch, including those the server
+        // created together with their referrer (e.g. the new Reaction in a new Pathway's hasEvent).
+        // The passed instances are not re-keyed by processCommit, so without this a referred new
+        // instance listed after its referrer is committed a second time as a duplicate.
+        const committedLocalDbIds = new Set<number>();
+        const isCommitted = (inst: Instance) => (inst.dbId && inst.dbId > 0) || committedLocalDbIds.has(inst.dbId);
+        const commitOne = (inst: Instance) => dataService.commit(inst).pipe(
+            tap(rtn => {
+                committedLocalDbIds.add(inst.dbId);
+                this.collectCoCommittedNewInstanceIds(rtn).forEach((_, oldDbId) => committedLocalDbIds.add(oldDbId));
+                this.processCommit(inst, rtn, dataService);
+            }),
+            map(rtn => this.buildCommitSummaryResults(inst, rtn))
+        );
 
         from(instances).pipe(
+            // concatMap only maps an instance once the previous commit has completed, so the check
+            // sees everything committed before it.
             concatMap(inst => {
-                if (inst.dbId && inst.dbId > 0) {
+                if (isCommitted(inst)) {
                     return EMPTY;
                 }
-                const commit$ = dataService.commit(inst).pipe(
-                    tap(rtn => this.processCommit(inst, rtn, dataService)),
-                    map(rtn => this.buildCommitSummaryResults(inst, rtn))
-                );
+                const commit$ = commitOne(inst);
                 // Run the pre-commit duplication check for new instances (see shouldCheckForMatches).
                 if (!dataService.shouldCheckForMatches(inst)) {
                     return commit$;
@@ -1528,10 +1541,7 @@ export class InstanceUtilities {
                             'Please wait while selected new instances are committed one by one.'
                         );
                         from(toCommit).pipe(
-                            concatMap(inst => dataService.commit(inst).pipe(
-                                tap(rtn => this.processCommit(inst, rtn, dataService)),
-                                map(rtn => this.buildCommitSummaryResults(inst, rtn))
-                            )),
+                            concatMap(inst => isCommitted(inst) ? EMPTY : commitOne(inst)),
                             finalize(() => this.closeCommitWaitDialog())
                         ).subscribe({
                             next: resultGroup => results.push(...resultGroup),
