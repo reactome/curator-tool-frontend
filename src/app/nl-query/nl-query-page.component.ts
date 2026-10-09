@@ -9,17 +9,21 @@ import { NLQueryPanelComponent } from './nl-query-panel.component';
   imports: [NLQueryPanelComponent],
   template: `
     <div class="nlq-page">
-      <h2>Ask the Curation Graph</h2>
-      <p class="nlq-hint">Read-only. Ask in plain English; follow-up questions keep the context. Click a dbId to open the instance.</p>
+      <header class="nlq-header">
+        <h2>Ask the Curation Graph</h2>
+        <p>Ask in plain English; follow-up questions keep the context. Click a dbId to open the instance.</p>
+      </header>
       <app-nl-query-panel (dbIdSelected)="openInstance($event)"></app-nl-query-panel>
     </div>
   `,
   styles: [`
+    :host { display: block; height: 100%; }
     .nlq-page { display: flex; flex-direction: column; height: 100vh; box-sizing: border-box;
-                max-width: 1200px; margin: 0 auto; padding: 16px; }
-    .nlq-page h2 { margin: 0; }
-    .nlq-hint { margin: 4px 0 12px; opacity: .7; font-size: 13px; }
-    app-nl-query-panel { display: block; flex: 1; min-height: 0; }
+                max-width: 960px; margin: 0 auto; padding: 16px 24px 0; }
+    .nlq-header { padding-bottom: 12px; border-bottom: 1px solid var(--outline-variant); }
+    .nlq-header h2 { margin: 0; }
+    .nlq-header p { margin: 4px 0 0; font-size: 13px; color: var(--on-surface-variant); }
+    app-nl-query-panel { flex: 1; min-height: 0; }
   `],
 })
 export class NLQueryPageComponent implements OnInit {
