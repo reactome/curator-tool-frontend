@@ -119,6 +119,29 @@ test.describe('the instance listing', () => {
       .some(p => p.includes('searchInstances'))).toBeTruthy();
   });
 
+  test('collapses a long search condition to one line, expandable without widening the page', async ({ page }) => {
+    // Ask the Graph opens its result lists as a dbId Regex condition, which can be hundreds of
+    // characters with no spaces in it.
+    const dbIds = Array.from({ length: 150 }, (_, i) => 1000000 + i).join('|');
+    await page.goto(`/schema_view/list_instances/Pathway?attributes=dbId&operands=Regex&searchKeys=${encodeURIComponent(dbIds)}`);
+
+    const chip = page.locator('.conditions-chips mat-chip-row');
+    const toggle = chip.getByRole('button', { name: 'Expand dbId condition' });
+    await expect(toggle).toBeVisible();
+    const collapsed = (await chip.boundingBox())!;
+    expect(collapsed.height).toBeLessThan(50);
+
+    await toggle.click();
+
+    await expect(chip.getByRole('button', { name: 'Collapse dbId condition' })).toBeVisible();
+    // ~1000 characters cannot fit on one line, so the whole list now spans many.
+    const expanded = (await chip.boundingBox())!;
+    expect(expanded.height).toBeGreaterThan(100);
+    expect(expanded.x + expanded.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth))
+      .toBeLessThanOrEqual(page.viewportSize()!.width);
+  });
+
   test('goes back to the plain listing when the filter is cleared', async ({ page, api }) => {
     await page.locator('mat-button-toggle').filter({ hasText: 'Human' }).first().click();
     await expect.poll(() => api.requestedPaths.some(p => p.includes('searchInstances')))

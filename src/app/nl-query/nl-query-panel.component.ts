@@ -19,7 +19,7 @@ interface Exchange {
  * Ask-the-graph panel: curators type a question in plain English and get an
  * answer, the Cypher that was run, and the result rows. Read-only.
  *
- * Usage: <app-nl-query-panel (dbIdSelected)="openInstance($event)"></app-nl-query-panel>
+ * Usage: <app-nl-query-panel (dbIdSelected)="openInstance($event)" (dbIdsListed)="openList($event)"></app-nl-query-panel>
  */
 @Component({
   selector: 'app-nl-query-panel',
@@ -74,6 +74,13 @@ interface Exchange {
                   <mat-icon>table_chart</mat-icon>
                   Results ({{ r.rows.length }}{{ r.rows_truncated ? '+' : '' }} rows)
                 </mat-expansion-panel-header>
+                <div class="nlq-list-actions">
+                  <button *ngFor="let c of dbIdColumns(r)" mat-stroked-button type="button"
+                          matTooltip="Open these instances in the schema view list, under their most specific common class"
+                          (click)="listDbIds(r, c)">
+                    <mat-icon>list</mat-icon> Open {{ dbIdColumns(r).length > 1 ? c + ' ' : '' }}in list view
+                  </button>
+                </div>
                 <div class="nlq-table-wrap">
                   <table class="nlq-table">
                     <thead><tr><th *ngFor="let c of r.columns">{{ c }}</th></tr></thead>
@@ -144,6 +151,9 @@ interface Exchange {
     .nlq-details .mat-expansion-panel-header mat-icon { font-size: 18px; width: 18px; height: 18px;
                                                         margin-right: 8px; color: var(--on-surface-variant); }
 
+    .nlq-list-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-bottom: 8px; }
+    .nlq-list-actions:empty { display: none; }
+    .nlq-list-actions button { letter-spacing: normal; }
     .nlq-table-wrap { max-height: 360px; overflow: auto; border: 1px solid var(--outline-variant); border-radius: 8px; }
     .nlq-table { border-collapse: collapse; font-size: 12px; width: 100%; }
     .nlq-table th { position: sticky; top: 0; background: var(--surface-variant); font-weight: 500; }
@@ -177,6 +187,9 @@ export class NLQueryPanelComponent {
 
   /** Emitted when a curator clicks a dbId in the results, so the host can open the instance. */
   @Output() dbIdSelected = new EventEmitter<number>();
+
+  /** Emitted with the dbIds of a result column when a curator asks to open them in the list view. */
+  @Output() dbIdsListed = new EventEmitter<number[]>();
 
   @ViewChild('log') private log?: ElementRef<HTMLElement>;
   @ViewChild('input') private input?: ElementRef<HTMLTextAreaElement>;
@@ -234,6 +247,24 @@ export class NLQueryPanelComponent {
   selectDbId(value: unknown): void {
     const dbId = Number(value);
     if (Number.isFinite(dbId)) this.dbIdSelected.emit(dbId);
+  }
+
+  /** The dbId columns of a result that hold at least one dbId, so there is something to list. */
+  dbIdColumns(response: NLQueryResponse): string[] {
+    return response.columns.filter(c => this.isDbIdColumn(c) && this.columnDbIds(response, c).length > 0);
+  }
+
+  listDbIds(response: NLQueryResponse, column: string): void {
+    const dbIds = this.columnDbIds(response, column);
+    if (dbIds.length) this.dbIdsListed.emit(dbIds);
+  }
+
+  private columnDbIds(response: NLQueryResponse, column: string): number[] {
+    const dbIds = response.rows.map(row => row[column])
+      .filter(v => v != null && v !== '')
+      .map(Number)
+      .filter(Number.isInteger);
+    return [...new Set(dbIds)];
   }
 
   clear(): void {

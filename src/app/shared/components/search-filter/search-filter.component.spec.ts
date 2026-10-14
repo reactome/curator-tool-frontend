@@ -91,4 +91,58 @@ describe('SearchFilterComponent', () => {
     expect(component.isNullOperand('Contains')).toBeFalse();
     expect(component.isNullOperand('')).toBeFalse();
   });
+
+  describe('a condition too long for one line', () => {
+    const long: SearchCriterium = {
+      attributeName: 'dbId',
+      operand: 'Regex',
+      searchKey: Array.from({ length: 100 }, (_, i) => 1000000 + i).join('|')
+    };
+
+    // ResizeObserver reports asynchronously, after layout.
+    const settle = async () => {
+      fixture.detectChanges();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      fixture.detectChanges();
+    };
+    const toggle = (): HTMLButtonElement | null => fixture.nativeElement.querySelector('.condition-toggle');
+    const text = (): HTMLElement => fixture.nativeElement.querySelector('.condition-text');
+
+    beforeEach(() => {
+      fixture.nativeElement.style.display = 'block';
+      fixture.nativeElement.style.width = '400px';
+      document.body.appendChild(fixture.nativeElement);
+    });
+
+    afterEach(() => fixture.nativeElement.remove());
+
+    it('is shown collapsed to its first line, with a toggle to expand it', async () => {
+      component.criteria = [long];
+      await settle();
+
+      expect(text().classList).toContain('collapsed');
+      expect(toggle()).not.toBeNull();
+      expect(toggle()!.getAttribute('aria-expanded')).toBe('false');
+
+      toggle()!.click();
+      await settle();
+
+      expect(text().classList).not.toContain('collapsed');
+      expect(text().offsetHeight).toBeGreaterThan(60);
+      expect(toggle()!.getAttribute('aria-expanded')).toBe('true');
+
+      toggle()!.click();
+      await settle();
+
+      expect(text().classList).toContain('collapsed');
+      expect(toggle()).not.toBeNull();
+    });
+
+    it('gets no toggle when it fits', async () => {
+      component.criteria = [criterion];
+      await settle();
+
+      expect(toggle()).toBeNull();
+    });
+  });
 });

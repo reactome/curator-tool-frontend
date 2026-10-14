@@ -133,4 +133,33 @@ describe('NLQueryPanelComponent', () => {
 
     expect(selected).toEqual([]);
   });
+
+  it('emits the unique dbIds of a result for the list view', () => {
+    service.ask.and.returnValue(of(response({
+      rows: [{ dbId: 123, displayName: 'A' }, { dbId: '456', displayName: 'B' }, { dbId: 123, displayName: 'A' },
+             { dbId: null, displayName: 'C' }],
+    })));
+    const listed: number[][] = [];
+    component.dbIdsListed.subscribe(ids => listed.push(ids));
+    component.question = 'x';
+    component.ask();
+    fixture.detectChanges();
+
+    const buttons = fixture.nativeElement.querySelectorAll('.nlq-list-actions button');
+    expect(buttons.length).toBe(1);
+    expect(buttons[0].textContent).toContain('Open in list view');
+    buttons[0].click();
+
+    expect(listed).toEqual([[123, 456]]);
+  });
+
+  it('offers one list button per dbId column, and none for a column without dbIds', () => {
+    const r = response({
+      columns: ['r.dbId', 'c.dbId', 'n.dbId'],
+      rows: [{ 'r.dbId': 1, 'c.dbId': 2, 'n.dbId': null }],
+    });
+
+    expect(component.dbIdColumns(r)).toEqual(['r.dbId', 'c.dbId']);
+    expect(component.dbIdColumns(response({ columns: ['count'], rows: [{ count: 3 }] }))).toEqual([]);
+  });
 });

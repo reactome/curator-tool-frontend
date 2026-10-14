@@ -7,9 +7,22 @@
 
     <mat-chip-set *ngIf="criteria.length > 0" class="conditions-chips" aria-label="Active search conditions">
       <mat-chip-row *ngFor="let criterium of criteria; let i = index" (removed)="removeCriterion(i)">
-        <span class="chip-attribute">{{ criterium.attributeName }}</span>
-        <span class="chip-operand">{{ criterium.operand }}</span>
-        <span class="chip-value" *ngIf="!isNullOperand(criterium.operand)">{{ criterium.searchKey }}</span>
+        <span class="condition-content">
+          <span #conditionText class="condition-text" [attr.data-index]="i"
+                [class.collapsed]="!expanded.has(criterium)">
+            <span class="chip-attribute">{{ criterium.attributeName }}</span>
+            <span class="chip-operand">{{ criterium.operand }}</span>
+            <span class="chip-value" *ngIf="!isNullOperand(criterium.operand)"><ng-container *ngFor="let part of breakAfterPipes(criterium.searchKey)">{{ part }}<wbr></ng-container></span>
+          </span>
+          <button *ngIf="overflowing.has(criterium) || expanded.has(criterium)" type="button" class="condition-toggle"
+                  [matTooltip]="expanded.has(criterium) ? 'Show less' : 'Show the whole condition'"
+                  [attr.aria-label]="(expanded.has(criterium) ? 'Collapse ' : 'Expand ') + criterium.attributeName + ' condition'"
+                  [attr.aria-expanded]="expanded.has(criterium)"
+                  (mousedown)="$event.preventDefault(); $event.stopPropagation()" (touchstart)="$event.stopPropagation()"
+                  (click)="toggleExpanded(criterium); $event.stopPropagation()">
+            <mat-icon>{{ expanded.has(criterium) ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
+        </span>
         <button matChipRemove [attr.aria-label]="'Remove ' + criterium.attributeName + ' condition'">
           <mat-icon>cancel</mat-icon>
         </button>

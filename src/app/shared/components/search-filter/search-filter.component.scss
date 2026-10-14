@@ -50,6 +50,64 @@
   --mdc-chip-label-text-size: 13px;
 }
 
+// Material chips are a single fixed-height, nowrap line, so a long condition (e.g. a dbId list
+// opened from Ask the Graph) pushed the page sideways. Let the chip grow downwards instead.
+.conditions-chips ::ng-deep .mat-mdc-standard-chip {
+  max-width: 100%;
+  height: auto;
+  min-height: var(--mdc-chip-container-height, 32px);
+}
+
+.conditions-chips ::ng-deep .mdc-evolution-chip__cell--primary,
+.conditions-chips ::ng-deep .mdc-evolution-chip__action--primary,
+.conditions-chips ::ng-deep .mdc-evolution-chip__text-label {
+  min-width: 0;
+  white-space: normal;
+}
+
+.conditions-chips ::ng-deep .mdc-evolution-chip__text-label {
+  padding: 4px 0;
+}
+
+.condition-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.condition-text {
+  min-width: 0;
+}
+
+.condition-text.collapsed {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+
+.condition-toggle {
+  flex: none;
+  display: inline-flex;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
 .chip-attribute {
   font-weight: 600;
 }
@@ -62,6 +120,8 @@
 
 .chip-value {
   font-weight: 500;
+  // A dbId list or regex has no spaces to break at.
+  overflow-wrap: anywhere;
 }
 
 .section-divider {
