@@ -847,6 +847,12 @@ export class DataService {
    * new Pathway's hasEvent) would otherwise stay cached under its negative dbId, and the server
    * creates a new instance for every negative dbId it is sent - committing it again duplicates it.
    *
+   * A reference already holding newDbId counts as remapped too. A referrer usually holds the
+   * shared shell from InstanceUtilities.getShellInstance, and setCommittedNewInstDbId re-keys that
+   * shell before this runs, so the referrer has silently moved to newDbId already. It still has
+   * to be reported, or its staged snapshot keeps the local dbId and a reload loses the reference.
+   * A dbId the server has just assigned cannot be referred to any other way.
+   *
    * @returns the referrer instances that were changed.
    */
   remapNewInstanceReferenceDbId(oldDbId: number, newDbId: number): Instance[] {
@@ -854,7 +860,7 @@ export class DataService {
 
     const changedReferrers: Instance[] = [];
     for (const inst of this.id2instance.values()) {
-      if (!inst.attributes) continue;
+      if (!inst.attributes || inst.dbId === newDbId) continue;
       let changed = false;
 
       for (const att of inst.attributes.keys()) {
@@ -863,12 +869,12 @@ export class DataService {
 
         if (Array.isArray(attValue)) {
           for (const v of attValue) {
-            if (this.utils.isInstance(v) && v.dbId === oldDbId) {
+            if (this.utils.isInstance(v) && (v.dbId === oldDbId || v.dbId === newDbId)) {
               v.dbId = newDbId;
               changed = true;
             }
           }
-        } else if (this.utils.isInstance(attValue) && attValue.dbId === oldDbId) {
+        } else if (this.utils.isInstance(attValue) && (attValue.dbId === oldDbId || attValue.dbId === newDbId)) {
           attValue.dbId = newDbId;
           changed = true;
         }

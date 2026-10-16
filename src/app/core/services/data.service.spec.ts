@@ -201,6 +201,26 @@ describe('DataService.remapNewInstanceReferenceDbId', () => {
     expect(changed).toEqual([pathway]);
     expect(service.getCachedInstance(-1)).toBeUndefined();
   });
+
+  it('reports a referrer whose shared shell was already moved to the persisted dbId', () => {
+    // Adding a new instance to an attribute stores the shared shell, and setCommittedNewInstDbId
+    // re-keys it before the remap runs. The referrer must still be reported, or its staged
+    // snapshot is never rewritten and a reload brings back the dead local dbId.
+    const utils = TestBed.inject(InstanceUtilities);
+    const reaction: Instance = { dbId: -1, displayName: 'A -> B', schemaClassName: 'Reaction', attributes: new Map() };
+    const pathway: Instance = {
+      dbId: 50, displayName: 'My pathway', schemaClassName: 'Pathway',
+      attributes: new Map<string, any>([['hasEvent', [utils.getShellInstance(reaction)]]])
+    };
+    service.registerInstance(reaction);
+    service.registerInstance(pathway);
+
+    utils.setCommittedNewInstDbId(-1, 200);
+    const changed = service.remapNewInstanceReferenceDbId(-1, 200);
+
+    expect(pathway.attributes.get('hasEvent')[0].dbId).toBe(200);
+    expect(changed).toEqual([pathway]);
+  });
 });
 
 describe('DataService.fetchEventTree', () => {
