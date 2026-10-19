@@ -11,6 +11,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { ListInstancesModule } from 'src/app/schema-view/list-instances/list-instances.module';
 import { NLQueryResponse, NLQueryService, NLQueryTurn } from './nl-query.service';
 import { ResultListing, ResultListingService } from './result-listing.service';
+import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 
 interface Exchange {
   question: string;
@@ -93,20 +94,22 @@ interface Exchange {
                     <mat-button-toggle *ngFor="let c of ex.sources" [value]="c">{{ c }}</mat-button-toggle>
                   </mat-button-toggle-group>
                   <span class="nlq-spacer"></span>
-                  <mat-button-toggle-group [value]="ex.view" (change)="ex.view = $event.value" aria-label="Result view">
+                  <!-- <mat-button-toggle-group [value]="ex.view" (change)="ex.view = $event.value" aria-label="Result view">
                     <mat-button-toggle value="list" matTooltip="The instances, in the schema view list">
                       <mat-icon>list</mat-icon> List
                     </mat-button-toggle>
                     <mat-button-toggle value="table" matTooltip="The rows exactly as the query returned them">
                       <mat-icon>table_rows</mat-icon> Table
                     </mat-button-toggle>
-                  </mat-button-toggle-group>
+                  </mat-button-toggle-group> -->
                 </div>
                 <ng-container *ngIf="ex.sources.length && ex.view === 'list'; else table">
                   <ng-container *ngFor="let c of ex.sources">
                     <ng-container *ngIf="ex.listSource === c">
                       <div *ngIf="listingOf(ex, c) as l" class="nlq-list-wrap">
                         <app-instance-list-view [useRoute]="false" [openInNewTab]="true"
+                                                [actionButtons]="listActionButtons" [needSecondaryActions]="false"
+                                                [showDeletion]="false" [showBatchEdit]="false" [showCompare]="false" [showBulkBookmark]="true"
                                                 [sourceInstances]="l.instances" [setClassName]="l.className">
                         </app-instance-list-view>
                       </div>
@@ -232,6 +235,9 @@ export class NLQueryPanelComponent {
     'How many human pathways were modified this month?',
     'List the complexes that contain UniProt:P04637',
   ];
+
+  /** Row actions in the instance list: launch and show referrers (select and bookmark are built in). */
+  readonly listActionButtons = [ACTION_BUTTONS.LAUNCH, ACTION_BUTTONS.LIST];
 
   question = '';
   loading = false;

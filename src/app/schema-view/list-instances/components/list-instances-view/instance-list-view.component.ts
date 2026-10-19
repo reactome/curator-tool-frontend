@@ -8,6 +8,7 @@ import { ReferrersDialogService } from "../../../../instance/components/referrer
 import { DeletionDialogService } from "../../../../instance/components/deletion-dialog/deletion-dialog.service";
 import { Store } from '@ngrx/store';
 import { NewInstanceActions } from 'src/app/instance/state/instance.actions';
+import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
 import { ActionButton } from './instance-list-table/instance-list-table.component';
@@ -76,6 +77,8 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   @Input() isLocal: boolean = false;
   @Input() showBatchEdit: boolean = true;
   @Input() showDeletion: boolean = true;
+  @Input() showCompare: boolean = true;
+  @Input() showBulkBookmark: boolean = false;
   @Input() showBatchEditActions: boolean = true; // This is used to control the visibility of batch edit actions, which is only shown when there are selected instances. It is set to true by default, but can be turned off in the batch edit dialog.
 
   // A flag to use route to load
@@ -1051,6 +1054,12 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
   clearSelectedInstances() {
     this.selectedInstances = [];
+  }
+
+  bookmarkSelectedInstances() {
+    for (const inst of this.selectedInstances) {
+      this.store.dispatch(BookmarkActions.add_bookmark(this.instUtils.makeShell(inst)));
+    }
   }
 
   downloadSelectedInstances() {
