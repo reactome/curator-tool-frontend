@@ -13,12 +13,14 @@
   <ng-container *ngIf="elmType === elmTypes.EDGE">
     <ng-container *ngIf="isEdgeEditable">
       <button (click)="onClick('addPoint')">Add Edge Point</button>
-      <!-- Only a reaction can be deleted from the diagram -->
-      <button (click)="onClick('delete')">Remove Reaction</button>
       <button (click)="onClick('disableEdgeEditing')">Disable Edge Editing</button>
     </ng-container>
     <button (click)="onClick('enableEdgeEditing')" *ngIf="!isEdgeEditable">Enable Edge Editing</button>
   </ng-container>
+
+  <!-- Only a reaction can be deleted from the diagram, via its reaction node -->
+  <button (click)="onClick('delete')"
+    *ngIf="elmType === elmTypes.REACTION_NODE && isEdgeEditable && isDiagramEditing">Remove Reaction</button>
 
   <!-- Add a flowline between a PE and a ProcessNode -->
   <button (click)="onClick('addFlowLine')"

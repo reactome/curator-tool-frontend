@@ -180,6 +180,7 @@ export interface ReactionStructureDto {
   outputs: ReactionParticipant[];
   catalysts: number[];
   regulators: ReactionRegulator[];
+  schemaClass?: string;
 }
 
 /**

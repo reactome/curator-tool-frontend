@@ -57,6 +57,7 @@ export enum ElementType {
   FLOWLINE = 'flowline',
   EDGE_POINT = 'edgePoint',
   NODE = "node",
+  REACTION_NODE = 'reaction_node',
   PE_Node = 'physicalentity_node',
   COMPARTMENT = "compartment",
   PATHWAY_NODE = 'pathway_node',

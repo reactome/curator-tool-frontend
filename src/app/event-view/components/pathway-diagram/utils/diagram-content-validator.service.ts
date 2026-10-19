@@ -39,6 +39,11 @@ const RESIDUE_EXTRA_ISSUE = 'drawn but not in database';
 const RESIDUE_DUPLICATE_ISSUE = 'drawn more than once';
 const RESIDUE_LABEL_MISMATCH_ISSUE = 'label mismatch';
 
+// A BlackBoxEvent must be drawn as an uncertain process (with a "?" inside). Shared by
+// checkReactionStructure() and autoFix() like the issues above.
+const BLACK_BOX_TYPE_ISSUE = 'BlackBoxEvent not drawn as uncertain process';
+const REACTION_TYPE_CLASSES = ['transition', 'association', 'dissociation', 'omitted', 'uncertain'];
+
 const ROLE_ATTRIBUTES = ['input', 'output', 'catalyst', 'activator', 'inhibitor'] as const;
 type Role = typeof ROLE_ATTRIBUTES[number];
 type RoleMap = Record<Role, Map<number, number>>;
@@ -168,6 +173,8 @@ export class PathwayDiagramContentValidator {
                 peNodes.forEach(n => displayNameIds.add(n.reactomeId));
                 subPathwayNodes.forEach(n => displayNameIds.add(n.reactomeId));
                 compartments.forEach(c => displayNameIds.add(c.reactomeId));
+                // For the report title, in case the fetched diagram JSON carries no displayName
+                displayNameIds.add(Number(diagramId));
                 reactionNodes.forEach((n: any) => { displayNameIds.add(n.data('reactomeId')); });
                 for (const structure of idToStructure.values()) {
                   (structure.inputs ?? []).forEach(p => displayNameIds.add(p.dbId));
@@ -219,7 +226,8 @@ export class PathwayDiagramContentValidator {
     return {
       // Labeled by the PathwayDiagram, not the Pathway -- that's the actual instance whose
       // JSON was fetched and diffed against the database here.
-      instance: { dbId: Number(diagramId), displayName: diagram.displayName, schemaClassName: 'PathwayDiagram' } as Instance,
+      // The generated diagram JSON doesn't always carry a displayName of its own, so fall back to the database's.
+      instance: { dbId: Number(diagramId), displayName: diagram.displayName || idToDisplayName.get(Number(diagramId)) || '', schemaClassName: 'PathwayDiagram' } as Instance,
       qaResults: [peCheck, subPathwayCheck, structureCheck, compartmentCheck, modifiedResidueCheck]
     };
   }
@@ -277,8 +285,39 @@ export class PathwayDiagramContentValidator {
    * whichever compartments aren't already accounted for in the JSON. Shared between validate()
    * and autoFix()'s compartment branch so the two never see a different compartment list.
    */
+  /**
+   * The live outer node of a compartment. A network that was saved and reloaded names it by
+   * dbId (e.g. "70101-outer") rather than by the JSON compartment's own id, so try the JSON id
+   * first and then fall back to matching reactomeId.
+   */
+  private findOuterNode(compartment: Compartment, cy: Core): any {
+    const byId = cy.getElementById(`${compartment.id}-outer`);
+    if (byId.length > 0) return byId;
+    return cy.nodes('.Compartment.outer').filter((n: any) => n.data('reactomeId') === compartment.reactomeId).first();
+  }
+
+  /**
+   * While a compartment's label is editable, its text lives on a separate label node
+   * ("<outer id>-label") and the outer node's own displayName is deliberately blanked (see
+   * PathwayDiagramUtilService.enableCompartmentEditing()). Return that node, if there is one.
+   */
+  private findLabelNode(outer: any, cy: Core): any {
+    const label = cy.getElementById(`${outer.id()}-label`);
+    return label.length > 0 ? label : undefined;
+  }
+
+  private liveCompartmentName(outer: any, cy: Core): string | undefined {
+    return (this.findLabelNode(outer, cy) ?? outer).data('displayName');
+  }
+
   private gatherCompartments(diagram: Diagram, cy: Core): Compartment[] {
-    const jsonCompartments = diagram.compartments ?? [];
+    // The diagram JSON can lack a compartment's displayName even though the live network draws
+    // it (the label shown on screen is the live outer node's), so prefer the live label; the
+    // outer node is found by findOuterNode().
+    const jsonCompartments = (diagram.compartments ?? []).map(c => {
+      const liveName = this.liveCompartmentName(this.findOuterNode(c, cy), cy);
+      return liveName ? { ...c, displayName: liveName } : c;
+    });
     const jsonCompartmentIds = new Set(jsonCompartments.map(c => c.reactomeId));
     const addedCompartments: Compartment[] = cy.nodes('.Compartment.outer')
       .filter((n: any) => n.data('reactomeId') !== undefined && !jsonCompartmentIds.has(n.data('reactomeId')))
@@ -287,7 +326,7 @@ export class PathwayDiagramContentValidator {
         // (`${compartment.id}-outer`), rather than trying to rebuild it from scratch.
         id: n.id().replace(/-outer$/, ''),
         reactomeId: n.data('reactomeId'),
-        displayName: n.data('displayName')
+        displayName: this.liveCompartmentName(n, cy)
       } as Compartment));
     return [...jsonCompartments, ...addedCompartments];
   }
@@ -317,6 +356,9 @@ export class PathwayDiagramContentValidator {
       // database instance's displayName just as a readable identifier for this row -- not a
       // comparison target.
       const reactionCell = this.entityCell(reactomeId, idToDisplayName);
+
+      if (dto.schemaClass === 'BlackBoxEvent' && !reactionNode.hasClass('uncertain'))
+        rows.push([reactionCell, 'type', '', BLACK_BOX_TYPE_ISSUE]);
 
       for (const role of ROLE_ATTRIBUTES) {
         const diff = this.diffMultisets(diagramStructure[role], dbStructure[role]);
@@ -558,7 +600,7 @@ export class PathwayDiagramContentValidator {
         const { dbId, deleted } = JSON.parse(row[0]);
         const compartment = reactomeIdToCompartment.get(dbId);
         if (!compartment) continue;
-        const outer = cy.getElementById(`${compartment.id}-outer`);
+        const outer = this.findOuterNode(compartment, cy);
         if (!outer || outer.length === 0) continue;
         if (deleted) {
           this.diagramUtils.deleteCompartment(outer, diagramComponent);
@@ -566,7 +608,7 @@ export class PathwayDiagramContentValidator {
         }
         const displayName = idToDisplayName.get(dbId);
         if (displayName === undefined) continue;
-        outer.data('displayName', displayName);
+        (this.findLabelNode(outer, cy) ?? outer).data('displayName', displayName);
       }
     }
 
@@ -582,6 +624,12 @@ export class PathwayDiagramContentValidator {
           // structure that has nothing left in the database to patch it against.
           const edgeElm = cy.edges(`[reactomeId = ${dbId}]`);
           if (edgeElm.length > 0) this.diagramUtils.deleteHyperEdge(edgeElm);
+          continue;
+        }
+        if (row[3] === BLACK_BOX_TYPE_ISSUE) {
+          // Only the drawn type is wrong, so no structure resync is needed.
+          cy.nodes(`.reaction[reactomeId = ${dbId}]`).not(`.${EDGE_POINT_CLASS}`)
+            .removeClass(REACTION_TYPE_CLASSES.join(' ')).addClass('uncertain');
           continue;
         }
         flaggedReactionIds.add(dbId);

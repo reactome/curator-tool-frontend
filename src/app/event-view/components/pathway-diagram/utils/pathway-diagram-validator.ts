@@ -513,13 +513,25 @@ export class PathwayDiagramValidator{
     getRegulationSign(edge: any): 'positive' | 'negative' | undefined {
         if (edge.hasClass('positive-regulation')) return 'positive';
         if (edge.hasClass('negative-regulation')) return 'negative';
-        for (const node of [edge.source(), edge.target()]) {
+        // A connector may have any number of bends (edge points), so walk the whole chain
+        // towards the reaction, not just the one segment next to this edge. Only pass through
+        // single-path interior points (exactly two edges), never a hub shared by other connectors.
+        const visited = new Set<string>([edge.id()]);
+        let current = edge;
+        while (current) {
+          let next: any;
+          for (const node of [current.source(), current.target()]) {
             if (!node.hasClass(EDGE_POINT_CLASS)) continue;
-            for (const other of node.connectedEdges()) {
-                if (other.id() === edge.id()) continue;
-                if (other.hasClass('positive-regulation')) return 'positive';
-                if (other.hasClass('negative-regulation')) return 'negative';
-            }
+            const edges = node.connectedEdges();
+            if (edges.length !== 2) continue;
+            const other = edges.filter((e: any) => !visited.has(e.id()))[0];
+            if (other) { next = other; break; }
+          }
+          if (!next) break;
+          if (next.hasClass('positive-regulation')) return 'positive';
+          if (next.hasClass('negative-regulation')) return 'negative';
+          visited.add(next.id());
+          current = next;
         }
         return undefined;
     }
