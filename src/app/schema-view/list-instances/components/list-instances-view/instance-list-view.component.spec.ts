@@ -172,6 +172,62 @@ describe('InstanceListViewComponent species quick filter', () => {
 
     expect(component.hasSpeciesAttribute).toBeTrue();
   });
+
+  describe('over a given set of instances', () => {
+    const source = [
+      { dbId: 1, displayName: 'Kinase A', schemaClassName: 'Reaction' },
+      { dbId: 2, displayName: 'kinase B', schemaClassName: 'Reaction' },
+      { dbId: 3, displayName: 'Phosphatase', schemaClassName: 'Reaction' },
+    ];
+
+    beforeEach(() => {
+      component.sourceInstances = source;
+      component.hasSpeciesAttribute = false;
+    });
+
+    it('lists them without asking the server', () => {
+      component.loadInstances();
+
+      expect(dataService.listInstances).not.toHaveBeenCalled();
+      expect(dataService.searchInstances).not.toHaveBeenCalled();
+      expect(component.data).toEqual(source);
+      expect(component.instanceCount).toBe(3);
+    });
+
+    it('narrows them with the search box, by displayName or by dbId', () => {
+      component.searchKey = 'KINASE';
+      component.doBasicSearch(0);
+      expect(component.data.map(i => i.dbId)).toEqual([1, 2]);
+
+      component.searchKey = '3';
+      component.doBasicSearch(0);
+      expect(component.data.map(i => i.dbId)).toEqual([3]);
+      expect(dataService.listInstances).not.toHaveBeenCalled();
+    });
+
+    it('pages them locally', () => {
+      component.pageSize = 2;
+      component.onPageChange({ pageIndex: 1, pageSize: 2, length: 3 });
+
+      expect(component.data.map(i => i.dbId)).toEqual([3]);
+      expect(component.instanceCount).toBe(3);
+    });
+  });
+
+  it('opens an instance clicked by name in a new tab when asked to', () => {
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
+    spyOn(window, 'open');
+
+    component.openInNewTab = true;
+    component.navigateUrl({ dbId: 7 } as any);
+    expect(window.open).toHaveBeenCalledWith('schema_view/instance/7', '_blank');
+    expect(router.navigate).not.toHaveBeenCalled();
+
+    component.openInNewTab = false;
+    component.navigateUrl({ dbId: 7 } as any);
+    expect(router.navigate).toHaveBeenCalledWith(['/schema_view/instance/7']);
+  });
 });
 
 /**

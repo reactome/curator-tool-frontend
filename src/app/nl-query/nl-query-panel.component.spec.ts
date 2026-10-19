@@ -1,15 +1,34 @@
+// Imported first for its side effect, as in instance-list-view.component.spec.ts: the panel pulls
+// in ListInstancesModule, which is part of an import cycle through MatchResolutionService.
+import '../instance/components/match-instances-dialog/match-instances-dialog.component';
+
 import { HttpErrorResponse } from '@angular/common/http';
+import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Subject, of, throwError } from 'rxjs';
 
+import { Instance } from 'src/app/core/models/reactome-instance.model';
+import { ListInstancesModule } from 'src/app/schema-view/list-instances/list-instances.module';
 import { NLQueryPanelComponent } from './nl-query-panel.component';
 import { NLQueryResponse, NLQueryService } from './nl-query.service';
+import { DataService } from 'src/app/core/services/data.service';
+import { ResultListingService } from './result-listing.service';
+
+/** Stands in for the real instance list, which needs the whole schema view behind it. */
+@Component({ selector: 'app-instance-list-view', standalone: true, template: '' })
+class StubInstanceListViewComponent {
+  @Input() useRoute = true;
+  @Input() openInNewTab = false;
+  @Input() sourceInstances?: Instance[];
+  @Input() setClassName = '';
+}
 
 describe('NLQueryPanelComponent', () => {
   let fixture: ComponentFixture<NLQueryPanelComponent>;
   let component: NLQueryPanelComponent;
   let service: jasmine.SpyObj<NLQueryService>;
+  let resultListing: ResultListingService;
 
   const response = (overrides: Partial<NLQueryResponse> = {}): NLQueryResponse => ({
     answer: 'Two reactions have no catalyst.',
@@ -21,13 +40,42 @@ describe('NLQueryPanelComponent', () => {
     ...overrides,
   });
 
+  const listView = (): StubInstanceListViewComponent | undefined => {
+    const el = fixture.debugElement.query(d => d.componentInstance instanceof StubInstanceListViewComponent);
+    return el?.componentInstance;
+  };
+
+  const askFor = (r: NLQueryResponse) => {
+    service.ask.and.returnValue(of(r));
+    component.question = 'x';
+    component.ask();
+    fixture.detectChanges();
+  };
+
+  const showTable = () => {
+    (fixture.nativeElement.querySelectorAll('mat-button-toggle button') as NodeListOf<HTMLElement>)
+      .forEach(b => { if (b.textContent?.includes('Table')) b.click(); });
+    fixture.detectChanges();
+  };
+
   beforeEach(async () => {
     service = jasmine.createSpyObj<NLQueryService>('NLQueryService', ['ask']);
     await TestBed.configureTestingModule({
       imports: [NLQueryPanelComponent, NoopAnimationsModule],
-      providers: [{ provide: NLQueryService, useValue: service }],
-    }).compileComponents();
+      providers: [
+        { provide: NLQueryService, useValue: service },
+        // A flat schema, which is all the listing needs to name the instances' class.
+        { provide: DataService, useValue: { getSchemaClass: (name: string) => ({ name }) } },
+      ],
+    })
+      .overrideComponent(NLQueryPanelComponent, {
+        remove: { imports: [ListInstancesModule] },
+        add: { imports: [StubInstanceListViewComponent] },
+      })
+      .compileComponents();
 
+    resultListing = TestBed.inject(ResultListingService);
+    spyOn(resultListing, 'listing').and.callThrough();
     fixture = TestBed.createComponent(NLQueryPanelComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -103,12 +151,10 @@ describe('NLQueryPanelComponent', () => {
   });
 
   it('emits the dbId when a dbId cell is clicked', () => {
-    service.ask.and.returnValue(of(response()));
     const selected: number[] = [];
     component.dbIdSelected.subscribe(id => selected.push(id));
-    component.question = 'x';
-    component.ask();
-    fixture.detectChanges();
+    askFor(response());
+    showTable();
 
     const links = fixture.nativeElement.querySelectorAll('.nlq-table a');
     expect(links.length).toBe(2);
@@ -134,32 +180,81 @@ describe('NLQueryPanelComponent', () => {
     expect(selected).toEqual([]);
   });
 
-  it('emits the unique dbIds of a result for the list view', () => {
-    service.ask.and.returnValue(of(response({
-      rows: [{ dbId: 123, displayName: 'A' }, { dbId: '456', displayName: 'B' }, { dbId: 123, displayName: 'A' },
-             { dbId: null, displayName: 'C' }],
-    })));
-    const listed: number[][] = [];
-    component.dbIdsListed.subscribe(ids => listed.push(ids));
-    component.question = 'x';
-    component.ask();
-    fixture.detectChanges();
+  it('lists a result with dbIds in the instance list, from its own rows, opening instances in a new tab', () => {
+    askFor(response({
+      columns: ['r.dbId', 'r.displayName', 'r.schemaClass'],
+      rows: [{ 'r.dbId': 123, 'r.displayName': 'A', 'r.schemaClass': 'Reaction' },
+             { 'r.dbId': 456, 'r.displayName': 'B', 'r.schemaClass': 'Reaction' }],
+    }));
 
-    const buttons = fixture.nativeElement.querySelectorAll('.nlq-list-actions button');
-    expect(buttons.length).toBe(1);
-    expect(buttons[0].textContent).toContain('Open in list view');
-    buttons[0].click();
-
-    expect(listed).toEqual([[123, 456]]);
+    const view = listView()!;
+    expect(view).toBeDefined();
+    expect(view.useRoute).toBeFalse();
+    expect(view.openInNewTab).toBeTrue();
+    expect(view.setClassName).toBe('Reaction');
+    expect(view.sourceInstances).toEqual([
+      { dbId: 123, displayName: 'A', schemaClassName: 'Reaction' },
+      { dbId: 456, displayName: 'B', schemaClassName: 'Reaction' },
+    ]);
+    expect(fixture.nativeElement.querySelector('.nlq-table')).toBeNull();
   });
 
-  it('offers one list button per dbId column, and none for a column without dbIds', () => {
-    const r = response({
-      columns: ['r.dbId', 'c.dbId', 'n.dbId'],
-      rows: [{ 'r.dbId': 1, 'c.dbId': 2, 'n.dbId': null }],
-    });
+  it('lists the instances a query collected into a list of maps', () => {
+    // The shape the query agent actually returns for "which reactions ...?": a count, and a
+    // sample collected as maps with aliased keys.
+    askFor(response({
+      columns: ['total', 'sample'],
+      rows: [{ total: 2, sample: [
+        { stId: 'R-HSA-1', dbId: 11, name: 'First', cls: 'Reaction' },
+        { stId: 'R-HSA-2', dbId: 12, name: 'Second', cls: 'Reaction' },
+      ] }],
+    }));
 
-    expect(component.dbIdColumns(r)).toEqual(['r.dbId', 'c.dbId']);
-    expect(component.dbIdColumns(response({ columns: ['count'], rows: [{ count: 3 }] }))).toEqual([]);
+    expect(component.exchanges[0].sources).toEqual(['sample.dbId']);
+    expect(listView()!.setClassName).toBe('Reaction');
+    expect(listView()!.sourceInstances).toEqual([
+      { dbId: 11, displayName: 'First', schemaClassName: 'Reaction' },
+      { dbId: 12, displayName: 'Second', schemaClassName: 'Reaction' },
+    ]);
+  });
+
+  it('switches to the raw rows and back', () => {
+    askFor(response());
+
+    showTable();
+    expect(listView()).toBeUndefined();
+    expect(fixture.nativeElement.querySelectorAll('.nlq-table tbody tr').length).toBe(2);
+
+    (fixture.nativeElement.querySelectorAll('mat-button-toggle button') as NodeListOf<HTMLElement>)
+      .forEach(b => { if (b.textContent?.includes('List')) b.click(); });
+    fixture.detectChanges();
+    expect(listView()).toBeDefined();
+  });
+
+  it('shows the plain table, with no list controls, for a result without dbIds', () => {
+    askFor(response({ columns: ['count', 'sample'], rows: [{ count: 3, sample: [{ stId: 'R-HSA-1' }] }] }));
+
+    expect(resultListing.listing).not.toHaveBeenCalled();
+    expect(listView()).toBeUndefined();
+    expect(fixture.nativeElement.querySelector('.nlq-result-controls')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.nlq-table')).not.toBeNull();
+  });
+
+  it('lists another source when it is picked, building each one once', () => {
+    askFor(response({
+      columns: ['r.dbId', 'c.dbId'],
+      rows: [{ 'r.dbId': 1, 'c.dbId': 2 }],
+    }));
+    expect(listView()!.sourceInstances![0].dbId).toBe(1);
+
+    const exchange = component.exchanges[0];
+    component.showSource(exchange, 'c.dbId');
+    fixture.detectChanges();
+    expect(listView()!.sourceInstances![0].dbId).toBe(2);
+
+    component.showSource(exchange, 'r.dbId');
+    fixture.detectChanges();
+    expect(listView()!.sourceInstances![0].dbId).toBe(1);
+    expect(resultListing.listing).toHaveBeenCalledTimes(2);
   });
 });

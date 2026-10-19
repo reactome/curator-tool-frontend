@@ -86,6 +86,18 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   // A flag to indicate this selection is used for editing
   @Input() isSelection: boolean = false;
 
+  // Open an instance clicked by name in a new tab rather than navigating away, for hosts
+  // whose own state would be lost (e.g. the Ask the Graph conversation).
+  @Input() openInNewTab: boolean = false;
+
+  // A fixed set of instances to list instead of the database's, e.g. the result rows of Ask
+  // the Graph. Searching, simple or advanced, then narrows this set rather than querying the
+  // whole class, the same way the staged list works over the staged instances.
+  @Input() sourceInstances?: Instance[];
+  // Everything in sourceInstances that the current search lets through, not just this page,
+  // so that "Download search results" can write all of it.
+  private sourceMatches: Instance[] = [];
+
   @Output() clickEvent = new EventEmitter<Instance>();
 
   @Input() set setClassName(inputClassName: string) {
@@ -146,7 +158,10 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   loadInstances() {
     // Make sure className is set!
     if (this.className && this.className.length > 0)
-      if (this.isLocal) {
+      if (this.sourceInstances) {
+        this.displayLocalInstances(this.filterBySearchKey(this.sourceInstances));
+      }
+      else if (this.isLocal) {
         const loadInstanceSubject = this.dataService.getLoadInstanceSubject();
         if (loadInstanceSubject) {
           loadInstanceSubject.pipe(take(1)).subscribe(() => this.loadLocalInstancesFromStore());
@@ -211,12 +226,27 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * The simple search over sourceInstances, matching the server's: a number is a dbId, and
+   * anything else a case-insensitive displayName substring.
+   */
+  private filterBySearchKey(instances: Instance[]): Instance[] {
+    const key = this.searchKey?.trim();
+    if (!key)
+      return instances;
+    if (/^\d+$/.test(key))
+      return instances.filter(inst => inst.dbId === Number(key));
+    const lowerKey = key.toLowerCase();
+    return instances.filter(inst => inst.displayName?.toLowerCase().includes(lowerKey));
+  }
+
+  /**
    * Apply the species quick filter, page, and display a set of staged instances. Both the
    * plain listing and the advanced search over staged instances end here, so the filter is
    * applied in exactly one place for either of them.
    */
   private displayLocalInstances(instances: Instance[]) {
     this.filterLocalInstancesBySpecies(instances).subscribe(filtered => {
+      this.sourceMatches = filtered;
       // Apply skip and limit
       const paged = filtered.slice(this.skip, this.skip + this.pageSize);
 
@@ -654,7 +684,12 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
   private searchInstances(criteria: SearchCriterium[]) {
     this.showProgressSpinner = true;
 
-    if (this.isLocal) {
+    if (this.sourceInstances) {
+      const { attributes, operands, searchKeys } = this.toSearchParams(criteria);
+      this.matchLocalInstances(this.sourceInstances, attributes, operands, searchKeys)
+        .subscribe(matched => this.displayLocalInstances(matched));
+    }
+    else if (this.isLocal) {
       // Staged instances are filtered by species once the criteria have been applied, in
       // displayLocalInstances.
       const { attributes, operands, searchKeys } = this.toSearchParams(criteria);
@@ -881,7 +916,11 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
 
   navigateUrl(instance: Instance) {
-    if (!this.isSelection)
+    if (this.isSelection)
+      return;
+    if (this.openInNewTab)
+      window.open(`schema_view/instance/${instance.dbId}`, '_blank');
+    else
       this.router.navigate(["/schema_view/instance/" + instance.dbId.toString()])
   }
 
@@ -1047,9 +1086,11 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       : `${trimmedName.length > 0 ? trimmedName : suggestedName}.csv`;
 
     this.showProgressSpinner = true;
-    const request = this.needAdvancedSearch && this.searchCriteria.length > 0
-      ? this.fetchAllAdvancedSearchResults()
-      : this.fetchInstancesForBasicSearch(0, this.instanceCount);
+    const request = this.sourceInstances
+      ? of({ instances: this.sourceMatches, totalCount: this.sourceMatches.length })
+      : this.needAdvancedSearch && this.searchCriteria.length > 0
+        ? this.fetchAllAdvancedSearchResults()
+        : this.fetchInstancesForBasicSearch(0, this.instanceCount);
 
     request.subscribe({
       next: (instanceList) => {

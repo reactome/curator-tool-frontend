@@ -7,25 +7,37 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { ListInstancesModule } from 'src/app/schema-view/list-instances/list-instances.module';
 import { NLQueryResponse, NLQueryService, NLQueryTurn } from './nl-query.service';
+import { ResultListing, ResultListingService } from './result-listing.service';
 
 interface Exchange {
   question: string;
   response?: NLQueryResponse;
   error?: string;
+  /** Results with dbIds are shown in the instance list, unless the curator asks for the raw rows. */
+  view: 'list' | 'table';
+  /** Where in the result the instance list can find instances (see ResultListingService). */
+  sources: string[];
+  /** The source the instance list is showing. */
+  listSource?: string;
+  listings: Map<string, ResultListing>;
 }
 
 /**
  * Ask-the-graph panel: curators type a question in plain English and get an
- * answer, the Cypher that was run, and the result rows. Read-only.
+ * answer, the Cypher that was run, and the result rows. A result holding dbIds is shown in the
+ * schema view's instance list, so it can be searched, paged and acted on like any other list;
+ * the raw rows are a toggle away. Asking is read-only.
  *
- * Usage: <app-nl-query-panel (dbIdSelected)="openInstance($event)" (dbIdsListed)="openList($event)"></app-nl-query-panel>
+ * Usage: <app-nl-query-panel (dbIdSelected)="openInstance($event)"></app-nl-query-panel>
  */
 @Component({
   selector: 'app-nl-query-panel',
   standalone: true,
   imports: [CommonModule, FormsModule, TextFieldModule, MatButtonModule, MatIconModule,
-            MatExpansionModule, MatTooltipModule],
+            MatExpansionModule, MatTooltipModule, MatButtonToggleModule, ListInstancesModule],
   template: `
     <div class="nlq">
       <form class="nlq-composer" (ngSubmit)="ask()">
@@ -74,13 +86,34 @@ interface Exchange {
                   <mat-icon>table_chart</mat-icon>
                   Results ({{ r.rows.length }}{{ r.rows_truncated ? '+' : '' }} rows)
                 </mat-expansion-panel-header>
-                <div class="nlq-list-actions">
-                  <button *ngFor="let c of dbIdColumns(r)" mat-stroked-button type="button"
-                          matTooltip="Open these instances in the schema view list, under their most specific common class"
-                          (click)="listDbIds(r, c)">
-                    <mat-icon>list</mat-icon> Open {{ dbIdColumns(r).length > 1 ? c + ' ' : '' }}in list view
-                  </button>
+                <div *ngIf="ex.sources.length" class="nlq-result-controls">
+                  <mat-button-toggle-group *ngIf="ex.view === 'list' && ex.sources.length > 1"
+                                           [value]="ex.listSource" (change)="showSource(ex, $event.value)"
+                                           aria-label="Instances to list">
+                    <mat-button-toggle *ngFor="let c of ex.sources" [value]="c">{{ c }}</mat-button-toggle>
+                  </mat-button-toggle-group>
+                  <span class="nlq-spacer"></span>
+                  <mat-button-toggle-group [value]="ex.view" (change)="ex.view = $event.value" aria-label="Result view">
+                    <mat-button-toggle value="list" matTooltip="The instances, in the schema view list">
+                      <mat-icon>list</mat-icon> List
+                    </mat-button-toggle>
+                    <mat-button-toggle value="table" matTooltip="The rows exactly as the query returned them">
+                      <mat-icon>table_rows</mat-icon> Table
+                    </mat-button-toggle>
+                  </mat-button-toggle-group>
                 </div>
+                <ng-container *ngIf="ex.sources.length && ex.view === 'list'; else table">
+                  <ng-container *ngFor="let c of ex.sources">
+                    <ng-container *ngIf="ex.listSource === c">
+                      <div *ngIf="listingOf(ex, c) as l" class="nlq-list-wrap">
+                        <app-instance-list-view [useRoute]="false" [openInNewTab]="true"
+                                                [sourceInstances]="l.instances" [setClassName]="l.className">
+                        </app-instance-list-view>
+                      </div>
+                    </ng-container>
+                  </ng-container>
+                </ng-container>
+                <ng-template #table>
                 <div class="nlq-table-wrap">
                   <table class="nlq-table">
                     <thead><tr><th *ngFor="let c of r.columns">{{ c }}</th></tr></thead>
@@ -95,6 +128,7 @@ interface Exchange {
                     </tbody>
                   </table>
                 </div>
+                </ng-template>
               </mat-expansion-panel>
 
               <mat-expansion-panel *ngIf="r.queries.length">
@@ -151,9 +185,10 @@ interface Exchange {
     .nlq-details .mat-expansion-panel-header mat-icon { font-size: 18px; width: 18px; height: 18px;
                                                         margin-right: 8px; color: var(--on-surface-variant); }
 
-    .nlq-list-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-bottom: 8px; }
-    .nlq-list-actions:empty { display: none; }
-    .nlq-list-actions button { letter-spacing: normal; }
+    .nlq-result-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .nlq-result-controls mat-icon { font-size: 18px; width: 18px; height: 18px; vertical-align: middle; }
+    .nlq-spacer { flex: 1; }
+    .nlq-list-wrap { overflow-x: auto; }
     .nlq-table-wrap { max-height: 360px; overflow: auto; border: 1px solid var(--outline-variant); border-radius: 8px; }
     .nlq-table { border-collapse: collapse; font-size: 12px; width: 100%; }
     .nlq-table th { position: sticky; top: 0; background: var(--surface-variant); font-weight: 500; }
@@ -184,12 +219,10 @@ interface Exchange {
 })
 export class NLQueryPanelComponent {
   private service = inject(NLQueryService);
+  private resultListing = inject(ResultListingService);
 
   /** Emitted when a curator clicks a dbId in the results, so the host can open the instance. */
   @Output() dbIdSelected = new EventEmitter<number>();
-
-  /** Emitted with the dbIds of a result column when a curator asks to open them in the list view. */
-  @Output() dbIdsListed = new EventEmitter<number[]>();
 
   @ViewChild('log') private log?: ElementRef<HTMLElement>;
   @ViewChild('input') private input?: ElementRef<HTMLTextAreaElement>;
@@ -215,14 +248,20 @@ export class NLQueryPanelComponent {
         { role: 'assistant' as const, content: ex.response!.answer },
       ]);
 
-    const exchange: Exchange = { question };
+    const exchange: Exchange = { question, view: 'list', sources: [], listings: new Map() };
     this.exchanges.push(exchange);
     this.question = '';
     this.loading = true;
     this.scrollToBottom();
 
     this.service.ask(question, history).subscribe({
-      next: r => { exchange.response = r; this.loading = false; this.scrollToBottom(); },
+      next: r => {
+        exchange.response = r;
+        exchange.sources = this.resultListing.sources(r);
+        if (exchange.sources.length) this.showSource(exchange, exchange.sources[0]);
+        this.loading = false;
+        this.scrollToBottom();
+      },
       error: (e: HttpErrorResponse) => {
         exchange.error = e.status === 401 ? 'Your session has expired. Please log in again.'
           : e.status === 0 || e.status === 404 ? 'The graph query service is not reachable from here.'
@@ -249,22 +288,15 @@ export class NLQueryPanelComponent {
     if (Number.isFinite(dbId)) this.dbIdSelected.emit(dbId);
   }
 
-  /** The dbId columns of a result that hold at least one dbId, so there is something to list. */
-  dbIdColumns(response: NLQueryResponse): string[] {
-    return response.columns.filter(c => this.isDbIdColumn(c) && this.columnDbIds(response, c).length > 0);
+  /** List a source's instances, built from the result rows the first time it is shown. */
+  showSource(exchange: Exchange, source: string): void {
+    exchange.listSource = source;
+    if (exchange.listings.has(source) || !exchange.response) return;
+    exchange.listings.set(source, this.resultListing.listing(exchange.response, source));
   }
 
-  listDbIds(response: NLQueryResponse, column: string): void {
-    const dbIds = this.columnDbIds(response, column);
-    if (dbIds.length) this.dbIdsListed.emit(dbIds);
-  }
-
-  private columnDbIds(response: NLQueryResponse, column: string): number[] {
-    const dbIds = response.rows.map(row => row[column])
-      .filter(v => v != null && v !== '')
-      .map(Number)
-      .filter(Number.isInteger);
-    return [...new Set(dbIds)];
+  listingOf(exchange: Exchange, source: string): ResultListing | undefined {
+    return exchange.listings.get(source);
   }
 
   clear(): void {
@@ -281,7 +313,7 @@ export class NLQueryPanelComponent {
   }
 
   isDbIdColumn(column: string): boolean {
-    return /(^|\.|_)dbId$/i.test(column);
+    return this.resultListing.isDbIdKey(column);
   }
 
   format(value: unknown): string {
