@@ -628,8 +628,11 @@ export class PathwayDiagramContentValidator {
         }
         if (row[3] === BLACK_BOX_TYPE_ISSUE) {
           // Only the drawn type is wrong, so no structure resync is needed.
-          cy.nodes(`.reaction[reactomeId = ${dbId}]`).not(`.${EDGE_POINT_CLASS}`)
-            .removeClass(REACTION_TYPE_CLASSES.join(' ')).addClass('uncertain');
+          // Keep the type as the first class, as it is when a reaction is created.
+          cy.nodes(`.reaction[reactomeId = ${dbId}]`).not(`.${EDGE_POINT_CLASS}`).forEach((n: any) => {
+            const others = (n.classes() as string[]).filter(c => !REACTION_TYPE_CLASSES.includes(c));
+            n.classes(['uncertain', ...others]);
+          });
           continue;
         }
         flaggedReactionIds.add(dbId);
