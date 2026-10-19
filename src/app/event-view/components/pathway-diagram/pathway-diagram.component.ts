@@ -1001,6 +1001,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       }
       else if (this.elementUnderMouse.hasClass(EDGE_POINT_CLASS))
         this.elementTypeForPopup = ElementType.EDGE_POINT;
+      else if (this.elementUnderMouse.data('reactionId'))
+        this.elementTypeForPopup = ElementType.REACTION_NODE;
       else {
         this.elementTypeForPopup = ElementType.NODE;
         this.isFlowLineAddable = this.diagramUtils.isFlowLineAddable(this.elementUnderMouse, this);

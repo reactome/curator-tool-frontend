@@ -57,6 +57,14 @@ describe('InstanceConverter.createPENode', () => {
     expect(second.id()).toBe('5205653');
   });
 
+  it('style OtherEntity and GenomeEncodedEntity nodes as Entity', () => {
+    for (const schemaClassName of ['OtherEntity', 'GenomeEncodedEntity']) {
+      const node = converter.createPENode({ dbId: 10004752, schemaClassName, displayName: 'tasiR-ARF [cytosol]' }, cy, reaction(1), service);
+      expect(node.classes()).toEqual(['PhysicalEntity', 'Entity']);
+      cy.remove(node);
+    }
+  });
+
   it('make a new node for a listed cofactor whose node in the reaction was removed', () => {
     const r1 = reaction(1);
     const first = converter.createPENode(ATP, cy, r1, service);

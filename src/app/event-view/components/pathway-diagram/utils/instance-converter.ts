@@ -278,7 +278,9 @@ export class InstanceConverter {
                 },
             },
             position: { x: 50, y: 50 },
-            classes: utils.diagramService?.reactionTypeMap.get('transition'),
+            // A BlackBoxEvent is shown as an uncertain process, i.e. with a "?" inside
+            classes: utils.diagramService?.reactionTypeMap.get(
+                instance.schemaClassName === 'BlackBoxEvent' ? 'uncertain' : 'transition'),
         };
         const reactionNode = cy.add(reactionNodes)[0];
         return reactionNode;
@@ -520,6 +522,8 @@ export class InstanceConverter {
             }
             return "Entity";
         }
+        if (schemaClass === 'OtherEntity' || schemaClass === 'GenomeEncodedEntity')
+            return "Entity";
         if (schemaClass === 'DefinedSet' || schemaClass === 'CandidateSet')
             return "EntitySet";
         if (schemaClass === 'Pathway' || schemaClass === 'CellLineagePath' || schemaClass === 'TopLevelPathway')
