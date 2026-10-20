@@ -337,6 +337,37 @@ export const QA_REPORT = {
 };
 
 /**
+ * A reaction imbalance report, as `/qa/reactionImbalance/{dbId}` returns it: one cleavage and one
+ * non-cleavage imbalance (adapted from 5358340 and 9666616 in the curation database). The second
+ * reaction has no `lastAuthor`, which the backend drops when there are no InstanceEdits.
+ */
+export const REACTION_IMBALANCE_REPORT = {
+  eventDbId: 100,
+  eventDisplayName: 'Glycolysis',
+  checkedReactions: 3,
+  reactions: [
+    {
+      dbId: 5358340,
+      displayName: 'Autoproteolytic cleavage of Hh precursors',
+      cleavage: true,
+      lastAuthor: 'Matthews, Lisa, 2023-03-08',
+      imbalances: [
+        { refDbId: 53626, identifier: 'O43323', displayName: 'UniProt:O43323 DHH', inputCount: 1, outputCount: 2 },
+        { refDbId: 64432, identifier: 'Q15465', displayName: 'UniProt:Q15465 SHH', inputCount: 1, outputCount: 2 }
+      ]
+    },
+    {
+      dbId: 9666616,
+      displayName: 'APC is deubiquitinated',
+      cleavage: false,
+      imbalances: [
+        { refDbId: 68524, identifier: 'P0CG48', displayName: 'UniProt:P0CG48 UBC', inputCount: 27, outputCount: 9 }
+      ]
+    }
+  ]
+};
+
+/**
  * A minimal but renderable pathway diagram for dbId 100, in the layout format
  * `/fetchPathwayDiagramForPathway/` returns: two reaction nodes plus their edges inside one
  * compartment.
@@ -449,7 +480,7 @@ export const DEFAULT_API_ROUTES: ApiRouteFixture[] = [
   {
     name: 'class attributes',
     match: p => p.includes('/getAttributes/'),
-    body: p => CLASS_ATTRIBUTES[trailingName(p)] ?? []
+    body: (p: string) => CLASS_ATTRIBUTES[trailingName(p)] ?? []
   },
   {
     name: 'event tree',
@@ -463,7 +494,7 @@ export const DEFAULT_API_ROUTES: ApiRouteFixture[] = [
   {
     name: 'list instances',
     match: p => p.includes('/listInstances'),
-    body: p => (p.includes('Reaction') ? REACTION_LIST : PATHWAY_LIST)
+    body: (p: string) => (p.includes('Reaction') ? REACTION_LIST : PATHWAY_LIST)
   },
   {
     name: 'search instances',
@@ -478,12 +509,12 @@ export const DEFAULT_API_ROUTES: ApiRouteFixture[] = [
   {
     name: 'find by dbId',
     match: p => p.includes('/findByDbId'),
-    body: p => INSTANCES[trailingId(p)] ?? null
+    body: (p: string) => INSTANCES[trailingId(p)] ?? null
   },
   {
     name: 'referrers',
     match: p => p.includes('/getReferrers'),
-    body: p => REFERRERS[trailingId(p)] ?? []
+    body: (p: string) => REFERRERS[trailingId(p)] ?? []
   },
   {
     name: 'load staged instances',
@@ -494,6 +525,11 @@ export const DEFAULT_API_ROUTES: ApiRouteFixture[] = [
   { name: 'delete persisted', match: p => p.includes('/deletePersistedInstances'), body: {} },
   { name: 'list backups', match: p => p.includes('/listUserInstanceBackups'), body: [] },
   { name: 'qa report', match: p => p.includes('/qaReport'), body: QA_REPORT },
+  {
+    name: 'reaction imbalance',
+    match: p => p.includes('/qa/reactionImbalance'),
+    body: REACTION_IMBALANCE_REPORT
+  },
   { name: 'qa check report', match: p => p.includes('/getTestQACheckReport'), body: [] },
   {
     name: 'pathway diagram',
@@ -514,7 +550,7 @@ export const DEFAULT_API_ROUTES: ApiRouteFixture[] = [
   {
     name: 'lock diagram',
     match: p => p.includes('/lockDiagram'),
-    body: p => ({
+    body: (p: string) => ({
       diagramDbId: trailingId(p),
       username: TEST_USER,
       lockedAt: '2026-01-01T00:00:00Z',

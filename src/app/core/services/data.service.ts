@@ -15,6 +15,7 @@ import { Diagram } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { InstanceNameGenerator } from "../post-edit/InstanceNameGenerator";
 import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 import { QAReport } from "../models/qa-report.model";
+import { ReactionImbalanceReport } from "../models/reaction-imbalance.model";
 import { ActivatedRoute, Router, UrlSegmentGroup } from "@angular/router";
 import { saveReturnUrl } from "./session-url";
 
@@ -52,6 +53,7 @@ export class DataService {
   private getReferrersUrl = `${environment.ApiRoot}/getReferrers/`;
   private deleteInstanceUrl = `${environment.ApiRoot}/delete/`;
   private fetchQAReportUrl = `${environment.ApiRoot}/qaReport/`;
+  private reactionImbalanceUrl = `${environment.ApiRoot}/qa/reactionImbalance/`;
   private deleteByDeletedUrl = `${environment.ApiRoot}/deleteByDeleted/`;
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
   private fetchPathwayDiagramForPathwayUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
@@ -1878,6 +1880,20 @@ export class DataService {
         // }
         return report;
       }),
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    );
+  }
+
+  /**
+   * Run the reaction imbalance check on a Pathway (every Reaction under it, at any depth) or a
+   * single Reaction. Only imbalanced reactions come back; any other Event reports
+   * checkedReactions = 0.
+   * @param dbId
+   */
+  checkReactionImbalance(dbId: number): Observable<ReactionImbalanceReport> {
+    return this.http.get<ReactionImbalanceReport>(this.reactionImbalanceUrl + dbId).pipe(
       catchError(error => {
         return this.handleErrorMessage(error);
       })

@@ -25,6 +25,11 @@
           </button>
         </ng-container>
 
+        <button *ngIf="canCheckReactionImbalance()" mat-icon-button color="primary" class="v-center"
+          (click)="onReactionImbalanceAction()" matTooltip="Check Reaction Imbalance">
+          <mat-icon>balance</mat-icon>
+        </button>
+
         <button mat-icon-button color="primary" class="v-center" (click)="showReferrers()" matTooltip="Show Referrers">
           <mat-icon>list_alt</mat-icon>
         </button>

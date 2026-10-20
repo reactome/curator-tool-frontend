@@ -1,3 +1,4 @@
+import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
 import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,6 +16,7 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
+import { ReactionImbalanceDialogComponent } from 'src/app/shared/components/reaction-imbalance-dialog/reaction-imbalance-dialog.component';
 import { CommitResultDialogService } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
 import { EventTreeComponent } from './event-tree.component';
 
@@ -101,6 +103,7 @@ describe('EventTreeComponent hasEvent edit', () => {
         MatTooltipModule,
         MatProgressSpinnerModule,
         RouterTestingModule,
+        CdkContextMenuTrigger, CdkMenu, CdkMenuItem,
       ],
       providers: [
         InstanceUtilities, // The real one: its edit bus is how the component is driven here
@@ -170,6 +173,27 @@ describe('EventTreeComponent hasEvent edit', () => {
     expect(pathwayInTree.attributes['hasEvent']).toContain(reactionInTree);
   });
 
+  it('offers the reaction imbalance check on pathways and reactions only', () => {
+    expect(component.canCheckReactionImbalance(node(1)!)).toBeTrue();
+    expect(component.canCheckReactionImbalance(node(2)!)).toBeTrue();
+    expect(component.canCheckReactionImbalance({ ...node(2)!, className: 'BlackBoxEvent' })).toBeFalse();
+  });
+
+  it('opens the reaction imbalance report for the right-clicked event', () => {
+    const dialog = TestBed.inject(MatDialog) as jasmine.SpyObj<MatDialog>;
+    const label = Array.from(fixture.nativeElement.querySelectorAll('button.event_text') as NodeListOf<HTMLElement>)
+      .find(button => button.textContent!.includes('The edited pathway'))!;
+
+    label.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 10, clientY: 10 }));
+    fixture.detectChanges();
+    const item = document.querySelector<HTMLElement>('.event-menu-button');
+    expect(item?.textContent).toContain('Check Reaction Imbalance');
+    item!.click();
+
+    expect(dialog.open).toHaveBeenCalledWith(ReactionImbalanceDialogComponent,
+      jasmine.objectContaining({ data: { dbId: 1, displayName: 'The edited pathway' } }));
+  });
+
   it('removes a sub-event of the added event when it is marked for deletion', () => {
     addPathwayToTree();
     expect(node(501)).toBeTruthy();
@@ -220,6 +244,7 @@ describe('EventTreeComponent circular reference reporting', () => {
       imports: [
         MatTreeModule, MatIconModule, MatButtonModule, MatTooltipModule,
         MatProgressSpinnerModule, RouterTestingModule,
+        CdkContextMenuTrigger, CdkMenu, CdkMenuItem,
       ],
       providers: [
         InstanceUtilities,
@@ -378,6 +403,7 @@ describe('EventTreeComponent hasEvent edit creating a cycle', () => {
       imports: [
         MatTreeModule, MatIconModule, MatButtonModule, MatTooltipModule,
         MatProgressSpinnerModule, RouterTestingModule,
+        CdkContextMenuTrigger, CdkMenu, CdkMenuItem,
       ],
       providers: [
         InstanceUtilities, // The real one: its edit bus is how the component is driven here

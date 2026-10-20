@@ -1,0 +1,130 @@
+<h2 class="dialog_title" mat-dialog-title>Reaction Imbalance Check for "{{title}}"</h2>
+<mat-dialog-content class="dialog-content">
+  <div *ngIf="loading" class="state-message loading">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>Checking reactions. This can take a few seconds for a large pathway.</p>
+  </div>
+
+  <p *ngIf="!loading && errorMessage" class="state-message error">
+    The check could not be run: {{errorMessage}}
+  </p>
+
+  <ng-container *ngIf="!loading && report">
+    <p *ngIf="report.checkedReactions === 0" class="state-message empty">
+      No reactions found under this event.
+    </p>
+
+    <ng-container *ngIf="report.checkedReactions > 0">
+      <h4 class="summary">
+        {{report.eventDisplayName}}: {{imbalancedCount}} imbalanced of {{report.checkedReactions}} reactions checked<ng-container
+          *ngIf="!hideCleavage"> ({{cleavageCount}} cleavage)</ng-container>
+      </h4>
+
+      <div class="toolbar">
+        <mat-slide-toggle [ngModel]="hideCleavage" (ngModelChange)="onHideCleavageChange($event)">
+          Hide cleavage reactions
+        </mat-slide-toggle>
+        <mat-form-field class="filter" subscriptSizing="dynamic">
+          <mat-label>Filter by reaction or protein</mat-label>
+          <input matInput [ngModel]="filterText" (ngModelChange)="onFilterChange($event)">
+        </mat-form-field>
+        <button mat-icon-button color="primary" class="export" (click)="exportTsv()"
+          [disabled]="dataSource.filteredData.length === 0" matTooltip="Export to TSV">
+          <mat-icon>download</mat-icon>
+        </button>
+      </div>
+
+      <p *ngIf="allReactions.length === 0" class="state-message empty">
+        All {{report.checkedReactions}} reactions are balanced.
+      </p>
+      <p *ngIf="allReactions.length > 0 && dataSource.data.length === 0" class="state-message empty">
+        No imbalanced reactions other than {{cleavageCount}} hidden cleavage
+        reaction{{cleavageCount === 1 ? '' : 's'}}.
+      </p>
+      <p *ngIf="dataSource.data.length > 0 && dataSource.filteredData.length === 0" class="state-message empty">
+        No reactions match the filter.
+      </p>
+
+      <div class="table-container" [hidden]="dataSource.filteredData.length === 0">
+        <table mat-table [dataSource]="dataSource" multiTemplateDataRows matSort class="reaction-table">
+          <ng-container matColumnDef="expand">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let reaction">
+              <mat-icon class="expand-icon">{{expandedReaction === reaction ? 'expand_less' : 'expand_more'}}</mat-icon>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="dbId">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>DB_ID</th>
+            <td mat-cell *matCellDef="let reaction">
+              <a class="db-id-link" (click)="openInstance(reaction.dbId, $event)"
+                matTooltip="Open in the instance view">{{reaction.dbId}}</a>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="displayName">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Reaction</th>
+            <td mat-cell *matCellDef="let reaction">{{reaction.displayName}}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="imbalanceCount">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Imbalanced proteins</th>
+            <td mat-cell *matCellDef="let reaction">{{reaction.imbalances.length}}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="cleavage">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Cleavage</th>
+            <td mat-cell *matCellDef="let reaction">
+              <mat-icon *ngIf="reaction.cleavage" class="cleavage-icon" matTooltip="Possible cleavage reaction">content_cut</mat-icon>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="lastAuthor">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Last author</th>
+            <td mat-cell *matCellDef="let reaction">{{reaction.lastAuthor}}</td>
+          </ng-container>
+
+          <!-- One row per protein whose counts differ, spanning the whole reaction row. -->
+          <ng-container matColumnDef="expandedDetail">
+            <td mat-cell *matCellDef="let reaction" [attr.colspan]="displayedColumns.length" class="detail-cell">
+              <div class="detail-wrapper" [@detailExpand]="reaction === expandedReaction ? 'expanded' : 'collapsed'">
+                <table mat-table [dataSource]="reaction.imbalances" class="detail-table">
+                  <ng-container matColumnDef="protein">
+                    <th mat-header-cell *matHeaderCellDef>Protein</th>
+                    <td mat-cell *matCellDef="let imbalance">{{imbalance.displayName}}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="identifier">
+                    <th mat-header-cell *matHeaderCellDef>Identifier</th>
+                    <td mat-cell *matCellDef="let imbalance">{{imbalance.identifier}}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="input">
+                    <th mat-header-cell *matHeaderCellDef>Input</th>
+                    <td mat-cell *matCellDef="let imbalance">{{imbalance.inputCount}}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="output">
+                    <th mat-header-cell *matHeaderCellDef>Output</th>
+                    <td mat-cell *matCellDef="let imbalance">{{imbalance.outputCount}}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="delta">
+                    <th mat-header-cell *matHeaderCellDef>&Delta;</th>
+                    <td mat-cell *matCellDef="let imbalance">{{formatDelta(imbalance.inputCount, imbalance.outputCount)}}</td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="detailColumns"></tr>
+                  <tr mat-row *matRowDef="let imbalance; columns: detailColumns" class="detail-protein-row"></tr>
+                </table>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr mat-row *matRowDef="let reaction; columns: displayedColumns" class="reaction-row"
+            [class.expanded-row]="expandedReaction === reaction" (click)="toggleExpanded(reaction)"></tr>
+          <tr mat-row *matRowDef="let reaction; columns: ['expandedDetail']" class="detail-row"></tr>
+        </table>
+      </div>
+    </ng-container>
+  </ng-container>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onClose()">Close</button>
+</mat-dialog-actions>

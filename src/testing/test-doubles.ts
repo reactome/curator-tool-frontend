@@ -55,7 +55,7 @@ export function createDataServiceSpy(overrides: Partial<DataService> = {}): jasm
     'fillReferenceSequence', 'matchInstances', 'setCandidateClasses', 'grepConcreteClasses',
     'testQACheckReport', 'delete', 'deleteByDeleted', 'getReferrers',
     'synchronizeDeletedReferrers', 'shouldCheckForMatches', 'handleErrorMessage',
-    'fetchQAReport', 'doubleArrayToDataSource', 'exportEventDocx'
+    'fetchQAReport', 'checkReactionImbalance', 'doubleArrayToDataSource', 'exportEventDocx'
   ]);
 
   const tree = makeSchemaClassTree();

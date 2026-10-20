@@ -7,6 +7,7 @@ import { forkJoin, Subscription, take } from "rxjs";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
+import { ReactionImbalanceDialogService } from "src/app/shared/components/reaction-imbalance-dialog/reaction-imbalance-dialog.service";
 import { EventTreeCycle, Instance } from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
 
@@ -110,6 +111,7 @@ export class EventTreeComponent implements OnDestroy {
 
   // To show information
   readonly dialog = inject(MatDialog);
+  private readonly reactionImbalanceDialog = inject(ReactionImbalanceDialogService);
 
   private subscriptions: Subscription = new Subscription();
 
@@ -577,6 +579,14 @@ export class EventTreeComponent implements OnDestroy {
       if (path)
         path.slice(1).forEach(node => this.treeControl.expand(node));
     }
+  }
+
+  canCheckReactionImbalance(event: EventNode): boolean {
+    return this.reactionImbalanceDialog.canCheck(event.className, event.dbId);
+  }
+
+  checkReactionImbalance(event: EventNode) {
+    this.reactionImbalanceDialog.openDialog(event.dbId, event.name);
   }
 
   handleEventClick(event: EventNode) {
