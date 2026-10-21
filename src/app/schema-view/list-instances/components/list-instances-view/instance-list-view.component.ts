@@ -21,6 +21,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { InstanceNameGenerator } from 'src/app/core/post-edit/InstanceNameGenerator';
 import { PageTitleService } from 'src/app/core/services/page-title.service';
+import { containsSearchText } from 'src/app/shared/search-text';
 
 /**
  * The choices offered by the species quick filter. 'all' means no filtering at all, and is
@@ -204,18 +205,10 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       const filteredNew = newlyCreated.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
       const filteredDeleted = deleted.filter(inst => this.instUtils.isSchemaClass(inst, this.className, this.dataService));
 
-      // Optionally filter by displayName if searchKey is set
-      const filterBySearchKey = (arr: Instance[]) => {
-        if (this.searchKey && this.searchKey.trim().length > 0) {
-          const key = this.searchKey.trim().toLowerCase();
-          return arr.filter(inst => inst.displayName && inst.displayName.toLowerCase().includes(key));
-        }
-        return arr;
-      };
-
-      const filteredUpdatedByKey = filterBySearchKey(filteredUpdated);
-      const filteredNewByKey = filterBySearchKey(filteredNew);
-      const filteredDeletedByKey = filterBySearchKey(filteredDeleted);
+      // Optionally filter by the search box if searchKey is set
+      const filteredUpdatedByKey = this.filterBySearchKey(filteredUpdated);
+      const filteredNewByKey = this.filterBySearchKey(filteredNew);
+      const filteredDeletedByKey = this.filterBySearchKey(filteredDeleted);
 
       // Combine: updated, new, and deleted instances, ensuring uniqueness by dbId
       const instanceMap = new Map<number, Instance>();
@@ -230,7 +223,9 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
   /**
    * The simple search over sourceInstances, matching the server's: a number is a dbId, and
-   * anything else a case-insensitive displayName substring.
+   * anything else a displayName substring. The substring match ignores case, dash variants
+   * and spacing (see containsSearchText), so a name with special characters can be pasted
+   * or typed as it reads.
    */
   private filterBySearchKey(instances: Instance[]): Instance[] {
     const key = this.searchKey?.trim();
@@ -238,8 +233,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
       return instances;
     if (/^\d+$/.test(key))
       return instances.filter(inst => inst.dbId === Number(key));
-    const lowerKey = key.toLowerCase();
-    return instances.filter(inst => inst.displayName?.toLowerCase().includes(lowerKey));
+    return instances.filter(inst => containsSearchText(inst.displayName, key));
   }
 
   /**
@@ -852,7 +846,7 @@ export class InstanceListViewComponent implements OnInit, OnDestroy {
 
     switch (operand) {
       case 'Contains':
-        return valStr.includes(patStr);
+        return containsSearchText(val.toString(), pattern ?? '');
       case 'Equal':
         return valStr === patStr;
       case 'Not Equal':

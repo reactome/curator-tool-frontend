@@ -205,6 +205,26 @@ describe('InstanceListViewComponent species quick filter', () => {
       expect(dataService.listInstances).not.toHaveBeenCalled();
     });
 
+    it('finds a name with special characters, whatever dash or spacing it uses', () => {
+      component.sourceInstances = [
+        { dbId: 114259, displayName: 'Cleavage of Procaspase\u20119 to caspase\u20119', schemaClassName: 'Reaction' },
+        { dbId: 2065355, displayName: 'Secreted ACE:Zn2+ hydrolyzes AGT(25-34) (Angiotensin-(1-10))', schemaClassName: 'Reaction' },
+        { dbId: 373074, displayName: 'Receptor CCR9  binds CCL25 ligand', schemaClassName: 'Reaction' },
+      ] as any;
+
+      component.searchKey = 'Procaspase-9 to caspase-9';
+      component.doBasicSearch(0);
+      expect(component.data.map(i => i.dbId)).toEqual([114259]);
+
+      component.searchKey = 'ACE:Zn2+ hydrolyzes AGT(25-34)';
+      component.doBasicSearch(0);
+      expect(component.data.map(i => i.dbId)).toEqual([2065355]);
+
+      component.searchKey = 'CCR9 binds';
+      component.doBasicSearch(0);
+      expect(component.data.map(i => i.dbId)).toEqual([373074]);
+    });
+
     it('pages them locally', () => {
       component.pageSize = 2;
       component.onPageChange({ pageIndex: 1, pageSize: 2, length: 3 });
@@ -357,6 +377,17 @@ describe('InstanceListViewComponent advanced search over staged instances', () =
 
     expect(search(instances, 'Equal', 'nucleoplasm')).toEqual([7]);
     expect(search(instances, 'Contains', 'chondrion')).toEqual([8]);
+  });
+
+  it('matches Contains literally, ignoring dash variants and spacing', () => {
+    const instances = [
+      stagedInstance(10, { dbId: 1000, displayName: 'B-cell\u2013bound Rituximab:MS4A1' }),
+      stagedInstance(11, 'AGT(25-34)  (Angiotensin-(1-10))')
+    ];
+
+    expect(search(instances, 'Contains', 'b-cell-bound rituximab:ms4a1')).toEqual([10]);
+    expect(search(instances, 'Contains', 'AGT(25-34) (Angiotensin-(1-10))')).toEqual([11]);
+    expect(search(instances, 'Contains', 'AGT.25')).toEqual([]);
   });
 
   it('matches instance-valued attributes on their display name', () => {
