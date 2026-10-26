@@ -359,6 +359,25 @@ export class PathwayDiagramUtilService {
         });
     }
 
+    /**
+     * Tag FlowLines loaded from a saved diagram the way createFlowLine() tags new ones. ngx-reactome-diagram
+     * converts a diagram's links into plain edges with classes ['production', 'outgoing'] only - no reactomeId,
+     * hyperEdgeId or edgeType - so without this they show the generic edge menu and cannot be removed.
+     * Interaction links get the same classes and cannot be told apart, but the backend saves any edge without
+     * a reactomeId as a FlowLine anyway. Entity set links ('set-to-member') are left alone.
+     * @param cy
+     */
+    markLoadedFlowLines(cy: Core) {
+        cy.edges('.production').forEach((edge: any) => {
+            if (edge.hasClass('reaction') || edge.data('reactomeId') || edge.data('edgeType'))
+                return;
+            edge.data('edgeType', 'FlowLine');
+            edge.data('hyperEdgeId', edge.source().data('reactomeId') + '-' + edge.target().data('reactomeId'));
+            // The library adds links as unselectable; new FlowLines are selectable.
+            edge.selectify();
+        });
+    }
+
     // Make sure this works for the following case:
     // 1. Only one element is selected and that element is not this element: one of them is ProcessNode and another is 
     // any PE node

@@ -124,3 +124,51 @@ describe('PathwayDiagramUtilService.snapModificationToParentBoundary', () => {
     expect(moveAndSnap({ x: 480, y: 480 })).toEqual({ x: 150, y: 120 });
   });
 });
+
+describe('PathwayDiagramUtilService.markLoadedFlowLines', () => {
+  let cy: Core;
+
+  const mark = () => PathwayDiagramUtilService.prototype.markLoadedFlowLines.call({}, cy);
+
+  beforeEach(() => {
+    cy = cytoscape({
+      headless: true,
+      elements: [
+        { data: { id: '1', reactomeId: 101 }, classes: ['PhysicalEntity', 'Protein'] },
+        { data: { id: '2', reactomeId: 202 }, classes: ['Pathway', 'SUB'] },
+        { data: { id: '3', reactomeId: 303 }, classes: ['reaction'] },
+        { data: { id: '4', reactomeId: 404 }, classes: ['PhysicalEntity', 'EntitySet'] },
+        // As ngx-reactome-diagram builds a saved diagram's FlowLine and entity set links
+        { data: { id: 'flow', source: '1', target: '2' }, classes: ['production', 'outgoing'], selectable: false },
+        { data: { id: 'member', source: '1', target: '4' }, classes: ['set-to-member', 'incoming'], selectable: false },
+        { data: { id: 'output', source: '3', target: '1', reactomeId: 303 }, classes: ['production', 'outgoing', 'reaction'] }
+      ]
+    });
+  });
+
+  afterEach(() => cy.destroy());
+
+  it('tags a loaded link as a FlowLine, as createFlowLine() does', () => {
+    mark();
+
+    const flow = cy.getElementById('flow');
+    expect(flow.data('edgeType')).toBe('FlowLine');
+    expect(flow.data('hyperEdgeId')).toBe('101-202');
+    expect(flow.selectable()).toBeTrue();
+  });
+
+  it('leaves reaction edges and entity set links alone', () => {
+    mark();
+
+    expect(cy.getElementById('output').data('edgeType')).toBeUndefined();
+    expect(cy.getElementById('member').data('edgeType')).toBeUndefined();
+  });
+
+  it('does not overwrite an already tagged FlowLine', () => {
+    cy.getElementById('flow').data({ edgeType: 'FlowLine', hyperEdgeId: 'original' });
+
+    mark();
+
+    expect(cy.getElementById('flow').data('hyperEdgeId')).toBe('original');
+  });
+});

@@ -22,6 +22,12 @@ class StubInstanceListViewComponent {
   @Input() openInNewTab = false;
   @Input() sourceInstances?: Instance[];
   @Input() setClassName = '';
+  @Input() actionButtons: unknown[] = [];
+  @Input() needSecondaryActions = true;
+  @Input() showDeletion = true;
+  @Input() showBatchEdit = true;
+  @Input() showCompare = true;
+  @Input() showBulkBookmark = false;
 }
 
 describe('NLQueryPanelComponent', () => {
@@ -91,6 +97,18 @@ describe('NLQueryPanelComponent', () => {
     expect(service.ask).toHaveBeenCalledWith('Which reactions have no catalyst?', []);
     expect(component.question).toBe('');
     expect(fixture.nativeElement.querySelector('.nlq-answer').textContent).toContain('Two reactions have no catalyst.');
+  });
+
+  it('renders the answer as markdown', () => {
+    service.ask.and.returnValue(of({ ...response(), answer: 'Found **two**:\n- R1\n- R2' }));
+    component.question = 'Which reactions have no catalyst?';
+
+    component.ask();
+    fixture.detectChanges();
+
+    const answer: HTMLElement = fixture.nativeElement.querySelector('.nlq-answer');
+    expect(answer.querySelector('strong')?.textContent).toBe('two');
+    expect(Array.from(answer.querySelectorAll('li')).map(li => li.textContent)).toEqual(['R1', 'R2']);
   });
 
   it('sends earlier answered exchanges as history, so follow-ups keep their context', () => {

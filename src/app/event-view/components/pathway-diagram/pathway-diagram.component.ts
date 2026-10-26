@@ -821,6 +821,8 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       return;
     this.diagramUtils.diagramService = this.diagram.getDiagramService();
     this.diagramUtils.updateCompartmentZOrder(this.diagram.cy);
+    // Must run before enableEditing() below, which groups edges into HyperEdges by hyperEdgeId.
+    this.diagramUtils.markLoadedFlowLines(this.diagram.cy);
     // Any resizing widgets are transient UI state and must never survive a (re)load - otherwise
     // a compartment can end up stuck showing resize widgets with no reachable "Disable Resizing" action.
     this.diagramUtils.disableAllResizing(this.diagram);

@@ -12,10 +12,13 @@ import { ListInstancesModule } from 'src/app/schema-view/list-instances/list-ins
 import { NLQueryResponse, NLQueryService, NLQueryTurn } from './nl-query.service';
 import { ResultListing, ResultListingService } from './result-listing.service';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
+import { renderMarkdown } from './markdown';
 
 interface Exchange {
   question: string;
   response?: NLQueryResponse;
+  /** The answer's markdown, rendered once when the response arrives. */
+  answerHtml?: string;
   error?: string;
   /** Results with dbIds are shown in the instance list, unless the curator asks for the raw rows. */
   view: 'list' | 'table';
@@ -79,7 +82,7 @@ interface Exchange {
           <div *ngIf="ex.error" class="nlq-error"><mat-icon>error_outline</mat-icon><span>{{ ex.error }}</span></div>
 
           <div *ngIf="ex.response as r" class="nlq-reply">
-            <div class="nlq-answer">{{ r.answer }}</div>
+            <div class="nlq-answer" [innerHTML]="ex.answerHtml"></div>
 
             <mat-accordion *ngIf="r.rows.length || r.queries.length" multi displayMode="flat" class="nlq-details">
               <mat-expansion-panel *ngIf="r.rows.length" [expanded]="true">
@@ -179,7 +182,33 @@ interface Exchange {
     .nlq-error { display: flex; gap: 8px; align-items: flex-start; padding: 10px 14px; border-radius: 12px;
                  background: var(--error-container); color: var(--on-error-container); }
     .nlq-reply { background: #fff; border: 1px solid var(--outline-variant); border-radius: 12px; overflow: hidden; }
-    .nlq-answer { white-space: pre-wrap; padding: 14px 16px; line-height: 1.5; }
+    .nlq-answer { padding: 14px 16px; line-height: 1.5; overflow-wrap: anywhere; }
+    /* The answer is rendered markdown, bound with [innerHTML], so its elements need ::ng-deep. */
+    .nlq-answer ::ng-deep > :first-child { margin-top: 0; }
+    .nlq-answer ::ng-deep > :last-child { margin-bottom: 0; }
+    .nlq-answer ::ng-deep p { margin: 0 0 10px; }
+    .nlq-answer ::ng-deep :is(h1, h2, h3, h4, h5, h6) { margin: 16px 0 8px; line-height: 1.3; font-weight: 500; }
+    .nlq-answer ::ng-deep h1 { font-size: 20px; }
+    .nlq-answer ::ng-deep h2 { font-size: 18px; }
+    .nlq-answer ::ng-deep h3 { font-size: 16px; }
+    .nlq-answer ::ng-deep :is(h4, h5, h6) { font-size: 14px; }
+    .nlq-answer ::ng-deep :is(ul, ol) { margin: 0 0 10px; padding-left: 24px; }
+    .nlq-answer ::ng-deep li :is(ul, ol) { margin-bottom: 0; }
+    .nlq-answer ::ng-deep li + li { margin-top: 2px; }
+    .nlq-answer ::ng-deep code { font-family: monospace; font-size: 12px; padding: 1px 4px; border-radius: 4px;
+                                 background: var(--surface-variant); }
+    .nlq-answer ::ng-deep pre { margin: 0 0 10px; padding: 10px 12px; border-radius: 8px; overflow: auto;
+                                background: var(--surface-variant); }
+    .nlq-answer ::ng-deep pre code { padding: 0; background: none; }
+    .nlq-answer ::ng-deep blockquote { margin: 0 0 10px; padding: 2px 12px; color: var(--on-surface-variant);
+                                       border-left: 3px solid var(--outline-variant); }
+    .nlq-answer ::ng-deep hr { border: none; border-top: 1px solid var(--outline-variant); margin: 12px 0; }
+    .nlq-answer ::ng-deep a { color: var(--primary); }
+    .nlq-answer ::ng-deep table { border-collapse: collapse; font-size: 13px; margin: 0 0 10px; display: block;
+                                  max-width: 100%; overflow-x: auto; }
+    .nlq-answer ::ng-deep :is(th, td) { padding: 4px 10px; border: 1px solid var(--outline-variant); }
+    .nlq-answer ::ng-deep :is(th, td):not([align]) { text-align: left; }
+    .nlq-answer ::ng-deep th { background: var(--surface-variant); font-weight: 500; }
 
     .nlq-details { display: block; border-top: 1px solid var(--outline-variant); }
     .nlq-details .mat-expansion-panel { box-shadow: none !important; border-radius: 0 !important; background: transparent; }
@@ -263,6 +292,7 @@ export class NLQueryPanelComponent {
     this.service.ask(question, history).subscribe({
       next: r => {
         exchange.response = r;
+        exchange.answerHtml = renderMarkdown(r.answer);
         exchange.sources = this.resultListing.sources(r);
         if (exchange.sources.length) this.showSource(exchange, exchange.sources[0]);
         this.loading = false;
