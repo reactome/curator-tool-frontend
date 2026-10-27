@@ -319,12 +319,13 @@ The header toolbar shows the source:
 
 #### Search modes
 
-- **Simple search:** type in the **Search** box and press **Enter** (matches display name / dbId).
+- **Simple search:** type in the **Search** box and press **Enter** (matches display name / dbId). On a `@Staged` list, the name match ignores case and treats look-alike dashes (a hyphen, a non-breaking hyphen, an en dash, a minus sign), doubled or non-breaking spaces and invisible zero-width characters as the same, so a name can be typed as it reads. **Contains** in the advanced search over staged instances matches the same way.
 - **Advanced search:** click the `manage_search` icon (**"Advanced Search"**) to switch modes. The search box becomes read-only and shows the composed query; build conditions in the filter panel:
   - **Select attribute** dropdown.
   - **Select operand** dropdown — supported operands: **Equal**, **Not Equal**, **Contains**, **IS NULL**, **IS NOT NULL**.
   - **Enter search term** input, with a **Search the query above** (`query_stats`) button.
   - **Enter** adds another condition; **Ctrl+Enter** completes and runs the search. Use the **Undo last** (`undo`) icon to remove the most recent condition. Switch back with the `manage_search` (**"Simple Search"**) icon.
+  - A condition too long for one line, such as a long list of dbIds, is shown cut down to its first line; click its arrow (`expand_more` / `expand_less`) to show or hide the whole condition.
 
 #### Download search results (CSV)
 
@@ -636,7 +637,7 @@ A persistent toolbar sits above the diagram canvas with icon buttons (hover for 
 
 **Find by dbId:** click the **search** icon to expand it into a small text field; type a dbId and press **Enter** to select that object and zoom/pan the view onto it, if it is currently displayed in this diagram. The field collapses back to the search icon once you search, or if you press **Escape** or click away without searching. If nothing in this diagram has that dbId, or what you typed isn't a valid number, you're told so directly rather than the search silently doing nothing.
 
-**Validate Diagram Against Database:** while editing, click the **Validate Diagram Against Database** (`fact_check`) icon to scan everything drawn — PhysicalEntity nodes, sub-Pathway nodes, Compartments, and reaction structure (inputs, outputs, catalysts, regulators) — against the live database, catching cases where the diagram's saved layout has drifted from what curators have since committed (e.g. after a delete or an edit elsewhere). A wait dialog shows while it runs, then a **QA Report**-style dialog lists each check as **Passed** or a table of mismatches, with clickable instance links. If anything failed, an **Auto-Fix** button corrects the live diagram to match the database — it does not save automatically, so you can review the result (and undo it, like any other edit) before choosing **Upload Diagram** yourself.
+**Validate Diagram Against Database:** while editing, click the **Validate Diagram Against Database** (`fact_check`) icon to scan everything drawn — PhysicalEntity nodes, sub-Pathway nodes, Compartments, and reaction structure (inputs, outputs, catalysts, regulators) — against the live database, catching cases where the diagram's saved layout has drifted from what curators have since committed (e.g. after a delete or an edit elsewhere). A wait dialog shows while it runs, then a **QA Report**-style dialog lists each check as **Passed** or a table of mismatches, with clickable instance links. A BlackBoxEvent must be drawn as an uncertain process (with a "?" in its reaction node); one that is not is reported too. If anything failed, an **Auto-Fix** button corrects the live diagram to match the database — it does not save automatically, so you can review the result (and undo it, like any other edit) before choosing **Upload Diagram** yourself.
 
 **Right-click** also opens the classic context menu — it still offers most of the actions above (both access points work identically) plus every element-specific action, context-sensitive to what you clicked. Zoom In / Zoom Out / Fit to Screen / Find by dbId are toolbar-only (view-level controls, not tied to any right-clicked element):
 
@@ -648,7 +649,8 @@ A persistent toolbar sits above the diagram canvas with icon buttons (hover for 
 - **Edit/Create PathwayDiagram**
 
 *Conditionally:*
-- On a reaction edge: **Add Edge Point**, **Remove Reaction**, **Enable/Disable Edge Editing**
+- On a reaction edge: **Add Edge Point**, **Enable/Disable Edge Editing**
+- On a reaction node, while editing with edge editing enabled: **Remove Reaction**
 - **Add Flow Line** / (on a flow line) **Add Edge Point**, **Remove Flow Line**
 - **Unlock Diagram** (when you hold the lock)
 - **Resize** / **Disable Resizing** (nodes/compartments)
@@ -767,17 +769,20 @@ Under **Annotation**:
 
 Ask the Graph (`/graph_query`, opens in a new tab, **login required**) answers questions about the curation database written in plain English, for example *"Which reactions in R-HSA-109582 have no catalyst?"*. A language model turns the question into database (Cypher) queries, runs them, and writes the answer. It **only reads** the database: it cannot create, change or delete anything, and it does not see your staged, uncommitted changes.
 
-**Asking:** type in the **Ask the curation graph** box and press `Enter` or **Ask** (`send`). `Shift+Enter` starts a new line. An answer can take a little while; a progress bar shows while it is being worked on.
+**Asking:** the question box is at the top of the page. Type your question and press `Enter`, or click the send (`arrow_upward`) button; `Shift+Enter` starts a new line. When the conversation is empty, a few example questions are shown below the box; click one to ask it. Your questions and the answers appear below as a conversation, with **Querying the graph…** shown while an answer is being worked on, which can take a little while.
 
 **Each answer shows:**
 
-- the answer in plain text;
-- **Results (N rows)** — a table of the rows returned by the last query that worked. `N+` means there were more rows than are shown. Any column whose name ends in `dbId` is a link: click it to open that instance in Schema View in a new tab, so the conversation stays where it is;
+- the answer, formatted: headings, lists, bold and italic text, code, tables and links are shown as such. Links open in a new tab;
+- **Results (N rows)** — the rows returned by the last query that worked. `N+` means there were more rows than are shown.
+  - When the rows hold dbIds, they are shown as an **instance list**, the same list as on the [List Instances page](#83-list-instances-page). The instances are listed under the most specific class they all share, so a mix of Reactions and BlackBoxEvents is listed as ReactionlikeEvents. You can search the list by name or dbId, narrow it with the advanced search and the species filter, page through it, and download it. Each row has **launch instance** (`launch`) and **show referrers** (`list_alt`); select rows to **Download selected** (`download`) or **Bookmark selected** (`bookmark`) them. Clicking a name opens the instance in Schema View in a new tab, so the conversation stays where it is. The list only covers the instances in the result: searching it narrows the result rather than searching the database.
+  - When a result has more than one set of dbIds, such as reactions and their catalysts, buttons above the list switch between them.
+  - A result with no dbIds is shown as a table of the rows as the query returned them.
 - **Cypher (N)** — every query that was run, in order, with its row count or the error it hit (a failed query is marked with a red bar), and a **Copy Cypher** (`content_copy`) button.
 
-**Follow-up questions** build on the earlier ones in the conversation, so *"only the human ones"* narrows the previous answer. **Clear** starts a new conversation.
+**Follow-up questions** build on the earlier ones in the conversation, so *"only the human ones"* narrows the previous answer. **New conversation** (`restart_alt`, below the question box) starts over.
 
-**Errors:** *"Your session has expired. Please log in again."* means your login is no longer accepted. *"The graph query service is not reachable from here."* means the query service is not running or this copy of the site has no access to it (it is only available on the deployed site, not on a locally run copy). Neither one logs you out.
+**Errors:** *"Your session has expired. Please log in again."* means your login is no longer accepted. *"The graph query service is not reachable from here."* means the query service is not running or this copy of the site has no access to it. A locally run copy needs the query service running locally too. Neither one logs you out.
 
 > Answers are generated by a language model. Check the Cypher and the results before relying on an answer for curation.
 

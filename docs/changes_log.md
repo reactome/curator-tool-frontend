@@ -1,3 +1,37 @@
+### Build on October 26, 2026
+
+- Bug fix: a flow line in a pathway diagram that had been saved and opened again could not be selected or removed. Right-clicking it showed the menu for an ordinary edge, without the flow-line options. A flow line now behaves the same after it has been saved and reopened as it did when it was first drawn.
+
+- Changed: answers in **Ask the Graph** are now formatted. Headings, bulleted and numbered lists, bold and italic text, code, tables and links show as they are meant to; before, the answer was plain text full of `**`, `#` and `|` marks. Links open in a new tab.
+
+### Build on October 21, 2026
+
+- Changed: searching by name in a list of staged instances, or in the instance list in **Ask the Graph**, now ignores the difference between the dashes that look alike (a plain hyphen, the non-breaking hyphen that many reaction names contain, an en dash, a minus sign), doubled or non-breaking spaces, and invisible zero-width characters. Before, typing "Procaspase-9" did not find "Cleavage of Procaspase‑9 to caspase‑9" because the name uses a non-breaking hyphen. The same applies to **Contains** in the advanced search over staged instances. Searches of the database itself are not changed.
+
+### Build on October 19, 2026
+
+- Changed: in **Ask the Graph**, a result that holds dbIds is now shown as an instance list like the one in Schema View, instead of a table of raw rows. You can page through it, search it by name or dbId, narrow it with the advanced search and the species filter, download it, and select instances to bookmark or download them. Each row can be opened or have its referrers shown. Clicking a name opens the instance in a new tab, so your conversation stays where it is. The instances are listed under the most specific class they all share, so a mix of Reactions and BlackBoxEvents is listed as ReactionlikeEvents. When a result has more than one set of dbIds, such as reactions and their catalysts, buttons above the list switch between them. A result with no dbIds is still shown as a table.
+
+- Changed: the **Ask the Graph** page has been redesigned as a chat. The question box is at the top; your questions and the answers appear below it as a conversation, with a progress indicator while a question is being answered. Press Enter to send and Shift+Enter for a new line. When the conversation is empty, a few example questions are offered that you can click to ask. **New conversation** replaces **Clear**.
+
+- Changed: a BlackBoxEvent added to a pathway diagram is now drawn as an uncertain process, with a "?" in its reaction node. **Validate Diagram Against Database** reports a BlackBoxEvent that is not drawn this way, and **Auto-Fix** redraws it. Its inputs, outputs and links are not changed.
+
+- Changed: **Remove Reaction** is now in the right-click menu of the reaction node itself, not of the reaction's edges.
+
+- Bug fix: an OtherEntity or a GenomeEncodedEntity could not be drawn properly in a pathway diagram. It is now drawn as a plain entity node.
+
+- Bug fix: **Validate Diagram Against Database** reported a regulator as missing from the diagram when the line from the regulator to the reaction had more than one bend, even though it was drawn correctly. The check now follows the whole line, however many bends it has.
+
+- Bug fix: **Validate Diagram Against Database** could report a compartment's name as wrong when the name shown in the diagram was correct, for example after the diagram had been saved and reopened, or while the compartment's label was being edited. Fixing a compartment name with **Auto-Fix** now also updates the label shown on screen. The report's title now shows the diagram's name when the saved diagram does not record one.
+
+### Build on October 16, 2026
+
+- Bug fix: committing a new pathway together with a new event in its **hasEvent**, for example by selecting both in the list of staged instances and committing them, created the new event twice in the database. Reloading the page after such a commit, and then committing the pathway again, could also create a second copy. Each new instance is now created once, and the staged copies of the instances that refer to it point at the committed instance after a reload.
+
+### Build on October 14, 2026
+
+- Changed: in the advanced search, a condition too long to fit on one line, such as a long list of dbIds, is shown cut down to its first line, with an arrow to show the whole condition and to hide it again. A list of alternatives separated by "|" now wraps between alternatives rather than in the middle of one.
+
 ### Build on October 7, 2026
 
 - Added: **Ask the Graph**, a new card on the home page, lets you ask questions about the curation database in plain English, such as "Which reactions in R-HSA-109582 have no catalyst?". A language model writes a database query for the question, runs it, and replies with an answer, a table of the results and the queries it ran, which you can copy. Clicking a dbId in the table opens that instance in a new tab. Follow-up questions such as "only the human ones" build on the earlier ones, and **Clear** starts over. It only reads the database and cannot change anything. It needs the graph query service on the server; if that service is down, the page says so and your session is not affected.
