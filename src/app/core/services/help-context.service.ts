@@ -143,7 +143,7 @@ const HELP_CONTENT: Record<string, HelpContext> = {
         heading: 'Starting an annotation',
         items: [
           'Enter a PubMed ID (the paper must be open access in PubMed Central) or upload a PDF, and optionally a focus gene.',
-          'Extraction takes about 10 to 15 minutes. You can leave the page; the annotation stays in your list.',
+          'Extraction usually takes a few minutes, longer for a long paper. You can leave the page; the annotation stays in your list.',
         ],
       },
       {
@@ -152,7 +152,9 @@ const HELP_CONTENT: Record<string, HelpContext> = {
           'Select a reaction to see its participants, regulations and the quotes from the paper, with page, section and figure.',
           'A quote marked verbatim was found word for word in the paper; close match means it differs slightly, usually in PDF symbols.',
           'The Issues tab lists everything that needs your attention. Mark issues resolved or dismiss them.',
-          'Check this reaction runs rule checks and a model review of one reaction.',
+          'Check this reaction runs rule checks and a model review of one reaction, and marks it Fix first, Needs fixing, Worth a look or No problems found.',
+          'Check all reactions, on the Issues tab, checks every reaction at once and lists them most urgent first. Click a name to open that reaction.',
+          'In the Network tab, click a reaction to see its details in the panel on the right; the rest of the network is greyed out. Double-click it to open it in Reactions. Drag the bar between the network and the panel to resize them; double-click the bar to reset it.',
           'The Usage tab shows how many model tokens each step used, including each reaction check and chat turn. Steps that call no model are not listed; for an annotation reused from a saved result, steps marked "saved run" show what the original run used.',
         ],
       },

@@ -72,6 +72,10 @@ describe('LlmApiService', () => {
       service.qa('s1', 'r0', false).subscribe();
       const qa = http.expectOne(r => r.url === `${base}/sessions/s1/qa/r0`);
       expect(qa.request.params.get('llm')).toBe('false');
+      service.qaAll('s1').subscribe();
+      const all = http.expectOne(r => r.url === `${base}/sessions/s1/qa`);
+      expect(all.request.method).toBe('POST');
+      expect(all.request.params.get('llm')).toBe('true');
       service.accept('s1', 'p-001').subscribe();
       expect(http.expectOne(`${base}/sessions/s1/proposals/p-001/accept`).request.method).toBe('POST');
       service.reject('s1', 'p-002').subscribe();

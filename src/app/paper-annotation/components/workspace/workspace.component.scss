@@ -29,6 +29,22 @@ h1 { margin: 8px 0; font-size: 22px; font-weight: 500; }
 .count.sev-action { background: #c62828; }
 .count.sev-warning { background: #ef6c00; }
 .detail { min-width: 0; }
+.network-split { display: grid; grid-template-columns: minmax(0, 1fr) 12px var(--detail-width, 380px); align-items: stretch; }
+.network-split.resizing { cursor: col-resize; user-select: none; }
+.network-split app-reaction-network { min-width: 0; }
+.splitter { display: flex; justify-content: center; margin-top: 12px; cursor: col-resize; touch-action: none; border-radius: 4px; }
+.splitter .grip { width: 4px; height: 100%; border-radius: 2px; background: #e0e0e0; transition: background .15s; }
+.splitter:hover .grip, .splitter:focus .grip, .resizing .splitter .grip { background: #90a4ae; }
+.splitter:focus { outline: none; }
+.splitter:focus-visible { outline: 2px solid #1976d2; outline-offset: -2px; }
+.network-detail { min-width: 0; margin-top: 12px; padding: 12px; border: 1px solid #e0e0e0; border-radius: 4px; max-height: 78vh; overflow: auto; align-self: start; }
+.network-detail .none { margin: 0; color: #666; }
+/* too narrow to sit side by side: the panel goes under the network and the divider is not needed */
+@media (max-width: 800px) {
+  .network-split { grid-template-columns: 1fr; }
+  .splitter { display: none; }
+  .network-detail { max-height: none; }
+}
 .body { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; }
 .main { min-width: 0; }
 @media (max-width: 1100px) { .body { grid-template-columns: 1fr; } }

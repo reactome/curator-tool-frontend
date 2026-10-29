@@ -35,6 +35,15 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   usageStamp = 0;
   /** Bumped when the draft may have changed, so the network tab redraws. */
   networkStamp = 0;
+  /** Width in px of the reaction panel beside the network; the curator drags the divider to change it. */
+  detailWidth = WorkspaceComponent.readDetailWidth();
+  resizing = false;
+
+  static readonly DETAIL_WIDTH_KEY = 'paper2path.networkDetailWidth';
+  static readonly DEFAULT_DETAIL_WIDTH = 380;
+  static readonly MIN_DETAIL_WIDTH = 260;
+  /** The network keeps at least this much, so the divider cannot squeeze it away. */
+  static readonly MIN_NETWORK_WIDTH = 320;
 
   constructor(private api: LlmApiService, private route: ActivatedRoute, private location: Location,
               private dialog: MatDialog, private snack: MatSnackBar, private userInstances: UserInstancesService) {}
@@ -187,6 +196,64 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   onProposalDecided(p: Proposal): void {
     if (p.status === 'accepted') this.stagingStale = true;
     this.reload();
+  }
+
+  /**
+   * Drag the divider between the network and the reaction panel. The pointer is captured by the divider, so
+   * the drag keeps going when it passes over the network canvas, which would otherwise take the events.
+   */
+  startResize(event: PointerEvent, split: HTMLElement): void {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const handle = event.currentTarget as HTMLElement;
+    handle.setPointerCapture(event.pointerId);
+    this.resizing = true;
+    const move = (e: PointerEvent) => this.resizeTo(e.clientX, split);
+    const end = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', end);
+      handle.removeEventListener('pointercancel', end);
+      this.resizing = false;
+      this.saveDetailWidth();
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
+  }
+
+  /** The panel spans from the pointer to the right edge of the split, within the limits. */
+  resizeTo(clientX: number, split: HTMLElement): void {
+    this.detailWidth = this.clampDetailWidth(split.getBoundingClientRect().right - clientX, split.clientWidth);
+  }
+
+  /** Arrow keys move the divider for curators who do not use a mouse; Home puts it back. */
+  nudgeDivider(event: KeyboardEvent, split: HTMLElement): void {
+    const step = event.shiftKey ? 80 : 20;
+    if (event.key === 'ArrowLeft') this.detailWidth = this.clampDetailWidth(this.detailWidth + step, split.clientWidth);
+    else if (event.key === 'ArrowRight') this.detailWidth = this.clampDetailWidth(this.detailWidth - step, split.clientWidth);
+    else if (event.key === 'Home') this.detailWidth = WorkspaceComponent.DEFAULT_DETAIL_WIDTH;
+    else return;
+    event.preventDefault();
+    this.saveDetailWidth();
+  }
+
+  resetDetailWidth(): void {
+    this.detailWidth = WorkspaceComponent.DEFAULT_DETAIL_WIDTH;
+    this.saveDetailWidth();
+  }
+
+  private clampDetailWidth(width: number, splitWidth: number): number {
+    const max = Math.max(WorkspaceComponent.MIN_DETAIL_WIDTH, splitWidth - WorkspaceComponent.MIN_NETWORK_WIDTH);
+    return Math.round(Math.min(max, Math.max(WorkspaceComponent.MIN_DETAIL_WIDTH, width)));
+  }
+
+  private saveDetailWidth(): void {
+    localStorage.setItem(WorkspaceComponent.DETAIL_WIDTH_KEY, String(this.detailWidth));
+  }
+
+  private static readDetailWidth(): number {
+    const saved = Number(localStorage.getItem(WorkspaceComponent.DETAIL_WIDTH_KEY));
+    return saved >= WorkspaceComponent.MIN_DETAIL_WIDTH ? saved : WorkspaceComponent.DEFAULT_DETAIL_WIDTH;
   }
 
   hasSameMatch(key: string): boolean {

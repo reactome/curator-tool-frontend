@@ -23,7 +23,7 @@
     <h2>Annotating this paper</h2>
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     <p class="step">{{ session?.progress || 'starting' }}</p>
-    <p class="hint">Extracting and merging reactions takes about 10 to 15 minutes. You can leave this page; it will be here when you come back.</p>
+    <p class="hint">Extracting and merging reactions usually takes a few minutes, longer for a long paper. You can leave this page; it will be here when you come back.</p>
   </section>
 
   <section class="failed" *ngIf="session?.status === 'failed'" role="alert">
@@ -57,12 +57,24 @@
       </mat-tab>
       <mat-tab [label]="'Issues (' + openIssues.length + ')'">
         <app-issues-panel [sessionId]="id" [issues]="issues" (changed)="onIssueChanged($event)"
-                          (openReaction)="openReaction($event)"></app-issues-panel>
+                          (checked)="reload()" (openReaction)="openReaction($event)"></app-issues-panel>
       </mat-tab>
       <mat-tab label="Network">
         <ng-template matTabContent>
-          <app-reaction-network [sessionId]="id" [stamp]="networkStamp" [selectedKey]="selectedKey"
-                                (reactionSelected)="select($event)" (reactionOpened)="openReaction($event)"></app-reaction-network>
+          <div #split class="network-split" [class.resizing]="resizing" [style.--detail-width]="detailWidth + 'px'">
+            <app-reaction-network [sessionId]="id" [stamp]="networkStamp" [selectedKey]="selectedKey"
+                                  (reactionSelected)="select($event)" (reactionOpened)="openReaction($event)"></app-reaction-network>
+            <div class="splitter" role="separator" aria-orientation="vertical" tabindex="0"
+                 aria-label="Resize the reaction panel" [attr.aria-valuenow]="detailWidth"
+                 matTooltip="Drag to resize; double-click to reset" matTooltipShowDelay="600"
+                 (pointerdown)="startResize($event, split)" (dblclick)="resetDetailWidth()"
+                 (keydown)="nudgeDivider($event, split)"><span class="grip"></span></div>
+            <aside class="network-detail" aria-label="Selected reaction">
+              <app-reaction-detail *ngIf="selectedKey; else noReaction" class="compact" [sessionId]="id" [reactionKey]="selectedKey"
+                                   [matches]="existing" [issues]="issues" (changed)="reload()"></app-reaction-detail>
+              <ng-template #noReaction><p class="none">Click a reaction in the network to see its details here.</p></ng-template>
+            </aside>
+          </div>
         </ng-template>
       </mat-tab>
       <mat-tab label="Usage">

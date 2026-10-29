@@ -13,4 +13,16 @@ mat-icon.sev-action { color: #c62828; }
 mat-icon.sev-warning { color: #ef6c00; }
 mat-icon.sev-info { color: #1976d2; }
 .empty { color: #666; }
+.ranking { margin: 8px 0 16px; padding: 8px 12px; background: #fafafa; border: 1px solid #e0e0e0; border-radius: 4px; }
+.ranking h3 { margin: 0 0 4px; font-size: 14px; }
+.ranking .counts { font-weight: normal; color: #666; font-size: 12px; margin-left: 8px; }
+.ranking ol { list-style: none; padding: 0; margin: 0; }
+.ranking li { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; border-top: 1px solid #eee; }
+.ranking .name { font-weight: 500; padding: 0; text-align: left; white-space: normal; height: auto; line-height: 20px; }
+.ranking .what { color: #444; font-size: 13px; }
+.chip { flex-shrink: 0; min-width: 88px; text-align: center; padding: 2px 8px; border-radius: 10px; font-size: 12px; color: #fff; }
+.chip.prio-fix_first { background: #c62828; }
+.chip.prio-fix { background: #ef6c00; }
+.chip.prio-review { background: #1976d2; }
+.chip.prio-ok { background: #2e7d32; }
 .error { display: flex; align-items: center; gap: 8px; background: #fdecea; color: #7a1c14; padding: 10px 12px; border-radius: 4px; }

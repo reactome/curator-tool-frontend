@@ -252,7 +252,7 @@ const PAPER2PATH_TOUR: TourStep[] = [
     id: 'paper2path-start',
     title: 'Start from a PubMed ID or a PDF',
     content:
-      'Enter a PubMed ID (the paper must be open access in PubMed Central) or upload a PDF. Optionally give a focus gene. Extraction takes about 10 to 15 minutes and you can leave the page meanwhile.',
+      'Enter a PubMed ID (the paper must be open access in PubMed Central) or upload a PDF. Optionally give a focus gene. Extraction usually takes a few minutes (longer for a long paper) and you can leave the page meanwhile.',
     targetSelector: '.starters',
     position: 'bottom',
   },
@@ -268,7 +268,7 @@ const PAPER2PATH_TOUR: TourStep[] = [
     id: 'paper2path-review',
     title: 'Review, Chat, Load',
     content:
-      'Inside an annotation you can read each reaction with its evidence (page, section and figure), work through the Issues tab, check a reaction, and chat to ask for changes. Chat only proposes edits; nothing changes until you accept them. Load into staged instances puts the result in Schema View, after backing up what you have staged.',
+      'Inside an annotation you can read each reaction with its evidence (page, section and figure), work through the Issues tab, check one reaction or all of them, see every reaction in the Network tab with the details of the selected one beside it, and chat to ask for changes. Chat only proposes edits; nothing changes until you accept them. Load into staged instances puts the result in Schema View, after backing up what you have staged.',
     position: 'center',
   },
   {

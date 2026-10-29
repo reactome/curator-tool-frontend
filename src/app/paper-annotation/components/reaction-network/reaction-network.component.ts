@@ -33,11 +33,17 @@ export class ReactionNetworkComponent implements AfterViewInit, OnChanges, OnDes
 
   private cy: Core | null = null;
   private viewReady = false;
+  /** Cytoscape only notices window resizes; this catches the canvas changing width (the divider beside it). */
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(private api: LlmApiService, private layouts: NetworkLayoutStore) {}
 
   ngAfterViewInit(): void {
     this.viewReady = true;
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.cy?.resize());
+      this.resizeObserver.observe(this.canvas.nativeElement);
+    }
     this.draw();
   }
 
@@ -47,6 +53,7 @@ export class ReactionNetworkComponent implements AfterViewInit, OnChanges, OnDes
   }
 
   ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
     this.remember();
     this.cy?.destroy();
   }
@@ -137,10 +144,19 @@ export class ReactionNetworkComponent implements AfterViewInit, OnChanges, OnDes
     cy.edges().filter(e => !keep.has(e.source().id()) || !keep.has(e.target().id())).addClass('faded');
   }
 
+  /**
+   * Outline the selected reaction and fade everything outside it, as a tap on it does. Without the fading, a
+   * reaction selected elsewhere (the first one, selected when the annotation opens, or one picked in Reactions)
+   * is hard to find among the others when the network is first drawn.
+   */
   private markSelected(): void {
     const cy = this.cy;
-    if (!cy) return;
+    if (!cy || !this.network) return;
     cy.nodes().removeClass('picked');
-    if (this.selectedKey) cy.getElementById('r:' + this.selectedKey).addClass('picked');
+    if (!this.selectedKey) return;
+    const node = cy.getElementById('r:' + this.selectedKey);
+    if (node.empty()) return;
+    node.addClass('picked');
+    this.focus(this.network, node.id(), null);
   }
 }

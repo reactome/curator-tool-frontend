@@ -5,6 +5,9 @@
       <strong>{{ count('warning') }}</strong> warnings ·
       <strong>{{ count('info') }}</strong> notes
     </span>
+    <button mat-stroked-button [disabled]="checking" (click)="checkAll()">
+      <mat-icon>fact_check</mat-icon> Check all reactions
+    </button>
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
       <mat-label>Show</mat-label>
       <mat-select [(ngModel)]="status" aria-label="Filter by status">
@@ -25,7 +28,24 @@
     </mat-form-field>
   </div>
 
+  <mat-progress-bar *ngIf="checking" mode="indeterminate"></mat-progress-bar>
   <div class="error" *ngIf="error" role="alert"><mat-icon>error_outline</mat-icon> {{ error }}</div>
+
+  <section class="ranking" *ngIf="ranking.length" aria-label="Reactions to look at first">
+    <h3>Look at these first
+      <span class="counts">{{ countPriority('fix_first') }} fix first · {{ countPriority('fix') }} need fixing ·
+        {{ countPriority('review') }} worth a look · {{ countPriority('ok') }} fine</span></h3>
+    <ol>
+      <li *ngFor="let r of ranking">
+        <span class="chip" [ngClass]="'prio-' + r.priority">{{ priorityLabel(r.priority) }}</span>
+        <div class="text">
+          <button mat-button class="link name" (click)="openReaction.emit(r.reaction_key)">{{ r.reaction_name || ('reaction ' + r.reaction_key) }}</button>
+          <div class="what" *ngIf="r.summary">{{ r.summary }}</div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
   <p class="empty" *ngIf="!shown.length">Nothing to show here.</p>
 
   <ul class="issues">

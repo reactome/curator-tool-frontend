@@ -144,6 +144,12 @@ export class LlmApiService {
     return this.call(() => this.http.post<ExistingMatch[]>(this.url(`/sessions/${id}/existing/check`), {}));
   }
 
+  /** QA every reaction at once; the service returns them most urgent first and records the findings as issues. */
+  qaAll(id: string, llm = true): Observable<QAResult[]> {
+    const params = new HttpParams().set('llm', llm);
+    return this.call(() => this.http.post<QAResult[]>(this.url(`/sessions/${id}/qa`), {}, { params }));
+  }
+
   qa(id: string, reactionKey: string, llm = true): Observable<QAResult> {
     const params = new HttpParams().set('llm', llm);
     return this.call(() => this.http.post<QAResult>(this.url(`/sessions/${id}/qa/${reactionKey}`), {}, { params }));

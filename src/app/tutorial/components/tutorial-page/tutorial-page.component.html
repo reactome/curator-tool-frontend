@@ -405,7 +405,7 @@
             <ol>
               <li>Enter a PubMed ID (the paper must be open access in PubMed Central) or upload a PDF.</li>
               <li>Optionally enter a focus gene, the protein you care most about in the paper.</li>
-              <li>Click Annotate. Extraction takes about 10 to 15 minutes; you can leave the page and come back to it from your list.</li>
+              <li>Click Annotate. Extraction usually takes a few minutes, longer for a long paper; you can leave the page and come back to it from your list.</li>
             </ol>
           </mat-card-content>
         </mat-card>
@@ -419,7 +419,9 @@
             <ul>
               <li>Select a reaction to see its inputs, outputs, catalyst, regulators and the quotes behind them, with page, section and figure.</li>
               <li>The Issues tab lists everything that needs your attention, such as identifiers that could not be resolved or a reaction Reactome already has. Mark each one resolved or dismiss it.</li>
-              <li>Check this reaction runs rule checks and a model review of one reaction.</li>
+              <li>Check this reaction runs rule checks and a model review of one reaction. It marks the reaction Fix first, Needs fixing, Worth a look or No problems found, and says in one sentence what matters most.</li>
+              <li>Check all reactions, on the Issues tab, checks every reaction at once and lists them most urgent first under Look at these first. Click a reaction's name to open it.</li>
+              <li>The Network tab draws every reaction with its entities. Click a reaction to see its details in the panel on the right, with the rest of the network greyed out; double-click it to open it in Reactions. Click an entity to see the reactions it takes part in. Drag the bar between the network and the panel to resize them, and double-click the bar to reset it.</li>
               <li>The Usage tab shows how many language-model tokens each step used, including every reaction check and chat turn, so you can see what an annotation cost.</li>
             </ul>
           </mat-card-content>

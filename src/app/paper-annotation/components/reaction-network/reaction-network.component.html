@@ -4,7 +4,7 @@
     <button mat-stroked-button (click)="fit()" [disabled]="!network"><mat-icon>fit_screen</mat-icon> Fit</button>
     <span class="focus" *ngIf="focusLabel">Reactions of <b>{{ focusLabel }}</b> (click the background to clear)</span>
     <span class="spacer"></span>
-    <span class="hint">Click an entity to see its reactions. Click a reaction to select it; double-click for details.</span>
+    <span class="hint">Click an entity to see its reactions. Click a reaction to see its details beside the network; double-click to open it in Reactions.</span>
   </div>
   <div class="error" *ngIf="error" role="alert"><mat-icon>error_outline</mat-icon> {{ error }}</div>
   <mat-progress-bar *ngIf="loading" mode="indeterminate"></mat-progress-bar>

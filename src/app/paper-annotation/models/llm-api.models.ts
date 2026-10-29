@@ -216,9 +216,24 @@ export interface QAFinding {
   source: 'rule' | 'llm';
 }
 
+/** Where a reaction goes in the curator's list: how much is wrong, not a pass/fail. */
+export type QAPriority = 'fix_first' | 'fix' | 'review' | 'ok';
+
+export const QA_PRIORITY_LABEL: Record<QAPriority, string> = {
+  fix_first: 'Fix first',
+  fix: 'Needs fixing',
+  review: 'Worth a look',
+  ok: 'No problems found'
+};
+
 export interface QAResult {
   reaction_key: string;
+  reaction_name?: string | null;
   verdict: 'ok' | 'needs_work';
+  /** Absent from an older service, which only sends the verdict. */
+  priority?: QAPriority;
+  /** One sentence: the most important thing to do about this reaction. */
+  summary?: string | null;
   score: number | null;
   findings: QAFinding[];
   llm_used: boolean;

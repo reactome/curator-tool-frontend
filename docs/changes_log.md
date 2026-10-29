@@ -1,3 +1,17 @@
+### Build on October 29, 2026
+
+- Added: in **Paper2Path**, the **Network** tab now shows the selected reaction's details in a panel to the right of the network: its inputs, outputs, catalyst, regulators, open issues, any similar reaction Reactome already has, its summary and its evidence, with **Check this reaction**. Clicking a reaction in the network shows it there, so you no longer have to switch to the **Reactions** tab. Double-clicking a reaction still opens it in **Reactions**. In a window narrower than about 800 pixels, the panel goes under the network.
+
+- Added: drag the bar between the network and the reaction panel to make either one wider. Double-click the bar to put it back to its usual width. With the bar selected, the arrow keys also move it, and Home puts it back. The width is remembered for the next time you open an annotation.
+
+- Added: **Check all reactions**, on the **Issues** tab in **Paper2Path**, checks every reaction of the annotation at once and lists them under **Look at these first**, most urgent first. Each reaction is marked **Fix first**, **Needs fixing**, **Worth a look** or **No problems found**, with one sentence on the most important thing to do about it. Clicking its name opens it in **Reactions**. What the check finds is added to the issues list. The ranking stays until you leave the page. The check reviews each reaction with the language model, so it can take a while, and its tokens are shown in **Usage**.
+
+- Changed: when the network in **Paper2Path** is first shown, everything that is not part of the selected reaction is greyed out, as when you click a reaction. Before, the reaction selected when an annotation opens, or one selected in another tab, was only outlined, and it was hard to find among the others. Clicking the background still clears the greying.
+
+- Changed: the result of **Check this reaction** in **Paper2Path** now says **Fix first**, **Needs fixing**, **Worth a look** or **No problems found**, rather than only "Needs work" or "No blocking problems found", and adds one sentence on the most important thing to do about the reaction.
+
+- Changed: Paper2Path now says that annotating a paper usually takes a few minutes, longer for a long paper, rather than 10 to 15 minutes.
+
 ### Build on October 26, 2026
 
 - Bug fix: a flow line in a pathway diagram that had been saved and opened again could not be selected or removed. Right-clicking it showed the menu for an ordinary edge, without the flow-line options. A flow line now behaves the same after it has been saved and reopened as it did when it was first drawn.

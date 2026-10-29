@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { ExistingMatch, Issue, Participant, QAResult, ReactionDetail } from '../../models/llm-api.models';
+import { ExistingMatch, Issue, Participant, QA_PRIORITY_LABEL, QAResult, ReactionDetail } from '../../models/llm-api.models';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
 
 @Component({
@@ -67,6 +67,11 @@ export class ReactionDetailComponent implements OnChanges {
     if (p.chebi) out.push(p.chebi);
     if (p.compartment_name) out.push(p.compartment_name);
     return out;
+  }
+
+  /** The ranked label; an older service sends only a verdict. */
+  qaLabel(q: QAResult): string {
+    return q.priority ? QA_PRIORITY_LABEL[q.priority] : q.verdict === 'ok' ? 'No blocking problems found' : 'Needs work';
   }
 
   runQa(): void {

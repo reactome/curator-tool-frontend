@@ -53,7 +53,10 @@ describe('WorkspaceComponent', () => {
   };
   const answer = (confirmed: boolean) => dialog.open.and.returnValue({ afterClosed: () => of(confirmed) } as any);
 
-  afterEach(() => localStorage.removeItem(LOADED_SESSION_KEY));
+  afterEach(() => {
+    localStorage.removeItem(LOADED_SESSION_KEY);
+    localStorage.removeItem(WorkspaceComponent.DETAIL_WIDTH_KEY);
+  });
 
   it('follows a running session until it is ready, then loads issues and matches and selects the first reaction', fakeAsync(() => {
     make();
@@ -244,4 +247,55 @@ describe('WorkspaceComponent', () => {
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));
+  describe('the divider between the network and the reaction panel', () => {
+    // a split 1000px wide whose right edge is at x = 1100
+    const split = { getBoundingClientRect: () => ({ right: 1100 }), clientWidth: 1000 } as unknown as HTMLElement;
+    const key = (k: string, shiftKey = false) => ({ key: k, shiftKey, preventDefault: jasmine.createSpy('preventDefault') } as unknown as KeyboardEvent);
+
+    beforeEach(() => localStorage.removeItem(WorkspaceComponent.DETAIL_WIDTH_KEY));
+
+    it('starts at the default width, or at the width the curator left it', () => {
+      make();
+      expect(component.detailWidth).toBe(WorkspaceComponent.DEFAULT_DETAIL_WIDTH);
+      const again = () => new WorkspaceComponent(api, {} as ActivatedRoute, location, dialog, snack, userInstances).detailWidth;
+      localStorage.setItem(WorkspaceComponent.DETAIL_WIDTH_KEY, '520');
+      expect(again()).toBe(520);
+      localStorage.setItem(WorkspaceComponent.DETAIL_WIDTH_KEY, 'junk');
+      expect(again()).toBe(WorkspaceComponent.DEFAULT_DETAIL_WIDTH);
+    });
+
+    it('gives the panel the space from the pointer to the right edge, but never squeezes either side away', () => {
+      make();
+      component.resizeTo(600, split);
+      expect(component.detailWidth).toBe(500);
+      component.resizeTo(1090, split);
+      expect(component.detailWidth).toBe(WorkspaceComponent.MIN_DETAIL_WIDTH);
+      component.resizeTo(150, split);
+      expect(component.detailWidth).toBe(1000 - WorkspaceComponent.MIN_NETWORK_WIDTH);
+    });
+
+    it('moves with the arrow keys, goes back with Home, and remembers the width', () => {
+      make();
+      const left = key('ArrowLeft');
+      component.nudgeDivider(left, split);
+      expect(component.detailWidth).toBe(400);
+      expect(left.preventDefault).toHaveBeenCalled();
+      component.nudgeDivider(key('ArrowRight', true), split);
+      expect(component.detailWidth).toBe(320);
+      expect(localStorage.getItem(WorkspaceComponent.DETAIL_WIDTH_KEY)).toBe('320');
+      component.nudgeDivider(key('Home'), split);
+      expect(component.detailWidth).toBe(WorkspaceComponent.DEFAULT_DETAIL_WIDTH);
+      const other = key('a');
+      component.nudgeDivider(other, split);
+      expect(other.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it('goes back to the default width on reset', () => {
+      make();
+      component.resizeTo(500, split);
+      component.resetDetailWidth();
+      expect(component.detailWidth).toBe(WorkspaceComponent.DEFAULT_DETAIL_WIDTH);
+      expect(localStorage.getItem(WorkspaceComponent.DETAIL_WIDTH_KEY)).toBe(String(WorkspaceComponent.DEFAULT_DETAIL_WIDTH));
+    });
+  });
 });

@@ -39,7 +39,7 @@ After login, the **home page** launches six areas:
 - **Schema View** — browse schema classes, list instances, open/edit instances, run batch edits, and manage staged changes.
 - **Event View** — work with pathway/event trees, pathway diagrams, and instance editing together.
 - **Gene2Path** — submit a gene symbol and review LLM-generated pathway annotation support.
-- **Paper2Path** — run a multi-agent (CrewAI) literature-annotation job from PMIDs/PDFs/a gene, then register generated instances into Schema View. *(Experimental.)*
+- **Paper2Path** — draft a Reactome annotation from one paper (a PubMed ID or a PDF), review its reactions, issues and network, refine it by chat, and load it into your staged instances. *(Experimental.)*
 - **Ask the Graph** — ask questions about the curation database in plain English and get an answer with the matching instances. Read-only.
 - **Tutorial** — tabbed reference plus interactive guided tours for each area.
 
@@ -722,46 +722,70 @@ Failures show under a **"Failure"** heading.
 
 ## 12) Paper2Path app
 
-Paper2Path (`/paper2path`, opens in a new tab, **login required**) runs a multi-agent (CrewAI) literature-annotation workflow and can register the results into Schema View.
+Paper2Path (`/paper2path`, opens in a new tab, **login required**) drafts a Reactome annotation from one paper: its reactions with their participants, the quotes from the paper that support them, and a list of what needs your attention. You review the draft, refine it by chat, and load it into your staged instances.
 
-> **Experimental:** *"Paper2Path is under active development. Results may be incomplete or inaccurate. Do not use for production curation without review."*
+> **Experimental:** treat the results as drafting support, and review them before you commit.
 
-**Banner:** *"Paper2Path — Multi-Agent Literature Annotation · Powered by CrewAI"*.
+### Start an annotation
 
-### Configuration (**Configure** / **Hide Config** toggle)
+The page, **Paper annotation**, has two cards:
 
-- **Max Papers** (1–20, default 8)
-- **Quality Threshold** (0–1, default 0.7)
-- **Enable Full Text Analysis** (default on) — process full PDFs vs. abstracts only
-- **Enable Literature Search** (default off) — search PubMed for more papers (requires a target gene)
-- **Agent Dashboard Controls** — enable/disable **Execution Phases**, **Agents**, and per-agent **Tools** (all server-driven; all enabled by default)
+- **From a PubMed ID**: enter a **PubMed ID** (the paper must be open access in PubMed Central) and, optionally, a **Focus gene**, the protein you care most about in the paper. Click **Annotate**, or press `Enter`.
+- **From a PDF**: for papers that are not in PubMed Central, up to 50 MB. Click **Choose a PDF** (`upload_file`), optionally enter a **Focus gene**, and click **Annotate**.
 
-### Run an annotation job
+Annotating a paper usually takes a few minutes, longer for a long paper. You can leave the page; the annotation stays in your list.
 
-Under **Annotation**:
+**Your annotations** lists every annotation you have started, with **Paper**, **Status** (`queued`, `running` with the current step, `ready` or `failed`), **Reactions**, **Open issues** and **Started**. Click a row to open it.
 
-1. Optionally enter a **Target Gene** (e.g. `NTN1`) — you can annotate by gene alone or combine with papers.
-2. Choose a source tab:
-   - **Enter Papers** — add **PMID** fields (**Add PMID** / remove) and/or upload a PDF named `PMID.pdf` (**Select PDF File**).
-   - **Preloaded Papers** — pick from papers already on the server (each shows PMID, size, title, and a PDF-available/not-found status icon).
-   - **Results** — enabled once a job/result exists.
-3. Click **Start Annotation** (`send`; disabled until at least one PMID, a selected preloaded paper, or a target gene is provided). It shows **"Processing…"** while running; **Clear** resets.
+### Inside an annotation
 
-### Review results (Results tab)
+The header shows the paper (PMID or file name), the focus gene and the status, with a back arrow (`arrow_back`, *"All annotations"*). While the paper is being annotated, the page shows the current step; if it failed, the reason. When it is ready, there are four tabs on the left and the **Chat** panel on the right.
 
-- **Processing Annotation…** shows Job ID, Status, Gene, and Current Phase with a progress bar.
-- **CrewAI Runtime Logs** stream live (timestamp, colored status tag, phase, summary/detail).
-- On failure: **Annotation Failed** with **Try Again** / **Dismiss**.
-- On success: **Annotation Complete** shows the JSON result and action buttons:
-  - **Download Results** (`download`) — saves `paper2path-results-YYYY-MM-DD.json`.
-  - **Add to Schema View** (`add_circle`, tooltip *"Register annotated entities, reactions and pathways as new instances in the schema view"*).
-  - **New Annotation** (`refresh`) — resets.
+#### Reactions
 
-### Register results into Schema View
+The list on the left shows every extracted reaction. A `content_copy` icon means Reactome appears to have that reaction already, and a coloured count shows its open issues (red: needs action; orange: warnings). Click a reaction to see its details on the right:
 
-**Add to Schema View** parses the result and creates new staged instances — LiteratureReferences (from PMIDs, auto-filled server-side), entities (default `EntityWithAccessionedSequence`), output Complexes, Reactions, and Pathways — then shows a snackbar (**"N instances added to schema view."**) and opens **Schema View in a new tab**. These are **staged** instances: review and validate them in Schema View, then commit. Paper2Path does not write to the database directly.
+- name and reaction type;
+- **Reactome appears to have this reaction already** or **Similar to an existing reaction**, with the existing reaction's name, stable id and why it matches;
+- **Needs attention**: the reaction's open issues;
+- **Participants**: **Inputs** and **Outputs**, with modifications, UniProt or ChEBI identifier, compartment, and a *needs …* flag for anything that could not be resolved; the **Catalyst** and its activity; regulators (*activated by*, *inhibited by*, *required by*);
+- **Summary**;
+- **Evidence (N)**: each quote from the paper with its page, section and figure. *verbatim* means the quote was found word for word in the paper, *close match* that it differs slightly (usually PDF symbols or hyphenation), and *not found in paper* that it could not be found.
 
-*(On first load, a bundled sample result is shown so the Results tab has example output before you run a real job.)*
+**Check this reaction** (`fact_check`) runs rule checks and a model review of the reaction. The result says **Fix first**, **Needs fixing**, **Worth a look** or **No problems found**, with one sentence on the most important thing to do, the reviewer's confidence, and each finding. What it finds is added to the issues.
+
+#### Issues
+
+Counts of open issues (**need action**, **warnings**, **notes**), filters for **Show** (Open, Resolved, Dismissed, All) and **Severity**, and the list of issues. Each issue links to its reaction and can be **Resolve**d or **Dismiss**ed, or **Reopen**ed.
+
+**Check all reactions** (`fact_check`) checks every reaction at once and shows them under **Look at these first**, most urgent first, each marked **Fix first**, **Needs fixing**, **Worth a look** or **No problems found** with one sentence on what matters most. Click a reaction's name to open it in **Reactions**. What the check finds is added to the issues. The ranking stays until you leave the page. The check reviews each reaction with the language model, so it can take a while.
+
+#### Network
+
+Every reaction and the entities it involves, drawn as one network. The legend under it explains the node shapes (protein, small molecule, complex, set, reaction), the dashed outline of an entity whose identifier was not resolved, the double outline of a reaction Reactome has already, and the line styles.
+
+- **Click a reaction** to select it. Its details are shown in the panel to the right of the network, the same details as in **Reactions**, and everything that is not part of it is greyed out. The selected reaction is also greyed around when the tab is first shown, so you can find it.
+- **Double-click a reaction** to open it in **Reactions**.
+- **Click an entity** to grey out everything except the reactions it takes part in and the entities beside it.
+- **Click the background** to clear the greying.
+- **Re-layout** (`auto_fix_high`) arranges the network again; **Fit** (`fit_screen`) fits it in the view. Where you drag nodes, and the zoom, are kept when you come back to the tab.
+- **Resize the panels**: drag the bar between the network and the reaction panel. Double-click the bar to put it back to its usual width. With the bar selected, the arrow keys move it (`Shift` for bigger steps) and `Home` puts it back. The width is remembered. In a window narrower than about 800 pixels, the panel goes under the network.
+
+#### Usage
+
+How many language-model tokens each step used (reading the paper, merging duplicate reactions, cross-model review, building the draft, reaction checks, chat), with a total. **Reaction checks and chat turns, one by one** lists each of them. For an annotation reused from a saved result, rows marked *saved run* show what the original run used, and **Spent in this session** shows what was spent now. Steps that use no model, such as checking quotes or resolving identifiers, are not listed.
+
+### Refine by chat
+
+Ask about the paper or ask for a change, for example *"Add the damage condition to the Parkin ubiquitination reaction."* Press `Enter` to send, `Shift+Enter` for a new line, and **Stop** to cancel a reply. Tick **About the selected reaction** to ask about the reaction selected in the tabs.
+
+The assistant only **proposes** edits. Each **Proposed edit** shows why, what it changes, and the quotes behind it (**Show N supporting quotes**). Nothing changes until you click **Accept**; **Reject** discards it. A change to what a reaction is needs a quote from the paper.
+
+### Load into staged instances
+
+**Load into staged instances** (`playlist_add`, in the header) puts the annotation's new instances into your staged instances. A dialog first shows how many instances come in and how many staged items they replace. What you have staged is saved to a backup first, and nothing is replaced if the backup fails; your default person and bookmarks are kept. Afterwards, **Open schema view** opens Schema View in a new tab.
+
+After you accept edits in the chat, a banner reminds you to load again to bring them in. Changes you made by hand to the loaded copies are overwritten. In Schema View, a loaded reaction, catalyst or regulation has an **Evidence** button showing its quotes. Paper2Path does not write to the database: review and commit the staged instances as usual.
 
 ---
 

@@ -1,5 +1,5 @@
 import { of, throwError } from 'rxjs';
-import { Issue } from '../../models/llm-api.models';
+import { Issue, QAResult } from '../../models/llm-api.models';
 import { LlmApiError } from '../../services/llm-api.service';
 import { IssuesPanelComponent } from './issues-panel.component';
 
@@ -10,7 +10,7 @@ describe('IssuesPanelComponent', () => {
   let panel: IssuesPanelComponent;
 
   beforeEach(() => {
-    api = jasmine.createSpyObj('LlmApiService', ['setIssueStatus']);
+    api = jasmine.createSpyObj('LlmApiService', ['setIssueStatus', 'qaAll']);
     panel = new IssuesPanelComponent(api);
     panel.sessionId = 's1';
     panel.issues = [issue('i3', 'info'), issue('i1', 'action', 'open', 'r1'), issue('i2', 'warning'), issue('i4', 'action', 'dismissed'),
@@ -58,5 +58,36 @@ describe('IssuesPanelComponent', () => {
 
   it('picks an icon by severity', () => {
     expect(['action', 'warning', 'info'].map(s => panel.icon(issue('x', s as Issue['severity'])))).toEqual(['error', 'warning', 'info']);
+  });
+
+  describe('check all reactions', () => {
+    const result = (key: string, priority: QAResult['priority']): QAResult =>
+      ({ reaction_key: key, reaction_name: `name ${key}`, verdict: 'needs_work', priority, summary: `fix ${key}`, score: 0.4, findings: [], llm_used: true });
+
+    it('keeps the ranked results the service sent and asks the page to re-read the issues', () => {
+      api.qaAll.and.returnValue(of([result('r1', 'fix_first'), result('r0', 'fix'), result('r2', 'review'), result('r3', 'ok')]));
+      let reloads = 0;
+      panel.checked.subscribe(() => reloads++);
+      panel.checkAll();
+      expect(api.qaAll).toHaveBeenCalledWith('s1');
+      expect(panel.ranking.map(r => r.reaction_key)).toEqual(['r1', 'r0', 'r2', 'r3']);
+      expect(panel.countPriority('fix_first')).toBe(1);
+      expect(panel.countPriority('ok')).toBe(1);
+      expect(panel.priorityLabel('fix_first')).toBe('Fix first');
+      expect(reloads).toBe(1);
+      expect(panel.checking).toBeFalse();
+    });
+
+    it('shows the reason and keeps the earlier ranking when the check fails', () => {
+      panel.ranking = [result('r1', 'fix')];
+      api.qaAll.and.returnValue(throwError(() => new LlmApiError(409, 'session is not ready')));
+      let reloads = 0;
+      panel.checked.subscribe(() => reloads++);
+      panel.checkAll();
+      expect(panel.error).toBe('session is not ready');
+      expect(panel.ranking.length).toBe(1);
+      expect(reloads).toBe(0);
+      expect(panel.checking).toBeFalse();
+    });
   });
 });
