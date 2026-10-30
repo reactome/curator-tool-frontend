@@ -52,14 +52,15 @@ const HOME_TOUR: TourStep[] = [
     targetSelector: '[routerLink="/event_view"], a[href*="event_view"]',
     position: 'bottom',
   },
-  {
-    id: 'gene2path',
-    title: 'Gene2Path',
-    content:
-      'Enter a gene symbol to generate LLM-assisted pathway annotation support. Useful for reviewing predicted pathway associations before curating.',
-    targetSelector: '[routerLink="/gene2path"], a[href*="gene2path"]',
-    position: 'bottom',
-  },
+  // Gene2Path is hidden from the home page while it is being re-developed; restore with its card there.
+  // {
+  //   id: 'gene2path',
+  //   title: 'Gene2Path',
+  //   content:
+  //     'Enter a gene symbol to generate LLM-assisted pathway annotation support. Useful for reviewing predicted pathway associations before curating.',
+  //   targetSelector: '[routerLink="/gene2path"], a[href*="gene2path"]',
+  //   position: 'bottom',
+  // },
   {
     id: 'paper2path',
     title: 'Paper2Path',

@@ -22,7 +22,8 @@ const HELP_CONTENT: Record<string, HelpContext> = {
         items: [
           'Click Schema View to browse classes and edit instances.',
           'Click Event View to work with pathway diagrams and the event tree.',
-          'Click Gene2Path to use the LLM gene annotation tool.',
+          // Gene2Path is hidden from the home page while it is being re-developed; restore with its card there.
+          // 'Click Gene2Path to use the LLM gene annotation tool.',
           'Click Tutorial to open the full guided tutorial.',
         ],
       },
