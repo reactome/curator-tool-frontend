@@ -19,8 +19,14 @@ h1 { margin: 8px 0; font-size: 22px; font-weight: 500; }
 .step { font-size: 16px; margin: 0 0 12px; }
 .hint { color: #666; }
 .reactions { display: grid; grid-template-columns: minmax(240px, 320px) 1fr; gap: 16px; padding-top: 12px; align-items: start; }
+.reaction-column { min-width: 0; }
+.list-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px 4px 0; }
+.checked-count { color: #666; font-size: 13px; }
+.load-check { flex-shrink: 0; margin: -10px 0 -10px -8px; }
+.panel-check { display: block; margin: -4px 0 8px -8px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
 .reaction-list { list-style: none; margin: 0; padding: 0; border: 1px solid #e0e0e0; border-radius: 4px; max-height: 70vh; overflow: auto; }
-.reaction-list li { display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #eee; }
+.reaction-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #eee; }
+.reaction-list li .name { flex: 1; min-width: 0; }
 .reaction-list li:last-child { border-bottom: none; }
 .reaction-list li:hover, .reaction-list li:focus { background: #f5f7fa; outline: none; }
 .reaction-list li.selected { background: #e8f0fe; }

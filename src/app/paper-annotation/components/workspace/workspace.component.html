@@ -10,11 +10,16 @@
       </ul>
     </div>
     <span class="spacer"></span>
-    <button mat-flat-button color="primary" *ngIf="session?.status === 'ready'" [disabled]="loading" (click)="loadIntoStaging()"
-            matTooltip="Replace your staged instances with this annotation (your current ones are backed up first)">
-      <mat-icon>playlist_add</mat-icon> Load into staged instances
-    </button>
+    <!-- the tooltip sits on a wrapper because a disabled button shows none -->
+    <span *ngIf="session?.status === 'ready'"
+          [matTooltip]="checkedCount ? 'Replace your staged instances with the checked reactions (your current ones are backed up first)' : 'Check the reactions to load first'">
+      <button mat-flat-button color="primary" [disabled]="loading || !checkedCount" (click)="loadIntoStaging()">
+        <mat-icon>playlist_add</mat-icon>
+        {{ checkedCount ? 'Load ' + checkedCount + ' reaction' + (checkedCount === 1 ? '' : 's') + ' into staged instances' : 'Load into staged instances' }}
+      </button>
+    </span>
   </header>
+  <div class="stale" *ngIf="loadStep" role="status"><mat-icon>hourglass_top</mat-icon> {{ loadStep }}</div>
   <div class="stale" *ngIf="stagingStale" role="status">
     <mat-icon>info</mat-icon> You accepted edits since the instances were last loaded. Load them again to bring the edits into your staged instances.
   </div>
@@ -40,10 +45,23 @@
     <mat-tab-group [(selectedIndex)]="tab" animationDuration="0ms">
       <mat-tab [label]="'Reactions (' + (session?.reactions?.length ?? 0) + ')'">
         <div class="reactions">
+         <div class="reaction-column">
+          <div class="list-head">
+            <mat-checkbox [checked]="allChecked" [indeterminate]="checkedCount > 0 && !allChecked"
+                          [disabled]="!loadableReactions.length" (change)="setAllChecked($event.checked)"
+                          aria-label="Check all reactions to load">All</mat-checkbox>
+            <span class="checked-count">{{ checkedCount }} of {{ loadableReactions.length }} checked to load</span>
+          </div>
           <ul class="reaction-list" role="listbox" aria-label="Reactions">
             <li *ngFor="let r of session?.reactions" role="option" tabindex="0"
                 [class.selected]="r.key === selectedKey" [attr.aria-selected]="r.key === selectedKey"
                 (click)="select(r.key)" (keyup.enter)="select(r.key)">
+              <mat-checkbox class="load-check" [checked]="isChecked(r.key)" [disabled]="!canCheck(r.key)"
+                            (click)="$event.stopPropagation()" (keyup.enter)="$event.stopPropagation()"
+                            (change)="setChecked(r.key, $event.checked)"
+                            [attr.aria-label]="'Load ' + r.name + ' into staged instances'"
+                            [matTooltip]="canCheck(r.key) ? 'Load this reaction into staged instances' : 'This reaction cannot be loaded'"
+                            matTooltipShowDelay="600"></mat-checkbox>
               <span class="name">{{ r.name }}</span>
               <span class="badges">
                 <mat-icon *ngIf="hasSameMatch(r.key)" class="badge same" matTooltip="Reactome appears to have this reaction already">content_copy</mat-icon>
@@ -52,6 +70,7 @@
               </span>
             </li>
           </ul>
+         </div>
           <div class="detail">
             <app-reaction-detail *ngIf="selectedKey" [sessionId]="id" [reactionKey]="selectedKey"
                                  [matches]="existing" [issues]="issues" [papers]="papers" (changed)="reload()"></app-reaction-detail>
@@ -83,6 +102,10 @@
                  (pointerdown)="startResize($event, split)" (dblclick)="resetDetailWidth()"
                  (keydown)="nudgeDivider($event, split)"><span class="grip"></span></div>
             <aside class="network-detail" aria-label="Selected reaction">
+              <mat-checkbox *ngIf="selectedKey && canCheck(selectedKey)" class="panel-check"
+                            [checked]="isChecked(selectedKey)" (change)="setChecked(selectedKey!, $event.checked)">
+                Load this reaction into staged instances
+              </mat-checkbox>
               <app-reaction-detail *ngIf="selectedKey; else noReaction" class="compact" [sessionId]="id" [reactionKey]="selectedKey"
                                    [matches]="existing" [issues]="issues" [papers]="papers" (changed)="reload()"></app-reaction-detail>
               <ng-template #noReaction><p class="none">Click a reaction in the network to see its details here.</p></ng-template>

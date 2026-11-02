@@ -4,12 +4,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { Subject, forkJoin, map, merge, switchMap, takeUntil, takeWhile, timer } from 'rxjs';
-import { ExistingMatch, Issue, PaperInfo, paperLabel, Proposal, SessionDetail } from '../../models/llm-api.models';
+import { ExistingMatch, Issue, PaperInfo, paperLabel, Proposal, ReactionRef, SessionDetail } from '../../models/llm-api.models';
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
 import { UserInstances } from 'src/app/core/models/reactome-instance.model';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
 import { LoadStagingDialogComponent } from '../load-staging-dialog/load-staging-dialog.component';
-import { LOADED_SESSION_KEY } from '../../services/staging';
+import { ReferencePreparer } from '../../services/reference-preparer.service';
+import { CHECKED_REACTIONS_KEY, LOADED_SESSION_KEY, selectReactions } from '../../services/staging';
 
 @Component({
   selector: 'app-workspace',
@@ -24,6 +25,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   /** Fixes the service suggests, as pending proposals: nothing is applied until the curator accepts one. */
   suggestions: Proposal[] = [];
   selectedKey: string | null = null;
+  /** Keys of the reactions the curator checked to load into staged instances. Nothing is checked at first. */
+  checkedKeys = new Set<string>();
   tab = 0;
   error: string | null = null;
   /** An edit was accepted since the instances were last loaded into staging. */
@@ -33,6 +36,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   private restart$ = new Subject<void>();
 
   loading = false;
+  /** What a load is doing while it prepares, shown to the curator; null when nothing is going on. */
+  loadStep: string | null = null;
   /** Bumped when something that spends tokens may have happened, so the usage tab reloads. */
   usageStamp = 0;
   /** Bumped when the draft may have changed, so the network tab redraws. */
@@ -48,7 +53,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   static readonly MIN_NETWORK_WIDTH = 320;
 
   constructor(private api: LlmApiService, private route: ActivatedRoute, private location: Location,
-              private dialog: MatDialog, private snack: MatSnackBar, private userInstances: UserInstancesService) {}
+              private dialog: MatDialog, private snack: MatSnackBar, private userInstances: UserInstancesService,
+              private references: ReferencePreparer) {}
 
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(p => {
@@ -58,6 +64,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       this.existing = [];
       this.suggestions = [];
       this.selectedKey = null;
+      this.checkedKeys = this.readChecked();
       this.watch();
     });
   }
@@ -140,15 +147,25 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
    * up first). The counts are fetched before asking, so the curator confirms with real numbers.
    */
   loadIntoStaging(): void {
-    if (this.loading) return;
+    if (this.loading || !this.checkedCount) return;
     this.loading = true;
+    this.loadStep = 'Filling in the cited papers from PubMed…';
+    const reactions = this.checkedCount;
+    const dbIds = this.checkedDbIds;
+    // the annotation's pathway holds all its reactions, so it comes only when every one of them is loaded
+    const pathway = this.allChecked;
     this.api.exportInstances(this.id).pipe(
-      switchMap(exported => this.userInstances.stagedSummary(exported as UserInstances).pipe(map(summary => ({ exported, summary }))))
+      map(all => selectReactions(all, dbIds, pathway)),
+      switchMap(selected => this.references.prepare(selected, this.id, this.loadableReactions, this.papers)),
+      switchMap(({ exported, report }) =>
+        this.userInstances.stagedSummary(exported as UserInstances).pipe(map(summary => ({ exported, summary, report }))))
     ).subscribe({
-      next: ({ exported, summary }) => {
+      next: ({ exported, summary, report }) => {
+        this.loadStep = null;
         this.dialog.open(LoadStagingDialogComponent, {
           data: { staged: summary.replaced, keepsDefaultPerson: summary.keepsDefaultPerson,
-                  keepsBookmarks: summary.keepsBookmarks, incoming: exported.newInstances.length, stale: this.stagingStale }
+                  keepsBookmarks: summary.keepsBookmarks, incoming: exported.newInstances.length, stale: this.stagingStale,
+                  reactions, totalReactions: this.loadableReactions.length, pathway, references: report }
         }).afterClosed().subscribe(confirmed => {
           if (!confirmed) { this.loading = false; return; }
           this.userInstances.loadAnnotationInstances(exported as UserInstances).subscribe({
@@ -159,14 +176,16 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
               const backup = r.backedUp ? ` Your previous ${r.replaced} staged item(s) were backed up${r.backupFile ? ' (' + r.backupFile + ')' : ''}.` : '';
               const mine = [r.keptDefaultPerson ? 'default person' : '', r.keptBookmarks ? `${r.keptBookmarks} bookmark${r.keptBookmarks === 1 ? '' : 's'}` : ''].filter(Boolean);
               const kept = mine.length ? ` Kept as they are: your ${mine.join(' and ')}.` : '';
-              this.snack.open(`Loaded ${r.loaded} instances.${backup}${kept}`, 'Open schema view', { duration: 12000 })
+              const pdfs = report.pdfs.length
+                ? ` ${report.pdfs.length} reference${report.pdfs.length === 1 ? ' needs a PubMed ID' : 's need PubMed IDs'}.` : '';
+              this.snack.open(`Loaded ${reactions} reaction${reactions === 1 ? '' : 's'} (${r.loaded} instances).${backup}${kept}${pdfs}`, 'Open schema view', { duration: 12000 })
                 .onAction().subscribe(() => this.openSchemaView());
             },
             error: (e: Error) => { this.loading = false; this.error = e.message; }
           });
         });
       },
-      error: (e: Error) => { this.loading = false; this.error = e.message; }
+      error: (e: Error) => { this.loading = false; this.loadStep = null; this.error = e.message; }
     });
   }
 
@@ -176,6 +195,59 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
    */
   openSchemaView(): void {
     window.open(this.location.prepareExternalUrl('/schema_view'), '_blank', 'noopener');
+  }
+
+  /** Reactions that can be loaded: those the export knows by a dbId. */
+  get loadableReactions(): ReactionRef[] {
+    return (this.session?.reactions ?? []).filter(r => r.dbId !== null && r.dbId !== undefined);
+  }
+
+  /** Only reactions still in the annotation count: one removed by an edit drops out of the choice. */
+  get checkedCount(): number {
+    return this.loadableReactions.filter(r => this.checkedKeys.has(r.key)).length;
+  }
+
+  get allChecked(): boolean {
+    return this.loadableReactions.length > 0 && this.checkedCount === this.loadableReactions.length;
+  }
+
+  private get checkedDbIds(): number[] {
+    return this.loadableReactions.filter(r => this.checkedKeys.has(r.key)).map(r => r.dbId!);
+  }
+
+  isChecked(key: string | null): boolean {
+    return !!key && this.checkedKeys.has(key);
+  }
+
+  canCheck(key: string | null): boolean {
+    return this.loadableReactions.some(r => r.key === key);
+  }
+
+  setChecked(key: string, checked: boolean): void {
+    const next = new Set(this.checkedKeys);
+    if (checked) next.add(key); else next.delete(key);
+    this.checkedKeys = next;
+    this.saveChecked();
+  }
+
+  setAllChecked(checked: boolean): void {
+    this.checkedKeys = new Set(checked ? this.loadableReactions.map(r => r.key) : []);
+    this.saveChecked();
+  }
+
+  /** The choice is kept per annotation, so it is still there when the curator comes back to it. */
+  private readChecked(): Set<string> {
+    try {
+      const saved = JSON.parse(localStorage.getItem(CHECKED_REACTIONS_KEY + this.id) ?? '[]');
+      return new Set(Array.isArray(saved) ? saved.filter((k): k is string => typeof k === 'string') : []);
+    } catch {
+      return new Set();
+    }
+  }
+
+  private saveChecked(): void {
+    if (this.checkedKeys.size) localStorage.setItem(CHECKED_REACTIONS_KEY + this.id, JSON.stringify([...this.checkedKeys]));
+    else localStorage.removeItem(CHECKED_REACTIONS_KEY + this.id);
   }
 
   /** A chat turn ended: its tokens are now recorded. */

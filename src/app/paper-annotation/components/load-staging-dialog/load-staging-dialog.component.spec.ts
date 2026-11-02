@@ -24,6 +24,37 @@ describe('LoadStagingDialogComponent', () => {
     expect(t).not.toContain('default person');
   });
 
+  it('says how many of the reactions were checked, and that the rest and the pathway stay out', () => {
+    const t = text({ staged: 7, reactions: 3, totalReactions: 11 });
+    expect(t).toContain('3 of 11 reactions you checked');
+    expect(t).toContain('12 new instances');
+    expect(t).toContain('Reactions you did not check, and the annotation\'s pathway, are not loaded');
+  });
+
+  it('says the pathway comes too when every reaction is checked', () => {
+    const t = text({ staged: 7, reactions: 11, totalReactions: 11, pathway: true });
+    expect(t).toContain('all 11 reactions and the annotation\'s pathway');
+    expect(t).not.toContain('not loaded');
+  });
+
+  const none = { filled: [], unfilled: [], pdfs: [] };
+
+  it('counts the references filled in from PubMed', () => {
+    expect(text({ references: { ...none, filled: ['1', '3'] } })).toContain('2 new literature references were filled in from PubMed.');
+  });
+
+  it('says which references could not be filled in', () => {
+    expect(text({ references: { ...none, unfilled: ['7'] } })).toContain('PMID 7 could not be filled in from PubMed, so it is loaded with the PubMed ID only');
+  });
+
+  it('says which PDFs have no PubMed ID', () => {
+    expect(text({ references: { ...none, pdfs: ['notes.pdf'] } })).toContain('notes.pdf has no PubMed ID. A reference named after the file is created');
+  });
+
+  it('says nothing about cited papers when there is nothing to say', () => {
+    expect(text({ references: none })).not.toContain('PubMed');
+  });
+
   it('says the default person is kept', () => {
     const t = text({ staged: 7, keepsDefaultPerson: true });
     expect(t).toContain('Kept as they are: your default person.');

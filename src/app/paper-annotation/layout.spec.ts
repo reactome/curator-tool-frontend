@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
 import { SessionDetail } from './models/llm-api.models';
 import { LlmApiService } from './services/llm-api.service';
+import { ReferencePreparer } from './services/reference-preparer.service';
 import { PaperAnnotationModule } from './paper-annotation.module';
 import { SessionListComponent } from './components/session-list/session-list.component';
 import { WorkspaceComponent } from './components/workspace/workspace.component';
@@ -28,6 +29,7 @@ describe('page layout', () => {
       imports: [PaperAnnotationModule, NoopAnimationsModule, RouterTestingModule],
       providers: [{ provide: LlmApiService, useValue: api },
         { provide: UserInstancesService, useValue: jasmine.createSpyObj('UserInstancesService', ['stagedCount', 'loadAnnotationInstances']) },
+        { provide: ReferencePreparer, useValue: jasmine.createSpyObj('ReferencePreparer', ['prepare']) },
         { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: 's1' })) } }]
     });
   });

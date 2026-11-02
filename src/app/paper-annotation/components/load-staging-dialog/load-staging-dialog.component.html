@@ -1,6 +1,29 @@
 <h2 mat-dialog-title>Load into your staged instances?</h2>
 <mat-dialog-content>
-  <p>This puts the <strong>{{ data.incoming }}</strong> new instance{{ data.incoming === 1 ? '' : 's' }} from this annotation into your staged instances.</p>
+  <p *ngIf="data.reactions === undefined">This puts the <strong>{{ data.incoming }}</strong> new instance{{ data.incoming === 1 ? '' : 's' }} from this annotation into your staged instances.</p>
+  <p *ngIf="data.reactions !== undefined && data.pathway">
+    This puts all <strong>{{ data.reactions }}</strong> reaction{{ data.reactions === 1 ? '' : 's' }} and the annotation's pathway,
+    with what they need, into your staged instances: <strong>{{ data.incoming }}</strong> new instance{{ data.incoming === 1 ? '' : 's' }}.
+  </p>
+  <p *ngIf="data.reactions !== undefined && !data.pathway">
+    This puts the <strong>{{ data.reactions }}</strong> of {{ data.totalReactions }} reaction{{ data.totalReactions === 1 ? '' : 's' }} you checked,
+    with what they need, into your staged instances: <strong>{{ data.incoming }}</strong> new instance{{ data.incoming === 1 ? '' : 's' }}.
+    Reactions you did not check, and the annotation's pathway, are not loaded; the pathway comes when every reaction is checked.
+  </p>
+  <ng-container *ngIf="data.references as r">
+    <p *ngIf="r.filled.length">
+      {{ r.filled.length }} new literature reference{{ r.filled.length === 1 ? ' was' : 's were' }} filled in from PubMed.
+    </p>
+    <p class="warn" *ngIf="r.unfilled.length">
+      {{ pmids(r.unfilled) }} could not be filled in from PubMed, so {{ r.unfilled.length === 1 ? 'it is' : 'they are' }}
+      loaded with the PubMed ID only. Enter the PubMed ID again in Schema View to fill {{ r.unfilled.length === 1 ? 'it' : 'them' }} in.
+    </p>
+    <p class="warn" *ngIf="r.pdfs.length">
+      {{ r.pdfs.join(', ') }} {{ r.pdfs.length === 1 ? 'has' : 'have' }} no PubMed ID. A reference named after
+      {{ r.pdfs.length === 1 ? 'the file is' : 'each file is' }} created for the reactions from {{ r.pdfs.length === 1 ? 'it' : 'them' }}.
+      Enter the PubMed ID in Schema View to fill {{ r.pdfs.length === 1 ? 'it' : 'them' }} in.
+    </p>
+  </ng-container>
   <p *ngIf="data.staged > 0">
     It <strong>replaces</strong> the {{ data.staged }} item{{ data.staged === 1 ? '' : 's' }} you have staged now.
     Those are saved to a backup first, so you can restore them from the staged-instances backups. If the backup cannot be saved, nothing is replaced.
