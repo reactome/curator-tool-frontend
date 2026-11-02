@@ -67,6 +67,6 @@
       <p class="qa-summary" *ngIf="q.summary">{{ q.summary }}</p>
       <ul><li *ngFor="let f of q.findings"><span class="dot" [ngClass]="'sev-' + f.severity"></span>{{ f.message }}</li></ul>
     </div>
-    <app-evidence-list [evidence]="d.evidence"></app-evidence-list>
+    <app-evidence-list [evidence]="d.evidence" [papers]="papers"></app-evidence-list>
   </section>
 </div>

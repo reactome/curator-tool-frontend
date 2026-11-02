@@ -14,10 +14,10 @@ export class SessionListComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
 
-  pmid = '';
-  pmidFocus = '';
-  pdfFocus = '';
-  file: File | null = null;
+  /** The PubMed IDs as typed: one or more, separated by spaces, commas, semicolons or new lines. */
+  pmids = '';
+  focus = '';
+  files: File[] = [];
   starting = false;
 
   private destroy$ = new Subject<void>();
@@ -45,23 +45,47 @@ export class SessionListComponent implements OnInit, OnDestroy {
     return this.sessions.some(s => s.status === 'queued' || s.status === 'running');
   }
 
-  get pmidValid(): boolean {
-    return /^\d{1,9}$/.test(this.pmid.trim());
+  /** The PubMed IDs typed, without repeats. */
+  get pmidList(): string[] {
+    return [...new Set(this.pmids.split(/[\s,;]+/).filter(t => t))];
   }
 
-  startFromPmid(): void {
-    if (!this.pmidValid || this.starting) return;
-    this.begin(this.api.start(this.pmid.trim(), this.pmidFocus.trim() || undefined));
+  get pmidsValid(): boolean {
+    return this.pmidList.every(t => /^\d{1,9}$/.test(t));
   }
 
-  onFileChosen(event: Event): void {
+  get paperCount(): number {
+    return this.pmidList.length + this.files.length;
+  }
+
+  get canStart(): boolean {
+    return this.paperCount > 0 && this.pmidsValid && !this.starting;
+  }
+
+  /** "2 PDFs + 1 PubMed ID" */
+  get summary(): string {
+    const parts: string[] = [];
+    if (this.files.length) parts.push(`${this.files.length} PDF${this.files.length > 1 ? 's' : ''}`);
+    if (this.pmidList.length) parts.push(`${this.pmidList.length} PubMed ID${this.pmidList.length > 1 ? 's' : ''}`);
+    return parts.join(' + ');
+  }
+
+  /** Adds to the PDFs already chosen (the same file twice is kept once) and clears the picker so it can be used again. */
+  onFilesChosen(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.file = input.files && input.files.length ? input.files[0] : null;
+    for (const f of Array.from(input.files ?? [])) {
+      if (!this.files.some(x => x.name === f.name && x.size === f.size && x.lastModified === f.lastModified)) this.files.push(f);
+    }
+    input.value = '';
   }
 
-  startFromPdf(): void {
-    if (!this.file || this.starting) return;
-    this.begin(this.api.upload(this.file, this.pdfFocus.trim() || undefined));
+  removeFile(index: number): void {
+    this.files.splice(index, 1);
+  }
+
+  start(): void {
+    if (!this.canStart) return;
+    this.begin(this.api.startPapers(this.pmidList, this.files, this.focus.trim() || undefined));
   }
 
   private begin(call: import('rxjs').Observable<StartResponse>): void {
@@ -78,7 +102,9 @@ export class SessionListComponent implements OnInit, OnDestroy {
     this.router.navigate([s.id], { relativeTo: this.route });
   }
 
+  /** One paper: its PMID or file name. Several: the service's summary of them ("3 papers: a.pdf, b.pdf, ..."). */
   label(s: SessionSummary): string {
+    if ((s.n_papers ?? 1) > 1) return s.source;
     return s.pmid ? `PMID ${s.pmid}` : s.source;
   }
 }

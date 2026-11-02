@@ -2,6 +2,7 @@
 <article class="ev" *ngFor="let e of evidence; trackBy: trackById">
   <blockquote>{{ e.quote }}</blockquote>
   <div class="meta">
+    <span *ngIf="paperOf(e) as paper" class="chip paper" matTooltip="The paper this quote is from">{{ paper }}</span>
     <span class="verify" [ngClass]="'v-' + e.verified" [matTooltip]="verifyHint(e)">{{ verifyLabel(e) }}</span>
     <span *ngIf="e.page !== null">page {{ e.page }}</span>
     <span *ngIf="e.section">{{ e.section }}</span>

@@ -31,8 +31,8 @@ describe('LlmApiService', () => {
   });
 
   describe('REST calls', () => {
-    it('starts an annotation for a PMID with an optional focus', () => {
-      service.start('24751536', 'PINK1').subscribe(r => expect(r.sessionId).toBe('s1'));
+    it('starts an annotation for one PMID with an optional focus', () => {
+      service.startPapers(['24751536'], [], 'PINK1').subscribe(r => expect(r.sessionId).toBe('s1'));
       const req = http.expectOne(`${base}/sessions`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ pmid: '24751536', focus: 'PINK1' });
@@ -40,18 +40,36 @@ describe('LlmApiService', () => {
     });
 
     it('sends no focus as null', () => {
-      service.start('1234567').subscribe();
+      service.startPapers(['1234567'], []).subscribe();
       expect(http.expectOne(`${base}/sessions`).request.body).toEqual({ pmid: '1234567', focus: null });
     });
 
-    it('uploads a PDF as multipart with the focus', () => {
-      const file = new File(['%PDF-1'], 'paper.pdf', { type: 'application/pdf' });
-      service.upload(file, 'PINK1').subscribe();
+    it('starts ONE annotation for several PMIDs', () => {
+      service.startPapers(['24751536', '29168502'], [], 'PINK1').subscribe();
+      const req = http.expectOne(`${base}/sessions`);
+      expect(req.request.body).toEqual({ pmids: ['24751536', '29168502'], focus: 'PINK1' });
+      req.flush({ sessionId: 's', jobId: 'j' });
+    });
+
+    it('uploads several PDFs as multipart, with the PMIDs and the focus alongside', () => {
+      const a = new File(['%PDF-1'], 'a.pdf', { type: 'application/pdf' });
+      const b = new File(['%PDF-2'], 'b.pdf', { type: 'application/pdf' });
+      service.startPapers(['24751536', '29168502'], [a, b], 'PINK1').subscribe();
       const req = http.expectOne(`${base}/sessions/upload`);
       const form = req.request.body as FormData;
-      expect((form.get('file') as File).name).toBe('paper.pdf');
+      expect((form.getAll('files') as File[]).map(f => f.name)).toEqual(['a.pdf', 'b.pdf']);
+      expect(form.get('pmids')).toBe('24751536 29168502');
       expect(form.get('focus')).toBe('PINK1');
       req.flush({ sessionId: 's', jobId: 'j' });
+    });
+
+    it('uploads one PDF without PMIDs or focus when there are none', () => {
+      const file = new File(['%PDF-1'], 'paper.pdf', { type: 'application/pdf' });
+      service.startPapers([], [file]).subscribe();
+      const form = http.expectOne(`${base}/sessions/upload`).request.body as FormData;
+      expect((form.get('files') as File).name).toBe('paper.pdf');
+      expect(form.has('pmids')).toBeFalse();
+      expect(form.has('focus')).toBeFalse();
     });
 
     it('filters issues by status and updates one', () => {

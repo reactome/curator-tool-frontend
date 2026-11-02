@@ -143,7 +143,7 @@ const HELP_CONTENT: Record<string, HelpContext> = {
       {
         heading: 'Starting an annotation',
         items: [
-          'Enter a PubMed ID (the paper must be open access in PubMed Central) or upload a PDF, and optionally a focus gene.',
+          'Enter one or more PubMed IDs (the papers must be open access in PubMed Central) and/or add PDFs, and optionally a focus gene. Several papers are merged into one annotation.',
           'Extraction usually takes a few minutes, longer for a long paper. You can leave the page; the annotation stays in your list.',
         ],
       },

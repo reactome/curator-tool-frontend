@@ -4,7 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { Subject, forkJoin, map, merge, switchMap, takeUntil, takeWhile, timer } from 'rxjs';
-import { ExistingMatch, Issue, Proposal, SessionDetail } from '../../models/llm-api.models';
+import { ExistingMatch, Issue, PaperInfo, paperLabel, Proposal, SessionDetail } from '../../models/llm-api.models';
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
 import { UserInstances } from 'src/app/core/models/reactome-instance.model';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
@@ -21,6 +21,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   session: SessionDetail | null = null;
   issues: Issue[] = [];
   existing: ExistingMatch[] = [];
+  /** Fixes the service suggests, as pending proposals: nothing is applied until the curator accepts one. */
+  suggestions: Proposal[] = [];
   selectedKey: string | null = null;
   tab = 0;
   error: string | null = null;
@@ -54,6 +56,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       this.session = null;
       this.issues = [];
       this.existing = [];
+      this.suggestions = [];
       this.selectedKey = null;
       this.watch();
     });
@@ -66,6 +69,21 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   get active(): boolean {
     return !!this.session && (this.session.status === 'queued' || this.session.status === 'running');
+  }
+
+  readonly paperLabel = paperLabel;
+
+  /** The papers of this annotation (one for an older session). */
+  get papers(): PaperInfo[] {
+    return this.session?.papers ?? [];
+  }
+
+  /** A single paper by its PMID or file name; several by their number (the list is shown beside it). */
+  get title(): string {
+    const s = this.session;
+    if (!s) return '';
+    if (this.papers.length > 1 || (s.n_papers ?? 1) > 1) return `${s.n_papers ?? this.papers.length} papers`;
+    return s.pmid ? `PMID ${s.pmid}` : s.source;
   }
 
   get openIssues(): Issue[] {
@@ -93,18 +111,24 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   reload(): void {
     this.usageStamp++;
     this.networkStamp++;
-    forkJoin({ session: this.api.session(this.id), issues: this.api.issues(this.id), existing: this.api.existing(this.id) })
+    forkJoin({ session: this.api.session(this.id), issues: this.api.issues(this.id), existing: this.api.existing(this.id),
+               proposals: this.api.proposals(this.id, 'pending') })
       .subscribe({
-        next: r => { this.session = r.session; this.issues = r.issues; this.existing = r.existing; this.error = null; },
+        next: r => {
+          this.session = r.session; this.issues = r.issues; this.existing = r.existing;
+          this.suggestions = r.proposals.filter(p => p.actor === 'suggestions');
+          this.error = null;
+        },
         error: (e: LlmApiError) => this.error = e.message
       });
   }
 
   private loadReview(): void {
-    forkJoin({ issues: this.api.issues(this.id), existing: this.api.existing(this.id) }).subscribe({
+    forkJoin({ issues: this.api.issues(this.id), existing: this.api.existing(this.id), proposals: this.api.proposals(this.id, 'pending') }).subscribe({
       next: r => {
         this.issues = r.issues;
         this.existing = r.existing;
+        this.suggestions = r.proposals.filter(p => p.actor === 'suggestions');
         if (!this.selectedKey && this.session?.reactions.length) this.selectedKey = this.session.reactions[0].key;
       },
       error: (e: LlmApiError) => this.error = e.message
@@ -191,6 +215,11 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   get contextDbIds(): number[] {
     const id = this.selectedReaction?.dbId;
     return id === null || id === undefined ? [] : [id];
+  }
+
+  /** The name of the first reaction a suggestion is about, for its heading. */
+  suggestionReaction(p: Proposal): string {
+    return this.session?.reactions.find(r => p.reaction_keys.includes(r.key))?.name ?? '';
   }
 
   onProposalDecided(p: Proposal): void {

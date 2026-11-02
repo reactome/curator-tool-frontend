@@ -65,7 +65,7 @@ const HOME_TOUR: TourStep[] = [
     id: 'paper2path',
     title: 'Paper2Path',
     content:
-      'Use Paper2Path to draft a Reactome annotation from one paper, review what needs attention, refine it by chat, and load it into your staged instances.',
+      'Use Paper2Path to draft a Reactome annotation from one paper or several, review what needs attention, refine it by chat, and load it into your staged instances.',
     targetSelector: '[routerLink="/paper2path"], a[href*="paper2path"]',
     position: 'bottom',
   },
@@ -246,14 +246,14 @@ const PAPER2PATH_TOUR: TourStep[] = [
     id: 'paper2path-welcome',
     title: 'Paper2Path App Tour',
     content:
-      'Paper2Path drafts a Reactome annotation from one paper: reactions with their participants, the quotes that support them, and a list of what needs your attention.',
+      'Paper2Path drafts a Reactome annotation from one paper or several: reactions with their participants, the quotes that support them, and a list of what needs your attention.',
     position: 'center',
   },
   {
     id: 'paper2path-start',
-    title: 'Start from a PubMed ID or a PDF',
+    title: 'Start from PubMed IDs or PDFs',
     content:
-      'Enter a PubMed ID (the paper must be open access in PubMed Central) or upload a PDF. Optionally give a focus gene. Extraction usually takes a few minutes (longer for a long paper) and you can leave the page meanwhile.',
+      'Enter one or more PubMed IDs (the papers must be open access in PubMed Central) and/or add PDFs; several papers are merged into one annotation. Optionally give a focus gene. Extraction usually takes a few minutes (longer for a long paper) and you can leave the page meanwhile.',
     targetSelector: '.starters',
     position: 'bottom',
   },

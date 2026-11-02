@@ -66,14 +66,19 @@ export class LlmApiService {
   }
 
   // ── sessions ───────────────────────────────────────────────────────────
-  start(pmid: string, focus?: string): Observable<StartResponse> {
-    return this.call(() => this.http.post<StartResponse>(this.url('/sessions'), { pmid, focus: focus || null }));
-  }
-
-  upload(file: File, focus?: string): Observable<StartResponse> {
+  /**
+   * Start ONE annotation from one or more papers: PubMed IDs, PDFs, or both. Several papers are merged into a single
+   * draft by the service. PubMed IDs alone go as JSON; with PDFs the request is multipart (`files`, `pmids`, `focus`).
+   */
+  startPapers(pmids: string[], files: File[], focus?: string): Observable<StartResponse> {
+    if (!files.length) {
+      const body = pmids.length === 1 ? { pmid: pmids[0], focus: focus || null } : { pmids, focus: focus || null };
+      return this.call(() => this.http.post<StartResponse>(this.url('/sessions'), body));
+    }
     return this.call(() => {
       const form = new FormData();
-      form.append('file', file, file.name);
+      files.forEach(f => form.append('files', f, f.name));
+      if (pmids.length) form.append('pmids', pmids.join(' '));
       if (focus) form.append('focus', focus);
       return this.http.post<StartResponse>(this.url('/sessions/upload'), form);
     });

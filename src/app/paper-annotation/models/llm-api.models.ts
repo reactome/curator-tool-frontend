@@ -21,6 +21,20 @@ export interface Job {
   error: string | null;
 }
 
+/** One paper of a session. `source` is the tag its reactions and quotes carry (`PMID:24751536`, or the PDF's stored file name). */
+export interface PaperInfo {
+  source: string;
+  kind: 'pmid' | 'pdf';
+  pmid: string | null;
+  /** What to show: the PMID, or the uploaded file's name. */
+  name: string;
+}
+
+/** "PMID 24751536" or the PDF's file name. */
+export function paperLabel(p: PaperInfo): string {
+  return p.kind === 'pmid' ? `PMID ${p.pmid ?? p.name}` : p.name;
+}
+
 export interface SessionSummary {
   id: string;
   pmid: string | null;
@@ -31,6 +45,8 @@ export interface SessionSummary {
   updated: number;
   n_reactions: number;
   n_open_issues: number;
+  /** How many papers the session merges (absent from an older service: one). */
+  n_papers?: number;
 }
 
 export interface ReactionRef {
@@ -44,11 +60,12 @@ export interface SessionDetail extends SessionSummary {
   focus: string | null;
   error: string | null;
   reactions: ReactionRef[];
+  papers?: PaperInfo[];
 }
 
 export interface Issue {
   id: string;
-  source: 'evidence' | 'builder' | 'resolver' | 'emitter' | 'pipeline' | 'existing' | 'qa';
+  source: 'evidence' | 'builder' | 'resolver' | 'emitter' | 'pipeline' | 'existing' | 'qa' | 'checks';
   severity: IssueSeverity;
   code: string;
   message: string;
@@ -64,6 +81,8 @@ export interface Evidence {
   id: string;
   quote: string;
   pmid: string | null;
+  /** The paper the quote is from (a `PaperInfo.source`); absent from an older service. */
+  source?: string | null;
   section: string | null;
   page: number | null;
   figure: string | null;

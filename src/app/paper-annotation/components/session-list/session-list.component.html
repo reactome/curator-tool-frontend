@@ -1,42 +1,43 @@
 <div class="page">
   <h1>Paper annotation</h1>
-  <p class="intro">Draft a Reactome annotation from one paper, review what needs attention, refine it by chat, and load it into your staged instances.</p>
+  <p class="intro">Draft a Reactome annotation from one paper, or from several at once. Review what needs attention, refine it by chat, and load it into your staged instances.</p>
 
   <div class="error" *ngIf="error" role="alert"><mat-icon>error_outline</mat-icon> {{ error }}</div>
 
   <div class="starters">
-    <mat-card>
-      <mat-card-title>From a PubMed ID</mat-card-title>
+    <mat-card class="start-card">
+      <mat-card-title>Papers to annotate</mat-card-title>
       <mat-card-content>
-        <p class="hint">The paper must be open access in PubMed Central.</p>
-        <mat-form-field appearance="outline">
-          <mat-label>PubMed ID</mat-label>
-          <input matInput [(ngModel)]="pmid" name="pmid" inputmode="numeric" placeholder="24751536" (keyup.enter)="startFromPmid()">
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Focus gene (optional)</mat-label>
-          <input matInput [(ngModel)]="pmidFocus" name="pmidFocus" placeholder="PINK1">
-        </mat-form-field>
-      </mat-card-content>
-      <mat-card-actions>
-        <button mat-flat-button color="primary" [disabled]="!pmidValid || starting" (click)="startFromPmid()">Annotate</button>
-      </mat-card-actions>
-    </mat-card>
+        <p class="hint">One paper or several. Several papers are merged into one annotation, and a reaction that more than one paper describes cites them all.</p>
 
-    <mat-card>
-      <mat-card-title>From a PDF</mat-card-title>
-      <mat-card-content>
-        <p class="hint">For papers that are not in PubMed Central. Up to 50 MB.</p>
-        <input #fileInput type="file" accept="application/pdf,.pdf" hidden (change)="onFileChosen($event)">
-        <button mat-stroked-button type="button" (click)="fileInput.click()"><mat-icon>upload_file</mat-icon> Choose a PDF</button>
-        <span class="file-name" *ngIf="file">{{ file.name }}</span>
+        <mat-form-field appearance="outline">
+          <mat-label>PubMed IDs</mat-label>
+          <textarea matInput [(ngModel)]="pmids" name="pmids" rows="2" placeholder="24751536 29168502" aria-label="PubMed IDs"></textarea>
+          <mat-hint>One or more, separated by spaces, commas or new lines. The papers must be open access in PubMed Central.</mat-hint>
+        </mat-form-field>
+        <p class="invalid" *ngIf="!pmidsValid" role="alert">Every PubMed ID must be a number (up to 9 digits).</p>
+
+        <div class="pdfs">
+          <input #fileInput type="file" accept="application/pdf,.pdf" multiple hidden (change)="onFilesChosen($event)">
+          <button mat-stroked-button type="button" (click)="fileInput.click()"><mat-icon>upload_file</mat-icon> Add PDFs</button>
+          <span class="hint">For papers that are not in PubMed Central. Up to 50 MB each.</span>
+          <ul class="files" *ngIf="files.length" aria-label="PDFs to annotate">
+            <li *ngFor="let f of files; let i = index">
+              <mat-icon class="file-icon">description</mat-icon>
+              <span class="file-name">{{ f.name }}</span>
+              <button mat-icon-button type="button" (click)="removeFile(i)" [attr.aria-label]="'Remove ' + f.name"><mat-icon>close</mat-icon></button>
+            </li>
+          </ul>
+        </div>
+
         <mat-form-field appearance="outline" class="focus">
           <mat-label>Focus gene (optional)</mat-label>
-          <input matInput [(ngModel)]="pdfFocus" name="pdfFocus" placeholder="PINK1">
+          <input matInput [(ngModel)]="focus" name="focus" placeholder="PINK1">
         </mat-form-field>
       </mat-card-content>
       <mat-card-actions>
-        <button mat-flat-button color="primary" [disabled]="!file || starting" (click)="startFromPdf()">Annotate</button>
+        <button mat-flat-button color="primary" [disabled]="!canStart" (click)="start()">Annotate</button>
+        <span class="count" *ngIf="paperCount">{{ summary }}</span>
       </mat-card-actions>
     </mat-card>
   </div>
@@ -47,7 +48,7 @@
   <p *ngIf="loading">Loading…</p>
   <p *ngIf="!loading && !sessions.length && !error" class="empty">Nothing yet. Start one above.</p>
   <table class="sessions" *ngIf="sessions.length">
-    <thead><tr><th>Paper</th><th>Status</th><th>Reactions</th><th>Open issues</th><th>Started</th></tr></thead>
+    <thead><tr><th>Paper(s)</th><th>Status</th><th>Reactions</th><th>Open issues</th><th>Started</th></tr></thead>
     <tbody>
       <tr *ngFor="let s of sessions" (click)="open(s)" tabindex="0" (keyup.enter)="open(s)">
         <td>{{ label(s) }}</td>

@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { ExistingMatch, Issue, Participant, QA_PRIORITY_LABEL, QAResult, ReactionDetail } from '../../models/llm-api.models';
+import { ExistingMatch, Issue, PaperInfo, Participant, QA_PRIORITY_LABEL, QAResult, ReactionDetail } from '../../models/llm-api.models';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
 
 @Component({
@@ -12,6 +12,8 @@ export class ReactionDetailComponent implements OnChanges {
   @Input({ required: true }) reactionKey!: string;
   @Input() matches: ExistingMatch[] = [];
   @Input() issues: Issue[] = [];
+  /** The session's papers, so a quote can say which one it is from (only shown when there are several). */
+  @Input() papers: PaperInfo[] = [];
   /** Emitted when something here changed the session (a QA run adds issues). */
   @Output() changed = new EventEmitter<void>();
 

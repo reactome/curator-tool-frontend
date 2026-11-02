@@ -5,7 +5,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
-import { ExistingMatch, Issue, Proposal, SessionDetail } from '../../models/llm-api.models';
+import { ExistingMatch, Issue, PaperInfo, Proposal, SessionDetail } from '../../models/llm-api.models';
 import { LlmApiError } from '../../services/llm-api.service';
 import { LOADED_SESSION_KEY } from '../../services/staging';
 import { WorkspaceComponent } from './workspace.component';
@@ -21,6 +21,9 @@ describe('WorkspaceComponent', () => {
   const match = (key: string, level: ExistingMatch['level']): ExistingMatch =>
     ({ reaction_key: key, db_id: 1, display_name: 'x', st_id: 'R-HSA-1', level, score: 1, cites_pmid: false, catalyst_match: true, overlap: 1, similarity: 1, reasons: [] });
 
+  const suggestion = (id: string, key: string): Proposal =>
+    ({ id, reason: 'why', ops: [], summary: ['changes'], reaction_keys: [key], evidence: [], actor: 'suggestions', status: 'pending', created: 1, decided_by: null, decided_at: null });
+
   let api: jasmine.SpyObj<any>;
   let dialog: jasmine.SpyObj<MatDialog>;
   let snack: jasmine.SpyObj<MatSnackBar>;
@@ -32,10 +35,11 @@ describe('WorkspaceComponent', () => {
   const exported = { newInstances: [{ dbId: -1, schemaClassName: 'Reaction' }, { dbId: -2, schemaClassName: 'Summation' }], updatedInstances: [], deletedInstances: [], bookmarks: [] };
 
   const make = () => {
-    api = jasmine.createSpyObj('LlmApiService', ['session', 'issues', 'existing', 'exportInstances']);
+    api = jasmine.createSpyObj('LlmApiService', ['session', 'issues', 'existing', 'exportInstances', 'proposals']);
     api.session.and.returnValue(of(session('ready')));
     api.issues.and.returnValue(of([issue('i1', 'r0', 'action'), issue('i2', 'r0', 'warning'), issue('i3', 'r1', 'info', 'dismissed')]));
     api.existing.and.returnValue(of([match('r1', 'same'), match('r0', 'similar')]));
+    api.proposals.and.returnValue(of([suggestion('p-001', 'r0'), { ...suggestion('p-002', 'r1'), actor: 'chat' }]));
     api.exportInstances.and.returnValue(of(exported));
     dialog = jasmine.createSpyObj('MatDialog', ['open']);
     snack = jasmine.createSpyObj('MatSnackBar', ['open']);
@@ -74,6 +78,23 @@ describe('WorkspaceComponent', () => {
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));
+
+  it('titles an annotation by its paper, or by how many papers it merges, and lists them', () => {
+    make();
+    component.session = null;
+    expect(component.title).toBe('');
+    component.session = session('ready');
+    expect(component.title).toBe('PMID 24751536');
+    expect(component.papers).toEqual([]);                                   // an older service sends no paper list
+    component.session = { ...session('ready'), pmid: null, source: 'paper.pdf' };
+    expect(component.title).toBe('paper.pdf');
+    const papers: PaperInfo[] = [{ source: 'PMID:24751536', kind: 'pmid', pmid: '24751536', name: '24751536' },
+                                 { source: 'ab12_clock.pdf', kind: 'pdf', pmid: null, name: 'clock.pdf' },
+                                 { source: 'PMID:29168502', kind: 'pmid', pmid: '29168502', name: '29168502' }];
+    component.session = { ...session('ready'), n_papers: 3, source: '3 papers: 24751536, clock.pdf, 29168502', papers };
+    expect(component.title).toBe('3 papers');
+    expect(component.papers.map(component.paperLabel)).toEqual(['PMID 24751536', 'clock.pdf', 'PMID 29168502']);
+  });
 
   it('stops at a failed session and shows nothing to review', fakeAsync(() => {
     make();
@@ -244,6 +265,18 @@ describe('WorkspaceComponent', () => {
     component.onProposalDecided(p('accepted'));
     expect(component.stagingStale).toBeTrue();
     expect(api.issues).toHaveBeenCalledTimes(2);
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+  it('lists only the suggestions the service made, named by their reaction, and refreshes them after a decision', fakeAsync(() => {
+    make();
+    component.ngOnInit();
+    tick(0);
+    expect(component.suggestions.map(p => p.id)).toEqual(['p-001']);          // the chat proposal is not a suggestion
+    expect(component.suggestionReaction(component.suggestions[0])).toBe('PINK1 phosphorylates Ub');
+    api.proposals.and.returnValue(of([]));
+    component.onProposalDecided({ ...suggestion('p-001', 'r0'), status: 'rejected' });
+    expect(component.suggestions).toEqual([]);
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));
