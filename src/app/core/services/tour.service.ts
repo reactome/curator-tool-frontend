@@ -269,7 +269,7 @@ const PAPER2PATH_TOUR: TourStep[] = [
     id: 'paper2path-review',
     title: 'Review, Chat, Load',
     content:
-      'Inside an annotation you can read each reaction with its evidence (page, section and figure), work through the Issues tab, check one reaction or all of them, see every reaction in the Network tab with the details of the selected one beside it, and chat to ask for changes. Chat only proposes edits; nothing changes until you accept them. Load into staged instances puts the result in Schema View, after backing up what you have staged.',
+      'Inside an annotation you can read each reaction with its evidence (page, section and figure), work through the Issues tab and the fixes Paper2Path suggests, check one reaction or all of them, see every reaction in the Network tab with the details of the selected one beside it, and chat to ask for changes. Chat only proposes edits; nothing changes until you accept them. Load into staged instances puts the result in Schema View, after backing up what you have staged.',
     position: 'center',
   },
   {

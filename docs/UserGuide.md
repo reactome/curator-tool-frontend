@@ -34,16 +34,17 @@ This guide explains how to use the Curator Tool frontend (**Reactome WebBench**)
 
 ## 1) What this site includes
 
-After login, the **home page** launches six areas:
+After login, the **home page** launches five areas:
 
 - **Schema View** — browse schema classes, list instances, open/edit instances, run batch edits, and manage staged changes.
 - **Event View** — work with pathway/event trees, pathway diagrams, and instance editing together.
-- **Gene2Path** — submit a gene symbol and review LLM-generated pathway annotation support.
-- **Paper2Path** — draft a Reactome annotation from one paper (a PubMed ID or a PDF), review its reactions, issues and network, refine it by chat, and load it into your staged instances. *(Experimental.)*
+- **Paper2Path** — draft a Reactome annotation from one or more papers (PubMed IDs and/or PDFs), review its reactions, issues and network, refine it by chat, and load it into your staged instances. *(Experimental.)*
 - **Ask the Graph** — ask questions about the curation database in plain English and get an answer with the matching instances. Read-only.
 - **Tutorial** — tabbed reference plus interactive guided tours for each area.
 
-The AI-assistance apps (Gene2Path, Paper2Path, Ask the Graph) and the Tutorial open in a **new browser tab**; Schema View and Event View open in the same tab.
+The AI-assistance apps (Paper2Path, Ask the Graph) and the Tutorial open in a **new browser tab**; Schema View and Event View open in the same tab.
+
+> **Gene2Path** is hidden from the home page while it is being re-developed. Its address, `/gene2path`, still works.
 
 ---
 
@@ -96,10 +97,11 @@ The home page shows the Reactome logo and the title **"Reactome WebBench"**, fol
 |---|---|---|
 | **Schema View** | `account_tree` | `/schema_view` (same tab) |
 | **Event View** | `timeline` | `/event_view` (same tab) |
-| **Gene2Path** | `psychology` | `/gene2path` (new tab) |
 | **Paper2Path** | `article` | `/paper2path` (new tab) |
 | **Ask the Graph** | `manage_search` | `/graph_query` (new tab) |
 | **Tutorial** | `school` | `/tutorial` (new tab) |
+
+The **Gene2Path** card is hidden while Gene2Path is being re-developed; [Gene2Path](#11-gene2path-app) is still reached at `/gene2path`.
 
 The [global status toolbar](#5-global-status-toolbar) is shown at the bottom of the home page with the staged-instance counters hidden.
 
@@ -722,24 +724,27 @@ Failures show under a **"Failure"** heading.
 
 ## 12) Paper2Path app
 
-Paper2Path (`/paper2path`, opens in a new tab, **login required**) drafts a Reactome annotation from one paper: its reactions with their participants, the quotes from the paper that support them, and a list of what needs your attention. You review the draft, refine it by chat, and load it into your staged instances.
+Paper2Path (`/paper2path`, opens in a new tab, **login required**) drafts a Reactome annotation from one paper, or from several at once: its reactions with their participants, the quotes from the papers that support them, and a list of what needs your attention. You review the draft, refine it by chat, and load it into your staged instances.
 
 > **Experimental:** treat the results as drafting support, and review them before you commit.
 
 ### Start an annotation
 
-The page, **Paper annotation**, has two cards:
+The page, **Paper annotation**, has one card, **Papers to annotate**. An annotation can be drawn from one paper or from several, in any mix of PubMed IDs and PDFs:
 
-- **From a PubMed ID**: enter a **PubMed ID** (the paper must be open access in PubMed Central) and, optionally, a **Focus gene**, the protein you care most about in the paper. Click **Annotate**, or press `Enter`.
-- **From a PDF**: for papers that are not in PubMed Central, up to 50 MB. Click **Choose a PDF** (`upload_file`), optionally enter a **Focus gene**, and click **Annotate**.
+- **PubMed IDs**: type one or more, separated by spaces, commas or new lines. The papers must be open access in PubMed Central. An ID typed twice is used once. If one is not a number (up to 9 digits), *"Every PubMed ID must be a number (up to 9 digits)."* is shown and **Annotate** is disabled.
+- **Add PDFs** (`upload_file`): for papers that are not in PubMed Central, up to 50 MB each. You can pick several at once, and click **Add PDFs** again to add more. Each PDF is listed with a remove (`close`) button. The same file added twice is kept once.
+- **Focus gene** (optional): the protein you care most about in the papers.
 
-Annotating a paper usually takes a few minutes, longer for a long paper. You can leave the page; the annotation stays in your list.
+Beside **Annotate**, a count such as *"2 PDFs + 1 PubMed ID"* shows what will be annotated. Several papers are merged into **one** annotation, and a reaction that more than one paper describes cites them all.
 
-**Your annotations** lists every annotation you have started, with **Paper**, **Status** (`queued`, `running` with the current step, `ready` or `failed`), **Reactions**, **Open issues** and **Started**. Click a row to open it.
+Annotating usually takes a few minutes, longer for a long paper or for several papers. You can leave the page; the annotation stays in your list.
+
+**Your annotations** lists every annotation you have started, with **Paper(s)** (the PMID or file name, or for several papers how many there are and which), **Status** (`queued`, `running` with the current step, `ready` or `failed`), **Reactions**, **Open issues** and **Started**. Click a row to open it.
 
 ### Inside an annotation
 
-The header shows the paper (PMID or file name), the focus gene and the status, with a back arrow (`arrow_back`, *"All annotations"*). While the paper is being annotated, the page shows the current step; if it failed, the reason. When it is ready, there are four tabs on the left and the **Chat** panel on the right.
+The header shows the paper (PMID or file name), the focus gene and the status, with a back arrow (`arrow_back`, *"All annotations"*). For an annotation of several papers, it shows *"N papers"* followed by each paper's PMID or file name. While the papers are being annotated, the page shows the current step; if it failed, the reason. When it is ready, there are five tabs on the left (**Reactions**, **Issues**, **Suggested fixes**, **Network** and **Usage**) and the **Chat** panel on the right.
 
 #### Reactions
 
@@ -750,7 +755,7 @@ The list on the left shows every extracted reaction. A `content_copy` icon means
 - **Needs attention**: the reaction's open issues;
 - **Participants**: **Inputs** and **Outputs**, with modifications, UniProt or ChEBI identifier, compartment, and a *needs …* flag for anything that could not be resolved; the **Catalyst** and its activity; regulators (*activated by*, *inhibited by*, *required by*);
 - **Summary**;
-- **Evidence (N)**: each quote from the paper with its page, section and figure. *verbatim* means the quote was found word for word in the paper, *close match* that it differs slightly (usually PDF symbols or hyphenation), and *not found in paper* that it could not be found.
+- **Evidence (N)**: each quote from the paper with its page, section and figure. In an annotation of several papers, each quote also has a tag saying which paper it is from (its PMID or file name). *verbatim* means the quote was found word for word in the paper, *close match* that it differs slightly (usually PDF symbols or hyphenation), and *not found in paper* that it could not be found.
 
 **Check this reaction** (`fact_check`) runs rule checks and a model review of the reaction. The result says **Fix first**, **Needs fixing**, **Worth a look** or **No problems found**, with one sentence on the most important thing to do, the reviewer's confidence, and each finding. What it finds is added to the issues.
 
@@ -759,6 +764,10 @@ The list on the left shows every extracted reaction. A `content_copy` icon means
 Counts of open issues (**need action**, **warnings**, **notes**), filters for **Show** (Open, Resolved, Dismissed, All) and **Severity**, and the list of issues. Each issue links to its reaction and can be **Resolve**d or **Dismiss**ed, or **Reopen**ed.
 
 **Check all reactions** (`fact_check`) checks every reaction at once and shows them under **Look at these first**, most urgent first, each marked **Fix first**, **Needs fixing**, **Worth a look** or **No problems found** with one sentence on what matters most. Click a reaction's name to open it in **Reactions**. What the check finds is added to the issues. The ranking stays until you leave the page. The check reviews each reaction with the language model, so it can take a while.
+
+#### Suggested fixes
+
+**Suggested fixes (N)** lists edits that Paper2Path suggests for some of the problems it found, each under the name of the reaction it is about. They are only suggestions. Like a proposal in the chat, each shows why, what it changes and the quotes behind it. Nothing changes until you click **Accept**; **Reject** discards it. Once you decide, the suggestion leaves the list. After accepting one, load the annotation into your staged instances again to bring the edit in.
 
 #### Network
 
@@ -785,7 +794,7 @@ The assistant only **proposes** edits. Each **Proposed edit** shows why, what it
 
 **Load into staged instances** (`playlist_add`, in the header) puts the annotation's new instances into your staged instances. A dialog first shows how many instances come in and how many staged items they replace. What you have staged is saved to a backup first, and nothing is replaced if the backup fails; your default person and bookmarks are kept. Afterwards, **Open schema view** opens Schema View in a new tab.
 
-After you accept edits in the chat, a banner reminds you to load again to bring them in. Changes you made by hand to the loaded copies are overwritten. In Schema View, a loaded reaction, catalyst or regulation has an **Evidence** button showing its quotes. Paper2Path does not write to the database: review and commit the staged instances as usual.
+After you accept edits in the chat, a banner reminds you to load again to bring them in. Changes you made by hand to the loaded copies are overwritten. In Schema View, a loaded reaction, catalyst or regulation has an **Evidence** button showing its quotes, and, for an annotation of several papers, which paper each one is from. Paper2Path does not write to the database: review and commit the staged instances as usual.
 
 ---
 

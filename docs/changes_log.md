@@ -1,3 +1,13 @@
+### Build on November 2, 2026
+
+- Added: **Paper2Path** can now draft one annotation from several papers at once. The start page has a single **Papers to annotate** card: type one or more PubMed IDs, separated by spaces, commas or new lines, and/or click **Add PDFs** to add one or more PDFs, which you can remove again with the × beside each. A count beside **Annotate**, such as "2 PDFs + 1 PubMed ID", shows what will be annotated, and a PubMed ID that is not a number is pointed out before you start. The papers are merged into one annotation, and a reaction that more than one paper describes cites them all. One paper works as before.
+
+- Added: in an annotation of several papers, every quote says which paper it is from: in **Reactions**, in the reaction panel beside the **Network**, and behind the **Evidence** button in Schema View. The header lists the papers, and **Your annotations** shows how many papers each annotation has.
+
+- Added: a **Suggested fixes** tab in **Paper2Path** lists edits that Paper2Path suggests for some of the problems it found, each under the name of its reaction. Like a proposal in the chat, each shows what it changes and the quotes behind it, and nothing changes until you click **Accept**. **Reject** discards it.
+
+- Changed: **Gene2Path** is no longer on the home page, nor in the home page's tour and help, while it is being re-developed. Its address, `/gene2path`, still works.
+
 ### Build on October 29, 2026
 
 - Added: in **Paper2Path**, the **Network** tab now shows the selected reaction's details in a panel to the right of the network: its inputs, outputs, catalyst, regulators, open issues, any similar reaction Reactome already has, its summary and its evidence, with **Check this reaction**. Clicking a reaction in the network shows it there, so you no longer have to switch to the **Reactions** tab. Double-clicking a reaction still opens it in **Reactions**. In a window narrower than about 800 pixels, the panel goes under the network.
