@@ -790,7 +790,10 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   selectObjectsInDiagram(dbId: any) {
     if (dbId) {
       const id = parseInt(dbId);
-      if (this.diagramUtils.isDbIdSelected(this.diagram, id))
+      // parseInt only reads the first id of a list ("a,b"), so for a list this shortcut would skip
+      // selecting the rest whenever the first happened to be selected already. select() does its
+      // own same-selection check over the whole list.
+      if (!String(dbId).includes(',') && this.diagramUtils.isDbIdSelected(this.diagram, id))
         return;
       this.diagramUtils.select(this.diagram, dbId);
     }

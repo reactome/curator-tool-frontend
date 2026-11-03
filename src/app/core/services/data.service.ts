@@ -15,6 +15,7 @@ import { Diagram } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { InstanceNameGenerator } from "../post-edit/InstanceNameGenerator";
 import { NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 import { QAReport } from "../models/qa-report.model";
+import { DiagramSyncReport } from "../models/diagram-sync.model";
 import { ActivatedRoute, Router, UrlSegmentGroup } from "@angular/router";
 import { saveReturnUrl } from "./session-url";
 
@@ -52,6 +53,7 @@ export class DataService {
   private getReferrersUrl = `${environment.ApiRoot}/getReferrers/`;
   private deleteInstanceUrl = `${environment.ApiRoot}/delete/`;
   private fetchQAReportUrl = `${environment.ApiRoot}/qaReport/`;
+  private diagramSyncUrl = `${environment.ApiRoot}/qa/diagramSync/`;
   private deleteByDeletedUrl = `${environment.ApiRoot}/deleteByDeleted/`;
   private matchInstancesUrl = `${environment.ApiRoot}/matchInstances/`;
   private fetchPathwayDiagramForPathwayUrl = `${environment.ApiRoot}/fetchPathwayDiagramForPathway/`;
@@ -1881,6 +1883,35 @@ export class DataService {
       catchError(error => {
         return this.handleErrorMessage(error);
       })
+    );
+  }
+
+  /**
+   * Run the Diagram sync QA check on a Pathway: its PathwayDiagram and those of all its
+   * sub-pathways are compared with the database, so one report can cover many diagrams. The
+   * check reads the committed database, not anything staged here. An unknown dbId comes back as
+   * the backend's usual not-found error, which surfaces through handleErrorMessage like any other.
+   */
+  checkDiagramSync(dbId: number): Observable<DiagramSyncReport> {
+    return this.http.get<DiagramSyncReport>(this.diagramSyncUrl + dbId).pipe(
+      catchError(error => {
+        return this.handleErrorMessage(error);
+      })
+    );
+  }
+
+  /**
+   * Whether the Pathway has its own PathwayDiagram in the database. Used only to decide whether
+   * to offer the Diagram sync check, so a failure is answered with false and kept quiet: the
+   * backend answers a pathway with no diagram with a not-found error, and routing that through
+   * handleErrorMessage would put an error banner up every time a curator opens such a pathway.
+   */
+  hasPathwayDiagram(dbId: number): Observable<boolean> {
+    if (dbId <= 0)
+      return of(false);
+    return this.http.get<Instance | null>(this.fetchPathwayDiagramForPathwayUrl + dbId).pipe(
+      map(diagram => !!diagram),
+      catchError(() => of(false))
     );
   }
 

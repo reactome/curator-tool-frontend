@@ -3,7 +3,7 @@
 // bread-crumb history, title, changed/deleted state, and the reload guard.
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
@@ -15,6 +15,7 @@ import { DeletionService } from 'src/app/instance/deletion-commit/utils/deletion
 import { CommitResultDialogService } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
 import { DeletionDialogService } from '../deletion-dialog/deletion-dialog.service';
 import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
+import { DiagramSyncDialogService } from '../diagram-sync-dialog/diagram-sync-dialog.service';
 import { ReferrersDialogService } from '../referrers-dialog/referrers-dialog.service';
 import {
   InstanceUtilitiesSpy,
@@ -41,6 +42,10 @@ describe('InstanceViewComponent', () => {
       {
         provide: QAReportDialogService,
         useValue: jasmine.createSpyObj('QAReportDialogService', ['openDialog'])
+      },
+      {
+        provide: DiagramSyncDialogService,
+        useValue: jasmine.createSpyObj('DiagramSyncDialogService', ['openDialog'])
       },
       {
         provide: ReferrersDialogService,
@@ -313,6 +318,84 @@ describe('InstanceViewComponent', () => {
 
       expect(dataService.fetchInstance).toHaveBeenCalledWith(101);
     }));
+  });
+
+  describe('the diagram sync check', () => {
+    const pathway = () => makeInstance({ dbId: 1430728, displayName: 'Metabolism', schemaClassName: 'Pathway' });
+
+    /** Lands `instance` in the view the way a finished load does. */
+    function land(instance: Instance) {
+      component.instance = instance;
+      (component as any).updateDiagramSyncAvailability(instance);
+    }
+
+    it('is offered for a pathway that has a diagram', () => {
+      dataService.hasPathwayDiagram.and.returnValue(of(true));
+
+      land(pathway());
+
+      expect(dataService.hasPathwayDiagram).toHaveBeenCalledWith(1430728);
+      expect(component.canCheckDiagramSync()).toBeTrue();
+    });
+
+    it('is not offered for a pathway without a diagram', () => {
+      dataService.hasPathwayDiagram.and.returnValue(of(false));
+
+      land(pathway());
+
+      expect(component.canCheckDiagramSync()).toBeFalse();
+    });
+
+    it('does not ask about anything but a committed pathway', () => {
+      land(makeInstance({ dbId: 70171, schemaClassName: 'Reaction' }));
+      land(makeInstance({ dbId: -1, schemaClassName: 'Pathway' }));
+
+      expect(dataService.hasPathwayDiagram).not.toHaveBeenCalled();
+      expect(component.canCheckDiagramSync()).toBeFalse();
+    });
+
+    it('is withdrawn when the view moves on to another instance', () => {
+      dataService.hasPathwayDiagram.and.returnValue(of(true));
+      land(pathway());
+
+      land(makeInstance({ dbId: 70171, schemaClassName: 'Reaction' }));
+
+      expect(component.canCheckDiagramSync()).toBeFalse();
+    });
+
+    it('ignores an answer that arrives after the view has moved on', () => {
+      // Otherwise a slow answer for the pathway would turn the button on for whatever the
+      // curator opened next.
+      const answer = new Subject<boolean>();
+      dataService.hasPathwayDiagram.and.returnValue(answer);
+      land(pathway());
+      component.instance = makeInstance({ dbId: 70171, schemaClassName: 'Reaction' });
+
+      answer.next(true);
+
+      expect(component.canCheckDiagramSync()).toBeFalse();
+    });
+
+    it('is worked out when a load lands', fakeAsync(() => {
+      dataService.hasPathwayDiagram.and.returnValue(of(true));
+      dataService.fetchInstance.and.returnValue(of(pathway()));
+
+      component.loadInstance(1430728);
+      tick();
+
+      expect(component.canCheckDiagramSync()).toBeTrue();
+    }));
+
+    it('opens the report for the displayed pathway', () => {
+      dataService.hasPathwayDiagram.and.returnValue(of(true));
+      const displayed = pathway();
+      land(displayed);
+
+      component.checkDiagramSync();
+
+      const dialogService = TestBed.inject(DiagramSyncDialogService) as jasmine.SpyObj<DiagramSyncDialogService>;
+      expect(dialogService.openDialog).toHaveBeenCalledOnceWith(displayed);
+    });
   });
 
   describe('hasRemovedNewInstanceRef', () => {

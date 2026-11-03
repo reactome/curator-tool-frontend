@@ -310,3 +310,112 @@ describe('DataService.fetchEventTree', () => {
     expect(service.getEventTreeCycles()).toEqual([cycle]);
   });
 });
+
+/**
+ * The Diagram sync QA check (qa/diagramSync) and the diagram lookup that decides whether the
+ * instance view offers it at all.
+ */
+describe('DataService diagram sync check', () => {
+  let service: DataService;
+  let http: HttpTestingController;
+  let errors: Error[];
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [
+        HttpClientTestingModule,
+        RouterTestingModule,
+        StoreModule.forRoot({
+          [UPDATE_INSTANCES_STATE_NAME]: updatedInstancesReducer,
+          [NEW_INSTANCES_STATE_NAME]: newInstancesReducer,
+          [DELETE_INSTANCES_STATE_NAME]: deletedInstancesReducer,
+        }),
+      ],
+      providers: [
+        DataService,
+        InstanceUtilities,
+        { provide: MatDialog, useValue: jasmine.createSpyObj<MatDialog>('MatDialog', ['open']) },
+        {
+          provide: CommitResultDialogService,
+          useValue: jasmine.createSpyObj<CommitResultDialogService>('CommitResultDialogService', ['openDialog'])
+        },
+        {
+          provide: MatchedInstancesDialogService,
+          useValue: jasmine.createSpyObj<MatchedInstancesDialogService>('MatchedInstancesDialogService', ['openDialog'])
+        },
+      ]
+    });
+    service = TestBed.inject(DataService);
+    http = TestBed.inject(HttpTestingController);
+    errors = [];
+    service.errorMessage$.subscribe(error => errors.push(error));
+  });
+
+  afterEach(() => {
+    http.verify();
+  });
+
+  it('runs the check against the pathway and hands back the report as sent', () => {
+    const report = {
+      eventDbId: 1430728,
+      eventDisplayName: 'Metabolism',
+      checkedDiagrams: 118,
+      uncheckedDiagramDbIds: [],
+      issues: [{
+        diagramDbId: 1430727, pathwayDbId: 1430728, pathwayDisplayName: 'Metabolism',
+        eventDbId: 556833, eventDisplayName: 'Metabolism of lipids', eventSchemaClass: 'Pathway',
+        issue: 'precedingEvent out of sync: missing 1428517', missingPrecedingEventDbId: 1428517
+      }]
+    };
+    let received: any;
+
+    service.checkDiagramSync(1430728).subscribe(result => received = result);
+    const request = http.expectOne(r => r.url.endsWith('/qa/diagramSync/1430728'));
+    expect(request.request.method).toBe('GET');
+    request.flush(report);
+
+    expect(received).toEqual(report);
+  });
+
+  it('reports an unknown dbId through the usual error banner and to the caller', () => {
+    let failed: any;
+
+    service.checkDiagramSync(42).subscribe({ error: error => failed = error });
+    http.expectOne(r => r.url.endsWith('/qa/diagramSync/42'))
+      .flush('Cannot find instance with dbId: 42', { status: 404, statusText: 'Not Found' });
+
+    expect(failed).toBeDefined();
+    expect(errors.length).toBe(1);
+  });
+
+  it('knows a pathway has a diagram when the server finds one', () => {
+    let hasDiagram: boolean | undefined;
+
+    service.hasPathwayDiagram(1430728).subscribe(result => hasDiagram = result);
+    http.expectOne(r => r.url.endsWith('/fetchPathwayDiagramForPathway/1430728'))
+      .flush({ dbId: 1430727, displayName: 'Diagram of Metabolism', schemaClassName: 'PathwayDiagram' });
+
+    expect(hasDiagram).toBeTrue();
+  });
+
+  it('answers false, without an error banner, for a pathway with no diagram', () => {
+    // The server answers "no diagram" with a not-found error. Showing that as an error every
+    // time a curator opens such a pathway would be noise: it only decides whether a button shows.
+    let hasDiagram: boolean | undefined;
+
+    service.hasPathwayDiagram(69615).subscribe(result => hasDiagram = result);
+    http.expectOne(r => r.url.endsWith('/fetchPathwayDiagramForPathway/69615'))
+      .flush('Cannot find instance with dbId: 69615', { status: 404, statusText: 'Not Found' });
+
+    expect(hasDiagram).toBeFalse();
+    expect(errors).toEqual([]);
+  });
+
+  it('does not ask the server about a new, uncommitted pathway', () => {
+    let hasDiagram: boolean | undefined;
+
+    service.hasPathwayDiagram(-3).subscribe(result => hasDiagram = result);
+
+    expect(hasDiagram).toBeFalse(); // http.verify() confirms no request went out
+  });
+});
