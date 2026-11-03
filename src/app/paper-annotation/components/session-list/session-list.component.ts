@@ -1,8 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, catchError, filter, of, switchMap, takeUntil, timer } from 'rxjs';
-import { SessionSummary, StartResponse } from '../../models/llm-api.models';
+import { Observable, Subject, Subscription, catchError, filter, of, switchMap, takeUntil, tap, timer } from 'rxjs';
+import { CandidatePaper, GeneSearchResult, SessionSummary, StartResponse } from '../../models/llm-api.models';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
+
+/** sessionStorage key for the gene search this tab is running or showing: { jobId, gene }. */
+const GENE_SEARCH_KEY = 'paper2path.geneSearch';
 
 @Component({
   selector: 'app-session-list',
@@ -20,6 +23,15 @@ export class SessionListComponent implements OnInit, OnDestroy {
   files: File[] = [];
   starting = false;
 
+  /** Gene -> papers: the symbol as typed, then the running search, then its candidates to pick from. */
+  gene = '';
+  geneSearching = false;
+  geneProgress = '';
+  geneResult: GeneSearchResult | null = null;
+  /** PMIDs of the candidates ticked for "Annotate selected". */
+  selectedPmids = new Set<string>();
+  private geneSub?: Subscription;
+
   private destroy$ = new Subject<void>();
 
   constructor(private api: LlmApiService, private router: Router, private route: ActivatedRoute) {}
@@ -34,6 +46,19 @@ export class SessionListComponent implements OnInit, OnDestroy {
       this.loading = false;
       if (list) { this.sessions = list; this.error = null; }
     });
+    // A gene search takes a minute or more and runs on the server whatever this page does. If the curator left the
+    // page while it ran (or after it finished, without starting an annotation), pick its job up again rather than
+    // making them search, and wait, a second time. Per tab: sessionStorage.
+    const saved = sessionStorage.getItem(GENE_SEARCH_KEY);
+    if (saved) {
+      try {
+        const { jobId, gene } = JSON.parse(saved);
+        this.gene = gene;
+        this.pollGene(jobId);
+      } catch {
+        sessionStorage.removeItem(GENE_SEARCH_KEY);
+      }
+    }
   }
 
   ngOnDestroy(): void {
@@ -88,7 +113,7 @@ export class SessionListComponent implements OnInit, OnDestroy {
     this.begin(this.api.startPapers(this.pmidList, this.files, this.focus.trim() || undefined));
   }
 
-  private begin(call: import('rxjs').Observable<StartResponse>): void {
+  private begin(call: Observable<StartResponse>): void {
     this.starting = true;
     this.error = null;
     call.subscribe({
@@ -96,6 +121,95 @@ export class SessionListComponent implements OnInit, OnDestroy {
       error: (e: LlmApiError) => { this.starting = false; this.error = e.message; },
       complete: () => this.starting = false
     });
+  }
+
+  // ── gene -> papers ─────────────────────────────────────────────────────
+  /** The symbol as the service will use it: trimmed and upper-cased. */
+  get geneSymbol(): string {
+    return this.gene.trim().toUpperCase();
+  }
+
+  /** The service's rule for a gene symbol (letters, digits, '.' and '-'; HLA-A, C9orf72), so a typo is caught here. */
+  get geneValid(): boolean {
+    return !this.geneSymbol || /^[A-Z0-9][A-Z0-9.-]{0,24}$/.test(this.geneSymbol);
+  }
+
+  get canSearchGene(): boolean {
+    return !!this.geneSymbol && this.geneValid && !this.geneSearching;
+  }
+
+  searchGene(): void {
+    if (!this.canSearchGene) return;
+    this.clearGeneSearch();
+    this.geneSearching = true;
+    this.geneProgress = 'starting';
+    this.error = null;
+    const gene = this.geneSymbol;
+    this.api.findPapersByGene(gene).pipe(takeUntil(this.destroy$)).subscribe({
+      next: r => {
+        sessionStorage.setItem(GENE_SEARCH_KEY, JSON.stringify({ jobId: r.jobId, gene }));
+        this.pollGene(r.jobId);
+      },
+      error: (e: LlmApiError) => { this.geneSearching = false; this.error = e.message; }
+    });
+  }
+
+  private pollGene(jobId: string): void {
+    this.geneSearching = true;
+    this.geneSub = this.api.pollGeneSearch(jobId).pipe(takeUntil(this.destroy$)).subscribe({
+      next: j => {
+        this.geneProgress = j.progress;
+        if (j.status === 'done') {
+          this.geneSearching = false;
+          this.geneResult = j.result ?? { gene: this.geneSymbol, accession: null, pool_size: 0, candidate_pool: 0, dropped_below_threshold: 0, papers: [] };
+          // Tick what can be annotated straight away: in PMC, and not judged unannotatable.
+          this.selectedPmids = new Set(this.geneResult.papers.filter(p => this.canSelect(p) && p.annotatable !== false).map(p => p.pmid));
+        } else if (j.status === 'failed') {
+          this.geneSearching = false;
+          sessionStorage.removeItem(GENE_SEARCH_KEY);
+          this.error = `The paper search for ${this.geneSymbol} failed: ${j.error ?? 'no reason given'}`;
+        }
+      },
+      error: (e: LlmApiError) => {
+        // e.g. the job is gone because the service restarted: forget it, so coming back does not fail the same way
+        this.geneSearching = false;
+        sessionStorage.removeItem(GENE_SEARCH_KEY);
+        this.error = e.message;
+      }
+    });
+  }
+
+  /** Stops waiting for a search (the service still finishes it) or puts its results away. */
+  clearGeneSearch(): void {
+    this.geneSub?.unsubscribe();
+    this.geneSub = undefined;
+    sessionStorage.removeItem(GENE_SEARCH_KEY);
+    this.geneSearching = false;
+    this.geneProgress = '';
+    this.geneResult = null;
+    this.selectedPmids = new Set();
+  }
+
+  /** A paper without PMC full text can only be annotated from its PDF, which /sessions {pmids} cannot take. */
+  canSelect(p: CandidatePaper): boolean {
+    return !!p.pmcid;
+  }
+
+  toggleCandidate(p: CandidatePaper, on: boolean): void {
+    if (on && this.canSelect(p)) this.selectedPmids.add(p.pmid);
+    else this.selectedPmids.delete(p.pmid);
+  }
+
+  /** The ticked candidates, in the judge's order. */
+  get selectedCandidates(): string[] {
+    return (this.geneResult?.papers ?? []).filter(p => this.selectedPmids.has(p.pmid)).map(p => p.pmid);
+  }
+
+  annotateSelected(): void {
+    const pmids = this.selectedCandidates;
+    if (!this.geneResult || !pmids.length || this.starting) return;
+    this.begin(this.api.startPapers(pmids, [], this.geneResult.gene).pipe(
+      tap(() => sessionStorage.removeItem(GENE_SEARCH_KEY))));
   }
 
   open(s: SessionSummary): void {

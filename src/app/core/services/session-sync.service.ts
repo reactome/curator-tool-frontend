@@ -2,7 +2,7 @@ import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
-import { saveReturnUrl, takeReturnUrl } from './session-url';
+import { currentAppUrl, saveReturnUrl, takeReturnUrl, toBrowserUrl } from './session-url';
 
 /**
  * Propagates a logout to every other tab/window of this app.
@@ -96,15 +96,17 @@ export class SessionSyncService implements OnDestroy {
     this.reloadTo(takeReturnUrl());
   }
 
-  // Isolated purely so tests can intercept it without triggering a real navigation.
+  // Isolated purely so tests can intercept it without triggering a real navigation. Takes a
+  // router URL; window.location needs the base href in front of it, or in production a tab is
+  // sent to https://curator.reactome.org/home - outside the app - instead of .../curatortool/home.
   private reloadTo(url: string): void {
-    window.location.href = url;
+    window.location.href = toBrowserUrl(url);
   }
 
   private endSession(): void {
     if (this.tearingDown)
       return;
-    const currentUrl = window.location.pathname + window.location.search + window.location.hash;
+    const currentUrl = currentAppUrl();
     if (currentUrl === '/login' || this.router.url.startsWith('/login'))
       return;
     this.tearingDown = true;

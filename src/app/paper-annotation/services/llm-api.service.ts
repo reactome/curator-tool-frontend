@@ -4,7 +4,7 @@ import { Observable, firstValueFrom, switchMap, takeWhile, throwError, timer, ca
 import { environment } from 'src/environments/environment.dev';
 import { TokenRefreshService } from 'src/app/core/services/token-refresh.service';
 import {
-  AcceptResponse, ChatEvent, ExistingMatch, InstanceEvidence, Issue, IssueStatus, Job, Network, Passage, Proposal,
+  AcceptResponse, ChatEvent, ExistingMatch, GeneSearchResult, InstanceEvidence, Issue, IssueStatus, Job, Network, Passage, Proposal,
   ProposalRequest, QAResult, ReactionDetail, SessionDetail, SessionSummary, SessionUserInstances, StartResponse, StoredChatMessage,
   UsageReport
 } from '../models/llm-api.models';
@@ -82,6 +82,20 @@ export class LlmApiService {
       if (focus) form.append('focus', focus);
       return this.http.post<StartResponse>(this.url('/sessions/upload'), form);
     });
+  }
+
+  /**
+   * Find the papers worth annotating a gene from (PubMed search, re-rank, LLM judge). Runs as a job that takes a minute
+   * or more: poll it with pollGeneSearch. Without `maxPapers` the service picks (5).
+   */
+  findPapersByGene(gene: string, maxPapers?: number): Observable<{ jobId: string }> {
+    const body = maxPapers ? { gene, max_papers: maxPapers } : { gene };
+    return this.call(() => this.http.post<{ jobId: string }>(this.url('/papers/by-gene'), body));
+  }
+
+  /** pollJob for a gene search: the final, done state carries the GeneSearchResult. */
+  pollGeneSearch(jobId: string, everyMs = 3000): Observable<Job<GeneSearchResult>> {
+    return this.pollJob(jobId, everyMs) as Observable<Job<GeneSearchResult>>;
   }
 
   sessions(): Observable<SessionSummary[]> {

@@ -14,11 +14,41 @@ export interface StartResponse {
   jobId: string;
 }
 
-export interface Job {
+/** `result` is what the job produced, once it is done (only some jobs have one, e.g. a gene search). */
+export interface Job<T = unknown> {
   id: string;
   status: JobStatus;
   progress: string;
   error: string | null;
+  result?: T | null;
+}
+
+/** A paper suggested for a gene (POST /papers/by-gene), with the rubric judge's verdict on it. */
+export interface CandidatePaper {
+  pmid: string;
+  title: string;
+  journal: string;
+  year: string;
+  /** null: PubMed Central has no full text, so the paper can only be annotated from its PDF. */
+  pmcid: string | null;
+  /** 1-10, how useful the paper is for a Reactome annotation. */
+  score: number | null;
+  /** DIRECT | INDIRECT | INSUFFICIENT | NONE */
+  evidence_type: string | null;
+  annotatable: boolean | null;
+  justification: string;
+}
+
+/** The `result` of a gene search job. `papers` are best first; fewer than asked means little usable literature. */
+export interface GeneSearchResult {
+  gene: string;
+  accession: string | null;
+  /** Papers the PubMed searches returned. */
+  pool_size: number;
+  /** Of those, how many the judge read. */
+  candidate_pool: number;
+  dropped_below_threshold: number;
+  papers: CandidatePaper[];
 }
 
 /** One paper of a session. `source` is the tag its reactions and quotes carry (`PMID:24751536`, or the PDF's stored file name). */

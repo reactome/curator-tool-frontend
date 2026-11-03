@@ -732,7 +732,7 @@ Paper2Path (`/paper2path`, opens in a new tab, **login required**) drafts a Reac
 
 ### Start an annotation
 
-The page, **Paper annotation**, has one card, **Papers to annotate**. An annotation can be drawn from one paper or from several, in any mix of PubMed IDs and PDFs:
+The page, **Paper annotation**, has two cards: **Papers to annotate**, for papers you already have in mind, and **Find papers for a gene** (below), to find them. An annotation can be drawn from one paper or from several, in any mix of PubMed IDs and PDFs:
 
 - **PubMed IDs**: type one or more, separated by spaces, commas or new lines. The papers must be open access in PubMed Central. An ID typed twice is used once. If one is not a number (up to 9 digits), *"Every PubMed ID must be a number (up to 9 digits)."* is shown and **Annotate** is disabled.
 - **Add PDFs** (`upload_file`): for papers that are not in PubMed Central, up to 50 MB each. You can pick several at once, and click **Add PDFs** again to add more. Each PDF is listed with a remove (`close`) button. The same file added twice is kept once.
@@ -741,6 +741,16 @@ The page, **Paper annotation**, has one card, **Papers to annotate**. An annotat
 Beside **Annotate**, a count such as *"2 PDFs + 1 PubMed ID"* shows what will be annotated. Several papers are merged into **one** annotation, and a reaction that more than one paper describes cites them all.
 
 Annotating usually takes a few minutes, longer for a long paper or for several papers. You can leave the page; the annotation stays in your list.
+
+### Find papers for a gene
+
+**Find papers for a gene** suggests the papers worth annotating a gene from. Type a gene symbol, such as `PINK1` or `HLA-A`, and click **Find papers** (or press Enter). Paper2Path searches PubMed for the gene, re-ranks what it finds, and has a language model judge how useful each paper is for a Reactome annotation. A symbol with anything but letters, digits, dots and dashes is pointed out (*"A gene symbol has only letters, digits, dots and dashes, such as PINK1 or HLA-A."*) and is not searched.
+
+The search usually takes a minute or two. Meanwhile the card shows a progress bar and the current step, such as *"searching PubMed"*. You can leave the page: when you come back in the same tab, the card picks the search up again. **Stop waiting** puts it away.
+
+The papers are then listed best first, each with its title (a link to PubMed), PMID, year, a **score** out of 10 for how useful it is, its **evidence type** (`DIRECT`, `INDIRECT`, `INSUFFICIENT` or `NONE`), and one sentence on why. The papers in PubMed Central that the judge found annotatable are ticked; tick or untick any of them. A paper that is not in PubMed Central cannot be ticked (*"Not in PubMed Central: to annotate it, add its PDF under Papers to annotate."*).
+
+**Annotate selected** starts one annotation from the ticked papers, with the gene as the focus gene, and opens it. **Clear** puts the list away.
 
 **Your annotations** lists every annotation you have started, with **Paper(s)** (the PMID or file name, or for several papers how many there are and which), **Status** (`queued`, `running` with the current step, `ready` or `failed`), **Reactions**, **Open issues** and **Started**. Click a row to open it.
 
