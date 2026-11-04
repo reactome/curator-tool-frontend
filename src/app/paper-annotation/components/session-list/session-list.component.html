@@ -47,6 +47,59 @@
         <span class="count" *ngIf="paperCount">{{ summary }}</span>
       </mat-card-actions>
     </mat-card>
+
+    <mat-card class="gene-card">
+      <mat-card-title>Find papers for a gene</mat-card-title>
+      <mat-card-content>
+        <p class="hint">Searches PubMed for papers about a gene and ranks them by how useful they are for a Reactome annotation.</p>
+
+        <form class="gene-form" (ngSubmit)="searchGene()">
+          <mat-form-field appearance="outline">
+            <mat-label>Gene symbol</mat-label>
+            <input matInput [(ngModel)]="gene" name="gene" placeholder="PINK1" aria-label="Gene symbol" [disabled]="geneSearching">
+          </mat-form-field>
+          <button mat-flat-button color="primary" type="submit" [disabled]="!canSearchGene">Find papers</button>
+        </form>
+        <p class="invalid" *ngIf="!geneValid" role="alert">A gene symbol has only letters, digits, dots and dashes, such as PINK1 or HLA-A.</p>
+
+        <div class="gene-running" *ngIf="geneSearching" role="status">
+          <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          <p><span class="gene-progress">{{ geneProgress || 'queued' }}</span> · usually a minute or two. You can leave the page and come back.</p>
+          <button mat-button type="button" (click)="clearGeneSearch()">Stop waiting</button>
+        </div>
+
+        <div class="candidates" *ngIf="geneResult">
+          <p class="hint" *ngIf="!geneResult.papers.length">No papers about {{ geneResult.gene }} were found that are useful for an annotation.</p>
+          <p class="hint" *ngIf="geneResult.papers.length">
+            {{ geneResult.papers.length }} paper{{ geneResult.papers.length > 1 ? 's' : '' }} for {{ geneResult.gene }}, best first<span *ngIf="geneResult.candidate_pool"> (of {{ geneResult.candidate_pool }} read)</span>.
+          </p>
+          <ul aria-label="Candidate papers">
+            <li *ngFor="let p of geneResult.papers" class="candidate" [class.unavailable]="!canSelect(p)">
+              <mat-checkbox [checked]="selectedPmids.has(p.pmid)" [disabled]="!canSelect(p)"
+                            (change)="toggleCandidate(p, $event.checked)" [attr.aria-label]="'Select PMID ' + p.pmid"></mat-checkbox>
+              <div class="candidate-body">
+                <div class="candidate-title">
+                  <a [href]="'https://pubmed.ncbi.nlm.nih.gov/' + p.pmid + '/'" target="_blank" rel="noopener">{{ p.title || ('PMID ' + p.pmid) }}</a>
+                </div>
+                <div class="candidate-meta">
+                  <span>PMID {{ p.pmid }}</span>
+                  <span *ngIf="p.year">{{ p.year }}</span>
+                  <span class="score" *ngIf="p.score !== null">score {{ p.score }}/10</span>
+                  <span class="evidence-type" *ngIf="p.evidence_type" [ngClass]="'ev-' + p.evidence_type.toLowerCase()">{{ p.evidence_type }}</span>
+                </div>
+                <div class="justification" *ngIf="p.justification">{{ p.justification }}</div>
+                <div class="no-pmc" *ngIf="!canSelect(p)">Not in PubMed Central: to annotate it, add its PDF under Papers to annotate.</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </mat-card-content>
+      <mat-card-actions *ngIf="geneResult">
+        <button mat-flat-button color="primary" [disabled]="!selectedCandidates.length || starting" (click)="annotateSelected()">Annotate selected</button>
+        <span class="count" *ngIf="selectedCandidates.length">{{ selectedCandidates.length }} paper{{ selectedCandidates.length > 1 ? 's' : '' }}, focus {{ geneResult.gene }}</span>
+        <button mat-button type="button" (click)="clearGeneSearch()">Clear</button>
+      </mat-card-actions>
+    </mat-card>
   </div>
 
   <mat-progress-bar *ngIf="starting" mode="indeterminate"></mat-progress-bar>

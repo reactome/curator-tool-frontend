@@ -83,7 +83,19 @@ export class LoginComponent{
 
   private finishLogin(url: string): void {
     this.userInstancesService.loadUserInstances();
-    this.router.navigateByUrl(url);
+    // If the remembered view cannot be routed to, fall back to /home rather than leaving the
+    // curator on the login form. That silent failure is what made OK need a second click after
+    // an idle logout: the first login authenticated fine, but navigateByUrl() rejected the
+    // saved '/curatortool/...' URL (see toAppUrl() in session-url.ts) and the tab stayed put,
+    // with the saved view already consumed, so only the second login - now falling back to
+    // /home - went anywhere.
+    // Only on rejection (an unmatched route throws): a false result can also mean a guard
+    // redirected the navigation, which must be left alone.
+    this.router.navigateByUrl(url).catch(error => {
+      console.warn(`Could not return to ${url} after login; going to /home instead.`, error);
+      if (url !== '/home')
+        this.router.navigateByUrl('/home');
+    });
     this.submitting = false;
   }
 

@@ -1,0 +1,102 @@
+<h2 class="dialog_title" mat-dialog-title cdkdraghandle> Diagram Sync Check for "{{data.pathway.displayName}}"</h2>
+<mat-dialog-content class="dialog_content">
+  <div *ngIf="loading" class="state">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Checking the diagrams of "{{data.pathway.displayName}}" and its sub-pathways...</p>
+  </div>
+
+  <div *ngIf="!loading && errorMessage" class="state error">
+    <p>The diagram sync check could not be run: {{errorMessage}}</p>
+  </div>
+
+  <ng-container *ngIf="!loading && report">
+    <p *ngIf="uncheckedDiagramDbIds.length > 0" class="unchecked">
+      {{uncheckedDiagramDbIds.length}} {{uncheckedDiagramDbIds.length === 1 ? 'diagram' : 'diagrams'}}
+      couldn't be checked because there is no diagram file to read:
+      <ng-container *ngFor="let dbId of uncheckedDiagramDbIds; let last = last">
+        <a [href]="instanceUrl(dbId)" target="_blank">{{dbId}}</a>{{last ? '' : ', '}}
+      </ng-container>
+    </p>
+
+    <p *ngIf="issueCount === 0" class="state passed">
+      No sync issues found in {{report.checkedDiagrams}} {{report.checkedDiagrams === 1 ? 'diagram' : 'diagrams'}}.
+    </p>
+
+    <ng-container *ngIf="issueCount > 0">
+      <div class="summary">
+        <span>{{issueCount}} {{issueCount === 1 ? 'issue' : 'issues'}} in {{diagrams.length}} of
+          {{report.checkedDiagrams}} checked {{report.checkedDiagrams === 1 ? 'diagram' : 'diagrams'}}.</span>
+        <mat-form-field class="diagram_filter" subscriptSizing="dynamic">
+          <mat-label>Diagram</mat-label>
+          <mat-select [value]="selectedDiagramDbId" (selectionChange)="selectDiagram($event.value)">
+            <mat-option [value]="undefined">All diagrams ({{issueCount}})</mat-option>
+            <mat-option *ngFor="let diagram of diagrams" [value]="diagram.diagramDbId">
+              {{diagram.pathwayDisplayName}} [{{diagram.diagramDbId}}] ({{diagram.issueCount}})
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="table_panel">
+        <table mat-table [dataSource]="dataSource" matSort class="sync_table">
+          <ng-container matColumnDef="event">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Event</th>
+            <td mat-cell *matCellDef="let issue">
+              <a [href]="instanceUrl(issue.eventDbId)" target="_blank"
+                 matTooltip="Open in a new tab">{{issue.eventDisplayName}} [{{issue.eventDbId}}]</a>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Type</th>
+            <td mat-cell *matCellDef="let issue">
+              <span [class.pathway_type]="isPathway(issue)">{{issue.eventSchemaClass}}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="issue">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Issue</th>
+            <td mat-cell *matCellDef="let issue">
+              <ng-container *ngIf="issue.missingPrecedingEventDbId !== undefined; else plainIssue">
+                precedingEvent out of sync: missing
+                <a [href]="instanceUrl(issue.missingPrecedingEventDbId)" target="_blank"
+                   matTooltip="Open the missing precedingEvent in a new tab">{{issue.missingPrecedingEventDbId}}</a>
+                <a mat-icon-button class="highlight_button" [href]="highlightInDiagramUrl(issue)" target="_blank"
+                   matTooltip="Highlight both events in the diagram (new tab)">
+                  <mat-icon>highlight_alt</mat-icon>
+                </a>
+              </ng-container>
+              <ng-template #plainIssue>{{issue.issue}}</ng-template>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="diagram">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Diagram DB_ID</th>
+            <td mat-cell *matCellDef="let issue">
+              <a [href]="instanceUrl(issue.diagramDbId)" target="_blank"
+                 [matTooltip]="issue.pathwayDisplayName + ' [' + issue.pathwayDbId + ']'">{{issue.diagramDbId}}</a>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="created">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Created</th>
+            <td mat-cell *matCellDef="let issue">{{issue.created}}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="modified">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Modified</th>
+            <td mat-cell *matCellDef="let issue">{{issue.modified}}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+          <tr mat-row *matRowDef="let issue; columns: displayedColumns;" [class.pathway_row]="isPathway(issue)"></tr>
+        </table>
+      </div>
+    </ng-container>
+  </ng-container>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <span class="note">Checks the committed database, not staged changes.</span>
+  <button mat-button (click)="runCheck()" [disabled]="loading">Re-run</button>
+  <button mat-button (click)="onClose()">Close</button>
+</mat-dialog-actions>

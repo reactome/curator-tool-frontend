@@ -196,6 +196,31 @@ describe('LlmApiService', () => {
     });
   });
 
+  describe('findPapersByGene', () => {
+    it('posts the gene, and the number of papers only when given', () => {
+      service.findPapersByGene('PINK1').subscribe(r => expect(r.jobId).toBe('g1'));
+      const req = http.expectOne(`${base}/papers/by-gene`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ gene: 'PINK1' });
+      req.flush({ jobId: 'g1' });
+      service.findPapersByGene('PINK1', 8).subscribe();
+      expect(http.expectOne(`${base}/papers/by-gene`).request.body).toEqual({ gene: 'PINK1', max_papers: 8 });
+    });
+
+    it('polls the job until it is done and hands over its result', fakeAsync(() => {
+      const seen: unknown[] = [];
+      service.pollGeneSearch('g1', 1000).subscribe(j => seen.push(j.result ?? j.progress));
+      tick(0);
+      http.expectOne(`${base}/jobs/g1`).flush({ id: 'g1', status: 'running', progress: 'searching PubMed', error: null, result: null });
+      tick(1000);
+      const res = { gene: 'PINK1', accession: null, pool_size: 1, candidate_pool: 1, dropped_below_threshold: 0, papers: [] };
+      http.expectOne(`${base}/jobs/g1`).flush({ id: 'g1', status: 'done', progress: 'done', error: null, result: res });
+      tick(5000);
+      http.expectNone(`${base}/jobs/g1`);
+      expect(seen).toEqual(['searching PubMed', res]);
+    }));
+  });
+
   describe('pollJob', () => {
     const job = (status: Job['status']): Job => ({ id: 'j', status, progress: status, error: null });
 

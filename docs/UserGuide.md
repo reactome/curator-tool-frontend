@@ -424,6 +424,7 @@ The title reads **"{SchemaClass}: {displayName} [{dbId}]"**. It turns **red** wh
 | `delete` | **Delete Instance** | Opens the deletion dialog |
 | `upload` | **Upload** | Commits this instance; enabled only when there are changes |
 | `download` | **Export event to DOCX** | Event classes only; blocked while staged instances are pending |
+| `sync_problem` | **Check diagram sync for this pathway and its sub-pathways** | Committed Pathways that have a pathway diagram only; opens the [Diagram Sync Check dialog](#98-supporting-dialogs) |
 | `manage_search` | **Match new instance in database** | New instances only |
 | `bookmark` | **Add Bookmark** | |
 
@@ -513,6 +514,7 @@ Highlights are removed automatically when you click **OK** (keep changes) or **C
 - **Referrers** — titled *Referrers of "{name} [{dbId}]"*, grouped by attribute with counts; each referrer has a **launch** button. Shows **"Total Referrers: {count}"** (very large lists are truncated). In a deletion context, instances that would be structurally affected are shown in red. A link icon in the title bar (tooltip **"open in new tab"**) opens the same referrers as the standalone **Referrers page** below.
 - **Referrers page** — a routed, bookmarkable page at `schema_view/referrers/{dbId}`, opened via the dialog's link icon above or the **Show Referrers** (`list_alt`) action on an instance-valued slot (see [9.6](#96-instance-valued-slot-action-menu)). It always opens in a **new tab**, so it never replaces the view you were on. Unlike the dialog, its URL is stable — it can be reloaded, bookmarked, or shared — and it lays the referrers out as a plain two-column table (referring attribute on the left, referring instances on the right, each a clickable link). A dbId that isn't a number, or that names an instance which can no longer be loaded, is reported directly rather than showing an empty table.
 - **QA Report** — titled *QA Report for "{name}"*; passed checks show green **" Passed"**, failed checks render a table with clickable instance links.
+- **Diagram Sync Check** — titled *Diagram Sync Check for "{name}"*. Checks the pathway diagram of the pathway and of each of its sub-pathways against the database and lists every drawn event that doesn't match. It reads what is committed, not your staged changes. The issues are: a reaction's drawn inputs, outputs, catalysts, activators or inhibitors differ from the database (*"input out of sync"*, and so on), or *"precedingEvent out of sync: missing {dbId}"*, where a flow line joins two events but the event at the arrow end doesn't list the event at the tail end as a precedingEvent. Only flow lines between two events are checked, and a precedingEvent with no flow line drawn for it is not reported. The table has the columns **Event** (name and dbId), **Type** (pathway rows are shaded and their type is in bold), **Issue**, **Diagram DB_ID**, **Created** and **Modified**; click a column header to sort by it. The **Diagram** drop-down narrows the table to one diagram. Links open in a new tab, so the results stay open: the event, the missing precedingEvent, and the diagram's PathwayDiagram instance open in Schema View, and the `highlight_alt` button beside a precedingEvent issue opens the diagram in Event View with both events selected. When nothing is out of sync, the dialog says *"No sync issues found in N diagrams"*. Diagrams that have no diagram file can't be checked; the dialog says how many there are and links to each. **Re-run** checks again, for example after you have committed a fix.
 - **Delete** — titled *Delete "{name} [{dbId}]"*, with an optional structural-change warning and a **Show Referrers / Hide Referrers** toggle; **Delete** / **Cancel**. A separate **Confirm Delete** step notes that database instances are only removed after you commit the deletion. You may also be offered to **create a "Deleted" instance** to record the deletion.
 - **Match Instances** — titled *Matched instances for {name}*; select an existing instance and click **OK** to navigate to it.
 - **Create a New Instance** — pick a schema class, then fill in attributes; **OK** / **Cancel**.
@@ -730,7 +732,7 @@ Paper2Path (`/paper2path`, opens in a new tab, **login required**) drafts a Reac
 
 ### Start an annotation
 
-The page, **Paper annotation**, has one card, **Papers to annotate**. An annotation can be drawn from one paper or from several, in any mix of PubMed IDs and PDFs:
+The page, **Paper annotation**, has two cards: **Papers to annotate**, for papers you already have in mind, and **Find papers for a gene** (below), to find them. An annotation can be drawn from one paper or from several, in any mix of PubMed IDs and PDFs:
 
 - **PubMed IDs**: type one or more, separated by spaces, commas or new lines. The papers must be open access in PubMed Central. An ID typed twice is used once. If one is not a number (up to 9 digits), *"Every PubMed ID must be a number (up to 9 digits)."* is shown and **Annotate** is disabled.
 - **Add PDFs** (`upload_file`): for papers that are not in PubMed Central, up to 50 MB each. You can pick several at once, and click **Add PDFs** again to add more. Each PDF is listed with a remove (`close`) button. The same file added twice is kept once.
@@ -739,6 +741,16 @@ The page, **Paper annotation**, has one card, **Papers to annotate**. An annotat
 Beside **Annotate**, a count such as *"2 PDFs + 1 PubMed ID"* shows what will be annotated. Several papers are merged into **one** annotation, and a reaction that more than one paper describes cites them all.
 
 Annotating usually takes a few minutes, longer for a long paper or for several papers. You can leave the page; the annotation stays in your list.
+
+### Find papers for a gene
+
+**Find papers for a gene** suggests the papers worth annotating a gene from. Type a gene symbol, such as `PINK1` or `HLA-A`, and click **Find papers** (or press Enter). Paper2Path searches PubMed for the gene, re-ranks what it finds, and has a language model judge how useful each paper is for a Reactome annotation. A symbol with anything but letters, digits, dots and dashes is pointed out (*"A gene symbol has only letters, digits, dots and dashes, such as PINK1 or HLA-A."*) and is not searched.
+
+The search usually takes a minute or two. Meanwhile the card shows a progress bar and the current step, such as *"searching PubMed"*. You can leave the page: when you come back in the same tab, the card picks the search up again. **Stop waiting** puts it away.
+
+The papers are then listed best first, each with its title (a link to PubMed), PMID, year, a **score** out of 10 for how useful it is, its **evidence type** (`DIRECT`, `INDIRECT`, `INSUFFICIENT` or `NONE`), and one sentence on why. The papers in PubMed Central that the judge found annotatable are ticked; tick or untick any of them. A paper that is not in PubMed Central cannot be ticked (*"Not in PubMed Central: to annotate it, add its PDF under Papers to annotate."*).
+
+**Annotate selected** starts one annotation from the ticked papers, with the gene as the focus gene, and opens it. **Clear** puts the list away.
 
 **Your annotations** lists every annotation you have started, with **Paper(s)** (the PMID or file name, or for several papers how many there are and which), **Status** (`queued`, `running` with the current step, `ready` or `failed`), **Reactions**, **Open issues** and **Started**. Click a row to open it.
 

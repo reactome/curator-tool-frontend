@@ -2,8 +2,8 @@ import { ComponentFixture, TestBed, fakeAsync, tick, discardPeriodicTasks } from
 import { ActivatedRoute, Router } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
-import { of, throwError } from 'rxjs';
-import { SessionSummary } from '../../models/llm-api.models';
+import { NEVER, Subject, of, throwError } from 'rxjs';
+import { CandidatePaper, GeneSearchResult, Job, SessionSummary } from '../../models/llm-api.models';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
 import { PaperAnnotationModule } from '../../paper-annotation.module';
 import { SessionListComponent } from './session-list.component';
@@ -19,9 +19,13 @@ describe('SessionListComponent', () => {
   let component: SessionListComponent;
   const el = () => fixture.nativeElement as HTMLElement;
 
+  beforeEach(() => sessionStorage.removeItem('paper2path.geneSearch'));
+  afterEach(() => sessionStorage.removeItem('paper2path.geneSearch'));
+
   const create = (sessions: SessionSummary[] | Error = []) => {
-    api = jasmine.createSpyObj('LlmApiService', ['sessions', 'startPapers']);
+    api = jasmine.createSpyObj('LlmApiService', ['sessions', 'startPapers', 'findPapersByGene', 'pollGeneSearch']);
     api.sessions.and.returnValue(sessions instanceof Error ? throwError(() => sessions) : of(sessions));
+    api.pollGeneSearch.and.returnValue(NEVER);                     // a search resumed on entry just keeps running
     router = jasmine.createSpyObj('Router', ['navigate']);
     TestBed.configureTestingModule({
       imports: [PaperAnnotationModule, NoopAnimationsModule, RouterTestingModule],
@@ -144,8 +148,8 @@ describe('SessionListComponent', () => {
   it('shows one start form that takes several PubMed IDs and PDFs, lists the chosen PDFs, and enables Annotate only when there is something valid', fakeAsync(() => {
     create();
     tick(0);
-    const button = () => Array.from(el().querySelectorAll('mat-card-actions button')).find(b => b.textContent?.includes('Annotate')) as HTMLButtonElement;
-    expect(el().querySelectorAll('.starters mat-card').length).toBe(1);
+    const button = () => el().querySelector('.start-card mat-card-actions button') as HTMLButtonElement;
+    expect(el().querySelectorAll('.starters mat-card.start-card').length).toBe(1);
     expect((el().querySelector('input[type=file]') as HTMLInputElement).multiple).toBeTrue();     // several PDFs can be picked at once
     expect(el().querySelector('textarea')).not.toBeNull();
     expect(button().disabled).toBeTrue();                                                          // nothing to annotate yet
@@ -189,4 +193,89 @@ describe('SessionListComponent', () => {
     expect(el().querySelector('.error')?.textContent).toContain('curator role required');
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
+
+  describe('gene -> papers', () => {
+    const paper = (pmid: string, extra: Partial<CandidatePaper> = {}): CandidatePaper => ({
+      pmid, title: `paper ${pmid}`, journal: 'J', year: '2014', pmcid: 'PMC1', score: 8, evidence_type: 'DIRECT',
+      annotatable: true, justification: `why ${pmid}`, ...extra });
+    const result = (papers: CandidatePaper[]): GeneSearchResult =>
+      ({ gene: 'PINK1', accession: 'Q9BXM7', pool_size: 120, candidate_pool: 50, dropped_below_threshold: 0, papers });
+    const job = (status: Job['status'], progress: string, res: GeneSearchResult | null = null, error: string | null = null): Job<GeneSearchResult> =>
+      ({ id: 'g1', status, progress, error, result: res });
+
+    it('searches, shows the progress, then the candidates with the PMC ones ticked, and annotates the ticked ones with the gene as focus', fakeAsync(() => {
+      create();
+      tick(0);
+      const polls = new Subject<Job<GeneSearchResult>>();
+      api.findPapersByGene.and.returnValue(of({ jobId: 'g1' }));
+      api.pollGeneSearch.and.returnValue(polls);
+      api.startPapers.and.returnValue(of({ sessionId: 's7', jobId: 'j7' }));
+      component.gene = ' pink1 ';
+      fixture.detectChanges();
+      component.searchGene();
+      expect(api.findPapersByGene).toHaveBeenCalledWith('PINK1');
+      expect(api.pollGeneSearch).toHaveBeenCalledWith('g1');
+      expect(JSON.parse(sessionStorage.getItem('paper2path.geneSearch')!)).toEqual({ jobId: 'g1', gene: 'PINK1' });
+      polls.next(job('running', 'judging 50 candidate papers'));
+      fixture.detectChanges();
+      expect(el().querySelector('.gene-running')?.textContent).toContain('judging 50 candidate papers');
+      polls.next(job('done', 'done', result([paper('1', { score: 9 }), paper('2', { pmcid: null }), paper('3', { annotatable: false })])));
+      fixture.detectChanges();
+      expect(el().querySelector('.gene-running')).toBeNull();
+      const items = el().querySelectorAll('.candidate');
+      expect(items.length).toBe(3);
+      expect(items[0].textContent).toContain('paper 1');
+      expect(items[0].textContent).toContain('2014');
+      expect(items[0].textContent).toContain('score 9/10');
+      expect(items[0].textContent).toContain('DIRECT');
+      expect(items[0].textContent).toContain('why 1');
+      expect(items[1].textContent).toContain('Not in PubMed Central');
+      expect(component.selectedCandidates).toEqual(['1']);           // no PMC text, or judged unannotatable: not ticked
+      component.toggleCandidate(paper('2', { pmcid: null }), true);   // cannot be ticked
+      component.toggleCandidate(paper('3'), true);
+      expect(component.selectedCandidates).toEqual(['1', '3']);
+      component.annotateSelected();
+      expect(api.startPapers).toHaveBeenCalledWith(['1', '3'], [], 'PINK1');
+      expect(router.navigate).toHaveBeenCalledWith(['s7'], { relativeTo: jasmine.anything() });
+      expect(sessionStorage.getItem('paper2path.geneSearch')).toBeNull();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('refuses what is not a gene symbol', fakeAsync(() => {
+      create();
+      tick(0);
+      for (const bad of ['', '   ', 'PINK1 OR BRCA1', '-PINK1', '"PINK1"']) {
+        component.gene = bad;
+        component.searchGene();
+      }
+      expect(api.findPapersByGene).not.toHaveBeenCalled();
+      component.gene = 'PINK1;rm';
+      fixture.detectChanges();
+      expect(el().querySelector('.gene-card .invalid')).not.toBeNull();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('says why a search failed and forgets it', fakeAsync(() => {
+      create();
+      tick(0);
+      api.findPapersByGene.and.returnValue(of({ jobId: 'g1' }));
+      api.pollGeneSearch.and.returnValue(of(job('failed', 'searching PubMed', null, 'PubMed is down')));
+      component.gene = 'PINK1';
+      component.searchGene();
+      fixture.detectChanges();
+      expect(component.geneSearching).toBeFalse();
+      expect(el().querySelector('.error')?.textContent).toContain('PubMed is down');
+      expect(sessionStorage.getItem('paper2path.geneSearch')).toBeNull();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('picks a running search up again after the page is left and reopened', fakeAsync(() => {
+      sessionStorage.setItem('paper2path.geneSearch', JSON.stringify({ jobId: 'g5', gene: 'PRKN' }));
+      create();
+      tick(0);
+      expect(component.gene).toBe('PRKN');
+      expect(api.pollGeneSearch).toHaveBeenCalledWith('g5');
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+  });
 });
