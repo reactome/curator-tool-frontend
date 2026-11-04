@@ -17,9 +17,9 @@ export class SessionListComponent implements OnInit, OnDestroy {
   /** The PubMed IDs as typed: one or more, separated by spaces, commas, semicolons or new lines. */
   pmids = '';
   focus = '';
-  /** The papers are review articles: keep the reactions they only cite (research papers keep only their own results). */
-  review = false;
   files: File[] = [];
+  /** The PDFs ticked as review articles: they keep the reactions they only cite (research keeps only its own results). */
+  reviews = new Set<File>();
   starting = false;
 
   private destroy$ = new Subject<void>();
@@ -82,12 +82,17 @@ export class SessionListComponent implements OnInit, OnDestroy {
   }
 
   removeFile(index: number): void {
-    this.files.splice(index, 1);
+    const [gone] = this.files.splice(index, 1);
+    this.reviews.delete(gone);
+  }
+
+  setReview(file: File, review: boolean): void {
+    if (review) this.reviews.add(file); else this.reviews.delete(file);
   }
 
   start(): void {
     if (!this.canStart) return;
-    this.begin(this.api.startPapers(this.pmidList, this.files, this.focus.trim() || undefined, this.review));
+    this.begin(this.api.startPapers(this.pmidList, this.files, this.focus.trim() || undefined, this.files.filter(f => this.reviews.has(f))));
   }
 
   private begin(call: import('rxjs').Observable<StartResponse>): void {

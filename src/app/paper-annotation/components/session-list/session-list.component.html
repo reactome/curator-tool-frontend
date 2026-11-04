@@ -13,18 +13,20 @@
         <mat-form-field appearance="outline">
           <mat-label>PubMed IDs</mat-label>
           <textarea matInput [(ngModel)]="pmids" name="pmids" rows="2" placeholder="24751536 29168502" aria-label="PubMed IDs"></textarea>
-          <mat-hint>One or more, separated by spaces, commas or new lines. The papers must be open access in PubMed Central.</mat-hint>
+          <mat-hint>One or more, separated by spaces, commas or new lines. The papers must be open access in PubMed Central. Whether each is a review is read from PubMed.</mat-hint>
         </mat-form-field>
         <p class="invalid" *ngIf="!pmidsValid" role="alert">Every PubMed ID must be a number (up to 9 digits).</p>
 
         <div class="pdfs">
           <input #fileInput type="file" accept="application/pdf,.pdf" multiple hidden (change)="onFilesChosen($event)">
           <button mat-stroked-button type="button" (click)="fileInput.click()"><mat-icon>upload_file</mat-icon> Add PDFs</button>
-          <span class="hint">For papers that are not in PubMed Central. Up to 50 MB each.</span>
+          <span class="hint">For papers that are not in PubMed Central. Up to 50 MB each. Tick "Review" for a review article: Reactome needs direct evidence, so a research paper keeps only the reactions its own results show, while a review also keeps the ones it cites.</span>
           <ul class="files" *ngIf="files.length" aria-label="PDFs to annotate">
             <li *ngFor="let f of files; let i = index">
               <mat-icon class="file-icon">description</mat-icon>
               <span class="file-name">{{ f.name }}</span>
+              <mat-checkbox class="file-review" [checked]="reviews.has(f)" (change)="setReview(f, $event.checked)"
+                            [attr.aria-label]="f.name + ' is a review article'">Review</mat-checkbox>
               <button mat-icon-button type="button" (click)="removeFile(i)" [attr.aria-label]="'Remove ' + f.name"><mat-icon>close</mat-icon></button>
             </li>
           </ul>
@@ -34,11 +36,6 @@
           <mat-label>Focus gene (optional)</mat-label>
           <input matInput [(ngModel)]="focus" name="focus" placeholder="PINK1">
         </mat-form-field>
-
-        <div class="review">
-          <mat-checkbox [(ngModel)]="review" name="review">Review article(s)</mat-checkbox>
-          <span class="hint">Reactome needs direct evidence, so for a research paper only reactions its own results show are kept. Tick this for a review to keep the reactions it cites from earlier work.</span>
-        </div>
       </mat-card-content>
       <mat-card-actions>
         <button mat-flat-button color="primary" [disabled]="!canStart" (click)="start()">Annotate</button>

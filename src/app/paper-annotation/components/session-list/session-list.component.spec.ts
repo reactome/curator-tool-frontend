@@ -83,7 +83,7 @@ describe('SessionListComponent', () => {
     component.pmids = ' 24751536 ';
     component.focus = ' PINK1 ';
     component.start();
-    expect(api.startPapers).toHaveBeenCalledWith(['24751536'], [], 'PINK1', false);   // research unless ticked
+    expect(api.startPapers).toHaveBeenCalledWith(['24751536'], [], 'PINK1', []);
     expect(router.navigate).toHaveBeenCalledWith(['s9'], { relativeTo: jasmine.anything() });
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
@@ -96,7 +96,7 @@ describe('SessionListComponent', () => {
     expect(component.pmidList).toEqual(['24751536', '29168502', '1234567']);
     expect(component.summary).toBe('3 PubMed IDs');
     component.start();
-    expect(api.startPapers).toHaveBeenCalledWith(['24751536', '29168502', '1234567'], [], undefined, false);   // no focus when blank
+    expect(api.startPapers).toHaveBeenCalledWith(['24751536', '29168502', '1234567'], [], undefined, []);   // no focus when blank
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
 
@@ -119,18 +119,25 @@ describe('SessionListComponent', () => {
     component.pmids = '24751536';
     expect(component.summary).toBe('2 PDFs + 1 PubMed ID');
     component.start();
-    expect(api.startPapers).toHaveBeenCalledWith(['24751536'], [b, a], undefined, false);
+    expect(api.startPapers).toHaveBeenCalledWith(['24751536'], [b, a], undefined, []);
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
 
-  it('starts review articles when the box is ticked', fakeAsync(() => {
+  it('sends the PDFs ticked as reviews, and forgets a removed one', fakeAsync(() => {
     create();
     tick(0);
     api.startPapers.and.returnValue(of({ sessionId: 's4', jobId: 'j4' }));
-    component.pmids = '23256519';
-    component.review = true;
+    const a = new File(['%PDF-a'], 'a.pdf', { type: 'application/pdf' });
+    const r = new File(['%PDF-r'], 'review.pdf', { type: 'application/pdf' });
+    const gone = new File(['%PDF-g'], 'gone.pdf', { type: 'application/pdf' });
+    component.files.push(a, r, gone);
+    component.setReview(r, true);
+    component.setReview(gone, true);
+    component.setReview(a, true);
+    component.setReview(a, false);
+    component.removeFile(2);
     component.start();
-    expect(api.startPapers).toHaveBeenCalledWith(['23256519'], [], undefined, true);
+    expect(api.startPapers).toHaveBeenCalledWith([], [a, r], undefined, [r]);
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
 

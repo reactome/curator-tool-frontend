@@ -4,9 +4,10 @@
     <div class="title" *ngIf="session">
       <h1>{{ title }}</h1>
       <span class="meta" *ngIf="session.focus">focus: {{ session.focus }}</span>
+      <span class="meta" *ngIf="papers.length === 1 && papers[0].review" matTooltip="Reactions this review only cites from earlier work were kept">review article</span>
       <span class="status" [ngClass]="'status-' + session.status">{{ session.status }}</span>
       <ul class="papers" *ngIf="papers.length > 1" aria-label="Papers in this annotation">
-        <li *ngFor="let p of papers">{{ paperLabel(p) }}</li>
+        <li *ngFor="let p of papers">{{ paperLabel(p) }}<span *ngIf="p.review" class="kind"> · review</span></li>
       </ul>
     </div>
     <span class="spacer"></span>

@@ -28,8 +28,11 @@ export interface PaperInfo {
   pmid: string | null;
   /** What to show: the PMID, or the uploaded file's name. */
   name: string;
-  /** Annotated as a review article: reactions it only cites were kept. Absent from services older than this flag. */
-  review?: boolean;
+  /**
+   * Annotated as a review article: reactions it only cites were kept. Null until the run decides (a PubMed ID's kind is
+   * read from PubMed); absent from services older than this flag.
+   */
+  review?: boolean | null;
 }
 
 /** "PMID 24751536" or the PDF's file name. */
