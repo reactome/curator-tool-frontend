@@ -194,7 +194,20 @@ describe('SessionListComponent', () => {
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
 
+  it('hides "Find papers for a gene" for the time being, and does not resume a saved search', fakeAsync(() => {
+    sessionStorage.setItem('paper2path.geneSearch', JSON.stringify({ jobId: 'g1', gene: 'PINK1' }));
+    create();
+    tick(0); fixture.detectChanges();
+    expect(el().querySelector('.gene-card')).toBeNull();
+    expect(api.pollGeneSearch).not.toHaveBeenCalled();
+    component.ngOnDestroy(); discardPeriodicTasks();
+  }));
+
   describe('gene -> papers', () => {
+    // The card is hidden for the time being; these tests cover it with the flag switched back on.
+    beforeEach(() => SessionListComponent.geneSearchEnabled = true);
+    afterEach(() => SessionListComponent.geneSearchEnabled = false);
+
     const paper = (pmid: string, extra: Partial<CandidatePaper> = {}): CandidatePaper => ({
       pmid, title: `paper ${pmid}`, journal: 'J', year: '2014', pmcid: 'PMC1', score: 8, evidence_type: 'DIRECT',
       annotatable: true, justification: `why ${pmid}`, ...extra });

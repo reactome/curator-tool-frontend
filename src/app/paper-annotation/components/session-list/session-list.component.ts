@@ -13,6 +13,13 @@ const GENE_SEARCH_KEY = 'paper2path.geneSearch';
   styleUrls: ['./session-list.component.scss']
 })
 export class SessionListComponent implements OnInit, OnDestroy {
+  /**
+   * "Find papers for a gene" is hidden for the time being (2026-11-04) while it is reworked. Set to true to bring the
+   * card back; the code behind it is left in place. Static so the specs can switch it on for the gene tests.
+   */
+  static geneSearchEnabled = false;
+  get showGeneSearch(): boolean { return SessionListComponent.geneSearchEnabled; }
+
   sessions: SessionSummary[] = [];
   loading = true;
   error: string | null = null;
@@ -51,7 +58,8 @@ export class SessionListComponent implements OnInit, OnDestroy {
     // A gene search takes a minute or more and runs on the server whatever this page does. If the curator left the
     // page while it ran (or after it finished, without starting an annotation), pick its job up again rather than
     // making them search, and wait, a second time. Per tab: sessionStorage.
-    const saved = sessionStorage.getItem(GENE_SEARCH_KEY);
+    // While the card is hidden, don't resume a search saved in this tab either: nobody could see or stop it.
+    const saved = this.showGeneSearch ? sessionStorage.getItem(GENE_SEARCH_KEY) : null;
     if (saved) {
       try {
         const { jobId, gene } = JSON.parse(saved);

@@ -48,7 +48,8 @@
       </mat-card-actions>
     </mat-card>
 
-    <mat-card class="gene-card">
+    <!-- Hidden for the time being: see SessionListComponent.geneSearchEnabled. -->
+    <mat-card class="gene-card" *ngIf="showGeneSearch">
       <mat-card-title>Find papers for a gene</mat-card-title>
       <mat-card-content>
         <p class="hint">Searches PubMed for papers about a gene and ranks them by how useful they are for a Reactome annotation.</p>
