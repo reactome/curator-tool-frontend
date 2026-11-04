@@ -213,7 +213,7 @@ than special-casing callers.
 |---|---|---|
 | `schema_view` | `MainSchemaViewModule` | Schema tree plus child routes (`instance`, `class`, `list_instances`, `referrers`). The child routes are deliberate: they reuse one `MainSchemaViewComponent`, so the tree's scroll position survives navigation. |
 | `event_view` | `MainEventModule` | Event tree, pathway diagram, and an embedded instance editor. |
-| `paper2path` | `PaperAnnotationModule` | Paper annotation workspace backed by curator-tool-llm (`llmApiURL`), with chat, proposals, evidence, and staging import. |
+| `paper2path` | `PaperAnnotationModule` | Paper annotation workspace backed by curator-tool-llm (`llmApiURL`), with chat, proposals, evidence, and staging import. In this code and the curator-tool-llm API, a "session" means one **annotation** (one Annotate run and its saved result), not a login session. |
 | `graph_query` | `NLQueryPageComponent` (standalone) | NL→Cypher query. Results feed into the list-instances view. |
 | `gene2path` | `GeneLlmComponentComponent` | Intentionally **unguarded**, because its URL was cited in grant applications. |
 | `home`, `login`, `tutorial` | | |

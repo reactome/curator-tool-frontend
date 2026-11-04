@@ -70,6 +70,11 @@ export function paperLabel(p: PaperInfo): string {
   return p.kind === 'pmid' ? `PMID ${p.pmid ?? p.name}` : p.name;
 }
 
+/**
+ * A "session" here (and in the curator-tool-llm API: /sessions, sessionId) means one annotation: one Annotate run and
+ * its saved result, not a login session. Curators only ever see the word "annotation". Sessions are stored per
+ * username, so "Your annotations" lists all of a curator's sessions, across logins and browsers.
+ */
 export interface SessionSummary {
   id: string;
   pmid: string | null;
