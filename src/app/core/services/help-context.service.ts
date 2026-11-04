@@ -22,8 +22,7 @@ const HELP_CONTENT: Record<string, HelpContext> = {
         items: [
           'Click Schema View to browse classes and edit instances.',
           'Click Event View to work with pathway diagrams and the event tree.',
-          // Gene2Path is hidden from the home page while it is being re-developed; restore with its card there.
-          // 'Click Gene2Path to use the LLM gene annotation tool.',
+          'Click Gene2Path to use the LLM gene annotation tool.',
           'Click Tutorial to open the full guided tutorial.',
         ],
       },
@@ -120,18 +119,25 @@ const HELP_CONTENT: Record<string, HelpContext> = {
       {
         heading: 'Usage',
         items: [
-          'Enter a gene symbol in the input field and click Submit.',
-          'Open Settings (gear icon) to change the LLM configuration before submitting.',
-          'A progress bar appears while the query runs.',
+          'Log in to WebBench first: Gene2Path needs it to run.',
+          'Enter a gene symbol and click Run (or press Enter). The pathways take a few seconds.',
+          'Open Settings to change the cutoffs for the predicted pathways before running.',
         ],
       },
       {
         heading: 'Reviewing Results',
         items: [
-          'Results include Annotated Pathways, Predicted Pathways, and interaction tables.',
-          'Use the side navigation menu to jump between generated sections.',
-          'Generated text may include links to Reactome pathways and PubMed citations.',
-          'Always review generated content as curation assistance, not ground truth.',
+          'Annotated Pathways lists the released human pathways the gene is already in.',
+          'Predicted Pathways lists the pathways enriched among its functional interaction partners, lowest FDR first; those it is already in are marked. The strong or weak badge says how far to trust the top one.',
+          'Use the On this page outline on the left to jump between sections. Pathway names link to the Pathway Browser.',
+          'Predictions are statistical suggestions, not ground truth: review them before curating.',
+        ],
+      },
+      {
+        heading: 'Relevant Papers',
+        items: [
+          'Below the pathways, Relevant Papers lists the papers worth annotating the gene from, best first, with a score out of 10, the kind of evidence and why.',
+          'Tick the papers to annotate (only those in PubMed Central can be ticked) and click Annotate selected to start a Paper2Path annotation with the gene as its focus.',
         ],
       },
     ],

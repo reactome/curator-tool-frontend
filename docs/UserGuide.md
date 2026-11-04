@@ -38,13 +38,12 @@ After login, the **home page** launches five areas:
 
 - **Schema View** — browse schema classes, list instances, open/edit instances, run batch edits, and manage staged changes.
 - **Event View** — work with pathway/event trees, pathway diagrams, and instance editing together.
+- **Gene2Path** — submit a gene symbol to see the Reactome pathways it is in or is predicted to be in, then the papers worth annotating it from.
 - **Paper2Path** — draft a Reactome annotation from one or more papers (PubMed IDs and/or PDFs), review its reactions, issues and network, refine it by chat, and load it into your staged instances. *(Experimental.)*
 - **Ask the Graph** — ask questions about the curation database in plain English and get an answer with the matching instances. Read-only.
 - **Tutorial** — tabbed reference plus interactive guided tours for each area.
 
-The AI-assistance apps (Paper2Path, Ask the Graph) and the Tutorial open in a **new browser tab**; Schema View and Event View open in the same tab.
-
-> **Gene2Path** is hidden from the home page while it is being re-developed. Its address, `/gene2path`, still works.
+The AI-assistance apps (Gene2Path, Paper2Path, Ask the Graph) and the Tutorial open in a **new browser tab**; Schema View and Event View open in the same tab.
 
 ---
 
@@ -74,7 +73,7 @@ There is **no self-service registration** — accounts are provisioned separatel
 | Event View | `/event_view` | **Yes** |
 | Paper2Path | `/paper2path` | **Yes** |
 | Ask the Graph | `/graph_query` | **Yes** |
-| Gene2Path | `/gene2path` | **No** (intentionally public — the link is cited in grant applications) |
+| Gene2Path | `/gene2path` | **No** to open it (intentionally public — the link is cited in grant applications); **yes** to run it |
 | Tutorial | `/tutorial` | No |
 
 The empty URL (`/`) redirects to `/home`.
@@ -97,11 +96,10 @@ The home page shows the Reactome logo and the title **"Reactome WebBench"**, fol
 |---|---|---|
 | **Schema View** | `account_tree` | `/schema_view` (same tab) |
 | **Event View** | `timeline` | `/event_view` (same tab) |
+| **Gene2Path** | `psychology` | `/gene2path` (new tab) |
 | **Paper2Path** | `article` | `/paper2path` (new tab) |
 | **Ask the Graph** | `manage_search` | `/graph_query` (new tab) |
 | **Tutorial** | `school` | `/tutorial` (new tab) |
-
-The **Gene2Path** card is hidden while Gene2Path is being re-developed; [Gene2Path](#11-gene2path-app) is still reached at `/gene2path`.
 
 The [global status toolbar](#5-global-status-toolbar) is shown at the bottom of the home page with the staged-instance counters hidden.
 
@@ -686,41 +684,49 @@ The lower panel is the same [instance editor](#9-instance-editor) described abov
 
 ## 11) Gene2Path app
 
-Gene2Path (`/gene2path`, opens in a new tab, no login required) uses LLM services to help annotate a gene against Reactome pathways.
+Gene2Path (`/gene2path`, opens in a new tab) finds the Reactome pathways a gene is, or could be, annotated in, then the papers to annotate it from. Anyone can open the page, but running it needs a WebBench login: without one, the page shows *"Gene2Path needs a WebBench login. Log in, then come back to this page."* and **Run** is disabled.
 
-**Title:** *"Gene2Path: Use LLM to Annotate a Gene in Reactome"*.
+**Title:** **Gene2Path**, with the line *"Find the Reactome pathways a gene is, or could be, annotated in, then the papers to annotate it from."* Before the first run, two panels explain what you will get: **Pathways** and **Relevant papers**.
 
 ### Basic usage
 
-1. In **"Enter a gene:"**, type a gene symbol (a default is prefilled).
-2. Click **Submit** (`publish` icon, tooltip **"Submit gene for processing"**).
-3. Optionally open **Settings** (`settings` icon, tooltip **"Edit Configurations"**) before submitting.
+1. In **Gene symbol**, type a gene symbol (a default is prefilled).
+2. Optionally open **Settings** (`settings`, tooltip **"Edit Configurations"**) before running.
+3. Click **Run** (`publish`, tooltip **"Submit gene for processing"**) or press Enter.
 
-An **indeterminate progress bar** shows while the query runs.
+The pathways usually take a few seconds. Meanwhile a progress bar shows *"Finding pathways for …"* with the current step, and the gene field and **Run** are disabled.
 
 ### Settings / configuration
 
-- **Choose Interaction Source** — **"IntAct & BioGrid Protein-Protein Interactions"** (default) or **"Reactome Functional Interactions"**.
-- **Filter PPIs based on Reactome FIs** (checkbox, default on; only with IntAct & BioGrid).
-- **Functional Interaction Score ≥** (0–0.9, default 0.8)
-- **Top Pubmed Results:** (default 8)
-- **Pathway Similarity Cutoff:** (0–0.9, default 0.20)
-- **LLM Score Cutoff:** (default 3)
-- **Top Pathways:** (0–20, default 8)
-- **FDR: <** (1, 0.05, 0.01, 0.001, 0.0001, 0.00001; default 0.01)
+Settings open under the gene field. They only affect the predicted pathways.
+
+- **Functional Interaction Score >** (default 0.8): partners with a lower score are not used.
+- **Top Partners** (1–50, default 10): how many partners, best score first, the enrichment is run over.
+- **FDR <** (1, 0.05, 0.01, 0.001, 0.0001, 0.00001; default 0.05): only pathways enriched below this are predicted.
+- **Top Pathways** (1–50, default 8): how many predicted pathways are listed.
 - **Reset** (`refresh`) restores defaults.
 
 ### Output
 
-Results appear with a left **navigation menu** (smooth-scrolls to sections) and content cards:
+Results appear as one card per section, with an **On this page** outline on the left that stays in view as you scroll (click an entry to scroll to it; hidden on a narrow window). Each pathway name links to the Reactome Pathway Browser.
 
-- **Annotated Pathways** — **Summary** and **Details** (pathways the gene is already annotated in).
-- **Predicted Pathways** — **Summary** and **Details**. Each predicted item shows *"PMID: … vs PATHWAY: …"* with a Semantic Score, LLM Score, and Pathway FDR. An expandable **"Click to process the full text paper"** panel extracts relationships and source text; if the PDF isn't found, you can upload one (**Choose a File**).
-- **Protein-Protein Interactions Supporting Annotation** — per-pathway tables with columns **Interaction Partner** and **PMID** (PubMed links), plus a summary.
+- **Annotated Pathways**, with their count: the released human pathways the gene already takes part in. A gene in none shows *"… is not annotated in any released human pathway yet."*
+- **Predicted Pathways**: the pathways enriched among the gene's top functional interaction (FI) partners, lowest FDR first, with the **FDR** and the **Partners in it**. A pathway the gene is already in is marked **already annotated**; the line under the heading says how many are not. A **strong** or **weak** badge says how far to trust the top one (strong: FDR below 1E-3 with at least 2 partners in it; hover for the reason). Under the table, **Interaction partners used** lists the partners with their FI scores. A gene with no partner above the score cutoff, or with no pathway below the FDR cutoff, says so and suggests which setting to change.
+- **Relevant Papers**: the papers worth annotating the gene from (see below).
 
-Failures show under a **"Failure"** heading.
+The pathways are computed without a language model: they come from the Reactome database and the FI network. Failures show in a red **Failure** box, for example when the annotation service cannot be reached.
 
-> Gene2Path does **not** write to the curation database. Generated text links out to reactome.org and PubMed. Treat all output as curation assistance requiring review.
+### Relevant papers
+
+Below the pathways, **Relevant Papers** suggests the papers to annotate the gene from. Submitting a gene starts this search together with the pathway query: Gene2Path searches PubMed for the gene, re-ranks what it finds, and has a language model judge how useful each paper is for a Reactome annotation. It usually takes a minute or two; meanwhile the section shows a progress bar and the current step, such as *"searching PubMed"*.
+
+Papers are only searched for a gene symbol, with only letters, digits, dots and dashes (such as `PINK1` or `HLA-A`); anything else is pointed out and not searched.
+
+The papers are listed best first, each with its title (a link to PubMed), PMID, year, a **score** out of 10 for how useful it is, its **evidence type** (`DIRECT`, `INDIRECT`, `INSUFFICIENT` or `NONE`), and one sentence on why. The papers in PubMed Central that the judge found annotatable are ticked; tick or untick any of them. A paper that is not in PubMed Central cannot be ticked (*"Not in PubMed Central: to annotate it, add its PDF in Paper2Path."*).
+
+**Annotate selected** starts one [Paper2Path](#12-paper2path-app) annotation from the ticked papers, with the gene as the focus gene. Gene2Path stays open with its results; follow **Open it in Paper2Path** to go to the annotation, which is also in Paper2Path's **Your annotations** list.
+
+> Gene2Path does **not** write to the curation database. Predicted pathways are statistical suggestions and the papers are ranked by a language model: review them before curating.
 
 ---
 
@@ -732,7 +738,7 @@ Paper2Path (`/paper2path`, opens in a new tab, **login required**) drafts a Reac
 
 ### Start an annotation
 
-The page, **Paper annotation**, has two cards: **Papers to annotate**, for papers you already have in mind, and **Find papers for a gene** (below), to find them. An annotation can be drawn from one paper or from several, in any mix of PubMed IDs and PDFs:
+The page, **Paper annotation**, has one card, **Papers to annotate**. To find the papers to annotate a gene from, use [Gene2Path](#relevant-papers). An annotation can be drawn from one paper or from several, in any mix of PubMed IDs and PDFs:
 
 - **PubMed IDs**: type one or more, separated by spaces, commas or new lines. The papers must be open access in PubMed Central. An ID typed twice is used once. If one is not a number (up to 9 digits), *"Every PubMed ID must be a number (up to 9 digits)."* is shown and **Annotate** is disabled.
 - **Add PDFs** (`upload_file`): for papers that are not in PubMed Central, up to 50 MB each. You can pick several at once, and click **Add PDFs** again to add more. Each PDF is listed with a remove (`close`) button. The same file added twice is kept once.
@@ -741,16 +747,6 @@ The page, **Paper annotation**, has two cards: **Papers to annotate**, for paper
 Beside **Annotate**, a count such as *"2 PDFs + 1 PubMed ID"* shows what will be annotated. Several papers are merged into **one** annotation, and a reaction that more than one paper describes cites them all.
 
 Annotating usually takes a few minutes, longer for a long paper or for several papers. You can leave the page; the annotation stays in your list.
-
-### Find papers for a gene
-
-**Find papers for a gene** suggests the papers worth annotating a gene from. Type a gene symbol, such as `PINK1` or `HLA-A`, and click **Find papers** (or press Enter). Paper2Path searches PubMed for the gene, re-ranks what it finds, and has a language model judge how useful each paper is for a Reactome annotation. A symbol with anything but letters, digits, dots and dashes is pointed out (*"A gene symbol has only letters, digits, dots and dashes, such as PINK1 or HLA-A."*) and is not searched.
-
-The search usually takes a minute or two. Meanwhile the card shows a progress bar and the current step, such as *"searching PubMed"*. You can leave the page: when you come back in the same tab, the card picks the search up again. **Stop waiting** puts it away.
-
-The papers are then listed best first, each with its title (a link to PubMed), PMID, year, a **score** out of 10 for how useful it is, its **evidence type** (`DIRECT`, `INDIRECT`, `INSUFFICIENT` or `NONE`), and one sentence on why. The papers in PubMed Central that the judge found annotatable are ticked; tick or untick any of them. A paper that is not in PubMed Central cannot be ticked (*"Not in PubMed Central: to annotate it, add its PDF under Papers to annotate."*).
-
-**Annotate selected** starts one annotation from the ticked papers, with the gene as the focus gene, and opens it. **Clear** puts the list away.
 
 **Your annotations** lists every annotation you have started, with **Paper(s)** (the PMID or file name, or for several papers how many there are and which), **Status** (`queued`, `running` with the current step, `ready` or `failed`), **Reactions**, **Open issues** and **Started**. Click a row to open it.
 

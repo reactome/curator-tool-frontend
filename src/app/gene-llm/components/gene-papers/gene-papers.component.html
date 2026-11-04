@@ -1,0 +1,48 @@
+<p class="hint" *ngIf="!loggedIn">
+    <a href="login">Log in to WebBench</a> to find papers for {{ geneSymbol }} and annotate them in Paper2Path.
+</p>
+<p class="invalid" *ngIf="loggedIn && geneSymbol && !geneValid" role="alert">
+    Papers are only searched for a gene symbol, which has only letters, digits, dots and dashes, such as PINK1 or HLA-A.
+</p>
+
+<div class="running" *ngIf="searching" role="status">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p><span class="progress">{{ progress || 'queued' }}</span> · usually a minute or two.</p>
+</div>
+
+<div class="error" *ngIf="error" role="alert">{{ error }}</div>
+
+<div class="candidates" *ngIf="result">
+    <p class="hint" *ngIf="!result.papers.length">No papers about {{ result.gene }} were found that are useful for an annotation.</p>
+    <p class="hint" *ngIf="result.papers.length">
+        {{ result.papers.length }} paper{{ result.papers.length > 1 ? 's' : '' }} for {{ result.gene }}, best first<span *ngIf="result.candidate_pool"> (of {{ result.candidate_pool }} read)</span>.
+    </p>
+    <ul aria-label="Candidate papers">
+        <li *ngFor="let p of result.papers" class="candidate" [class.unavailable]="!canSelect(p)">
+            <mat-checkbox [checked]="selectedPmids.has(p.pmid)" [disabled]="!canSelect(p)"
+                          (change)="toggleCandidate(p, $event.checked)" [attr.aria-label]="'Select PMID ' + p.pmid"></mat-checkbox>
+            <div class="candidate-body">
+                <div class="candidate-title">
+                    <a [href]="'https://pubmed.ncbi.nlm.nih.gov/' + p.pmid + '/'" target="pubmed" rel="noopener">{{ p.title || ('PMID ' + p.pmid) }}</a>
+                </div>
+                <div class="candidate-meta">
+                    <span>PMID {{ p.pmid }}</span>
+                    <span *ngIf="p.year">{{ p.year }}</span>
+                    <span class="score" *ngIf="p.score !== null">score {{ p.score }}/10</span>
+                    <span class="evidence-type" *ngIf="p.evidence_type" [ngClass]="'ev-' + p.evidence_type.toLowerCase()">{{ p.evidence_type }}</span>
+                </div>
+                <div class="justification" *ngIf="p.justification">{{ p.justification }}</div>
+                <div class="no-pmc" *ngIf="!canSelect(p)">Not in PubMed Central: to annotate it, add its PDF in Paper2Path.</div>
+            </div>
+        </li>
+    </ul>
+
+    <div class="actions" *ngIf="result.papers.length">
+        <button mat-flat-button color="primary" [disabled]="!selectedCandidates.length || starting" (click)="annotateSelected()">Annotate selected</button>
+        <span class="count" *ngIf="selectedCandidates.length && !startedSessionId">{{ selectedCandidates.length }} paper{{ selectedCandidates.length > 1 ? 's' : '' }}, focus {{ result.gene }}</span>
+        <span class="started" *ngIf="startedSessionId">
+            Annotation started. <a [href]="'paper2path/' + startedSessionId" target="_blank" rel="noopener noreferrer">Open it in Paper2Path</a>
+        </span>
+    </div>
+    <mat-progress-bar *ngIf="starting" mode="indeterminate"></mat-progress-bar>
+</div>

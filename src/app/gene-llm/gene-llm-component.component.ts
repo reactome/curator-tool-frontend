@@ -1,516 +1,114 @@
 import { Component, OnDestroy } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { catchError, concatMap, interval, of, Subscription, throwError } from 'rxjs';
-import { environment } from 'src/environments/environment.dev';
-import { Configuration, DEFAULT_LLM_CONFIG } from "./components/configuration-component/configuration-component.component";
-import { NavigationData } from './components/navigation-menu/navigation-menu.component';
+import { Subscription, switchMap } from 'rxjs';
 import { PageTitleService } from 'src/app/core/services/page-title.service';
+import { GenePathwaysResult } from 'src/app/paper-annotation/models/llm-api.models';
+import { LlmApiError, LlmApiService } from 'src/app/paper-annotation/services/llm-api.service';
+import { Configuration, DEFAULT_LLM_CONFIG } from "./components/configuration-component/configuration-component.component";
+import { GenePaperQuery } from './components/gene-papers/gene-papers.component';
+import { OutlineSection } from './components/navigation-menu/navigation-menu.component';
 
+/**
+ * Gene2Path: the Reactome pathways a gene is, or could be, annotated in, then the papers to annotate it from.
+ *
+ * The pathways come from curator-tool-llm's POST /api/llm/pathways/by-gene, without an LLM: the released human pathways
+ * the gene is already in, and those enriched among its top functional-interaction partners. This page used to call a
+ * Flask service (environment.llmURL, POST /annotate) that wrote LLM summaries of both; that service was deleted from
+ * curator-tool-llm, and in production /llm/ is the new service, so the page had stopped working at all.
+ *
+ * The route stays unguarded (its URL is cited in grant applications), but the service needs a WebBench token, so
+ * without one the page asks the curator to log in instead of running.
+ */
 @Component({
   selector: 'app-gene-llm-component',
   templateUrl: './gene-llm-component.component.html',
   styleUrls: ['./gene-llm-component.component.scss'],
 })
-export class GeneLlmComponentComponent {
-
-  //private LLM_HOST = "http://127.0.0.1:5000/"
-  private LLM_HOST = environment.llmURL;
-  private AUTH_REFRESH_URL = `${environment.authURL}/refresh`;
-  private LLM_ANNOTATE_GENE_URL = this.LLM_HOST + "/annotate"
-  private LLM_FULLTEXT_ANALYSIS_URL = this.LLM_HOST + '/fulltext/'
-  private tokenKeepAliveSub: Subscription | null = null;
-
-  content: string | undefined;
-  details: Interacting_Pathway_Detail[] | undefined;
-  failure: string | undefined;
-  annotated_pathway_content: string | undefined;
-  annotated_pathway_details: string | undefined;
-  pathway_2_ppi_abstracts_summary: string | undefined;
-  during_query: boolean = false;
-
-  navigationData: NavigationData = {
-    predPMIDPathways: [],
-    ppiPathways: []
-  };
-
+export class GeneLlmComponentComponent implements OnDestroy {
   gene: string = "NTN1";
   configuration: Configuration = { ...DEFAULT_LLM_CONFIG };
-
   showConfiguration: boolean = false;
-  ppiTableData: AbstractTableData[] | undefined;
 
-  constructor(private http: HttpClient, pageTitleService: PageTitleService) {
+  /** Set once a gene has been submitted: the intro gives way to the results. */
+  hasRun = false;
+  searching = false;
+  progress = '';
+  failure: string | null = null;
+  result: GenePathwaysResult | null = null;
+  /** Drives the Relevant Papers section, listed under the pathways. A new object per run starts a new paper search. */
+  paperQuery: GenePaperQuery | null = null;
+
+  private sub?: Subscription;
+
+  constructor(private api: LlmApiService, pageTitleService: PageTitleService) {
     pageTitleService.setTitle('Gene2Path');
   }
 
   ngOnDestroy(): void {
-    this.stopTokenKeepAlive();
+    this.sub?.unsubscribe();
   }
 
-  private startTokenKeepAlive(): void {
-    if (this.tokenKeepAliveSub) return;
-    this.tokenKeepAliveSub = interval(60_000).subscribe(() => {
-      this.http.post<any>(this.AUTH_REFRESH_URL, {}, { withCredentials: true }).subscribe({
-        next: (resp: any) => {
-          const token = typeof resp === 'string' ? resp : (resp?.token || resp?.accessToken || resp?.jwt);
-          if (token) {
-            localStorage.setItem('token', token);
-          }
-        },
-        error: () => {
-          // Keep polling job unaffected; regular auth flow handles failures when needed.
-        }
-      });
-    });
-  }
-
-  private stopTokenKeepAlive(): void {
-    this.tokenKeepAliveSub?.unsubscribe();
-    this.tokenKeepAliveSub = null;
+  get loggedIn(): boolean {
+    return !!localStorage.getItem('token');
   }
 
   changeShowConfiguration() {
-    if (this.showConfiguration) this.showConfiguration = false;
-    else this.showConfiguration = true;
+    this.showConfiguration = !this.showConfiguration;
   }
 
-  private resetContent() {
-    this.content = undefined;
-    this.details = undefined;
-    this.failure = undefined;
-    this.annotated_pathway_content = undefined;
-    this.annotated_pathway_details = undefined;
-    this.pathway_2_ppi_abstracts_summary = undefined;
-    this.ppiTableData = undefined;
-    this.navigationData.ppiPathways.length = 0;
-    this.navigationData.predPMIDPathways.length = 0;
-  }
-
-  annotateGene() {
-    // Before running anything, let's clean up the previous results
-    this.resetContent();
-    console.debug('Query gene: ', this.gene);
-    console.debug('Form data:');
-    const url = this.LLM_ANNOTATE_GENE_URL;
-    this.during_query = true;
-    this.startTokenKeepAlive();
-    this.configuration.queryGene = this.gene;
-    console.debug('Configuration:', this.configuration);
-    return this.http.post<LLM_Result>(url, this.configuration).pipe(
-      catchError((err: Error) => {
-        console.log("Error to query gene: \n" + err.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 100
-        });
-        this.failure = err.message;
-        this.during_query = false;
-        this.stopTokenKeepAlive();
-        return throwError(() => err);
-      })
-    ).subscribe(result => {
-      // Need to check failure first
-      if (result.failure) {
-        this.failure = result.failure;
-        this.during_query = false;
-        this.stopTokenKeepAlive();
-        return;
-      }
-      this.annotated_pathway_content = result.annotated_pathways_content;
-      this.annotated_pathway_details = result.annotated_pathways_docs;
-      this.pathway_2_ppi_abstracts_summary = result.pathway_2_ppi_abstracts_summary;
-      if (this.annotated_pathway_details) {
-        // Perform some formatting
-        this.annotated_pathway_details = this.postProcessText(this.annotated_pathway_details,
-          this.gene,
-          result.pathway_name_2_id);
-      }
-      if (this.annotated_pathway_content) {
-        this.annotated_pathway_content = this.postProcessText(this.annotated_pathway_content,
-          this.gene,
-          result.pathway_name_2_id);
-      }
-      this.content = result.content
-      if (this.content) {
-        this.content = this.postProcessText(this.content,
-          this.gene,
-          result.pathway_name_2_id);
-      }
-      if (result.pathway_2_ppi_abstracts_summary) {
-        let summaries = result.pathway_2_ppi_abstracts_summary;
-        this.createPPISummaryData(summaries, result.pathway_name_2_id, this.gene);
-      }
-      setTimeout(() => {
-        this.details = this.splitDetails(result.docs,
-          result.pathway_name_2_id,
-          result.pathway_abstract_scores,
-          this.gene);
-        this.navigationData.predPMIDPathways.length = 0;
-        this.details?.forEach((detail) => {
-          this.navigationData.predPMIDPathways.push(detail.pmid + ' vs ' + detail.pathway);
-        });
-      })
-      this.during_query = false;
-      this.stopTokenKeepAlive();
-    })
-  }
-
-  private createPPISummaryData(summaries: string[],
-    pathway_name_2_id: any,
-    queryGene: string = this.gene
-  ) {
-    this.navigationData.ppiPathways.length = 0;
-    Object.entries(summaries).forEach(([key, value]) => {
-      let entry: Pathway2Abstracts = { pathway_name: key, abstractData: value }
-      let summary = this.postProcessText(entry.abstractData.summary, queryGene, pathway_name_2_id);
-      if (summary === undefined)
-        summary = "";
-      let abstract: Abstracts = {
-        summary: summary,
-        gene: entry.abstractData.ppi_genes,
-        pmids: entry.abstractData.pmids
-      }
-      let data = this.mappingSummary(abstract.gene, abstract.pmids)
-      let pathway: AbstractTableData = {
-        pathwayName: key,
-        pathwayId: pathway_name_2_id[key],
-        summary: abstract.summary,
-        data: data
-      }
-      console.debug('pathway:', pathway);
-      if (this.ppiTableData === undefined)
-        this.ppiTableData = [];
-      this.ppiTableData.push(pathway);
-      this.navigationData.ppiPathways.push(pathway.pathwayName)
+  run(): void {
+    const gene = this.gene.trim().toUpperCase();
+    if (!gene || this.searching || !this.loggedIn) return;
+    this.gene = gene;
+    this.sub?.unsubscribe();
+    this.hasRun = true;
+    this.showConfiguration = false;
+    this.searching = true;
+    this.progress = 'starting';
+    this.failure = null;
+    this.result = null;
+    // The paper search is a separate, slow job (a minute or two). Start it now, alongside the pathway search, so the
+    // papers are usually ready by the time the curator has read the pathways above them.
+    this.paperQuery = { gene };
+    this.sub = this.api.findPathwaysByGene(gene, { ...this.configuration }).pipe(
+      switchMap(r => this.api.pollPathwaySearch(r.jobId))
+    ).subscribe({
+      next: j => {
+        this.progress = j.progress;
+        if (j.status === 'done') {
+          this.searching = false;
+          this.result = j.result ?? null;
+          if (!this.result) this.failure = `The pathway search for ${gene} returned nothing.`;
+        } else if (j.status === 'failed') {
+          this.searching = false;
+          this.failure = `The pathway search for ${gene} failed: ${j.error ?? 'no reason given'}`;
+        }
+      },
+      error: (e: LlmApiError) => { this.searching = false; this.failure = e.message; }
     });
   }
 
-  private mappingSummary(ppi_genes: string[], pmids: string[]): AbstractSummary[] {
-    const mappedGenes: AbstractSummary[] = ppi_genes.map((gene, index) => ({
-      gene: gene,
-      pmids: pmids[index].split('|')
+  /** The outline: one entry per section on the page. */
+  get sections(): OutlineSection[] {
+    const s: OutlineSection[] = [];
+    if (this.result) {
+      s.push({ id: 'annotated_pathways', label: 'Annotated Pathways' },
+             { id: 'predicted_pathways', label: 'Predicted Pathways' });
+      if (this.result.partners.length) s.push({ id: 'fi_partners', label: 'Interaction Partners', level: 1 });
     }
-    ));
-    return mappedGenes;
+    if (this.paperQuery) s.push({ id: 'relevant_papers', label: 'Relevant Papers' });
+    return s;
   }
 
-  private processPathwayAbstractScores(scores: any[]) {
-    const pathwayPmidScores: { [key: string]: [number?, number?, number?] } = {};
-    for (const score of scores) {
-      const key = `${score['pmid']}:${score['pathway']}`;
-      pathwayPmidScores[key] = [score['cos_score'], score['llm_score'], score['enrichment_fdr']];
-    }
-    return pathwayPmidScores;
+  get newPredictions(): number {
+    return (this.result?.predicted_pathways ?? []).filter(p => !p.annotated).length;
   }
 
-  private splitDetails(details: string | undefined,
-    pathway_name_2_id: any,
-    pathway_abstract_scores: any,
-    queryGene: string) {
-    if (details === undefined)
-      return undefined;
-    let pathwayPmidScores = this.processPathwayAbstractScores(pathway_abstract_scores);
-    let paragraphs = details.split('\n\n')
-    let detailObjects: Interacting_Pathway_Detail[] = [];
-    for (let i in paragraphs) { // This give us an index
-      let paragraph = paragraphs[i];
-      // Need to re-initialize this. Otherwise, the previous status is kept.
-      let regex = /PMID:(\d+)/g;
-      let match = regex.exec(paragraph);
-      let pmid = match ? match[1] : undefined;
-      let pathway = this.extractPathwayName(paragraph);
-      let pathwayId = pathway ? pathway_name_2_id[pathway] : undefined;
-      let text = paragraph;
-      if (pathway) {
-        let index = paragraph.indexOf(pathway);
-        text = paragraph.substring(index + pathway.length + 2).trim();
-        // let tmp = this.hiliteGene(text, queryGene);
-        let tmp = this.postProcessText(text, queryGene, pathway_name_2_id);
-        text = tmp ? tmp : "";
-      }
-      let detailObject: Interacting_Pathway_Detail = {
-        pmid: pmid,
-        pathway: pathway,
-        pathwayId: pathwayId,
-        text: text,
-        isWorkingFullText: true, // Ensure the spinner is shown
-        queryGene: queryGene
-      };
-      let scores = pathwayPmidScores[pmid + ':' + pathway];
-      if (scores) {
-        detailObject.cosScore = scores[0];
-        detailObject.llmScore = scores[1];
-        detailObject.enrichmentFDR = scores[2];
-      }
-      detailObjects.push(detailObject);
-    }
-    return detailObjects;
+  pathwayUrl(dbId: number): string {
+    return `https://reactome.org/PathwayBrowser/#/${dbId}`;
   }
 
-  private getScores(pathway: string, pmid: string) {
-    return undefined;
-  }
-
-  private extractPathwayName(text: string | undefined) {
-    if (text === undefined) return undefined;
-
-    // Match the first occurrence of PATHWAY_NAME:"..."
-    let regex = new RegExp('PATHWAY_NAME:"(.+?)"', 'g'); // Non-greedy match for the first pathway name
-    let match = regex.exec(text);
-
-    // Return the first matched pathway name or undefined if no match
-    return match ? match[1] : undefined;
-  }
-
-  private addPathwayLinks(text: string | undefined, name2id: any, for_pathway_name: boolean = true) {
-    if (text === undefined)
-      return text;
-    // Create a map from name to id first for links
-    let replacedText = text
-    for (let key in name2id) {
-      if (name2id.hasOwnProperty(key)) {
-        let pathway = key;
-        let dbId = name2id[pathway];
-        let regex = undefined;
-        let link = undefined;
-        if (for_pathway_name) {
-          regex = new RegExp('PATHWAY_NAME:"' + pathway + '"', 'g');
-          link = ' PATHWAY: <a href="https://reactome.org/PathwayBrowser/#/' + dbId + '" target="reactome">' + pathway + '</a>';
-        }
-        else {
-          // In case there is a pair of brackets
-          let regexWithBrackets = new RegExp(`\\[(${pathway})\\]`, 'g'); // Match with double stars
-          replacedText = replacedText.replace(regexWithBrackets, '$1');
-          // Match the pathway name without brackets
-          regex = new RegExp(pathway, 'g');
-          link = '<a href="https://reactome.org/PathwayBrowser/#/' + dbId + '" target="reactome">' + pathway + '</a>';
-        }
-        replacedText = replacedText.replace(regex, link);
-      }
-    }
-    return replacedText;
-  }
-
-  private postProcessText(text: string | undefined, queryGene: string, pathway_name_2_id: any) {
-    if (text === undefined)
-      return text;
-    text = this.replaceNewLine(text);
-    text = this.addPathwayLinks(text, pathway_name_2_id, false);
-    text = this.hiliteGene(text, queryGene);
-    text = this.addLinkToPMID(text);
-    return text;
-  }
-
-  private hiliteGene(text: string | undefined, queryGene: string) {
-    if (text === undefined) return text;
-
-    // Create a regex to match the query gene with or without double stars
-    let regexWithStars = new RegExp(`\\*\\*(${queryGene})\\*\\*`, 'gi'); // Match with double stars
-    let regexWithoutStars = new RegExp(`(${queryGene})`, 'gi'); // Match without double stars
-
-    // First, replace occurrences with double stars and remove the stars
-    text = text.replace(regexWithStars, '$1');
-
-    // Then, highlight the query gene
-    let hiliteGene = "<b class=\"query_gene\">$1</b>";
-    text = text.replace(regexWithoutStars, hiliteGene);
-
-    // Finally, highlight anything wrapped in double stars
-    text = this.hiliteTextWithStars(text);
-    return text;
-  }
-
-  // Highlight anything wrapped in double stars
-  private hiliteTextWithStars(text: string | undefined) {
-    if (text === undefined) return text;
-    // Create a regex to match the query gene with double stars
-    let regex = new RegExp(`\\*\\*(.+?)\\*\\*`, 'gi');
-    // Highlight the query gene
-    let hiliteGene = "<b class=\"query_gene\">$1</b>";
-    text = text.replace(regex, hiliteGene);
-    return text;
-  }
-
-  private addLinkToPMID(text: string | undefined) {
-    if (text === undefined)
-      return text;
-    let regex = /PMID: (\d+)/g;
-    let replacedText = text.replace(regex, '<a href="https://pubmed.ncbi.nlm.nih.gov/$1" target="pubmed">PMID:$1</a>');
-    console.debug('addLinkToPMID: ', replacedText)
-    return replacedText;
-  }
-
-  private replaceNewLine(text: string | undefined) {
-    if (text === undefined)
-      return text;
-    let replacedText = text.replace(/\n/g, '<br>')
-    return replacedText;
-  }
-
-  fetchFullText(detail: Interacting_Pathway_Detail) {
-    console.debug('Fetching full text...');
-    const url = this.LLM_FULLTEXT_ANALYSIS_URL + detail.pmid + "/" + detail.queryGene
-    detail.isWorkingFullText = true;
-    return this.http.get<LLM_Result[]>(url).pipe(
-      concatMap((result: LLM_Result[]) => {
-        return of(result);
-      }),
-      catchError((err: Error) => {
-        console.log("Error to query gene: \n" + err.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 100
-        });
-        return throwError(() => err);
-      })
-    ).subscribe(results => {
-      detail.isWorkingFullText = false;
-      // Check if there is any error here
-      if (results.length == 0) {
-        detail.failure = 'Uknown error at the server. Please report the error or try again later.'
-      }
-      else {
-        // Peek the first and see if there is any error
-        let firstResult = results[0];
-        if (firstResult.failure) {
-          detail.failure = firstResult.failure;
-          if (detail.failure.toLocaleLowerCase() === "The PDF full text paper cannot be found at the server".toLocaleLowerCase()) {
-            detail.needPDFFile = true;
-          }
-        }
-        else {
-          for (let result of results) {
-            result.content = this.replaceNewLine(result.content);
-            result.content = this.hiliteGene(result.content, detail.queryGene);
-            result.docs = this.hiliteGene(result.docs, detail.queryGene);
-          }
-          detail.fullPaperResults = results;
-        }
-      }
-    });
-  }
-
-  uploadPDFFile($event: any) {
-    let event: any = $event.event;
-    let detail: Interacting_Pathway_Detail = $event.detail;
-    console.debug("Uploading pdf file: ", event.target.files[0]);
-    const file = event.target.files[0];
-    if (file) {
-      detail.pdfUrl = file.name;
-      let formData = new FormData();
-      formData.append("pdf", file);
-      if (detail.pmid)
-        formData.append("pmid", detail.pmid);
-      let url = this.LLM_FULLTEXT_ANALYSIS_URL + "uploadPDF";
-      this.http.post(url, formData).pipe(
-        concatMap((result: any) => {
-          return of(result);
-        }),
-        catchError((err: Error) => {
-          console.log("Error to submit pdfUrl: \n" + err.message, "Close", {
-            panelClass: ['warning-snackbar'],
-            duration: 100
-          });
-          return throwError(() => err);
-        })
-      ).subscribe(result => {
-        if (result["status"] === "success") {
-          console.debug("The PDF is downloaded successfully.");
-          detail.failure = undefined;
-          detail.needPDFFile = false;
-          this.fetchFullText(detail);
-        }
-        else {
-          detail.failure = result['failure'];
-          detail.isWorkingFullText = false;
-        }
-      });
-    }
-  }
-
-  // The code cannot work at the server side. It is blocked by PMC becaue of the copyright issue!
-  submitPDFUrlForProcess(pdfUrl: string,
-    detail: Interacting_Pathway_Detail) {
-    console.debug('Paper PDF url: ', pdfUrl);
-    let url = this.LLM_FULLTEXT_ANALYSIS_URL + "download/" + detail.pmid + "?pdfUrl=" + pdfUrl;
-    detail.isWorkingFullText = true;
-    this.http.get<any>(url).pipe(
-      concatMap((result: any) => {
-        return of(result);
-      }),
-      catchError((err: Error) => {
-        console.log("Error to submit pdfUrl: \n" + err.message, "Close", {
-          panelClass: ['warning-snackbar'],
-          duration: 100
-        });
-        return throwError(() => err);
-      })
-    ).subscribe(result => {
-      if (result["status"] === "success") {
-        console.debug("The PDF is downloaded successfully.");
-        this.fetchFullText(detail);
-      }
-      else {
-        detail.failure = result['failure'];
-        detail.isWorkingFullText = false;
-      }
-    });
-  }
-  onGeneChange(geneName: string) {
-    this.gene = geneName;
+  /** 1.2E-4, as the FDR was shown before. */
+  formatFdr(fdr: number): string {
+    return fdr.toExponential(1).toUpperCase();
   }
 }
-
-interface LLM_Result {
-  annotated_pathways_content?: string;
-  annotated_pathways_docs?: string;
-  pathway_abstract_scores?: any;
-  content?: string;
-  docs?: string;
-  failure?: string;
-  pathway_2_ppi_abstracts_summary?: any;
-  pathway_name_2_id?: any;
-}
-
-export interface Interacting_Pathway_Detail {
-  pathway?: string;
-  pathwayId?: string;
-  pmid?: string;
-  text: string;
-  // scores
-  cosScore?: number;
-  llmScore?: number;
-  enrichmentFDR?: number;
-  // For full text
-  // For loading full text
-  isWorkingFullText: boolean;
-  fullPaperResults?: LLM_Result[];
-  queryGene: string;
-  failure?: string;
-  needPDFFile?: boolean;
-  pdfUrl?: string;
-}
-
-
-interface Pathway2Abstracts {
-  pathway_name: string;
-  abstractData: any;
-
-}
-
-interface AbstractTableData {
-  pathwayName: string;
-  pathwayId: number
-  summary: string;
-  data: AbstractSummary[];
-}
-
-interface Abstracts {
-  summary: string;
-  pmids: string[];
-  gene: string[];
-}
-
-export interface AbstractSummary {
-  gene: string;
-  pmids: string[];
-}
-

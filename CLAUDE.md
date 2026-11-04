@@ -73,8 +73,7 @@ services, and components. The production build swaps that file for `environment.
 | Key | Dev | Prod | Backs |
 |---|---|---|---|
 | `ApiRoot` / `authURL` | `localhost:9090/api/{curation,auth}` | `/api/...` | curator-tool-ws |
-| `llmURL` | `127.0.0.1:5000` | `/llm` | Flask LLM app used by `gene2path` |
-| `llmApiURL` | `localhost:8000/api/llm` | `/llm/api/llm` | curator-tool-llm (paper annotation and chat, SSE streaming) |
+| `llmApiURL` | `localhost:8000/api/llm` | `/llm/api/llm` | curator-tool-llm (Paper2Path: paper annotation and chat, SSE streaming; Gene2Path: pathway and paper searches) |
 | `nlQueryURL` | `localhost:8095/api/nlquery` | `/api/nlquery` | NL→Cypher sidecar for `graph_query`; validates tokens against ws |
 | `curatorGraphBaseUrl` | newcurator.reactome.org | same | external link |
 
@@ -215,7 +214,7 @@ than special-casing callers.
 | `event_view` | `MainEventModule` | Event tree, pathway diagram, and an embedded instance editor. |
 | `paper2path` | `PaperAnnotationModule` | Paper annotation workspace backed by curator-tool-llm (`llmApiURL`), with chat, proposals, evidence, and staging import. |
 | `graph_query` | `NLQueryPageComponent` (standalone) | NL→Cypher query. Results feed into the list-instances view. |
-| `gene2path` | `GeneLlmComponentComponent` | Intentionally **unguarded**, because its URL was cited in grant applications. |
+| `gene2path` | `GeneLlmComponentComponent` | Intentionally **unguarded**, because its URL was cited in grant applications. Its pathway and paper searches go to curator-tool-llm (`llmApiURL`), which needs a token, so the page asks for a login before it runs. |
 | `home`, `login`, `tutorial` | | |
 
 - **Instance editor:** [instance/components/instance-view](src/app/instance/components/instance-view)

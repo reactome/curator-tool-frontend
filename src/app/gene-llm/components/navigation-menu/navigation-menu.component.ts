@@ -1,26 +1,19 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
+
+/** One entry of the Gene2Path outline: the id of the element to scroll to, its label, and its depth (0 = section). */
+export interface OutlineSection {
+  id: string;
+  label: string;
+  level?: 0 | 1;
+}
 
 @Component({
   selector: 'app-navigation-menu',
   templateUrl: './navigation-menu.component.html',
   styleUrls: ['./navigation-menu.component.scss']
 })
-export class NavigationMenuComponent implements OnInit {
-  @Input() set navigationData(data: NavigationData) {
-    this.navData = data;
-  }
-
-  @Input() hasAnnotatedData: boolean = false;
-  @Input() hasPPIData: boolean = false;
-
-  navData: NavigationData = {
-    predPMIDPathways: [],
-    ppiPathways: []
-  };
-
-  ngOnInit(): void {
-    console.log('data', this.navData);
-  }
+export class NavigationMenuComponent {
+  @Input() sections: OutlineSection[] = [];
 
   scrollToSection(id: string) {
     // wait a moment to ensure the view has rendered (if necessary)
@@ -31,10 +24,4 @@ export class NavigationMenuComponent implements OnInit {
       }
     }, 0);
   }
-
-}
-
-export interface NavigationData {
-  predPMIDPathways: string[]; //for list predicted pathway details)
-  ppiPathways: string[]; //for listing ppis for each pathway)
 }

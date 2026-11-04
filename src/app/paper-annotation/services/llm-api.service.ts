@@ -4,7 +4,7 @@ import { Observable, firstValueFrom, switchMap, takeWhile, throwError, timer, ca
 import { environment } from 'src/environments/environment.dev';
 import { TokenRefreshService } from 'src/app/core/services/token-refresh.service';
 import {
-  AcceptResponse, ChatEvent, ExistingMatch, GeneSearchResult, InstanceEvidence, Issue, IssueStatus, Job, Network, Passage, Proposal,
+  AcceptResponse, ChatEvent, ExistingMatch, GenePathwaysRequest, GenePathwaysResult, GeneSearchResult, InstanceEvidence, Issue, IssueStatus, Job, Network, Passage, Proposal,
   ProposalRequest, QAResult, ReactionDetail, SessionDetail, SessionSummary, SessionUserInstances, StartResponse, StoredChatMessage,
   UsageReport
 } from '../models/llm-api.models';
@@ -100,6 +100,19 @@ export class LlmApiService {
   /** pollJob for a gene search: the final, done state carries the GeneSearchResult. */
   pollGeneSearch(jobId: string, everyMs = 3000): Observable<Job<GeneSearchResult>> {
     return this.pollJob(jobId, everyMs) as Observable<Job<GeneSearchResult>>;
+  }
+
+  /**
+   * The Reactome pathways a gene is, or could be, annotated in (Gene2Path): those it is already in, and those enriched
+   * among its functional-interaction partners. LLM-free, a few seconds, but a job: poll it with pollPathwaySearch.
+   */
+  findPathwaysByGene(gene: string, settings: GenePathwaysRequest = {}): Observable<{ jobId: string }> {
+    return this.call(() => this.http.post<{ jobId: string }>(this.url('/pathways/by-gene'), { gene, ...settings }));
+  }
+
+  /** pollJob for a pathway search: the final, done state carries the GenePathwaysResult. */
+  pollPathwaySearch(jobId: string, everyMs = 1000): Observable<Job<GenePathwaysResult>> {
+    return this.pollJob(jobId, everyMs) as Observable<Job<GenePathwaysResult>>;
   }
 
   sessions(): Observable<SessionSummary[]> {

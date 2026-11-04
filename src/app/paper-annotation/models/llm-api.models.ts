@@ -51,6 +51,47 @@ export interface GeneSearchResult {
   papers: CandidatePaper[];
 }
 
+/** A released human Reactome pathway the gene already takes part in (POST /pathways/by-gene). */
+export interface AnnotatedPathway {
+  pathway_id: number;
+  pathway_name: string;
+}
+
+/** A pathway enriched among the gene's top functional-interaction partners (binomial test, BH FDR). */
+export interface PredictedPathway {
+  pathway_id: number;
+  pathway_name: string;
+  fdr: number;
+  /** How many of the partners are in the pathway, and which. */
+  overlap_count: number;
+  mapped_genes: string[];
+  /** The gene is already annotated in this pathway. */
+  annotated: boolean;
+}
+
+/** The `result` of a pathway search job, for Gene2Path. Computed without an LLM. */
+export interface GenePathwaysResult {
+  gene: string;
+  annotated_pathways: AnnotatedPathway[];
+  /** ok | no_partners (no FI partner above fi_cutoff) | no_significant_pathway (none below fdr_cutoff) */
+  status: 'ok' | 'no_partners' | 'no_significant_pathway' | string;
+  /** The top prediction is strong (FDR < 1e-3 with at least 2 partners): the gene-first pipeline would anchor on it. */
+  confident: boolean;
+  /** Lowest FDR first. */
+  predicted_pathways: PredictedPathway[];
+  /** The FI partners used, best score first. */
+  partners: { gene: string; score: number }[];
+  params: { fi_cutoff?: number; top_partners?: number; fdr_cutoff?: number; max_pathways?: number };
+}
+
+/** The settings of a pathway search; the service's defaults apply to any left out. */
+export interface GenePathwaysRequest {
+  fi_cutoff?: number;
+  top_partners?: number;
+  fdr_cutoff?: number;
+  max_pathways?: number;
+}
+
 /** One paper of a session. `source` is the tag its reactions and quotes carry (`PMID:24751536`, or the PDF's stored file name). */
 export interface PaperInfo {
   source: string;

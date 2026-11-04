@@ -1,28 +1,3 @@
-<nav>
-    <ng-container *ngIf="hasAnnotatedData">
-        <a (click)="scrollToSection('annotated_pathways')" class="level_0">Annotated Pathways</a>
-        <br>
-        <a (click)="scrollToSection('annotated_pathways_summary')" class="level_1">Summary</a>
-        <br>
-        <a (click)="scrollToSection('annotated_pathways_details')" class="level_1">Details</a>
-        <br>
-    </ng-container>
-    <a (click)="scrollToSection('predicted_pathways')" class="level_0">Predicted Pathways</a>
-    <br>
-    <a (click)="scrollToSection('predicted_pathways_summary')" class="level_1">Summary</a>
-    <br>
-    <a (click)="scrollToSection('predicted_pathways_details')" class="level_1">Details</a>
-    <br>
-    <ng-container *ngFor="let pmid_pathway of navData.predPMIDPathways; let i=index">
-        <a (click)="scrollToSection('pred_pmid_pathway_' + i)" class="level_2">{{pmid_pathway}}</a>
-        <br>
-    </ng-container>
-    <a (click)="scrollToSection('gene2PPi')" class="level_1" *ngIf="hasPPIData">PPI for Annotation</a>
-    <br>
-    <ng-container *ngIf="hasPPIData">
-        <ng-container *ngFor="let pathway of navData.ppiPathways; let i=index;">
-            <a (click)="scrollToSection('ppi_pathway_' + i)" class="level_2">{{pathway}}</a>
-            <br>
-        </ng-container>
-    </ng-container>
-</nav>
+<p class="outline-title">On this page</p>
+<a *ngFor="let s of sections" (click)="scrollToSection(s.id)" [title]="s.label"
+   [class.level_0]="!s.level" [class.level_1]="s.level === 1">{{ s.label }}</a>
