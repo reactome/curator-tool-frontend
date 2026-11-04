@@ -133,6 +133,36 @@ describe('WorkspaceComponent', () => {
     discardPeriodicTasks();
   }));
 
+  it('sorts the reactions as in the paper, by what needs attention, or by name, and marks the ones to keep or remove', fakeAsync(() => {
+    make();
+    const three = { ...session('ready'), n_reactions: 3, qa: { r0: { priority: 'review' as const, summary: null, score: 0.8, is_reaction: true },
+                                                              r1: { priority: 'fix_first' as const, summary: null, score: 0.3, is_reaction: true } },
+      reactions: [{ key: 'r0', name: 'PINK1 phosphorylates Ub', dbId: -5, evidenceIds: [] },
+                  { key: 'r1', name: 'parkin binds pUb', dbId: -9, evidenceIds: [] },
+                  { key: 'r2', name: 'Atg5 binds Atg12', dbId: -7, evidenceIds: [], equation: 'ATG5 + ATG12 -> ATG5:ATG12' }] };
+    api.session.and.returnValue(of(three));
+    api.issues.and.returnValue(of([
+      { ...issue('k', 'r2', 'warning'), category: 'keep', message: 'every quote comes from Methods' },
+      { ...issue('w', 'r2', 'action'), blocked_by: 'k' },                 // waits on the decision: not counted
+      { ...issue('a', 'r0', 'action'), category: 'content' },
+      { ...issue('n', 'r0', 'info'), category: 'existing' }]));           // a note: not counted
+    component.ngOnInit();
+    tick(0);
+    const keys = () => component.sortedReactions.map(r => r.key);
+    expect(keys()).toEqual(['r0', 'r1', 'r2']);                           // as in the paper
+    component.reactionSort = 'attention';
+    expect(keys()).toEqual(['r2', 'r1', 'r0']);                           // keep or remove?, then fix first, then review
+    component.reactionSort = 'name';
+    expect(keys()).toEqual(['r2', 'r1', 'r0']);                           // Atg5, parkin, PINK1: case does not matter
+    expect(component.needsDecision('r2')).toBeTrue();
+    expect(component.needsDecision('r0')).toBeFalse();
+    expect(component.decisionReason('r2')).toBe('every quote comes from Methods');
+    expect(component.openCount('r2')).toBe(0);
+    expect(component.openCount('r0')).toBe(1);
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
   it('summarises issues and matches per reaction', fakeAsync(() => {
     make();
     component.ngOnInit();

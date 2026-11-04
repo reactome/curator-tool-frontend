@@ -4,7 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { Subject, forkJoin, map, merge, switchMap, takeUntil, takeWhile, timer } from 'rxjs';
-import { ExistingMatch, Issue, PaperInfo, paperLabel, Proposal, ReactionRef, SessionDetail } from '../../models/llm-api.models';
+import { ExistingMatch, Issue, PaperInfo, paperLabel, Proposal, QAPriority, ReactionRef, SessionDetail } from '../../models/llm-api.models';
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
 import { UserInstances } from 'src/app/core/models/reactome-instance.model';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
@@ -269,13 +269,59 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     if (this.session) this.session = { ...this.session, n_open_issues: this.openIssues.length };
   }
 
+  /** How the reaction list is ordered: as in the paper (the draft's order), what needs attention first, or by name. */
+  reactionSort: 'paper' | 'attention' | 'name' = 'paper';
+
+  /**
+   * The open issues of a reaction as the Issues tab lists them: not notes, not issues waiting on a keep-or-remove
+   * decision, and not the keep question itself (the row shows that as "Keep?").
+   */
+  private listedIssues(key: string): Issue[] {
+    return this.issues.filter(i => i.reaction_key === key && i.status === 'open' && i.severity !== 'info'
+      && !i.blocked_by && i.category !== 'keep');
+  }
+
   openCount(key: string): number {
-    return this.issues.filter(i => i.reaction_key === key && i.status === 'open').length;
+    return this.listedIssues(key).length;
   }
 
   worstSeverity(key: string): string {
-    const open = this.issues.filter(i => i.reaction_key === key && i.status === 'open');
+    const open = this.listedIssues(key);
     return open.some(i => i.severity === 'action') ? 'action' : open.length ? 'warning' : '';
+  }
+
+  /** The reaction waits on a keep-or-remove decision (it may not be a reaction, or no result of the paper shows it). */
+  needsDecision(key: string): boolean {
+    return this.issues.some(i => i.reaction_key === key && i.status === 'open' && i.category === 'keep');
+  }
+
+  /** The keep question's reasons, for the row's tooltip. */
+  decisionReason(key: string): string {
+    return this.issues.filter(i => i.reaction_key === key && i.status === 'open' && i.category === 'keep').map(i => i.message).join(' / ');
+  }
+
+  /** 0: keep or remove? then the QA priority (fix first, fix, review, ok); unchecked reactions by their worst issue. */
+  private attentionRank(key: string): number {
+    if (this.needsDecision(key)) return 0;
+    const rank: Record<QAPriority, number> = { fix_first: 1, fix: 2, review: 3, ok: 4 };
+    const qa = this.session?.qa?.[key];
+    if (qa) return rank[qa.priority];
+    const worst = this.worstSeverity(key);
+    return worst === 'action' ? 2 : worst === 'warning' ? 3 : 4;
+  }
+
+  get sortedReactions(): ReactionRef[] {
+    const list = [...(this.session?.reactions ?? [])];
+    const byKey = (a: ReactionRef, b: ReactionRef) => a.key.localeCompare(b.key, undefined, { numeric: true });
+    if (this.reactionSort === 'name') {
+      return list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }) || byKey(a, b));
+    }
+    if (this.reactionSort === 'attention') {
+      const pos = new Map(list.map((r, i) => [r.key, i]));
+      return list.sort((a, b) => this.attentionRank(a.key) - this.attentionRank(b.key)
+        || this.openCount(b.key) - this.openCount(a.key) || pos.get(a.key)! - pos.get(b.key)!);
+    }
+    return list;
   }
 
   /** The selected reaction, as context for the chat. Its dbId is the one the instances were exported with. */

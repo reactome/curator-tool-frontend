@@ -53,8 +53,16 @@
                           aria-label="Check all reactions to load">All</mat-checkbox>
             <span class="checked-count">{{ checkedCount }} of {{ loadableReactions.length }} checked to load</span>
           </div>
+          <mat-form-field class="sort" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Sort</mat-label>
+            <mat-select [(ngModel)]="reactionSort" aria-label="Sort reactions">
+              <mat-option value="paper">As in the paper</mat-option>
+              <mat-option value="attention">Needs attention first</mat-option>
+              <mat-option value="name">By name (A–Z)</mat-option>
+            </mat-select>
+          </mat-form-field>
           <ul class="reaction-list" role="listbox" aria-label="Reactions">
-            <li *ngFor="let r of session?.reactions" role="option" tabindex="0"
+            <li *ngFor="let r of sortedReactions" role="option" tabindex="0"
                 [class.selected]="r.key === selectedKey" [attr.aria-selected]="r.key === selectedKey"
                 (click)="select(r.key)" (keyup.enter)="select(r.key)">
               <mat-checkbox class="load-check" [checked]="isChecked(r.key)" [disabled]="!canCheck(r.key)"
@@ -63,8 +71,9 @@
                             [attr.aria-label]="'Load ' + r.name + ' into staged instances'"
                             [matTooltip]="canCheck(r.key) ? 'Load this reaction into staged instances' : 'This reaction cannot be loaded'"
                             matTooltipShowDelay="600"></mat-checkbox>
-              <span class="name">{{ r.name }}</span>
+              <span class="name">{{ r.name }}<span class="rkey" [matTooltip]="r.equation ?? ''">{{ r.key }}</span></span>
               <span class="badges">
+                <span *ngIf="needsDecision(r.key)" class="keep" [matTooltip]="decisionReason(r.key)">Keep?</span>
                 <mat-icon *ngIf="hasSameMatch(r.key)" class="badge same" matTooltip="Reactome appears to have this reaction already">content_copy</mat-icon>
                 <span *ngIf="openCount(r.key)" class="count" [ngClass]="'sev-' + worstSeverity(r.key)"
                       [matTooltip]="openCount(r.key) + ' open issue(s)'">{{ openCount(r.key) }}</span>

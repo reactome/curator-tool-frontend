@@ -36,6 +36,9 @@ h1 { margin: 8px 0; font-size: 22px; font-weight: 500; }
 .count { min-width: 20px; text-align: center; border-radius: 10px; padding: 0 6px; font-size: 12px; color: #fff; background: #757575; }
 .count.sev-action { background: #c62828; }
 .count.sev-warning { background: #ef6c00; }
+.sort { width: 100%; margin: 0 0 6px; }
+.rkey { margin-left: 6px; color: #888; font-size: 11px; font-family: monospace; }
+.keep { border: 1px solid #c62828; color: #c62828; border-radius: 10px; padding: 0 6px; font-size: 11px; line-height: 16px; }
 .detail { min-width: 0; }
 .network-split { display: grid; grid-template-columns: minmax(0, 1fr) 12px var(--detail-width, 380px); align-items: stretch; }
 .network-split.resizing { cursor: col-resize; user-select: none; }
