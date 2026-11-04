@@ -6,6 +6,16 @@
 
 - Added: in **Paper2Path**, **Remove this reaction** in the reaction panel takes a reaction out of the annotation directly, after you confirm. Its issues, suggested fixes and any edit proposed for it go with it, and the reaction list, Issues tab, network and chat all update.
 
+- Added: **Paper2Path** can annotate review articles. Reactome needs direct evidence, so a research paper keeps only the reactions its own results show and drops those it only cites from earlier work, while a review article also keeps the ones it cites. Whether a PubMed paper is a review is read from PubMed. For a PDF, tick **Review** beside the file name; otherwise it counts as research. A review shows *review article* in the annotation's header, or *· review* beside it when the annotation has several papers.
+
+- Added: in **Paper2Path**, you choose which reactions to load into your staged instances. Each reaction in **Reactions** has a checkbox, with **All** above the list. **Load into staged instances** loads only the checked reactions, and says how many. The annotation's pathway comes too when every reaction is checked. Your choice is remembered in this browser for each annotation. When loading, new literature references are filled in from PubMed, and a PDF with no PubMed ID gets a reference named after the file. The dialog says which references could not be filled in.
+
+- Changed: the **Issues** tab in **Paper2Path** now starts with **Keep these reactions?**. It lists the reactions that may not belong in the annotation, because they may not be molecular reactions or no result of the paper shows them, each with the reasons, its equation and any existing Reactome reaction it looks like. **Remove** takes the reaction out and **Keep** dismisses the reasons. The other issues are grouped by reaction, most urgent first, showing three per reaction until you click **Show N more**. Notes, and the issues of reactions waiting on a keep-or-remove decision, are hidden until you tick **Notes** or **Waiting on a decision**.
+
+- Added: the **Reactions** list in **Paper2Path** can be sorted **As in the paper**, **Needs attention first** or **By name (A–Z)**. Each reaction shows its key (point at it to see the equation), and **Keep?** marks a reaction waiting on a keep-or-remove decision (point at it to see why). The issue count beside each reaction now matches the **Issues** tab.
+
+- Changed: in **Paper2Path**, the reaction panel shows the review saved with the annotation as soon as you open a reaction, including when the reviewer thinks it may not be a molecular reaction. Before, a review only appeared after you clicked **Check this reaction**.
+
 - Fixed: in **Paper2Path**, after you accepted a change the chat proposed, the reaction panel kept showing the old version of the reaction until you selected another reaction and came back. It now updates straight away.
 
 ### Build on November 3, 2026

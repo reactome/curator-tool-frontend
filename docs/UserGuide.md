@@ -734,9 +734,11 @@ Paper2Path (`/paper2path`, opens in a new tab, **login required**) drafts a Reac
 
 The page, **Paper annotation**, has the **Papers to annotate** card, for papers you already have in mind. (A second card, **Find papers for a gene**, is hidden for the time being; see below.) An annotation can be drawn from one paper or from several, in any mix of PubMed IDs and PDFs:
 
-- **PubMed IDs**: type one or more, separated by spaces, commas or new lines. The papers must be open access in PubMed Central. An ID typed twice is used once. If one is not a number (up to 9 digits), *"Every PubMed ID must be a number (up to 9 digits)."* is shown and **Annotate** is disabled.
-- **Add PDFs** (`upload_file`): for papers that are not in PubMed Central, up to 50 MB each. You can pick several at once, and click **Add PDFs** again to add more. Each PDF is listed with a remove (`close`) button. The same file added twice is kept once.
+- **PubMed IDs**: type one or more, separated by spaces, commas or new lines. The papers must be open access in PubMed Central. An ID typed twice is used once. If one is not a number (up to 9 digits), *"Every PubMed ID must be a number (up to 9 digits)."* is shown and **Annotate** is disabled. Whether each paper is a review article is read from PubMed.
+- **Add PDFs** (`upload_file`): for papers that are not in PubMed Central, up to 50 MB each. You can pick several at once, and click **Add PDFs** again to add more. Each PDF is listed with a **Review** checkbox and a remove (`close`) button. Tick **Review** for a review article. The same file added twice is kept once.
 - **Focus gene** (optional): the protein you care most about in the papers.
+
+Reactome needs direct evidence, so a research paper keeps only the reactions its own results show, and drops those it only cites from earlier work. A review article also keeps the reactions it cites. A PDF counts as research unless you tick **Review**.
 
 Beside **Annotate**, a count such as *"2 PDFs + 1 PubMed ID"* shows what will be annotated. Several papers are merged into **one** annotation, and a reaction that more than one paper describes cites them all.
 
@@ -760,11 +762,20 @@ To delete an annotation, click the delete button (`delete`) at the end of its ro
 
 ### Inside an annotation
 
-The header shows the paper (PMID or file name), the focus gene and the status, with a back arrow (`arrow_back`, *"All annotations"*). For an annotation of several papers, it shows *"N papers"* followed by each paper's PMID or file name. While the papers are being annotated, the page shows the current step; if it failed, the reason. When it is ready, there are five tabs on the left (**Reactions**, **Issues**, **Suggested fixes**, **Network** and **Usage**) and the **Chat** panel on the right.
+The header shows the paper (PMID or file name), the focus gene and the status, with a back arrow (`arrow_back`, *"All annotations"*). For an annotation of several papers, it shows *"N papers"* followed by each paper's PMID or file name, with *· review* after a review article. An annotation of one review article shows *review article* in the header. While the papers are being annotated, the page shows the current step; if it failed, the reason. When it is ready, there are five tabs on the left (**Reactions**, **Issues**, **Suggested fixes**, **Network** and **Usage**) and the **Chat** panel on the right.
 
 #### Reactions
 
-The list on the left shows every extracted reaction. A `content_copy` icon means Reactome appears to have that reaction already, and a coloured count shows its open issues (red: needs action; orange: warnings). Click a reaction to see its details on the right:
+The list on the left shows every extracted reaction, with its key (such as `r3`; point at the key to see the reaction's equation). On each row:
+
+- the checkbox chooses whether the reaction is loaded into your staged instances (see [Load into staged instances](#load-into-staged-instances)). **All**, above the list, checks or clears every reaction, and *"N of M checked to load"* shows how many are checked. A reaction that can't be loaded has its checkbox disabled;
+- **Keep?** means the reaction may not belong in the annotation, because it may not be a molecular reaction or no result of the paper shows it. Point at it to see why, and decide under **Keep these reactions?** on the **Issues** tab;
+- a `content_copy` icon means Reactome appears to have the reaction already;
+- a coloured count shows its open issues, as the **Issues** tab counts them (red: needs action; orange: warnings). Notes, and issues that wait on a keep-or-remove decision, are not counted.
+
+**Sort** orders the list **As in the paper** (the order the reactions were drafted in), **Needs attention first** (reactions to keep or remove, then by their saved review: fix first, needs fixing, worth a look, no problems found), or **By name (A–Z)**.
+
+Click a reaction to see its details on the right:
 
 - name and reaction type;
 - **Reactome appears to have this reaction already** or **Similar to an existing reaction**, with the existing reaction's name, stable id and why it matches;
@@ -779,9 +790,16 @@ At the top of the reaction panel, the review saved with the annotation is shown:
 
 #### Issues
 
-Counts of open issues (**need action**, **warnings**, **notes**), filters for **Show** (Open, Resolved, Dismissed, All) and **Severity**, and the list of issues. Each issue links to its reaction and can be **Resolve**d or **Dismiss**ed, or **Reopen**ed.
+The top line counts the reactions to keep or remove and the issues listed. **Show** filters the issues by status (Open, Resolved, Dismissed, All). **Notes (N)** also lists notes, which are hidden at first. **Waiting on a decision (N)** also lists the issues of reactions that may be removed: they matter only if you keep the reaction.
 
-**Check all reactions** (`fact_check`) checks every reaction at once and shows them under **Look at these first**, most urgent first, each marked **Fix first**, **Needs fixing**, **Worth a look** or **No problems found** with one sentence on what matters most. Click a reaction's name to open it in **Reactions**. What the check finds is added to the issues. The ranking stays until you leave the page. The check reviews each reaction with the language model, so it can take a while.
+**Keep these reactions?** comes first. It lists each reaction that may not belong in the annotation, because it may not be a molecular reaction or no result of the paper shows it. Each has its name (click it to open the reaction in **Reactions**), key, equation and the reasons it was questioned, plus any existing Reactome reaction it looks like (`content_copy`).
+
+- **Remove** accepts the suggested fix that removes the reaction from the annotation, with its other issues. It is disabled until a removal is suggested.
+- **Keep** dismisses the reasons and rejects the suggested removal. The reaction's other issues are then listed with the rest.
+
+The other issues are grouped by reaction, most urgent first by the reaction's saved review (**Fix first**, **Needs fixing**, **Worth a look**, **No problems found**), which each group shows with its one-sentence summary. Click a reaction's name to open it in **Reactions**. A group shows its first three issues; **Show N more** lists the rest, and **Show fewer** folds them again. Each issue can be **Resolve**d or **Dismiss**ed, or **Reopen**ed.
+
+**Check all reactions** (`fact_check`) reviews every reaction again with the language model and updates the saved reviews and the issues, so it can take a while.
 
 #### Suggested fixes
 
@@ -810,7 +828,13 @@ The assistant only **proposes** edits. Each **Proposed edit** shows why, what it
 
 ### Load into staged instances
 
-**Load into staged instances** (`playlist_add`, in the header) puts the annotation's new instances into your staged instances. A dialog first shows how many instances come in and how many staged items they replace. What you have staged is saved to a backup first, and nothing is replaced if the backup fails; your default person and bookmarks are kept. Afterwards, **Open schema view** opens Schema View in a new tab.
+**Load into staged instances** (`playlist_add`, in the header) puts the reactions you checked in **Reactions** into your staged instances, with what they need. The button says how many, for example **Load 3 reactions into staged instances**, and stays disabled until at least one reaction is checked. Nothing is checked at first. Your choice is remembered in this browser for each annotation. The annotation's pathway comes too only when every reaction is checked.
+
+A dialog first shows how many reactions and instances come in and how many staged items they replace. It also says what happened to the papers the reactions cite:
+
+- A paper Reactome already has a literature reference for uses that reference.
+- A new literature reference is filled in from PubMed, as when you type a PubMed ID in Schema View. One that could not be filled in is named in the dialog and loaded with the PubMed ID only: enter the PubMed ID again in Schema View to fill it in.
+- A PDF with no PubMed ID gets a reference named after the file. Enter its PubMed ID in Schema View to fill it in. What you have staged is saved to a backup first, and nothing is replaced if the backup fails; your default person and bookmarks are kept. Afterwards, **Open schema view** opens Schema View in a new tab.
 
 After you accept edits in the chat, a banner reminds you to load again to bring them in. Changes you made by hand to the loaded copies are overwritten. In Schema View, a loaded reaction, catalyst or regulation has an **Evidence** button showing its quotes, and, for an annotation of several papers, which paper each one is from. Paper2Path does not write to the database: review and commit the staged instances as usual.
 
