@@ -292,6 +292,9 @@ export interface QAResult {
   score: number | null;
   findings: QAFinding[];
   llm_used: boolean;
+  /** The reviewer's answer to "is this a molecular reaction at all" (absent from an older service). */
+  is_reaction?: boolean | null;
+  not_reaction_reason?: string | null;
 }
 
 /** Language-model tokens, as the provider reports them. Cache reads and writes are reported separately. */

@@ -1,5 +1,17 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { ExistingMatch, Issue, PaperInfo, Participant, QA_PRIORITY_LABEL, QAResult, ReactionDetail } from '../../models/llm-api.models';
+import {
+  ExistingMatch, Issue, PaperInfo, Participant, QA_PRIORITY_LABEL, QAPriority, QAResult, ReactionDetail, ReactionQA
+} from '../../models/llm-api.models';
+
+/** What the QA box shows: the review saved with the session, or the one just run here. */
+export interface QAView {
+  priority: QAPriority | null;
+  verdict?: string;
+  summary: string | null;
+  score: number | null;
+  isReaction: boolean | null;
+  llmUsed: boolean;
+}
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
 
 @Component({
@@ -14,6 +26,8 @@ export class ReactionDetailComponent implements OnChanges {
   @Input() issues: Issue[] = [];
   /** The session's papers, so a quote can say which one it is from (only shown when there are several). */
   @Input() papers: PaperInfo[] = [];
+  /** This reaction's last QA review as saved with the session (run automatically after the pipeline), if any. */
+  @Input() savedQa: ReactionQA | null = null;
   /** Emitted when something here changed the session (a QA run adds issues). */
   @Output() changed = new EventEmitter<void>();
 
@@ -71,8 +85,18 @@ export class ReactionDetailComponent implements OnChanges {
     return out;
   }
 
+  /** The review to show: the one just run here, else the saved one. Its findings are in "Needs attention". */
+  get qaView(): QAView | null {
+    if (this.qa) {
+      return { priority: this.qa.priority ?? null, verdict: this.qa.verdict, summary: this.qa.summary ?? null,
+               score: this.qa.score ?? null, isReaction: this.qa.is_reaction ?? null, llmUsed: this.qa.llm_used };
+    }
+    const s = this.savedQa;
+    return s ? { priority: s.priority, summary: s.summary, score: s.score, isReaction: s.is_reaction, llmUsed: s.score !== null } : null;
+  }
+
   /** The ranked label; an older service sends only a verdict. */
-  qaLabel(q: QAResult): string {
+  qaLabel(q: QAView): string {
     return q.priority ? QA_PRIORITY_LABEL[q.priority] : q.verdict === 'ok' ? 'No blocking problems found' : 'Needs work';
   }
 

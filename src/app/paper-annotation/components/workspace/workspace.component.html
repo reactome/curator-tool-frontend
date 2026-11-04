@@ -83,7 +83,7 @@
          </div>
           <div class="detail">
             <app-reaction-detail *ngIf="selectedKey" [sessionId]="id" [reactionKey]="selectedKey"
-                                 [matches]="existing" [issues]="issues" [papers]="papers" (changed)="reload()"></app-reaction-detail>
+                                 [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" (changed)="reload()"></app-reaction-detail>
           </div>
         </div>
       </mat-tab>
@@ -118,7 +118,7 @@
                 Load this reaction into staged instances
               </mat-checkbox>
               <app-reaction-detail *ngIf="selectedKey; else noReaction" class="compact" [sessionId]="id" [reactionKey]="selectedKey"
-                                   [matches]="existing" [issues]="issues" [papers]="papers" (changed)="reload()"></app-reaction-detail>
+                                   [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" (changed)="reload()"></app-reaction-detail>
               <ng-template #noReaction><p class="none">Click a reaction in the network to see its details here.</p></ng-template>
             </aside>
           </div>

@@ -4,7 +4,7 @@
 mat-card mat-form-field { width: 100%; }
 .start-card { max-width: 720px; padding: 8px 16px 12px; }
 .start-card mat-card-header, .start-card mat-card-content, .start-card mat-card-actions { padding: 0; }
-.start-card mat-card-actions { min-height: auto; }
+.start-card mat-card-actions { min-height: auto; padding-top: 8px; }   /* a little room below the focus gene field */
 .start-card mat-card-subtitle { margin-top: 8px; line-height: 1.5; }
 .field-group { margin: 12px 0 16px; }
 .field-group:last-child { margin-bottom: 12px; }
