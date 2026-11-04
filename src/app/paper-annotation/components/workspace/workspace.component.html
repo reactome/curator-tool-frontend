@@ -83,7 +83,7 @@
          </div>
           <div class="detail">
             <app-reaction-detail *ngIf="selectedKey" [sessionId]="id" [reactionKey]="selectedKey"
-                                 [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" [stamp]="draftStamp" (changed)="reload()"></app-reaction-detail>
+                                 [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" [stamp]="draftStamp" (changed)="reload()" (removed)="onReactionRemoved($event)"></app-reaction-detail>
           </div>
         </div>
       </mat-tab>
@@ -118,7 +118,7 @@
                 Load this reaction into staged instances
               </mat-checkbox>
               <app-reaction-detail *ngIf="selectedKey; else noReaction" class="compact" [sessionId]="id" [reactionKey]="selectedKey"
-                                   [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" [stamp]="draftStamp" (changed)="reload()"></app-reaction-detail>
+                                   [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" [stamp]="draftStamp" (changed)="reload()" (removed)="onReactionRemoved($event)"></app-reaction-detail>
               <ng-template #noReaction><p class="none">Click a reaction in the network to see its details here.</p></ng-template>
             </aside>
           </div>
@@ -131,7 +131,7 @@
       </mat-tab>
     </mat-tab-group>
    </div>
-   <app-chat-panel [sessionId]="id" [contextLabel]="selectedReaction?.name ?? null" [contextDbIds]="contextDbIds"
+   <app-chat-panel [sessionId]="id" [stamp]="draftStamp" [contextLabel]="selectedReaction?.name ?? null" [contextDbIds]="contextDbIds"
                    (proposalDecided)="onProposalDecided($event)" (turnDone)="onTurnDone()"></app-chat-panel>
   </div>
 </div>

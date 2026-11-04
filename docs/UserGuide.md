@@ -773,7 +773,9 @@ The list on the left shows every extracted reaction. A `content_copy` icon means
 - **Summary**;
 - **Evidence (N)**: each quote from the paper with its page, section and figure. In an annotation of several papers, each quote also has a tag saying which paper it is from (its PMID or file name). *verbatim* means the quote was found word for word in the paper, *close match* that it differs slightly (usually PDF symbols or hyphenation), and *not found in paper* that it could not be found.
 
-**Check this reaction** (`fact_check`) runs rule checks and a model review of the reaction. The result says **Fix first**, **Needs fixing**, **Worth a look** or **No problems found**, with one sentence on the most important thing to do, the reviewer's confidence, and each finding. What it finds is added to the issues.
+At the top of the reaction panel, the review saved with the annotation is shown: **Fix first**, **Needs fixing**, **Worth a look** or **No problems found**, the reviewer's confidence, "may not be a molecular reaction" when the reviewer thinks so, and one sentence on the most important thing to do. Its findings are under **Needs attention**. **Re-check this reaction** (`fact_check`; **Check this reaction** if it was never checked) runs the rule checks and the model review again, for example after you changed the reaction.
+
+**Remove this reaction** (`delete`) takes the reaction out of the annotation, after you confirm with **Remove** (or **Cancel**). Its issues and suggested fixes go with it, a proposed edit of it is marked as no longer applying, and the next reaction in the list is selected. Load the annotation into your staged instances again afterwards, as after any change.
 
 #### Issues
 

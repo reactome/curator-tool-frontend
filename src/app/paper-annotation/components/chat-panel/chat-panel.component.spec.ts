@@ -1,3 +1,4 @@
+import { SimpleChange } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
@@ -44,6 +45,16 @@ describe('ChatPanelComponent', () => {
     expect(el().textContent).toContain('add CCCP');
     expect(el().textContent).toContain('I proposed it.');
     expect(el().querySelector('app-proposal-card')?.textContent).toContain('accepted');
+  });
+
+  it('re-reads proposal statuses when the draft changes, so an edit made stale elsewhere is shown as stale', () => {
+    create([{ role: 'assistant', text: 'I proposed it.', at: 2, proposal_ids: ['p-001'] }], [proposal('p-001')]);
+    expect(el().querySelector('app-proposal-card')?.textContent).toContain('waiting for your decision');
+    api.proposals.and.returnValue(of([proposal('p-001', 'stale')]));
+    component.stamp = 1;
+    component.ngOnChanges({ stamp: new SimpleChange(0, 1, false) });
+    fixture.detectChanges();
+    expect(el().querySelector('app-proposal-card')?.textContent).toContain('no longer applies');
   });
 
   it('explains how to start when the conversation is empty', () => {

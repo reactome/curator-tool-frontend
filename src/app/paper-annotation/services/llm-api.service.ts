@@ -193,6 +193,14 @@ export class LlmApiService {
     return this.call(() => this.http.post<Proposal>(this.url(`/sessions/${id}/proposals`), body));
   }
 
+  /**
+   * Remove a reaction from the draft as the curator's own decision. The service records it as an accepted proposal, so
+   * issues, QA, suggestions, other pending proposals and the exported instances follow. Same reply as accept().
+   */
+  removeReaction(id: string, key: string): Observable<AcceptResponse> {
+    return this.call(() => this.http.delete<AcceptResponse>(this.url(`/sessions/${id}/reactions/${encodeURIComponent(key)}`)));
+  }
+
   accept(id: string, proposalId: string): Observable<AcceptResponse> {
     return this.call(() => this.http.post<AcceptResponse>(this.url(`/sessions/${id}/proposals/${proposalId}/accept`), {}));
   }

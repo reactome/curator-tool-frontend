@@ -117,13 +117,15 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   /** Re-read the session, its issues and its existing-reaction matches (after an edit, QA, or a status change). */
   reload(): void {
     this.usageStamp++;
-    this.draftStamp++;
     forkJoin({ session: this.api.session(this.id), issues: this.api.issues(this.id), existing: this.api.existing(this.id),
                proposals: this.api.proposals(this.id, 'pending') })
       .subscribe({
         next: r => {
           this.session = r.session; this.issues = r.issues; this.existing = r.existing;
           this.suggestions = r.proposals.filter(p => p.actor === 'suggestions');
+          this.followRemovals();
+          // only now: the reaction panel, network and chat re-read what they show, and the selection is already valid
+          this.draftStamp++;
           this.error = null;
         },
         error: (e: LlmApiError) => this.error = e.message
@@ -221,6 +223,30 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
 
   canCheck(key: string | null): boolean {
     return this.loadableReactions.some(r => r.key === key);
+  }
+
+  /**
+   * A reaction may have gone (removed from its panel, from the Issues tab, or by an accepted edit): select another one
+   * and forget it in the "checked to load" set.
+   */
+  private followRemovals(): void {
+    const keys = new Set((this.session?.reactions ?? []).map(r => r.key));
+    if (this.selectedKey && !keys.has(this.selectedKey)) this.selectedKey = this.session?.reactions[0]?.key ?? null;
+    const kept = new Set([...this.checkedKeys].filter(k => keys.has(k)));
+    if (kept.size !== this.checkedKeys.size) {
+      this.checkedKeys = kept;
+      this.saveChecked();
+    }
+  }
+
+  /** The curator removed a reaction in its panel: select its neighbour in the list as shown, then re-read everything. */
+  onReactionRemoved(key: string): void {
+    const list = this.sortedReactions;
+    const at = list.findIndex(r => r.key === key);
+    const next = list[at + 1] ?? list[at - 1] ?? null;
+    this.selectedKey = next && next.key !== key ? next.key : null;
+    this.stagingStale = true;
+    this.reload();
   }
 
   setChecked(key: string, checked: boolean): void {

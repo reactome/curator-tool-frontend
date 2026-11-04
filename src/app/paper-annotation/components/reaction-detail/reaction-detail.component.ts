@@ -38,12 +38,17 @@ export class ReactionDetailComponent implements OnChanges, OnDestroy {
   @Input() stamp = 0;
   /** Emitted when something here changed the session (a QA run adds issues). */
   @Output() changed = new EventEmitter<void>();
+  /** Emitted with the reaction's key once the curator removed it from the draft. */
+  @Output() removed = new EventEmitter<string>();
 
   detail: ReactionDetail | null = null;
   loading = false;
   error: string | null = null;
   qa: QAResult | null = null;
   qaBusy = false;
+  /** Asking "remove this reaction?" before doing it. */
+  confirmRemove = false;
+  removing = false;
 
   constructor(private api: LlmApiService) {}
 
@@ -52,6 +57,7 @@ export class ReactionDetailComponent implements OnChanges, OnDestroy {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['sessionId'] || changes['reactionKey']) {
       this.qa = null;
+      this.confirmRemove = false;
       this.load();
     } else if (changes['stamp']) {
       // Same reaction, possibly edited: re-read it, keeping what is shown until the new version arrives. The QA
@@ -119,6 +125,17 @@ export class ReactionDetailComponent implements OnChanges, OnDestroy {
   /** The ranked label; an older service sends only a verdict. */
   qaLabel(q: QAView): string {
     return q.priority ? QA_PRIORITY_LABEL[q.priority] : q.verdict === 'ok' ? 'No blocking problems found' : 'Needs work';
+  }
+
+  /** Remove the reaction from the draft (after the curator confirmed). The page re-reads everything. */
+  remove(): void {
+    const key = this.reactionKey;
+    this.removing = true;
+    this.error = null;
+    this.api.removeReaction(this.sessionId, key).subscribe({
+      next: () => { this.removing = false; this.confirmRemove = false; this.removed.emit(key); },
+      error: (e: LlmApiError) => { this.removing = false; this.error = e.message; }
+    });
   }
 
   runQa(): void {

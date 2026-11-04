@@ -4,6 +4,8 @@
 
 - Changed: **Paper2Path** annotations, with every change you accepted, are now kept when the annotation service restarts. Before, a restart lost them all. An annotation that was still running when the service restarted shows as `failed`, with a note to start it again.
 
+- Added: in **Paper2Path**, **Remove this reaction** in the reaction panel takes a reaction out of the annotation directly, after you confirm. Its issues, suggested fixes and any edit proposed for it go with it, and the reaction list, Issues tab, network and chat all update.
+
 - Fixed: in **Paper2Path**, after you accepted a change the chat proposed, the reaction panel kept showing the old version of the reaction until you selected another reaction and came back. It now updates straight away.
 
 ### Build on November 3, 2026

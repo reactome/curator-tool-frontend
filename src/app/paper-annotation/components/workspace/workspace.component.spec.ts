@@ -163,6 +163,43 @@ describe('WorkspaceComponent', () => {
     discardPeriodicTasks();
   }));
 
+  it('after a reaction is removed, selects its neighbour, forgets it in the checked set and marks staging stale', fakeAsync(() => {
+    make();
+    api.removeReaction = jasmine.createSpy('removeReaction');
+    const three = { ...session('ready'), n_reactions: 3,
+      reactions: [{ key: 'r0', name: 'a', dbId: -5, evidenceIds: [] }, { key: 'r1', name: 'b', dbId: -9, evidenceIds: [] },
+                  { key: 'r2', name: 'c', dbId: -7, evidenceIds: [] }] };
+    api.session.and.returnValue(of(three));
+    component.ngOnInit();
+    tick(0);
+    component.select('r1');
+    component.setChecked('r1', true);
+    component.setChecked('r2', true);
+    const stamp = component.draftStamp;
+    api.session.and.returnValue(of({ ...three, n_reactions: 2, reactions: [three.reactions[0], three.reactions[2]] }));
+    component.onReactionRemoved('r1');
+    tick(0);
+    expect(component.selectedKey).toBe('r2');
+    expect([...component.checkedKeys]).toEqual(['r2']);
+    expect(component.stagingStale).toBeTrue();
+    expect(component.draftStamp).toBe(stamp + 1);
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
+  it('follows a reaction removed elsewhere (Issues tab, accepted edit): the selection moves to the first one', fakeAsync(() => {
+    make();
+    component.ngOnInit();
+    tick(0);
+    component.select('r1');
+    api.session.and.returnValue(of({ ...session('ready'), n_reactions: 1, reactions: [session('ready').reactions[0]] }));
+    component.reload();
+    tick(0);
+    expect(component.selectedKey).toBe('r0');
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
   it('summarises issues and matches per reaction', fakeAsync(() => {
     make();
     component.ngOnInit();

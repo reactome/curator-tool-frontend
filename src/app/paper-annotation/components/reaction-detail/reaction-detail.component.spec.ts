@@ -1,5 +1,6 @@
 import { SimpleChange } from '@angular/core';
-import { Subject, of } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
+import { LlmApiError } from '../../services/llm-api.service';
 import { QAResult, ReactionDetail } from '../../models/llm-api.models';
 import { ReactionDetailComponent } from './reaction-detail.component';
 
@@ -81,5 +82,46 @@ describe('ReactionDetailComponent refresh', () => {
     panel.ngOnChanges({ reactionKey: new SimpleChange('r3', 'r4', false) });
     slow.next(version(3));
     expect(panel.detail?.dbId).toBe(4);
+  });
+});
+
+describe('ReactionDetailComponent remove', () => {
+  let api: jasmine.SpyObj<any>;
+  let panel: ReactionDetailComponent;
+
+  beforeEach(() => {
+    api = jasmine.createSpyObj('LlmApiService', ['reaction', 'qa', 'removeReaction']);
+    panel = new ReactionDetailComponent(api);
+    panel.sessionId = 's1';
+    panel.reactionKey = 'r3';
+  });
+
+  it('removes the reaction once confirmed and tells the page which one', () => {
+    api.removeReaction.and.returnValue(of({}));
+    const removed: string[] = [];
+    panel.removed.subscribe(k => removed.push(k));
+    panel.confirmRemove = true;
+    panel.remove();
+    expect(api.removeReaction).toHaveBeenCalledWith('s1', 'r3');
+    expect(removed).toEqual(['r3']);
+    expect(panel.confirmRemove).toBeFalse();
+    expect(panel.removing).toBeFalse();
+  });
+
+  it('shows why when the service refuses, and removes nothing', () => {
+    api.removeReaction.and.returnValue(throwError(() => new LlmApiError(404, "no reaction with key 'r3'")));
+    const removed: string[] = [];
+    panel.removed.subscribe(k => removed.push(k));
+    panel.remove();
+    expect(panel.error).toContain('no reaction');
+    expect(removed).toEqual([]);
+  });
+
+  it('forgets an open confirmation when another reaction is selected', () => {
+    api.reaction.and.returnValue(new Subject());
+    panel.confirmRemove = true;
+    panel.reactionKey = 'r4';
+    panel.ngOnChanges({ reactionKey: new SimpleChange('r3', 'r4', false) });
+    expect(panel.confirmRemove).toBeFalse();
   });
 });
