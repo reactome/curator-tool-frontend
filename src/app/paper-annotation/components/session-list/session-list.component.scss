@@ -2,16 +2,20 @@
 .intro, .hint, .empty { color: #555; }
 .starters { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin: 16px 0; }
 mat-card mat-form-field { width: 100%; }
-.start-card { max-width: 720px; }
-.pdfs { margin: 4px 0 8px; }
-.pdfs .hint { margin-left: 8px; }
+.start-card { max-width: 720px; padding: 8px 16px 12px; }
+.start-card mat-card-header, .start-card mat-card-content, .start-card mat-card-actions { padding: 0; }
+.start-card mat-card-actions { min-height: auto; }
+.start-card mat-card-subtitle { margin-top: 8px; line-height: 1.5; }
+.field-group { margin: 12px 0 16px; }
+.field-group:last-child { margin-bottom: 12px; }
+.pdfs .hint { margin: 8px 0 0; font-size: 13px; line-height: 1.5; }
 .files { list-style: none; margin: 8px 0 0; padding: 0; }
 .files li { display: flex; align-items: center; gap: 4px; padding: 2px 0; }
 .file-icon { color: #777; }
 .file-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #333; }
-.invalid { color: #7a1c14; margin: 0 0 8px; font-size: 13px; }
+.invalid { color: #7a1c14; margin: 6px 0 0; font-size: 13px; }
 .count { margin-left: 12px; color: #555; }
-.focus { margin-top: 12px; }
+.file-review { margin-left: 12px; }
 .gene-form { display: flex; align-items: flex-start; gap: 8px; }
 .gene-form mat-form-field { flex: 1; }
 .gene-form button { margin-top: 10px; }

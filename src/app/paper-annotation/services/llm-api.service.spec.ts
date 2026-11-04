@@ -63,6 +63,19 @@ describe('LlmApiService', () => {
       req.flush({ sessionId: 's', jobId: 'j' });
     });
 
+    it('names the PDFs that are reviews in review_files; PubMed IDs are left to the service', () => {
+      service.startPapers(['23256519'], []).subscribe();
+      expect(http.expectOne(`${base}/sessions`).request.body).toEqual({ pmid: '23256519', focus: null });
+      const research = new File(['%PDF-1'], 'research.pdf', { type: 'application/pdf' });
+      const review = new File(['%PDF-2'], 'review.pdf', { type: 'application/pdf' });
+      service.startPapers(['23256519'], [research, review], undefined, [review]).subscribe();
+      const form = http.expectOne(`${base}/sessions/upload`).request.body as FormData;
+      expect(form.getAll('review_files')).toEqual(['review.pdf']);
+      expect(form.has('review')).toBeFalse();
+      service.startPapers([], [research]).subscribe();
+      expect((http.expectOne(`${base}/sessions/upload`).request.body as FormData).has('review_files')).toBeFalse();
+    });
+
     it('uploads one PDF without PMIDs or focus when there are none', () => {
       const file = new File(['%PDF-1'], 'paper.pdf', { type: 'application/pdf' });
       service.startPapers([], [file]).subscribe();
