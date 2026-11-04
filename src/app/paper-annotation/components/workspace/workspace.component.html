@@ -79,8 +79,9 @@
         </div>
       </mat-tab>
       <mat-tab [label]="'Issues (' + openIssues.length + ')'">
-        <app-issues-panel [sessionId]="id" [issues]="issues" (changed)="onIssueChanged($event)"
-                          (checked)="reload()" (openReaction)="openReaction($event)"></app-issues-panel>
+        <app-issues-panel [sessionId]="id" [issues]="issues" [reactions]="session?.reactions ?? []" [qa]="session?.qa ?? {}"
+                          (changed)="onIssueChanged($event)"
+                          (checked)="reload()" (removed)="stagingStale = true" (openReaction)="openReaction($event)"></app-issues-panel>
       </mat-tab>
       <mat-tab [label]="'Suggested fixes (' + suggestions.length + ')'">
         <section class="suggestions" aria-label="Suggested fixes">

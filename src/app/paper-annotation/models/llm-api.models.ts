@@ -59,6 +59,8 @@ export interface ReactionRef {
   name: string;
   dbId: number | null;
   evidenceIds: string[];
+  /** "inputs -> outputs (catalyst X)", to tell apart reactions that share a name (absent from an older service). */
+  equation?: string;
 }
 
 export interface SessionDetail extends SessionSummary {
@@ -66,7 +68,29 @@ export interface SessionDetail extends SessionSummary {
   error: string | null;
   reactions: ReactionRef[];
   papers?: PaperInfo[];
+  /** Each reaction's last QA review, by reaction key (absent from an older service). */
+  qa?: Record<string, ReactionQA>;
 }
+
+/** The last QA review of one reaction: where it goes in the curator's list. */
+export interface ReactionQA {
+  priority: QAPriority;
+  summary: string | null;
+  score: number | null;
+  /** The reviewer's answer to "is this a molecular reaction at all" (null when not asked). */
+  is_reaction: boolean | null;
+}
+
+/**
+ * What an issue is about, in the order a curator should look: whether the reaction should exist at all, whether Reactome
+ * already has it, its participants / catalyst / regulation, identifiers, its evidence, the paper.
+ */
+export type IssueCategory = 'keep' | 'existing' | 'content' | 'identifiers' | 'evidence' | 'paper' | 'other';
+export const ISSUE_CATEGORY_ORDER: IssueCategory[] = ['keep', 'existing', 'content', 'identifiers', 'evidence', 'paper', 'other'];
+export const ISSUE_CATEGORY_LABEL: Record<IssueCategory, string> = {
+  keep: 'Keep this reaction?', existing: 'Already in Reactome?', content: 'Participants, catalyst, regulation',
+  identifiers: 'Identifiers', evidence: 'Evidence and summary', paper: 'The paper', other: 'Other'
+};
 
 export interface Issue {
   id: string;
@@ -78,6 +102,13 @@ export interface Issue {
   participant_key: string | null;
   instance_db_id: number | null;
   status: IssueStatus;
+  /** The part of the reaction it is about (catalyst, inputs, summation, ...). */
+  field?: string | null;
+  category?: IssueCategory;
+  /** The open "keep this reaction?" issue this one waits on: it is moot if the reaction is removed. */
+  blocked_by?: string | null;
+  /** A pending suggested fix that resolves it. */
+  proposal_id?: string | null;
 }
 
 export type Verification = 'unverified' | 'exact' | 'fuzzy' | 'failed';
