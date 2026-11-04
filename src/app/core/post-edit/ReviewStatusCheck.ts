@@ -65,22 +65,26 @@ export class ReviewStatusCheck implements PostEditOperation {
             return false;
     }
 
+    // There is deliberately no Event class check here: the review status rules apply to every
+    // class that carries internalReviewed/reviewed. The old check also read schemaClass?.name,
+    // which is undefined on instance.source (the database copy postEdit also runs on), so it
+    // silently returned false there.
+    // Promotion only happens when the slot actually holds a value: finishEdit() also calls
+    // postEdit when the last internalReviewed/reviewed value is deleted, and removing a review
+    // must not award stars.
     private isInternalReviewedAdded(instance: Instance, attributeName: string): boolean {
-        if (this.dataService.isEventClass(instance.schemaClass?.name!)) {
-            if (attributeName === "internalReviewed") {
-                return true;
-            }
-        }
-        return false;
+        return attributeName === "internalReviewed" && this.hasValue(instance, attributeName);
     }
 
     private isExternalReviewedAdded(instance: Instance, attributeName: string): boolean {
-        if (this.dataService.isEventClass(instance.schemaClass?.name!)) {
-            if (attributeName === "reviewed") {
-                return true;
-            }
-        }
-        return false;
+        return attributeName === "reviewed" && this.hasValue(instance, attributeName);
+    }
+
+    private hasValue(instance: Instance, attributeName: string): boolean {
+        const value = instance.attributes?.get(attributeName);
+        if (value === undefined || value === null)
+            return false;
+        return !(Array.isArray(value) && value.length === 0);
     }
 
     public checkChangeReviewStatus(instance: Instance, attributeName: string): boolean {
@@ -144,15 +148,19 @@ export class ReviewStatusCheck implements PostEditOperation {
 
         else if (this.isInternalReviewedAdded(instance, attributeName)) {
             // ensureReviewStatusInLocal(e.getEditingComponent());
+            // An event with no reviewStatus has no key in the attributes Map, so get() returns
+            // undefined, not null. The old `preStatus === null` test never matched, and an
+            // unreviewed event stayed without stars after internalReviewed was assigned.
             let preStatus = instance.attributes?.get('reviewStatus');
-            if (preStatus === null ||
+            if (preStatus === undefined || preStatus === null ||
                 preStatus?.dbId === ReviewStatus.oneStar.dbId) {
-                instance.attributes.set('previousReviewStatus', preStatus);
-                this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
-
+                if (preStatus) {
+                    instance.attributes.set('previousReviewStatus', preStatus);
+                    this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
+                }
                 instance.attributes?.set('reviewStatus', ReviewStatus.threeStar);
                 this.addModifiedAttributes('reviewStatus', instance, isActiveEdit);
-
+                reviewStatusChanged = true;
             }
             else if (preStatus?.dbId === ReviewStatus.twoStar.dbId) {
                 instance.attributes.set('previousReviewStatus', preStatus);
@@ -165,13 +173,16 @@ export class ReviewStatusCheck implements PostEditOperation {
         }
         else if (this.isExternalReviewedAdded(instance, attributeName)) {
             // ensureReviewStatusInLocal(e.getEditingComponent());
+            // See the internalReviewed branch: a missing reviewStatus is undefined, not null.
             let preStatus = instance.attributes?.get('reviewStatus');
-            if (preStatus === null ||
+            if (preStatus === undefined || preStatus === null ||
                 preStatus?.dbId === ReviewStatus.twoStar.dbId ||
                 preStatus?.dbId === ReviewStatus.threeStar.dbId ||
                 preStatus?.dbId === ReviewStatus.fourStar.dbId) {
-                instance.attributes.set('previousReviewStatus', preStatus);
-                this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
+                if (preStatus) {
+                    instance.attributes.set('previousReviewStatus', preStatus);
+                    this.addModifiedAttributes('previousReviewStatus', instance, isActiveEdit);
+                }
                 instance.attributes?.set('reviewStatus', ReviewStatus.fiveStar);
                 this.addModifiedAttributes('reviewStatus', instance, isActiveEdit);
                 reviewStatusChanged = true;
