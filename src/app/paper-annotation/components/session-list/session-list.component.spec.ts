@@ -83,7 +83,7 @@ describe('SessionListComponent', () => {
     component.pmids = ' 24751536 ';
     component.focus = ' PINK1 ';
     component.start();
-    expect(api.startPapers).toHaveBeenCalledWith(['24751536'], [], 'PINK1');
+    expect(api.startPapers).toHaveBeenCalledWith(['24751536'], [], 'PINK1', false);   // research unless ticked
     expect(router.navigate).toHaveBeenCalledWith(['s9'], { relativeTo: jasmine.anything() });
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
@@ -96,7 +96,7 @@ describe('SessionListComponent', () => {
     expect(component.pmidList).toEqual(['24751536', '29168502', '1234567']);
     expect(component.summary).toBe('3 PubMed IDs');
     component.start();
-    expect(api.startPapers).toHaveBeenCalledWith(['24751536', '29168502', '1234567'], [], undefined);   // no focus when blank
+    expect(api.startPapers).toHaveBeenCalledWith(['24751536', '29168502', '1234567'], [], undefined, false);   // no focus when blank
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
 
@@ -119,7 +119,18 @@ describe('SessionListComponent', () => {
     component.pmids = '24751536';
     expect(component.summary).toBe('2 PDFs + 1 PubMed ID');
     component.start();
-    expect(api.startPapers).toHaveBeenCalledWith(['24751536'], [b, a], undefined);
+    expect(api.startPapers).toHaveBeenCalledWith(['24751536'], [b, a], undefined, false);
+    component.ngOnDestroy(); discardPeriodicTasks();
+  }));
+
+  it('starts review articles when the box is ticked', fakeAsync(() => {
+    create();
+    tick(0);
+    api.startPapers.and.returnValue(of({ sessionId: 's4', jobId: 'j4' }));
+    component.pmids = '23256519';
+    component.review = true;
+    component.start();
+    expect(api.startPapers).toHaveBeenCalledWith(['23256519'], [], undefined, true);
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
 

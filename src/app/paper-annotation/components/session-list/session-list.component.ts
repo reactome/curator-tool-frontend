@@ -17,6 +17,8 @@ export class SessionListComponent implements OnInit, OnDestroy {
   /** The PubMed IDs as typed: one or more, separated by spaces, commas, semicolons or new lines. */
   pmids = '';
   focus = '';
+  /** The papers are review articles: keep the reactions they only cite (research papers keep only their own results). */
+  review = false;
   files: File[] = [];
   starting = false;
 
@@ -85,7 +87,7 @@ export class SessionListComponent implements OnInit, OnDestroy {
 
   start(): void {
     if (!this.canStart) return;
-    this.begin(this.api.startPapers(this.pmidList, this.files, this.focus.trim() || undefined));
+    this.begin(this.api.startPapers(this.pmidList, this.files, this.focus.trim() || undefined, this.review));
   }
 
   private begin(call: import('rxjs').Observable<StartResponse>): void {

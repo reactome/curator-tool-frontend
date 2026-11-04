@@ -12,6 +12,8 @@ mat-card mat-form-field { width: 100%; }
 .invalid { color: #7a1c14; margin: 0 0 8px; font-size: 13px; }
 .count { margin-left: 12px; color: #555; }
 .focus { margin-top: 12px; }
+.review { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.review .hint { font-size: 12px; margin-left: 32px; }
 .error { display: flex; align-items: center; gap: 8px; background: #fdecea; color: #7a1c14; padding: 10px 12px; border-radius: 4px; margin: 12px 0; }
 table.sessions { width: 100%; border-collapse: collapse; }
 table.sessions th { text-align: left; font-weight: 500; color: #555; border-bottom: 1px solid #ddd; padding: 8px; }

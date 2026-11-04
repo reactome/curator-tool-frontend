@@ -34,6 +34,11 @@
           <mat-label>Focus gene (optional)</mat-label>
           <input matInput [(ngModel)]="focus" name="focus" placeholder="PINK1">
         </mat-form-field>
+
+        <div class="review">
+          <mat-checkbox [(ngModel)]="review" name="review">Review article(s)</mat-checkbox>
+          <span class="hint">Reactome needs direct evidence, so for a research paper only reactions its own results show are kept. Tick this for a review to keep the reactions it cites from earlier work.</span>
+        </div>
       </mat-card-content>
       <mat-card-actions>
         <button mat-flat-button color="primary" [disabled]="!canStart" (click)="start()">Annotate</button>

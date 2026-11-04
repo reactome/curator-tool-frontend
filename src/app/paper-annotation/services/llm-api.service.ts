@@ -69,10 +69,14 @@ export class LlmApiService {
   /**
    * Start ONE annotation from one or more papers: PubMed IDs, PDFs, or both. Several papers are merged into a single
    * draft by the service. PubMed IDs alone go as JSON; with PDFs the request is multipart (`files`, `pmids`, `focus`).
+   * `review` marks the papers as review articles, which keep the reactions they only cite from earlier work; by
+   * default a paper is research and only reactions its own results show are kept (Reactome needs direct evidence).
+   * It is sent only when set, so a research request is unchanged.
    */
-  startPapers(pmids: string[], files: File[], focus?: string): Observable<StartResponse> {
+  startPapers(pmids: string[], files: File[], focus?: string, review = false): Observable<StartResponse> {
     if (!files.length) {
-      const body = pmids.length === 1 ? { pmid: pmids[0], focus: focus || null } : { pmids, focus: focus || null };
+      const body: Record<string, unknown> = pmids.length === 1 ? { pmid: pmids[0], focus: focus || null } : { pmids, focus: focus || null };
+      if (review) body['review'] = true;
       return this.call(() => this.http.post<StartResponse>(this.url('/sessions'), body));
     }
     return this.call(() => {
@@ -80,6 +84,7 @@ export class LlmApiService {
       files.forEach(f => form.append('files', f, f.name));
       if (pmids.length) form.append('pmids', pmids.join(' '));
       if (focus) form.append('focus', focus);
+      if (review) form.append('review', 'true');
       return this.http.post<StartResponse>(this.url('/sessions/upload'), form);
     });
   }

@@ -63,6 +63,16 @@ describe('LlmApiService', () => {
       req.flush({ sessionId: 's', jobId: 'j' });
     });
 
+    it('sends review only for review articles, as JSON or as a form field', () => {
+      service.startPapers(['23256519'], [], undefined, true).subscribe();
+      expect(http.expectOne(`${base}/sessions`).request.body).toEqual({ pmid: '23256519', focus: null, review: true });
+      const file = new File(['%PDF-1'], 'review.pdf', { type: 'application/pdf' });
+      service.startPapers([], [file], undefined, true).subscribe();
+      expect((http.expectOne(`${base}/sessions/upload`).request.body as FormData).get('review')).toBe('true');
+      service.startPapers([], [file]).subscribe();
+      expect((http.expectOne(`${base}/sessions/upload`).request.body as FormData).has('review')).toBeFalse();
+    });
+
     it('uploads one PDF without PMIDs or focus when there are none', () => {
       const file = new File(['%PDF-1'], 'paper.pdf', { type: 'application/pdf' });
       service.startPapers([], [file]).subscribe();
