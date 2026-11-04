@@ -39,6 +39,8 @@ table.sessions { width: 100%; border-collapse: collapse; }
 table.sessions th { text-align: left; font-weight: 500; color: #555; border-bottom: 1px solid #ddd; padding: 8px; }
 table.sessions td { padding: 10px 8px; border-bottom: 1px solid #eee; }
 table.sessions tbody tr { cursor: pointer; }
+table.sessions td.row-actions { width: 1%; white-space: nowrap; text-align: right; padding: 0 8px; cursor: default; }
+.confirm-delete { display: inline-flex; align-items: center; gap: 8px; color: #7a1c14; }
 table.sessions tbody tr:hover, table.sessions tbody tr:focus { background: #f5f7fa; outline: none; }
 .status { padding: 2px 10px; border-radius: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
 .status-ready { background: #e3f4e6; color: #1b5e20; }

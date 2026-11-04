@@ -41,6 +41,15 @@ export class SessionListComponent implements OnInit, OnDestroy {
   selectedPmids = new Set<string>();
   private geneSub?: Subscription;
 
+  /** The annotation whose row is asking "Delete?", and the one being deleted (its buttons are disabled meanwhile). */
+  confirmingDeleteId: string | null = null;
+  deletingId: string | null = null;
+  /**
+   * Annotations deleted on this page. A list refresh already on its way when one was deleted would otherwise put
+   * its row back until the next refresh.
+   */
+  private deletedIds = new Set<string>();
+
   private destroy$ = new Subject<void>();
 
   constructor(private api: LlmApiService, private router: Router, private route: ActivatedRoute) {}
@@ -53,7 +62,7 @@ export class SessionListComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe(list => {
       this.loading = false;
-      if (list) { this.sessions = list; this.error = null; }
+      if (list) { this.sessions = list.filter(s => !this.deletedIds.has(s.id)); this.error = null; }
     });
     // A gene search takes a minute or more and runs on the server whatever this page does. If the curator left the
     // page while it ran (or after it finished, without starting an annotation), pick its job up again rather than
@@ -225,6 +234,39 @@ export class SessionListComponent implements OnInit, OnDestroy {
     if (!this.geneResult || !pmids.length || this.starting) return;
     this.begin(this.api.startPapers(pmids, [], this.geneResult.gene).pipe(
       tap(() => sessionStorage.removeItem(GENE_SEARCH_KEY))));
+  }
+
+  /** Still being annotated: the service refuses to delete it (its job would save it again when it finished). */
+  isActive(s: SessionSummary): boolean {
+    return s.status === 'queued' || s.status === 'running';
+  }
+
+  /** The row's delete button: ask first, in the row itself. */
+  askDelete(s: SessionSummary): void {
+    if (this.isActive(s) || this.deletingId) return;
+    this.confirmingDeleteId = s.id;
+  }
+
+  cancelDelete(): void {
+    this.confirmingDeleteId = null;
+  }
+
+  /** Delete the annotation for good (on the server, with its uploaded PDFs) and drop its row. */
+  confirmDelete(s: SessionSummary): void {
+    if (this.deletingId) return;
+    this.deletingId = s.id;
+    this.api.deleteSession(s.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.deletedIds.add(s.id);
+        this.sessions = this.sessions.filter(x => x.id !== s.id);
+        this.deletingId = this.confirmingDeleteId = null;
+        this.error = null;
+      },
+      error: (e: LlmApiError) => {
+        this.deletingId = this.confirmingDeleteId = null;
+        this.error = e.message;
+      }
+    });
   }
 
   open(s: SessionSummary): void {

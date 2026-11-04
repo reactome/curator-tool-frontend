@@ -106,6 +106,11 @@ export class LlmApiService {
     return this.call(() => this.http.get<SessionSummary[]>(this.url('/sessions')));
   }
 
+  /** Delete one of the curator's sessions (annotations) for good, with its uploaded PDFs. 409 while it is still running. */
+  deleteSession(id: string): Observable<void> {
+    return this.call(() => this.http.delete<void>(this.url(`/sessions/${id}`)));
+  }
+
   session(id: string): Observable<SessionDetail> {
     return this.call(() => this.http.get<SessionDetail>(this.url(`/sessions/${id}`)));
   }

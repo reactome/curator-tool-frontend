@@ -1,3 +1,11 @@
+### Build on November 4, 2026
+
+- Added: **Paper2Path** annotations can be deleted. In **Your annotations**, click the delete button (`delete`) at the end of a row and confirm. The annotation is removed for good, with any PDFs uploaded for it, so you can start the same papers again or clear out ones you no longer need. One that is still running can't be deleted until it finishes.
+
+- Changed: **Paper2Path** annotations, with every change you accepted, are now kept when the annotation service restarts. Before, a restart lost them all. An annotation that was still running when the service restarted shows as `failed`, with a note to start it again.
+
+- Fixed: in **Paper2Path**, after you accepted a change the chat proposed, the reaction panel kept showing the old version of the reaction until you selected another reaction and came back. It now updates straight away.
+
 ### Build on November 3, 2026
 
 - Fixed: after WebBench logged you out for inactivity, clicking **OK** on the login form often did nothing and had to be clicked again, and you then landed on the home page instead of the view you had open. Other WebBench windows waiting at the login page went to https://curator.reactome.org/home, outside WebBench, and showed an error. Now one click logs you in, and each window goes back to the view it had open.

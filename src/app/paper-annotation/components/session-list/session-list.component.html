@@ -109,7 +109,7 @@
   <p *ngIf="loading">Loading…</p>
   <p *ngIf="!loading && !sessions.length && !error" class="empty">Nothing yet. Start one above.</p>
   <table class="sessions" *ngIf="sessions.length">
-    <thead><tr><th>Paper(s)</th><th>Status</th><th>Reactions</th><th>Open issues</th><th>Started</th></tr></thead>
+    <thead><tr><th>Paper(s)</th><th>Status</th><th>Reactions</th><th>Open issues</th><th>Started</th><th><span class="cdk-visually-hidden">Delete</span></th></tr></thead>
     <tbody>
       <tr *ngFor="let s of sessions" (click)="open(s)" tabindex="0" (keyup.enter)="open(s)">
         <td>{{ label(s) }}</td>
@@ -120,6 +120,23 @@
         <td>{{ s.status === 'ready' ? s.n_reactions : '' }}</td>
         <td>{{ s.status === 'ready' ? s.n_open_issues : '' }}</td>
         <td>{{ s.created * 1000 | date:'medium' }}</td>
+        <!-- Clicks and Enter here must not also open the annotation (the whole row opens it). -->
+        <td class="row-actions" (click)="$event.stopPropagation()" (keyup.enter)="$event.stopPropagation()">
+          <ng-container *ngIf="confirmingDeleteId !== s.id; else confirmDeleteTpl">
+            <span [matTooltip]="isActive(s) ? 'Still running: wait until it finishes, then delete it' : 'Delete this annotation'">
+              <button mat-icon-button type="button" class="delete" [disabled]="isActive(s) || !!deletingId"
+                      (click)="askDelete(s)" [attr.aria-label]="'Delete annotation ' + label(s)"><mat-icon>delete</mat-icon></button>
+            </span>
+          </ng-container>
+          <ng-template #confirmDeleteTpl>
+            <span class="confirm-delete" role="group" [attr.aria-label]="'Delete annotation ' + label(s) + '?'">
+              <span>Delete for good?</span>
+              <button mat-flat-button color="warn" type="button" class="confirm" [disabled]="deletingId === s.id"
+                      (click)="confirmDelete(s)">Delete</button>
+              <button mat-button type="button" class="cancel" [disabled]="deletingId === s.id" (click)="cancelDelete()">Cancel</button>
+            </span>
+          </ng-template>
+        </td>
       </tr>
     </tbody>
   </table>

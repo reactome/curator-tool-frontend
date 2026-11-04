@@ -23,7 +23,7 @@ describe('SessionListComponent', () => {
   afterEach(() => sessionStorage.removeItem('paper2path.geneSearch'));
 
   const create = (sessions: SessionSummary[] | Error = []) => {
-    api = jasmine.createSpyObj('LlmApiService', ['sessions', 'startPapers', 'findPapersByGene', 'pollGeneSearch']);
+    api = jasmine.createSpyObj('LlmApiService', ['sessions', 'startPapers', 'findPapersByGene', 'pollGeneSearch', 'deleteSession']);
     api.sessions.and.returnValue(sessions instanceof Error ? throwError(() => sessions) : of(sessions));
     api.pollGeneSearch.and.returnValue(NEVER);                     // a search resumed on entry just keeps running
     router = jasmine.createSpyObj('Router', ['navigate']);
@@ -193,6 +193,64 @@ describe('SessionListComponent', () => {
     expect(el().querySelector('.error')?.textContent).toContain('curator role required');
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
+
+  describe('delete', () => {
+    const rows = () => el().querySelectorAll('table.sessions tbody tr');
+    const button = (row: Element, sel: string) => row.querySelector(sel) as HTMLButtonElement;
+
+    it('asks in the row, then deletes the annotation and drops its row, without opening it', fakeAsync(() => {
+      create([summary('a', 'ready'), summary('b', 'failed')]);
+      tick(0); fixture.detectChanges();
+      api.deleteSession.and.returnValue(of(undefined));
+      button(rows()[0], 'button.delete').click();
+      fixture.detectChanges();
+      expect(api.deleteSession).not.toHaveBeenCalled();
+      expect(rows()[0].textContent).toContain('Delete for good?');
+      button(rows()[0], 'button.confirm').click();
+      fixture.detectChanges();
+      expect(api.deleteSession).toHaveBeenCalledWith('a');
+      expect(rows().length).toBe(1);
+      expect(component.sessions.map(x => x.id)).toEqual(['b']);
+      expect(router.navigate).not.toHaveBeenCalled();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('cancel keeps the annotation', fakeAsync(() => {
+      create([summary('a', 'ready')]);
+      tick(0); fixture.detectChanges();
+      button(rows()[0], 'button.delete').click();
+      fixture.detectChanges();
+      button(rows()[0], 'button.cancel').click();
+      fixture.detectChanges();
+      expect(api.deleteSession).not.toHaveBeenCalled();
+      expect(rows().length).toBe(1);
+      expect(button(rows()[0], 'button.delete')).not.toBeNull();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('cannot delete one that is still running', fakeAsync(() => {
+      create([summary('a', 'running'), summary('b', 'queued')]);
+      tick(0); fixture.detectChanges();
+      expect(button(rows()[0], 'button.delete').disabled).toBeTrue();
+      expect(button(rows()[1], 'button.delete').disabled).toBeTrue();
+      component.askDelete(component.sessions[0]);
+      expect(component.confirmingDeleteId).toBeNull();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('says why when the service refuses, and keeps the row', fakeAsync(() => {
+      create([summary('a', 'ready')]);
+      tick(0); fixture.detectChanges();
+      api.deleteSession.and.returnValue(throwError(() => new LlmApiError(409, 'This annotation is still running.')));
+      component.askDelete(component.sessions[0]);
+      component.confirmDelete(component.sessions[0]);
+      fixture.detectChanges();
+      expect(el().querySelector('.error')?.textContent).toContain('still running');
+      expect(rows().length).toBe(1);
+      expect(component.confirmingDeleteId).toBeNull();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+  });
 
   it('hides "Find papers for a gene" for the time being, and does not resume a saved search', fakeAsync(() => {
     sessionStorage.setItem('paper2path.geneSearch', JSON.stringify({ jobId: 'g1', gene: 'PINK1' }));

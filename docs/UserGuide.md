@@ -754,7 +754,9 @@ The papers are then listed best first, each with its title (a link to PubMed), P
 
 **Annotate selected** starts one annotation from the ticked papers, with the gene as the focus gene, and opens it. **Clear** puts the list away.
 
-**Your annotations** lists every annotation you have started, with **Paper(s)** (the PMID or file name, or for several papers how many there are and which), **Status** (`queued`, `running` with the current step, `ready` or `failed`), **Reactions**, **Open issues** and **Started**. Click a row to open it.
+**Your annotations** lists every annotation you have started, with **Paper(s)** (the PMID or file name, or for several papers how many there are and which), **Status** (`queued`, `running` with the current step, `ready` or `failed`), **Reactions**, **Open issues** and **Started**. Click a row to open it. Your annotations are kept on the server, so they are still there after you log out and back in, from any browser, with every change you accepted.
+
+To delete an annotation, click the delete button (`delete`) at the end of its row, then **Delete** to confirm (or **Cancel**). It is removed for good, together with any PDFs you uploaded for it, so you can start the same papers again or tidy up the list. An annotation that is still `queued` or `running` can't be deleted: wait until it finishes. Deleting an annotation does not touch your staged instances.
 
 ### Inside an annotation
 
