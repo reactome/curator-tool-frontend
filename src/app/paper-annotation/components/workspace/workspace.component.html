@@ -83,7 +83,7 @@
          </div>
           <div class="detail">
             <app-reaction-detail *ngIf="selectedKey" [sessionId]="id" [reactionKey]="selectedKey"
-                                 [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" (changed)="reload()"></app-reaction-detail>
+                                 [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" [stamp]="draftStamp" (changed)="reload()"></app-reaction-detail>
           </div>
         </div>
       </mat-tab>
@@ -105,7 +105,7 @@
       <mat-tab label="Network">
         <ng-template matTabContent>
           <div #split class="network-split" [class.resizing]="resizing" [style.--detail-width]="detailWidth + 'px'">
-            <app-reaction-network [sessionId]="id" [stamp]="networkStamp" [selectedKey]="selectedKey"
+            <app-reaction-network [sessionId]="id" [stamp]="draftStamp" [selectedKey]="selectedKey"
                                   (reactionSelected)="select($event)" (reactionOpened)="openReaction($event)"></app-reaction-network>
             <div class="splitter" role="separator" aria-orientation="vertical" tabindex="0"
                  aria-label="Resize the reaction panel" [attr.aria-valuenow]="detailWidth"
@@ -118,7 +118,7 @@
                 Load this reaction into staged instances
               </mat-checkbox>
               <app-reaction-detail *ngIf="selectedKey; else noReaction" class="compact" [sessionId]="id" [reactionKey]="selectedKey"
-                                   [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" (changed)="reload()"></app-reaction-detail>
+                                   [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" [stamp]="draftStamp" (changed)="reload()"></app-reaction-detail>
               <ng-template #noReaction><p class="none">Click a reaction in the network to see its details here.</p></ng-template>
             </aside>
           </div>

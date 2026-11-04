@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
+import { Subscription } from 'rxjs';
 import {
   ExistingMatch, Issue, PaperInfo, Participant, QA_PRIORITY_LABEL, QAPriority, QAResult, ReactionDetail, ReactionQA
 } from '../../models/llm-api.models';
@@ -19,7 +20,7 @@ import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
   templateUrl: './reaction-detail.component.html',
   styleUrls: ['./reaction-detail.component.scss']
 })
-export class ReactionDetailComponent implements OnChanges {
+export class ReactionDetailComponent implements OnChanges, OnDestroy {
   @Input({ required: true }) sessionId!: string;
   @Input({ required: true }) reactionKey!: string;
   @Input() matches: ExistingMatch[] = [];
@@ -28,6 +29,13 @@ export class ReactionDetailComponent implements OnChanges {
   @Input() papers: PaperInfo[] = [];
   /** This reaction's last QA review as saved with the session (run automatically after the pipeline), if any. */
   @Input() savedQa: ReactionQA | null = null;
+  /**
+   * Changes when the draft may have changed (an accepted chat or suggestion edit, a QA run); the reaction is re-read.
+   * Without it, accepting a change the chat proposed for the open reaction left this panel showing the old version
+   * until the curator selected another reaction and came back: sessionId and reactionKey had not changed, so
+   * nothing told the panel to fetch again.
+   */
+  @Input() stamp = 0;
   /** Emitted when something here changed the session (a QA run adds issues). */
   @Output() changed = new EventEmitter<void>();
 
@@ -39,17 +47,30 @@ export class ReactionDetailComponent implements OnChanges {
 
   constructor(private api: LlmApiService) {}
 
+  private loadSub?: Subscription;
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['sessionId'] || changes['reactionKey']) {
       this.qa = null;
       this.load();
+    } else if (changes['stamp']) {
+      // Same reaction, possibly edited: re-read it, keeping what is shown until the new version arrives. The QA
+      // result just run here is kept: a QA run itself bumps the stamp (it adds issues, so the page reloads).
+      this.load();
     }
   }
 
+  ngOnDestroy(): void {
+    this.loadSub?.unsubscribe();
+  }
+
   private load(): void {
+    // Drop a fetch still in flight, so a slow answer for the previous reaction (or an older version of this
+    // one) cannot land after the newer one and overwrite it.
+    this.loadSub?.unsubscribe();
     this.loading = true;
     this.error = null;
-    this.api.reaction(this.sessionId, this.reactionKey).subscribe({
+    this.loadSub = this.api.reaction(this.sessionId, this.reactionKey).subscribe({
       next: d => { this.detail = d; this.loading = false; },
       error: (e: LlmApiError) => { this.error = e.message; this.loading = false; }
     });

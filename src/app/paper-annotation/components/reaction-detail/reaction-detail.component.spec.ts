@@ -1,5 +1,6 @@
-import { of } from 'rxjs';
-import { QAResult } from '../../models/llm-api.models';
+import { SimpleChange } from '@angular/core';
+import { Subject, of } from 'rxjs';
+import { QAResult, ReactionDetail } from '../../models/llm-api.models';
 import { ReactionDetailComponent } from './reaction-detail.component';
 
 describe('ReactionDetailComponent QA review', () => {
@@ -38,5 +39,47 @@ describe('ReactionDetailComponent QA review', () => {
     expect(panel.qaView?.summary).toBe('new');
     expect(panel.qaLabel(panel.qaView!)).toBe('Needs fixing');
     expect(reloads).toBe(1);
+  });
+});
+
+describe('ReactionDetailComponent refresh', () => {
+  let api: jasmine.SpyObj<any>;
+  let panel: ReactionDetailComponent;
+  const version = (dbId: number): ReactionDetail => ({ reaction: {} as ReactionDetail['reaction'], dbId, participants: {}, evidence: [] });
+
+  beforeEach(() => {
+    api = jasmine.createSpyObj('LlmApiService', ['reaction', 'qa']);
+    panel = new ReactionDetailComponent(api);
+    panel.sessionId = 's1';
+    panel.reactionKey = 'r3';
+  });
+
+  it('re-reads the open reaction when the draft changes (an accepted chat edit), keeping a QA result run here', () => {
+    api.reaction.and.returnValue(of(version(1)));
+    panel.ngOnChanges({ reactionKey: new SimpleChange(undefined, 'r3', true) });
+    expect(panel.detail?.dbId).toBe(1);
+    panel.qa = { reaction_key: 'r3', reaction_name: 'x', verdict: 'ok', priority: 'fix', summary: 'fine', score: 1,
+                 findings: [], llm_used: true };
+
+    const next = new Subject<ReactionDetail>();
+    api.reaction.and.returnValue(next);
+    panel.stamp = 1;
+    panel.ngOnChanges({ stamp: new SimpleChange(0, 1, false) });
+    expect(api.reaction).toHaveBeenCalledTimes(2);
+    expect(panel.detail?.dbId).toBe(1);          // still shown while the new version loads
+    next.next(version(2));
+    expect(panel.detail?.dbId).toBe(2);
+    expect(panel.qa?.summary).toBe('fine');
+  });
+
+  it('ignores a slow answer for the previous reaction once another one is selected', () => {
+    const slow = new Subject<ReactionDetail>();
+    api.reaction.and.returnValue(slow);
+    panel.ngOnChanges({ reactionKey: new SimpleChange(undefined, 'r3', true) });
+    api.reaction.and.returnValue(of(version(4)));
+    panel.reactionKey = 'r4';
+    panel.ngOnChanges({ reactionKey: new SimpleChange('r3', 'r4', false) });
+    slow.next(version(3));
+    expect(panel.detail?.dbId).toBe(4);
   });
 });

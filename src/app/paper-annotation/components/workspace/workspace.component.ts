@@ -40,8 +40,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   loadStep: string | null = null;
   /** Bumped when something that spends tokens may have happened, so the usage tab reloads. */
   usageStamp = 0;
-  /** Bumped when the draft may have changed, so the network tab redraws. */
-  networkStamp = 0;
+  /** Bumped when the draft may have changed, so the network redraws and the open reaction panel re-reads its reaction. */
+  draftStamp = 0;
   /** Width in px of the reaction panel beside the network; the curator drags the divider to change it. */
   detailWidth = WorkspaceComponent.readDetailWidth();
   resizing = false;
@@ -117,7 +117,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   /** Re-read the session, its issues and its existing-reaction matches (after an edit, QA, or a status change). */
   reload(): void {
     this.usageStamp++;
-    this.networkStamp++;
+    this.draftStamp++;
     forkJoin({ session: this.api.session(this.id), issues: this.api.issues(this.id), existing: this.api.existing(this.id),
                proposals: this.api.proposals(this.id, 'pending') })
       .subscribe({
