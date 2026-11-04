@@ -6,21 +6,24 @@
 
   <div class="starters">
     <mat-card class="start-card">
-      <mat-card-title>Papers to annotate</mat-card-title>
+      <mat-card-header>
+        <mat-card-title>Papers to annotate</mat-card-title>
+        <mat-card-subtitle>One paper or several. Several papers are merged into one annotation, and a reaction that more than one paper describes cites them all.</mat-card-subtitle>
+      </mat-card-header>
       <mat-card-content>
-        <p class="hint">One paper or several. Several papers are merged into one annotation, and a reaction that more than one paper describes cites them all.</p>
+        <section class="field-group">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>PubMed IDs</mat-label>
+            <textarea matInput [(ngModel)]="pmids" name="pmids" rows="2" placeholder="24751536 29168502" aria-label="PubMed IDs"></textarea>
+            <mat-hint>One or more, separated by spaces, commas or new lines. The papers must be open access in PubMed Central. Whether each is a review is read from PubMed.</mat-hint>
+          </mat-form-field>
+          <p class="invalid" *ngIf="!pmidsValid" role="alert">Every PubMed ID must be a number (up to 9 digits).</p>
+        </section>
 
-        <mat-form-field appearance="outline">
-          <mat-label>PubMed IDs</mat-label>
-          <textarea matInput [(ngModel)]="pmids" name="pmids" rows="2" placeholder="24751536 29168502" aria-label="PubMed IDs"></textarea>
-          <mat-hint>One or more, separated by spaces, commas or new lines. The papers must be open access in PubMed Central. Whether each is a review is read from PubMed.</mat-hint>
-        </mat-form-field>
-        <p class="invalid" *ngIf="!pmidsValid" role="alert">Every PubMed ID must be a number (up to 9 digits).</p>
-
-        <div class="pdfs">
+        <section class="field-group pdfs">
           <input #fileInput type="file" accept="application/pdf,.pdf" multiple hidden (change)="onFilesChosen($event)">
           <button mat-stroked-button type="button" (click)="fileInput.click()"><mat-icon>upload_file</mat-icon> Add PDFs</button>
-          <span class="hint">For papers that are not in PubMed Central. Up to 50 MB each. Tick "Review" for a review article: Reactome needs direct evidence, so a research paper keeps only the reactions its own results show, while a review also keeps the ones it cites.</span>
+          <p class="hint">For papers that are not in PubMed Central. Up to 50 MB each. Tick "Review" for a review article: Reactome needs direct evidence, so a research paper keeps only the reactions its own results show, while a review also keeps the ones it cites.</p>
           <ul class="files" *ngIf="files.length" aria-label="PDFs to annotate">
             <li *ngFor="let f of files; let i = index">
               <mat-icon class="file-icon">description</mat-icon>
@@ -30,12 +33,14 @@
               <button mat-icon-button type="button" (click)="removeFile(i)" [attr.aria-label]="'Remove ' + f.name"><mat-icon>close</mat-icon></button>
             </li>
           </ul>
-        </div>
+        </section>
 
-        <mat-form-field appearance="outline" class="focus">
-          <mat-label>Focus gene (optional)</mat-label>
-          <input matInput [(ngModel)]="focus" name="focus" placeholder="PINK1">
-        </mat-form-field>
+        <section class="field-group">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Focus gene (optional)</mat-label>
+            <input matInput [(ngModel)]="focus" name="focus" placeholder="PINK1">
+          </mat-form-field>
+        </section>
       </mat-card-content>
       <mat-card-actions>
         <button mat-flat-button color="primary" [disabled]="!canStart" (click)="start()">Annotate</button>
