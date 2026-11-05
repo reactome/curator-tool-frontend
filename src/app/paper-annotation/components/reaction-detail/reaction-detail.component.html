@@ -7,10 +7,21 @@
       <h2>{{ d.reaction.name }}</h2>
       <p class="type">{{ d.reaction.reaction_type }}</p>
     </div>
-    <button mat-stroked-button [disabled]="qaBusy" (click)="runQa()"
-            matTooltip="Review the whole reaction again (rule checks and the model): after an edit, or when it was not checked">
-      <mat-icon>fact_check</mat-icon> {{ qaView ? 'Re-check this reaction' : 'Check this reaction' }}</button>
+    <div class="title-actions">
+      <button mat-stroked-button [disabled]="qaBusy || removing" (click)="runQa()"
+              matTooltip="Review the whole reaction again (rule checks and the model): after an edit, or when it was not checked">
+        <mat-icon>fact_check</mat-icon> {{ qaView ? 'Re-check this reaction' : 'Check this reaction' }}</button>
+      <button mat-stroked-button color="warn" [disabled]="qaBusy || removing || confirmRemove" (click)="confirmRemove = true"
+              matTooltip="Take this reaction out of the annotation">
+        <mat-icon>delete</mat-icon> Remove this reaction</button>
+    </div>
   </div>
+  <div class="confirm-remove" *ngIf="confirmRemove" role="alertdialog" aria-label="Confirm removing the reaction">
+    <span>Remove “{{ d.reaction.name }}” ({{ reactionKey }}) from the annotation? Its issues and suggested fixes go with it.</span>
+    <button mat-flat-button color="warn" [disabled]="removing" (click)="remove()">Remove</button>
+    <button mat-button [disabled]="removing" (click)="confirmRemove = false">Cancel</button>
+  </div>
+  <mat-progress-bar *ngIf="removing" mode="indeterminate"></mat-progress-bar>
   <mat-progress-bar *ngIf="qaBusy" mode="indeterminate"></mat-progress-bar>
   <section class="qa" *ngIf="qaView as q" aria-label="QA review">
     <p><strong>{{ qaLabel(q) }}</strong>

@@ -119,6 +119,11 @@ export class LlmApiService {
     return this.call(() => this.http.get<SessionSummary[]>(this.url('/sessions')));
   }
 
+  /** Delete one of the curator's sessions (annotations) for good, with its uploaded PDFs. 409 while it is still running. */
+  deleteSession(id: string): Observable<void> {
+    return this.call(() => this.http.delete<void>(this.url(`/sessions/${id}`)));
+  }
+
   session(id: string): Observable<SessionDetail> {
     return this.call(() => this.http.get<SessionDetail>(this.url(`/sessions/${id}`)));
   }
@@ -199,6 +204,14 @@ export class LlmApiService {
 
   propose(id: string, body: ProposalRequest): Observable<Proposal> {
     return this.call(() => this.http.post<Proposal>(this.url(`/sessions/${id}/proposals`), body));
+  }
+
+  /**
+   * Remove a reaction from the draft as the curator's own decision. The service records it as an accepted proposal, so
+   * issues, QA, suggestions, other pending proposals and the exported instances follow. Same reply as accept().
+   */
+  removeReaction(id: string, key: string): Observable<AcceptResponse> {
+    return this.call(() => this.http.delete<AcceptResponse>(this.url(`/sessions/${id}/reactions/${encodeURIComponent(key)}`)));
   }
 
   accept(id: string, proposalId: string): Observable<AcceptResponse> {

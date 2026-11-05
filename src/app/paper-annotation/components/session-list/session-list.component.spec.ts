@@ -20,7 +20,7 @@ describe('SessionListComponent', () => {
   const el = () => fixture.nativeElement as HTMLElement;
 
   const create = (sessions: SessionSummary[] | Error = []) => {
-    api = jasmine.createSpyObj('LlmApiService', ['sessions', 'startPapers']);
+    api = jasmine.createSpyObj('LlmApiService', ['sessions', 'startPapers', 'deleteSession']);
     api.sessions.and.returnValue(sessions instanceof Error ? throwError(() => sessions) : of(sessions));
     router = jasmine.createSpyObj('Router', ['navigate']);
     TestBed.configureTestingModule({
@@ -189,4 +189,160 @@ describe('SessionListComponent', () => {
     expect(el().querySelector('.error')?.textContent).toContain('curator role required');
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
+
+  describe('delete', () => {
+    const rows = () => el().querySelectorAll('table.sessions tbody tr');
+    const button = (row: Element, sel: string) => row.querySelector(sel) as HTMLButtonElement;
+
+    it('asks in the row, then deletes the annotation and drops its row, without opening it', fakeAsync(() => {
+      create([summary('a', 'ready'), summary('b', 'failed')]);
+      tick(0); fixture.detectChanges();
+      api.deleteSession.and.returnValue(of(undefined));
+      button(rows()[0], 'button.delete').click();
+      fixture.detectChanges();
+      expect(api.deleteSession).not.toHaveBeenCalled();
+      expect(rows()[0].textContent).toContain('Delete for good?');
+      button(rows()[0], 'button.confirm').click();
+      fixture.detectChanges();
+      expect(api.deleteSession).toHaveBeenCalledWith('a');
+      expect(rows().length).toBe(1);
+      expect(component.sessions.map(x => x.id)).toEqual(['b']);
+      expect(router.navigate).not.toHaveBeenCalled();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('cancel keeps the annotation', fakeAsync(() => {
+      create([summary('a', 'ready')]);
+      tick(0); fixture.detectChanges();
+      button(rows()[0], 'button.delete').click();
+      fixture.detectChanges();
+      button(rows()[0], 'button.cancel').click();
+      fixture.detectChanges();
+      expect(api.deleteSession).not.toHaveBeenCalled();
+      expect(rows().length).toBe(1);
+      expect(button(rows()[0], 'button.delete')).not.toBeNull();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('cannot delete one that is still running', fakeAsync(() => {
+      create([summary('a', 'running'), summary('b', 'queued')]);
+      tick(0); fixture.detectChanges();
+      expect(button(rows()[0], 'button.delete').disabled).toBeTrue();
+      expect(button(rows()[1], 'button.delete').disabled).toBeTrue();
+      component.askDelete(component.sessions[0]);
+      expect(component.confirmingDeleteId).toBeNull();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('says why when the service refuses, and keeps the row', fakeAsync(() => {
+      create([summary('a', 'ready')]);
+      tick(0); fixture.detectChanges();
+      api.deleteSession.and.returnValue(throwError(() => new LlmApiError(409, 'This annotation is still running.')));
+      component.askDelete(component.sessions[0]);
+      component.confirmDelete(component.sessions[0]);
+      fixture.detectChanges();
+      expect(el().querySelector('.error')?.textContent).toContain('still running');
+      expect(rows().length).toBe(1);
+      expect(component.confirmingDeleteId).toBeNull();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+  });
+
+  it('hides "Find papers for a gene" for the time being, and does not resume a saved search', fakeAsync(() => {
+    sessionStorage.setItem('paper2path.geneSearch', JSON.stringify({ jobId: 'g1', gene: 'PINK1' }));
+    create();
+    tick(0); fixture.detectChanges();
+    expect(el().querySelector('.gene-card')).toBeNull();
+    expect(api.pollGeneSearch).not.toHaveBeenCalled();
+    component.ngOnDestroy(); discardPeriodicTasks();
+  }));
+
+  describe('gene -> papers', () => {
+    // The card is hidden for the time being; these tests cover it with the flag switched back on.
+    beforeEach(() => SessionListComponent.geneSearchEnabled = true);
+    afterEach(() => SessionListComponent.geneSearchEnabled = false);
+
+    const paper = (pmid: string, extra: Partial<CandidatePaper> = {}): CandidatePaper => ({
+      pmid, title: `paper ${pmid}`, journal: 'J', year: '2014', pmcid: 'PMC1', score: 8, evidence_type: 'DIRECT',
+      annotatable: true, justification: `why ${pmid}`, ...extra });
+    const result = (papers: CandidatePaper[]): GeneSearchResult =>
+      ({ gene: 'PINK1', accession: 'Q9BXM7', pool_size: 120, candidate_pool: 50, dropped_below_threshold: 0, papers });
+    const job = (status: Job['status'], progress: string, res: GeneSearchResult | null = null, error: string | null = null): Job<GeneSearchResult> =>
+      ({ id: 'g1', status, progress, error, result: res });
+
+    it('searches, shows the progress, then the candidates with the PMC ones ticked, and annotates the ticked ones with the gene as focus', fakeAsync(() => {
+      create();
+      tick(0);
+      const polls = new Subject<Job<GeneSearchResult>>();
+      api.findPapersByGene.and.returnValue(of({ jobId: 'g1' }));
+      api.pollGeneSearch.and.returnValue(polls);
+      api.startPapers.and.returnValue(of({ sessionId: 's7', jobId: 'j7' }));
+      component.gene = ' pink1 ';
+      fixture.detectChanges();
+      component.searchGene();
+      expect(api.findPapersByGene).toHaveBeenCalledWith('PINK1');
+      expect(api.pollGeneSearch).toHaveBeenCalledWith('g1');
+      expect(JSON.parse(sessionStorage.getItem('paper2path.geneSearch')!)).toEqual({ jobId: 'g1', gene: 'PINK1' });
+      polls.next(job('running', 'judging 50 candidate papers'));
+      fixture.detectChanges();
+      expect(el().querySelector('.gene-running')?.textContent).toContain('judging 50 candidate papers');
+      polls.next(job('done', 'done', result([paper('1', { score: 9 }), paper('2', { pmcid: null }), paper('3', { annotatable: false })])));
+      fixture.detectChanges();
+      expect(el().querySelector('.gene-running')).toBeNull();
+      const items = el().querySelectorAll('.candidate');
+      expect(items.length).toBe(3);
+      expect(items[0].textContent).toContain('paper 1');
+      expect(items[0].textContent).toContain('2014');
+      expect(items[0].textContent).toContain('score 9/10');
+      expect(items[0].textContent).toContain('DIRECT');
+      expect(items[0].textContent).toContain('why 1');
+      expect(items[1].textContent).toContain('Not in PubMed Central');
+      expect(component.selectedCandidates).toEqual(['1']);           // no PMC text, or judged unannotatable: not ticked
+      component.toggleCandidate(paper('2', { pmcid: null }), true);   // cannot be ticked
+      component.toggleCandidate(paper('3'), true);
+      expect(component.selectedCandidates).toEqual(['1', '3']);
+      component.annotateSelected();
+      expect(api.startPapers).toHaveBeenCalledWith(['1', '3'], [], 'PINK1');
+      expect(router.navigate).toHaveBeenCalledWith(['s7'], { relativeTo: jasmine.anything() });
+      expect(sessionStorage.getItem('paper2path.geneSearch')).toBeNull();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('refuses what is not a gene symbol', fakeAsync(() => {
+      create();
+      tick(0);
+      for (const bad of ['', '   ', 'PINK1 OR BRCA1', '-PINK1', '"PINK1"']) {
+        component.gene = bad;
+        component.searchGene();
+      }
+      expect(api.findPapersByGene).not.toHaveBeenCalled();
+      component.gene = 'PINK1;rm';
+      fixture.detectChanges();
+      expect(el().querySelector('.gene-card .invalid')).not.toBeNull();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('says why a search failed and forgets it', fakeAsync(() => {
+      create();
+      tick(0);
+      api.findPapersByGene.and.returnValue(of({ jobId: 'g1' }));
+      api.pollGeneSearch.and.returnValue(of(job('failed', 'searching PubMed', null, 'PubMed is down')));
+      component.gene = 'PINK1';
+      component.searchGene();
+      fixture.detectChanges();
+      expect(component.geneSearching).toBeFalse();
+      expect(el().querySelector('.error')?.textContent).toContain('PubMed is down');
+      expect(sessionStorage.getItem('paper2path.geneSearch')).toBeNull();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('picks a running search up again after the page is left and reopened', fakeAsync(() => {
+      sessionStorage.setItem('paper2path.geneSearch', JSON.stringify({ jobId: 'g5', gene: 'PRKN' }));
+      create();
+      tick(0);
+      expect(component.gene).toBe('PRKN');
+      expect(api.pollGeneSearch).toHaveBeenCalledWith('g5');
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+  });
 });

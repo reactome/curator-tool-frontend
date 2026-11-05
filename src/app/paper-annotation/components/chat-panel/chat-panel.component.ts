@@ -1,4 +1,4 @@
-import { AfterViewChecked, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { Subscription, forkJoin } from 'rxjs';
 import { ChatEvent, Proposal, UsageCounts } from '../../models/llm-api.models';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
@@ -30,11 +30,13 @@ const STEP_LABELS: Record<string, string> = {
   templateUrl: './chat-panel.component.html',
   styleUrls: ['./chat-panel.component.scss']
 })
-export class ChatPanelComponent implements OnInit, OnDestroy, AfterViewChecked {
+export class ChatPanelComponent implements OnInit, OnChanges, OnDestroy, AfterViewChecked {
   @Input({ required: true }) sessionId!: string;
   /** The reaction selected in the workspace, offered to the assistant as context. */
   @Input() contextLabel: string | null = null;
   @Input() contextDbIds: number[] = [];
+  /** Changes when the draft may have changed: re-read the proposals, since accepting one edit can make another stale. */
+  @Input() stamp = 0;
   /** An edit was accepted or rejected: the workspace should reload. */
   @Output() proposalDecided = new EventEmitter<Proposal>();
   /** A turn ended, so the tokens it used are recorded and a usage view can refresh. */
@@ -67,6 +69,15 @@ export class ChatPanelComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['stamp'] && !changes['stamp'].firstChange) {
+      this.api.proposals(this.sessionId).subscribe({
+        next: ps => { const m = new Map(this.proposals); ps.forEach(p => m.set(p.id, p)); this.proposals = m; },
+        error: () => { /* the cards keep what they show; the next change tries again */ }
+      });
+    }
   }
 
   ngAfterViewChecked(): void {

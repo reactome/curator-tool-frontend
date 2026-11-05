@@ -10,6 +10,13 @@ import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
   styleUrls: ['./session-list.component.scss']
 })
 export class SessionListComponent implements OnInit, OnDestroy {
+  /**
+   * "Find papers for a gene" is hidden for the time being (2026-11-04) while it is reworked. Set to true to bring the
+   * card back; the code behind it is left in place. Static so the specs can switch it on for the gene tests.
+   */
+  static geneSearchEnabled = false;
+  get showGeneSearch(): boolean { return SessionListComponent.geneSearchEnabled; }
+
   sessions: SessionSummary[] = [];
   loading = true;
   error: string | null = null;
@@ -21,6 +28,24 @@ export class SessionListComponent implements OnInit, OnDestroy {
   /** The PDFs ticked as review articles: they keep the reactions they only cite (research keeps only its own results). */
   reviews = new Set<File>();
   starting = false;
+
+  /** Gene -> papers: the symbol as typed, then the running search, then its candidates to pick from. */
+  gene = '';
+  geneSearching = false;
+  geneProgress = '';
+  geneResult: GeneSearchResult | null = null;
+  /** PMIDs of the candidates ticked for "Annotate selected". */
+  selectedPmids = new Set<string>();
+  private geneSub?: Subscription;
+
+  /** The annotation whose row is asking "Delete?", and the one being deleted (its buttons are disabled meanwhile). */
+  confirmingDeleteId: string | null = null;
+  deletingId: string | null = null;
+  /**
+   * Annotations deleted on this page. A list refresh already on its way when one was deleted would otherwise put
+   * its row back until the next refresh.
+   */
+  private deletedIds = new Set<string>();
 
   private destroy$ = new Subject<void>();
 
@@ -34,8 +59,22 @@ export class SessionListComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe(list => {
       this.loading = false;
-      if (list) { this.sessions = list; this.error = null; }
+      if (list) { this.sessions = list.filter(s => !this.deletedIds.has(s.id)); this.error = null; }
     });
+    // A gene search takes a minute or more and runs on the server whatever this page does. If the curator left the
+    // page while it ran (or after it finished, without starting an annotation), pick its job up again rather than
+    // making them search, and wait, a second time. Per tab: sessionStorage.
+    // While the card is hidden, don't resume a search saved in this tab either: nobody could see or stop it.
+    const saved = this.showGeneSearch ? sessionStorage.getItem(GENE_SEARCH_KEY) : null;
+    if (saved) {
+      try {
+        const { jobId, gene } = JSON.parse(saved);
+        this.gene = gene;
+        this.pollGene(jobId);
+      } catch {
+        sessionStorage.removeItem(GENE_SEARCH_KEY);
+      }
+    }
   }
 
   ngOnDestroy(): void {
@@ -102,6 +141,128 @@ export class SessionListComponent implements OnInit, OnDestroy {
       next: r => this.router.navigate([r.sessionId], { relativeTo: this.route }),
       error: (e: LlmApiError) => { this.starting = false; this.error = e.message; },
       complete: () => this.starting = false
+    });
+  }
+
+  // ── gene -> papers ─────────────────────────────────────────────────────
+  /** The symbol as the service will use it: trimmed and upper-cased. */
+  get geneSymbol(): string {
+    return this.gene.trim().toUpperCase();
+  }
+
+  /** The service's rule for a gene symbol (letters, digits, '.' and '-'; HLA-A, C9orf72), so a typo is caught here. */
+  get geneValid(): boolean {
+    return !this.geneSymbol || /^[A-Z0-9][A-Z0-9.-]{0,24}$/.test(this.geneSymbol);
+  }
+
+  get canSearchGene(): boolean {
+    return !!this.geneSymbol && this.geneValid && !this.geneSearching;
+  }
+
+  searchGene(): void {
+    if (!this.canSearchGene) return;
+    this.clearGeneSearch();
+    this.geneSearching = true;
+    this.geneProgress = 'starting';
+    this.error = null;
+    const gene = this.geneSymbol;
+    this.api.findPapersByGene(gene).pipe(takeUntil(this.destroy$)).subscribe({
+      next: r => {
+        sessionStorage.setItem(GENE_SEARCH_KEY, JSON.stringify({ jobId: r.jobId, gene }));
+        this.pollGene(r.jobId);
+      },
+      error: (e: LlmApiError) => { this.geneSearching = false; this.error = e.message; }
+    });
+  }
+
+  private pollGene(jobId: string): void {
+    this.geneSearching = true;
+    this.geneSub = this.api.pollGeneSearch(jobId).pipe(takeUntil(this.destroy$)).subscribe({
+      next: j => {
+        this.geneProgress = j.progress;
+        if (j.status === 'done') {
+          this.geneSearching = false;
+          this.geneResult = j.result ?? { gene: this.geneSymbol, accession: null, pool_size: 0, candidate_pool: 0, dropped_below_threshold: 0, papers: [] };
+          // Tick what can be annotated straight away: in PMC, and not judged unannotatable.
+          this.selectedPmids = new Set(this.geneResult.papers.filter(p => this.canSelect(p) && p.annotatable !== false).map(p => p.pmid));
+        } else if (j.status === 'failed') {
+          this.geneSearching = false;
+          sessionStorage.removeItem(GENE_SEARCH_KEY);
+          this.error = `The paper search for ${this.geneSymbol} failed: ${j.error ?? 'no reason given'}`;
+        }
+      },
+      error: (e: LlmApiError) => {
+        // e.g. the job is gone because the service restarted: forget it, so coming back does not fail the same way
+        this.geneSearching = false;
+        sessionStorage.removeItem(GENE_SEARCH_KEY);
+        this.error = e.message;
+      }
+    });
+  }
+
+  /** Stops waiting for a search (the service still finishes it) or puts its results away. */
+  clearGeneSearch(): void {
+    this.geneSub?.unsubscribe();
+    this.geneSub = undefined;
+    sessionStorage.removeItem(GENE_SEARCH_KEY);
+    this.geneSearching = false;
+    this.geneProgress = '';
+    this.geneResult = null;
+    this.selectedPmids = new Set();
+  }
+
+  /** A paper without PMC full text can only be annotated from its PDF, which /sessions {pmids} cannot take. */
+  canSelect(p: CandidatePaper): boolean {
+    return !!p.pmcid;
+  }
+
+  toggleCandidate(p: CandidatePaper, on: boolean): void {
+    if (on && this.canSelect(p)) this.selectedPmids.add(p.pmid);
+    else this.selectedPmids.delete(p.pmid);
+  }
+
+  /** The ticked candidates, in the judge's order. */
+  get selectedCandidates(): string[] {
+    return (this.geneResult?.papers ?? []).filter(p => this.selectedPmids.has(p.pmid)).map(p => p.pmid);
+  }
+
+  annotateSelected(): void {
+    const pmids = this.selectedCandidates;
+    if (!this.geneResult || !pmids.length || this.starting) return;
+    this.begin(this.api.startPapers(pmids, [], this.geneResult.gene).pipe(
+      tap(() => sessionStorage.removeItem(GENE_SEARCH_KEY))));
+  }
+
+  /** Still being annotated: the service refuses to delete it (its job would save it again when it finished). */
+  isActive(s: SessionSummary): boolean {
+    return s.status === 'queued' || s.status === 'running';
+  }
+
+  /** The row's delete button: ask first, in the row itself. */
+  askDelete(s: SessionSummary): void {
+    if (this.isActive(s) || this.deletingId) return;
+    this.confirmingDeleteId = s.id;
+  }
+
+  cancelDelete(): void {
+    this.confirmingDeleteId = null;
+  }
+
+  /** Delete the annotation for good (on the server, with its uploaded PDFs) and drop its row. */
+  confirmDelete(s: SessionSummary): void {
+    if (this.deletingId) return;
+    this.deletingId = s.id;
+    this.api.deleteSession(s.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => {
+        this.deletedIds.add(s.id);
+        this.sessions = this.sessions.filter(x => x.id !== s.id);
+        this.deletingId = this.confirmingDeleteId = null;
+        this.error = null;
+      },
+      error: (e: LlmApiError) => {
+        this.deletingId = this.confirmingDeleteId = null;
+        this.error = e.message;
+      }
     });
   }
 

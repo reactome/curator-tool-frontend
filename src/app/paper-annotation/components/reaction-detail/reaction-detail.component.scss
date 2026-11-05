@@ -17,7 +17,10 @@ ul { margin: 0; padding-left: 18px; }
 .dot.sev-warning { background: #ef6c00; }
 .open-issues ul, .qa ul { list-style: none; padding-left: 0; }
 .title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-.title-row button { flex-shrink: 0; margin-top: 4px; }
+.title-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; flex-shrink: 0; margin-top: 4px; }
+.confirm-remove { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; background: #fdecea; color: #7a1c14;
+  border-radius: 4px; padding: 8px 12px; margin: 8px 0; }
+.confirm-remove span { flex: 1; min-width: 200px; }
 .not-reaction { color: #c62828; }
 .qa-summary { font-weight: 500; margin: 4px 0; }
 .qa { background: #f5f7fa; border-radius: 4px; padding: 8px 12px; margin: 8px 0; }
