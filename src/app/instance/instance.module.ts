@@ -36,6 +36,7 @@ import {
   ConfirmDeleteDialogComponent
 } from "./components/deletion-dialog/confirm-delete-dialog/confirm-delete-dialog.component";
 import { QAReportTable } from "./components/qa-report-dialog/selected-instances-table/qa-report-table.component";
+import { ReactionImbalanceTable } from "./components/qa-report-dialog/reaction-imbalance-table/reaction-imbalance-table.component";
 import { MatExpansionModule } from "@angular/material/expansion";
 import { TextEditorDialogComponent } from "./components/instance-view/instance-table/instance-table-row-element/text-editor-dialog/text-editor-dialog.component";
 import { StoichiometryDialogComponent } from "./components/instance-view/instance-table/stoichiometry-dialog/stoichiometry-dialog.component";
@@ -71,6 +72,7 @@ import { ClassNameIconComponent } from '../event-view/components/event-tree/clas
   imports: [
     CommonModule,
     InstanceRoutingModule,
+    ReactionImbalanceTable,
     // EffectsModule.forFeature(InstanceEffects),
     // EffectsModule.forFeature(NewInstanceEffects),
     StoreModule.forFeature(NEW_INSTANCES_STATE_NAME, newInstancesReducer),

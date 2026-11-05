@@ -3,6 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { QAReport, QAResults } from 'src/app/core/models/qa-report.model';
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
+import { isPathwayReactionImbalance } from './reaction-imbalance-table/reaction-imbalance-table.component';
 
 /**
  * A dialog component for displaying qa-report.
@@ -15,6 +16,7 @@ import { DataService } from 'src/app/core/services/data.service';
 export class QAReportDialogComponent {
   qaReport: QAReport | undefined; 
   qaReportPassed: boolean = true;
+  readonly isPathwayReactionImbalance = isPathwayReactionImbalance;
 
   // Using constructor to correctly initialize values
   constructor(@Inject(MAT_DIALOG_DATA) public data: { instance: Instance; report?: QAReport },

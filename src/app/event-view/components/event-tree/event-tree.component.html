@@ -73,14 +73,14 @@ cdkDropListSortingDisabled
               (node.focus ? 'event_text_focus' : 'event_text_no_focus')]"
           [hidden]="node.name === 'TopLevelPathway'"
           [cdkContextMenuTriggerFor]="eventMenu" [cdkContextMenuTriggerData]="{$implicit: node}"
-          [cdkContextMenuDisabled]="!canCheckReactionImbalance(node)"
+          [cdkContextMenuDisabled]="!canRunQAReport(node)"
           (click)="handleEventClick(node)" cdkFocusInitial>{{node.name}}</button>
 </ng-template>
 
-<!-- Right-click menu on an event, currently only offered for Pathway and Reaction nodes. -->
+<!-- Right-click menu on an event, offered for every event already in the database. -->
 <ng-template #eventMenu let-node>
   <mat-action-list class="event-menu" cdkMenu>
-    <button class="event-menu-button" cdkMenuItem (cdkMenuItemTriggered)="checkReactionImbalance(node)">
-      <mat-icon>balance</mat-icon> Check Reaction Imbalance</button>
+    <button class="event-menu-button" cdkMenuItem (cdkMenuItemTriggered)="runQAReport(node)">
+      <mat-icon>checklist</mat-icon> QA Report</button>
   </mat-action-list>
 </ng-template>

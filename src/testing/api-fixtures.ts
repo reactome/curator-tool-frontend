@@ -322,7 +322,30 @@ export const EMPTY_USER_INSTANCES = {
   defaultPerson: shell(1, 'Curator, Test', 'Person')
 };
 
-/** A QA report with one passing and one failing check, as `/qaReport/` returns it. */
+/**
+ * The Pathway form of the reaction imbalance entry in a QA report: one row per imbalanced protein
+ * of each imbalanced reaction. Reaction 5358340 is a possible cleavage with two proteins; 9666616 is
+ * not, and has no InstanceEdits, so its Last_Author is "" (adapted from the curation database).
+ */
+export const REACTION_IMBALANCE_QA_RESULT = {
+  checkName: 'Reaction Imbalance Check',
+  passed: false,
+  issue: '2 of 3 reactions imbalanced (1 possible cleavage)',
+  columns: ['Reaction_DBID', 'Reaction', 'Reference', 'Identifier', 'Input', 'Output',
+    'Possible_Cleavage', 'Last_Author'],
+  rows: [
+    ['9666616', 'APC is deubiquitinated', 'UniProt:P0CG48 UBC', 'P0CG48', '27', '9', 'No', ''],
+    ['5358340', 'Autoproteolytic cleavage of Hh precursors', 'UniProt:O43323 DHH', 'O43323', '1', '2',
+      'Yes', 'Matthews, Lisa, 2023-03-08'],
+    ['5358340', 'Autoproteolytic cleavage of Hh precursors', 'UniProt:Q15465 SHH', 'Q15465', '1', '2',
+      'Yes', 'Matthews, Lisa, 2023-03-08'],
+  ]
+};
+
+/**
+ * A QA report with one passing and two failing checks, as `/qaReport/` returns it. The reaction
+ * imbalance check is in its Pathway form, which the dialog groups by reaction.
+ */
 export const QA_REPORT = {
   instance: shell(100, 'Glycolysis', 'Pathway'),
   qaResults: [
@@ -332,38 +355,8 @@ export const QA_REPORT = {
       passed: false,
       columns: ['DB_ID', 'Display name', 'Issue'],
       rows: [['102', 'Glucose-6-phosphate => Fructose-6-phosphate', 'species is empty']]
-    }
-  ]
-};
-
-/**
- * A reaction imbalance report, as `/qa/reactionImbalance/{dbId}` returns it: one cleavage and one
- * non-cleavage imbalance (adapted from 5358340 and 9666616 in the curation database). The second
- * reaction has no `lastAuthor`, which the backend drops when there are no InstanceEdits.
- */
-export const REACTION_IMBALANCE_REPORT = {
-  eventDbId: 100,
-  eventDisplayName: 'Glycolysis',
-  checkedReactions: 3,
-  reactions: [
-    {
-      dbId: 5358340,
-      displayName: 'Autoproteolytic cleavage of Hh precursors',
-      cleavage: true,
-      lastAuthor: 'Matthews, Lisa, 2023-03-08',
-      imbalances: [
-        { refDbId: 53626, identifier: 'O43323', displayName: 'UniProt:O43323 DHH', inputCount: 1, outputCount: 2 },
-        { refDbId: 64432, identifier: 'Q15465', displayName: 'UniProt:Q15465 SHH', inputCount: 1, outputCount: 2 }
-      ]
     },
-    {
-      dbId: 9666616,
-      displayName: 'APC is deubiquitinated',
-      cleavage: false,
-      imbalances: [
-        { refDbId: 68524, identifier: 'P0CG48', displayName: 'UniProt:P0CG48 UBC', inputCount: 27, outputCount: 9 }
-      ]
-    }
+    REACTION_IMBALANCE_QA_RESULT
   ]
 };
 
@@ -525,11 +518,6 @@ export const DEFAULT_API_ROUTES: ApiRouteFixture[] = [
   { name: 'delete persisted', match: p => p.includes('/deletePersistedInstances'), body: {} },
   { name: 'list backups', match: p => p.includes('/listUserInstanceBackups'), body: [] },
   { name: 'qa report', match: p => p.includes('/qaReport'), body: QA_REPORT },
-  {
-    name: 'reaction imbalance',
-    match: p => p.includes('/qa/reactionImbalance'),
-    body: REACTION_IMBALANCE_REPORT
-  },
   { name: 'qa check report', match: p => p.includes('/getTestQACheckReport'), body: [] },
   {
     name: 'pathway diagram',

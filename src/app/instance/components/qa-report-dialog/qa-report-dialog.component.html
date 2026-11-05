@@ -7,8 +7,16 @@
       </ng-container>
     </h4>
 
-    <qa-report-table *ngIf="!check.passed" [rows]="check.rows ? check.rows : []"
-      [colNames]="check.columns ? check.columns : []"></qa-report-table>
+    <ng-container *ngIf="!check.passed">
+      <p *ngIf="check.issue" class="check-issue">{{check.issue}}</p>
+      <!-- A Pathway's reaction imbalance check can run to thousands of rows, so it is grouped by reaction. -->
+      <reaction-imbalance-table *ngIf="isPathwayReactionImbalance(check); else flatTable"
+        [columns]="check.columns!" [rows]="check.rows ?? []" [eventDbId]="qaReport!.instance.dbId"></reaction-imbalance-table>
+      <ng-template #flatTable>
+        <qa-report-table *ngIf="check.rows?.length" [rows]="check.rows!"
+          [colNames]="check.columns ? check.columns : []"></qa-report-table>
+      </ng-template>
+    </ng-container>
     <!-- <br> -->
   </ng-container>
 </mat-dialog-content>

@@ -7,7 +7,7 @@ import { forkJoin, Subscription, take } from "rxjs";
 import { REACTION_TYPES } from "src/app/core/models/reactome-schema.model";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { InfoDialogComponent } from "src/app/shared/components/info-dialog/info-dialog.component";
-import { ReactionImbalanceDialogService } from "src/app/shared/components/reaction-imbalance-dialog/reaction-imbalance-dialog.service";
+import { QAReportDialogService } from "src/app/instance/components/qa-report-dialog/qa-report-dialog.service";
 import { EventTreeCycle, Instance } from "../../../core/models/reactome-instance.model";
 import { DataService } from "../../../core/services/data.service";
 
@@ -111,7 +111,7 @@ export class EventTreeComponent implements OnDestroy {
 
   // To show information
   readonly dialog = inject(MatDialog);
-  private readonly reactionImbalanceDialog = inject(ReactionImbalanceDialogService);
+  private readonly qaReportDialog = inject(QAReportDialogService);
 
   private subscriptions: Subscription = new Subscription();
 
@@ -583,12 +583,19 @@ export class EventTreeComponent implements OnDestroy {
     }
   }
 
-  canCheckReactionImbalance(event: EventNode): boolean {
-    return this.reactionImbalanceDialog.canCheck(event.className, event.dbId);
+  /** The QA report reads the database, so it is only offered for events that are already there. */
+  canRunQAReport(event: EventNode): boolean {
+    return event.dbId > 0;
   }
 
-  checkReactionImbalance(event: EventNode) {
-    this.reactionImbalanceDialog.openDialog(event.dbId, event.name);
+  /**
+   * Run the QA report on an event without opening it first. For a Pathway this is the way to run the
+   * reaction imbalance check over every Reaction under it, which comes back in the report.
+   */
+  runQAReport(event: EventNode) {
+    this.dataService.fetchInstance(event.dbId).pipe(take(1)).subscribe((instance: Instance) => {
+      this.qaReportDialog.openDialog(instance);
+    });
   }
 
   handleEventClick(event: EventNode) {

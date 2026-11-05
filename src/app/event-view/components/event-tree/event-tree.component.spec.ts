@@ -16,7 +16,7 @@ import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { DataService } from 'src/app/core/services/data.service';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
 import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
-import { ReactionImbalanceDialogComponent } from 'src/app/shared/components/reaction-imbalance-dialog/reaction-imbalance-dialog.component';
+import { QAReportDialogComponent } from 'src/app/instance/components/qa-report-dialog/qa-report-dialog.component';
 import { CommitResultDialogService } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
 import { EventTreeComponent } from './event-tree.component';
 
@@ -173,13 +173,13 @@ describe('EventTreeComponent hasEvent edit', () => {
     expect(pathwayInTree.attributes['hasEvent']).toContain(reactionInTree);
   });
 
-  it('offers the reaction imbalance check on pathways and reactions only', () => {
-    expect(component.canCheckReactionImbalance(node(1)!)).toBeTrue();
-    expect(component.canCheckReactionImbalance(node(2)!)).toBeTrue();
-    expect(component.canCheckReactionImbalance({ ...node(2)!, className: 'BlackBoxEvent' })).toBeFalse();
+  it('offers the QA report on events already in the database only', () => {
+    expect(component.canRunQAReport(node(1)!)).toBeTrue();
+    expect(component.canRunQAReport(node(2)!)).toBeTrue();
+    expect(component.canRunQAReport({ ...node(2)!, dbId: -5 })).toBeFalse();
   });
 
-  it('opens the reaction imbalance report for the right-clicked event', () => {
+  it('opens the QA report for the right-clicked event', () => {
     const dialog = TestBed.inject(MatDialog) as jasmine.SpyObj<MatDialog>;
     const label = Array.from(fixture.nativeElement.querySelectorAll('button.event_text') as NodeListOf<HTMLElement>)
       .find(button => button.textContent!.includes('The edited pathway'))!;
@@ -187,11 +187,12 @@ describe('EventTreeComponent hasEvent edit', () => {
     label.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 10, clientY: 10 }));
     fixture.detectChanges();
     const item = document.querySelector<HTMLElement>('.event-menu-button');
-    expect(item?.textContent).toContain('Check Reaction Imbalance');
+    expect(item?.textContent).toContain('QA Report');
     item!.click();
 
-    expect(dialog.open).toHaveBeenCalledWith(ReactionImbalanceDialogComponent,
-      jasmine.objectContaining({ data: { dbId: 1, displayName: 'The edited pathway' } }));
+    expect(TestBed.inject(DataService).fetchInstance).toHaveBeenCalledWith(1);
+    expect(dialog.open).toHaveBeenCalledWith(QAReportDialogComponent,
+      jasmine.objectContaining({ data: { instance: cachedEditedPathway, report: undefined } }));
   });
 
   it('removes a sub-event of the added event when it is marked for deletion', () => {

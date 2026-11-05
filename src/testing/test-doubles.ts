@@ -55,7 +55,7 @@ export function createDataServiceSpy(overrides: Partial<DataService> = {}): jasm
     'fillReferenceSequence', 'matchInstances', 'setCandidateClasses', 'grepConcreteClasses',
     'testQACheckReport', 'delete', 'deleteByDeleted', 'getReferrers',
     'synchronizeDeletedReferrers', 'shouldCheckForMatches', 'handleErrorMessage',
-    'fetchQAReport', 'checkReactionImbalance', 'doubleArrayToDataSource', 'exportEventDocx',
+    'fetchQAReport', 'doubleArrayToDataSource', 'exportEventDocx',
     'checkDiagramSync', 'hasPathwayDiagram'
   ]);
 

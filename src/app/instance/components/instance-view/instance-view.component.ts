@@ -9,7 +9,6 @@ import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/boo
 import { NewInstanceActions } from '../../state/instance.actions';
 import { DeletionDialogService } from "../deletion-dialog/deletion-dialog.service";
 import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
-import { ReactionImbalanceDialogService } from 'src/app/shared/components/reaction-imbalance-dialog/reaction-imbalance-dialog.service';
 import { DiagramSyncDialogService } from '../diagram-sync-dialog/diagram-sync-dialog.service';
 import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
@@ -106,7 +105,6 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     private dataService: DataService,
     private store: Store,
     private qaReportDialogService: QAReportDialogService,
-    private reactionImbalanceDialogService: ReactionImbalanceDialogService,
     private referrersDialogService: ReferrersDialogService,
     private instUtils: InstanceUtilities,
     private deletionDialogService: DeletionDialogService,
@@ -861,26 +859,6 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         }
       });
     }
-  }
-
-  canCheckReactionImbalance(): boolean {
-    return this.reactionImbalanceDialogService.canCheck(this.instance?.schemaClassName, this.instance?.dbId);
-  }
-
-  onReactionImbalanceAction() {
-    if (!this.canCheckReactionImbalance())
-      return;
-    // The check runs on the database, so an uncommitted edit is not part of it.
-    if (this.isUploadable()) {
-      this.dialog.open(InfoDialogComponent, {
-        data: {
-          title: 'Information',
-          message: 'You may need to commit your changes first for the reaction imbalance check',
-        }
-      });
-      return;
-    }
-    this.reactionImbalanceDialogService.openDialog(this.instance!.dbId, this.instance!.displayName);
   }
 
   setQAReportToolTip() {

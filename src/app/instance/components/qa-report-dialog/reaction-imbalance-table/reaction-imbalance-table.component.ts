@@ -1,47 +1,89 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { CommonModule } from '@angular/common';
-import { Component, Inject, OnDestroy, ViewChild } from '@angular/core';
+import { Component, Input, OnChanges, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { ReactionImbalance, ReactionImbalanceReport } from 'src/app/core/models/reaction-imbalance.model';
-import { DataService } from 'src/app/core/services/data.service';
+import {
+  REACTION_IMBALANCE_CHECK,
+  REACTION_IMBALANCE_COLUMNS,
+  ReactionImbalance
+} from 'src/app/core/models/reaction-imbalance.model';
+import { QAResults } from 'src/app/core/models/qa-report.model';
 
-export interface ReactionImbalanceDialogData {
-  dbId: number;
-  displayName?: string;
+/**
+ * True for the Pathway form of the reaction imbalance check, which this table shows. The Reaction
+ * form (one reaction, a handful of proteins) has no Reaction_DBID column and is left to the generic
+ * QA report table.
+ */
+export function isPathwayReactionImbalance(check: QAResults): boolean {
+  return check.checkName === REACTION_IMBALANCE_CHECK
+    && !!check.columns?.includes(REACTION_IMBALANCE_COLUMNS.reactionDbId);
 }
 
 /**
- * Pathway-level view of the reaction imbalance check (the desktop CuratorTool's "Imbalance Check"):
- * one row per imbalanced reaction, expandable to the proteins whose input and output counts differ.
- * Cleavage reactions are usually expected, so they are hidden by default instead of having their
- * own tab as in the desktop tool.
+ * Regroup the flat QA report rows (one per imbalanced protein) into one entry per reaction, in the
+ * order the backend sent them. Values are looked up by column name, not position, as the backend asks.
+ */
+export function groupReactionImbalanceRows(columns: string[], rows: string[][]): ReactionImbalance[] {
+  const index = (name: string) => columns.indexOf(name);
+  const c = REACTION_IMBALANCE_COLUMNS;
+  const cols = {
+    dbId: index(c.reactionDbId), reaction: index(c.reaction), reference: index(c.reference),
+    identifier: index(c.identifier), input: index(c.input), output: index(c.output),
+    cleavage: index(c.cleavage), lastAuthor: index(c.lastAuthor),
+  };
+  const cell = (row: string[], i: number) => (i < 0 ? '' : row[i] ?? '');
+  const dbId2reaction = new Map<number, ReactionImbalance>();
+  for (const row of rows) {
+    const dbId = Number(cell(row, cols.dbId));
+    let reaction = dbId2reaction.get(dbId);
+    if (!reaction) {
+      reaction = {
+        dbId,
+        displayName: cell(row, cols.reaction),
+        cleavage: cell(row, cols.cleavage) === 'Yes',
+        lastAuthor: cell(row, cols.lastAuthor),
+        imbalances: [],
+      };
+      dbId2reaction.set(dbId, reaction);
+    }
+    reaction.imbalances.push({
+      displayName: cell(row, cols.reference),
+      identifier: cell(row, cols.identifier),
+      inputCount: Number(cell(row, cols.input)),
+      outputCount: Number(cell(row, cols.output)),
+    });
+  }
+  return Array.from(dbId2reaction.values());
+}
+
+/**
+ * The Pathway form of the reaction imbalance check (the desktop CuratorTool's "Imbalance Check"), shown
+ * inside the QA report: one row per imbalanced reaction, expandable to the proteins whose input and
+ * output counts differ. Cleavage reactions are usually expected, so they are hidden by default instead
+ * of having their own tab as in the desktop tool.
  */
 @Component({
-  selector: 'app-reaction-imbalance-dialog',
-  templateUrl: './reaction-imbalance-dialog.component.html',
-  styleUrls: ['./reaction-imbalance-dialog.component.scss'],
+  selector: 'reaction-imbalance-table',
+  templateUrl: './reaction-imbalance-table.component.html',
+  styleUrls: ['./reaction-imbalance-table.component.scss'],
   standalone: true,
   imports: [
     CommonModule,
     FormsModule,
     MatButtonModule,
-    MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatProgressSpinnerModule,
     MatSlideToggleModule,
     MatSortModule,
     MatTableModule,
@@ -55,11 +97,13 @@ export interface ReactionImbalanceDialogData {
     ]),
   ],
 })
-export class ReactionImbalanceDialogComponent implements OnDestroy {
-  loading = true;
-  report: ReactionImbalanceReport | undefined;
-  errorMessage: string | undefined;
+export class ReactionImbalanceTable implements OnChanges {
+  @Input() columns: string[] = [];
+  @Input() rows: string[][] = [];
+  /** The checked Pathway, used to name the TSV export. */
+  @Input() eventDbId: number | undefined;
 
+  allReactions: ReactionImbalance[] = [];
   hideCleavage = true;
   filterText = '';
   expandedReaction: ReactionImbalance | undefined;
@@ -67,48 +111,29 @@ export class ReactionImbalanceDialogComponent implements OnDestroy {
   readonly detailColumns = ['protein', 'identifier', 'input', 'output', 'delta'];
   dataSource = new MatTableDataSource<ReactionImbalance>([]);
 
-  private subscription: Subscription;
+  // Only there when the table is shown in a dialog, which then has to close for in-app navigation.
+  private dialogRef = inject(MatDialogRef, { optional: true });
+  private router = inject(Router);
 
-  // The table is only rendered once the report arrives, so the sort is attached when it appears.
   @ViewChild(MatSort) set sort(sort: MatSort | undefined) {
     if (sort)
       this.dataSource.sort = sort;
   }
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: ReactionImbalanceDialogData,
-              public dialogRef: MatDialogRef<ReactionImbalanceDialogComponent>,
-              private dataService: DataService,
-              private router: Router) {
+  constructor() {
     this.dataSource.sortingDataAccessor = (reaction, column) => {
       switch (column) {
         case 'imbalanceCount': return reaction.imbalances.length;
         case 'cleavage': return reaction.cleavage ? 1 : 0;
-        case 'lastAuthor': return reaction.lastAuthor ?? '';
         default: return (reaction as any)[column];
       }
     };
     this.dataSource.filterPredicate = (reaction, filter) => this.matchesFilter(reaction, filter);
-
-    this.subscription = this.dataService.checkReactionImbalance(data.dbId).subscribe({
-      next: report => {
-        this.report = report;
-        this.loading = false;
-        this.updateRows();
-      },
-      error: (err: Error) => {
-        // DataService has already shown the standard error notification.
-        this.errorMessage = err?.message ?? 'Unknown error';
-        this.loading = false;
-      }
-    });
   }
 
-  ngOnDestroy() {
-    this.subscription.unsubscribe();
-  }
-
-  get title(): string {
-    return this.report?.eventDisplayName ?? this.data.displayName ?? `${this.data.dbId}`;
+  ngOnChanges() {
+    this.allReactions = groupReactionImbalanceRows(this.columns ?? [], this.rows ?? []);
+    this.updateRows();
   }
 
   get displayedColumns(): string[] {
@@ -119,17 +144,8 @@ export class ReactionImbalanceDialogComponent implements OnDestroy {
     return columns;
   }
 
-  get allReactions(): ReactionImbalance[] {
-    return this.report?.reactions ?? [];
-  }
-
   get cleavageCount(): number {
     return this.allReactions.filter(r => r.cleavage).length;
-  }
-
-  /** Reactions counted in the header: cleavages drop out while they are hidden. */
-  get imbalancedCount(): number {
-    return this.hideCleavage ? this.allReactions.length - this.cleavageCount : this.allReactions.length;
   }
 
   onHideCleavageChange(hide: boolean) {
@@ -164,7 +180,7 @@ export class ReactionImbalanceDialogComponent implements OnDestroy {
       opened = null;
     }
     if (!opened) {
-      this.dialogRef.close();
+      this.dialogRef?.close();
       this.router.navigateByUrl(`/${path}`);
     }
   }
@@ -179,7 +195,7 @@ export class ReactionImbalanceDialogComponent implements OnDestroy {
           reaction.dbId,
           reaction.displayName,
           reaction.cleavage,
-          reaction.lastAuthor ?? '',
+          reaction.lastAuthor,
           imbalance.displayName,
           imbalance.identifier,
           imbalance.inputCount,
@@ -191,13 +207,11 @@ export class ReactionImbalanceDialogComponent implements OnDestroy {
     const objectUrl = window.URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = objectUrl;
-    anchor.download = `reaction_imbalance_${this.report?.eventDbId ?? this.data.dbId}.tsv`;
+    anchor.download = this.eventDbId === undefined
+      ? 'reaction_imbalance.tsv'
+      : `reaction_imbalance_${this.eventDbId}.tsv`;
     anchor.click();
     window.URL.revokeObjectURL(objectUrl);
-  }
-
-  onClose() {
-    this.dialogRef.close();
   }
 
   private updateRows() {

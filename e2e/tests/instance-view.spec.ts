@@ -161,4 +161,19 @@ test.describe('the QA report', () => {
     const dialog = page.locator('mat-dialog-container');
     await expect(dialog).toContainText('species is empty');
   });
+
+  test('groups a pathway\'s reaction imbalance check by reaction, hiding possible cleavages', async ({ page }) => {
+    await page.goto('/schema_view/instance/100');
+    await expect(page.locator('app-instance-table')).toBeVisible();
+    await page.getByText('checklist', { exact: true }).first().click();
+
+    const dialog = page.locator('mat-dialog-container');
+    await expect(dialog).toContainText('2 of 3 reactions imbalanced (1 possible cleavage)');
+    const reactions = dialog.locator('reaction-imbalance-table tr.reaction-row');
+    await expect(reactions).toHaveCount(1);
+    await expect(reactions.first()).toContainText('APC is deubiquitinated');
+
+    await dialog.getByText('Hide possible cleavages').click();
+    await expect(reactions).toHaveCount(2);
+  });
 });

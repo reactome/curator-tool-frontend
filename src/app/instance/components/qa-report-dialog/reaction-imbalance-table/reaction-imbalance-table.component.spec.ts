@@ -2,38 +2,37 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialogRef } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { Observable, of, Subject, throwError } from 'rxjs';
 
-import { ReactionImbalanceReport } from 'src/app/core/models/reaction-imbalance.model';
-import { DataService } from 'src/app/core/services/data.service';
-import { createDataServiceSpy, createRouterStub, provideDialogContext } from 'src/testing';
-import { REACTION_IMBALANCE_REPORT } from 'src/testing/api-fixtures';
-import { ReactionImbalanceDialogComponent } from './reaction-imbalance-dialog.component';
+import { createRouterStub, provideDialogContext } from 'src/testing';
+import { REACTION_IMBALANCE_QA_RESULT } from 'src/testing/api-fixtures';
+import {
+  groupReactionImbalanceRows,
+  isPathwayReactionImbalance,
+  ReactionImbalanceTable
+} from './reaction-imbalance-table.component';
 
-describe('ReactionImbalanceDialogComponent', () => {
-  let fixture: ComponentFixture<ReactionImbalanceDialogComponent>;
-  let component: ReactionImbalanceDialogComponent;
-  let dataService: jasmine.SpyObj<DataService>;
+describe('ReactionImbalanceTable', () => {
+  let fixture: ComponentFixture<ReactionImbalanceTable>;
+  let component: ReactionImbalanceTable;
   let el: HTMLElement;
 
-  /** A fresh copy, so a spec that edits the report cannot leak into another. */
-  function report(overrides: Partial<ReactionImbalanceReport> = {}): ReactionImbalanceReport {
-    return { ...structuredClone(REACTION_IMBALANCE_REPORT), ...overrides };
-  }
+  /** Fresh copies, so a spec that edits the rows cannot leak into another. */
+  const columns = () => [...REACTION_IMBALANCE_QA_RESULT.columns];
+  const rows = () => structuredClone(REACTION_IMBALANCE_QA_RESULT.rows);
 
-  function build(response: Observable<ReactionImbalanceReport>) {
-    dataService = createDataServiceSpy();
-    dataService.checkReactionImbalance.and.returnValue(response);
+  function build(tableRows: string[][] = rows(), tableColumns: string[] = columns()) {
     TestBed.configureTestingModule({
-      imports: [ReactionImbalanceDialogComponent, NoopAnimationsModule],
+      imports: [ReactionImbalanceTable, NoopAnimationsModule],
       providers: [
-        ...provideDialogContext({ dbId: 100, displayName: 'Glycolysis' }),
-        { provide: DataService, useValue: dataService },
+        ...provideDialogContext({}),
         { provide: Router, useValue: createRouterStub() },
       ],
     });
-    fixture = TestBed.createComponent(ReactionImbalanceDialogComponent);
+    fixture = TestBed.createComponent(ReactionImbalanceTable);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('columns', tableColumns);
+    fixture.componentRef.setInput('rows', tableRows);
+    fixture.componentRef.setInput('eventDbId', 100);
     el = fixture.nativeElement;
     fixture.detectChanges();
   }
@@ -51,49 +50,64 @@ describe('ReactionImbalanceDialogComponent', () => {
     fixture.detectChanges();
   }
 
-  it('runs the check for the event it was opened on', () => {
-    build(of(report()));
-    expect(dataService.checkReactionImbalance).toHaveBeenCalledOnceWith(100);
+  it('recognises only the Pathway form of the reaction imbalance check', () => {
+    expect(isPathwayReactionImbalance(REACTION_IMBALANCE_QA_RESULT)).toBeTrue();
+    // The Reaction form has no Reaction_DBID column and stays in the generic table.
+    expect(isPathwayReactionImbalance({
+      checkName: 'Reaction Imbalance Check', passed: false,
+      columns: ['Reference', 'Identifier', 'Input', 'Output'], rows: [['UniProt:O43323 DHH', 'O43323', '1', '2']]
+    })).toBeFalse();
+    expect(isPathwayReactionImbalance({ ...REACTION_IMBALANCE_QA_RESULT, checkName: 'Something else' })).toBeFalse();
   });
 
-  it('shows a spinner until the report arrives', () => {
-    const response = new Subject<ReactionImbalanceReport>();
-    build(response);
-    expect(el.querySelector('mat-spinner')).not.toBeNull();
+  it('groups the rows by reaction, keeping the order they came in', () => {
+    const reactions = groupReactionImbalanceRows(columns(), rows());
 
-    response.next(report());
-    fixture.detectChanges();
-
-    expect(el.querySelector('mat-spinner')).toBeNull();
-    expect(reactionRows().length).toBe(1);
+    expect(reactions.map(r => r.dbId)).toEqual([9666616, 5358340]);
+    expect(reactions[1]).toEqual({
+      dbId: 5358340,
+      displayName: 'Autoproteolytic cleavage of Hh precursors',
+      cleavage: true,
+      lastAuthor: 'Matthews, Lisa, 2023-03-08',
+      imbalances: [
+        { displayName: 'UniProt:O43323 DHH', identifier: 'O43323', inputCount: 1, outputCount: 2 },
+        { displayName: 'UniProt:Q15465 SHH', identifier: 'Q15465', inputCount: 1, outputCount: 2 },
+      ],
+    });
+    expect(reactions[0].cleavage).toBeFalse();
+    expect(reactions[0].lastAuthor).toBe('');
   });
 
-  it('hides cleavage reactions by default and leaves them out of the header count', () => {
-    build(of(report()));
+  it('finds values by column name, not position', () => {
+    const order = columns().reverse();
+    const reordered = rows().map(row => [...row].reverse());
+
+    expect(groupReactionImbalanceRows(order, reordered)).toEqual(groupReactionImbalanceRows(columns(), rows()));
+  });
+
+  it('hides cleavage reactions and the cleavage column by default', () => {
+    build();
 
     expect(component.hideCleavage).toBeTrue();
-    const rows = reactionRows();
-    expect(rows.length).toBe(1);
-    expect(rows[0].textContent).toContain('APC is deubiquitinated');
-    expect(text()).toContain('Glycolysis: 1 imbalanced of 3 reactions checked');
-    expect(text()).not.toContain('cleavage)');
+    const shown = reactionRows();
+    expect(shown.length).toBe(1);
+    expect(shown[0].textContent).toContain('APC is deubiquitinated');
     expect(component.displayedColumns).not.toContain('cleavage');
   });
 
-  it('shows cleavage reactions, their count and the cleavage column when the toggle is off', () => {
-    build(of(report()));
+  it('shows cleavage reactions and the cleavage column when the toggle is off', () => {
+    build();
     setHideCleavage(false);
 
-    const rows = reactionRows();
-    expect(rows.length).toBe(2);
-    expect(text()).toContain('Glycolysis: 2 imbalanced of 3 reactions checked (1 cleavage)');
+    const shown = reactionRows();
+    expect(shown.length).toBe(2);
     expect(component.displayedColumns).toContain('cleavage');
-    const cleavageRow = rows.find(row => row.textContent!.includes('Autoproteolytic'))!;
+    const cleavageRow = shown.find(row => row.textContent!.includes('Autoproteolytic'))!;
     expect(cleavageRow.querySelector('.cleavage-icon')).not.toBeNull();
   });
 
   it('expands a reaction to one row per protein with a signed delta, and collapses it again', () => {
-    build(of(report()));
+    build();
     setHideCleavage(false);
     const cleavageRow = reactionRows().find(row => row.textContent!.includes('Autoproteolytic'))!;
 
@@ -111,7 +125,7 @@ describe('ReactionImbalanceDialogComponent', () => {
   });
 
   it('renders each imbalanced protein with its counts', () => {
-    build(of(report()));
+    build();
     // The detail table is in the DOM (collapsed to zero height) for every reaction row.
     const proteinRows = Array.from(el.querySelectorAll<HTMLElement>('tr.detail-protein-row'));
     expect(proteinRows.length).toBe(1);
@@ -120,13 +134,13 @@ describe('ReactionImbalanceDialogComponent', () => {
   });
 
   it('formats a positive delta with a plus sign', () => {
-    build(of(report()));
+    build();
     expect(component.formatDelta(1, 2)).toBe('+1');
     expect(component.formatDelta(27, 9)).toBe('-18');
   });
 
   it('collapses the expanded reaction when the toggle hides it', () => {
-    build(of(report()));
+    build();
     setHideCleavage(false);
     component.toggleExpanded(component.allReactions.find(r => r.cleavage)!);
 
@@ -136,7 +150,7 @@ describe('ReactionImbalanceDialogComponent', () => {
   });
 
   it('filters on reaction name and protein identifier', () => {
-    build(of(report()));
+    build();
     setHideCleavage(false);
 
     component.onFilterChange('O43323');
@@ -153,36 +167,15 @@ describe('ReactionImbalanceDialogComponent', () => {
     expect(text()).toContain('No reactions match the filter.');
   });
 
-  it('says every reaction is balanced when nothing comes back', () => {
-    build(of(report({ checkedReactions: 7, reactions: [] })));
-    expect(text()).toContain('All 7 reactions are balanced.');
-    expect(reactionRows().length).toBe(0);
-  });
-
-  it('says how many cleavage reactions are hidden when the toggle hides everything', () => {
-    const onlyCleavage = report();
-    onlyCleavage.reactions = onlyCleavage.reactions.filter(r => r.cleavage);
-    build(of(onlyCleavage));
+  it('says how many possible cleavages are hidden when the toggle hides everything', () => {
+    build(rows().filter(row => row[6] === 'Yes'));
 
     expect(reactionRows().length).toBe(0);
-    expect(text()).toContain('No imbalanced reactions other than 1 hidden cleavage reaction.');
-  });
-
-  it('says there is nothing to check when the event has no reactions', () => {
-    build(of(report({ checkedReactions: 0, reactions: [] })));
-    expect(text()).toContain('No reactions found under this event.');
-    expect(el.querySelector('mat-slide-toggle')).toBeNull();
-  });
-
-  it('shows the error message and stops the spinner when the check fails', () => {
-    build(throwError(() => new Error('Instance 42 is not an Event')));
-
-    expect(el.querySelector('mat-spinner')).toBeNull();
-    expect(text()).toContain('The check could not be run: Instance 42 is not an Event');
+    expect(text()).toContain('No imbalanced reactions other than 1 hidden possible cleavage.');
   });
 
   it('opens a reaction in the instance view from its DB_ID without toggling the row', () => {
-    build(of(report()));
+    build();
     const open = spyOn(window, 'open').and.returnValue({} as Window);
 
     el.querySelector<HTMLElement>('.db-id-link')!.click();
@@ -192,8 +185,8 @@ describe('ReactionImbalanceDialogComponent', () => {
     expect(component.expandedReaction).toBeUndefined();
   });
 
-  it('falls back to in-app navigation when a new tab cannot be opened', () => {
-    build(of(report()));
+  it('falls back to in-app navigation, closing the QA report, when a new tab cannot be opened', () => {
+    build();
     spyOn(window, 'open').and.returnValue(null);
     const router = TestBed.inject(Router);
     const dialogRef = TestBed.inject(MatDialogRef);
@@ -205,7 +198,7 @@ describe('ReactionImbalanceDialogComponent', () => {
   });
 
   it('exports the visible reactions to TSV, one line per protein', async () => {
-    build(of(report()));
+    build();
     setHideCleavage(false);
     let blob: Blob | undefined;
     spyOn(window.URL, 'createObjectURL').and.callFake((b: Blob | MediaSource) => {
@@ -213,7 +206,7 @@ describe('ReactionImbalanceDialogComponent', () => {
       return 'blob:test';
     });
     spyOn(window.URL, 'revokeObjectURL');
-    spyOn(HTMLAnchorElement.prototype, 'click');
+    const click = spyOn(HTMLAnchorElement.prototype, 'click');
 
     component.exportTsv();
 
@@ -223,5 +216,6 @@ describe('ReactionImbalanceDialogComponent', () => {
     expect(lines).toContain('9666616\tAPC is deubiquitinated\tfalse\t\tUniProt:P0CG48 UBC\tP0CG48\t27\t9');
     expect(lines).toContain(
       '5358340\tAutoproteolytic cleavage of Hh precursors\ttrue\tMatthews, Lisa, 2023-03-08\tUniProt:O43323 DHH\tO43323\t1\t2');
+    expect((click.calls.mostRecent().object as HTMLAnchorElement).download).toBe('reaction_imbalance_100.tsv');
   });
 });
