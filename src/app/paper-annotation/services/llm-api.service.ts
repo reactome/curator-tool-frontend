@@ -4,7 +4,7 @@ import { Observable, firstValueFrom, switchMap, takeWhile, throwError, timer, ca
 import { environment } from 'src/environments/environment.dev';
 import { TokenRefreshService } from 'src/app/core/services/token-refresh.service';
 import {
-  AcceptResponse, ChatEvent, ExistingMatch, InstanceEvidence, Issue, IssueStatus, Job, Network, Passage, Proposal,
+  AcceptResponse, ChatEvent, ExistingMatch, GeneSearchResult, InstanceEvidence, Issue, IssueStatus, Job, Network, Passage, Proposal,
   ProposalRequest, QAResult, ReactionDetail, SessionDetail, SessionSummary, SessionUserInstances, StartResponse, StoredChatMessage,
   UsageReport
 } from '../models/llm-api.models';
@@ -66,21 +66,49 @@ export class LlmApiService {
   }
 
   // ── sessions ───────────────────────────────────────────────────────────
-  start(pmid: string, focus?: string): Observable<StartResponse> {
-    return this.call(() => this.http.post<StartResponse>(this.url('/sessions'), { pmid, focus: focus || null }));
-  }
-
-  upload(file: File, focus?: string): Observable<StartResponse> {
+  /**
+   * Start ONE annotation from one or more papers: PubMed IDs, PDFs, or both. Several papers are merged into a single
+   * draft by the service. PubMed IDs alone go as JSON; with PDFs the request is multipart (`files`, `pmids`, `focus`).
+   * `reviews` are the PDFs that are review articles (sent as `review_files`, by name): a review keeps the reactions
+   * it only cites from earlier work, while a research paper keeps only what its own results show (Reactome needs
+   * direct evidence). Every other PDF is research; the service reads each PubMed ID's kind from PubMed.
+   */
+  startPapers(pmids: string[], files: File[], focus?: string, reviews: File[] = []): Observable<StartResponse> {
+    if (!files.length) {
+      const body = pmids.length === 1 ? { pmid: pmids[0], focus: focus || null } : { pmids, focus: focus || null };
+      return this.call(() => this.http.post<StartResponse>(this.url('/sessions'), body));
+    }
     return this.call(() => {
       const form = new FormData();
-      form.append('file', file, file.name);
+      files.forEach(f => form.append('files', f, f.name));
+      if (pmids.length) form.append('pmids', pmids.join(' '));
       if (focus) form.append('focus', focus);
+      reviews.filter(f => files.includes(f)).forEach(f => form.append('review_files', f.name));
       return this.http.post<StartResponse>(this.url('/sessions/upload'), form);
     });
   }
 
+  /**
+   * Find the papers worth annotating a gene from (PubMed search, re-rank, LLM judge). Runs as a job that takes a minute
+   * or more: poll it with pollGeneSearch. Without `maxPapers` the service picks (5).
+   */
+  findPapersByGene(gene: string, maxPapers?: number): Observable<{ jobId: string }> {
+    const body = maxPapers ? { gene, max_papers: maxPapers } : { gene };
+    return this.call(() => this.http.post<{ jobId: string }>(this.url('/papers/by-gene'), body));
+  }
+
+  /** pollJob for a gene search: the final, done state carries the GeneSearchResult. */
+  pollGeneSearch(jobId: string, everyMs = 3000): Observable<Job<GeneSearchResult>> {
+    return this.pollJob(jobId, everyMs) as Observable<Job<GeneSearchResult>>;
+  }
+
   sessions(): Observable<SessionSummary[]> {
     return this.call(() => this.http.get<SessionSummary[]>(this.url('/sessions')));
+  }
+
+  /** Delete one of the curator's sessions (annotations) for good, with its uploaded PDFs. 409 while it is still running. */
+  deleteSession(id: string): Observable<void> {
+    return this.call(() => this.http.delete<void>(this.url(`/sessions/${id}`)));
   }
 
   session(id: string): Observable<SessionDetail> {
@@ -144,6 +172,12 @@ export class LlmApiService {
     return this.call(() => this.http.post<ExistingMatch[]>(this.url(`/sessions/${id}/existing/check`), {}));
   }
 
+  /** QA every reaction at once; the service returns them most urgent first and records the findings as issues. */
+  qaAll(id: string, llm = true): Observable<QAResult[]> {
+    const params = new HttpParams().set('llm', llm);
+    return this.call(() => this.http.post<QAResult[]>(this.url(`/sessions/${id}/qa`), {}, { params }));
+  }
+
   qa(id: string, reactionKey: string, llm = true): Observable<QAResult> {
     const params = new HttpParams().set('llm', llm);
     return this.call(() => this.http.post<QAResult>(this.url(`/sessions/${id}/qa/${reactionKey}`), {}, { params }));
@@ -157,6 +191,14 @@ export class LlmApiService {
 
   propose(id: string, body: ProposalRequest): Observable<Proposal> {
     return this.call(() => this.http.post<Proposal>(this.url(`/sessions/${id}/proposals`), body));
+  }
+
+  /**
+   * Remove a reaction from the draft as the curator's own decision. The service records it as an accepted proposal, so
+   * issues, QA, suggestions, other pending proposals and the exported instances follow. Same reply as accept().
+   */
+  removeReaction(id: string, key: string): Observable<AcceptResponse> {
+    return this.call(() => this.http.delete<AcceptResponse>(this.url(`/sessions/${id}/reactions/${encodeURIComponent(key)}`)));
   }
 
   accept(id: string, proposalId: string): Observable<AcceptResponse> {

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Evidence } from '../../models/llm-api.models';
+import { Evidence, PaperInfo, paperLabel } from '../../models/llm-api.models';
 
 @Component({
   selector: 'app-evidence-list',
@@ -12,6 +12,15 @@ import { Evidence } from '../../models/llm-api.models';
 })
 export class EvidenceListComponent {
   @Input() evidence: Evidence[] = [];
+  /** The session's papers. With more than one, each quote says which paper it is from. */
+  @Input() papers: PaperInfo[] = [];
+
+  /** The paper a quote is from, for a session with several papers; null otherwise. */
+  paperOf(e: Evidence): string | null {
+    if (this.papers.length < 2 || !e.source) return null;
+    const p = this.papers.find(x => x.source === e.source);
+    return p ? paperLabel(p) : e.source;
+  }
 
   verifyLabel(e: Evidence): string {
     switch (e.verified) {

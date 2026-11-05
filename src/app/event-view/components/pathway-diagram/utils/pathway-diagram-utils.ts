@@ -201,6 +201,16 @@ export class PathwayDiagramUtilService {
                 // Let's just call select again for diagram.cyCompare to make sure it is selected
                 diagram.select(dbIds[0], diagram.cyCompare);
             }
+            // An explicit comma-separated list still selects every id in it. Nothing in the diagram
+            // itself produces one; it comes from the Diagram sync QA check's "highlight in diagram",
+            // which has to show both ends of a FlowLine (the flagged event and the precedingEvent it
+            // is missing) at once. Selecting only the first would hide the very pair being reported.
+            // diagram.select() is not called again for these, since it may clear the first selection.
+            for (const extraId of dbIds.slice(1)) {
+                diagram.cy.elements()
+                    .filter((element: any) => element.data('reactomeId') === extraId)
+                    .select();
+            }
             // This is a hack. It should be handled by diagram. However, for some reason,
             // it is blocked.
             diagram.cy.animate({

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
@@ -34,7 +35,7 @@ import { WorkspaceComponent } from './components/workspace/workspace.component';
   ],
   imports: [
     CommonModule, FormsModule, PaperAnnotationRoutingModule, EvidenceListComponent,
-    MatButtonModule, MatCardModule, MatChipsModule, MatDialogModule, MatDividerModule, MatFormFieldModule,
+    MatButtonModule, MatCardModule, MatCheckboxModule, MatChipsModule, MatDialogModule, MatDividerModule, MatFormFieldModule,
     MatIconModule, MatInputModule, MatProgressBarModule, MatProgressSpinnerModule, MatSelectModule,
     MatSnackBarModule, MatTabsModule, MatTooltipModule
   ]

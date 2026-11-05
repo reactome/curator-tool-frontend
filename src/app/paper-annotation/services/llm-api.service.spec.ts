@@ -31,8 +31,8 @@ describe('LlmApiService', () => {
   });
 
   describe('REST calls', () => {
-    it('starts an annotation for a PMID with an optional focus', () => {
-      service.start('24751536', 'PINK1').subscribe(r => expect(r.sessionId).toBe('s1'));
+    it('starts an annotation for one PMID with an optional focus', () => {
+      service.startPapers(['24751536'], [], 'PINK1').subscribe(r => expect(r.sessionId).toBe('s1'));
       const req = http.expectOne(`${base}/sessions`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ pmid: '24751536', focus: 'PINK1' });
@@ -40,18 +40,49 @@ describe('LlmApiService', () => {
     });
 
     it('sends no focus as null', () => {
-      service.start('1234567').subscribe();
+      service.startPapers(['1234567'], []).subscribe();
       expect(http.expectOne(`${base}/sessions`).request.body).toEqual({ pmid: '1234567', focus: null });
     });
 
-    it('uploads a PDF as multipart with the focus', () => {
-      const file = new File(['%PDF-1'], 'paper.pdf', { type: 'application/pdf' });
-      service.upload(file, 'PINK1').subscribe();
+    it('starts ONE annotation for several PMIDs', () => {
+      service.startPapers(['24751536', '29168502'], [], 'PINK1').subscribe();
+      const req = http.expectOne(`${base}/sessions`);
+      expect(req.request.body).toEqual({ pmids: ['24751536', '29168502'], focus: 'PINK1' });
+      req.flush({ sessionId: 's', jobId: 'j' });
+    });
+
+    it('uploads several PDFs as multipart, with the PMIDs and the focus alongside', () => {
+      const a = new File(['%PDF-1'], 'a.pdf', { type: 'application/pdf' });
+      const b = new File(['%PDF-2'], 'b.pdf', { type: 'application/pdf' });
+      service.startPapers(['24751536', '29168502'], [a, b], 'PINK1').subscribe();
       const req = http.expectOne(`${base}/sessions/upload`);
       const form = req.request.body as FormData;
-      expect((form.get('file') as File).name).toBe('paper.pdf');
+      expect((form.getAll('files') as File[]).map(f => f.name)).toEqual(['a.pdf', 'b.pdf']);
+      expect(form.get('pmids')).toBe('24751536 29168502');
       expect(form.get('focus')).toBe('PINK1');
       req.flush({ sessionId: 's', jobId: 'j' });
+    });
+
+    it('names the PDFs that are reviews in review_files; PubMed IDs are left to the service', () => {
+      service.startPapers(['23256519'], []).subscribe();
+      expect(http.expectOne(`${base}/sessions`).request.body).toEqual({ pmid: '23256519', focus: null });
+      const research = new File(['%PDF-1'], 'research.pdf', { type: 'application/pdf' });
+      const review = new File(['%PDF-2'], 'review.pdf', { type: 'application/pdf' });
+      service.startPapers(['23256519'], [research, review], undefined, [review]).subscribe();
+      const form = http.expectOne(`${base}/sessions/upload`).request.body as FormData;
+      expect(form.getAll('review_files')).toEqual(['review.pdf']);
+      expect(form.has('review')).toBeFalse();
+      service.startPapers([], [research]).subscribe();
+      expect((http.expectOne(`${base}/sessions/upload`).request.body as FormData).has('review_files')).toBeFalse();
+    });
+
+    it('uploads one PDF without PMIDs or focus when there are none', () => {
+      const file = new File(['%PDF-1'], 'paper.pdf', { type: 'application/pdf' });
+      service.startPapers([], [file]).subscribe();
+      const form = http.expectOne(`${base}/sessions/upload`).request.body as FormData;
+      expect((form.get('files') as File).name).toBe('paper.pdf');
+      expect(form.has('pmids')).toBeFalse();
+      expect(form.has('focus')).toBeFalse();
     });
 
     it('filters issues by status and updates one', () => {
@@ -72,6 +103,10 @@ describe('LlmApiService', () => {
       service.qa('s1', 'r0', false).subscribe();
       const qa = http.expectOne(r => r.url === `${base}/sessions/s1/qa/r0`);
       expect(qa.request.params.get('llm')).toBe('false');
+      service.qaAll('s1').subscribe();
+      const all = http.expectOne(r => r.url === `${base}/sessions/s1/qa`);
+      expect(all.request.method).toBe('POST');
+      expect(all.request.params.get('llm')).toBe('true');
       service.accept('s1', 'p-001').subscribe();
       expect(http.expectOne(`${base}/sessions/s1/proposals/p-001/accept`).request.method).toBe('POST');
       service.reject('s1', 'p-002').subscribe();
@@ -159,6 +194,31 @@ describe('LlmApiService', () => {
       expect(fail(422, { detail: [{ msg: 'field required' }, { msg: 'bad pmid' }] }).message).toBe('field required; bad pmid');
       expect(fail(500, 'oops').message).toBe('The annotation service returned 500.');
     });
+  });
+
+  describe('findPapersByGene', () => {
+    it('posts the gene, and the number of papers only when given', () => {
+      service.findPapersByGene('PINK1').subscribe(r => expect(r.jobId).toBe('g1'));
+      const req = http.expectOne(`${base}/papers/by-gene`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ gene: 'PINK1' });
+      req.flush({ jobId: 'g1' });
+      service.findPapersByGene('PINK1', 8).subscribe();
+      expect(http.expectOne(`${base}/papers/by-gene`).request.body).toEqual({ gene: 'PINK1', max_papers: 8 });
+    });
+
+    it('polls the job until it is done and hands over its result', fakeAsync(() => {
+      const seen: unknown[] = [];
+      service.pollGeneSearch('g1', 1000).subscribe(j => seen.push(j.result ?? j.progress));
+      tick(0);
+      http.expectOne(`${base}/jobs/g1`).flush({ id: 'g1', status: 'running', progress: 'searching PubMed', error: null, result: null });
+      tick(1000);
+      const res = { gene: 'PINK1', accession: null, pool_size: 1, candidate_pool: 1, dropped_below_threshold: 0, papers: [] };
+      http.expectOne(`${base}/jobs/g1`).flush({ id: 'g1', status: 'done', progress: 'done', error: null, result: res });
+      tick(5000);
+      http.expectNone(`${base}/jobs/g1`);
+      expect(seen).toEqual(['searching PubMed', res]);
+    }));
   });
 
   describe('pollJob', () => {

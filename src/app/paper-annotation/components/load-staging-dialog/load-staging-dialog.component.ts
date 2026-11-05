@@ -1,6 +1,7 @@
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MAX_STAGED_INSTANCES } from 'src/app/core/models/reactome-instance.model';
+import { ReferenceReport } from '../../services/reference-preparer.service';
 
 export interface LoadStagingDialogData {
   /** Items that will be replaced (everything staged except a default person that is kept); they are backed up first. */
@@ -13,6 +14,13 @@ export interface LoadStagingDialogData {
   incoming: number;
   /** True when the annotation was edited after the instances were last loaded. */
   stale: boolean;
+  /** How many reactions the curator checked to load, and how many the annotation has. */
+  reactions?: number;
+  totalReactions?: number;
+  /** True when every reaction is checked, so the annotation's pathway comes too. */
+  pathway?: boolean;
+  /** What was done with the cited papers. */
+  references?: ReferenceReport;
 }
 
 @Component({
@@ -27,6 +35,11 @@ export class LoadStagingDialogComponent {
   get kept(): string {
     const n = this.data.keepsBookmarks;
     return [this.data.keepsDefaultPerson ? 'default person' : '', n ? `${n} bookmark${n === 1 ? '' : 's'}` : ''].filter(Boolean).join(' and ');
+  }
+
+  /** "PMID 1, PMID 2" */
+  pmids(list: string[]): string {
+    return list.map(p => 'PMID ' + p).join(', ');
   }
 
   get overLimit(): boolean {

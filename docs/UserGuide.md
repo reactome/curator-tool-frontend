@@ -34,16 +34,17 @@ This guide explains how to use the Curator Tool frontend (**Reactome WebBench**)
 
 ## 1) What this site includes
 
-After login, the **home page** launches six areas:
+After login, the **home page** launches five areas:
 
 - **Schema View** — browse schema classes, list instances, open/edit instances, run batch edits, and manage staged changes.
 - **Event View** — work with pathway/event trees, pathway diagrams, and instance editing together.
-- **Gene2Path** — submit a gene symbol and review LLM-generated pathway annotation support.
-- **Paper2Path** — run a multi-agent (CrewAI) literature-annotation job from PMIDs/PDFs/a gene, then register generated instances into Schema View. *(Experimental.)*
+- **Paper2Path** — draft a Reactome annotation from one or more papers (PubMed IDs and/or PDFs), review its reactions, issues and network, refine it by chat, and load it into your staged instances. *(Experimental.)*
 - **Ask the Graph** — ask questions about the curation database in plain English and get an answer with the matching instances. Read-only.
 - **Tutorial** — tabbed reference plus interactive guided tours for each area.
 
-The AI-assistance apps (Gene2Path, Paper2Path, Ask the Graph) and the Tutorial open in a **new browser tab**; Schema View and Event View open in the same tab.
+The AI-assistance apps (Paper2Path, Ask the Graph) and the Tutorial open in a **new browser tab**; Schema View and Event View open in the same tab.
+
+> **Gene2Path** is hidden from the home page while it is being re-developed. Its address, `/gene2path`, still works.
 
 ---
 
@@ -96,10 +97,11 @@ The home page shows the Reactome logo and the title **"Reactome WebBench"**, fol
 |---|---|---|
 | **Schema View** | `account_tree` | `/schema_view` (same tab) |
 | **Event View** | `timeline` | `/event_view` (same tab) |
-| **Gene2Path** | `psychology` | `/gene2path` (new tab) |
 | **Paper2Path** | `article` | `/paper2path` (new tab) |
 | **Ask the Graph** | `manage_search` | `/graph_query` (new tab) |
 | **Tutorial** | `school` | `/tutorial` (new tab) |
+
+The **Gene2Path** card is hidden while Gene2Path is being re-developed; [Gene2Path](#11-gene2path-app) is still reached at `/gene2path`.
 
 The [global status toolbar](#5-global-status-toolbar) is shown at the bottom of the home page with the staged-instance counters hidden.
 
@@ -319,12 +321,13 @@ The header toolbar shows the source:
 
 #### Search modes
 
-- **Simple search:** type in the **Search** box and press **Enter** (matches display name / dbId).
+- **Simple search:** type in the **Search** box and press **Enter** (matches display name / dbId). On a `@Staged` list, the name match ignores case and treats look-alike dashes (a hyphen, a non-breaking hyphen, an en dash, a minus sign), doubled or non-breaking spaces and invisible zero-width characters as the same, so a name can be typed as it reads. **Contains** in the advanced search over staged instances matches the same way.
 - **Advanced search:** click the `manage_search` icon (**"Advanced Search"**) to switch modes. The search box becomes read-only and shows the composed query; build conditions in the filter panel:
   - **Select attribute** dropdown.
   - **Select operand** dropdown — supported operands: **Equal**, **Not Equal**, **Contains**, **IS NULL**, **IS NOT NULL**.
   - **Enter search term** input, with a **Search the query above** (`query_stats`) button.
   - **Enter** adds another condition; **Ctrl+Enter** completes and runs the search. Use the **Undo last** (`undo`) icon to remove the most recent condition. Switch back with the `manage_search` (**"Simple Search"**) icon.
+  - A condition too long for one line, such as a long list of dbIds, is shown cut down to its first line; click its arrow (`expand_more` / `expand_less`) to show or hide the whole condition.
 
 #### Download search results (CSV)
 
@@ -421,6 +424,7 @@ The title reads **"{SchemaClass}: {displayName} [{dbId}]"**. It turns **red** wh
 | `delete` | **Delete Instance** | Opens the deletion dialog |
 | `upload` | **Upload** | Commits this instance; enabled only when there are changes |
 | `download` | **Export event to DOCX** | Event classes only; blocked while staged instances are pending |
+| `sync_problem` | **Check diagram sync for this pathway and its sub-pathways** | Committed Pathways that have a pathway diagram only; opens the [Diagram Sync Check dialog](#98-supporting-dialogs) |
 | `manage_search` | **Match new instance in database** | New instances only |
 | `bookmark` | **Add Bookmark** | |
 
@@ -510,6 +514,7 @@ Highlights are removed automatically when you click **OK** (keep changes) or **C
 - **Referrers** — titled *Referrers of "{name} [{dbId}]"*, grouped by attribute with counts; each referrer has a **launch** button. Shows **"Total Referrers: {count}"** (very large lists are truncated). In a deletion context, instances that would be structurally affected are shown in red. A link icon in the title bar (tooltip **"open in new tab"**) opens the same referrers as the standalone **Referrers page** below.
 - **Referrers page** — a routed, bookmarkable page at `schema_view/referrers/{dbId}`, opened via the dialog's link icon above or the **Show Referrers** (`list_alt`) action on an instance-valued slot (see [9.6](#96-instance-valued-slot-action-menu)). It always opens in a **new tab**, so it never replaces the view you were on. Unlike the dialog, its URL is stable — it can be reloaded, bookmarked, or shared — and it lays the referrers out as a plain two-column table (referring attribute on the left, referring instances on the right, each a clickable link). A dbId that isn't a number, or that names an instance which can no longer be loaded, is reported directly rather than showing an empty table.
 - **QA Report** — titled *QA Report for "{name}"*; passed checks show green **" Passed"**, failed checks render a table with clickable instance links.
+- **Diagram Sync Check** — titled *Diagram Sync Check for "{name}"*. Checks the pathway diagram of the pathway and of each of its sub-pathways against the database and lists every drawn event that doesn't match. It reads what is committed, not your staged changes. The issues are: a reaction's drawn inputs, outputs, catalysts, activators or inhibitors differ from the database (*"input out of sync"*, and so on), or *"precedingEvent out of sync: missing {dbId}"*, where a flow line joins two events but the event at the arrow end doesn't list the event at the tail end as a precedingEvent. Only flow lines between two events are checked, and a precedingEvent with no flow line drawn for it is not reported. The table has the columns **Event** (name and dbId), **Type** (pathway rows are shaded and their type is in bold), **Issue**, **Diagram DB_ID**, **Created** and **Modified**; click a column header to sort by it. The **Diagram** drop-down narrows the table to one diagram. Links open in a new tab, so the results stay open: the event, the missing precedingEvent, and the diagram's PathwayDiagram instance open in Schema View, and the `highlight_alt` button beside a precedingEvent issue opens the diagram in Event View with both events selected. When nothing is out of sync, the dialog says *"No sync issues found in N diagrams"*. Diagrams that have no diagram file can't be checked; the dialog says how many there are and links to each. **Re-run** checks again, for example after you have committed a fix.
 - **Delete** — titled *Delete "{name} [{dbId}]"*, with an optional structural-change warning and a **Show Referrers / Hide Referrers** toggle; **Delete** / **Cancel**. A separate **Confirm Delete** step notes that database instances are only removed after you commit the deletion. You may also be offered to **create a "Deleted" instance** to record the deletion.
 - **Match Instances** — titled *Matched instances for {name}*; select an existing instance and click **OK** to navigate to it.
 - **Create a New Instance** — pick a schema class, then fill in attributes; **OK** / **Cancel**.
@@ -636,7 +641,7 @@ A persistent toolbar sits above the diagram canvas with icon buttons (hover for 
 
 **Find by dbId:** click the **search** icon to expand it into a small text field; type a dbId and press **Enter** to select that object and zoom/pan the view onto it, if it is currently displayed in this diagram. The field collapses back to the search icon once you search, or if you press **Escape** or click away without searching. If nothing in this diagram has that dbId, or what you typed isn't a valid number, you're told so directly rather than the search silently doing nothing.
 
-**Validate Diagram Against Database:** while editing, click the **Validate Diagram Against Database** (`fact_check`) icon to scan everything drawn — PhysicalEntity nodes, sub-Pathway nodes, Compartments, and reaction structure (inputs, outputs, catalysts, regulators) — against the live database, catching cases where the diagram's saved layout has drifted from what curators have since committed (e.g. after a delete or an edit elsewhere). A wait dialog shows while it runs, then a **QA Report**-style dialog lists each check as **Passed** or a table of mismatches, with clickable instance links. If anything failed, an **Auto-Fix** button corrects the live diagram to match the database — it does not save automatically, so you can review the result (and undo it, like any other edit) before choosing **Upload Diagram** yourself.
+**Validate Diagram Against Database:** while editing, click the **Validate Diagram Against Database** (`fact_check`) icon to scan everything drawn — PhysicalEntity nodes, sub-Pathway nodes, Compartments, and reaction structure (inputs, outputs, catalysts, regulators) — against the live database, catching cases where the diagram's saved layout has drifted from what curators have since committed (e.g. after a delete or an edit elsewhere). A wait dialog shows while it runs, then a **QA Report**-style dialog lists each check as **Passed** or a table of mismatches, with clickable instance links. A BlackBoxEvent must be drawn as an uncertain process (with a "?" in its reaction node); one that is not is reported too. If anything failed, an **Auto-Fix** button corrects the live diagram to match the database — it does not save automatically, so you can review the result (and undo it, like any other edit) before choosing **Upload Diagram** yourself.
 
 **Right-click** also opens the classic context menu — it still offers most of the actions above (both access points work identically) plus every element-specific action, context-sensitive to what you clicked. Zoom In / Zoom Out / Fit to Screen / Find by dbId are toolbar-only (view-level controls, not tied to any right-clicked element):
 
@@ -648,7 +653,8 @@ A persistent toolbar sits above the diagram canvas with icon buttons (hover for 
 - **Edit/Create PathwayDiagram**
 
 *Conditionally:*
-- On a reaction edge: **Add Edge Point**, **Remove Reaction**, **Enable/Disable Edge Editing**
+- On a reaction edge: **Add Edge Point**, **Enable/Disable Edge Editing**
+- On a reaction node, while editing with edge editing enabled: **Remove Reaction**
 - **Add Flow Line** / (on a flow line) **Add Edge Point**, **Remove Flow Line**
 - **Unlock Diagram** (when you hold the lock)
 - **Resize** / **Disable Resizing** (nodes/compartments)
@@ -720,46 +726,117 @@ Failures show under a **"Failure"** heading.
 
 ## 12) Paper2Path app
 
-Paper2Path (`/paper2path`, opens in a new tab, **login required**) runs a multi-agent (CrewAI) literature-annotation workflow and can register the results into Schema View.
+Paper2Path (`/paper2path`, opens in a new tab, **login required**) drafts a Reactome annotation from one paper, or from several at once: its reactions with their participants, the quotes from the papers that support them, and a list of what needs your attention. You review the draft, refine it by chat, and load it into your staged instances.
 
-> **Experimental:** *"Paper2Path is under active development. Results may be incomplete or inaccurate. Do not use for production curation without review."*
+> **Experimental:** treat the results as drafting support, and review them before you commit.
 
-**Banner:** *"Paper2Path — Multi-Agent Literature Annotation · Powered by CrewAI"*.
+### Start an annotation
 
-### Configuration (**Configure** / **Hide Config** toggle)
+The page, **Paper annotation**, has the **Papers to annotate** card, for papers you already have in mind. (A second card, **Find papers for a gene**, is hidden for the time being; see below.) An annotation can be drawn from one paper or from several, in any mix of PubMed IDs and PDFs:
 
-- **Max Papers** (1–20, default 8)
-- **Quality Threshold** (0–1, default 0.7)
-- **Enable Full Text Analysis** (default on) — process full PDFs vs. abstracts only
-- **Enable Literature Search** (default off) — search PubMed for more papers (requires a target gene)
-- **Agent Dashboard Controls** — enable/disable **Execution Phases**, **Agents**, and per-agent **Tools** (all server-driven; all enabled by default)
+- **PubMed IDs**: type one or more, separated by spaces, commas or new lines. The papers must be open access in PubMed Central. An ID typed twice is used once. If one is not a number (up to 9 digits), *"Every PubMed ID must be a number (up to 9 digits)."* is shown and **Annotate** is disabled. Whether each paper is a review article is read from PubMed.
+- **Add PDFs** (`upload_file`): for papers that are not in PubMed Central, up to 50 MB each. You can pick several at once, and click **Add PDFs** again to add more. Each PDF is listed with a **Review** checkbox and a remove (`close`) button. Tick **Review** for a review article. The same file added twice is kept once.
+- **Focus gene** (optional): the protein you care most about in the papers.
 
-### Run an annotation job
+Reactome needs direct evidence, so a research paper keeps only the reactions its own results show, and drops those it only cites from earlier work. A review article also keeps the reactions it cites. A PDF counts as research unless you tick **Review**.
 
-Under **Annotation**:
+Beside **Annotate**, a count such as *"2 PDFs + 1 PubMed ID"* shows what will be annotated. Several papers are merged into **one** annotation, and a reaction that more than one paper describes cites them all.
 
-1. Optionally enter a **Target Gene** (e.g. `NTN1`) — you can annotate by gene alone or combine with papers.
-2. Choose a source tab:
-   - **Enter Papers** — add **PMID** fields (**Add PMID** / remove) and/or upload a PDF named `PMID.pdf` (**Select PDF File**).
-   - **Preloaded Papers** — pick from papers already on the server (each shows PMID, size, title, and a PDF-available/not-found status icon).
-   - **Results** — enabled once a job/result exists.
-3. Click **Start Annotation** (`send`; disabled until at least one PMID, a selected preloaded paper, or a target gene is provided). It shows **"Processing…"** while running; **Clear** resets.
+Annotating usually takes a few minutes, longer for a long paper or for several papers. You can leave the page; the annotation stays in your list.
 
-### Review results (Results tab)
+### Find papers for a gene
 
-- **Processing Annotation…** shows Job ID, Status, Gene, and Current Phase with a progress bar.
-- **CrewAI Runtime Logs** stream live (timestamp, colored status tag, phase, summary/detail).
-- On failure: **Annotation Failed** with **Try Again** / **Dismiss**.
-- On success: **Annotation Complete** shows the JSON result and action buttons:
-  - **Download Results** (`download`) — saves `paper2path-results-YYYY-MM-DD.json`.
-  - **Add to Schema View** (`add_circle`, tooltip *"Register annotated entities, reactions and pathways as new instances in the schema view"*).
-  - **New Annotation** (`refresh`) — resets.
+> **Hidden for the time being:** this card is not shown on the start page while it is being reworked. The description below is kept for when it returns.
 
-### Register results into Schema View
+**Find papers for a gene** suggests the papers worth annotating a gene from. Type a gene symbol, such as `PINK1` or `HLA-A`, and click **Find papers** (or press Enter). Paper2Path searches PubMed for the gene, re-ranks what it finds, and has a language model judge how useful each paper is for a Reactome annotation. A symbol with anything but letters, digits, dots and dashes is pointed out (*"A gene symbol has only letters, digits, dots and dashes, such as PINK1 or HLA-A."*) and is not searched.
 
-**Add to Schema View** parses the result and creates new staged instances — LiteratureReferences (from PMIDs, auto-filled server-side), entities (default `EntityWithAccessionedSequence`), output Complexes, Reactions, and Pathways — then shows a snackbar (**"N instances added to schema view."**) and opens **Schema View in a new tab**. These are **staged** instances: review and validate them in Schema View, then commit. Paper2Path does not write to the database directly.
+The search usually takes a minute or two. Meanwhile the card shows a progress bar and the current step, such as *"searching PubMed"*. You can leave the page: when you come back in the same tab, the card picks the search up again. **Stop waiting** puts it away.
 
-*(On first load, a bundled sample result is shown so the Results tab has example output before you run a real job.)*
+The papers are then listed best first, each with its title (a link to PubMed), PMID, year, a **score** out of 10 for how useful it is, its **evidence type** (`DIRECT`, `INDIRECT`, `INSUFFICIENT` or `NONE`), and one sentence on why. The papers in PubMed Central that the judge found annotatable are ticked; tick or untick any of them. A paper that is not in PubMed Central cannot be ticked (*"Not in PubMed Central: to annotate it, add its PDF under Papers to annotate."*).
+
+**Annotate selected** starts one annotation from the ticked papers, with the gene as the focus gene, and opens it. **Clear** puts the list away.
+
+**Your annotations** lists every annotation you have started, with **Paper(s)** (the PMID or file name, or for several papers how many there are and which), **Status** (`queued`, `running` with the current step, `ready` or `failed`), **Reactions**, **Open issues** and **Started**. Click a row to open it. Your annotations are kept on the server, so they are still there after you log out and back in, from any browser, with every change you accepted.
+
+To delete an annotation, click the delete button (`delete`) at the end of its row, then **Delete** to confirm (or **Cancel**). It is removed for good, together with any PDFs you uploaded for it, so you can start the same papers again or tidy up the list. An annotation that is still `queued` or `running` can't be deleted: wait until it finishes. Deleting an annotation does not touch your staged instances.
+
+### Inside an annotation
+
+The header shows the paper (PMID or file name), the focus gene and the status, with a back arrow (`arrow_back`, *"All annotations"*). For an annotation of several papers, it shows *"N papers"* followed by each paper's PMID or file name, with *· review* after a review article. An annotation of one review article shows *review article* in the header. While the papers are being annotated, the page shows the current step; if it failed, the reason. When it is ready, there are five tabs on the left (**Reactions**, **Issues**, **Suggested fixes**, **Network** and **Usage**) and the **Chat** panel on the right.
+
+#### Reactions
+
+The list on the left shows every extracted reaction, with its key (such as `r3`; point at the key to see the reaction's equation). On each row:
+
+- the checkbox chooses whether the reaction is loaded into your staged instances (see [Load into staged instances](#load-into-staged-instances)). **All**, above the list, checks or clears every reaction, and *"N of M checked to load"* shows how many are checked. A reaction that can't be loaded has its checkbox disabled;
+- **Keep?** means the reaction may not belong in the annotation, because it may not be a molecular reaction or no result of the paper shows it. Point at it to see why, and decide under **Keep these reactions?** on the **Issues** tab;
+- a `content_copy` icon means Reactome appears to have the reaction already;
+- a coloured count shows its open issues, as the **Issues** tab counts them (red: needs action; orange: warnings). Notes, and issues that wait on a keep-or-remove decision, are not counted.
+
+**Sort** orders the list **As in the paper** (the order the reactions were drafted in), **Needs attention first** (reactions to keep or remove, then by their saved review: fix first, needs fixing, worth a look, no problems found), or **By name (A–Z)**.
+
+Click a reaction to see its details on the right:
+
+- name and reaction type;
+- **Reactome appears to have this reaction already** or **Similar to an existing reaction**, with the existing reaction's name, stable id and why it matches;
+- **Needs attention**: the reaction's open issues;
+- **Participants**: **Inputs** and **Outputs**, with modifications, UniProt or ChEBI identifier, compartment, and a *needs …* flag for anything that could not be resolved; the **Catalyst** and its activity; regulators (*activated by*, *inhibited by*, *required by*);
+- **Summary**;
+- **Evidence (N)**: each quote from the paper with its page, section and figure. In an annotation of several papers, each quote also has a tag saying which paper it is from (its PMID or file name). *verbatim* means the quote was found word for word in the paper, *close match* that it differs slightly (usually PDF symbols or hyphenation), and *not found in paper* that it could not be found.
+
+At the top of the reaction panel, the review saved with the annotation is shown: **Fix first**, **Needs fixing**, **Worth a look** or **No problems found**, the reviewer's confidence, "may not be a molecular reaction" when the reviewer thinks so, and one sentence on the most important thing to do. Its findings are under **Needs attention**. **Re-check this reaction** (`fact_check`; **Check this reaction** if it was never checked) runs the rule checks and the model review again, for example after you changed the reaction.
+
+**Remove this reaction** (`delete`) takes the reaction out of the annotation, after you confirm with **Remove** (or **Cancel**). Its issues and suggested fixes go with it, a proposed edit of it is marked as no longer applying, and the next reaction in the list is selected. Load the annotation into your staged instances again afterwards, as after any change.
+
+#### Issues
+
+The top line counts the reactions to keep or remove and the issues listed. **Show** filters the issues by status (Open, Resolved, Dismissed, All). **Notes (N)** also lists notes, which are hidden at first. **Waiting on a decision (N)** also lists the issues of reactions that may be removed: they matter only if you keep the reaction.
+
+**Keep these reactions?** comes first. It lists each reaction that may not belong in the annotation, because it may not be a molecular reaction or no result of the paper shows it. Each has its name (click it to open the reaction in **Reactions**), key, equation and the reasons it was questioned, plus any existing Reactome reaction it looks like (`content_copy`).
+
+- **Remove** accepts the suggested fix that removes the reaction from the annotation, with its other issues. It is disabled until a removal is suggested.
+- **Keep** dismisses the reasons and rejects the suggested removal. The reaction's other issues are then listed with the rest.
+
+The other issues are grouped by reaction, most urgent first by the reaction's saved review (**Fix first**, **Needs fixing**, **Worth a look**, **No problems found**), which each group shows with its one-sentence summary. Click a reaction's name to open it in **Reactions**. A group shows its first three issues; **Show N more** lists the rest, and **Show fewer** folds them again. Each issue can be **Resolve**d or **Dismiss**ed, or **Reopen**ed.
+
+**Check all reactions** (`fact_check`) reviews every reaction again with the language model and updates the saved reviews and the issues, so it can take a while.
+
+#### Suggested fixes
+
+**Suggested fixes (N)** lists edits that Paper2Path suggests for some of the problems it found, each under the name of the reaction it is about. They are only suggestions. Like a proposal in the chat, each shows why, what it changes and the quotes behind it. Nothing changes until you click **Accept**; **Reject** discards it. Once you decide, the suggestion leaves the list. After accepting one, load the annotation into your staged instances again to bring the edit in.
+
+#### Network
+
+Every reaction and the entities it involves, drawn as one network. The legend under it explains the node shapes (protein, small molecule, complex, set, reaction), the dashed outline of an entity whose identifier was not resolved, the double outline of a reaction Reactome has already, and the line styles.
+
+- **Click a reaction** to select it. Its details are shown in the panel to the right of the network, the same details as in **Reactions**, and everything that is not part of it is greyed out. The selected reaction is also greyed around when the tab is first shown, so you can find it.
+- **Double-click a reaction** to open it in **Reactions**.
+- **Click an entity** to grey out everything except the reactions it takes part in and the entities beside it.
+- **Click the background** to clear the greying.
+- **Re-layout** (`auto_fix_high`) arranges the network again; **Fit** (`fit_screen`) fits it in the view. Where you drag nodes, and the zoom, are kept when you come back to the tab.
+- **Resize the panels**: drag the bar between the network and the reaction panel. Double-click the bar to put it back to its usual width. With the bar selected, the arrow keys move it (`Shift` for bigger steps) and `Home` puts it back. The width is remembered. In a window narrower than about 800 pixels, the panel goes under the network.
+
+#### Usage
+
+How many language-model tokens each step used (reading the paper, merging duplicate reactions, cross-model review, building the draft, reaction checks, chat), with a total. **Reaction checks and chat turns, one by one** lists each of them. For an annotation reused from a saved result, rows marked *saved run* show what the original run used, and **Spent in this session** shows what was spent now. Steps that use no model, such as checking quotes or resolving identifiers, are not listed.
+
+### Refine by chat
+
+Ask about the paper or ask for a change, for example *"Add the damage condition to the Parkin ubiquitination reaction."* Press `Enter` to send, `Shift+Enter` for a new line, and **Stop** to cancel a reply. Tick **About the selected reaction** to ask about the reaction selected in the tabs.
+
+The assistant only **proposes** edits. Each **Proposed edit** shows why, what it changes, and the quotes behind it (**Show N supporting quotes**). Nothing changes until you click **Accept**; **Reject** discards it. A change to what a reaction is needs a quote from the paper.
+
+### Load into staged instances
+
+**Load into staged instances** (`playlist_add`, in the header) puts the reactions you checked in **Reactions** into your staged instances, with what they need. The button says how many, for example **Load 3 reactions into staged instances**, and stays disabled until at least one reaction is checked. Nothing is checked at first. Your choice is remembered in this browser for each annotation. The annotation's pathway comes too only when every reaction is checked.
+
+A dialog first shows how many reactions and instances come in and how many staged items they replace. It also says what happened to the papers the reactions cite:
+
+- A paper Reactome already has a literature reference for uses that reference.
+- A new literature reference is filled in from PubMed, as when you type a PubMed ID in Schema View. One that could not be filled in is named in the dialog and loaded with the PubMed ID only: enter the PubMed ID again in Schema View to fill it in.
+- A PDF with no PubMed ID gets a reference named after the file. Enter its PubMed ID in Schema View to fill it in. What you have staged is saved to a backup first, and nothing is replaced if the backup fails; your default person and bookmarks are kept. Afterwards, **Open schema view** opens Schema View in a new tab.
+
+After you accept edits in the chat, a banner reminds you to load again to bring them in. Changes you made by hand to the loaded copies are overwritten. In Schema View, a loaded reaction, catalyst or regulation has an **Evidence** button showing its quotes, and, for an annotation of several papers, which paper each one is from. Paper2Path does not write to the database: review and commit the staged instances as usual.
 
 ---
 
@@ -767,17 +844,20 @@ Under **Annotation**:
 
 Ask the Graph (`/graph_query`, opens in a new tab, **login required**) answers questions about the curation database written in plain English, for example *"Which reactions in R-HSA-109582 have no catalyst?"*. A language model turns the question into database (Cypher) queries, runs them, and writes the answer. It **only reads** the database: it cannot create, change or delete anything, and it does not see your staged, uncommitted changes.
 
-**Asking:** type in the **Ask the curation graph** box and press `Enter` or **Ask** (`send`). `Shift+Enter` starts a new line. An answer can take a little while; a progress bar shows while it is being worked on.
+**Asking:** the question box is at the top of the page. Type your question and press `Enter`, or click the send (`arrow_upward`) button; `Shift+Enter` starts a new line. When the conversation is empty, a few example questions are shown below the box; click one to ask it. Your questions and the answers appear below as a conversation, with **Querying the graph…** shown while an answer is being worked on, which can take a little while.
 
 **Each answer shows:**
 
-- the answer in plain text;
-- **Results (N rows)** — a table of the rows returned by the last query that worked. `N+` means there were more rows than are shown. Any column whose name ends in `dbId` is a link: click it to open that instance in Schema View in a new tab, so the conversation stays where it is;
+- the answer, formatted: headings, lists, bold and italic text, code, tables and links are shown as such. Links open in a new tab;
+- **Results (N rows)** — the rows returned by the last query that worked. `N+` means there were more rows than are shown.
+  - When the rows hold dbIds, they are shown as an **instance list**, the same list as on the [List Instances page](#83-list-instances-page). The instances are listed under the most specific class they all share, so a mix of Reactions and BlackBoxEvents is listed as ReactionlikeEvents. You can search the list by name or dbId, narrow it with the advanced search and the species filter, page through it, and download it. Each row has **launch instance** (`launch`) and **show referrers** (`list_alt`); select rows to **Download selected** (`download`) or **Bookmark selected** (`bookmark`) them. Clicking a name opens the instance in Schema View in a new tab, so the conversation stays where it is. The list only covers the instances in the result: searching it narrows the result rather than searching the database.
+  - When a result has more than one set of dbIds, such as reactions and their catalysts, buttons above the list switch between them.
+  - A result with no dbIds is shown as a table of the rows as the query returned them.
 - **Cypher (N)** — every query that was run, in order, with its row count or the error it hit (a failed query is marked with a red bar), and a **Copy Cypher** (`content_copy`) button.
 
-**Follow-up questions** build on the earlier ones in the conversation, so *"only the human ones"* narrows the previous answer. **Clear** starts a new conversation.
+**Follow-up questions** build on the earlier ones in the conversation, so *"only the human ones"* narrows the previous answer. **New conversation** (`restart_alt`, below the question box) starts over.
 
-**Errors:** *"Your session has expired. Please log in again."* means your login is no longer accepted. *"The graph query service is not reachable from here."* means the query service is not running or this copy of the site has no access to it (it is only available on the deployed site, not on a locally run copy). Neither one logs you out.
+**Errors:** *"Your session has expired. Please log in again."* means your login is no longer accepted. *"The graph query service is not reachable from here."* means the query service is not running or this copy of the site has no access to it. A locally run copy needs the query service running locally too. Neither one logs you out.
 
 > Answers are generated by a language model. Check the Cypher and the results before relying on an answer for curation.
 

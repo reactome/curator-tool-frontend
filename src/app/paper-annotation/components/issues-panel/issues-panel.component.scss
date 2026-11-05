@@ -13,4 +13,25 @@ mat-icon.sev-action { color: #c62828; }
 mat-icon.sev-warning { color: #ef6c00; }
 mat-icon.sev-info { color: #1976d2; }
 .empty { color: #666; }
+.decisions { margin: 8px 0 16px; padding: 8px 12px; background: #fff8f6; border: 1px solid #f3d2cc; border-radius: 4px; }
+.decisions h3, .group h3 { margin: 0 0 4px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.decisions .hint { margin: 0 0 6px; color: #555; font-size: 12px; }
+.decisions ul { list-style: none; padding: 0; margin: 0; }
+.decisions li { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; border-top: 1px solid #f3d2cc; }
+.decisions .why { color: #444; font-size: 13px; }
+.decisions .key { color: #777; font-size: 12px; margin-left: 6px; }
+.decisions .equation { color: #555; font-size: 12px; font-family: monospace; margin: 2px 0; }
+.decisions .lookalike { color: #6a1b9a; }
+.decisions .actions { gap: 6px; }
+.name { font-weight: 500; padding: 0; text-align: left; white-space: normal; height: auto; line-height: 20px; }
+.group { margin: 12px 0 4px; }
+.group .count { color: #777; font-size: 12px; font-weight: normal; }
+.group .what { color: #444; font-size: 13px; margin: 0 0 4px; }
+.issues li.waiting { background: #fafafa; }
+.more { font-size: 12px; }
+.chip { flex-shrink: 0; min-width: 88px; text-align: center; padding: 2px 8px; border-radius: 10px; font-size: 12px; color: #fff; }
+.chip.prio-fix_first { background: #c62828; }
+.chip.prio-fix { background: #ef6c00; }
+.chip.prio-review { background: #1976d2; }
+.chip.prio-ok { background: #2e7d32; }
 .error { display: flex; align-items: center; gap: 8px; background: #fdecea; color: #7a1c14; padding: 10px 12px; border-radius: 4px; }

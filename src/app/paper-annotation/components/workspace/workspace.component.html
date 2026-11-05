@@ -2,16 +2,25 @@
   <header>
     <a mat-icon-button routerLink="/paper2path" matTooltip="All annotations" aria-label="Back to all annotations"><mat-icon>arrow_back</mat-icon></a>
     <div class="title" *ngIf="session">
-      <h1>{{ session.pmid ? 'PMID ' + session.pmid : session.source }}</h1>
+      <h1>{{ title }}</h1>
       <span class="meta" *ngIf="session.focus">focus: {{ session.focus }}</span>
+      <span class="meta" *ngIf="papers.length === 1 && papers[0].review" matTooltip="Reactions this review only cites from earlier work were kept">review article</span>
       <span class="status" [ngClass]="'status-' + session.status">{{ session.status }}</span>
+      <ul class="papers" *ngIf="papers.length > 1" aria-label="Papers in this annotation">
+        <li *ngFor="let p of papers">{{ paperLabel(p) }}<span *ngIf="p.review" class="kind"> · review</span></li>
+      </ul>
     </div>
     <span class="spacer"></span>
-    <button mat-flat-button color="primary" *ngIf="session?.status === 'ready'" [disabled]="loading" (click)="loadIntoStaging()"
-            matTooltip="Replace your staged instances with this annotation (your current ones are backed up first)">
-      <mat-icon>playlist_add</mat-icon> Load into staged instances
-    </button>
+    <!-- the tooltip sits on a wrapper because a disabled button shows none -->
+    <span *ngIf="session?.status === 'ready'"
+          [matTooltip]="checkedCount ? 'Replace your staged instances with the checked reactions (your current ones are backed up first)' : 'Check the reactions to load first'">
+      <button mat-flat-button color="primary" [disabled]="loading || !checkedCount" (click)="loadIntoStaging()">
+        <mat-icon>playlist_add</mat-icon>
+        {{ checkedCount ? 'Load ' + checkedCount + ' reaction' + (checkedCount === 1 ? '' : 's') + ' into staged instances' : 'Load into staged instances' }}
+      </button>
+    </span>
   </header>
+  <div class="stale" *ngIf="loadStep" role="status"><mat-icon>hourglass_top</mat-icon> {{ loadStep }}</div>
   <div class="stale" *ngIf="stagingStale" role="status">
     <mat-icon>info</mat-icon> You accepted edits since the instances were last loaded. Load them again to bring the edits into your staged instances.
   </div>
@@ -23,7 +32,7 @@
     <h2>Annotating this paper</h2>
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     <p class="step">{{ session?.progress || 'starting' }}</p>
-    <p class="hint">Extracting and merging reactions takes about 10 to 15 minutes. You can leave this page; it will be here when you come back.</p>
+    <p class="hint">Extracting and merging reactions usually takes a few minutes, longer for a long paper. You can leave this page; it will be here when you come back.</p>
   </section>
 
   <section class="failed" *ngIf="session?.status === 'failed'" role="alert">
@@ -37,32 +46,82 @@
     <mat-tab-group [(selectedIndex)]="tab" animationDuration="0ms">
       <mat-tab [label]="'Reactions (' + (session?.reactions?.length ?? 0) + ')'">
         <div class="reactions">
+         <div class="reaction-column">
+          <div class="list-head">
+            <mat-checkbox [checked]="allChecked" [indeterminate]="checkedCount > 0 && !allChecked"
+                          [disabled]="!loadableReactions.length" (change)="setAllChecked($event.checked)"
+                          aria-label="Check all reactions to load">All</mat-checkbox>
+            <span class="checked-count">{{ checkedCount }} of {{ loadableReactions.length }} checked to load</span>
+          </div>
+          <mat-form-field class="sort" appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Sort</mat-label>
+            <mat-select [(ngModel)]="reactionSort" aria-label="Sort reactions">
+              <mat-option value="paper">As in the paper</mat-option>
+              <mat-option value="attention">Needs attention first</mat-option>
+              <mat-option value="name">By name (A–Z)</mat-option>
+            </mat-select>
+          </mat-form-field>
           <ul class="reaction-list" role="listbox" aria-label="Reactions">
-            <li *ngFor="let r of session?.reactions" role="option" tabindex="0"
+            <li *ngFor="let r of sortedReactions" role="option" tabindex="0"
                 [class.selected]="r.key === selectedKey" [attr.aria-selected]="r.key === selectedKey"
                 (click)="select(r.key)" (keyup.enter)="select(r.key)">
-              <span class="name">{{ r.name }}</span>
+              <mat-checkbox class="load-check" [checked]="isChecked(r.key)" [disabled]="!canCheck(r.key)"
+                            (click)="$event.stopPropagation()" (keyup.enter)="$event.stopPropagation()"
+                            (change)="setChecked(r.key, $event.checked)"
+                            [attr.aria-label]="'Load ' + r.name + ' into staged instances'"
+                            [matTooltip]="canCheck(r.key) ? 'Load this reaction into staged instances' : 'This reaction cannot be loaded'"
+                            matTooltipShowDelay="600"></mat-checkbox>
+              <span class="name">{{ r.name }}<span class="rkey" [matTooltip]="r.equation ?? ''">{{ r.key }}</span></span>
               <span class="badges">
+                <span *ngIf="needsDecision(r.key)" class="keep" [matTooltip]="decisionReason(r.key)">Keep?</span>
                 <mat-icon *ngIf="hasSameMatch(r.key)" class="badge same" matTooltip="Reactome appears to have this reaction already">content_copy</mat-icon>
                 <span *ngIf="openCount(r.key)" class="count" [ngClass]="'sev-' + worstSeverity(r.key)"
                       [matTooltip]="openCount(r.key) + ' open issue(s)'">{{ openCount(r.key) }}</span>
               </span>
             </li>
           </ul>
+         </div>
           <div class="detail">
             <app-reaction-detail *ngIf="selectedKey" [sessionId]="id" [reactionKey]="selectedKey"
-                                 [matches]="existing" [issues]="issues" (changed)="reload()"></app-reaction-detail>
+                                 [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" [stamp]="draftStamp" (changed)="reload()" (removed)="onReactionRemoved($event)"></app-reaction-detail>
           </div>
         </div>
       </mat-tab>
       <mat-tab [label]="'Issues (' + openIssues.length + ')'">
-        <app-issues-panel [sessionId]="id" [issues]="issues" (changed)="onIssueChanged($event)"
-                          (openReaction)="openReaction($event)"></app-issues-panel>
+        <app-issues-panel [sessionId]="id" [issues]="issues" [reactions]="session?.reactions ?? []" [qa]="session?.qa ?? {}"
+                          (changed)="onIssueChanged($event)"
+                          (checked)="reload()" (removed)="stagingStale = true" (openReaction)="openReaction($event)"></app-issues-panel>
+      </mat-tab>
+      <mat-tab [label]="'Suggested fixes (' + suggestions.length + ')'">
+        <section class="suggestions" aria-label="Suggested fixes">
+          <p class="hint">Fixes for some of the problems found. Each is only a suggestion: nothing changes until you accept it.</p>
+          <p class="none" *ngIf="!suggestions.length">There are no suggested fixes.</p>
+          <div class="suggestion" *ngFor="let p of suggestions">
+            <h3 *ngIf="suggestionReaction(p)">{{ suggestionReaction(p) }}</h3>
+            <app-proposal-card [sessionId]="id" [proposal]="p" (decided)="onProposalDecided($event)"></app-proposal-card>
+          </div>
+        </section>
       </mat-tab>
       <mat-tab label="Network">
         <ng-template matTabContent>
-          <app-reaction-network [sessionId]="id" [stamp]="networkStamp" [selectedKey]="selectedKey"
-                                (reactionSelected)="select($event)" (reactionOpened)="openReaction($event)"></app-reaction-network>
+          <div #split class="network-split" [class.resizing]="resizing" [style.--detail-width]="detailWidth + 'px'">
+            <app-reaction-network [sessionId]="id" [stamp]="draftStamp" [selectedKey]="selectedKey"
+                                  (reactionSelected)="select($event)" (reactionOpened)="openReaction($event)"></app-reaction-network>
+            <div class="splitter" role="separator" aria-orientation="vertical" tabindex="0"
+                 aria-label="Resize the reaction panel" [attr.aria-valuenow]="detailWidth"
+                 matTooltip="Drag to resize; double-click to reset" matTooltipShowDelay="600"
+                 (pointerdown)="startResize($event, split)" (dblclick)="resetDetailWidth()"
+                 (keydown)="nudgeDivider($event, split)"><span class="grip"></span></div>
+            <aside class="network-detail" aria-label="Selected reaction">
+              <mat-checkbox *ngIf="selectedKey && canCheck(selectedKey)" class="panel-check"
+                            [checked]="isChecked(selectedKey)" (change)="setChecked(selectedKey!, $event.checked)">
+                Load this reaction into staged instances
+              </mat-checkbox>
+              <app-reaction-detail *ngIf="selectedKey; else noReaction" class="compact" [sessionId]="id" [reactionKey]="selectedKey"
+                                   [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" [stamp]="draftStamp" (changed)="reload()" (removed)="onReactionRemoved($event)"></app-reaction-detail>
+              <ng-template #noReaction><p class="none">Click a reaction in the network to see its details here.</p></ng-template>
+            </aside>
+          </div>
         </ng-template>
       </mat-tab>
       <mat-tab label="Usage">
@@ -72,7 +131,7 @@
       </mat-tab>
     </mat-tab-group>
    </div>
-   <app-chat-panel [sessionId]="id" [contextLabel]="selectedReaction?.name ?? null" [contextDbIds]="contextDbIds"
+   <app-chat-panel [sessionId]="id" [stamp]="draftStamp" [contextLabel]="selectedReaction?.name ?? null" [contextDbIds]="contextDbIds"
                    (proposalDecided)="onProposalDecided($event)" (turnDone)="onTurnDone()"></app-chat-panel>
   </div>
 </div>

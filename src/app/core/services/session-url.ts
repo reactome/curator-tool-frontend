@@ -25,16 +25,67 @@ const RETURN_URL_KEY = 'currentUrl';
 const PARKED_TOKEN_KEY = 'currentUrl_parked_token';
 
 /**
+ * The path the app is mounted under, without a trailing slash: '' in development (base href
+ * '/'), '/curatortool' in production (`npm run build` passes --base-href='/curatortool/').
+ */
+function basePath(): string {
+  // The <base> element itself, as Angular's own PathLocationStrategy reads it, rather than
+  // document.baseURI: with no <base> (the Karma runner) the latter is the page's own URL, which
+  // would make '/context.html' look like a mount point.
+  const baseElement = document.querySelector('base');
+  if (!baseElement)
+    return '';
+  const base = new URL(baseElement.href).pathname;
+  return base.endsWith('/') ? base.slice(0, -1) : base;
+}
+
+/**
+ * Strip the base path from a browser URL, giving the router URL Angular routes on.
+ *
+ * The saved view is consumed in two different ways: LoginComponent and loginGuard hand it to
+ * the router, which only knows URLs relative to the base href, while SessionSyncService reloads
+ * the whole page with it via window.location.href, which needs the base href in front. The
+ * callers used to save whichever form they had to hand - the guard a router URL, everything
+ * else window.location.pathname - and neither consumer was right for both. In production
+ * (mounted under /curatortool/) that broke both ways at once after an idle logout:
+ *  - the idle logout saved '/curatortool/schema_view/...', the router matched no route for it,
+ *    and the curator's first OK on the login form left them sitting on /login (the saved view
+ *    already consumed), so only the second OK - falling back to /home - got them in;
+ *  - sibling tabs waiting at /login were reloaded to a bare '/home' (or '/schema_view/...'),
+ *    i.e. https://curator.reactome.org/home, outside the app, which the server answers with
+ *    an error page.
+ * So the slot now always holds a router URL, and toBrowserUrl() adds the base back for the one
+ * caller that needs it. Applied on read as well as write, because sessionStorage survives a
+ * deploy: a tab torn down by an older build may still hold the prefixed form.
+ */
+function toAppUrl(url: string): string {
+  const base = basePath();
+  if (base && (url === base || url.startsWith(base + '/')))
+    return url.slice(base.length) || '/';
+  return url;
+}
+
+/** The router URL of what this tab is showing, taken from the address bar. */
+export function currentAppUrl(): string {
+  return toAppUrl(window.location.pathname) + window.location.search + window.location.hash;
+}
+
+/** Prefix a router URL with the base path, for a full-page navigation (window.location). */
+export function toBrowserUrl(appUrl: string): string {
+  return basePath() + appUrl;
+}
+
+/**
  * Remember where this tab is before sending it to /login.
  *
  * Pass a router URL when one is at hand (a guard's `state.url`, which exists before the
- * address bar has caught up); otherwise the current address bar is used. /login is never
+ * address bar has caught up); otherwise the current address bar is used, minus the base path
+ * (see toAppUrl()). /login is never
  * saved - as a destination it is meaningless, and overwriting a real saved view with it would
  * lose exactly what this exists to preserve.
  */
 export function saveReturnUrl(url?: string): void {
-  const target = url
-    ?? window.location.pathname + window.location.search + window.location.hash;
+  const target = url !== undefined ? toAppUrl(url) : currentAppUrl();
   if (!target || target.startsWith('/login'))
     return;
   sessionStorage.setItem(RETURN_URL_KEY, target);
@@ -50,7 +101,8 @@ export function saveReturnUrl(url?: string): void {
  * merely read so a stale destination cannot hijack a later, unrelated login in this tab.
  */
 export function takeReturnUrl(fallback: string = '/home'): string {
-  const url = sessionStorage.getItem(RETURN_URL_KEY) ?? fallback;
+  const saved = sessionStorage.getItem(RETURN_URL_KEY);
+  const url = saved ? toAppUrl(saved) : fallback;
   sessionStorage.removeItem(RETURN_URL_KEY);
   sessionStorage.removeItem(PARKED_TOKEN_KEY);
   return url;

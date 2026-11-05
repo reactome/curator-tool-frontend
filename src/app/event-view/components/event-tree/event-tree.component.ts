@@ -407,7 +407,9 @@ export class EventTreeComponent implements OnDestroy {
     if (!Number.isFinite(diagramPathwayId) || diagramPathwayId <= 0)
       return;
 
-    const selectParam = Number(this.route.snapshot.queryParams['select']);
+    // select may be a comma-separated list (see PathwayDiagramUtils.select()); the tree highlights
+    // the first id, which is also the one the instance editor loads.
+    const selectParam = Number(String(this.route.snapshot.queryParams['select'] ?? '').split(',')[0]);
     const select = Number.isFinite(selectParam) && selectParam > 0 ? selectParam : undefined;
     this.goToPathway(select, diagramPathwayId);
   }

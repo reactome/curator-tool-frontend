@@ -55,7 +55,8 @@ export function createDataServiceSpy(overrides: Partial<DataService> = {}): jasm
     'fillReferenceSequence', 'matchInstances', 'setCandidateClasses', 'grepConcreteClasses',
     'testQACheckReport', 'delete', 'deleteByDeleted', 'getReferrers',
     'synchronizeDeletedReferrers', 'shouldCheckForMatches', 'handleErrorMessage',
-    'fetchQAReport', 'checkReactionImbalance', 'doubleArrayToDataSource', 'exportEventDocx'
+    'fetchQAReport', 'checkReactionImbalance', 'doubleArrayToDataSource', 'exportEventDocx',
+    'checkDiagramSync', 'hasPathwayDiagram'
   ]);
 
   const tree = makeSchemaClassTree();
@@ -133,6 +134,10 @@ export function createDataServiceSpy(overrides: Partial<DataService> = {}): jasm
   spy.getReferrers.and.returnValue(of([]));
   spy.synchronizeDeletedReferrers.and.returnValue(of([]));
   spy.testQACheckReport.and.returnValue(of([]) as any);
+  // No diagram, so views don't offer the Diagram sync check unless a spec says otherwise.
+  spy.hasPathwayDiagram.and.returnValue(of(false));
+  spy.checkDiagramSync.and.callFake((dbId: number) =>
+    of({ eventDbId: dbId, eventDisplayName: '', checkedDiagrams: 0, uncheckedDiagramDbIds: [], issues: [] }));
   spy.doubleArrayToDataSource.and.returnValue([]);
 
   // Not in the spy list because it is a field, not a method.

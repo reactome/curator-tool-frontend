@@ -52,19 +52,20 @@ const HOME_TOUR: TourStep[] = [
     targetSelector: '[routerLink="/event_view"], a[href*="event_view"]',
     position: 'bottom',
   },
-  {
-    id: 'gene2path',
-    title: 'Gene2Path',
-    content:
-      'Enter a gene symbol to generate LLM-assisted pathway annotation support. Useful for reviewing predicted pathway associations before curating.',
-    targetSelector: '[routerLink="/gene2path"], a[href*="gene2path"]',
-    position: 'bottom',
-  },
+  // Gene2Path is hidden from the home page while it is being re-developed; restore with its card there.
+  // {
+  //   id: 'gene2path',
+  //   title: 'Gene2Path',
+  //   content:
+  //     'Enter a gene symbol to generate LLM-assisted pathway annotation support. Useful for reviewing predicted pathway associations before curating.',
+  //   targetSelector: '[routerLink="/gene2path"], a[href*="gene2path"]',
+  //   position: 'bottom',
+  // },
   {
     id: 'paper2path',
     title: 'Paper2Path',
     content:
-      'Use Paper2Path to draft a Reactome annotation from one paper, review what needs attention, refine it by chat, and load it into your staged instances.',
+      'Use Paper2Path to draft a Reactome annotation from one paper or several, review what needs attention, refine it by chat, and load it into your staged instances.',
     targetSelector: '[routerLink="/paper2path"], a[href*="paper2path"]',
     position: 'bottom',
   },
@@ -245,14 +246,14 @@ const PAPER2PATH_TOUR: TourStep[] = [
     id: 'paper2path-welcome',
     title: 'Paper2Path App Tour',
     content:
-      'Paper2Path drafts a Reactome annotation from one paper: reactions with their participants, the quotes that support them, and a list of what needs your attention.',
+      'Paper2Path drafts a Reactome annotation from one paper or several: reactions with their participants, the quotes that support them, and a list of what needs your attention.',
     position: 'center',
   },
   {
     id: 'paper2path-start',
-    title: 'Start from a PubMed ID or a PDF',
+    title: 'Start from PubMed IDs or PDFs',
     content:
-      'Enter a PubMed ID (the paper must be open access in PubMed Central) or upload a PDF. Optionally give a focus gene. Extraction takes about 10 to 15 minutes and you can leave the page meanwhile.',
+      'Enter one or more PubMed IDs (the papers must be open access in PubMed Central) and/or add PDFs; several papers are merged into one annotation. Optionally give a focus gene. Extraction usually takes a few minutes (longer for a long paper) and you can leave the page meanwhile.',
     targetSelector: '.starters',
     position: 'bottom',
   },
@@ -268,7 +269,7 @@ const PAPER2PATH_TOUR: TourStep[] = [
     id: 'paper2path-review',
     title: 'Review, Chat, Load',
     content:
-      'Inside an annotation you can read each reaction with its evidence (page, section and figure), work through the Issues tab, check a reaction, and chat to ask for changes. Chat only proposes edits; nothing changes until you accept them. Load into staged instances puts the result in Schema View, after backing up what you have staged.',
+      'Inside an annotation you can read each reaction with its evidence (page, section and figure), work through the Issues tab and the fixes Paper2Path suggests, check one reaction or all of them, see every reaction in the Network tab with the details of the selected one beside it, and chat to ask for changes. Chat only proposes edits; nothing changes until you accept them. Load into staged instances puts the result in Schema View, after backing up what you have staged.',
     position: 'center',
   },
   {

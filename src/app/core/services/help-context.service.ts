@@ -22,7 +22,8 @@ const HELP_CONTENT: Record<string, HelpContext> = {
         items: [
           'Click Schema View to browse classes and edit instances.',
           'Click Event View to work with pathway diagrams and the event tree.',
-          'Click Gene2Path to use the LLM gene annotation tool.',
+          // Gene2Path is hidden from the home page while it is being re-developed; restore with its card there.
+          // 'Click Gene2Path to use the LLM gene annotation tool.',
           'Click Tutorial to open the full guided tutorial.',
         ],
       },
@@ -142,17 +143,20 @@ const HELP_CONTENT: Record<string, HelpContext> = {
       {
         heading: 'Starting an annotation',
         items: [
-          'Enter a PubMed ID (the paper must be open access in PubMed Central) or upload a PDF, and optionally a focus gene.',
-          'Extraction takes about 10 to 15 minutes. You can leave the page; the annotation stays in your list.',
+          'Enter one or more PubMed IDs (the papers must be open access in PubMed Central) and/or add PDFs, and optionally a focus gene. Several papers are merged into one annotation.',
+          'Extraction usually takes a few minutes, longer for a long paper or for several papers. You can leave the page; the annotation stays in your list.',
         ],
       },
       {
         heading: 'Reviewing',
         items: [
-          'Select a reaction to see its participants, regulations and the quotes from the paper, with page, section and figure.',
+          'Select a reaction to see its participants, regulations and the quotes from the paper, with page, section and figure. With several papers, each quote also says which paper it is from.',
           'A quote marked verbatim was found word for word in the paper; close match means it differs slightly, usually in PDF symbols.',
           'The Issues tab lists everything that needs your attention. Mark issues resolved or dismiss them.',
-          'Check this reaction runs rule checks and a model review of one reaction.',
+          'The Suggested fixes tab lists edits Paper2Path suggests for some of the problems it found. Nothing changes until you accept one.',
+          'Check this reaction runs rule checks and a model review of one reaction, and marks it Fix first, Needs fixing, Worth a look or No problems found.',
+          'Check all reactions, on the Issues tab, checks every reaction at once and lists them most urgent first. Click a name to open that reaction.',
+          'In the Network tab, click a reaction to see its details in the panel on the right; the rest of the network is greyed out. Double-click it to open it in Reactions. Drag the bar between the network and the panel to resize them; double-click the bar to reset it.',
           'The Usage tab shows how many model tokens each step used, including each reaction check and chat turn. Steps that call no model are not listed; for an annotation reused from a saved result, steps marked "saved run" show what the original run used.',
         ],
       },
@@ -168,7 +172,7 @@ const HELP_CONTENT: Record<string, HelpContext> = {
         items: [
           'Load into staged instances replaces your staged instances with the annotation. What you have staged is saved to a backup first, and nothing is replaced if the backup fails.',
           'After you accept edits, load again to bring them into your staged instances. Changes you made by hand to the loaded copies are overwritten.',
-          'In Schema View, a loaded reaction, catalyst or regulation has an Evidence button that shows its quotes.',
+          'In Schema View, a loaded reaction, catalyst or regulation has an Evidence button that shows its quotes, and which paper each is from when there are several.',
           'Treat Paper2Path output as assistant-generated suggestions; always verify biological correctness and evidence before committing.',
         ],
       },

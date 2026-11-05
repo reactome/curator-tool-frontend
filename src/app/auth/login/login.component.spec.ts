@@ -92,6 +92,21 @@ describe('LoginComponent', () => {
     expect(router.navigateByUrl).toHaveBeenCalledWith('/schema_view/instance/100');
   });
 
+  it('goes home rather than staying on the login form when the remembered view cannot be routed to', fakeAsync(() => {
+    // An unmatched URL makes navigateByUrl reject. Swallowing that left the curator on /login
+    // after a successful login, so OK had to be clicked a second time.
+    sessionStorage.setItem('currentUrl', '/no_such_view');
+    authService.login.and.returnValue(of('a-token'));
+    router.navigateByUrl.and.callFake((url: string) =>
+      url === '/home' ? Promise.resolve(true) : Promise.reject(new Error('NG04002')));
+
+    component.submit(credentials);
+    tick();
+
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/no_such_view');
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/home');
+  }));
+
   it('consumes the remembered view so a later login does not reuse it', () => {
     sessionStorage.setItem('currentUrl', '/schema_view/instance/100');
     authService.login.and.returnValue(of('a-token'));

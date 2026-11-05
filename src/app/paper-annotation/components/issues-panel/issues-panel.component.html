@@ -1,10 +1,12 @@
 <div class="panel">
   <div class="toolbar">
     <span class="summary">
-      <strong>{{ count('action') }}</strong> need action ·
-      <strong>{{ count('warning') }}</strong> warnings ·
-      <strong>{{ count('info') }}</strong> notes
+      <strong>{{ decisions.length }}</strong> reactions to keep or remove ·
+      <strong>{{ listed.length }}</strong> issues in {{ groups.length }} {{ groups.length === 1 ? 'group' : 'groups' }}
     </span>
+    <button mat-stroked-button [disabled]="checking" (click)="checkAll()">
+      <mat-icon>fact_check</mat-icon> Check all reactions
+    </button>
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
       <mat-label>Show</mat-label>
       <mat-select [(ngModel)]="status" aria-label="Filter by status">
@@ -14,40 +16,71 @@
         <mat-option value="all">All</mat-option>
       </mat-select>
     </mat-form-field>
-    <mat-form-field appearance="outline" subscriptSizing="dynamic">
-      <mat-label>Severity</mat-label>
-      <mat-select [(ngModel)]="severity" aria-label="Filter by severity">
-        <mat-option value="all">All</mat-option>
-        <mat-option value="action">Needs action</mat-option>
-        <mat-option value="warning">Warning</mat-option>
-        <mat-option value="info">Note</mat-option>
-      </mat-select>
-    </mat-form-field>
+    <mat-checkbox [(ngModel)]="showNotes">Notes ({{ notes }})</mat-checkbox>
+    <mat-checkbox [(ngModel)]="showWaiting" matTooltip="Issues of reactions that may be removed: they matter only if you keep the reaction">
+      Waiting on a decision ({{ waiting }})</mat-checkbox>
   </div>
 
+  <mat-progress-bar *ngIf="checking" mode="indeterminate"></mat-progress-bar>
   <div class="error" *ngIf="error" role="alert"><mat-icon>error_outline</mat-icon> {{ error }}</div>
-  <p class="empty" *ngIf="!shown.length">Nothing to show here.</p>
 
-  <ul class="issues">
-    <li *ngFor="let i of shown" [class.done]="i.status !== 'open'">
-      <mat-icon [ngClass]="'sev-' + i.severity" [attr.aria-label]="i.severity">{{ icon(i) }}</mat-icon>
-      <div class="text">
-        <div>{{ i.message }}</div>
-        <div class="meta">
-          <button mat-button class="link" *ngIf="i.reaction_key" (click)="openReaction.emit(i.reaction_key)">reaction {{ i.reaction_key }}</button>
-          <span>{{ i.source }}</span>
-          <span *ngIf="i.status !== 'open'">· {{ i.status }}</span>
+  <section class="decisions" *ngIf="decisions.length" aria-label="Reactions to keep or remove">
+    <h3>Keep these reactions?</h3>
+    <p class="hint">Each may not belong in the annotation: it is not a molecular reaction, or no result of this paper shows it.
+      Removing it also clears its other issues; keeping it lists them.</p>
+    <ul>
+      <li *ngFor="let d of decisions">
+        <div class="text">
+          <button mat-button class="link name" (click)="openReaction.emit(d.key)">{{ d.name }}</button>
+          <span class="key">{{ d.key }}</span>
+          <div class="equation" *ngIf="d.equation">{{ d.equation }}</div>
+          <div class="why" *ngFor="let r of d.reasons">{{ r.message }}</div>
+          <div class="why lookalike" *ngFor="let r of d.lookalikes"><mat-icon inline>content_copy</mat-icon> {{ r.message }}</div>
         </div>
-      </div>
-      <div class="actions">
-        <ng-container *ngIf="i.status === 'open'; else reopen">
-          <button mat-button [disabled]="busy.has(i.id)" (click)="setStatus(i, 'resolved')">Resolve</button>
-          <button mat-button [disabled]="busy.has(i.id)" (click)="setStatus(i, 'dismissed')">Dismiss</button>
-        </ng-container>
-        <ng-template #reopen>
-          <button mat-button [disabled]="busy.has(i.id)" (click)="setStatus(i, 'open')">Reopen</button>
-        </ng-template>
-      </div>
-    </li>
-  </ul>
+        <div class="actions">
+          <button mat-flat-button color="warn" [disabled]="busy.has(d.key) || !d.proposalId" (click)="remove(d)"
+                  [matTooltip]="d.proposalId ? 'Accept the suggested fix that removes it' : 'No removal is suggested yet'">Remove</button>
+          <button mat-stroked-button [disabled]="busy.has(d.key)" (click)="keep(d)">Keep</button>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <p class="empty" *ngIf="!groups.length && !decisions.length">Nothing to show here.</p>
+
+  <section class="group" *ngFor="let g of groups" [attr.aria-label]="g.name">
+    <h3>
+      <span class="chip" *ngIf="g.qa" [ngClass]="'prio-' + g.qa.priority">{{ priorityLabel(g.qa.priority) }}</span>
+      <button mat-button class="link name" *ngIf="g.key; else plain" (click)="openReaction.emit(g.key)">{{ g.name }}</button>
+      <ng-template #plain><span class="name">{{ g.name }}</span></ng-template>
+      <span class="count">{{ g.issues.length }}</span>
+    </h3>
+    <div class="what" *ngIf="g.qa?.summary as summary">{{ summary }}</div>
+    <ul class="issues">
+      <li *ngFor="let i of visible(g)" [class.done]="i.status !== 'open'" [class.waiting]="i.blocked_by">
+        <mat-icon [ngClass]="'sev-' + i.severity" [attr.aria-label]="i.severity">{{ icon(i) }}</mat-icon>
+        <div class="text">
+          <div>{{ i.message }}</div>
+          <div class="meta">
+            <span>{{ categoryLabel(i) }}</span>
+            <span>· {{ i.source }}</span>
+            <span *ngIf="i.blocked_by">· waits on a keep-or-remove decision</span>
+            <span *ngIf="i.status !== 'open'">· {{ i.status }}</span>
+          </div>
+        </div>
+        <div class="actions">
+          <ng-container *ngIf="i.status === 'open'; else reopen">
+            <button mat-button [disabled]="busy.has(i.id)" (click)="setStatus(i, 'resolved')">Resolve</button>
+            <button mat-button [disabled]="busy.has(i.id)" (click)="setStatus(i, 'dismissed')">Dismiss</button>
+          </ng-container>
+          <ng-template #reopen>
+            <button mat-button [disabled]="busy.has(i.id)" (click)="setStatus(i, 'open')">Reopen</button>
+          </ng-template>
+        </div>
+      </li>
+    </ul>
+    <button mat-button class="more" *ngIf="g.issues.length > perReaction" (click)="toggle(g)">
+      {{ expanded.has(g.key ?? '') ? 'Show fewer' : 'Show ' + (g.issues.length - perReaction) + ' more' }}
+    </button>
+  </section>
 </div>

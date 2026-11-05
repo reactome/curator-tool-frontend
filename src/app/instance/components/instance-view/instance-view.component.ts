@@ -10,6 +10,7 @@ import { NewInstanceActions } from '../../state/instance.actions';
 import { DeletionDialogService } from "../deletion-dialog/deletion-dialog.service";
 import { QAReportDialogService } from '../qa-report-dialog/qa-report-dialog.service';
 import { ReactionImbalanceDialogService } from 'src/app/shared/components/reaction-imbalance-dialog/reaction-imbalance-dialog.service';
+import { DiagramSyncDialogService } from '../diagram-sync-dialog/diagram-sync-dialog.service';
 import { ReferrersDialogService } from "../referrers-dialog/referrers-dialog.service";
 import { InstanceTableComponent } from './instance-table/instance-table.component';
 import { InstanceUtilities } from 'src/app/core/services/instance.service';
@@ -82,6 +83,11 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   private commitWaitDialogRef?: MatDialogRef<CommitWaitDialogComponent>;
 
   readonly dialog = inject(MatDialog);
+  private readonly diagramSyncDialogService = inject(DiagramSyncDialogService);
+  // dbId of the displayed Pathway once it is known to have a PathwayDiagram. Kept as a dbId rather
+  // than a flag so an answer that arrives after the curator has moved on can't switch the button
+  // on for the next instance.
+  private diagramSyncPathwayDbId: number | undefined;
   // block sync view to avoid re-loading the instance for handling URL change
   private blockSyncViewCount: number = 0;
   // dbId of the instance currently being switched to, if any. Loading runs across several async
@@ -392,6 +398,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
           this.viewHistory.length = 0;
           this.addToViewHistory(firstInstance);
           this.updateTitle(firstInstance);
+          this.updateDiagramSyncAvailability(firstInstance);
           this.changeTable(firstInstance);
           this.showReferenceColumn = true;
           this.showProgressSpinner = false;
@@ -502,6 +509,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       this.addToViewHistory(this.instance);
       this.showProgressSpinner = false;
       this.updateTitle(this.instance);
+      this.updateDiagramSyncAvailability(this.instance);
       if (needComparsion) {
         this.dataService.fetchInstanceFromDatabase(dbId, false).subscribe(instance => {
           this.dbInstance = instance;
@@ -782,6 +790,33 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         // Error dialog is handled by DataService.
       }
     });
+  }
+
+  /**
+   * The Diagram sync check is offered only for a committed Pathway that has its own PathwayDiagram.
+   * Whether it has one is asked of the server once per load.
+   */
+  private updateDiagramSyncAvailability(instance: Instance | undefined) {
+    if (this.diagramSyncPathwayDbId === instance?.dbId)
+      return; // Same pathway reloaded: the answer hasn't changed
+    this.diagramSyncPathwayDbId = undefined;
+    if (!instance || instance.dbId <= 0 || !this.dataService.isSchemaClass(instance, 'Pathway'))
+      return;
+    const dbId = instance.dbId;
+    this.dataService.hasPathwayDiagram(dbId).pipe(take(1)).subscribe(hasDiagram => {
+      if (hasDiagram && this.instance?.dbId === dbId)
+        this.diagramSyncPathwayDbId = dbId;
+    });
+  }
+
+  canCheckDiagramSync(): boolean {
+    return this.instance !== undefined && this.instance.dbId === this.diagramSyncPathwayDbId;
+  }
+
+  checkDiagramSync() {
+    if (!this.canCheckDiagramSync())
+      return;
+    this.diagramSyncDialogService.openDialog(this.instance!);
   }
 
   private extractFileName(contentDisposition: string | null): string | null {

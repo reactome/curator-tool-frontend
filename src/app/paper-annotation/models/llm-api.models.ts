@@ -14,13 +14,67 @@ export interface StartResponse {
   jobId: string;
 }
 
-export interface Job {
+/** `result` is what the job produced, once it is done (only some jobs have one, e.g. a gene search). */
+export interface Job<T = unknown> {
   id: string;
   status: JobStatus;
   progress: string;
   error: string | null;
+  result?: T | null;
 }
 
+/** A paper suggested for a gene (POST /papers/by-gene), with the rubric judge's verdict on it. */
+export interface CandidatePaper {
+  pmid: string;
+  title: string;
+  journal: string;
+  year: string;
+  /** null: PubMed Central has no full text, so the paper can only be annotated from its PDF. */
+  pmcid: string | null;
+  /** 1-10, how useful the paper is for a Reactome annotation. */
+  score: number | null;
+  /** DIRECT | INDIRECT | INSUFFICIENT | NONE */
+  evidence_type: string | null;
+  annotatable: boolean | null;
+  justification: string;
+}
+
+/** The `result` of a gene search job. `papers` are best first; fewer than asked means little usable literature. */
+export interface GeneSearchResult {
+  gene: string;
+  accession: string | null;
+  /** Papers the PubMed searches returned. */
+  pool_size: number;
+  /** Of those, how many the judge read. */
+  candidate_pool: number;
+  dropped_below_threshold: number;
+  papers: CandidatePaper[];
+}
+
+/** One paper of a session. `source` is the tag its reactions and quotes carry (`PMID:24751536`, or the PDF's stored file name). */
+export interface PaperInfo {
+  source: string;
+  kind: 'pmid' | 'pdf';
+  pmid: string | null;
+  /** What to show: the PMID, or the uploaded file's name. */
+  name: string;
+  /**
+   * Annotated as a review article: reactions it only cites were kept. Null until the run decides (a PubMed ID's kind is
+   * read from PubMed); absent from services older than this flag.
+   */
+  review?: boolean | null;
+}
+
+/** "PMID 24751536" or the PDF's file name. */
+export function paperLabel(p: PaperInfo): string {
+  return p.kind === 'pmid' ? `PMID ${p.pmid ?? p.name}` : p.name;
+}
+
+/**
+ * A "session" here (and in the curator-tool-llm API: /sessions, sessionId) means one annotation: one Annotate run and
+ * its saved result, not a login session. Curators only ever see the word "annotation". Sessions are stored per
+ * username, so "Your annotations" lists all of a curator's sessions, across logins and browsers.
+ */
 export interface SessionSummary {
   id: string;
   pmid: string | null;
@@ -31,6 +85,8 @@ export interface SessionSummary {
   updated: number;
   n_reactions: number;
   n_open_issues: number;
+  /** How many papers the session merges (absent from an older service: one). */
+  n_papers?: number;
 }
 
 export interface ReactionRef {
@@ -38,17 +94,42 @@ export interface ReactionRef {
   name: string;
   dbId: number | null;
   evidenceIds: string[];
+  /** "inputs -> outputs (catalyst X)", to tell apart reactions that share a name (absent from an older service). */
+  equation?: string;
 }
 
 export interface SessionDetail extends SessionSummary {
   focus: string | null;
   error: string | null;
   reactions: ReactionRef[];
+  papers?: PaperInfo[];
+  /** Each reaction's last QA review, by reaction key (absent from an older service). */
+  qa?: Record<string, ReactionQA>;
 }
+
+/** The last QA review of one reaction: where it goes in the curator's list. */
+export interface ReactionQA {
+  priority: QAPriority;
+  summary: string | null;
+  score: number | null;
+  /** The reviewer's answer to "is this a molecular reaction at all" (null when not asked). */
+  is_reaction: boolean | null;
+}
+
+/**
+ * What an issue is about, in the order a curator should look: whether the reaction should exist at all, whether Reactome
+ * already has it, its participants / catalyst / regulation, identifiers, its evidence, the paper.
+ */
+export type IssueCategory = 'keep' | 'existing' | 'content' | 'identifiers' | 'evidence' | 'paper' | 'other';
+export const ISSUE_CATEGORY_ORDER: IssueCategory[] = ['keep', 'existing', 'content', 'identifiers', 'evidence', 'paper', 'other'];
+export const ISSUE_CATEGORY_LABEL: Record<IssueCategory, string> = {
+  keep: 'Keep this reaction?', existing: 'Already in Reactome?', content: 'Participants, catalyst, regulation',
+  identifiers: 'Identifiers', evidence: 'Evidence and summary', paper: 'The paper', other: 'Other'
+};
 
 export interface Issue {
   id: string;
-  source: 'evidence' | 'builder' | 'resolver' | 'emitter' | 'pipeline' | 'existing' | 'qa';
+  source: 'evidence' | 'builder' | 'resolver' | 'emitter' | 'pipeline' | 'existing' | 'qa' | 'checks';
   severity: IssueSeverity;
   code: string;
   message: string;
@@ -56,6 +137,13 @@ export interface Issue {
   participant_key: string | null;
   instance_db_id: number | null;
   status: IssueStatus;
+  /** The part of the reaction it is about (catalyst, inputs, summation, ...). */
+  field?: string | null;
+  category?: IssueCategory;
+  /** The open "keep this reaction?" issue this one waits on: it is moot if the reaction is removed. */
+  blocked_by?: string | null;
+  /** A pending suggested fix that resolves it. */
+  proposal_id?: string | null;
 }
 
 export type Verification = 'unverified' | 'exact' | 'fuzzy' | 'failed';
@@ -64,6 +152,8 @@ export interface Evidence {
   id: string;
   quote: string;
   pmid: string | null;
+  /** The paper the quote is from (a `PaperInfo.source`); absent from an older service. */
+  source?: string | null;
   section: string | null;
   page: number | null;
   figure: string | null;
@@ -216,12 +306,30 @@ export interface QAFinding {
   source: 'rule' | 'llm';
 }
 
+/** Where a reaction goes in the curator's list: how much is wrong, not a pass/fail. */
+export type QAPriority = 'fix_first' | 'fix' | 'review' | 'ok';
+
+export const QA_PRIORITY_LABEL: Record<QAPriority, string> = {
+  fix_first: 'Fix first',
+  fix: 'Needs fixing',
+  review: 'Worth a look',
+  ok: 'No problems found'
+};
+
 export interface QAResult {
   reaction_key: string;
+  reaction_name?: string | null;
   verdict: 'ok' | 'needs_work';
+  /** Absent from an older service, which only sends the verdict. */
+  priority?: QAPriority;
+  /** One sentence: the most important thing to do about this reaction. */
+  summary?: string | null;
   score: number | null;
   findings: QAFinding[];
   llm_used: boolean;
+  /** The reviewer's answer to "is this a molecular reaction at all" (absent from an older service). */
+  is_reaction?: boolean | null;
+  not_reaction_reason?: string | null;
 }
 
 /** Language-model tokens, as the provider reports them. Cache reads and writes are reported separately. */

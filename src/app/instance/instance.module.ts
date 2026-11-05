@@ -24,6 +24,7 @@ import { InstanceTableComponent } from './components/instance-view/instance-tabl
 import { InstanceViewComponent } from './components/instance-view/instance-view.component';
 import { NewInstanceDialogComponent } from './components/new-instance-dialog/new-instance-dialog.component';
 import { QAReportDialogComponent } from './components/qa-report-dialog/qa-report-dialog.component';
+import { DiagramSyncDialogComponent } from './components/diagram-sync-dialog/diagram-sync-dialog.component';
 import { InstanceRoutingModule } from './instance-routing.module';
 import { DELETE_INSTANCES_STATE_NAME, NEW_INSTANCES_STATE_NAME, DEFAUT_PERSON_STATE_NAME } from "./state/instance.selectors";
 import { defaultPersonReducer, deletedInstancesReducer, newInstancesReducer } from "./state/instance.reducers";
@@ -55,6 +56,7 @@ import { ClassNameIconComponent } from '../event-view/components/event-tree/clas
         InstanceViewComponent,
         NewInstanceDialogComponent,
         QAReportDialogComponent,
+        DiagramSyncDialogComponent,
         DisableControlDirective,
         ReferrersDialogComponent,
         DeletionDialogComponent,

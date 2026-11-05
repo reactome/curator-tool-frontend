@@ -1,5 +1,5 @@
 import { of, throwError } from 'rxjs';
-import { Evidence, InstanceEvidence } from '../../models/llm-api.models';
+import { Evidence, InstanceEvidence, PaperInfo } from '../../models/llm-api.models';
 import { LlmApiError } from '../../services/llm-api.service';
 import { EvidenceDialogComponent } from './evidence-dialog.component';
 import { EvidenceListComponent } from '../evidence-list/evidence-list.component';
@@ -23,8 +23,9 @@ describe('EvidenceDialogComponent', () => {
   });
 
   it('loads the evidence for the staged instance id and groups it', () => {
-    const api = jasmine.createSpyObj('LlmApiService', ['instanceEvidence']);
+    const api = jasmine.createSpyObj('LlmApiService', ['instanceEvidence', 'session']);
     api.instanceEvidence.and.returnValue(of([{ field: 'catalystActivity', evidence: ev('b') }]));
+    api.session.and.returnValue(of({ papers: [] }));
     const d = new EvidenceDialogComponent(data, api);
     d.ngOnInit();
     expect(api.instanceEvidence).toHaveBeenCalledWith('s1', -7);
@@ -32,8 +33,24 @@ describe('EvidenceDialogComponent', () => {
     expect(d.groups.length).toBe(1);
   });
 
+  it('learns the names of the papers so each quote can say which one it is from, and shows the quotes even if that fails', () => {
+    const papers: PaperInfo[] = [{ source: 'PMID:1', kind: 'pmid', pmid: '1', name: '1' }, { source: 'ab_x.pdf', kind: 'pdf', pmid: null, name: 'x.pdf' }];
+    const api = jasmine.createSpyObj('LlmApiService', ['instanceEvidence', 'session']);
+    api.instanceEvidence.and.returnValue(of([{ field: 'reaction', evidence: ev('b', { source: 'ab_x.pdf' }) }]));
+    api.session.and.returnValue(of({ papers }));
+    const d = new EvidenceDialogComponent(data, api);
+    d.ngOnInit();
+    expect(d.papers).toEqual(papers);
+    api.session.and.returnValue(throwError(() => new LlmApiError(404, 'gone')));
+    const d2 = new EvidenceDialogComponent(data, api);
+    d2.ngOnInit();
+    expect(d2.papers).toEqual([]);
+    expect(d2.groups.length).toBe(1);                                   // the quotes still show
+  });
+
   it('says so when the annotation is gone, and shows other errors as they are', () => {
-    const api = jasmine.createSpyObj('LlmApiService', ['instanceEvidence']);
+    const api = jasmine.createSpyObj('LlmApiService', ['instanceEvidence', 'session']);
+    api.session.and.returnValue(of({ papers: [] }));
     api.instanceEvidence.and.returnValue(throwError(() => new LlmApiError(404, 'no such session')));
     const d = new EvidenceDialogComponent(data, api);
     d.ngOnInit();
@@ -63,6 +80,28 @@ describe('EvidenceListComponent', () => {
     expect(list.origin(ev('a', { claim_origin: 'cited', cited_reference: 'Kondapalli et al. 2012' }))).toBe('cited from Kondapalli et al. 2012');
     expect(list.origin(ev('a', { claim_origin: 'cited' }))).toBe('cited from earlier work');
     expect(list.origin(ev('a', { claim_origin: 'curator_assertion' }))).toBe('curator assertion');
+  });
+});
+
+describe('EvidenceListComponent, which paper', () => {
+  const list = new EvidenceListComponent();
+  const one: PaperInfo = { source: 'PMID:24751536', kind: 'pmid', pmid: '24751536', name: '24751536' };
+  const two: PaperInfo = { source: 'ab12_clock.pdf', kind: 'pdf', pmid: null, name: 'clock.pdf' };
+
+  it('says nothing about the paper when the annotation has only one', () => {
+    list.papers = [one];
+    expect(list.paperOf(ev('a', { source: 'PMID:24751536' }))).toBeNull();
+    list.papers = [];
+    expect(list.paperOf(ev('a', { source: 'PMID:24751536' }))).toBeNull();
+  });
+
+  it('names the paper of each quote when there are several, by PMID or by the PDF name you uploaded', () => {
+    list.papers = [one, two];
+    expect(list.paperOf(ev('a', { source: 'PMID:24751536' }))).toBe('PMID 24751536');
+    expect(list.paperOf(ev('b', { source: 'ab12_clock.pdf' }))).toBe('clock.pdf');
+    expect(list.paperOf(ev('c', { source: 'unknown.pdf' }))).toBe('unknown.pdf');          // not in the list: show the tag
+    expect(list.paperOf(ev('d'))).toBeNull();                                               // an older service sends no source
+    expect(list.paperOf(ev('e', { source: null }))).toBeNull();
   });
 });
 

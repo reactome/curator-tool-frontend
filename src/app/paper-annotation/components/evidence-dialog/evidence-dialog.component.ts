@@ -3,7 +3,8 @@ import { Component, Inject, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { InstanceEvidence } from '../../models/llm-api.models';
+import { catchError, of } from 'rxjs';
+import { InstanceEvidence, PaperInfo } from '../../models/llm-api.models';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
 import { EvidenceListComponent } from '../evidence-list/evidence-list.component';
 
@@ -32,7 +33,7 @@ export interface EvidenceDialogData {
       <p *ngIf="!loading && !error && !groups.length">No quotes are recorded for this instance.</p>
       <section *ngFor="let g of groups">
         <h3>{{ g.label }}</h3>
-        <app-evidence-list [evidence]="g.items"></app-evidence-list>
+        <app-evidence-list [evidence]="g.items" [papers]="papers"></app-evidence-list>
       </section>
     </mat-dialog-content>
     <mat-dialog-actions align="end"><button mat-button mat-dialog-close cdkFocusInitial>Close</button></mat-dialog-actions>`,
@@ -42,10 +43,13 @@ export class EvidenceDialogComponent implements OnInit {
   loading = true;
   error: string | null = null;
   groups: { label: string; items: InstanceEvidence['evidence'][] }[] = [];
+  /** The session's papers, to say which one a quote is from; empty if they could not be read (the quotes still show). */
+  papers: PaperInfo[] = [];
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: EvidenceDialogData, private api: LlmApiService) {}
 
   ngOnInit(): void {
+    this.api.session(this.data.sessionId).pipe(catchError(() => of(null))).subscribe(s => this.papers = s?.papers ?? []);
     this.api.instanceEvidence(this.data.sessionId, this.data.dbId).subscribe({
       next: list => { this.groups = EvidenceDialogComponent.group(list); this.loading = false; },
       error: (e: LlmApiError) => {

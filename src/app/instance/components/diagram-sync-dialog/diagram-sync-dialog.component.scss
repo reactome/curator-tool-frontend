@@ -1,0 +1,77 @@
+.dialog_title {
+  text-align: left;
+  font-weight: bold;
+  font-size: 20px;
+  color: white;
+  background-color: var(--primary);
+}
+
+.dialog_content {
+  width: 100%;
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 0;
+}
+
+.error {
+  color: var(--warn, #b00020);
+}
+
+.passed {
+  color: green;
+}
+
+.unchecked {
+  color: var(--warn, #b00020);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.diagram_filter {
+  min-width: 360px;
+}
+
+.table_panel {
+  max-height: 55vh;
+  overflow: auto;
+}
+
+.sync_table {
+  width: 100%;
+}
+
+.sync_table a {
+  text-decoration: underline;
+}
+
+// Pathway nodes are drawn as boxes, not reactions; set them apart so they aren't read as reactions.
+.pathway_row {
+  background-color: var(--surface2, #f3f0f7);
+}
+
+.pathway_type {
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.highlight_button {
+  vertical-align: middle;
+  text-decoration: none !important;
+}
+
+.note {
+  margin-right: auto;
+  font-size: 12px;
+  color: gray;
+}

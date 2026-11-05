@@ -1,3 +1,87 @@
+### Build on November 4, 2026
+
+- Added: **Paper2Path** annotations can be deleted. In **Your annotations**, click the delete button (`delete`) at the end of a row and confirm. The annotation is removed for good, with any PDFs uploaded for it, so you can start the same papers again or clear out ones you no longer need. One that is still running can't be deleted until it finishes.
+
+- Changed: **Paper2Path** annotations, with every change you accepted, are now kept when the annotation service restarts. Before, a restart lost them all. An annotation that was still running when the service restarted shows as `failed`, with a note to start it again.
+
+- Added: in **Paper2Path**, **Remove this reaction** in the reaction panel takes a reaction out of the annotation directly, after you confirm. Its issues, suggested fixes and any edit proposed for it go with it, and the reaction list, Issues tab, network and chat all update.
+
+- Added: **Paper2Path** can annotate review articles. Reactome needs direct evidence, so a research paper keeps only the reactions its own results show and drops those it only cites from earlier work, while a review article also keeps the ones it cites. Whether a PubMed paper is a review is read from PubMed. For a PDF, tick **Review** beside the file name; otherwise it counts as research. A review shows *review article* in the annotation's header, or *· review* beside it when the annotation has several papers.
+
+- Added: in **Paper2Path**, you choose which reactions to load into your staged instances. Each reaction in **Reactions** has a checkbox, with **All** above the list. **Load into staged instances** loads only the checked reactions, and says how many. The annotation's pathway comes too when every reaction is checked. Your choice is remembered in this browser for each annotation. When loading, new literature references are filled in from PubMed, and a PDF with no PubMed ID gets a reference named after the file. The dialog says which references could not be filled in.
+
+- Changed: the **Issues** tab in **Paper2Path** now starts with **Keep these reactions?**. It lists the reactions that may not belong in the annotation, because they may not be molecular reactions or no result of the paper shows them, each with the reasons, its equation and any existing Reactome reaction it looks like. **Remove** takes the reaction out and **Keep** dismisses the reasons. The other issues are grouped by reaction, most urgent first, showing three per reaction until you click **Show N more**. Notes, and the issues of reactions waiting on a keep-or-remove decision, are hidden until you tick **Notes** or **Waiting on a decision**.
+
+- Added: the **Reactions** list in **Paper2Path** can be sorted **As in the paper**, **Needs attention first** or **By name (A–Z)**. Each reaction shows its key (point at it to see the equation), and **Keep?** marks a reaction waiting on a keep-or-remove decision (point at it to see why). The issue count beside each reaction now matches the **Issues** tab.
+
+- Changed: in **Paper2Path**, the reaction panel shows the review saved with the annotation as soon as you open a reaction, including when the reviewer thinks it may not be a molecular reaction. Before, a review only appeared after you clicked **Check this reaction**.
+
+- Fixed: in **Paper2Path**, after you accepted a change the chat proposed, the reaction panel kept showing the old version of the reaction until you selected another reaction and came back. It now updates straight away.
+
+### Build on November 3, 2026
+
+- Fixed: after WebBench logged you out for inactivity, clicking **OK** on the login form often did nothing and had to be clicked again, and you then landed on the home page instead of the view you had open. Other WebBench windows waiting at the login page went to https://curator.reactome.org/home, outside WebBench, and showed an error. Now one click logs you in, and each window goes back to the view it had open.
+
+- Added: a **Check diagram sync** button (`sync_problem`) in the instance editor's toolbar, shown for a pathway that has a pathway diagram. It checks the diagram of the pathway and of each of its sub-pathways against the database, as the desktop Curator Tool's diagram check does, and lists every drawn event that doesn't match: a reaction whose drawn inputs, outputs, catalysts, activators or inhibitors differ from the database, and, new, an event that a flow line in the diagram follows from but that doesn't list the earlier event as a precedingEvent. Pathway nodes are checked as well as reactions. The results can be sorted by any column and narrowed to one diagram. Each event links to its instance, and for a missing precedingEvent a button opens the diagram in Event View with both events selected. Links open in a new tab, so the results stay open. The check reads what has been committed, not your staged changes; **Re-run** checks again after you commit a fix.
+
+### Build on November 2, 2026
+
+- Added: **Paper2Path** can now draft one annotation from several papers at once. The start page has a single **Papers to annotate** card: type one or more PubMed IDs, separated by spaces, commas or new lines, and/or click **Add PDFs** to add one or more PDFs, which you can remove again with the × beside each. A count beside **Annotate**, such as "2 PDFs + 1 PubMed ID", shows what will be annotated, and a PubMed ID that is not a number is pointed out before you start. The papers are merged into one annotation, and a reaction that more than one paper describes cites them all. One paper works as before.
+
+- Added: in an annotation of several papers, every quote says which paper it is from: in **Reactions**, in the reaction panel beside the **Network**, and behind the **Evidence** button in Schema View. The header lists the papers, and **Your annotations** shows how many papers each annotation has.
+
+- Added: a **Suggested fixes** tab in **Paper2Path** lists edits that Paper2Path suggests for some of the problems it found, each under the name of its reaction. Like a proposal in the chat, each shows what it changes and the quotes behind it, and nothing changes until you click **Accept**. **Reject** discards it.
+
+- Changed: **Gene2Path** is no longer on the home page, nor in the home page's tour and help, while it is being re-developed. Its address, `/gene2path`, still works.
+
+### Build on October 29, 2026
+
+- Added: in **Paper2Path**, the **Network** tab now shows the selected reaction's details in a panel to the right of the network: its inputs, outputs, catalyst, regulators, open issues, any similar reaction Reactome already has, its summary and its evidence, with **Check this reaction**. Clicking a reaction in the network shows it there, so you no longer have to switch to the **Reactions** tab. Double-clicking a reaction still opens it in **Reactions**. In a window narrower than about 800 pixels, the panel goes under the network.
+
+- Added: drag the bar between the network and the reaction panel to make either one wider. Double-click the bar to put it back to its usual width. With the bar selected, the arrow keys also move it, and Home puts it back. The width is remembered for the next time you open an annotation.
+
+- Added: **Check all reactions**, on the **Issues** tab in **Paper2Path**, checks every reaction of the annotation at once and lists them under **Look at these first**, most urgent first. Each reaction is marked **Fix first**, **Needs fixing**, **Worth a look** or **No problems found**, with one sentence on the most important thing to do about it. Clicking its name opens it in **Reactions**. What the check finds is added to the issues list. The ranking stays until you leave the page. The check reviews each reaction with the language model, so it can take a while, and its tokens are shown in **Usage**.
+
+- Changed: when the network in **Paper2Path** is first shown, everything that is not part of the selected reaction is greyed out, as when you click a reaction. Before, the reaction selected when an annotation opens, or one selected in another tab, was only outlined, and it was hard to find among the others. Clicking the background still clears the greying.
+
+- Changed: the result of **Check this reaction** in **Paper2Path** now says **Fix first**, **Needs fixing**, **Worth a look** or **No problems found**, rather than only "Needs work" or "No blocking problems found", and adds one sentence on the most important thing to do about the reaction.
+
+- Changed: Paper2Path now says that annotating a paper usually takes a few minutes, longer for a long paper, rather than 10 to 15 minutes.
+
+### Build on October 26, 2026
+
+- Bug fix: a flow line in a pathway diagram that had been saved and opened again could not be selected or removed. Right-clicking it showed the menu for an ordinary edge, without the flow-line options. A flow line now behaves the same after it has been saved and reopened as it did when it was first drawn.
+
+- Changed: answers in **Ask the Graph** are now formatted. Headings, bulleted and numbered lists, bold and italic text, code, tables and links show as they are meant to; before, the answer was plain text full of `**`, `#` and `|` marks. Links open in a new tab.
+
+### Build on October 21, 2026
+
+- Changed: searching by name in a list of staged instances, or in the instance list in **Ask the Graph**, now ignores the difference between the dashes that look alike (a plain hyphen, the non-breaking hyphen that many reaction names contain, an en dash, a minus sign), doubled or non-breaking spaces, and invisible zero-width characters. Before, typing "Procaspase-9" did not find "Cleavage of Procaspase‑9 to caspase‑9" because the name uses a non-breaking hyphen. The same applies to **Contains** in the advanced search over staged instances. Searches of the database itself are not changed.
+
+### Build on October 19, 2026
+
+- Changed: in **Ask the Graph**, a result that holds dbIds is now shown as an instance list like the one in Schema View, instead of a table of raw rows. You can page through it, search it by name or dbId, narrow it with the advanced search and the species filter, download it, and select instances to bookmark or download them. Each row can be opened or have its referrers shown. Clicking a name opens the instance in a new tab, so your conversation stays where it is. The instances are listed under the most specific class they all share, so a mix of Reactions and BlackBoxEvents is listed as ReactionlikeEvents. When a result has more than one set of dbIds, such as reactions and their catalysts, buttons above the list switch between them. A result with no dbIds is still shown as a table.
+
+- Changed: the **Ask the Graph** page has been redesigned as a chat. The question box is at the top; your questions and the answers appear below it as a conversation, with a progress indicator while a question is being answered. Press Enter to send and Shift+Enter for a new line. When the conversation is empty, a few example questions are offered that you can click to ask. **New conversation** replaces **Clear**.
+
+- Changed: a BlackBoxEvent added to a pathway diagram is now drawn as an uncertain process, with a "?" in its reaction node. **Validate Diagram Against Database** reports a BlackBoxEvent that is not drawn this way, and **Auto-Fix** redraws it. Its inputs, outputs and links are not changed.
+
+- Changed: **Remove Reaction** is now in the right-click menu of the reaction node itself, not of the reaction's edges.
+
+- Bug fix: an OtherEntity or a GenomeEncodedEntity could not be drawn properly in a pathway diagram. It is now drawn as a plain entity node.
+
+- Bug fix: **Validate Diagram Against Database** reported a regulator as missing from the diagram when the line from the regulator to the reaction had more than one bend, even though it was drawn correctly. The check now follows the whole line, however many bends it has.
+
+- Bug fix: **Validate Diagram Against Database** could report a compartment's name as wrong when the name shown in the diagram was correct, for example after the diagram had been saved and reopened, or while the compartment's label was being edited. Fixing a compartment name with **Auto-Fix** now also updates the label shown on screen. The report's title now shows the diagram's name when the saved diagram does not record one.
+
+### Build on October 16, 2026
+
+- Bug fix: committing a new pathway together with a new event in its **hasEvent**, for example by selecting both in the list of staged instances and committing them, created the new event twice in the database. Reloading the page after such a commit, and then committing the pathway again, could also create a second copy. Each new instance is now created once, and the staged copies of the instances that refer to it point at the committed instance after a reload.
+
+### Build on October 14, 2026
+
+- Changed: in the advanced search, a condition too long to fit on one line, such as a long list of dbIds, is shown cut down to its first line, with an arrow to show the whole condition and to hide it again. A list of alternatives separated by "|" now wraps between alternatives rather than in the middle of one.
+
 ### Build on October 7, 2026
 
 - Added: **Ask the Graph**, a new card on the home page, lets you ask questions about the curation database in plain English, such as "Which reactions in R-HSA-109582 have no catalyst?". A language model writes a database query for the question, runs it, and replies with an answer, a table of the results and the queries it ran, which you can copy. Clicking a dbId in the table opens that instance in a new tab. Follow-up questions such as "only the human ones" build on the earlier ones, and **Clear** starts over. It only reads the database and cannot change anything. It needs the graph query service on the server; if that service is down, the page says so and your session is not affected.

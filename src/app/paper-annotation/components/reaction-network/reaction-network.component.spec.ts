@@ -21,7 +21,7 @@ describe('ReactionNetworkComponent', () => {
   let component: ReactionNetworkComponent;
   const text = () => (fixture.nativeElement as HTMLElement).textContent!.replace(/\s+/g, ' ');
 
-  const create = (result: Network | Error) => {
+  const create = (result: Network | Error, selectedKey: string | null = null) => {
     api = jasmine.createSpyObj('LlmApiService', ['network']);
     api.network.and.returnValue(result instanceof Error ? throwError(() => result) : of(result));
     TestBed.configureTestingModule({
@@ -31,6 +31,7 @@ describe('ReactionNetworkComponent', () => {
     fixture = TestBed.createComponent(ReactionNetworkComponent);
     component = fixture.componentInstance;
     component.sessionId = 's1';
+    component.selectedKey = selectedKey;
     fixture.detectChanges();
     component.ngOnChanges({ sessionId: { currentValue: 's1' } as any });
     fixture.detectChanges();
@@ -118,6 +119,39 @@ describe('ReactionNetworkComponent', () => {
     component.layout();
     expect((component as any).cy.getElementById('e:ub').position().x).not.toBe(9999);
     expect(TestBed.inject(NetworkLayoutStore).get('s1')!.positions['e:ub'].x).not.toBe(9999);
+  });
+
+  // two reactions that share nothing: r0 consumes UB, r1 consumes ATP
+  const TWO: Network = {
+    nodes: [...NET.nodes,
+      { id: 'e:atp', type: 'entity', key: 'atp', kind: 'simple', label: 'ATP', unresolved: [], openIssues: 0 },
+      { id: 'r:r1', type: 'reaction', key: 'r1', label: 'Other', openIssues: 0 }],
+    edges: [...NET.edges, { id: 'input:1', type: 'input', source: 'e:atp', target: 'r:r1' }],
+  };
+  const faded = (id: string) => (component as any).cy.getElementById(id).hasClass('faded');
+
+  it('fades what the selected reaction does not touch as soon as the network is drawn', () => {
+    create(TWO, 'r0');
+    expect((component as any).cy.getElementById('r:r0').hasClass('picked')).toBeTrue();
+    expect(faded('r:r0')).toBeFalse();
+    expect(faded('e:ub')).toBeFalse();
+    expect(faded('r:r1')).toBeTrue();
+    expect(faded('e:atp')).toBeTrue();
+    expect(component.focusLabel).toBeNull();
+  });
+
+  it('moves the fading when a reaction is selected outside the network', () => {
+    create(TWO, 'r0');
+    component.selectedKey = 'r1';
+    component.ngOnChanges({ selectedKey: { currentValue: 'r1' } as any });
+    expect(faded('r:r0')).toBeTrue();
+    expect(faded('r:r1')).toBeFalse();
+    expect(faded('e:atp')).toBeFalse();
+  });
+
+  it('fades nothing when the selected reaction is not in the network', () => {
+    create(TWO, 'gone');
+    expect((component as any).cy.nodes().filter((n: any) => n.hasClass('faded')).length).toBe(0);
   });
 
   it('marks the selected reaction', () => {

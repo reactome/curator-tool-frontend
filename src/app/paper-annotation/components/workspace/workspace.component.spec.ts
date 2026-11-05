@@ -5,9 +5,10 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
-import { ExistingMatch, Issue, Proposal, SessionDetail } from '../../models/llm-api.models';
+import { ExistingMatch, Issue, PaperInfo, Proposal, SessionDetail } from '../../models/llm-api.models';
 import { LlmApiError } from '../../services/llm-api.service';
-import { LOADED_SESSION_KEY } from '../../services/staging';
+import { CHECKED_REACTIONS_KEY, LOADED_SESSION_KEY } from '../../services/staging';
+import { ReferencePreparer } from '../../services/reference-preparer.service';
 import { WorkspaceComponent } from './workspace.component';
 
 describe('WorkspaceComponent', () => {
@@ -21,6 +22,9 @@ describe('WorkspaceComponent', () => {
   const match = (key: string, level: ExistingMatch['level']): ExistingMatch =>
     ({ reaction_key: key, db_id: 1, display_name: 'x', st_id: 'R-HSA-1', level, score: 1, cites_pmid: false, catalyst_match: true, overlap: 1, similarity: 1, reasons: [] });
 
+  const suggestion = (id: string, key: string): Proposal =>
+    ({ id, reason: 'why', ops: [], summary: ['changes'], reaction_keys: [key], evidence: [], actor: 'suggestions', status: 'pending', created: 1, decided_by: null, decided_at: null });
+
   let api: jasmine.SpyObj<any>;
   let dialog: jasmine.SpyObj<MatDialog>;
   let snack: jasmine.SpyObj<MatSnackBar>;
@@ -29,13 +33,25 @@ describe('WorkspaceComponent', () => {
   let openSpy: jasmine.Spy;
   let snackAction: Subject<void>;
   let component: WorkspaceComponent;
-  const exported = { newInstances: [{ dbId: -1, schemaClassName: 'Reaction' }, { dbId: -2, schemaClassName: 'Summation' }], updatedInstances: [], deletedInstances: [], bookmarks: [] };
+  let references: jasmine.SpyObj<ReferencePreparer>;
+  const noReferences = { filled: [], unfilled: [], pdfs: [] };
+  // r0 (-5) with its summation, r1 (-9), and the annotation's pathway holding both
+  const ref = (dbId: number, schemaClassName: string) => ({ dbId, displayName: 'x', schemaClassName });
+  const exported = {
+    newInstances: [
+      { dbId: -5, schemaClassName: 'Reaction', attributes: { summation: [ref(-2, 'Summation')] } },
+      { dbId: -2, schemaClassName: 'Summation' },
+      { dbId: -9, schemaClassName: 'Reaction' },
+      { dbId: -1, schemaClassName: 'Pathway', attributes: { hasEvent: [ref(-5, 'Reaction'), ref(-9, 'Reaction')] } },
+    ], updatedInstances: [], deletedInstances: [], bookmarks: [] };
+  const loadedIds = () => (userInstances.loadAnnotationInstances.calls.mostRecent().args[0].newInstances as any[]).map(i => i.dbId);
 
   const make = () => {
-    api = jasmine.createSpyObj('LlmApiService', ['session', 'issues', 'existing', 'exportInstances']);
+    api = jasmine.createSpyObj('LlmApiService', ['session', 'issues', 'existing', 'exportInstances', 'proposals']);
     api.session.and.returnValue(of(session('ready')));
     api.issues.and.returnValue(of([issue('i1', 'r0', 'action'), issue('i2', 'r0', 'warning'), issue('i3', 'r1', 'info', 'dismissed')]));
     api.existing.and.returnValue(of([match('r1', 'same'), match('r0', 'similar')]));
+    api.proposals.and.returnValue(of([suggestion('p-001', 'r0'), { ...suggestion('p-002', 'r1'), actor: 'chat' }]));
     api.exportInstances.and.returnValue(of(exported));
     dialog = jasmine.createSpyObj('MatDialog', ['open']);
     snack = jasmine.createSpyObj('MatSnackBar', ['open']);
@@ -48,12 +64,18 @@ describe('WorkspaceComponent', () => {
     location.prepareExternalUrl.and.callFake((path: string) => `/curatortool${path}`);
     openSpy = spyOn(window, 'open');
     const route = { paramMap: of(convertToParamMap({ id: 's1' })) } as unknown as ActivatedRoute;
-    component = new WorkspaceComponent(api, route, location, dialog, snack, userInstances);
+    references = jasmine.createSpyObj('ReferencePreparer', ['prepare']);
+    references.prepare.and.callFake((e: any) => of({ exported: e, report: noReferences }));
+    component = new WorkspaceComponent(api, route, location, dialog, snack, userInstances, references);
     localStorage.removeItem(LOADED_SESSION_KEY);
   };
   const answer = (confirmed: boolean) => dialog.open.and.returnValue({ afterClosed: () => of(confirmed) } as any);
 
-  afterEach(() => localStorage.removeItem(LOADED_SESSION_KEY));
+  afterEach(() => {
+    localStorage.removeItem(LOADED_SESSION_KEY);
+    localStorage.removeItem(CHECKED_REACTIONS_KEY + 's1');
+    localStorage.removeItem(WorkspaceComponent.DETAIL_WIDTH_KEY);
+  });
 
   it('follows a running session until it is ready, then loads issues and matches and selects the first reaction', fakeAsync(() => {
     make();
@@ -71,6 +93,23 @@ describe('WorkspaceComponent', () => {
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));
+
+  it('titles an annotation by its paper, or by how many papers it merges, and lists them', () => {
+    make();
+    component.session = null;
+    expect(component.title).toBe('');
+    component.session = session('ready');
+    expect(component.title).toBe('PMID 24751536');
+    expect(component.papers).toEqual([]);                                   // an older service sends no paper list
+    component.session = { ...session('ready'), pmid: null, source: 'paper.pdf' };
+    expect(component.title).toBe('paper.pdf');
+    const papers: PaperInfo[] = [{ source: 'PMID:24751536', kind: 'pmid', pmid: '24751536', name: '24751536' },
+                                 { source: 'ab12_clock.pdf', kind: 'pdf', pmid: null, name: 'clock.pdf' },
+                                 { source: 'PMID:29168502', kind: 'pmid', pmid: '29168502', name: '29168502' }];
+    component.session = { ...session('ready'), n_papers: 3, source: '3 papers: 24751536, clock.pdf, 29168502', papers };
+    expect(component.title).toBe('3 papers');
+    expect(component.papers.map(component.paperLabel)).toEqual(['PMID 24751536', 'clock.pdf', 'PMID 29168502']);
+  });
 
   it('stops at a failed session and shows nothing to review', fakeAsync(() => {
     make();
@@ -90,6 +129,73 @@ describe('WorkspaceComponent', () => {
     component.ngOnInit();
     tick(0);
     expect(component.error).toContain('not reachable');
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
+  it('sorts the reactions as in the paper, by what needs attention, or by name, and marks the ones to keep or remove', fakeAsync(() => {
+    make();
+    const three = { ...session('ready'), n_reactions: 3, qa: { r0: { priority: 'review' as const, summary: null, score: 0.8, is_reaction: true },
+                                                              r1: { priority: 'fix_first' as const, summary: null, score: 0.3, is_reaction: true } },
+      reactions: [{ key: 'r0', name: 'PINK1 phosphorylates Ub', dbId: -5, evidenceIds: [] },
+                  { key: 'r1', name: 'parkin binds pUb', dbId: -9, evidenceIds: [] },
+                  { key: 'r2', name: 'Atg5 binds Atg12', dbId: -7, evidenceIds: [], equation: 'ATG5 + ATG12 -> ATG5:ATG12' }] };
+    api.session.and.returnValue(of(three));
+    api.issues.and.returnValue(of([
+      { ...issue('k', 'r2', 'warning'), category: 'keep', message: 'every quote comes from Methods' },
+      { ...issue('w', 'r2', 'action'), blocked_by: 'k' },                 // waits on the decision: not counted
+      { ...issue('a', 'r0', 'action'), category: 'content' },
+      { ...issue('n', 'r0', 'info'), category: 'existing' }]));           // a note: not counted
+    component.ngOnInit();
+    tick(0);
+    const keys = () => component.sortedReactions.map(r => r.key);
+    expect(keys()).toEqual(['r0', 'r1', 'r2']);                           // as in the paper
+    component.reactionSort = 'attention';
+    expect(keys()).toEqual(['r2', 'r1', 'r0']);                           // keep or remove?, then fix first, then review
+    component.reactionSort = 'name';
+    expect(keys()).toEqual(['r2', 'r1', 'r0']);                           // Atg5, parkin, PINK1: case does not matter
+    expect(component.needsDecision('r2')).toBeTrue();
+    expect(component.needsDecision('r0')).toBeFalse();
+    expect(component.decisionReason('r2')).toBe('every quote comes from Methods');
+    expect(component.openCount('r2')).toBe(0);
+    expect(component.openCount('r0')).toBe(1);
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
+  it('after a reaction is removed, selects its neighbour, forgets it in the checked set and marks staging stale', fakeAsync(() => {
+    make();
+    api.removeReaction = jasmine.createSpy('removeReaction');
+    const three = { ...session('ready'), n_reactions: 3,
+      reactions: [{ key: 'r0', name: 'a', dbId: -5, evidenceIds: [] }, { key: 'r1', name: 'b', dbId: -9, evidenceIds: [] },
+                  { key: 'r2', name: 'c', dbId: -7, evidenceIds: [] }] };
+    api.session.and.returnValue(of(three));
+    component.ngOnInit();
+    tick(0);
+    component.select('r1');
+    component.setChecked('r1', true);
+    component.setChecked('r2', true);
+    const stamp = component.draftStamp;
+    api.session.and.returnValue(of({ ...three, n_reactions: 2, reactions: [three.reactions[0], three.reactions[2]] }));
+    component.onReactionRemoved('r1');
+    tick(0);
+    expect(component.selectedKey).toBe('r2');
+    expect([...component.checkedKeys]).toEqual(['r2']);
+    expect(component.stagingStale).toBeTrue();
+    expect(component.draftStamp).toBe(stamp + 1);
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
+  it('follows a reaction removed elsewhere (Issues tab, accepted edit): the selection moves to the first one', fakeAsync(() => {
+    make();
+    component.ngOnInit();
+    tick(0);
+    component.select('r1');
+    api.session.and.returnValue(of({ ...session('ready'), n_reactions: 1, reactions: [session('ready').reactions[0]] }));
+    component.reload();
+    tick(0);
+    expect(component.selectedKey).toBe('r0');
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));
@@ -132,19 +238,25 @@ describe('WorkspaceComponent', () => {
   }));
 
   describe('loading into staged instances', () => {
-    beforeEach(fakeAsync(() => { make(); component.ngOnInit(); tick(0); component.ngOnDestroy(); discardPeriodicTasks(); }));
+    beforeEach(fakeAsync(() => {
+      make(); component.ngOnInit(); tick(0); component.ngOnDestroy(); discardPeriodicTasks();
+      component.setChecked('r0', true);
+    }));
 
-    it('asks with the real counts, then loads, remembers the session and tells the curator about the backup', () => {
+    it('asks with the real counts, then loads only the checked reaction, remembers the session and tells the curator about the backup', () => {
       answer(true);
       component.stagingStale = true;
       component.loadIntoStaging();
-      expect(dialog.open.calls.mostRecent().args[1]!.data).toEqual({ staged: 4, keepsDefaultPerson: false, keepsBookmarks: 0, incoming: 2, stale: true });
-      expect(userInstances.stagedSummary).toHaveBeenCalledWith(exported as any);          // judged against what is about to be loaded
-      expect(userInstances.loadAnnotationInstances).toHaveBeenCalledWith(exported as any);
+      expect(dialog.open.calls.mostRecent().args[1]!.data).toEqual(
+        { staged: 4, keepsDefaultPerson: false, keepsBookmarks: 0, incoming: 2, stale: true, reactions: 1, totalReactions: 2, pathway: false,
+          references: noReferences });
+      // judged against what is about to be loaded: r0 and its summation, not r1 nor the pathway
+      expect((userInstances.stagedSummary.calls.mostRecent().args[0].newInstances as any[]).map(i => i.dbId)).toEqual([-5, -2]);
+      expect(loadedIds()).toEqual([-5, -2]);
       expect(localStorage.getItem(LOADED_SESSION_KEY)).toBe('s1');
       expect(component.stagingStale).toBeFalse();
       expect(component.loading).toBeFalse();
-      expect(snack.open.calls.mostRecent().args[0]).toContain('Loaded 2 instances');
+      expect(snack.open.calls.mostRecent().args[0]).toContain('Loaded 1 reaction (2 instances)');
       expect(snack.open.calls.mostRecent().args[0]).toContain('b.json');
     });
 
@@ -215,6 +327,97 @@ describe('WorkspaceComponent', () => {
       component.loadIntoStaging();
       expect(api.exportInstances).not.toHaveBeenCalled();
     });
+
+    it('gets the cited papers ready for the checked reactions, and loads what that gave', () => {
+      answer(true);
+      const prepared = { ...exported, newInstances: [{ dbId: -5, schemaClassName: 'Reaction' }] };
+      const report = { ...noReferences, pdfs: ['notes.pdf'] };
+      references.prepare.and.returnValue(of({ exported: prepared as any, report }));
+      component.loadIntoStaging();
+      const [selected, sessionId, rs, papers] = references.prepare.calls.mostRecent().args;
+      expect((selected.newInstances as any[]).map(i => i.dbId)).toEqual([-5, -2]);   // after cutting down to r0
+      expect(sessionId).toBe('s1');
+      expect(rs.map(r => r.key)).toEqual(['r0', 'r1']);
+      expect(papers).toEqual([]);
+      expect(loadedIds()).toEqual([-5]);
+      expect(dialog.open.calls.mostRecent().args[1]!.data).toEqual(jasmine.objectContaining({ references: report, incoming: 1 }));
+      expect(snack.open.calls.mostRecent().args[0]).toContain('1 reference needs a PubMed ID');
+      expect(component.loadStep).toBeNull();
+    });
+
+    it('does nothing when no reaction is checked', () => {
+      component.setAllChecked(false);
+      component.loadIntoStaging();
+      expect(api.exportInstances).not.toHaveBeenCalled();
+      expect(dialog.open).not.toHaveBeenCalled();
+    });
+
+    it('loads the pathway too when every reaction is checked', () => {
+      answer(true);
+      component.setAllChecked(true);
+      component.loadIntoStaging();
+      expect(loadedIds().sort((a, b) => a - b)).toEqual([-9, -5, -2, -1]);
+      expect(dialog.open.calls.mostRecent().args[1]!.data).toEqual(jasmine.objectContaining({ incoming: 4, reactions: 2, totalReactions: 2, pathway: true }));
+    });
+
+    it('leaves the pathway out when only some reactions are checked', () => {
+      answer(true);
+      component.loadIntoStaging();                                   // only r0 is checked
+      expect(loadedIds()).not.toContain(-1);
+    });
+  });
+
+  describe('checking reactions to load', () => {
+    beforeEach(() => localStorage.removeItem(CHECKED_REACTIONS_KEY + 's1'));
+
+    it('starts with nothing checked', fakeAsync(() => {
+      make(); component.ngOnInit(); tick(0);
+      expect(component.checkedCount).toBe(0);
+      expect(component.isChecked('r0')).toBeFalse();
+      expect(component.allChecked).toBeFalse();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('checks one, all and none, and counts only what is checked', fakeAsync(() => {
+      make(); component.ngOnInit(); tick(0);
+      component.setChecked('r1', true);
+      expect(component.checkedCount).toBe(1);
+      expect(component.isChecked('r1')).toBeTrue();
+      component.setAllChecked(true);
+      expect(component.allChecked).toBeTrue();
+      component.setChecked('r0', false);
+      expect(component.checkedCount).toBe(1);
+      expect(component.allChecked).toBeFalse();
+      component.setAllChecked(false);
+      expect(component.checkedCount).toBe(0);
+      expect(localStorage.getItem(CHECKED_REACTIONS_KEY + 's1')).toBeNull();
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('remembers the choice for the annotation, so it is still there when the curator comes back', fakeAsync(() => {
+      make(); component.ngOnInit(); tick(0);
+      component.setChecked('r1', true);
+      component.ngOnDestroy(); discardPeriodicTasks();
+      const again = new WorkspaceComponent(api, { paramMap: of(convertToParamMap({ id: 's1' })) } as unknown as ActivatedRoute,
+                                           location, dialog, snack, userInstances, references);
+      again.ngOnInit(); tick(0);
+      expect(again.isChecked('r1')).toBeTrue();
+      expect(again.checkedCount).toBe(1);
+      again.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('does not count a checked reaction the annotation no longer has, nor one the export cannot load', fakeAsync(() => {
+      localStorage.setItem(CHECKED_REACTIONS_KEY + 's1', JSON.stringify(['r0', 'gone']));
+      make();
+      const s = session('ready');
+      api.session.and.returnValue(of({ ...s, reactions: [...s.reactions, { key: 'r2', name: 'No id', dbId: null, evidenceIds: [] }] }));
+      component.ngOnInit(); tick(0);
+      expect(component.checkedCount).toBe(1);
+      expect(component.canCheck('r2')).toBeFalse();
+      component.setAllChecked(true);
+      expect(component.checkedCount).toBe(2);                       // r0 and r1; r2 has no dbId to load by
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
   });
 
   it('asks the usage tab to reload when a chat turn ends and when the session is reloaded', fakeAsync(() => {
@@ -244,4 +447,67 @@ describe('WorkspaceComponent', () => {
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));
+  it('lists only the suggestions the service made, named by their reaction, and refreshes them after a decision', fakeAsync(() => {
+    make();
+    component.ngOnInit();
+    tick(0);
+    expect(component.suggestions.map(p => p.id)).toEqual(['p-001']);          // the chat proposal is not a suggestion
+    expect(component.suggestionReaction(component.suggestions[0])).toBe('PINK1 phosphorylates Ub');
+    api.proposals.and.returnValue(of([]));
+    component.onProposalDecided({ ...suggestion('p-001', 'r0'), status: 'rejected' });
+    expect(component.suggestions).toEqual([]);
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+  describe('the divider between the network and the reaction panel', () => {
+    // a split 1000px wide whose right edge is at x = 1100
+    const split = { getBoundingClientRect: () => ({ right: 1100 }), clientWidth: 1000 } as unknown as HTMLElement;
+    const key = (k: string, shiftKey = false) => ({ key: k, shiftKey, preventDefault: jasmine.createSpy('preventDefault') } as unknown as KeyboardEvent);
+
+    beforeEach(() => localStorage.removeItem(WorkspaceComponent.DETAIL_WIDTH_KEY));
+
+    it('starts at the default width, or at the width the curator left it', () => {
+      make();
+      expect(component.detailWidth).toBe(WorkspaceComponent.DEFAULT_DETAIL_WIDTH);
+      const again = () => new WorkspaceComponent(api, {} as ActivatedRoute, location, dialog, snack, userInstances, references).detailWidth;
+      localStorage.setItem(WorkspaceComponent.DETAIL_WIDTH_KEY, '520');
+      expect(again()).toBe(520);
+      localStorage.setItem(WorkspaceComponent.DETAIL_WIDTH_KEY, 'junk');
+      expect(again()).toBe(WorkspaceComponent.DEFAULT_DETAIL_WIDTH);
+    });
+
+    it('gives the panel the space from the pointer to the right edge, but never squeezes either side away', () => {
+      make();
+      component.resizeTo(600, split);
+      expect(component.detailWidth).toBe(500);
+      component.resizeTo(1090, split);
+      expect(component.detailWidth).toBe(WorkspaceComponent.MIN_DETAIL_WIDTH);
+      component.resizeTo(150, split);
+      expect(component.detailWidth).toBe(1000 - WorkspaceComponent.MIN_NETWORK_WIDTH);
+    });
+
+    it('moves with the arrow keys, goes back with Home, and remembers the width', () => {
+      make();
+      const left = key('ArrowLeft');
+      component.nudgeDivider(left, split);
+      expect(component.detailWidth).toBe(400);
+      expect(left.preventDefault).toHaveBeenCalled();
+      component.nudgeDivider(key('ArrowRight', true), split);
+      expect(component.detailWidth).toBe(320);
+      expect(localStorage.getItem(WorkspaceComponent.DETAIL_WIDTH_KEY)).toBe('320');
+      component.nudgeDivider(key('Home'), split);
+      expect(component.detailWidth).toBe(WorkspaceComponent.DEFAULT_DETAIL_WIDTH);
+      const other = key('a');
+      component.nudgeDivider(other, split);
+      expect(other.preventDefault).not.toHaveBeenCalled();
+    });
+
+    it('goes back to the default width on reset', () => {
+      make();
+      component.resizeTo(500, split);
+      component.resetDetailWidth();
+      expect(component.detailWidth).toBe(WorkspaceComponent.DEFAULT_DETAIL_WIDTH);
+      expect(localStorage.getItem(WorkspaceComponent.DETAIL_WIDTH_KEY)).toBe(String(WorkspaceComponent.DEFAULT_DETAIL_WIDTH));
+    });
+  });
 });
