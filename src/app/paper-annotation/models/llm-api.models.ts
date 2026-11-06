@@ -341,7 +341,7 @@ export interface UsageCounts {
   cache_write_tokens: number;
 }
 
-export type UsageStep = 'extraction' | 'merge' | 'review' | 'draft' | 'qa' | 'chat';
+export type UsageStep = 'extraction' | 'merge' | 'review' | 'draft' | 'qa' | 'chat' | 'combine';
 
 /** One step's totals. `saved` marks a step whose numbers come from the saved run a replayed annotation was made from. */
 export interface UsageStepRow extends UsageCounts {
