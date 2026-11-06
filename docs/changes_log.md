@@ -1,3 +1,8 @@
+### Build on November 5, 2026
+
+- Added: in **Gene2Path**, each predicted pathway now has a short summary of what its papers say about the gene in that pathway, written by a language model from the papers' abstracts. Each claim cites its paper as a **PMID** link to PubMed, and only papers listed for that pathway are cited. If the papers only mention the gene and the pathway together without linking them, the summary says so. Open the pathway's papers below the summary to check it. Summaries make a run take up to a minute or two longer; untick **Summarize the papers** in Settings to skip them.
+- Removed: the **Relevant Papers** section at the bottom of **Gene2Path**. Each predicted pathway already lists the papers that link the gene to it, so the separate ranked list is gone, and with it the **Annotate selected** button there. To annotate papers, start an annotation from the Paper2Path page.
+
 ### Build on November 4, 2026
 
 - Added: **Paper2Path** annotations can be deleted. In **Your annotations**, click the delete button (`delete`) at the end of a row and confirm. The annotation is removed for good, with any PDFs uploaded for it, so you can start the same papers again or clear out ones you no longer need. One that is still running can't be deleted until it finishes.

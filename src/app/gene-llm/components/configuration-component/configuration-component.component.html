@@ -22,6 +22,15 @@
             <input [(ngModel)]="configuration.max_pathways" matInput min="1" max="50" step="1" type="number"
                 matTooltip="How many predicted pathways are listed, lowest FDR first">
         </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Papers per Pathway</mat-label>
+            <input [(ngModel)]="configuration.max_evidence" matInput min="0" max="20" step="1" type="number"
+                matTooltip="How many supporting PubMed papers are listed under each predicted pathway; 0 skips the search">
+        </mat-form-field>
+        <mat-checkbox [(ngModel)]="configuration.summarize" class="summarize-box" [disabled]="!configuration.max_evidence"
+                      matTooltip="Have an LLM summarize each predicted pathway's papers, citing them. Needs at least one paper per pathway.">
+            Summarize the papers
+        </mat-checkbox>
     </div>
 
     <div class="actions">

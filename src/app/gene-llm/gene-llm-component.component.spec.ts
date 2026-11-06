@@ -7,7 +7,7 @@ import { GenePathwaysResult, Job } from 'src/app/paper-annotation/models/llm-api
 import { LlmApiError, LlmApiService } from 'src/app/paper-annotation/services/llm-api.service';
 import { componentTestImports } from 'src/testing';
 import { DEFAULT_LLM_CONFIG } from './components/configuration-component/configuration-component.component';
-import { GeneLlmComponentComponent } from './gene-llm-component.component';
+import { GeneLlmComponentComponent, splitCitations } from './gene-llm-component.component';
 
 describe('GeneLlmComponentComponent', () => {
   let component: GeneLlmComponentComponent;
@@ -71,7 +71,7 @@ describe('GeneLlmComponentComponent', () => {
     expect(component.showConfiguration).toBeFalse();
   });
 
-  it('searches for the gene with the settings, shows the progress, then the result, and starts the paper search too', () => {
+  it('searches for the gene with the settings, shows the progress, then the result', () => {
     const polls = new Subject<Job<GenePathwaysResult>>();
     api.pollPathwaySearch.and.returnValue(polls);
     component.gene = ' pink1 ';
@@ -81,7 +81,6 @@ describe('GeneLlmComponentComponent', () => {
 
     expect(api.findPathwaysByGene).toHaveBeenCalledWith('PINK1', { ...DEFAULT_LLM_CONFIG, fdr_cutoff: 0.01 });
     expect(api.pollPathwaySearch).toHaveBeenCalledWith('p1');
-    expect(component.paperQuery).toEqual({ gene: 'PINK1' });
     expect(component.searching).toBeTrue();
     polls.next(job('running'));
     expect(component.progress).toBe('ranking its functional-interaction partners');
@@ -89,17 +88,7 @@ describe('GeneLlmComponentComponent', () => {
     expect(component.searching).toBeFalse();
     expect(component.result?.predicted_pathways.length).toBe(2);
     expect(component.newPredictions).toBe(1);                    // Mitophagy is already annotated
-    expect(component.sections.map(s => s.id)).toEqual(['annotated_pathways', 'predicted_pathways', 'fi_partners', 'relevant_papers']);
-  });
-
-  it('starts a new paper search each run, even for the same gene', () => {
-    api.pollPathwaySearch.and.returnValue(of(job('done', result())));
-    component.gene = 'PINK1';
-    component.run();
-    const first = component.paperQuery;
-    component.run();
-    expect(component.paperQuery).toEqual(first);
-    expect(component.paperQuery).not.toBe(first);
+    expect(component.sections.map(s => s.id)).toEqual(['annotated_pathways', 'predicted_pathways', 'fi_partners']);
   });
 
   it('does not run without a gene, or without a login', () => {
@@ -131,6 +120,71 @@ describe('GeneLlmComponentComponent', () => {
   it('formats an FDR as it was shown before', () => {
     expect(component.formatFdr(6.2e-4)).toBe('6.2E-4');
     expect(component.formatFdr(0.0049)).toBe('4.9E-3');
+  });
+
+  it('opens and closes a pathway\'s literature, and closes them all on a new run', () => {
+    api.pollPathwaySearch.and.returnValue(of(job('done', result())));
+    component.toggleEvidence(9013419);
+    component.toggleEvidence(5205647);
+    expect([...component.openEvidence]).toEqual([9013419, 5205647]);
+    component.toggleEvidence(9013419);
+    expect([...component.openEvidence]).toEqual([5205647]);
+    component.gene = 'PINK1';
+    component.run();
+    expect(component.openEvidence.size).toBe(0);
+  });
+
+  it('keeps each pathway\'s literature from the result', () => {
+    const evidence = [{ pmid: '22078885', title: 'PINK1 and Parkin target Miro', journal: 'Cell', year: '2011',
+      pmcid: 'PMC3261796', partners_mentioned: ['RHOT1'], terms_mentioned: ['GTPase'], sentences: ['PINK1 phosphorylates RHOT1.'] }];
+    const r = result();
+    r.predicted_pathways[0] = { ...r.predicted_pathways[0], evidence, evidence_count: 41 };
+    api.pollPathwaySearch.and.returnValue(of(job('done', r)));
+    component.gene = 'PINK1';
+    component.run();
+    expect(component.result?.predicted_pathways[0].evidence?.[0].sentences).toEqual(['PINK1 phosphorylates RHOT1.']);
+    expect(component.result?.predicted_pathways[0].evidence_count).toBe(41);
+  });
+
+  it('splits each pathway\'s summary into text and PubMed citations once the result arrives, and clears them on a new run', () => {
+    const r = result();
+    r.predicted_pathways[0] = { ...r.predicted_pathways[0], summary: 'PINK1 phosphorylates RHOT1 [PMID:22078885].' };
+    r.predicted_pathways[1] = { ...r.predicted_pathways[1], summary_error: 'RuntimeError: overloaded' };
+    const polls = new Subject<Job<GenePathwaysResult>>();
+    api.pollPathwaySearch.and.returnValue(polls);
+    component.gene = 'PINK1';
+    component.run();
+    polls.next(job('done', r));
+    expect(component.summaries.get(9013419)).toEqual([
+      { text: 'PINK1 phosphorylates RHOT1 ' }, { text: 'PMID 22078885', pmid: '22078885' }, { text: '.' }]);
+    expect(component.summaries.has(5205647)).toBeFalse();       // a failed summary keeps its error on the pathway
+    const first = component.summaries.get(9013419);
+    component.ngOnDestroy();
+    api.pollPathwaySearch.and.returnValue(new Subject<Job<GenePathwaysResult>>());
+    component.run();
+    expect(component.summaries.size).toBe(0);
+    expect(first?.length).toBe(3);
+  });
+
+  it('splits citations anywhere in a summary, including back to back', () => {
+    expect(splitCitations('[PMID:1][PMID: 2] bind.')).toEqual([
+      { text: 'PMID 1', pmid: '1' }, { text: 'PMID 2', pmid: '2' }, { text: ' bind.' }]);
+    expect(splitCitations('No citations.')).toEqual([{ text: 'No citations.' }]);
+  });
+
+  it('asks for summaries by default, and says the search will take longer only when it writes them', () => {
+    expect(component.configuration.summarize).toBeTrue();
+    expect(component.summarizing).toBeTrue();
+    component.configuration.max_evidence = 0;                   // no papers, nothing to summarize
+    expect(component.summarizing).toBeFalse();
+    component.configuration.max_evidence = 5;
+    component.configuration.summarize = false;
+    expect(component.summarizing).toBeFalse();
+  });
+
+  it('links a paper to PubMed and its full text to PMC', () => {
+    expect(component.pubmedUrl('22078885')).toBe('https://pubmed.ncbi.nlm.nih.gov/22078885/');
+    expect(component.pmcUrl('PMC3261796')).toBe('https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3261796/');
   });
 
   it('links a pathway to the Pathway Browser by its dbId', () => {

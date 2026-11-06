@@ -4,14 +4,21 @@ import { PageTitleService } from 'src/app/core/services/page-title.service';
 import { GenePathwaysResult } from 'src/app/paper-annotation/models/llm-api.models';
 import { LlmApiError, LlmApiService } from 'src/app/paper-annotation/services/llm-api.service';
 import { Configuration, DEFAULT_LLM_CONFIG } from "./components/configuration-component/configuration-component.component";
-import { GenePaperQuery } from './components/gene-papers/gene-papers.component';
 import { OutlineSection } from './components/navigation-menu/navigation-menu.component';
+
+/** A piece of a pathway summary: plain text, or a citation to show as a PubMed link. */
+export interface SummaryPart {
+  text: string;
+  pmid?: string;
+}
 
 /**
  * Gene2Path: the Reactome pathways a gene is, or could be, annotated in, then the papers to annotate it from.
  *
- * The pathways come from curator-tool-llm's POST /api/llm/pathways/by-gene, without an LLM: the released human pathways
- * the gene is already in, and those enriched among its top functional-interaction partners. This page used to call a
+ * The pathways come from curator-tool-llm's POST /api/llm/pathways/by-gene, predicted without an LLM: the released human
+ * pathways the gene is already in, and those enriched among its top functional-interaction partners that it is not in
+ * yet, each with an LLM summary of its literature (unless turned off in Settings) shown under the pathway's row, then
+ * the PubMed papers that link the gene to it (opened under the summary). This page used to call a
  * Flask service (environment.llmURL, POST /annotate) that wrote LLM summaries of both; that service was deleted from
  * curator-tool-llm, and in production /llm/ is the new service, so the page had stopped working at all.
  *
@@ -34,8 +41,13 @@ export class GeneLlmComponentComponent implements OnDestroy {
   progress = '';
   failure: string | null = null;
   result: GenePathwaysResult | null = null;
-  /** Drives the Relevant Papers section, listed under the pathways. A new object per run starts a new paper search. */
-  paperQuery: GenePaperQuery | null = null;
+  /** The predicted pathways (dbIds) whose literature is open. */
+  openEvidence = new Set<number>();
+  /**
+   * Each predicted pathway's summary (by dbId), split once into text and citations when the result arrives. Splitting
+   * in the template would build new arrays on every change detection, and *ngFor would re-create the links each time.
+   */
+  summaries = new Map<number, SummaryPart[]>();
 
   private sub?: Subscription;
 
@@ -66,9 +78,8 @@ export class GeneLlmComponentComponent implements OnDestroy {
     this.progress = 'starting';
     this.failure = null;
     this.result = null;
-    // The paper search is a separate, slow job (a minute or two). Start it now, alongside the pathway search, so the
-    // papers are usually ready by the time the curator has read the pathways above them.
-    this.paperQuery = { gene };
+    this.openEvidence.clear();
+    this.summaries.clear();
     this.sub = this.api.findPathwaysByGene(gene, { ...this.configuration }).pipe(
       switchMap(r => this.api.pollPathwaySearch(r.jobId))
     ).subscribe({
@@ -77,6 +88,9 @@ export class GeneLlmComponentComponent implements OnDestroy {
         if (j.status === 'done') {
           this.searching = false;
           this.result = j.result ?? null;
+          for (const p of this.result?.predicted_pathways ?? []) {
+            if (p.summary) this.summaries.set(p.pathway_id, splitCitations(p.summary));
+          }
           if (!this.result) this.failure = `The pathway search for ${gene} returned nothing.`;
         } else if (j.status === 'failed') {
           this.searching = false;
@@ -95,7 +109,6 @@ export class GeneLlmComponentComponent implements OnDestroy {
              { id: 'predicted_pathways', label: 'Predicted Pathways' });
       if (this.result.partners.length) s.push({ id: 'fi_partners', label: 'Interaction Partners', level: 1 });
     }
-    if (this.paperQuery) s.push({ id: 'relevant_papers', label: 'Relevant Papers' });
     return s;
   }
 
@@ -103,12 +116,41 @@ export class GeneLlmComponentComponent implements OnDestroy {
     return (this.result?.predicted_pathways ?? []).filter(p => !p.annotated).length;
   }
 
+  toggleEvidence(dbId: number): void {
+    if (!this.openEvidence.delete(dbId)) this.openEvidence.add(dbId);
+  }
+
+  pubmedUrl(pmid: string): string {
+    return `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
+  }
+
+  pmcUrl(pmcid: string): string {
+    return `https://www.ncbi.nlm.nih.gov/pmc/articles/${pmcid}/`;
+  }
+
   pathwayUrl(dbId: number): string {
     return `https://reactome.org/PathwayBrowser/#/${dbId}`;
+  }
+
+  get summarizing(): boolean {
+    return this.configuration.summarize && this.configuration.max_evidence > 0;
   }
 
   /** 1.2E-4, as the FDR was shown before. */
   formatFdr(fdr: number): string {
     return fdr.toExponential(1).toUpperCase();
   }
+}
+
+/** "PINK1 binds RHOT1 [PMID:1]." -> [{text: 'PINK1 binds RHOT1 '}, {text: 'PMID 1', pmid: '1'}, {text: '.'}] */
+export function splitCitations(summary: string): SummaryPart[] {
+  const parts: SummaryPart[] = [];
+  let last = 0;
+  for (const m of summary.matchAll(/\[PMID:\s*(\d+)\]/g)) {
+    if (m.index! > last) parts.push({ text: summary.slice(last, m.index) });
+    parts.push({ text: `PMID ${m[1]}`, pmid: m[1] });
+    last = m.index! + m[0].length;
+  }
+  if (last < summary.length) parts.push({ text: summary.slice(last) });
+  return parts;
 }

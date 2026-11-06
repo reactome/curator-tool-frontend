@@ -232,17 +232,10 @@ const GENE2PATH_TOUR: TourStep[] = [
     position: 'center',
   },
   {
-    id: 'gene2path-papers',
-    title: 'Relevant Papers',
-    content:
-      'Below the pathways, Relevant Papers ranks the papers worth annotating the gene from. Tick the ones you want and click Annotate selected to start a Paper2Path annotation from them, with the gene as its focus.',
-    position: 'center',
-  },
-  {
     id: 'gene2path-caution',
     title: 'Review Before Curating',
     content:
-      'Predicted pathways are statistical suggestions and the papers are ranked by an LLM: curation assistance, not ground truth. Review them before adding data to Reactome.',
+      'Predicted pathways are statistical suggestions and their papers are summarized by an LLM: curation assistance, not ground truth. Review them before adding data to Reactome.',
     position: 'center',
   },
 ];

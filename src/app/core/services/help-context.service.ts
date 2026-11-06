@@ -133,13 +133,6 @@ const HELP_CONTENT: Record<string, HelpContext> = {
           'Predictions are statistical suggestions, not ground truth: review them before curating.',
         ],
       },
-      {
-        heading: 'Relevant Papers',
-        items: [
-          'Below the pathways, Relevant Papers lists the papers worth annotating the gene from, best first, with a score out of 10, the kind of evidence and why.',
-          'Tick the papers to annotate (only those in PubMed Central can be ticked) and click Annotate selected to start a Paper2Path annotation with the gene as its focus.',
-        ],
-      },
     ],
   },
   'paper2path': {

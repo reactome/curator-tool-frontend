@@ -1,8 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subject, catchError, filter, of, switchMap, takeUntil, timer } from 'rxjs';
-import { SessionSummary, StartResponse } from '../../models/llm-api.models';
+import { Observable, Subject, Subscription, catchError, filter, of, switchMap, takeUntil, tap, timer } from 'rxjs';
+import { CandidatePaper, GeneSearchResult, SessionSummary, StartResponse } from '../../models/llm-api.models';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
+
+/** sessionStorage key for the gene search this tab is running or showing: { jobId, gene }. */
+const GENE_SEARCH_KEY = 'paper2path.geneSearch';
 
 @Component({
   selector: 'app-session-list',

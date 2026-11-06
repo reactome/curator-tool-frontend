@@ -2,8 +2,8 @@ import { ComponentFixture, TestBed, fakeAsync, tick, discardPeriodicTasks } from
 import { ActivatedRoute, Router } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
-import { of, throwError } from 'rxjs';
-import { SessionSummary } from '../../models/llm-api.models';
+import { NEVER, Subject, of, throwError } from 'rxjs';
+import { CandidatePaper, GeneSearchResult, Job, SessionSummary } from '../../models/llm-api.models';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
 import { PaperAnnotationModule } from '../../paper-annotation.module';
 import { SessionListComponent } from './session-list.component';
@@ -19,9 +19,13 @@ describe('SessionListComponent', () => {
   let component: SessionListComponent;
   const el = () => fixture.nativeElement as HTMLElement;
 
+  beforeEach(() => sessionStorage.removeItem('paper2path.geneSearch'));
+  afterEach(() => sessionStorage.removeItem('paper2path.geneSearch'));
+
   const create = (sessions: SessionSummary[] | Error = []) => {
-    api = jasmine.createSpyObj('LlmApiService', ['sessions', 'startPapers', 'deleteSession']);
+    api = jasmine.createSpyObj('LlmApiService', ['sessions', 'startPapers', 'findPapersByGene', 'pollGeneSearch', 'deleteSession']);
     api.sessions.and.returnValue(sessions instanceof Error ? throwError(() => sessions) : of(sessions));
+    api.pollGeneSearch.and.returnValue(NEVER);                     // a search resumed on entry just keeps running
     router = jasmine.createSpyObj('Router', ['navigate']);
     TestBed.configureTestingModule({
       imports: [PaperAnnotationModule, NoopAnimationsModule, RouterTestingModule],

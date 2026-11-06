@@ -30,8 +30,8 @@
 
     <div *ngIf="searching" class="running" role="status">
         <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-        <p>Finding pathways for <b>{{ gene }}</b>: <span class="progress">{{ progress || 'queued' }}</span>. The relevant
-            papers are searched for at the same time.</p>
+        <p>Finding pathways for <b>{{ gene }}</b>: <span class="progress">{{ progress || 'queued' }}</span>.<ng-container
+            *ngIf="summarizing"> Summarizing each predicted pathway's papers can take a minute.</ng-container></p>
     </div>
 
     <!-- Before the first run -->
@@ -43,14 +43,12 @@
         </div>
         <div class="intro-step">
             <mat-icon>article</mat-icon>
-            <div><b>Relevant papers</b><span>The PubMed papers worth annotating the gene from, ranked, ready to start a
-                Paper2Path annotation.</span></div>
+            <div><b>Literature</b><span>For each predicted pathway, the PubMed papers that link the gene to it, with a
+                summary of what they say.</span></div>
         </div>
     </section>
 
-    <!-- [hidden], not *ngIf: the Relevant Papers section below runs its paper search while the pathway search is still
-         running, and *ngIf would destroy it, and the search with it, until the pathways are back. -->
-    <div class="results" [hidden]="searching" *ngIf="hasRun">
+    <div class="results" *ngIf="hasRun && !searching">
         <nav class="outline" *ngIf="sections.length">
             <app-navigation-menu [sections]="sections"></app-navigation-menu>
         </nav>
@@ -94,10 +92,12 @@
                                     {{ result.confident ? 'strong' : 'weak' }}
                                 </span>
                             </h2>
-                            <p class="note">Pathways enriched among {{ result.gene }}'s top {{ result.partners.length || result.params.top_partners }}
-                                functional interaction partners (binomial test, FDR below {{ result.params.fdr_cutoff }}).
-                                <ng-container *ngIf="result.predicted_pathways.length">{{ newPredictions }} of them
-                                    {{ newPredictions === 1 ? 'is' : 'are' }} not annotated for {{ result.gene }} yet.</ng-container>
+                            <p class="note">Pathways {{ result.gene }} is not annotated in yet, enriched among its top
+                                {{ result.partners.length || result.params.top_partners }} functional interaction partners
+                                (binomial test, FDR below {{ result.params.fdr_cutoff }}). Under each pathway, a summary of
+                                what its papers say about {{ result.gene }}, written by an LLM from their abstracts; open
+                                the pathway's literature for the PubMed papers naming {{ result.gene }} with its partners
+                                or the words of its name.
                             </p>
                         </div>
                     </div>
@@ -113,17 +113,97 @@
 
                     <table class="predicted" *ngIf="result.predicted_pathways.length">
                         <thead>
-                            <tr><th>Pathway</th><th class="num">FDR</th><th>Partners in it</th></tr>
+                            <tr><th>Pathway</th><th class="num">FDR</th><th>Partners in it</th><th>Literature</th></tr>
                         </thead>
                         <tbody>
-                            <tr *ngFor="let p of result.predicted_pathways" [class.already]="p.annotated">
+                            <ng-container *ngFor="let p of result.predicted_pathways">
+                            <tr [class.already]="p.annotated"
+                                [class.open]="openEvidence.has(p.pathway_id) || p.summary || p.summary_error">
                                 <td>
                                     <a [href]="pathwayUrl(p.pathway_id)" target="reactome">{{ p.pathway_name }}</a>
                                     <span class="annotated-tag" *ngIf="p.annotated">already annotated</span>
                                 </td>
                                 <td class="num">{{ formatFdr(p.fdr) }}</td>
                                 <td><span class="gene-chip" *ngFor="let g of p.mapped_genes">{{ g }}</span></td>
+                                <td class="evidence-cell">
+                                    <button mat-button type="button" class="evidence-toggle" *ngIf="p.evidence"
+                                            (click)="toggleEvidence(p.pathway_id)"
+                                            [attr.aria-expanded]="openEvidence.has(p.pathway_id)"
+                                            [matTooltip]="(p.evidence_count ?? 0) + ' PubMed papers match; the best ' + p.evidence.length + ' are listed'">
+                                        <mat-icon>{{ openEvidence.has(p.pathway_id) ? 'expand_less' : 'expand_more' }}</mat-icon>
+                                        {{ p.evidence.length }} {{ p.evidence.length === 1 ? 'paper' : 'papers' }}
+                                    </button>
+                                </td>
                             </tr>
+                            <!-- The summary, always shown; the literature it cites is opened below it -->
+                            <tr class="summary-row" *ngIf="p.summary || p.summary_error"
+                                [class.open]="openEvidence.has(p.pathway_id)">
+                                <td colspan="4">
+                                    <p class="summary" *ngIf="summaries.get(p.pathway_id) as parts">
+                                        <mat-icon matTooltip="Written by an LLM from the abstracts of the papers below; check them before relying on it">auto_awesome</mat-icon>
+                                        <span><ng-container *ngFor="let part of parts"><a *ngIf="part.pmid; else plain"
+                                            class="citation" [href]="pubmedUrl(part.pmid)" target="pubmed">{{ part.text }}</a><ng-template
+                                            #plain>{{ part.text }}</ng-template></ng-container></span>
+                                    </p>
+                                    <p class="empty" *ngIf="!p.summary && p.summary_error">The summary could not be
+                                        written: {{ p.summary_error }}</p>
+                                </td>
+                            </tr>
+                            <tr class="evidence-row" *ngIf="openEvidence.has(p.pathway_id)">
+                                <td colspan="4">
+                                    <p class="empty" *ngIf="p.evidence_error">The literature search failed for this
+                                        pathway: {{ p.evidence_error }}</p>
+                                    <p class="empty" *ngIf="!p.evidence_error && !p.evidence?.length">No PubMed paper names
+                                        {{ result.gene }} with this pathway's partners or the words of its name.</p>
+                                    <ol class="evidence-list" *ngIf="p.evidence?.length">
+                                        <li *ngFor="let e of p.evidence">
+                                            <div class="evidence-title">
+                                                <a [href]="pubmedUrl(e.pmid)" target="pubmed">{{ e.title || ('PMID ' + e.pmid) }}</a>
+                                            </div>
+                                            <div class="evidence-meta">
+                                                <span>{{ e.journal }}<ng-container *ngIf="e.year">, {{ e.year }}</ng-container></span>
+                                                <span>PMID {{ e.pmid }}</span>
+                                                <a *ngIf="e.pmcid" [href]="pmcUrl(e.pmcid)" target="pmc" class="pmc"
+                                                   matTooltip="Full text in PMC: it can be annotated in Paper2Path">{{ e.pmcid }}</a>
+                                                <span class="gene-chip" *ngFor="let g of e.partners_mentioned">{{ g }}</span>
+                                                <span class="term-chip" *ngFor="let t of e.terms_mentioned">{{ t }}</span>
+                                            </div>
+                                            <blockquote *ngFor="let s of e.sentences">{{ s }}</blockquote>
+                                        </li>
+                                    </ol>
+                                    <ng-container *ngIf="p.partner_evidence?.length || p.partner_evidence_error">
+                                        <h4 class="partner-evidence-heading">By partner</h4>
+                                        <p class="empty" *ngIf="p.partner_evidence_error">The partner search failed:
+                                            {{ p.partner_evidence_error }}</p>
+                                        <div class="partner-evidence" *ngFor="let pe of p.partner_evidence">
+                                            <div class="partner-evidence-head">
+                                                <span class="gene-chip">{{ pe.partner }}</span>
+                                                <span *ngIf="pe.error" class="empty">search failed: {{ pe.error }}</span>
+                                                <span *ngIf="!pe.error && !pe.count" class="empty">no PubMed paper names
+                                                    {{ result.gene }} with {{ pe.partner }}</span>
+                                                <span *ngIf="!pe.error && pe.count" class="count"
+                                                      [matTooltip]="pe.count + ' PubMed papers name both; the best ' + pe.papers.length + ' are listed'">
+                                                    {{ pe.count }} {{ pe.count === 1 ? 'paper' : 'papers' }}</span>
+                                            </div>
+                                            <ul class="evidence-list" *ngIf="pe.papers.length">
+                                                <li *ngFor="let e of pe.papers">
+                                                    <div class="evidence-title">
+                                                        <a [href]="pubmedUrl(e.pmid)" target="pubmed">{{ e.title || ('PMID ' + e.pmid) }}</a>
+                                                    </div>
+                                                    <div class="evidence-meta">
+                                                        <span>{{ e.journal }}<ng-container *ngIf="e.year">, {{ e.year }}</ng-container></span>
+                                                        <span>PMID {{ e.pmid }}</span>
+                                                        <a *ngIf="e.pmcid" [href]="pmcUrl(e.pmcid)" target="pmc" class="pmc"
+                                                           matTooltip="Full text in PMC: it can be annotated in Paper2Path">{{ e.pmcid }}</a>
+                                                    </div>
+                                                    <blockquote *ngFor="let s of e.sentences">{{ s }}</blockquote>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </ng-container>
+                                </td>
+                            </tr>
+                            </ng-container>
                         </tbody>
                     </table>
 
@@ -138,23 +218,10 @@
                 </mat-card>
             </ng-container>
 
-            <!-- Relevant Papers: after the pathways, so the curator sees those first -->
-            <mat-card *ngIf="paperQuery" id="relevant_papers" class="section-card" appearance="outlined">
-                <div class="section-head">
-                    <mat-icon>article</mat-icon>
-                    <div>
-                        <h2>Relevant Papers</h2>
-                        <p class="note">Papers about the query gene from PubMed, ranked by how useful they are for a
-                            Reactome annotation. Tick the ones to annotate and start a Paper2Path annotation from them.</p>
-                    </div>
-                </div>
-                <app-gene-papers [query]="paperQuery"></app-gene-papers>
-            </mat-card>
-
             <p class="disclaimer">
                 <mat-icon>info_outline</mat-icon>
-                Predicted pathways are statistical suggestions and the papers are ranked by an LLM: review them before
-                adding anything to Reactome.
+                Predicted pathways are statistical suggestions, and their literature is found by keyword and summarized
+                by an LLM: review them before adding anything to Reactome.
             </p>
         </main>
     </div>

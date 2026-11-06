@@ -686,7 +686,7 @@ The lower panel is the same [instance editor](#9-instance-editor) described abov
 
 Gene2Path (`/gene2path`, opens in a new tab) finds the Reactome pathways a gene is, or could be, annotated in, then the papers to annotate it from. Anyone can open the page, but running it needs a WebBench login: without one, the page shows *"Gene2Path needs a WebBench login. Log in, then come back to this page."* and **Run** is disabled.
 
-**Title:** **Gene2Path**, with the line *"Find the Reactome pathways a gene is, or could be, annotated in, then the papers to annotate it from."* Before the first run, two panels explain what you will get: **Pathways** and **Relevant papers**.
+**Title:** **Gene2Path**, with the line *"Find the Reactome pathways a gene is, or could be, annotated in, then the papers to annotate it from."* Before the first run, two panels explain what you will get: **Pathways** and **Literature**.
 
 ### Basic usage
 
@@ -694,7 +694,7 @@ Gene2Path (`/gene2path`, opens in a new tab) finds the Reactome pathways a gene 
 2. Optionally open **Settings** (`settings`, tooltip **"Edit Configurations"**) before running.
 3. Click **Run** (`publish`, tooltip **"Submit gene for processing"**) or press Enter.
 
-The pathways usually take a few seconds. Meanwhile a progress bar shows *"Finding pathways for …"* with the current step, and the gene field and **Run** are disabled.
+The pathways usually take a few seconds, or up to a minute or two while the predicted pathways' papers are summarized. Meanwhile a progress bar shows *"Finding pathways for …"* with the current step, and the gene field and **Run** are disabled.
 
 ### Settings / configuration
 
@@ -704,6 +704,8 @@ Settings open under the gene field. They only affect the predicted pathways.
 - **Top Partners** (1–50, default 10): how many partners, best score first, the enrichment is run over.
 - **FDR <** (1, 0.05, 0.01, 0.001, 0.0001, 0.00001; default 0.05): only pathways enriched below this are predicted.
 - **Top Pathways** (1–50, default 8): how many predicted pathways are listed.
+- **Papers per Pathway** (0–20, default 5): how many supporting PubMed papers are listed under each predicted pathway; 0 skips the literature search (and with it the summaries).
+- **Summarize the papers** (on by default): has a language model summarize each predicted pathway's papers. Turn it off for a faster run without a language model. Disabled when **Papers per Pathway** is 0.
 - **Reset** (`refresh`) restores defaults.
 
 ### Output
@@ -711,22 +713,15 @@ Settings open under the gene field. They only affect the predicted pathways.
 Results appear as one card per section, with an **On this page** outline on the left that stays in view as you scroll (click an entry to scroll to it; hidden on a narrow window). Each pathway name links to the Reactome Pathway Browser.
 
 - **Annotated Pathways**, with their count: the released human pathways the gene already takes part in. A gene in none shows *"… is not annotated in any released human pathway yet."*
-- **Predicted Pathways**: the pathways enriched among the gene's top functional interaction (FI) partners, lowest FDR first, with the **FDR** and the **Partners in it**. A pathway the gene is already in is marked **already annotated**; the line under the heading says how many are not. A **strong** or **weak** badge says how far to trust the top one (strong: FDR below 1E-3 with at least 2 partners in it; hover for the reason). Under the table, **Interaction partners used** lists the partners with their FI scores. A gene with no partner above the score cutoff, or with no pathway below the FDR cutoff, says so and suggests which setting to change.
-- **Relevant Papers**: the papers worth annotating the gene from (see below).
+- **Predicted Pathways**: the pathways enriched among the gene's top functional interaction (FI) partners, lowest FDR first, with the **FDR** and the **Partners in it**. A pathway the gene is already in is marked **already annotated**; the line under the heading says how many are not. A **strong** or **weak** badge says how far to trust the top one (strong: FDR below 1E-3 with at least 2 partners in it; hover for the reason).
 
-The pathways are computed without a language model: they come from the Reactome database and the FI network. Failures show in a red **Failure** box, for example when the annotation service cannot be reached.
+  Under each predicted pathway is a **summary** (marked `auto_awesome`) of what its papers say about the gene in that pathway: two to four sentences written by a language model from the papers' abstracts, citing them as **PMID** links to PubMed. It only cites papers listed for that pathway, and says so when the papers mention the gene and the pathway together without actually linking them. A pathway with no papers has no summary; one whose summary could not be written says *"The summary could not be written: …"*. Click the **papers** button in a pathway's **Literature** column to open its papers under the summary: each with its title (a link to PubMed), journal, year, PMID, a PMC link when the full text is available, the partners and pathway words it mentions, and the abstract sentences that tie them to the gene.
 
-### Relevant papers
+  Under the table, **Interaction partners used** lists the partners with their FI scores. A gene with no partner above the score cutoff, or with no pathway below the FDR cutoff, says so and suggests which setting to change.
 
-Below the pathways, **Relevant Papers** suggests the papers to annotate the gene from. Submitting a gene starts this search together with the pathway query: Gene2Path searches PubMed for the gene, re-ranks what it finds, and has a language model judge how useful each paper is for a Reactome annotation. It usually takes a minute or two; meanwhile the section shows a progress bar and the current step, such as *"searching PubMed"*.
+The pathways are predicted without a language model: they come from the Reactome database and the FI network. Only the summaries use one. Failures show in a red **Failure** box, for example when the annotation service cannot be reached.
 
-Papers are only searched for a gene symbol, with only letters, digits, dots and dashes (such as `PINK1` or `HLA-A`); anything else is pointed out and not searched.
-
-The papers are listed best first, each with its title (a link to PubMed), PMID, year, a **score** out of 10 for how useful it is, its **evidence type** (`DIRECT`, `INDIRECT`, `INSUFFICIENT` or `NONE`), and one sentence on why. The papers in PubMed Central that the judge found annotatable are ticked; tick or untick any of them. A paper that is not in PubMed Central cannot be ticked (*"Not in PubMed Central: to annotate it, add its PDF in Paper2Path."*).
-
-**Annotate selected** starts one [Paper2Path](#12-paper2path-app) annotation from the ticked papers, with the gene as the focus gene. Gene2Path stays open with its results; follow **Open it in Paper2Path** to go to the annotation, which is also in Paper2Path's **Your annotations** list.
-
-> Gene2Path does **not** write to the curation database. Predicted pathways are statistical suggestions and the papers are ranked by a language model: review them before curating.
+> Gene2Path does **not** write to the curation database. Predicted pathways are statistical suggestions, and their summaries are written by a language model: check the cited papers before curating.
 
 ---
 
