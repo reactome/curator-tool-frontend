@@ -1,0 +1,68 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.filter {
+  flex: 1;
+}
+
+.state-message {
+  margin: 16px 0;
+}
+
+.table-container {
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.reaction-table {
+  width: 100%;
+}
+
+.reaction-row {
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--hover);
+  }
+
+  td {
+    border-bottom-width: 0;
+  }
+}
+
+.expanded-row {
+  background-color: var(--hover);
+}
+
+.detail-row {
+  height: 0;
+}
+
+.detail-cell {
+  padding: 0;
+}
+
+.detail-wrapper {
+  overflow: hidden;
+  padding-left: 48px;
+}
+
+.detail-table {
+  width: auto;
+  margin-bottom: 8px;
+}
+
+.expand-icon,
+.cleavage-icon {
+  color: var(--primary);
+  vertical-align: middle;
+}
+
+.db-id-link {
+  cursor: pointer;
+  text-decoration: underline;
+}

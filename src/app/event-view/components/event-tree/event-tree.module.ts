@@ -1,4 +1,5 @@
 import { NgModule } from '@angular/core';
+import { CdkContextMenuTrigger, CdkMenu, CdkMenuItem } from '@angular/cdk/menu';
 import { CommonModule } from '@angular/common';
 import { EventTreeComponent } from './event-tree.component';
 import { MaterialModule } from '../../../shared/material/material.module';
@@ -25,7 +26,10 @@ import { ClassNameIconComponent } from './class-name-icon/class-name-icon.compon
     MatTooltipModule,
     RouterLink,
     EventFilterComponent,
-    ClassNameIconComponent
+    ClassNameIconComponent,
+    CdkContextMenuTrigger,
+    CdkMenu,
+    CdkMenuItem
   ],
   exports: [MaterialModule, EventTreeComponent]
 })

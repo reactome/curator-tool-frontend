@@ -116,3 +116,29 @@
   margin:0 auto;
 }
 
+
+.event-menu {
+  background: var(--surface2);
+  padding: 0;
+  border: 1px solid var(--outline-variant);
+  border-bottom: 0;
+}
+
+.event-menu-button {
+  font-size: 12px;
+  height: 28px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--outline-variant);
+
+  .mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    color: var(--primary);
+    vertical-align: middle;
+  }
+}
+
+.event-menu-button:hover {
+  background-color: var(--hover);
+}
