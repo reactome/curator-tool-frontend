@@ -822,7 +822,7 @@ How many language-model tokens each step used (reading the paper, merging duplic
 
 ### Refine by chat
 
-Ask about the paper or ask for a change, for example *"Add the damage condition to the Parkin ubiquitination reaction."* Press `Enter` to send, `Shift+Enter` for a new line, and **Stop** to cancel a reply. Tick **About the selected reaction** to ask about the reaction selected in the tabs.
+Ask about the paper or ask for a change, for example *"Add the damage condition to the Parkin ubiquitination reaction."* Press `Enter` to send, `Shift+Enter` for a new line, and **Stop** to cancel a reply. Tick **About the selected reaction** to ask about the reaction selected in the tabs. The assistant's replies are formatted (headings, lists, bold, tables, code and links), as in **Ask the Graph**; your own messages are shown as you typed them.
 
 The assistant only **proposes** edits. Each **Proposed edit** shows why, what it changes, and the quotes behind it (**Show N supporting quotes**). Nothing changes until you click **Accept**; **Reject** discards it. A change to what a reaction is needs a quote from the paper.
 

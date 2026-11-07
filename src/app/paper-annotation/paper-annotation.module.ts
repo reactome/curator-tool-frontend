@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MarkdownPipe } from '../shared/markdown.pipe';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -34,7 +35,7 @@ import { WorkspaceComponent } from './components/workspace/workspace.component';
     ChatPanelComponent, ProposalCardComponent, LoadStagingDialogComponent, UsagePanelComponent, ReactionNetworkComponent
   ],
   imports: [
-    CommonModule, FormsModule, PaperAnnotationRoutingModule, EvidenceListComponent,
+    CommonModule, FormsModule, PaperAnnotationRoutingModule, EvidenceListComponent, MarkdownPipe,
     MatButtonModule, MatCardModule, MatCheckboxModule, MatChipsModule, MatDialogModule, MatDividerModule, MatFormFieldModule,
     MatIconModule, MatInputModule, MatProgressBarModule, MatProgressSpinnerModule, MatSelectModule,
     MatSnackBarModule, MatTabsModule, MatTooltipModule

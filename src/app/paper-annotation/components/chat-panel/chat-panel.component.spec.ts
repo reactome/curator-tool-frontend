@@ -150,6 +150,33 @@ describe('ChatPanelComponent', () => {
     expect(el().textContent).toContain('Stopped.');
   });
 
+  it('renders the assistant\'s markdown, also while it streams, and shows the curator\'s own message as typed', () => {
+    create([{ role: 'user', text: 'Is **PINK1** a kinase?', at: 1, proposal_ids: [] }]);
+    const user = el().querySelector('.turn.user .text')!;
+    expect(user.textContent).toBe('Is **PINK1** a kinase?');
+    expect(user.querySelector('strong')).toBeNull();
+
+    component.draft = 'list them';
+    component.send();
+    emit({ event: 'text', data: { delta: 'Two steps:\n\n- **PINK1** phosphorylates' } });
+    let reply = el().querySelectorAll('.turn.assistant .text.markdown-body');
+    expect(reply.length).toBe(1);
+    expect(reply[0].querySelector('li strong')?.textContent).toBe('PINK1');
+    emit({ event: 'text', data: { delta: ' Ub\n- Parkin binds `pUb`' } });
+    emit({ event: 'done', data: { proposalIds: [] } });
+    reply = el().querySelectorAll('.turn.assistant .text.markdown-body');
+    expect(reply[0].querySelectorAll('li').length).toBe(2);
+    expect(reply[0].querySelector('code')?.textContent).toBe('pUb');
+    expect(el().querySelector('.cursor')).toBeNull();
+  });
+
+  it('shows HTML in a reply as text instead of running it', () => {
+    create([{ role: 'assistant', text: '<img src=x onerror="alert(1)"> <b>bold</b>', at: 1, proposal_ids: [] }]);
+    const reply = el().querySelector('.turn.assistant .text')!;
+    expect(reply.querySelector('img, b')).toBeNull();
+    expect(reply.textContent).toContain('<b>bold</b>');
+  });
+
   it('tells the workspace when a proposal is decided', () => {
     create([{ role: 'assistant', text: 'x', at: 1, proposal_ids: ['p-001'] }], [proposal('p-001')]);
     api.accept.and.returnValue(of({ proposal: proposal('p-001', 'accepted'), reactions: [], nOpenIssues: 0 }));
