@@ -1,3 +1,15 @@
+### Build on November 7, 2026
+
+- Changed: **Paper2Path** now places proteins, genes and RNAs from viruses and other non-human organisms in their own species. Before, they were looked up as human. Such a protein gets its species and is identified in it, so, for example, the KSHV protein LANA is matched to its UniProt entry and named after its gene, LANA1. A note in **Issues** says when an entity was renamed this way. When the organism isn't a Species in Reactome, an issue asks you to set the species and the identifier. Loaded into your staged instances, the annotation follows Reactome's usual way of annotating viruses with a human host. The viral protein and its reference carry the virus as species. A complex with a human part, and every reaction and pathway, is *Homo sapiens*, with the virus as **relatedSpecies**. A complex made only of viral parts is the virus.
+
+- Fixed: in **Paper2Path**, a participant whose identifier couldn't be found was flagged again after every edit you accepted, so its details could read *needs uniprot* many times over. It is now flagged once, and the flag clears as soon as an edit gives it an identifier. Annotations saved before this fix show each flag once when you open them.
+
+- Changed: **Paper2Path** now matches a gene symbol to the gene whose official name it is, even when the same symbol is also another gene's alternative name. For example, SP1 is now the transcription factor SP1, not DAND5, and TRAF2 is TRAF2, not TANK. Before, such a symbol was left unresolved for you to choose. A symbol that names several products of one gene, such as CDKN2A (p16 and p14ARF), is still left for you to choose.
+
+- Added: annotations prepared outside the web page can now appear in **Your annotations** in **Paper2Path**. Large sets of papers can be annotated from the command line on the server and added to your list, where you open, refine and load them like any other annotation.
+
+- Added: an annotation built from many papers can now come with a pathway hierarchy: a top pathway, a pathway for each group of papers, and a pathway for each paper. Proteins and other entities are shared across the papers, and reactions that several papers describe appear once. When every reaction is checked, **Load into staged instances** brings the whole hierarchy in. The **Usage** tab lists the tokens used to combine the papers as **Combining papers (shared reactions)**.
+
 ### Build on November 4, 2026
 
 - Added: **Paper2Path** annotations can be deleted. In **Your annotations**, click the delete button (`delete`) at the end of a row and confirm. The annotation is removed for good, with any PDFs uploaded for it, so you can start the same papers again or clear out ones you no longer need. One that is still running can't be deleted until it finishes.
