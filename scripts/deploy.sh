@@ -21,8 +21,10 @@
 #   5. Checks the deployed index.html and removes the uploaded tarball.
 #
 # If the folder is team-writable, it is written directly. Otherwise unpacking needs sudo on the server, so you are
-# asked for your sudo password there. To make it team-writable (once, on the server):
-#   sudo chgrp -R reactome DIR && sudo chmod -R g+w DIR && sudo find DIR -type d -exec chmod g+s {} +
+# asked for your sudo password there. To make it team-writable (once, on the server; its group is reactome):
+#   sudo find DIR -type d -exec chmod g+ws {} +
+# Only the directories need it: replacing or deleting a file takes write permission on its directory, and GNU tar
+# removes an existing file before writing the new one. g+s makes new files and folders take the reactome group.
 # To roll back: the script prints the backup's path and the command to restore it.
 
 set -euo pipefail
@@ -155,8 +157,8 @@ fi
 # Over the existing folder: never delete and re-create it, and leave .htaccess alone.
 as_owner tar --strip-components=1 --no-same-owner -xzf "$tarball" -C "$target"
 if [ "$direct" = 1 ]; then
-  # What was just unpacked belongs to you, with the archive's 644/755: make it group-writable, or the next
-  # teammate cannot replace it.
+  # What was just unpacked belongs to you. The directories' g+w is what lets a teammate replace it; making your
+  # own files and any folder the build added group-writable too keeps it working where tar would overwrite in place.
   find "$target" -user "$(id -un)" -exec chmod g+w {} + 2>/dev/null || true
 fi
 if [ "$do_prune" = 1 ]; then
