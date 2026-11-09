@@ -17,7 +17,8 @@
 #   3. On the server: saves a backup of the live folder to /tmp, then unpacks the build OVER the folder as the
 #      folder's owner (www-data), with --strip-components=1. The folder is never deleted and re-created (that would
 #      need an apache restart), and .htaccess is never touched (the build has none).
-#   4. Optionally (--prune) removes top-level files the new build no longer has (old hashed bundles).
+#   4. Removes top-level files the new build no longer has: the old hashed bundles (--no-prune keeps them). Only
+#      files directly in the folder, never folders, and never .htaccess. The backup still has them.
 #   5. Checks the deployed index.html and removes the uploaded tarball.
 #
 # If the folder is team-writable, it is written directly. Otherwise unpacking needs sudo on the server, so you are
@@ -34,7 +35,7 @@ TARGET_DIR="${DEPLOY_DIR:-/usr/local/reactomes/Reactome/production/GKB/website/h
 BASE_HREF="/curatortool/"
 BUILD=1
 BACKUP=1
-PRUNE=0
+PRUNE=1
 DRY_RUN=0
 ASSUME_YES=0
 
@@ -48,7 +49,8 @@ Options:
   -s, --server HOST   SSH host name of the server (default: $SERVER; or set DEPLOY_SERVER)
   -d, --dir PATH      folder on the server (default: $TARGET_DIR; or set DEPLOY_DIR)
       --skip-build    deploy what is already in dist/curator-tool-frontend
-      --prune         also remove top-level files the new build no longer has (old hashed .js/.css)
+      --no-prune      keep top-level files the new build no longer has (by default they are removed:
+                      old hashed .js/.css; never folders or .htaccess)
       --no-backup     do not save a backup of the live folder first
   -n, --dry-run       show what would be done, change nothing
   -y, --yes           do not ask for confirmation
@@ -61,7 +63,8 @@ while [[ $# -gt 0 ]]; do
     -s|--server) SERVER="${2:?--server needs a host name}"; shift 2 ;;
     -d|--dir) TARGET_DIR="${2:?--dir needs a path}"; shift 2 ;;
     --skip-build) BUILD=0; shift ;;
-    --prune) PRUNE=1; shift ;;
+    --no-prune) PRUNE=0; shift ;;
+    --prune) PRUNE=1; shift ;;   # the default; still accepted
     --no-backup) BACKUP=0; shift ;;
     -n|--dry-run) DRY_RUN=1; shift ;;
     -y|--yes) ASSUME_YES=1; shift ;;

@@ -22,7 +22,7 @@ Run `ng generate component component-name` to generate a new component. You can 
 
 ## Build
 
-To deploy, run `scripts/deploy.sh` (`-h` for its options). It builds with `--base-href='/curatortool/'`, uploads the build to `aws_curator_new` (`-s HOST` or `DEPLOY_SERVER` for another SSH host name), backs up the live folder, unpacks the build over it as the README describes below (keeping `.htaccess`), and checks the result. `--dry-run` shows the steps without changing anything, and `--prune` also removes old bundle files. If the server folder is writable by the `reactome` group, no sudo password is needed.
+To deploy, run `scripts/deploy.sh` (`-h` for its options). It builds with `--base-href='/curatortool/'`, uploads the build to `aws_curator_new` (`-s HOST` or `DEPLOY_SERVER` for another SSH host name), backs up the live folder, unpacks the build over it as the README describes below (keeping `.htaccess`), and checks the result. `--dry-run` shows the steps without changing anything, and old bundle files the new build no longer has are removed (`--no-prune` keeps them; `.htaccess` is always kept). If the server folder is writable by the `reactome` group, no sudo password is needed.
 
 Run `npm run build` to build the project, create a tarball, and deploy to the remote server. The build artifacts will be stored in the `dist/` directory.
 
