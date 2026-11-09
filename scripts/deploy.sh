@@ -154,8 +154,10 @@ if [ "$do_backup" = 1 ]; then
   if [ "$direct" = 1 ]; then tar czf "$backup" -C "$target" .; else sudo tar czf "$backup" -C "$target" .; sudo chmod 644 "$backup"; fi
   echo "    backup: $backup"
 fi
-# Over the existing folder: never delete and re-create it, and leave .htaccess alone.
-as_owner tar --strip-components=1 --no-same-owner -xzf "$tarball" -C "$target"
+# Over the existing folder: never delete and re-create it, and leave .htaccess alone. --no-overwrite-dir leaves the
+# existing folders as they are: without it tar resets their mode and time from the archive, which a teammate who
+# does not own them may not do (tar then fails), and which would drop the folders' g+ws (team-writable) setting.
+as_owner tar --strip-components=1 --no-same-owner --no-overwrite-dir -xzf "$tarball" -C "$target"
 if [ "$direct" = 1 ]; then
   # What was just unpacked belongs to you. The directories' g+w is what lets a teammate replace it; making your
   # own files and any folder the build added group-writable too keeps it working where tar would overwrite in place.
