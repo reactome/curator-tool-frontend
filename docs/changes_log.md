@@ -1,3 +1,7 @@
+### Build on November 9, 2026
+
+- Fixed: committing a new instance could be refused with an error saying that one of its references "was expected to be" a different kind of instance, for example a literature reference treated as a protein. It could happen after loading reactions from **Paper2Path**, removing some of them, and then creating new instances by hand, especially after logging out and back in without reloading the page. A new instance could be given the same temporary number as one removed earlier, and pick up that removed instance's type. New instances now always get a number nothing else has used, including those loaded from Paper2Path, and a reference always takes the type of the instance it points to. If a commit was refused this way, remove the affected reference from the attribute (in the reported case, a literature reference shown under **literatureReference**), add it again, and commit.
+
 ### Build on November 7, 2026
 
 - Changed: the chat in **Paper2Path** now shows the assistant's replies formatted, as **Ask the Graph** does: headings, bulleted and numbered lists, bold and italic text, tables, code and links, instead of plain text with the markdown symbols showing. The formatting appears as the reply streams in. Your own messages are shown exactly as you typed them.

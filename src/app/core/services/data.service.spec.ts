@@ -1,5 +1,6 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { firstValueFrom, of } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Store, StoreModule } from '@ngrx/store';
@@ -18,7 +19,7 @@ import {
 import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
 import { CommitResultDialogService } from 'src/app/status/components/local-instance-list/commit-result-dialog/commit-result-dialog.service';
 import { Instance, Referrer } from '../models/reactome-instance.model';
-import { DataService } from './data.service';
+import { DataService, NEXT_NEW_DB_ID_STORAGE_KEY } from './data.service';
 import { InstanceUtilities } from './instance.service';
 
 /**
@@ -417,5 +418,46 @@ describe('DataService diagram sync check', () => {
     service.hasPathwayDiagram(-3).subscribe(result => hasDiagram = result);
 
     expect(hasDiagram).toBeFalse(); // http.verify() confirms no request went out
+  });
+});
+
+describe('DataService new dbIds', () => {
+  let service: DataService;
+  let utils: InstanceUtilities;
+
+  beforeEach(() => {
+    localStorage.removeItem(NEXT_NEW_DB_ID_STORAGE_KEY);
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule, RouterTestingModule, StoreModule.forRoot({})],
+      providers: [
+        DataService,
+        InstanceUtilities,
+        { provide: MatDialog, useValue: jasmine.createSpyObj<MatDialog>('MatDialog', ['open']) },
+        { provide: CommitResultDialogService, useValue: jasmine.createSpyObj<CommitResultDialogService>('CommitResultDialogService', ['openDialog']) },
+        { provide: MatchedInstancesDialogService, useValue: jasmine.createSpyObj<MatchedInstancesDialogService>('MatchedInstancesDialogService', ['openDialog']) },
+      ]
+    });
+    service = TestBed.inject(DataService);
+    utils = TestBed.inject(InstanceUtilities);
+  });
+  afterEach(() => localStorage.removeItem(NEXT_NEW_DB_ID_STORAGE_KEY));
+
+  it('claimNewDbIds hands out a block from the shared counter, and the counter carries on below it', async () => {
+    localStorage.setItem(NEXT_NEW_DB_ID_STORAGE_KEY, '-13');
+    expect(await service.claimNewDbIds(3)).toEqual([-13, -14, -15]);
+    expect(localStorage.getItem(NEXT_NEW_DB_ID_STORAGE_KEY)).toBe('-16');
+    expect(await service.getNextNewDbId()).toBe(-16);
+    expect(await service.claimNewDbIds(0)).toEqual([]);
+  });
+
+  it('a new instance never inherits the cached shell of an earlier instance that had its dbId', async () => {
+    localStorage.setItem(NEXT_NEW_DB_ID_STORAGE_KEY, '-5');
+    const stale = utils.getShellInstance({ dbId: -5, displayName: 'LANA1', schemaClassName: 'EntityWithAccessionedSequence' });
+    spyOn(service, 'fetchSchemaClass').and.returnValue(of({ name: 'LiteratureReference' } as any));
+    const created = await firstValueFrom(service.createNewInstance('LiteratureReference'));
+    expect(created.dbId).toBe(-5);
+    const shell = utils.getShellInstance(created);
+    expect(shell).not.toBe(stale);
+    expect(shell.schemaClassName).toBe('LiteratureReference');
   });
 });

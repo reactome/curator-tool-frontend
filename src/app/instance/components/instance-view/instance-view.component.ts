@@ -18,7 +18,7 @@ import { ListInstancesDialogService } from 'src/app/schema-view/list-instances/c
 import { deleteInstances, newInstances, updatedInstances } from '../../state/instance.selectors';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { EvidenceDialogComponent } from 'src/app/paper-annotation/components/evidence-dialog/evidence-dialog.component';
-import { LOADED_SESSION_KEY } from 'src/app/paper-annotation/services/staging';
+import { exportedDbIdOf, LOADED_SESSION_KEY } from 'src/app/paper-annotation/services/staging';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
 import { DeletionService } from '../../deletion-commit/utils/deletion.service';
 import { DeletedInstanceAttributeFilter } from 'src/app/core/instance-view-filters/DeletedInstanceAttributeFilter';
@@ -972,7 +972,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
       return;
     this.dialog.open(EvidenceDialogComponent, {
       width: '720px',
-      data: { sessionId, dbId: this.instance.dbId, title: this.instance.displayName ?? this.title }
+      // A loaded instance was renumbered when it was staged; the service knows it by its exported dbId.
+      data: { sessionId, dbId: exportedDbIdOf(this.instance.dbId), title: this.instance.displayName ?? this.title }
     });
   }
 

@@ -10,7 +10,7 @@ import { UserInstances } from 'src/app/core/models/reactome-instance.model';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
 import { LoadStagingDialogComponent } from '../load-staging-dialog/load-staging-dialog.component';
 import { ReferencePreparer } from '../../services/reference-preparer.service';
-import { CHECKED_REACTIONS_KEY, LOADED_SESSION_KEY, selectReactions } from '../../services/staging';
+import { CHECKED_REACTIONS_KEY, LOADED_DB_IDS_KEY, LOADED_SESSION_KEY, selectReactions } from '../../services/staging';
 
 @Component({
   selector: 'app-workspace',
@@ -175,6 +175,8 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
               this.loading = false;
               this.stagingStale = false;
               localStorage.setItem(LOADED_SESSION_KEY, this.id);
+              // The loaded instances were renumbered; the service finds their evidence by the exported dbIds.
+              localStorage.setItem(LOADED_DB_IDS_KEY, JSON.stringify(Object.fromEntries(r.stagedToExported)));
               const backup = r.backedUp ? ` Your previous ${r.replaced} staged item(s) were backed up${r.backupFile ? ' (' + r.backupFile + ')' : ''}.` : '';
               const mine = [r.keptDefaultPerson ? 'default person' : '', r.keptBookmarks ? `${r.keptBookmarks} bookmark${r.keptBookmarks === 1 ? '' : 's'}` : ''].filter(Boolean);
               const kept = mine.length ? ` Kept as they are: your ${mine.join(' and ')}.` : '';

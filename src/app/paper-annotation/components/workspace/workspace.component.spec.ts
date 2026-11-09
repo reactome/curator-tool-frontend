@@ -7,7 +7,7 @@ import { Subject, of, throwError } from 'rxjs';
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
 import { ExistingMatch, Issue, PaperInfo, Proposal, SessionDetail } from '../../models/llm-api.models';
 import { LlmApiError } from '../../services/llm-api.service';
-import { CHECKED_REACTIONS_KEY, LOADED_SESSION_KEY } from '../../services/staging';
+import { CHECKED_REACTIONS_KEY, LOADED_DB_IDS_KEY, LOADED_SESSION_KEY } from '../../services/staging';
 import { ReferencePreparer } from '../../services/reference-preparer.service';
 import { WorkspaceComponent } from './workspace.component';
 
@@ -59,7 +59,7 @@ describe('WorkspaceComponent', () => {
     snack.open.and.returnValue({ onAction: () => snackAction } as any);
     userInstances = jasmine.createSpyObj('UserInstancesService', ['stagedSummary', 'loadAnnotationInstances']);
     userInstances.stagedSummary.and.returnValue(of({ replaced: 4, keepsDefaultPerson: false, keepsBookmarks: 0 }));
-    userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 4, backedUp: true, backupFile: 'b.json', loaded: 2, keptDefaultPerson: false, keptBookmarks: 0 }));
+    userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 4, backedUp: true, backupFile: 'b.json', loaded: 2, keptDefaultPerson: false, keptBookmarks: 0, stagedToExported: new Map<number, number>() }));
     location = jasmine.createSpyObj('Location', ['prepareExternalUrl']);
     location.prepareExternalUrl.and.callFake((path: string) => `/curatortool${path}`);
     openSpy = spyOn(window, 'open');
@@ -68,11 +68,13 @@ describe('WorkspaceComponent', () => {
     references.prepare.and.callFake((e: any) => of({ exported: e, report: noReferences }));
     component = new WorkspaceComponent(api, route, location, dialog, snack, userInstances, references);
     localStorage.removeItem(LOADED_SESSION_KEY);
+    localStorage.removeItem(LOADED_DB_IDS_KEY);
   };
   const answer = (confirmed: boolean) => dialog.open.and.returnValue({ afterClosed: () => of(confirmed) } as any);
 
   afterEach(() => {
     localStorage.removeItem(LOADED_SESSION_KEY);
+    localStorage.removeItem(LOADED_DB_IDS_KEY);
     localStorage.removeItem(CHECKED_REACTIONS_KEY + 's1');
     localStorage.removeItem(WorkspaceComponent.DETAIL_WIDTH_KEY);
   });
@@ -260,10 +262,18 @@ describe('WorkspaceComponent', () => {
       expect(snack.open.calls.mostRecent().args[0]).toContain('b.json');
     });
 
+    it('remembers which exported dbId each renumbered instance came from, for its evidence', () => {
+      answer(true);
+      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 0, backedUp: false, loaded: 2, keptDefaultPerson: false,
+        keptBookmarks: 0, stagedToExported: new Map([[-41, -5], [-42, -2]]) }));
+      component.loadIntoStaging();
+      expect(JSON.parse(localStorage.getItem(LOADED_DB_IDS_KEY)!)).toEqual({ '-41': -5, '-42': -2 });
+    });
+
     it('tells the curator what was kept, in the dialog and afterwards', () => {
       answer(true);
       userInstances.stagedSummary.and.returnValue(of({ replaced: 4, keepsDefaultPerson: true, keepsBookmarks: 3 }));
-      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 4, backedUp: true, backupFile: 'b.json', loaded: 2, keptDefaultPerson: true, keptBookmarks: 3 }));
+      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 4, backedUp: true, backupFile: 'b.json', loaded: 2, keptDefaultPerson: true, keptBookmarks: 3, stagedToExported: new Map<number, number>() }));
       component.loadIntoStaging();
       expect(dialog.open.calls.mostRecent().args[1]!.data).toEqual(jasmine.objectContaining({ staged: 4, keepsDefaultPerson: true, keepsBookmarks: 3 }));
       expect(snack.open.calls.mostRecent().args[0]).toContain('Kept as they are: your default person and 3 bookmarks.');
@@ -271,10 +281,10 @@ describe('WorkspaceComponent', () => {
 
     it('words a single kept bookmark, and a kept default person alone', () => {
       answer(true);
-      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 0, backedUp: false, loaded: 2, keptDefaultPerson: false, keptBookmarks: 1 }));
+      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 0, backedUp: false, loaded: 2, keptDefaultPerson: false, keptBookmarks: 1, stagedToExported: new Map<number, number>() }));
       component.loadIntoStaging();
       expect(snack.open.calls.mostRecent().args[0]).toContain('Kept as they are: your 1 bookmark.');
-      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 0, backedUp: false, loaded: 2, keptDefaultPerson: true, keptBookmarks: 0 }));
+      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 0, backedUp: false, loaded: 2, keptDefaultPerson: true, keptBookmarks: 0, stagedToExported: new Map<number, number>() }));
       component.loadIntoStaging();
       expect(snack.open.calls.mostRecent().args[0]).toContain('Kept as they are: your default person.');
     });

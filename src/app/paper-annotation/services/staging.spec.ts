@@ -1,6 +1,6 @@
 import { SessionUserInstances } from '../models/llm-api.models';
 import { PINK1_EXPORT } from '../testing/pink1-export.fixture';
-import { selectReactions } from './staging';
+import { exportedDbIdOf, LOADED_DB_IDS_KEY, renumberNewInstances, selectReactions } from './staging';
 
 /** Loading only the reactions a curator checked, cut out of a real export (Kane et al. 2014, PINK1). */
 describe('selectReactions', () => {
@@ -102,5 +102,48 @@ describe('selectReactions', () => {
 
   it('ignores a dbId that is not in the export', () => {
     expect(selectReactions(exported(), [-99999]).newInstances).toEqual([]);
+  });
+});
+
+describe('renumberNewInstances', () => {
+  const exported = (): SessionUserInstances => JSON.parse(JSON.stringify(PINK1_EXPORT));
+  type Raw = { dbId: number; schemaClassName: string; attributes?: Record<string, any> };
+  const refs = (i: Raw): { dbId: number }[] =>
+    Object.entries(i.attributes ?? {}).filter(([k]) => k !== 'dbId').flatMap(([, v]) => (Array.isArray(v) ? v : [v]))
+      .filter(x => x && typeof x === 'object' && typeof x.dbId === 'number');
+
+  it('gives every new instance a fresh dbId and keeps the load self-contained', () => {
+    const e = exported();
+    const news = e.newInstances as unknown as Raw[];
+    const fresh = news.map((_, k) => -1000 - k);
+    const { payload, stagedToExported } = renumberNewInstances(e, fresh);
+    const out = payload.newInstances as unknown as Raw[];
+    const ids = new Set(out.map(i => i.dbId));
+    expect([...ids].sort()).toEqual([...fresh].sort());
+    for (const i of out) {
+      if (i.attributes?.['dbId'] !== undefined) expect(i.attributes['dbId']).withContext('attributes.dbId').toBe(i.dbId);
+      for (const r of refs(i)) {
+        if (r.dbId < 0) expect(ids.has(r.dbId)).withContext(`a reference to ${r.dbId}`).toBeTrue();
+      }
+    }
+    // each staged dbId maps back to the exported one, which the service finds evidence by
+    news.forEach((i, k) => expect(stagedToExported.get(fresh[k])).toBe(i.dbId));
+    expect(e).toEqual(exported());                                         // the export is not changed
+  });
+
+  it('refuses to run short of dbIds', () => {
+    expect(() => renumberNewInstances(exported(), [-1])).toThrowError(/dbIds needed/);
+  });
+});
+
+describe('exportedDbIdOf', () => {
+  afterEach(() => localStorage.removeItem(LOADED_DB_IDS_KEY));
+
+  it('finds the exported dbId of a renumbered instance, and falls back to the staged one', () => {
+    localStorage.setItem(LOADED_DB_IDS_KEY, JSON.stringify({ '-41': -1, '-42': -2 }));
+    expect(exportedDbIdOf(-42)).toBe(-2);
+    expect(exportedDbIdOf(-7)).toBe(-7);                                   // not from the last load
+    localStorage.setItem(LOADED_DB_IDS_KEY, 'not json');
+    expect(exportedDbIdOf(-42)).toBe(-42);
   });
 });

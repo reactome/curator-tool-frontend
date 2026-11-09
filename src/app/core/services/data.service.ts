@@ -19,6 +19,12 @@ import { DiagramSyncReport } from "../models/diagram-sync.model";
 import { ActivatedRoute, Router, UrlSegmentGroup } from "@angular/router";
 import { saveReturnUrl } from "./session-url";
 
+/**
+ * localStorage key of the negative dbId counter every tab shares (see DataService.getNextNewDbId). Exported so a
+ * logout can keep it through localStorage.clear(): see UserInstancesService.persistInstances.
+ */
+export const NEXT_NEW_DB_ID_STORAGE_KEY = 'nextNewDbId';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -81,7 +87,7 @@ export class DataService {
   // Seed value used the very first time this browser ever hands out a negative dbId,
   // i.e. before localStorage[nextNewDbIdStorageKey] has been written.
   private readonly initialNextNewDbId = -1;
-  private readonly nextNewDbIdStorageKey = 'nextNewDbId';
+  private readonly nextNewDbIdStorageKey = NEXT_NEW_DB_ID_STORAGE_KEY;
   private readonly nextNewDbIdLockName = 'nextNewDbIdLock';
   // The root class is cached for performance
   private rootClass: SchemaClass | undefined;
@@ -678,6 +684,17 @@ export class DataService {
    * queues automatically if another tab holds it, and is released by the browser as soon as
    * the callback settles - including if the holding tab is closed or crashes mid-request -
    * so there is no manual unlock/cleanup-on-close logic to get wrong.
+   *
+   * The counter must also never go back up while anything in any open tab may still hold one of
+   * the dbIds it handed out - a discarded new instance lives on in InstanceUtilities.shellInstances
+   * and in the referrers that point at it. 2026-11-09: a logout's localStorage.clear() wiped it, the
+   * next new instances started again at -1 in a tab that was never reloaded, and a new
+   * LiteratureReference was given -5, the dbId of an EWAS loaded from Paper2Path and discarded
+   * earlier. It inherited the EWAS's cached shell (class EntityWithAccessionedSequence), so after
+   * the reference was committed the reaction citing it was sent claiming the new
+   * LiteratureReference was an EWAS, and the server refused the commit
+   * (DatabaseObjectTypeMismatchException). So the logout keeps this key, a Paper2Path load draws
+   * its dbIds from here (claimNewDbIds), and createNewInstance drops any stale shell for the dbId.
    */
   async getNextNewDbId(): Promise<number> {
     const claim = () => {
@@ -692,6 +709,22 @@ export class DataService {
       // tab could in theory still collide.
       return claim();
     }
+    return navigator.locks.request(this.nextNewDbIdLockName, async () => claim());
+  }
+
+  /**
+   * Claim `count` new dbIds at once, under the same lock as getNextNewDbId: for instances that arrive
+   * with dbIds of their own (a Paper2Path load), which must not be trusted to be unused here.
+   * Returns them in the order handed out (-n, -n-1, ...).
+   */
+  async claimNewDbIds(count: number): Promise<number[]> {
+    if (count <= 0) return [];
+    const claim = () => {
+      const first = this.readSharedNextNewDbId();
+      localStorage.setItem(this.nextNewDbIdStorageKey, String(first - count));
+      return Array.from({ length: count }, (_, k) => first - k);
+    };
+    if (typeof navigator === 'undefined' || !navigator.locks) return claim();
     return navigator.locks.request(this.nextNewDbIdLockName, async () => claim());
   }
 
@@ -732,6 +765,9 @@ export class DataService {
     return this.fetchSchemaClass(schemaClassName).pipe(
       switchMap((schemaClass: SchemaClass) => from(this.getNextNewDbId()).pipe(
         map((dbId: number) => {
+          // Whatever this tab still holds under this dbId belongs to an earlier, discarded instance
+          // (see getNextNewDbId); the new instance must not inherit its cached shell.
+          this.utils.forgetNewDbId(dbId);
           const attributes = new Map();
           attributes.set('dbId', dbId);
           attributes.set('displayName', NEW_DISPLAY_NAME);
