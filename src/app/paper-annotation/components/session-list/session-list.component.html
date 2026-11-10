@@ -23,16 +23,28 @@
         <section class="field-group pdfs">
           <input #fileInput type="file" accept="application/pdf,.pdf" multiple hidden (change)="onFilesChosen($event)">
           <button mat-stroked-button type="button" (click)="fileInput.click()"><mat-icon>upload_file</mat-icon> Add PDFs</button>
-          <p class="hint">For papers that are not in PubMed Central. Up to 50 MB each. Tick "Review" for a review article: Reactome needs direct evidence, so a research paper keeps only the reactions its own results show, while a review also keeps the ones it cites.</p>
+          <p class="hint">For papers that are not in PubMed Central. Up to 50 MB each. Tick "Review" for a review article: Reactome needs direct evidence, so a research paper keeps only the reactions its own results show, while a review also keeps the ones it cites. Each PDF's PubMed ID is looked up for you: with it, the reactions cite the paper.</p>
           <ul class="files" *ngIf="files.length" aria-label="PDFs to annotate">
             <li *ngFor="let f of files; let i = index">
-              <mat-icon class="file-icon">description</mat-icon>
-              <span class="file-name">{{ f.name }}</span>
-              <mat-checkbox class="file-review" [checked]="reviews.has(f)" (change)="setReview(f, $event.checked)"
-                            [attr.aria-label]="f.name + ' is a review article'">Review</mat-checkbox>
-              <button mat-icon-button type="button" (click)="removeFile(i)" [attr.aria-label]="'Remove ' + f.name"><mat-icon>close</mat-icon></button>
+              <div class="file-row">
+                <mat-icon class="file-icon">description</mat-icon>
+                <span class="file-name">{{ f.name }}</span>
+                <mat-checkbox class="file-review" [checked]="reviews.has(f)" (change)="setReview(f, $event.checked)"
+                              [attr.aria-label]="f.name + ' is a review article'">Review</mat-checkbox>
+                <button mat-icon-button type="button" (click)="removeFile(i)" [attr.aria-label]="'Remove ' + f.name"><mat-icon>close</mat-icon></button>
+              </div>
+              <div class="file-pmid">
+                <mat-form-field appearance="outline" subscriptSizing="dynamic" class="file-pmid-field">
+                  <mat-label>PubMed ID</mat-label>
+                  <input matInput [ngModel]="pdfIds.get(f)?.pmid ?? ''" (ngModelChange)="setPdfPmid(f, $event)"
+                         [ngModelOptions]="{ standalone: true }" inputmode="numeric" [attr.aria-label]="'PubMed ID of ' + f.name">
+                </mat-form-field>
+                <mat-spinner *ngIf="pdfIds.get(f)?.status === 'checking'" diameter="16"></mat-spinner>
+                <span class="file-pmid-note" [class.found]="pdfIds.get(f)?.status === 'found'">{{ pdfIdNote(f) }}</span>
+              </div>
             </li>
           </ul>
+          <p class="invalid" *ngIf="!pdfPmidsValid" role="alert">A PDF's PubMed ID must be a number (up to 9 digits), or left empty.</p>
         </section>
 
         <section class="field-group">

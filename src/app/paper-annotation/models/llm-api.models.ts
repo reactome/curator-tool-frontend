@@ -67,7 +67,22 @@ export interface PaperInfo {
 
 /** "PMID 24751536" or the PDF's file name. */
 export function paperLabel(p: PaperInfo): string {
-  return p.kind === 'pmid' ? `PMID ${p.pmid ?? p.name}` : p.name;
+  if (p.kind === 'pmid') return `PMID ${p.pmid ?? p.name}`;
+  return p.pmid ? `${p.name} (PMID ${p.pmid})` : p.name;
+}
+
+/**
+ * What the service found for a PDF (POST /papers/identify, or /sessions/{id}/papers/identify for one already uploaded):
+ * the PubMed ID of its article, by the DOI on its first pages or by its title. A suggestion for the curator to keep,
+ * edit or clear; `note` says why nothing was found (not in PubMed, a preprint, PubMed unreachable).
+ */
+export interface PaperIdentity {
+  found: boolean;
+  pmid?: string;
+  title?: string;
+  method?: 'doi' | 'title';
+  doi?: string | null;
+  note?: string;
 }
 
 /**

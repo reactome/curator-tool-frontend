@@ -47,7 +47,8 @@ describe('WorkspaceComponent', () => {
   const loadedIds = () => (userInstances.loadAnnotationInstances.calls.mostRecent().args[0].newInstances as any[]).map(i => i.dbId);
 
   const make = () => {
-    api = jasmine.createSpyObj('LlmApiService', ['session', 'issues', 'existing', 'exportInstances', 'proposals']);
+    api = jasmine.createSpyObj('LlmApiService', ['session', 'issues', 'existing', 'exportInstances', 'proposals',
+                                                 'identifySessionPaper', 'setPaperPmid']);
     api.session.and.returnValue(of(session('ready')));
     api.issues.and.returnValue(of([issue('i1', 'r0', 'action'), issue('i2', 'r0', 'warning'), issue('i3', 'r1', 'info', 'dismissed')]));
     api.existing.and.returnValue(of([match('r1', 'same'), match('r0', 'similar')]));
@@ -112,6 +113,48 @@ describe('WorkspaceComponent', () => {
     expect(component.title).toBe('3 papers');
     expect(component.papers.map(component.paperLabel)).toEqual(['PMID 24751536', 'clock.pdf', 'PMID 29168502']);
   });
+
+  it('gives an uploaded PDF its PubMed ID: finds it in PubMed for the curator to check, saves it, and re-reads everything', fakeAsync(() => {
+    make();
+    const pdf: PaperInfo = { source: 'ab12_tp53.pdf', kind: 'pdf', pmid: null, name: 'tp53.pdf' };
+    component.id = 's1';                                                   // set from the route by ngOnInit
+    component.session = { ...session('ready'), pmid: null, source: 'tp53.pdf', papers: [pdf] };
+    expect(component.title).toBe('tp53.pdf');
+    expect(component.pdfPapers).toEqual([pdf]);
+    component.editPmid(pdf);
+    expect(component.editingPmid).toBe('ab12_tp53.pdf');
+    api.identifySessionPaper.and.returnValue(of({ found: true, pmid: '33824975', title: 'Intact TP-53 function', method: 'doi' }));
+    component.findPmid(pdf);
+    expect(api.identifySessionPaper).toHaveBeenCalledWith('s1', 'ab12_tp53.pdf');
+    expect(component.pmidDraft).toBe('33824975');                          // offered, not saved
+    expect(component.pmidNote).toContain('Found by its DOI: Intact TP-53 function');
+    expect(api.setPaperPmid).not.toHaveBeenCalled();
+    component.pmidDraft = '33x';
+    expect(component.pmidDraftValid).toBeFalse();
+    component.savePmid(pdf);
+    expect(api.setPaperPmid).not.toHaveBeenCalled();
+    component.pmidDraft = '33824975';
+    api.setPaperPmid.and.returnValue(of({ papers: [{ ...pdf, pmid: '33824975' }], title: 'Intact TP-53 function' }));
+    const reload = spyOn(component, 'reload');
+    component.savePmid(pdf);
+    expect(api.setPaperPmid).toHaveBeenCalledWith('s1', 'ab12_tp53.pdf', '33824975');
+    expect(component.editingPmid).toBeNull();
+    expect(reload).toHaveBeenCalled();
+    component.session = { ...session('ready'), pmid: '33824975', source: 'tp53.pdf', papers: [{ ...pdf, pmid: '33824975' }] };
+    expect(component.title).toBe('tp53.pdf (PMID 33824975)');
+  }));
+
+  it('shows why a PubMed ID could not be saved, and keeps the editor open', fakeAsync(() => {
+    make();
+    const pdf: PaperInfo = { source: 'ab12_x.pdf', kind: 'pdf', pmid: null, name: 'x.pdf' };
+    component.session = { ...session('ready'), papers: [pdf] };
+    component.editPmid(pdf);
+    component.pmidDraft = '999';
+    api.setPaperPmid.and.returnValue(throwError(() => new LlmApiError(422, 'PubMed has no record of PMID 999')));
+    component.savePmid(pdf);
+    expect(component.editingPmid).toBe('ab12_x.pdf');
+    expect(component.pmidNote).toBe('PubMed has no record of PMID 999');
+  }));
 
   it('stops at a failed session and shows nothing to review', fakeAsync(() => {
     make();

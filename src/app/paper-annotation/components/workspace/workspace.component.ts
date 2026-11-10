@@ -90,7 +90,63 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     const s = this.session;
     if (!s) return '';
     if (this.papers.length > 1 || (s.n_papers ?? 1) > 1) return `${s.n_papers ?? this.papers.length} papers`;
+    if (this.papers.length === 1) return paperLabel(this.papers[0]);
     return s.pmid ? `PMID ${s.pmid}` : s.source;
+  }
+
+  // ── an uploaded PDF's PubMed ID ────────────────────────────────────────
+  /** The PDF whose PubMed ID is being edited (its source), the ID as typed, and what Find / Save said. */
+  editingPmid: string | null = null;
+  pmidDraft = '';
+  pmidNote = '';
+  pmidBusy = false;
+
+  /** The uploaded PDFs of this annotation: each can be given its PubMed ID, so its reactions cite the paper. */
+  get pdfPapers(): PaperInfo[] {
+    return this.papers.filter(p => p.kind === 'pdf');
+  }
+
+  editPmid(p: PaperInfo): void {
+    this.editingPmid = p.source;
+    this.pmidDraft = p.pmid ?? '';
+    this.pmidNote = '';
+  }
+
+  cancelPmid(): void {
+    this.editingPmid = null;
+    this.pmidNote = '';
+  }
+
+  /** Look for the PDF's PubMed ID (its DOI, then its title) and put it in the field to check before saving. */
+  findPmid(p: PaperInfo): void {
+    this.pmidBusy = true;
+    this.pmidNote = 'Looking for it in PubMed…';
+    this.api.identifySessionPaper(this.id, p.source).subscribe({
+      next: r => {
+        this.pmidBusy = false;
+        if (r.found && r.pmid) {
+          this.pmidDraft = r.pmid;
+          this.pmidNote = `Found ${r.method === 'doi' ? 'by its DOI' : 'by its title'}: ${r.title}. Check it, then Save.`;
+        } else {
+          this.pmidNote = `Not found: ${r.note ?? 'no match in PubMed'}.`;
+        }
+      },
+      error: (e: LlmApiError) => { this.pmidBusy = false; this.pmidNote = e.message; }
+    });
+  }
+
+  get pmidDraftValid(): boolean {
+    return /^(\d{1,9})?$/.test(this.pmidDraft.trim());
+  }
+
+  /** Save the PubMed ID (empty removes it): the reactions from that PDF then cite the paper; everything is re-read. */
+  savePmid(p: PaperInfo): void {
+    if (!this.pmidDraftValid) return;
+    this.pmidBusy = true;
+    this.api.setPaperPmid(this.id, p.source, this.pmidDraft.trim()).subscribe({
+      next: () => { this.pmidBusy = false; this.editingPmid = null; this.pmidNote = ''; this.reload(); },
+      error: (e: LlmApiError) => { this.pmidBusy = false; this.pmidNote = e.message; }
+    });
   }
 
   get openIssues(): Issue[] {

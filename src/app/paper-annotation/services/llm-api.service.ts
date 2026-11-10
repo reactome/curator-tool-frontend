@@ -4,7 +4,7 @@ import { Observable, firstValueFrom, switchMap, takeWhile, throwError, timer, ca
 import { environment } from 'src/environments/environment.dev';
 import { TokenRefreshService } from 'src/app/core/services/token-refresh.service';
 import {
-  AcceptResponse, ChatEvent, ExistingMatch, GeneSearchResult, InstanceEvidence, Issue, IssueStatus, Job, Network, Passage, Proposal,
+  AcceptResponse, ChatEvent, ExistingMatch, GeneSearchResult, InstanceEvidence, Issue, IssueStatus, Job, Network, PaperIdentity, PaperInfo, Passage, Proposal,
   ProposalRequest, QAResult, ReactionDetail, SessionDetail, SessionSummary, SessionUserInstances, StartResponse, StoredChatMessage,
   UsageReport
 } from '../models/llm-api.models';
@@ -73,7 +73,8 @@ export class LlmApiService {
    * it only cites from earlier work, while a research paper keeps only what its own results show (Reactome needs
    * direct evidence). Every other PDF is research; the service reads each PubMed ID's kind from PubMed.
    */
-  startPapers(pmids: string[], files: File[], focus?: string, reviews: File[] = []): Observable<StartResponse> {
+  startPapers(pmids: string[], files: File[], focus?: string, reviews: File[] = [],
+              pdfPmids: Map<File, string> = new Map()): Observable<StartResponse> {
     if (!files.length) {
       const body = pmids.length === 1 ? { pmid: pmids[0], focus: focus || null } : { pmids, focus: focus || null };
       return this.call(() => this.http.post<StartResponse>(this.url('/sessions'), body));
@@ -84,8 +85,31 @@ export class LlmApiService {
       if (pmids.length) form.append('pmids', pmids.join(' '));
       if (focus) form.append('focus', focus);
       reviews.filter(f => files.includes(f)).forEach(f => form.append('review_files', f.name));
+      const ids: Record<string, string> = {};
+      files.forEach(f => { const id = (pdfPmids.get(f) ?? '').trim(); if (id) ids[f.name] = id; });
+      if (Object.keys(ids).length) form.append('pdf_pmids', JSON.stringify(ids));
       return this.http.post<StartResponse>(this.url('/sessions/upload'), form);
     });
+  }
+
+  /** The PubMed ID of the article in a PDF, before it is uploaded for annotation (the PDF is not kept). */
+  identifyPaper(file: File): Observable<PaperIdentity> {
+    return this.call(() => {
+      const form = new FormData();
+      form.append('file', file, file.name);
+      return this.http.post<PaperIdentity>(this.url('/papers/identify'), form);
+    });
+  }
+
+  /** The same, for a PDF already uploaded in an annotation (one made before its PubMed ID was known). */
+  identifySessionPaper(id: string, source: string): Observable<PaperIdentity> {
+    return this.call(() => this.http.post<PaperIdentity>(this.url(`/sessions/${id}/papers/identify`), { source }));
+  }
+
+  /** Give an uploaded PDF its PubMed ID (or change it; '' removes it): its reactions then cite that paper. */
+  setPaperPmid(id: string, source: string, pmid: string): Observable<{ papers: PaperInfo[]; title: string | null }> {
+    return this.call(() => this.http.put<{ papers: PaperInfo[]; title: string | null }>(
+      this.url(`/sessions/${id}/papers/pmid`), { source, pmid }));
   }
 
   /**

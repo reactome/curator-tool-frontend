@@ -9,6 +9,27 @@
       <ul class="papers" *ngIf="papers.length > 1" aria-label="Papers in this annotation">
         <li *ngFor="let p of papers">{{ paperLabel(p) }}<span *ngIf="p.review" class="kind"> · review</span></li>
       </ul>
+      <ul class="pdf-ids" *ngIf="session.status === 'ready' && pdfPapers.length" aria-label="PubMed IDs of the uploaded PDFs">
+        <li *ngFor="let p of pdfPapers">
+          <span class="pdf-name" *ngIf="pdfPapers.length > 1 || papers.length > 1">{{ p.name }}:</span>
+          <ng-container *ngIf="editingPmid !== p.source; else editor">
+            <span *ngIf="p.pmid" class="pdf-pmid">PMID {{ p.pmid }}</span>
+            <span *ngIf="!p.pmid" class="pdf-no-pmid" matTooltip="Its reactions have no literature reference until it has one">no PubMed ID</span>
+            <button mat-button type="button" class="pdf-pmid-edit" (click)="editPmid(p)">{{ p.pmid ? 'Change' : 'Set PubMed ID' }}</button>
+          </ng-container>
+          <ng-template #editor>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="pdf-pmid-field">
+              <mat-label>PubMed ID</mat-label>
+              <input matInput [(ngModel)]="pmidDraft" [ngModelOptions]="{ standalone: true }" inputmode="numeric"
+                     [attr.aria-label]="'PubMed ID of ' + p.name" (keydown.enter)="savePmid(p)">
+            </mat-form-field>
+            <button mat-button type="button" (click)="findPmid(p)" [disabled]="pmidBusy">Find in PubMed</button>
+            <button mat-flat-button color="primary" type="button" (click)="savePmid(p)" [disabled]="pmidBusy || !pmidDraftValid">Save</button>
+            <button mat-button type="button" (click)="cancelPmid()" [disabled]="pmidBusy">Cancel</button>
+            <span class="pdf-pmid-note" *ngIf="pmidNote || !pmidDraftValid">{{ pmidDraftValid ? pmidNote : 'A PubMed ID is a number (empty removes it).' }}</span>
+          </ng-template>
+        </li>
+      </ul>
     </div>
     <span class="spacer"></span>
     <!-- the tooltip sits on a wrapper because a disabled button shows none -->

@@ -70,3 +70,9 @@ h1 { margin: 8px 0; font-size: 22px; font-weight: 500; }
   .suggestion { margin-bottom: 16px; }
   h3 { margin: 0 0 6px; font-size: 14px; font-weight: 500; }
 }
+
+.pdf-ids { list-style: none; margin: 2px 0 0; padding: 0; width: 100%; font-size: 13px; color: #555; }
+.pdf-ids li { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.pdf-no-pmid { color: #9a5b00; }
+.pdf-pmid-field { width: 130px; }
+.pdf-pmid-note { font-size: 12px; color: #555; flex-basis: 100%; }

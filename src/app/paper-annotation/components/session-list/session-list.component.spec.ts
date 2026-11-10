@@ -23,7 +23,9 @@ describe('SessionListComponent', () => {
   afterEach(() => sessionStorage.removeItem('paper2path.geneSearch'));
 
   const create = (sessions: SessionSummary[] | Error = []) => {
-    api = jasmine.createSpyObj('LlmApiService', ['sessions', 'startPapers', 'findPapersByGene', 'pollGeneSearch', 'deleteSession']);
+    api = jasmine.createSpyObj('LlmApiService', ['sessions', 'startPapers', 'findPapersByGene', 'pollGeneSearch', 'deleteSession',
+                                                 'identifyPaper']);
+    api.identifyPaper.and.returnValue(of({ found: false, note: 'nothing matched' }));
     api.sessions.and.returnValue(sessions instanceof Error ? throwError(() => sessions) : of(sessions));
     api.pollGeneSearch.and.returnValue(NEVER);                     // a search resumed on entry just keeps running
     router = jasmine.createSpyObj('Router', ['navigate']);
@@ -87,7 +89,7 @@ describe('SessionListComponent', () => {
     component.pmids = ' 24751536 ';
     component.focus = ' PINK1 ';
     component.start();
-    expect(api.startPapers).toHaveBeenCalledWith(['24751536'], [], 'PINK1', []);
+    expect(api.startPapers).toHaveBeenCalledWith(['24751536'], [], 'PINK1', [], new Map());
     expect(router.navigate).toHaveBeenCalledWith(['s9'], { relativeTo: jasmine.anything() });
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
@@ -100,7 +102,7 @@ describe('SessionListComponent', () => {
     expect(component.pmidList).toEqual(['24751536', '29168502', '1234567']);
     expect(component.summary).toBe('3 PubMed IDs');
     component.start();
-    expect(api.startPapers).toHaveBeenCalledWith(['24751536', '29168502', '1234567'], [], undefined, []);   // no focus when blank
+    expect(api.startPapers).toHaveBeenCalledWith(['24751536', '29168502', '1234567'], [], undefined, [], new Map());   // no focus when blank
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
 
@@ -123,7 +125,7 @@ describe('SessionListComponent', () => {
     component.pmids = '24751536';
     expect(component.summary).toBe('2 PDFs + 1 PubMed ID');
     component.start();
-    expect(api.startPapers).toHaveBeenCalledWith(['24751536'], [b, a], undefined, []);
+    expect(api.startPapers).toHaveBeenCalledWith(['24751536'], [b, a], undefined, [], new Map());
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
 
@@ -141,7 +143,49 @@ describe('SessionListComponent', () => {
     component.setReview(a, false);
     component.removeFile(2);
     component.start();
-    expect(api.startPapers).toHaveBeenCalledWith([], [a, r], undefined, [r]);
+    expect(api.startPapers).toHaveBeenCalledWith([], [a, r], undefined, [r], new Map());
+    component.ngOnDestroy(); discardPeriodicTasks();
+  }));
+
+  it('looks up each added PDF in PubMed, keeps or replaces the ID as the curator edits it, and sends it with the PDF', fakeAsync(() => {
+    create();
+    tick(0);
+    const found = new Subject<any>();
+    api.identifyPaper.and.returnValues(found, of({ found: false, note: 'nothing matched' }));
+    api.startPapers.and.returnValue(of({ sessionId: 's5', jobId: 'j5' }));
+    const a = new File(['%PDF-a'], 'tp53.pdf', { type: 'application/pdf' });
+    const b = new File(['%PDF-b'], 'preprint.pdf', { type: 'application/pdf' });
+    component.onFilesChosen({ target: { files: [a, b], value: 'x' } } as unknown as Event);
+    expect(api.identifyPaper).toHaveBeenCalledTimes(2);
+    expect(component.pdfIds.get(a)?.status).toBe('checking');
+    expect(component.pdfIdNote(b)).toContain('Not found in PubMed');
+    found.next({ found: true, pmid: '33824975', title: 'Intact TP-53 function', method: 'doi' });
+    expect(component.pdfIds.get(a)?.pmid).toBe('33824975');
+    expect(component.pdfIdNote(a)).toBe('Found by its DOI: Intact TP-53 function');
+    fixture.detectChanges();
+    expect(el().querySelector('.file-pmid-note.found')?.textContent).toContain('Found by its DOI');
+    component.setPdfPmid(b, '12x');                                  // not a number: Annotate is disabled
+    expect(component.pdfPmidsValid).toBeFalse();
+    expect(component.canStart).toBeFalse();
+    component.setPdfPmid(b, '');
+    component.start();
+    expect(api.startPapers).toHaveBeenCalledWith([], [a, b], undefined, [], new Map([[a, '33824975']]));
+    component.ngOnDestroy(); discardPeriodicTasks();
+  }));
+
+  it('keeps an ID the curator typed before the lookup answered, and forgets a removed PDF', fakeAsync(() => {
+    create();
+    tick(0);
+    const found = new Subject<any>();
+    api.identifyPaper.and.returnValue(found);
+    const a = new File(['%PDF-a'], 'a.pdf', { type: 'application/pdf' });
+    component.onFilesChosen({ target: { files: [a], value: 'x' } } as unknown as Event);
+    component.setPdfPmid(a, '111');
+    found.next({ found: true, pmid: '222', title: 'Other', method: 'title' });
+    expect(component.pdfIds.get(a)?.pmid).toBe('111');
+    expect(component.pdfIdNote(a)).toBe('Found by its title: PMID 222, Other');
+    component.removeFile(0);
+    expect(component.pdfIds.has(a)).toBeFalse();
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
 

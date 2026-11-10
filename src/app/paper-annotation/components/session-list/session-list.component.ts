@@ -1,11 +1,18 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, Subject, Subscription, catchError, filter, of, switchMap, takeUntil, tap, timer } from 'rxjs';
-import { CandidatePaper, GeneSearchResult, SessionSummary, StartResponse } from '../../models/llm-api.models';
+import { CandidatePaper, GeneSearchResult, PaperIdentity, SessionSummary, StartResponse } from '../../models/llm-api.models';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
 
 /** sessionStorage key for the gene search this tab is running or showing: { jobId, gene }. */
 const GENE_SEARCH_KEY = 'paper2path.geneSearch';
+
+/** A chosen PDF's PubMed ID: what the service found in it (or did not), and the ID as the curator leaves it. */
+export interface PdfId {
+  pmid: string;
+  status: 'checking' | 'found' | 'none' | 'error';
+  found?: PaperIdentity;
+}
 
 @Component({
   selector: 'app-session-list',
@@ -30,6 +37,11 @@ export class SessionListComponent implements OnInit, OnDestroy {
   files: File[] = [];
   /** The PDFs ticked as review articles: they keep the reactions they only cite (research keeps only its own results). */
   reviews = new Set<File>();
+  /**
+   * Each PDF's PubMed ID. The service looks for it as soon as a PDF is added (DOI, then title); the curator keeps,
+   * edits or clears it. With one, the PDF's reactions cite the paper and PubMed says whether it is a review.
+   */
+  pdfIds = new Map<File, PdfId>();
   starting = false;
 
   /** Gene -> papers: the symbol as typed, then the running search, then its candidates to pick from. */
@@ -102,8 +114,13 @@ export class SessionListComponent implements OnInit, OnDestroy {
     return this.pmidList.length + this.files.length;
   }
 
+  /** Every PDF's PubMed ID is empty or a number. */
+  get pdfPmidsValid(): boolean {
+    return this.files.every(f => /^(\d{1,9})?$/.test((this.pdfIds.get(f)?.pmid ?? '').trim()));
+  }
+
   get canStart(): boolean {
-    return this.paperCount > 0 && this.pmidsValid && !this.starting;
+    return this.paperCount > 0 && this.pmidsValid && this.pdfPmidsValid && !this.starting;
   }
 
   /** "2 PDFs + 1 PubMed ID" */
@@ -118,14 +135,54 @@ export class SessionListComponent implements OnInit, OnDestroy {
   onFilesChosen(event: Event): void {
     const input = event.target as HTMLInputElement;
     for (const f of Array.from(input.files ?? [])) {
-      if (!this.files.some(x => x.name === f.name && x.size === f.size && x.lastModified === f.lastModified)) this.files.push(f);
+      if (!this.files.some(x => x.name === f.name && x.size === f.size && x.lastModified === f.lastModified)) {
+        this.files.push(f);
+        this.identify(f);
+      }
     }
     input.value = '';
+  }
+
+  /** Ask the service for the PDF's PubMed ID; an ID the curator typed meanwhile is kept. */
+  private identify(file: File): void {
+    this.pdfIds.set(file, { pmid: '', status: 'checking' });
+    this.api.identifyPaper(file).pipe(takeUntil(this.destroy$)).subscribe({
+      next: r => {
+        const cur = this.pdfIds.get(file);
+        if (!cur) return;                                   // removed meanwhile
+        const typed = cur.pmid.trim();
+        this.pdfIds.set(file, { pmid: typed || (r.found ? r.pmid ?? '' : ''), status: r.found ? 'found' : 'none', found: r });
+      },
+      error: () => {
+        const cur = this.pdfIds.get(file);
+        if (cur) this.pdfIds.set(file, { ...cur, status: 'error' });
+      }
+    });
+  }
+
+  setPdfPmid(file: File, pmid: string): void {
+    const cur = this.pdfIds.get(file) ?? { pmid: '', status: 'none' as const };
+    this.pdfIds.set(file, { ...cur, pmid });
+  }
+
+  /** The line under a PDF: what was found, and whether the ID shown is still that one. */
+  pdfIdNote(file: File): string {
+    const id = this.pdfIds.get(file);
+    if (!id) return '';
+    if (id.status === 'checking') return 'Looking for it in PubMed…';
+    if (id.status === 'error') return 'Could not check PubMed. Type its PubMed ID if it has one.';
+    const f = id.found;
+    if (id.status === 'found' && f?.pmid) {
+      const how = f.method === 'doi' ? 'by its DOI' : 'by its title';
+      return id.pmid.trim() === f.pmid ? `Found ${how}: ${f.title}` : `Found ${how}: PMID ${f.pmid}, ${f.title}`;
+    }
+    return 'Not found in PubMed (a preprint, or not indexed yet?). Type its PubMed ID if it has one.';
   }
 
   removeFile(index: number): void {
     const [gone] = this.files.splice(index, 1);
     this.reviews.delete(gone);
+    this.pdfIds.delete(gone);
   }
 
   setReview(file: File, review: boolean): void {
@@ -134,7 +191,10 @@ export class SessionListComponent implements OnInit, OnDestroy {
 
   start(): void {
     if (!this.canStart) return;
-    this.begin(this.api.startPapers(this.pmidList, this.files, this.focus.trim() || undefined, this.files.filter(f => this.reviews.has(f))));
+    const ids = new Map<File, string>();
+    this.files.forEach(f => { const id = (this.pdfIds.get(f)?.pmid ?? '').trim(); if (id) ids.set(f, id); });
+    this.begin(this.api.startPapers(this.pmidList, this.files, this.focus.trim() || undefined,
+                                    this.files.filter(f => this.reviews.has(f)), ids));
   }
 
   private begin(call: Observable<StartResponse>): void {
