@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import {
   ExistingMatch, Issue, PaperInfo, Participant, QA_PRIORITY_LABEL, QAPriority, QAResult, ReactionDetail, ReactionQA
@@ -50,7 +50,15 @@ export class ReactionDetailComponent implements OnChanges, OnDestroy {
   confirmRemove = false;
   removing = false;
 
+  /** The Cancel button of an open remove question: it takes the focus, so Enter or Escape keeps the reaction. */
+  @ViewChild('cancelRemoveButton', { read: ElementRef }) cancelRemoveButton?: ElementRef<HTMLButtonElement>;
+
   constructor(private api: LlmApiService) {}
+
+  askRemove(): void {
+    this.confirmRemove = true;
+    setTimeout(() => this.cancelRemoveButton?.nativeElement.focus());
+  }
 
   private loadSub?: Subscription;
 

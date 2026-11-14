@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick, discardPeriodicTasks } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick, discardPeriodicTasks, flush } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -256,6 +256,7 @@ describe('SessionListComponent', () => {
       expect(rows().length).toBe(1);
       expect(component.sessions.map(x => x.id)).toEqual(['b']);
       expect(router.navigate).not.toHaveBeenCalled();
+      flush();                 // focusing Cancel starts Material's focus-origin timer
       component.ngOnDestroy(); discardPeriodicTasks();
     }));
 
@@ -269,6 +270,26 @@ describe('SessionListComponent', () => {
       expect(api.deleteSession).not.toHaveBeenCalled();
       expect(rows().length).toBe(1);
       expect(button(rows()[0], 'button.delete')).not.toBeNull();
+      flush();                 // focusing Cancel starts Material's focus-origin timer
+      component.ngOnDestroy(); discardPeriodicTasks();
+    }));
+
+    it('asking keeps the row still: the delete button keeps its place and Cancel, focused, takes exactly that place',
+       fakeAsync(() => {
+      create([summary('a', 'ready')]);
+      tick(0); fixture.detectChanges();
+      button(rows()[0], 'button.delete').click();
+      fixture.detectChanges();
+      const del = button(rows()[0], 'button.delete');
+      const cancel = button(rows()[0], 'button.cancel');
+      expect(getComputedStyle(del.parentElement!).visibility).toBe('hidden');      // still there, so nothing moves
+      expect(cancel.parentElement).toBe(del.parentElement!.parentElement);         // in the same slot
+      expect(getComputedStyle(cancel).position).toBe('absolute');
+      expect(document.activeElement).toBe(cancel);
+      cancel.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      fixture.detectChanges();
+      expect(component.confirmingDeleteId).toBeNull();
+      flush();                 // focusing Cancel starts Material's focus-origin timer
       component.ngOnDestroy(); discardPeriodicTasks();
     }));
 
@@ -279,6 +300,7 @@ describe('SessionListComponent', () => {
       expect(button(rows()[1], 'button.delete').disabled).toBeTrue();
       component.askDelete(component.sessions[0]);
       expect(component.confirmingDeleteId).toBeNull();
+      flush();                 // focusing Cancel starts Material's focus-origin timer
       component.ngOnDestroy(); discardPeriodicTasks();
     }));
 
@@ -292,6 +314,7 @@ describe('SessionListComponent', () => {
       expect(el().querySelector('.error')?.textContent).toContain('still running');
       expect(rows().length).toBe(1);
       expect(component.confirmingDeleteId).toBeNull();
+      flush();                 // focusing Cancel starts Material's focus-origin timer
       component.ngOnDestroy(); discardPeriodicTasks();
     }));
   });

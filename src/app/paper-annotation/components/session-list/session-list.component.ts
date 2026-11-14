@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, Subject, Subscription, catchError, filter, of, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { CandidatePaper, GeneSearchResult, PaperIdentity, SessionSummary, StartResponse } from '../../models/llm-api.models';
@@ -64,7 +64,11 @@ export class SessionListComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private api: LlmApiService, private router: Router, private route: ActivatedRoute) {}
+  /** The Cancel button of an open delete question: it takes the focus, so Enter or Escape keeps the annotation. */
+  @ViewChild('cancelDeleteButton', { read: ElementRef }) cancelDeleteButton?: ElementRef<HTMLButtonElement>;
+
+  constructor(private api: LlmApiService, private router: Router, private route: ActivatedRoute,
+              private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     // One load on entry, then keep refreshing only while something is still being annotated.
@@ -305,6 +309,8 @@ export class SessionListComponent implements OnInit, OnDestroy {
   askDelete(s: SessionSummary): void {
     if (this.isActive(s) || this.deletingId) return;
     this.confirmingDeleteId = s.id;
+    this.cdr.detectChanges();                    // render Cancel now, then give it the focus
+    this.cancelDeleteButton?.nativeElement.focus();
   }
 
   cancelDelete(): void {

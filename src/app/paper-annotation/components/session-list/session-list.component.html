@@ -134,20 +134,25 @@
         <td>{{ s.created * 1000 | date:'medium' }}</td>
         <!-- Clicks and Enter here must not also open the annotation (the whole row opens it). -->
         <td class="row-actions" (click)="$event.stopPropagation()" (keyup.enter)="$event.stopPropagation()">
-          <ng-container *ngIf="confirmingDeleteId !== s.id; else confirmDeleteTpl">
-            <span [matTooltip]="isActive(s) ? 'Still running: wait until it finishes, then delete it' : 'Delete this annotation'">
+          <!-- Asking keeps the layout still: the delete button keeps its place (hidden) and Cancel takes exactly that
+               place, so a click that does not move the mouse cancels; Delete opens to its left, over the row. -->
+          <span class="delete-slot">
+            <span [class.asking]="confirmingDeleteId === s.id"
+                  [matTooltip]="isActive(s) ? 'Still running: wait until it finishes, then delete it' : 'Delete this annotation'">
               <button mat-icon-button type="button" class="delete" [disabled]="isActive(s) || !!deletingId"
                       (click)="askDelete(s)" [attr.aria-label]="'Delete annotation ' + label(s)"><mat-icon>delete</mat-icon></button>
             </span>
-          </ng-container>
-          <ng-template #confirmDeleteTpl>
-            <span class="confirm-delete" role="group" [attr.aria-label]="'Delete annotation ' + label(s) + '?'">
-              <span>Delete for good?</span>
-              <button mat-flat-button color="warn" type="button" class="confirm" [disabled]="deletingId === s.id"
-                      (click)="confirmDelete(s)">Delete</button>
-              <button mat-button type="button" class="cancel" [disabled]="deletingId === s.id" (click)="cancelDelete()">Cancel</button>
-            </span>
-          </ng-template>
+            <ng-container *ngIf="confirmingDeleteId === s.id">
+              <span class="confirm-delete" role="group" [attr.aria-label]="'Delete annotation ' + label(s) + '?'">
+                <span>Delete for good?</span>
+                <button mat-flat-button color="warn" type="button" class="confirm" [disabled]="deletingId === s.id"
+                        (click)="confirmDelete(s)">Delete</button>
+              </span>
+              <button mat-icon-button type="button" class="cancel" #cancelDeleteButton [disabled]="deletingId === s.id"
+                      (click)="cancelDelete()" (keydown.escape)="cancelDelete()" title="Cancel: keep it"
+                      aria-label="Cancel: keep the annotation"><mat-icon>close</mat-icon></button>
+            </ng-container>
+          </span>
         </td>
       </tr>
     </tbody>

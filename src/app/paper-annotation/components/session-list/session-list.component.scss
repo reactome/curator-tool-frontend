@@ -45,7 +45,12 @@ table.sessions th { text-align: left; font-weight: 500; color: #555; border-bott
 table.sessions td { padding: 10px 8px; border-bottom: 1px solid #eee; }
 table.sessions tbody tr { cursor: pointer; }
 table.sessions td.row-actions { width: 1%; white-space: nowrap; text-align: right; padding: 0 8px; cursor: default; }
-.confirm-delete { display: inline-flex; align-items: center; gap: 8px; color: #7a1c14; }
+.delete-slot { position: relative; display: inline-block; vertical-align: middle; }
+.delete-slot .asking { visibility: hidden; }                     /* keeps its place: nothing in the row moves */
+.delete-slot .cancel { position: absolute; inset: 0; }           /* exactly where the delete button was */
+.confirm-delete { position: absolute; right: 100%; top: 50%; transform: translateY(-50%); z-index: 2;
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; color: #7a1c14;
+  background: #fdecea; border-radius: 4px; padding: 4px 4px 4px 12px; box-shadow: 0 1px 4px rgba(0, 0, 0, .2); }
 table.sessions tbody tr:hover, table.sessions tbody tr:focus { background: #f5f7fa; outline: none; }
 .status { padding: 2px 10px; border-radius: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
 .status-ready { background: #e3f4e6; color: #1b5e20; }
