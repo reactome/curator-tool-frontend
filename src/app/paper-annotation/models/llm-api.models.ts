@@ -215,6 +215,13 @@ export interface Participant {
   uniprot?: string | null;
   chebi?: string | null;
   compartment_name?: string | null;
+  /** How the compartment was found: stated | shown (by the paper, see compartment_quote) | parts | curator | null (no evidence). */
+  compartment_source?: string | null;
+  compartment_quote?: string | null;
+  /** No evidence in the paper: a likely compartment from general knowledge (a suggested fix, never applied). */
+  compartment_suggested?: ExistingRef | null;
+  /** The existing Reactome instance this participant reuses. */
+  existing?: ExistingRef | null;
   needs_resolution: string[];
   modifications?: { psi_mod: string | null; mod_label: string | null; residue: string | null; coordinate: number | null }[];
   components?: string[];
@@ -234,6 +241,8 @@ export interface ReactionSpec {
   evidence_ids: string[];
   preceding: string[];
   existing: ExistingRef | null;
+  /** The compartments of its participants (from the paper). */
+  compartments?: ExistingRef[];
 }
 
 /** The reactions and their entities as a graph (GET /sessions/{id}/network). Ids are prefixed: `e:` entity, `r:` reaction. */
@@ -356,7 +365,7 @@ export interface UsageCounts {
   cache_write_tokens: number;
 }
 
-export type UsageStep = 'extraction' | 'merge' | 'review' | 'draft' | 'qa' | 'chat' | 'combine';
+export type UsageStep = 'extraction' | 'merge' | 'review' | 'draft' | 'qa' | 'chat' | 'combine' | 'compartments';
 
 /** One step's totals. `saved` marks a step whose numbers come from the saved run a replayed annotation was made from. */
 export interface UsageStepRow extends UsageCounts {

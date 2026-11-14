@@ -25,3 +25,12 @@ ul { margin: 0; padding-left: 18px; }
 .qa-summary { font-weight: 500; margin: 4px 0; }
 .qa { background: #f5f7fa; border-radius: 4px; padding: 8px 12px; margin: 8px 0; }
 .error { display: flex; align-items: center; gap: 8px; background: #fdecea; color: #7a1c14; padding: 10px 12px; border-radius: 4px; }
+
+.compartments { color: #555; font-size: 13px; margin: 0 0 6px; }
+.comp { margin-left: 8px; border-radius: 10px; padding: 0 8px; font-size: 12px; cursor: help; border: 1px solid transparent; }
+.comp-stated { background: #e8f5e9; color: #1b5e20; }
+.comp-shown { background: #e3f2fd; color: #0d47a1; }
+.comp-parts { background: #f3e5f5; color: #4a148c; }
+.comp-curator { background: #eceff1; color: #37474f; }
+.comp-none { background: transparent; color: #8a4b00; border-color: #ffcc80; border-style: dashed; }
+.in-reactome { margin-left: 6px; background: #fff8e1; color: #6d4c00; border-radius: 10px; padding: 0 8px; font-size: 12px; }

@@ -125,3 +125,23 @@ describe('ReactionDetailComponent remove', () => {
     expect(panel.confirmRemove).toBeFalse();
   });
 });
+
+describe('ReactionDetailComponent compartments', () => {
+  const panel = new ReactionDetailComponent(jasmine.createSpyObj('LlmApiService', ['reaction']));
+  const base = { kind: 'ewas' as const, key: 'k', name: 'CTNNB1', needs_resolution: [] };
+
+  it('shows where the paper places a participant, with its quote', () => {
+    const c = panel.compartment({ ...base, compartment_name: 'nucleoplasm', compartment_source: 'stated',
+                                  compartment_quote: 'translocates to the nucleus' });
+    expect(c.label).toBe('nucleoplasm');
+    expect(c.cls).toBe('stated');
+    expect(c.tip).toContain('“translocates to the nucleus”');
+    expect(panel.compartment({ ...base, compartment_name: 'cytosol', compartment_source: 'shown' }).tip).toContain('experiment');
+  });
+
+  it('shows "no compartment" without evidence, naming the suggestion but not applying it', () => {
+    const c = panel.compartment({ ...base, compartment_suggested: { db_id: 876, display_name: 'plasma membrane', schema_class: 'Compartment' } });
+    expect(c.label).toBe('no compartment');
+    expect(c.tip).toContain('general knowledge: plasma membrane');
+  });
+});

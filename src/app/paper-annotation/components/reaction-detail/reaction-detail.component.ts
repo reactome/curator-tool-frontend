@@ -108,8 +108,29 @@ export class ReactionDetailComponent implements OnChanges, OnDestroy {
     const out: string[] = [];
     if (p.uniprot) out.push(`UniProt ${p.uniprot}`);
     if (p.chebi) out.push(p.chebi);
-    if (p.compartment_name) out.push(p.compartment_name);
     return out;
+  }
+
+  /** The compartment chip: where the participant is and how we know (the paper's quote), or that the paper does not say. */
+  compartment(p: Participant): { label: string; tip: string; cls: string } {
+    const name = p.compartment_name;
+    const quote = p.compartment_quote ? `: “${p.compartment_quote}”` : '';
+    switch (name ? p.compartment_source : 'none') {
+      case 'stated': return { label: name!, tip: `Stated in the paper${quote}`, cls: 'stated' };
+      case 'shown': return { label: name!, tip: `Shown by the paper's experiment${quote}`, cls: 'shown' };
+      case 'parts': return { label: name!, tip: 'All its components are placed there by the paper', cls: 'parts' };
+      case 'curator': return { label: name!, tip: 'Set by a curator (not from the paper)', cls: 'curator' };
+      case 'none': {
+        const s = p.compartment_suggested?.display_name;
+        return { label: 'no compartment', cls: 'none',
+                 tip: 'The paper does not say where it is' + (s ? `; suggested from general knowledge: ${s} (see the suggested fixes)` : '') };
+      }
+      default: return { label: name!, tip: 'Compartment from the draft (no quote recorded)', cls: 'stated' };
+    }
+  }
+
+  get reactionCompartments(): string {
+    return (this.detail?.reaction.compartments ?? []).map(c => c.display_name).join(', ');
   }
 
   /** The review to show: the one just run here, else the saved one. Its findings are in "Needs attention". */
