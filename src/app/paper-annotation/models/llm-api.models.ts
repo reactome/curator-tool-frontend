@@ -144,7 +144,7 @@ export const ISSUE_CATEGORY_LABEL: Record<IssueCategory, string> = {
 
 export interface Issue {
   id: string;
-  source: 'evidence' | 'builder' | 'resolver' | 'emitter' | 'pipeline' | 'existing' | 'qa' | 'checks';
+  source: 'evidence' | 'builder' | 'resolver' | 'emitter' | 'pipeline' | 'existing' | 'qa' | 'checks' | 'compartments';
   severity: IssueSeverity;
   code: string;
   message: string;
