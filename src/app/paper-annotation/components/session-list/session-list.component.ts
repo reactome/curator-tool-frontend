@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subject, Subscription, catchError, filter, of, switchMap, takeUntil, tap, timer } from 'rxjs';
+import { Observable, Subject, Subscription, catchError, filter, of, switchMap, takeUntil, tap, timer, merge } from 'rxjs';
 import { CandidatePaper, GeneSearchResult, PaperIdentity, SessionSummary, StartResponse } from '../../models/llm-api.models';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
 
@@ -10,7 +10,7 @@ const GENE_SEARCH_KEY = 'paper2path.geneSearch';
 /** A chosen PDF's PubMed ID: what the service found in it (or did not), and the ID as the curator leaves it. */
 export interface PdfId {
   pmid: string;
-  status: 'checking' | 'found' | 'none' | 'error';
+  status: 'checking' | 'found' | 'none' | 'error' | 'skipped';
   found?: PaperIdentity;
 }
 
@@ -147,10 +147,26 @@ export class SessionListComponent implements OnInit, OnDestroy {
     input.value = '';
   }
 
+  /** PDFs whose PubMed ID is still being looked up: the start card waits for them (Annotate would go without IDs). */
+  get identifying(): number {
+    return this.files.filter(f => this.pdfIds.get(f)?.status === 'checking').length;
+  }
+
+  private stopIdentifying$ = new Subject<void>();
+
+  /** Stop waiting for PubMed (slow or unreachable): the PDFs still being checked keep no ID, which can be typed. */
+  stopIdentifying(): void {
+    this.stopIdentifying$.next();
+    for (const f of this.files) {
+      const cur = this.pdfIds.get(f);
+      if (cur?.status === 'checking') this.pdfIds.set(f, { ...cur, status: 'skipped' });
+    }
+  }
+
   /** Ask the service for the PDF's PubMed ID; an ID the curator typed meanwhile is kept. */
   private identify(file: File): void {
     this.pdfIds.set(file, { pmid: '', status: 'checking' });
-    this.api.identifyPaper(file).pipe(takeUntil(this.destroy$)).subscribe({
+    this.api.identifyPaper(file).pipe(takeUntil(merge(this.destroy$, this.stopIdentifying$))).subscribe({
       next: r => {
         const cur = this.pdfIds.get(file);
         if (!cur) return;                                   // removed meanwhile
@@ -175,6 +191,7 @@ export class SessionListComponent implements OnInit, OnDestroy {
     if (!id) return '';
     if (id.status === 'checking') return 'Looking for it in PubMed…';
     if (id.status === 'error') return 'Could not check PubMed. Type its PubMed ID if it has one.';
+    if (id.status === 'skipped') return 'Not looked up (you stopped waiting). Type its PubMed ID if it has one.';
     const f = id.found;
     if (id.status === 'found' && f?.pmid) {
       const how = f.method === 'doi' ? 'by its DOI' : 'by its title';

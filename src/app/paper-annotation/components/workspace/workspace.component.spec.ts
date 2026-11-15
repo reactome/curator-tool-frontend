@@ -5,7 +5,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
-import { ExistingMatch, Issue, PaperInfo, Proposal, SessionDetail } from '../../models/llm-api.models';
+import { EntityInfo, ExistingMatch, Issue, PaperInfo, Proposal, SessionDetail } from '../../models/llm-api.models';
 import { LlmApiError } from '../../services/llm-api.service';
 import { CHECKED_REACTIONS_KEY, LOADED_DB_IDS_KEY, LOADED_SESSION_KEY } from '../../services/staging';
 import { ReferencePreparer } from '../../services/reference-preparer.service';
@@ -22,6 +22,8 @@ describe('WorkspaceComponent', () => {
   const match = (key: string, level: ExistingMatch['level']): ExistingMatch =>
     ({ reaction_key: key, db_id: 1, display_name: 'x', st_id: 'R-HSA-1', level, score: 1, cites_pmid: false, catalyst_match: true, overlap: 1, similarity: 1, reasons: [] });
 
+  const entity = (key: string): EntityInfo =>
+    ({ key, participant: { kind: 'ewas', key, name: key.toUpperCase(), needs_resolution: [] }, dbId: -20, reactions: [], partOf: [] });
   const suggestion = (id: string, key: string): Proposal =>
     ({ id, reason: 'why', ops: [], summary: ['changes'], reaction_keys: [key], evidence: [], actor: 'suggestions', status: 'pending', created: 1, decided_by: null, decided_at: null });
 
@@ -48,7 +50,8 @@ describe('WorkspaceComponent', () => {
 
   const make = () => {
     api = jasmine.createSpyObj('LlmApiService', ['session', 'issues', 'existing', 'exportInstances', 'proposals',
-                                                 'identifySessionPaper', 'setPaperPmid']);
+                                                 'identifySessionPaper', 'setPaperPmid', 'entities', 'qaAll']);
+    api.entities.and.returnValue(of([entity('pink1'), entity('ub')]));
     api.session.and.returnValue(of(session('ready')));
     api.issues.and.returnValue(of([issue('i1', 'r0', 'action'), issue('i2', 'r0', 'warning'), issue('i3', 'r1', 'info', 'dismissed')]));
     api.existing.and.returnValue(of([match('r1', 'same'), match('r0', 'similar')]));
@@ -144,6 +147,27 @@ describe('WorkspaceComponent', () => {
     expect(component.title).toBe('tp53.pdf (PMID 33824975)');
   }));
 
+  it('waits for Find in PubMed behind a panel, which the curator can stop', fakeAsync(() => {
+    make();
+    const pdf: PaperInfo = { source: 'ab12_tp53.pdf', kind: 'pdf', pmid: null, name: 'tp53.pdf' };
+    component.id = 's1';
+    component.session = { ...session('ready'), papers: [pdf] };
+    const answer$ = new Subject<any>();
+    api.identifySessionPaper.and.returnValue(answer$);
+    component.editPmid(pdf);
+    component.findPmid(pdf);
+    expect(component.pmidFinding).toBeTrue();
+    component.stopFindingPmid();
+    expect(component.pmidFinding).toBeFalse();
+    expect(component.pmidBusy).toBeFalse();
+    expect(component.pmidNote).toContain('stopped waiting');
+    answer$.next({ found: true, pmid: '33824975', title: 't', method: 'doi' });     // too late: ignored
+    expect(component.pmidDraft).toBe('');
+    api.identifySessionPaper.and.returnValue(of({ found: false, note: 'no match' }));
+    component.findPmid(pdf);
+    expect(component.pmidFinding).toBeFalse();                                        // answered: the panel goes
+  }));
+
   it('shows why a PubMed ID could not be saved, and keeps the editor open', fakeAsync(() => {
     make();
     const pdf: PaperInfo = { source: 'ab12_x.pdf', kind: 'pdf', pmid: null, name: 'x.pdf' };
@@ -232,7 +256,7 @@ describe('WorkspaceComponent', () => {
     discardPeriodicTasks();
   }));
 
-  it('follows a reaction removed elsewhere (Issues tab, accepted edit): the selection moves to the first one', fakeAsync(() => {
+  it('follows a reaction removed elsewhere (an accepted edit): the selection moves to the first one', fakeAsync(() => {
     make();
     component.ngOnInit();
     tick(0);
@@ -285,6 +309,7 @@ describe('WorkspaceComponent', () => {
   describe('loading into staged instances', () => {
     beforeEach(fakeAsync(() => {
       make(); component.ngOnInit(); tick(0); component.ngOnDestroy(); discardPeriodicTasks();
+      api.exportInstances.calls.reset();          // the review read them too ("As Reactome instances"): count the load's own
       component.setChecked('r0', true);
     }));
 
@@ -500,18 +525,69 @@ describe('WorkspaceComponent', () => {
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));
-  it('lists only the suggestions the service made, named by their reaction, and refreshes them after a decision', fakeAsync(() => {
+  it('reads the suggestions the service made, the entities and the instances with the issues, and again after a decision', fakeAsync(() => {
     make();
     component.ngOnInit();
     tick(0);
     expect(component.suggestions.map(p => p.id)).toEqual(['p-001']);          // the chat proposal is not a suggestion
-    expect(component.suggestionReaction(component.suggestions[0])).toBe('PINK1 phosphorylates Ub');
+    expect(component.entities.map(e => e.key)).toEqual(['pink1', 'ub']);
+    expect(component.instances[-5].schemaClassName).toBe('Reaction');          // by dbId, for "As Reactome instances"
     api.proposals.and.returnValue(of([]));
+    api.entities.and.returnValue(of([entity('pink1')]));
     component.onProposalDecided({ ...suggestion('p-001', 'r0'), status: 'rejected' });
     expect(component.suggestions).toEqual([]);
+    expect(component.entities.length).toBe(1);                                 // every tab follows the same re-read
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));
+
+  it('shows the reviewer confidence of each reviewed reaction, and can list the least confident first', fakeAsync(() => {
+    make();
+    api.session.and.returnValue(of({ ...session('ready'), qa: {
+      r0: { priority: 'review', summary: null, score: 0.85, is_reaction: true },
+      r1: { priority: 'fix', summary: null, score: 0.3, is_reaction: true } } }));
+    component.ngOnInit();
+    tick(0);
+    expect(component.confidence('r0')).toEqual(jasmine.objectContaining({ pct: 85, level: 'high' }));
+    expect(component.confidence('r1')?.level).toBe('low');
+    expect(component.confidence('r9')).toBeNull();                               // not reviewed: no bar
+    component.reactionSort = 'confidence';
+    expect(component.sortedReactions.map(r => r.key)).toEqual(['r1', 'r0']);
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
+  it('lists the general issues (no reaction, no entity) and opens an entity in the Entities tab', fakeAsync(() => {
+    make();
+    api.issues.and.returnValue(of([issue('i1', 'r0', 'action'), issue('g1', null, 'warning'), issue('g2', null, 'info', 'resolved'),
+                                   { ...issue('e1', null, 'info'), participant_key: 'ub' }]));
+    component.ngOnInit();
+    tick(0);
+    expect(component.generalIssues.map(i => i.id)).toEqual(['g1', 'g2']);
+    expect(component.openGeneralIssues).toBe(1);
+    component.openEntity('ub');
+    expect(component.entityKey).toBe('ub');
+    expect(component.tab).toBe(1);
+    component.openReaction('r1');
+    expect(component.tab).toBe(0);
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
+  it('checks every reaction from the reaction list, then re-reads everything', fakeAsync(() => {
+    make();
+    component.ngOnInit();
+    tick(0);
+    api.qaAll.and.returnValue(of([]));
+    api.issues.calls.reset();
+    component.checkAll();
+    expect(api.qaAll).toHaveBeenCalledWith('s1');
+    expect(component.checkingAll).toBeFalse();
+    expect(api.issues).toHaveBeenCalledTimes(1);
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
   describe('the divider between the network and the reaction panel', () => {
     // a split 1000px wide whose right edge is at x = 1100
     const split = { getBoundingClientRect: () => ({ right: 1100 }), clientWidth: 1000 } as unknown as HTMLElement;

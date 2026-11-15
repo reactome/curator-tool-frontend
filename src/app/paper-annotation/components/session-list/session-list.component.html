@@ -58,6 +58,15 @@
         <button mat-flat-button color="primary" [disabled]="!canStart" (click)="start()">Annotate</button>
         <span class="count" *ngIf="paperCount">{{ summary }}</span>
       </mat-card-actions>
+      <!-- While PubMed IDs are looked up the card waits, so the papers do not go without them. -->
+      <div class="blocker" *ngIf="identifying" role="status" aria-live="polite">
+        <div class="blocker-box">
+          <mat-spinner diameter="32"></mat-spinner>
+          <p>Looking for the PubMed ID of {{ identifying === 1 ? 'the PDF' : identifying + ' PDFs' }} in PubMed…</p>
+          <p class="blocker-hint">From its DOI, else its title. This usually takes a few seconds.</p>
+          <button mat-button type="button" (click)="stopIdentifying()">Stop waiting</button>
+        </div>
+      </div>
     </mat-card>
 
     <!-- Hidden for the time being: see SessionListComponent.geneSearchEnabled. -->

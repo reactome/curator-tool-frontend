@@ -1,8 +1,12 @@
 import { Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { forkJoin, Observable, of, Subscription } from 'rxjs';
 import {
-  ExistingMatch, Issue, PaperInfo, Participant, QA_PRIORITY_LABEL, QAPriority, QAResult, ReactionDetail, ReactionQA
+  ExistingMatch, Issue, PaperInfo, Participant, Proposal, QA_PRIORITY_LABEL, QAPriority, QAResult, ReactionDetail, ReactionQA
 } from '../../models/llm-api.models';
+import { CompartmentChip, compartmentChip, describeParticipant } from '../../models/compartment-chip';
+import { StagedInstance } from '../instance-model/instance-model.component';
+
+const NO_ISSUES: Issue[] = [];
 
 /** What the QA box shows: the review saved with the session, or the one just run here. */
 export interface QAView {
@@ -36,8 +40,19 @@ export class ReactionDetailComponent implements OnChanges, OnDestroy {
    * nothing told the panel to fetch again.
    */
   @Input() stamp = 0;
-  /** Emitted when something here changed the session (a QA run adds issues). */
+  /** The pending suggested fixes of the annotation: each issue shows the one that settles it. */
+  @Input() proposals: Proposal[] = [];
+  /** The exported instances by dbId, for "As Reactome instances". */
+  @Input() instances: Record<number, StagedInstance> = {};
+  /**
+   * Emitted when something here changed the session (a QA run, an issue resolved or dismissed, a fix accepted or
+   * rejected, the reaction kept): the page re-reads it, so every tab shows the same state.
+   */
   @Output() changed = new EventEmitter<void>();
+  /** Emitted with a fix accepted or rejected here (an accepted one makes the staged instances out of date). */
+  @Output() proposalDecided = new EventEmitter<Proposal>();
+  /** Emitted with a participant's key: show it in the Entities tab. */
+  @Output() openEntity = new EventEmitter<string>();
   /** Emitted with the reaction's key once the curator removed it from the draft. */
   @Output() removed = new EventEmitter<string>();
 
@@ -49,6 +64,10 @@ export class ReactionDetailComponent implements OnChanges, OnDestroy {
   /** Asking "remove this reaction?" before doing it. */
   confirmRemove = false;
   removing = false;
+  /** Keeping or removing it from the "keep this reaction?" question. */
+  deciding = false;
+  /** "As Reactome instances": what loading creates, the panel's main output, so it starts open. */
+  showInstances = true;
 
   /** The Cancel button of an open remove question: it takes the focus, so Enter or Escape keeps the reaction. */
   @ViewChild('cancelRemoveButton', { read: ElementRef }) cancelRemoveButton?: ElementRef<HTMLButtonElement>;
@@ -94,22 +113,136 @@ export class ReactionDetailComponent implements OnChanges, OnDestroy {
     return this.matches.filter(m => m.reaction_key === this.reactionKey);
   }
 
+  /** This reaction's issues (any status: the list filters them); the keep question is asked above them. */
   get myIssues(): Issue[] {
-    return this.issues.filter(i => i.reaction_key === this.reactionKey && i.status === 'open');
+    return this.issues.filter(i => i.reaction_key === this.reactionKey);
   }
 
-  participants(keys: string[]): Participant[] {
-    return keys.map(k => this.detail?.participants[k]).filter((p): p is Participant => !!p);
+  /** The keys of the entities this reaction uses (its participants and their parts). */
+  get entityKeys(): Set<string> {
+    const out = new Set<string>();
+    const P = this.detail?.participants ?? {};
+    const add = (k: string) => {
+      if (out.has(k)) return;
+      out.add(k);
+      const p = P[k];
+      [...(p?.components ?? []), ...(p?.members ?? [])].forEach(add);
+    };
+    Object.keys(P).forEach(add);
+    return out;
   }
 
-  participant(key: string): Participant | undefined {
-    return this.detail?.participants[key];
+  /** Issues about the entities this reaction uses (a compartment the paper does not give, an identifier): the same
+   *  issues the Entities tab lists, so they can be fixed from either place. */
+  get entityIssues(): Issue[] {
+    const keys = this.entityKeys;
+    return this.issues.filter(i => !i.reaction_key && !!i.participant_key && keys.has(i.participant_key));
   }
 
-  /** "UB, S65 O-phospho-L-serine". */
+  private entityIssueCache: { issues: Issue[]; by: Map<string, Issue[]> } | null = null;
+
+  /** An entity's own issues; the same array until the issues change, so the lists under the rows are not rebuilt. */
+  issuesOfEntity(key: string): Issue[] {
+    if (this.entityIssueCache?.issues !== this.issues) {
+      const by = new Map<string, Issue[]>();
+      for (const i of this.issues) {
+        if (!i.reaction_key && i.participant_key) by.set(i.participant_key, [...(by.get(i.participant_key) ?? []), i]);
+      }
+      this.entityIssueCache = { issues: this.issues, by };
+    }
+    return this.entityIssueCache.by.get(key) ?? NO_ISSUES;
+  }
+
+  private entityCache: { detail: ReactionDetail; rows: { role: string; p: Participant }[] } | null = null;
+
+  /** The reaction's entities with their role: inputs, outputs, catalyst, regulators, then the parts of complexes and
+   *  sets (each once). Computed once per loaded reaction: new row objects on every check made Angular rebuild the rows
+   *  (and their issue lists and tooltips) on every mouse move, which could stall the panel. */
+  get entities(): { role: string; p: Participant }[] {
+    if (this.detail && this.entityCache?.detail === this.detail) return this.entityCache.rows;
+    const rows = this.computeEntities();
+    if (this.detail) this.entityCache = { detail: this.detail, rows };
+    return rows;
+  }
+
+  trackEntity(_: number, e: { role: string; p: Participant }): string {
+    return e.p.key;
+  }
+
+  private computeEntities(): { role: string; p: Participant }[] {
+    const r = this.detail?.reaction;
+    const P = this.detail?.participants ?? {};
+    if (!r) return [];
+    const out: { role: string; p: Participant }[] = [];
+    const seen = new Set<string>();
+    const add = (role: string, k: string) => {
+      const p = P[k];
+      if (!p || seen.has(k)) return;
+      seen.add(k);
+      out.push({ role, p });
+    };
+    r.inputs.forEach(k => add('input', k));
+    r.outputs.forEach(k => add('output', k));
+    if (r.catalyst) add('catalyst', r.catalyst.entity);
+    r.regulations.forEach(g => add(this.regulationLabel(g.kind), g.regulator));
+    for (let i = 0; i < out.length; i++) {
+      const p = out[i].p;
+      (p.components ?? []).forEach(k => add(`part of ${p.name}`, k));
+      (p.members ?? []).forEach(k => add(`member of ${p.name}`, k));
+    }
+    return out;
+  }
+
+  /** The open reasons to question the reaction ("not a molecular reaction", "only cited"...). */
+  get keepReasons(): Issue[] {
+    return this.issues.filter(i => i.reaction_key === this.reactionKey && i.category === 'keep' && i.status === 'open');
+  }
+
+  /** "May describe the same event as r11": decide look-alikes together. */
+  get lookalikes(): Issue[] {
+    return this.issues.filter(i => i.reaction_key === this.reactionKey && i.code === 'qa_possible_duplicate' && i.status === 'open');
+  }
+
+  /** The pending suggestion that removes it, if any. */
+  get removalProposal(): Proposal | undefined {
+    const id = this.keepReasons.find(r => r.proposal_id)?.proposal_id;
+    return id ? this.proposals.find(p => p.id === id && p.status === 'pending') : undefined;
+  }
+
+  /** Pending suggested fixes for this reaction that no listed issue links to (those are shown under their issue). */
+  get otherFixes(): Proposal[] {
+    const linked = new Set([...this.issues.filter(i => i.proposal_id).map(i => i.proposal_id!)]);
+    return this.proposals.filter(p => p.status === 'pending' && p.actor === 'suggestions'
+      && p.reaction_keys.includes(this.reactionKey) && !linked.has(p.id));
+  }
+
+  /** Keep it: dismiss the reasons to question it and reject the suggestion to remove it. */
+  keep(): void {
+    const calls: Observable<unknown>[] = this.keepReasons.map(r => this.api.setIssueStatus(this.sessionId, r.id, 'dismissed'));
+    const p = this.removalProposal;
+    if (p) calls.push(this.api.reject(this.sessionId, p.id));
+    this.deciding = true;
+    this.error = null;
+    const call: Observable<unknown> = calls.length ? forkJoin(calls) : of(null);
+    call.subscribe({
+      next: () => { this.deciding = false; this.changed.emit(); },
+      error: (e: LlmApiError) => { this.deciding = false; this.error = e.message; }
+    });
+  }
+
+  /** Remove it from the keep question: as the Remove button does (the suggestion and the button make the same patch). */
+  removeFromDecision(): void {
+    this.remove();
+  }
+
+  onFixDecided(p: Proposal): void {
+    this.proposalDecided.emit(p);
+    this.changed.emit();
+  }
+
+  /** "UB (S65 O-phospho-L-serine)". */
   describe(p: Participant): string {
-    const mods = (p.modifications ?? []).map(m => `${m.residue ?? ''}${m.coordinate ?? ''} ${m.mod_label ?? m.psi_mod ?? ''}`.trim());
-    return mods.length ? `${p.name} (${mods.join(', ')})` : p.name;
+    return describeParticipant(p);
   }
 
   details(p: Participant): string[] {
@@ -119,22 +252,9 @@ export class ReactionDetailComponent implements OnChanges, OnDestroy {
     return out;
   }
 
-  /** The compartment chip: where the participant is and how we know (the paper's quote), or that the paper does not say. */
-  compartment(p: Participant): { label: string; tip: string; cls: string } {
-    const name = p.compartment_name;
-    const quote = p.compartment_quote ? `: “${p.compartment_quote}”` : '';
-    switch (name ? p.compartment_source : 'none') {
-      case 'stated': return { label: name!, tip: `Stated in the paper${quote}`, cls: 'stated' };
-      case 'shown': return { label: name!, tip: `Shown by the paper's experiment${quote}`, cls: 'shown' };
-      case 'parts': return { label: name!, tip: 'All its components are placed there by the paper', cls: 'parts' };
-      case 'curator': return { label: name!, tip: 'Set by a curator (not from the paper)', cls: 'curator' };
-      case 'none': {
-        const s = p.compartment_suggested?.display_name;
-        return { label: 'no compartment', cls: 'none',
-                 tip: 'The paper does not say where it is' + (s ? `; suggested from general knowledge: ${s} (see the suggested fixes)` : '') };
-      }
-      default: return { label: name!, tip: 'Compartment from the draft (no quote recorded)', cls: 'stated' };
-    }
+  /** The compartment chip: where the participant is and how we know (the paper's passage), or that the paper does not say. */
+  compartment(p: Participant): CompartmentChip {
+    return compartmentChip(p);
   }
 
   get reactionCompartments(): string {

@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, firstValueFrom, switchMap, takeWhile, throwError, timer, catchError, map } from 'rxjs';
 import { environment } from 'src/environments/environment.dev';
 import { TokenRefreshService } from 'src/app/core/services/token-refresh.service';
-import {
+import { EntityInfo,
   AcceptResponse, ChatEvent, ExistingMatch, GeneSearchResult, InstanceEvidence, Issue, IssueStatus, Job, Network, PaperIdentity, PaperInfo, Passage, Proposal,
   ProposalRequest, QAResult, ReactionDetail, SessionDetail, SessionSummary, SessionUserInstances, StartResponse, StoredChatMessage,
   UsageReport
@@ -162,6 +162,11 @@ export class LlmApiService {
 
   reaction(id: string, key: string): Observable<ReactionDetail> {
     return this.call(() => this.http.get<ReactionDetail>(this.url(`/sessions/${id}/reactions/${key}`)));
+  }
+
+  /** Every entity of the draft with its staged dbId and the reactions using it. */
+  entities(id: string): Observable<EntityInfo[]> {
+    return this.call(() => this.http.get<EntityInfo[]>(this.url(`/sessions/${id}/entities`)));
   }
 
   /** The reactions and their entities as nodes and edges, for drawing. */

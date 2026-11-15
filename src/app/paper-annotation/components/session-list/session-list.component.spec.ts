@@ -147,6 +147,31 @@ describe('SessionListComponent', () => {
     component.ngOnDestroy(); discardPeriodicTasks();
   }));
 
+  it('covers the start card while PubMed IDs are looked up, until they are found or the curator stops waiting', fakeAsync(() => {
+    create();
+    tick(0);
+    const slow = new Subject<any>();
+    const late = new Subject<any>();
+    api.identifyPaper.and.returnValues(slow, late);
+    const a = new File(['%PDF-a'], 'a.pdf', { type: 'application/pdf' });
+    const b = new File(['%PDF-b'], 'b.pdf', { type: 'application/pdf' });
+    component.onFilesChosen({ target: { files: [a, b], value: 'x' } } as unknown as Event);
+    fixture.detectChanges();
+    expect(component.identifying).toBe(2);
+    expect(el().querySelector('.start-card .blocker')?.textContent).toContain('2 PDFs');
+    slow.next({ found: true, pmid: '1', title: 't', method: 'doi' });
+    fixture.detectChanges();
+    expect(el().querySelector('.start-card .blocker')?.textContent).toContain('the PDF');
+    component.stopIdentifying();
+    fixture.detectChanges();
+    expect(component.identifying).toBe(0);
+    expect(el().querySelector('.start-card .blocker')).toBeNull();
+    expect(component.pdfIdNote(b)).toContain('you stopped waiting');
+    late.next({ found: true, pmid: '2', title: 't', method: 'doi' });               // too late: ignored
+    expect(component.pdfIds.get(b)?.pmid).toBe('');
+    component.ngOnDestroy(); discardPeriodicTasks();
+  }));
+
   it('looks up each added PDF in PubMed, keeps or replaces the ID as the curator edits it, and sends it with the PDF', fakeAsync(() => {
     create();
     tick(0);

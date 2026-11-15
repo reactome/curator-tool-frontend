@@ -1,4 +1,13 @@
 <div class="workspace">
+  <!-- Find in PubMed: wait for it, so the ID is not saved or left before it is found -->
+  <div class="blocker" *ngIf="pmidFinding" role="status" aria-live="polite">
+    <div class="blocker-box">
+      <mat-spinner diameter="32"></mat-spinner>
+      <p>Looking for the PDF's PubMed ID in PubMed…</p>
+      <p class="blocker-hint">From its DOI, else its title. This usually takes a few seconds.</p>
+      <button mat-button type="button" (click)="stopFindingPmid()">Stop waiting</button>
+    </div>
+  </div>
   <header>
     <a mat-icon-button routerLink="/paper2path" matTooltip="All annotations" aria-label="Back to all annotations"><mat-icon>arrow_back</mat-icon></a>
     <div class="title" *ngIf="session">
@@ -73,12 +82,17 @@
                           [disabled]="!loadableReactions.length" (change)="setAllChecked($event.checked)"
                           aria-label="Check all reactions to load">All</mat-checkbox>
             <span class="checked-count">{{ checkedCount }} of {{ loadableReactions.length }} checked to load</span>
+            <button mat-stroked-button class="check-all" [disabled]="checkingAll" (click)="checkAll()"
+                    matTooltip="Review every reaction again (rule checks and the model); the findings become issues">
+              <mat-icon>fact_check</mat-icon> Check all</button>
           </div>
+          <mat-progress-bar *ngIf="checkingAll" mode="indeterminate"></mat-progress-bar>
           <mat-form-field class="sort" appearance="outline" subscriptSizing="dynamic">
             <mat-label>Sort</mat-label>
             <mat-select [(ngModel)]="reactionSort" aria-label="Sort reactions">
               <mat-option value="paper">As in the paper</mat-option>
               <mat-option value="attention">Needs attention first</mat-option>
+              <mat-option value="confidence">Lowest confidence first</mat-option>
               <mat-option value="name">By name (A–Z)</mat-option>
             </mat-select>
           </mat-form-field>
@@ -92,7 +106,13 @@
                             [attr.aria-label]="'Load ' + r.name + ' into staged instances'"
                             [matTooltip]="canCheck(r.key) ? 'Load this reaction into staged instances' : 'This reaction cannot be loaded'"
                             matTooltipShowDelay="600"></mat-checkbox>
-              <span class="name">{{ r.name }}<span class="rkey" [matTooltip]="r.equation ?? ''">{{ r.key }}</span></span>
+              <span class="name">{{ r.name }}<span class="rkey" [matTooltip]="r.equation ?? ''">{{ r.key }}</span>
+                <span class="confidence" *ngIf="confidence(r.key) as c" [matTooltip]="c.tip" matTooltipShowDelay="300"
+                      [attr.aria-label]="c.tip">
+                  <span class="track"><span class="fill" [ngClass]="'conf-' + c.level" [style.width.%]="c.pct"></span></span>
+                  <span class="pct">{{ c.pct }}%</span>
+                </span>
+              </span>
               <span class="badges">
                 <span *ngIf="needsDecision(r.key)" class="keep" [matTooltip]="decisionReason(r.key)">Keep?</span>
                 <mat-icon *ngIf="hasSameMatch(r.key)" class="badge same" matTooltip="Reactome appears to have this reaction already">content_copy</mat-icon>
@@ -104,23 +124,27 @@
          </div>
           <div class="detail">
             <app-reaction-detail *ngIf="selectedKey" [sessionId]="id" [reactionKey]="selectedKey"
-                                 [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" [stamp]="draftStamp" (changed)="reload()" (removed)="onReactionRemoved($event)"></app-reaction-detail>
+                                 [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null"
+                                 [proposals]="suggestions" [instances]="instances" [stamp]="draftStamp"
+                                 (changed)="reload()" (removed)="onReactionRemoved($event)"
+                                 (proposalDecided)="onProposalDecided($event)" (openEntity)="openEntity($event)"></app-reaction-detail>
           </div>
         </div>
       </mat-tab>
-      <mat-tab [label]="'Issues (' + openIssues.length + ')'">
-        <app-issues-panel [sessionId]="id" [issues]="issues" [reactions]="session?.reactions ?? []" [qa]="session?.qa ?? {}"
-                          (changed)="onIssueChanged($event)"
-                          (checked)="reload()" (removed)="stagingStale = true" (openReaction)="openReaction($event)"></app-issues-panel>
+      <mat-tab [label]="'Entities (' + entities.length + ')'">
+        <app-entities-panel [sessionId]="id" [entities]="entities" [issues]="issues" [proposals]="suggestions"
+                            [instances]="instances" [(selectedKey)]="entityKey" (openReaction)="openReaction($event)"
+                            (changed)="reload()" (proposalDecided)="onProposalDecided($event)"></app-entities-panel>
       </mat-tab>
-      <mat-tab [label]="'Suggested fixes (' + suggestions.length + ')'">
-        <section class="suggestions" aria-label="Suggested fixes">
-          <p class="hint">Fixes for some of the problems found. Each is only a suggestion: nothing changes until you accept it.</p>
-          <p class="none" *ngIf="!suggestions.length">There are no suggested fixes.</p>
-          <div class="suggestion" *ngFor="let p of suggestions">
-            <h3 *ngIf="suggestionReaction(p)">{{ suggestionReaction(p) }}</h3>
-            <app-proposal-card [sessionId]="id" [proposal]="p" (decided)="onProposalDecided($event)"></app-proposal-card>
-          </div>
+      <mat-tab [label]="'General issues (' + openGeneralIssues + ')'">
+        <section class="general" aria-label="General issues">
+          <p class="hint">Issues about the annotation as a whole or its papers, not about one reaction or entity.</p>
+          <ul class="paper-list" *ngIf="papers.length">
+            <li *ngFor="let p of papers">{{ paperLabel(p) }}<span *ngIf="p.review" class="kind"> · review</span>
+              <span *ngIf="p.kind === 'pdf'" class="kind"> · {{ p.pmid ? 'PMID ' + p.pmid : 'no PubMed ID' }}</span></li>
+          </ul>
+          <app-issue-list [sessionId]="id" [issues]="generalIssues" [proposals]="suggestions"
+                          empty="No general issues." (changed)="reload()" (proposalDecided)="onProposalDecided($event)"></app-issue-list>
         </section>
       </mat-tab>
       <mat-tab label="Network">
@@ -139,7 +163,10 @@
                 Load this reaction into staged instances
               </mat-checkbox>
               <app-reaction-detail *ngIf="selectedKey; else noReaction" class="compact" [sessionId]="id" [reactionKey]="selectedKey"
-                                   [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null" [stamp]="draftStamp" (changed)="reload()" (removed)="onReactionRemoved($event)"></app-reaction-detail>
+                                   [matches]="existing" [issues]="issues" [papers]="papers" [savedQa]="session?.qa?.[selectedKey] ?? null"
+                                   [proposals]="suggestions" [instances]="instances" [stamp]="draftStamp"
+                                   (changed)="reload()" (removed)="onReactionRemoved($event)"
+                                   (proposalDecided)="onProposalDecided($event)" (openEntity)="openEntity($event)"></app-reaction-detail>
               <ng-template #noReaction><p class="none">Click a reaction in the network to see its details here.</p></ng-template>
             </aside>
           </div>

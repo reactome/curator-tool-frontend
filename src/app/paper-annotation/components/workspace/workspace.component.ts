@@ -3,8 +3,9 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
-import { Subject, forkJoin, map, merge, switchMap, takeUntil, takeWhile, timer } from 'rxjs';
-import { ExistingMatch, Issue, PaperInfo, paperLabel, Proposal, QAPriority, ReactionRef, SessionDetail } from '../../models/llm-api.models';
+import { Subject, forkJoin, map, merge, switchMap, takeUntil, takeWhile, timer, Subscription } from 'rxjs';
+import { EntityInfo, ExistingMatch, Issue, PaperInfo, paperLabel, Proposal, QAPriority, ReactionRef, SessionDetail } from '../../models/llm-api.models';
+import { StagedInstance } from '../instance-model/instance-model.component';
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
 import { UserInstances } from 'src/app/core/models/reactome-instance.model';
 import { LlmApiError, LlmApiService } from '../../services/llm-api.service';
@@ -24,6 +25,13 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   existing: ExistingMatch[] = [];
   /** Fixes the service suggests, as pending proposals: nothing is applied until the curator accepts one. */
   suggestions: Proposal[] = [];
+  /** Every entity of the draft (Entities tab), and the exported instances by dbId ("As Reactome instances"). Both are
+   *  re-read with the issues and fixes after every change, so every tab shows the same state. */
+  entities: EntityInfo[] = [];
+  instances: Record<number, StagedInstance> = {};
+  /** The entity shown in the Entities tab. */
+  entityKey: string | null = null;
+  checkingAll = false;
   selectedKey: string | null = null;
   /** Keys of the reactions the curator checked to load into staged instances. Nothing is checked at first. */
   checkedKeys = new Set<string>();
@@ -63,6 +71,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
       this.issues = [];
       this.existing = [];
       this.suggestions = [];
+      this.entities = [];
+      this.instances = {};
+      this.entityKey = null;
       this.selectedKey = null;
       this.checkedKeys = this.readChecked();
       this.watch();
@@ -100,6 +111,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   pmidDraft = '';
   pmidNote = '';
   pmidBusy = false;
+  /** Find in PubMed is running: the page waits for it. */
+  pmidFinding = false;
+  private findSub?: Subscription;
 
   /** The uploaded PDFs of this annotation: each can be given its PubMed ID, so its reactions cite the paper. */
   get pdfPapers(): PaperInfo[] {
@@ -120,10 +134,12 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   /** Look for the PDF's PubMed ID (its DOI, then its title) and put it in the field to check before saving. */
   findPmid(p: PaperInfo): void {
     this.pmidBusy = true;
+    this.pmidFinding = true;
     this.pmidNote = 'Looking for it in PubMed…';
-    this.api.identifySessionPaper(this.id, p.source).subscribe({
+    this.findSub = this.api.identifySessionPaper(this.id, p.source).subscribe({
       next: r => {
         this.pmidBusy = false;
+        this.pmidFinding = false;
         if (r.found && r.pmid) {
           this.pmidDraft = r.pmid;
           this.pmidNote = `Found ${r.method === 'doi' ? 'by its DOI' : 'by its title'}: ${r.title}. Check it, then Save.`;
@@ -131,8 +147,16 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
           this.pmidNote = `Not found: ${r.note ?? 'no match in PubMed'}.`;
         }
       },
-      error: (e: LlmApiError) => { this.pmidBusy = false; this.pmidNote = e.message; }
+      error: (e: LlmApiError) => { this.pmidBusy = false; this.pmidFinding = false; this.pmidNote = e.message; }
     });
+  }
+
+  /** Stop waiting for PubMed: the ID can still be typed. */
+  stopFindingPmid(): void {
+    this.findSub?.unsubscribe();
+    this.pmidBusy = false;
+    this.pmidFinding = false;
+    this.pmidNote = 'Not looked up (you stopped waiting). Type the PubMed ID if it has one.';
   }
 
   get pmidDraftValid(): boolean {
@@ -170,15 +194,31 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Re-read the session, its issues and its existing-reaction matches (after an edit, QA, or a status change). */
+  /** Everything the tabs show besides the session itself: one call each, read together. */
+  private review() {
+    return forkJoin({ issues: this.api.issues(this.id), existing: this.api.existing(this.id),
+                      proposals: this.api.proposals(this.id, 'pending'), entities: this.api.entities(this.id),
+                      instances: this.api.exportInstances(this.id) });
+  }
+
+  private takeReview(r: { issues: Issue[]; existing: ExistingMatch[]; proposals: Proposal[]; entities: EntityInfo[];
+                          instances: { newInstances: unknown[] } }): void {
+    this.issues = r.issues;
+    this.existing = r.existing;
+    this.suggestions = r.proposals.filter(p => p.actor === 'suggestions');
+    this.entities = r.entities;
+    this.instances = Object.fromEntries((r.instances.newInstances as StagedInstance[]).map(i => [i.dbId, i]));
+    if (this.entityKey && !this.entities.some(e => e.key === this.entityKey)) this.entityKey = null;
+  }
+
+  /** Re-read the session and everything the tabs show (after an edit, QA, a status change or a decided fix). */
   reload(): void {
     this.usageStamp++;
-    forkJoin({ session: this.api.session(this.id), issues: this.api.issues(this.id), existing: this.api.existing(this.id),
-               proposals: this.api.proposals(this.id, 'pending') })
+    forkJoin({ session: this.api.session(this.id), review: this.review() })
       .subscribe({
         next: r => {
-          this.session = r.session; this.issues = r.issues; this.existing = r.existing;
-          this.suggestions = r.proposals.filter(p => p.actor === 'suggestions');
+          this.session = r.session;
+          this.takeReview(r.review);
           this.followRemovals();
           // only now: the reaction panel, network and chat re-read what they show, and the selection is already valid
           this.draftStamp++;
@@ -189,11 +229,9 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   private loadReview(): void {
-    forkJoin({ issues: this.api.issues(this.id), existing: this.api.existing(this.id), proposals: this.api.proposals(this.id, 'pending') }).subscribe({
+    this.review().subscribe({
       next: r => {
-        this.issues = r.issues;
-        this.existing = r.existing;
-        this.suggestions = r.proposals.filter(p => p.actor === 'suggestions');
+        this.takeReview(r);
         if (!this.selectedKey && this.session?.reactions.length) this.selectedKey = this.session.reactions[0].key;
       },
       error: (e: LlmApiError) => this.error = e.message
@@ -284,7 +322,7 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * A reaction may have gone (removed from its panel, from the Issues tab, or by an accepted edit): select another one
+   * A reaction may have gone (removed from its panel or its keep question, or by an accepted edit): select another one
    * and forget it in the "checked to load" set.
    */
   private followRemovals(): void {
@@ -348,16 +386,53 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     this.tab = 0;
   }
 
+  /** Show an entity in the Entities tab (from a reaction's participant). */
+  openEntity(key: string): void {
+    this.entityKey = key;
+    this.tab = 1;
+  }
+
+  /** Issues about the annotation as a whole or its papers (no reaction, no entity). */
+  get generalIssues(): Issue[] {
+    return this.issues.filter(i => !i.reaction_key && !i.participant_key);
+  }
+
+  get openGeneralIssues(): number {
+    return this.generalIssues.filter(i => i.status === 'open').length;
+  }
+
+  /** Review every reaction (they run together on the service), then re-read everything. */
+  checkAll(): void {
+    this.checkingAll = true;
+    this.error = null;
+    this.api.qaAll(this.id).subscribe({
+      next: () => { this.checkingAll = false; this.reload(); },
+      error: (e: LlmApiError) => { this.checkingAll = false; this.error = e.message; }
+    });
+  }
+
   onIssueChanged(updated: Issue): void {
     this.issues = this.issues.map(i => i.id === updated.id ? updated : i);
     if (this.session) this.session = { ...this.session, n_open_issues: this.openIssues.length };
   }
 
   /** How the reaction list is ordered: as in the paper (the draft's order), what needs attention first, or by name. */
-  reactionSort: 'paper' | 'attention' | 'name' = 'paper';
+  reactionSort: 'paper' | 'attention' | 'confidence' | 'name' = 'paper';
 
   /**
-   * The open issues of a reaction as the Issues tab lists them: not notes, not issues waiting on a keep-or-remove
+   * The QA reviewer's confidence in a reaction (0-1, from its last review), for the bar in the list: low (< 40%),
+   * medium (< 70%) or high. Null when the reaction was not reviewed by the model.
+   */
+  confidence(key: string): { pct: number; level: 'low' | 'medium' | 'high'; tip: string } | null {
+    const score = this.session?.qa?.[key]?.score;
+    if (score === null || score === undefined) return null;
+    const pct = Math.round(score * 100);
+    const level = score < 0.4 ? 'low' : score < 0.7 ? 'medium' : 'high';
+    return { pct, level, tip: `Reviewer confidence ${pct}%: how sure the QA review is that this reaction is right` };
+  }
+
+  /**
+   * The open issues of a reaction worth a badge in the list: not notes, not issues waiting on a keep-or-remove
    * decision, and not the keep question itself (the row shows that as "Keep?").
    */
   private listedIssues(key: string): Issue[] {
@@ -400,6 +475,11 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
     if (this.reactionSort === 'name') {
       return list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }) || byKey(a, b));
     }
+    if (this.reactionSort === 'confidence') {
+      const pos = new Map(list.map((r, i) => [r.key, i]));
+      const score = (r: ReactionRef) => this.session?.qa?.[r.key]?.score ?? 2;      // not reviewed: last
+      return list.sort((a, b) => score(a) - score(b) || pos.get(a.key)! - pos.get(b.key)!);
+    }
     if (this.reactionSort === 'attention') {
       const pos = new Map(list.map((r, i) => [r.key, i]));
       return list.sort((a, b) => this.attentionRank(a.key) - this.attentionRank(b.key)
@@ -417,11 +497,6 @@ export class WorkspaceComponent implements OnInit, OnDestroy {
   get contextDbIds(): number[] {
     const id = this.selectedReaction?.dbId;
     return id === null || id === undefined ? [] : [id];
-  }
-
-  /** The name of the first reaction a suggestion is about, for its heading. */
-  suggestionReaction(p: Proposal): string {
-    return this.session?.reactions.find(r => p.reaction_keys.includes(r.key))?.name ?? '';
   }
 
   onProposalDecided(p: Proposal): void {

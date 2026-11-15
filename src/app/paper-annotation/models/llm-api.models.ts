@@ -215,6 +215,8 @@ export interface Participant {
   uniprot?: string | null;
   chebi?: string | null;
   compartment_name?: string | null;
+  /** The Reactome Compartment instance it was resolved to. */
+  compartment?: ExistingRef | null;
   /** How the compartment was found: stated | shown (by the paper, see compartment_quote) | parts | curator | null (no evidence). */
   compartment_source?: string | null;
   compartment_quote?: string | null;
@@ -222,6 +224,13 @@ export interface Participant {
   compartment_suggested?: ExistingRef | null;
   /** The existing Reactome instance this participant reuses. */
   existing?: ExistingRef | null;
+  /** Other names of the molecule (the paper's name before a rename, UniProt synonyms). */
+  aliases?: string[];
+  /** ewas: protein | dna (a gene) | rna; its organism and the existing reference / species it was resolved to. */
+  molecule?: 'protein' | 'dna' | 'rna';
+  species?: string;
+  species_ref?: ExistingRef | null;
+  reference_entity?: ExistingRef | null;
   needs_resolution: string[];
   modifications?: { psi_mod: string | null; mod_label: string | null; residue: string | null; coordinate: number | null }[];
   components?: string[];
@@ -276,6 +285,17 @@ export interface NetworkEdge {
 export interface Network {
   nodes: NetworkNode[];
   edges: NetworkEdge[];
+}
+
+/** One entity of the draft (GET /sessions/{id}/entities): the participant, its staged dbId, where it is used. */
+export interface EntityInfo {
+  key: string;
+  participant: Participant;
+  /** Its dbId among the exported instances: negative for a new instance, positive for an existing Reactome one. */
+  dbId: number | null;
+  reactions: { key: string; name: string; roles: ('input' | 'output' | 'catalyst' | 'regulator')[] }[];
+  /** Keys of the complexes and sets containing it. */
+  partOf: string[];
 }
 
 export interface ReactionDetail {

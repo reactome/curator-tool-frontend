@@ -2,7 +2,14 @@
 .intro, .hint, .empty { color: #555; }
 .starters { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin: 16px 0; }
 mat-card mat-form-field { width: 100%; }
-.start-card { max-width: 720px; padding: 8px 16px 12px; }
+.start-card { position: relative; max-width: 720px; padding: 8px 16px 12px; }
+/* covers the start card while PubMed IDs are looked up */
+.blocker { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, .8); border-radius: inherit; }
+.blocker-box { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; max-width: 420px;
+  background: #fff; padding: 16px 24px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, .15); }
+.blocker-box p { margin: 0; }
+.blocker-hint { color: #666; font-size: 13px; }
 .start-card mat-card-header, .start-card mat-card-content, .start-card mat-card-actions { padding: 0; }
 .start-card mat-card-actions { min-height: auto; padding-top: 8px; }   /* a little room below the focus gene field */
 .start-card mat-card-subtitle { margin-top: 8px; line-height: 1.5; }

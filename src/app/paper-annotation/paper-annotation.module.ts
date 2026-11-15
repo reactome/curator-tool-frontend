@@ -20,7 +20,10 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ChatPanelComponent } from './components/chat-panel/chat-panel.component';
 import { EvidenceListComponent } from './components/evidence-list/evidence-list.component';
 import { LoadStagingDialogComponent } from './components/load-staging-dialog/load-staging-dialog.component';
-import { IssuesPanelComponent } from './components/issues-panel/issues-panel.component';
+import { DbInstanceLinkComponent } from './components/db-instance-link/db-instance-link.component';
+import { EntitiesPanelComponent } from './components/entities-panel/entities-panel.component';
+import { InstanceModelComponent } from './components/instance-model/instance-model.component';
+import { IssueListComponent } from './components/issue-list/issue-list.component';
 import { PaperAnnotationRoutingModule } from './paper-annotation-routing.module';
 import { ProposalCardComponent } from './components/proposal-card/proposal-card.component';
 import { ReactionNetworkComponent } from './components/reaction-network/reaction-network.component';
@@ -31,7 +34,8 @@ import { WorkspaceComponent } from './components/workspace/workspace.component';
 
 @NgModule({
   declarations: [
-    SessionListComponent, WorkspaceComponent, ReactionDetailComponent, IssuesPanelComponent,
+    SessionListComponent, WorkspaceComponent, ReactionDetailComponent, IssueListComponent, EntitiesPanelComponent,
+    InstanceModelComponent, DbInstanceLinkComponent,
     ChatPanelComponent, ProposalCardComponent, LoadStagingDialogComponent, UsagePanelComponent, ReactionNetworkComponent
   ],
   imports: [

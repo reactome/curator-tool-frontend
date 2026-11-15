@@ -1,0 +1,19 @@
+.filters { display: flex; gap: 16px; flex-wrap: wrap; margin: 0 0 4px; font-size: 13px; }
+.issues { list-style: none; padding: 0; margin: 0; }
+.issues li { padding: 8px 4px; border-bottom: 1px solid #eee; }
+.issues li.done { opacity: .6; }
+.issues li.waiting { opacity: .55; background: #fafafa; }
+.row { display: flex; gap: 10px; align-items: flex-start; }
+.text { flex: 1; min-width: 0; }
+.message { font-size: 13px; }
+.meta { display: flex; gap: 6px; flex-wrap: wrap; color: #777; font-size: 12px; }
+.meta .wait { color: #8a4b00; }
+.actions { display: flex; flex-shrink: 0; }
+.actions button { min-width: 0; padding: 0 8px; }
+mat-icon.sev-action { color: #c62828; }
+mat-icon.sev-warning { color: #ef6c00; }
+mat-icon.sev-info { color: #1976d2; }
+.fix { margin: 6px 0 0 34px; }
+.fix-label { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #2e7d32; margin-bottom: 2px; }
+.empty { color: #666; font-size: 13px; margin: 4px 0; }
+.error { display: flex; align-items: center; gap: 8px; background: #fdecea; color: #7a1c14; padding: 8px 12px; border-radius: 4px; }
