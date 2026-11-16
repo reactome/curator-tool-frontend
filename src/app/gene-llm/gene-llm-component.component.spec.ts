@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
 
 import { PageTitleService } from 'src/app/core/services/page-title.service';
-import { GenePathwaysResult, Job } from 'src/app/paper-annotation/models/llm-api.models';
+import { GenePathwaysResult, Job, PathwayEvidence } from 'src/app/paper-annotation/models/llm-api.models';
 import { LlmApiError, LlmApiService } from 'src/app/paper-annotation/services/llm-api.service';
 import { componentTestImports } from 'src/testing';
 import { DEFAULT_LLM_CONFIG } from './components/configuration-component/configuration-component.component';
@@ -32,7 +32,7 @@ describe('GeneLlmComponentComponent', () => {
     savedToken = localStorage.getItem('token');
     localStorage.setItem('token', 'a-token');
     pageTitle = jasmine.createSpyObj<PageTitleService>('PageTitleService', ['setTitle']);
-    api = jasmine.createSpyObj('LlmApiService', ['findPathwaysByGene', 'pollPathwaySearch']);
+    api = jasmine.createSpyObj('LlmApiService', ['findPathwaysByGene', 'pollPathwaySearch', 'startPartnerPapers']);
     api.findPathwaysByGene.and.returnValue(of({ jobId: 'p1' }));
 
     TestBed.configureTestingModule({
@@ -189,5 +189,68 @@ describe('GeneLlmComponentComponent', () => {
 
   it('links a pathway to the Pathway Browser by its dbId', () => {
     expect(component.pathwayUrl(5205647)).toBe('https://reactome.org/PathwayBrowser/#/5205647');
+  });
+
+  describe('annotating a partner\'s papers', () => {
+    const paper = (pmid: string, pmcid: string | null, relation?: 'direct' | 'indirect' | 'none'): PathwayEvidence => ({
+      pmid, title: `Paper ${pmid}`, journal: 'J', year: '2014', pmcid, partners_mentioned: ['PRKN'], terms_mentioned: [],
+      sentences: [], check: relation ? { relation, event: relation === 'none' ? '' : 'PINK1 phosphorylates PRKN' } : null });
+    const withPartnerPapers = () => {
+      const r = result();
+      r.predicted_pathways[0] = { ...r.predicted_pathways[0], partner_evidence: [{ partner: 'PRKN', count: 40, papers: [
+        paper('1', 'PMC1', 'direct'), paper('2', null, 'direct'), paper('3', 'PMC3', 'indirect'), paper('4', 'PMC4')] }] };
+      api.pollPathwaySearch.and.returnValue(of(job('done', r)));
+      component.gene = 'PINK1';
+      component.run();
+      const p = component.result!.predicted_pathways[0];
+      return { p, pe: p.partner_evidence![0] };
+    };
+
+    it('ticks the papers in PMC judged to describe a direct event', () => {
+      const { p, pe } = withPartnerPapers();
+      expect(component.selectedPartnerPapers(p, pe)).toEqual(['1']);   // 2 is direct but not in PMC
+    });
+
+    it('ticks and unticks papers, but never one without PMC full text', () => {
+      const { p, pe } = withPartnerPapers();
+      component.togglePartnerPaper(p, pe, pe.papers[3], true);
+      component.togglePartnerPaper(p, pe, pe.papers[1], true);
+      component.togglePartnerPaper(p, pe, pe.papers[0], false);
+      expect(component.selectedPartnerPapers(p, pe)).toEqual(['4']);
+      expect(component.isPartnerPaperSelected(p, pe, pe.papers[3])).toBeTrue();
+    });
+
+    it('starts one session for the ticked papers with the gene, the partner and the pathway, and links to it', () => {
+      const { p, pe } = withPartnerPapers();
+      component.togglePartnerPaper(p, pe, pe.papers[2], true);
+      api.startPartnerPapers.and.returnValue(of({ sessionId: 's1', jobId: 'j1' }));
+      component.annotatePartner(p, pe);
+      expect(api.startPartnerPapers).toHaveBeenCalledWith(['1', '3'], 'PINK1', 'PRKN', 9013419);
+      expect(component.partnerStarts.get(component.partnerKey(p, pe))).toEqual({ starting: false, sessionId: 's1' });
+    });
+
+    it('says why the annotation could not start', () => {
+      const { p, pe } = withPartnerPapers();
+      api.startPartnerPapers.and.returnValue(throwError(() => new LlmApiError(422, 'at most 5 papers per session')));
+      component.annotatePartner(p, pe);
+      expect(component.partnerStarts.get(component.partnerKey(p, pe))?.error).toContain('at most 5 papers');
+    });
+
+    it('starts nothing with no paper ticked, and forgets the selections on a new run', () => {
+      const { p, pe } = withPartnerPapers();
+      component.togglePartnerPaper(p, pe, pe.papers[0], false);
+      component.annotatePartner(p, pe);
+      expect(api.startPartnerPapers).not.toHaveBeenCalled();
+      api.pollPathwaySearch.and.returnValue(new Subject<Job<GenePathwaysResult>>());
+      component.run();
+      expect(component.partnerSelection.size).toBe(0);
+      expect(component.partnerStarts.size).toBe(0);
+    });
+
+    it('explains the LLM check in the chip tooltip', () => {
+      const { pe } = withPartnerPapers();
+      expect(component.relationTooltip(pe.papers[0])).toContain('molecular event');
+      expect(component.relationTooltip(pe.papers[2])).toContain('no mechanism');
+    });
   });
 });

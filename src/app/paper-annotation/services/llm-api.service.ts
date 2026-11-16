@@ -89,6 +89,15 @@ export class LlmApiService {
   }
 
   /**
+   * Start ONE annotation from the papers naming a gene with one of its functional-interaction partners (Gene2Path):
+   * merged into a single draft, the reactions involving both genes first, placed in the predicted pathway (dbId).
+   */
+  startPartnerPapers(pmids: string[], gene: string, partner: string, pathwayId: number): Observable<StartResponse> {
+    const body = { pmids, focus: gene, partner, pathway_id: pathwayId };
+    return this.call(() => this.http.post<StartResponse>(this.url('/sessions'), body));
+  }
+
+  /**
    * Find the papers worth annotating a gene from (PubMed search, re-rank, LLM judge). Runs as a job that takes a minute
    * or more: poll it with pollGeneSearch. Without `maxPapers` the service picks (5).
    */

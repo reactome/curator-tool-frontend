@@ -185,20 +185,46 @@
                                                       [matTooltip]="pe.count + ' PubMed papers name both; the best ' + pe.papers.length + ' are listed'">
                                                     {{ pe.count }} {{ pe.count === 1 ? 'paper' : 'papers' }}</span>
                                             </div>
-                                            <ul class="evidence-list" *ngIf="pe.papers.length">
-                                                <li *ngFor="let e of pe.papers">
-                                                    <div class="evidence-title">
-                                                        <a [href]="pubmedUrl(e.pmid)" target="pubmed">{{ e.title || ('PMID ' + e.pmid) }}</a>
+                                            <ul class="evidence-list partner-papers" *ngIf="pe.papers.length">
+                                                <li *ngFor="let e of pe.papers" [class.unavailable]="!canAnnotate(e)">
+                                                    <mat-checkbox [checked]="isPartnerPaperSelected(p, pe, e)" [disabled]="!canAnnotate(e)"
+                                                                  (change)="togglePartnerPaper(p, pe, e, $event.checked)"
+                                                                  [attr.aria-label]="'Select PMID ' + e.pmid + ' to annotate'"
+                                                                  [matTooltip]="canAnnotate(e) ? '' : 'Not in PubMed Central: to annotate it, add its PDF in Paper2Path'"></mat-checkbox>
+                                                    <div class="partner-paper">
+                                                        <div class="evidence-title">
+                                                            <a [href]="pubmedUrl(e.pmid)" target="pubmed">{{ e.title || ('PMID ' + e.pmid) }}</a>
+                                                        </div>
+                                                        <div class="evidence-meta">
+                                                            <span *ngIf="e.check" class="relation" [ngClass]="'rel-' + e.check.relation"
+                                                                  [matTooltip]="relationTooltip(e)">{{ e.check.relation }}</span>
+                                                            <span>{{ e.journal }}<ng-container *ngIf="e.year">, {{ e.year }}</ng-container></span>
+                                                            <span>PMID {{ e.pmid }}</span>
+                                                            <a *ngIf="e.pmcid" [href]="pmcUrl(e.pmcid)" target="pmc" class="pmc"
+                                                               matTooltip="Full text in PMC: it can be annotated in Paper2Path">{{ e.pmcid }}</a>
+                                                        </div>
+                                                        <div class="relation-event" *ngIf="e.check?.event">{{ e.check!.event }}</div>
+                                                        <div class="empty" *ngIf="e.check_error">The abstract could not be checked: {{ e.check_error }}</div>
+                                                        <blockquote *ngFor="let s of e.sentences">{{ s }}</blockquote>
                                                     </div>
-                                                    <div class="evidence-meta">
-                                                        <span>{{ e.journal }}<ng-container *ngIf="e.year">, {{ e.year }}</ng-container></span>
-                                                        <span>PMID {{ e.pmid }}</span>
-                                                        <a *ngIf="e.pmcid" [href]="pmcUrl(e.pmcid)" target="pmc" class="pmc"
-                                                           matTooltip="Full text in PMC: it can be annotated in Paper2Path">{{ e.pmcid }}</a>
-                                                    </div>
-                                                    <blockquote *ngFor="let s of e.sentences">{{ s }}</blockquote>
                                                 </li>
                                             </ul>
+                                            <div class="partner-actions" *ngIf="pe.papers.length">
+                                                <ng-container *ngIf="partnerStarts.get(partnerKey(p, pe)) as st; else notStarted">
+                                                    <mat-progress-bar *ngIf="st.starting" mode="indeterminate"></mat-progress-bar>
+                                                    <span class="started" *ngIf="st.sessionId">Annotation started.
+                                                        <a [href]="'paper2path/' + st.sessionId" target="_blank" rel="noopener noreferrer">Open it in Paper2Path</a></span>
+                                                    <span class="error" *ngIf="st.error" role="alert">{{ st.error }}</span>
+                                                </ng-container>
+                                                <ng-template #notStarted>
+                                                    <button mat-stroked-button color="primary" [disabled]="!selectedPartnerPapers(p, pe).length"
+                                                            (click)="annotatePartner(p, pe)"
+                                                            [matTooltip]="'One annotation from the ticked papers, merged, with the reactions involving ' + result.gene + ' and ' + pe.partner + ' first, placed in ' + p.pathway_name">
+                                                        Annotate in Paper2Path</button>
+                                                    <span class="count" *ngIf="selectedPartnerPapers(p, pe).length as n">{{ n }} paper{{ n > 1 ? 's' : '' }},
+                                                        focus {{ result.gene }} with {{ pe.partner }}</span>
+                                                </ng-template>
+                                            </div>
                                         </div>
                                     </ng-container>
                                 </td>

@@ -296,3 +296,42 @@ tr.evidence-row > td {
   }
   .evidence-list li { margin: 6px 0; }
 }
+
+.partner-papers { list-style: none; padding-left: 0; }
+
+.partner-papers li {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  &.unavailable .evidence-title a { color: #666; }
+  .partner-paper { flex: 1; min-width: 0; }
+}
+
+.relation {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  &.rel-direct { background: #dcefdc; color: #1e5b1e; }
+  &.rel-indirect { background: #fdf1d6; color: #6b4e00; }
+  &.rel-none { background: #eee; color: #555; }
+}
+
+.relation-event {
+  margin: 2px 0;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.partner-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 4px 0 12px 36px;
+  font-size: 12px;
+  .count, .started { color: #555; }
+  .error { color: #b00020; }
+  mat-progress-bar { width: 200px; }
+}

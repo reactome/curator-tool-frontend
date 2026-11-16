@@ -57,6 +57,17 @@ export interface AnnotatedPathway {
   pathway_name: string;
 }
 
+/**
+ * What an LLM read in a partner paper's abstract: a guide to which papers to annotate, not a finding. direct: a
+ * molecular event between the gene and the partner (binding, modification, transport, ...); indirect: linked with no
+ * mechanism given; none: only mentioned together.
+ */
+export interface PaperCheck {
+  relation: 'direct' | 'indirect' | 'none';
+  /** The event in a few words; empty for none. */
+  event: string;
+}
+
 /** A PubMed paper naming the gene together with a predicted pathway's partners, or the key words of its name. */
 export interface PathwayEvidence {
   pmid: string;
@@ -70,12 +81,16 @@ export interface PathwayEvidence {
   terms_mentioned: string[];
   /** Abstract sentences, verbatim, naming the gene with a partner or term. */
   sentences: string[];
+  /** Partner papers only, when the search ran with its LLM steps (absent from an older service). */
+  check?: PaperCheck | null;
+  /** The check failed for this paper. */
+  check_error?: string | null;
 }
 
 /** The papers naming the gene with one of a predicted pathway's partners (PubMed: gene AND partner, title/abstract). */
 export interface PartnerEvidence {
   partner: string;
-  /** PubMed hits; `papers` holds the best few (a sentence tying the two first). */
+  /** PubMed hits; `papers` holds the best few (with the checks, direct ones first; else a sentence tying the two first). */
   count: number;
   papers: PathwayEvidence[];
   /** The search failed for this partner. */
@@ -188,6 +203,9 @@ export interface ReactionRef {
 
 export interface SessionDetail extends SessionSummary {
   focus: string | null;
+  /** Started from Gene2Path: the focus gene's partner the papers were chosen for, and the predicted pathway (dbId). */
+  partner?: string | null;
+  pathway_id?: number | null;
   error: string | null;
   reactions: ReactionRef[];
   papers?: PaperInfo[];
