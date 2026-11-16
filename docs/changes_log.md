@@ -1,3 +1,7 @@
+### Build on November 16, 2026
+
+- Fixed: when a protein with modified residues is drawn more than once in a pathway diagram, **Validate Diagram** reported its modifications as drawn twice, and **Auto-Fix** then removed the mark from one of the copies and could never put it back. Each drawn copy is now checked on its own, and **Auto-Fix** adds a missing mark to the copy that lacks it. If a copy lost its mark this way and the diagram was saved, run **Validate Diagram** again and use **Auto-Fix**, then upload the diagram.
+
 ### Build on November 15, 2026
 
 - Changed: the annotation page in **Paper2Path** now has the tabs **Reactions**, **Entities**, **General issues**, **Network** and **Usage**. The **Issues** and **Suggested fixes** tabs are gone: each issue, and the fix suggested for it, is now shown with the reaction or entity it is about, so you can look into it and settle it in one place. Whatever you accept, resolve or dismiss in one tab is shown in every other tab straight away.
