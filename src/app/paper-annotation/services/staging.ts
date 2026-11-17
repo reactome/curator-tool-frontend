@@ -3,6 +3,24 @@ import { SessionUserInstances } from '../models/llm-api.models';
 /** localStorage key holding the id of the annotation session whose instances were last loaded into staging. */
 export const LOADED_SESSION_KEY = 'paperAnnotation.loadedSession';
 
+/**
+ * localStorage key holding, for the instances last loaded into staging, the dbId each was given here mapped to the
+ * dbId the annotation service exported it with: { "<staged dbId>": <exported dbId> }. A loaded instance is renumbered
+ * (renumberNewInstances), but the service finds its evidence by the exported dbId (exportedDbIdOf).
+ */
+export const LOADED_DB_IDS_KEY = 'paperAnnotation.loadedDbIds';
+
+/** The dbId the annotation service knows a staged instance by: the exported one if it was renumbered on load. */
+export function exportedDbIdOf(stagedDbId: number): number {
+  try {
+    const map = JSON.parse(localStorage.getItem(LOADED_DB_IDS_KEY) ?? '{}');
+    const exported = map?.[String(stagedDbId)];
+    return typeof exported === 'number' ? exported : stagedDbId;
+  } catch {
+    return stagedDbId;
+  }
+}
+
 /** localStorage key prefix for the reactions a curator checked to load, per annotation session. */
 export const CHECKED_REACTIONS_KEY = 'paperAnnotation.checkedReactions.';
 
@@ -90,5 +108,44 @@ export function selectReactions(exported: SessionUserInstances, reactionDbIds: n
     newInstances: all.filter(i => keep.has(i.dbId)).map(prune) as any,
     updatedInstances: (exported.updatedInstances as unknown as Exported[]).map(prune) as any,
     bookmarks: (exported.bookmarks as unknown as Ref[]).filter(loaded) as any,
+  };
+}
+
+/**
+ * Give every new instance of a load (dbId < 0) a dbId from `fresh`, in order, and point every reference within the
+ * load at its new dbId: top-level dbIds, the dbId inside attributes, and references in attributes of the new and
+ * updated instances and in the bookmarks. Returns the renumbered copy (the input is not changed) and the map from
+ * each new dbId back to the exported one.
+ *
+ * Why: the annotation service numbers an annotation's new instances itself, from -1 down, so they collide with
+ * dbIds this browser has already handed out, and a dbId still cached for a discarded instance (in any open tab)
+ * then lends its cached shell, class and all, to the loaded instance. See DataService.getNextNewDbId.
+ */
+export function renumberNewInstances<T extends { newInstances?: unknown[]; updatedInstances?: unknown[]; bookmarks?: unknown[] }>(
+  payload: T, fresh: number[]): { payload: T; stagedToExported: Map<number, number> } {
+  const news = (payload.newInstances ?? []) as Exported[];
+  const ids = [...new Set(news.map(i => i.dbId).filter(id => id < 0))];
+  if (fresh.length < ids.length) throw new Error(`renumberNewInstances: ${ids.length} dbIds needed, ${fresh.length} given`);
+  const oldToNew = new Map(ids.map((id, k) => [id, fresh[k]]));
+  const stagedToExported = new Map(ids.map((id, k) => [fresh[k], id]));
+  const remap = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(remap);
+    if (isRef(v) && oldToNew.has(v.dbId)) return { ...v, dbId: oldToNew.get(v.dbId)! };
+    return v;
+  };
+  const renumber = (i: Exported): Exported => {
+    const attributes: Record<string, unknown> = {};
+    for (const [name, v] of Object.entries(i.attributes ?? {}))
+      attributes[name] = name === 'dbId' && typeof v === 'number' && oldToNew.has(v) ? oldToNew.get(v)! : remap(v);
+    return { ...i, dbId: oldToNew.get(i.dbId) ?? i.dbId, ...(i.attributes ? { attributes } : {}) };
+  };
+  return {
+    payload: {
+      ...payload,
+      newInstances: news.map(renumber),
+      updatedInstances: ((payload.updatedInstances ?? []) as Exported[]).map(renumber),
+      bookmarks: ((payload.bookmarks ?? []) as unknown[]).map(remap),
+    },
+    stagedToExported,
   };
 }

@@ -160,6 +160,20 @@ export class InstanceUtilities {
         this.resetDeletedDbId.next(dbId);
     }
 
+    /**
+     * Forget everything cached under a new instance's dbId, for a dbId that is being handed to a
+     * different instance than the one that had it before (a fresh new instance, a Paper2Path load).
+     * Referrers still holding the old shell object keep it; only lookups by dbId stop finding it.
+     * See DataService.getNextNewDbId for the bug this guards against.
+     */
+    forgetNewDbId(dbId: number): void {
+        if (dbId >= 0)
+            return;
+        this.shellInstances.delete(dbId);
+        this.dbId2displayName.delete(dbId);
+        this.permanentlyRemovedNewDbIds.delete(dbId);
+    }
+
     isPermanentlyRemovedNewInstance(dbId: number): boolean {
         return dbId < 0 && this.permanentlyRemovedNewDbIds.has(dbId);
     }
@@ -589,6 +603,15 @@ export class InstanceUtilities {
         if (!shell) {
             shell = this.makeShell(inst);
             this.shellInstances.set(inst.dbId, shell);
+        } else if (inst.schemaClassName && shell.schemaClassName !== inst.schemaClassName) {
+            // A shell of another class is never right for this instance: either the instance was
+            // reclassified, or the shell is left over from a different instance that had the same
+            // (negative) dbId - in another tab's lifetime too, which forgetNewDbId cannot reach.
+            // Renaming it while keeping the old class is what let a LiteratureReference be committed
+            // as a reference typed EntityWithAccessionedSequence (DataService.getNextNewDbId).
+            // Patched in place, like refreshShellInstance, so every referrer sharing it follows.
+            shell.schemaClassName = inst.schemaClassName;
+            this.registerDisplayNameChange(inst);
         } else if (!this.dbId2displayName.has(inst.dbId) && inst.displayName && inst.displayName !== shell.displayName) {
             this.registerDisplayNameChange(inst);
         }

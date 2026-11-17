@@ -151,10 +151,10 @@ const HELP_CONTENT: Record<string, HelpContext> = {
         items: [
           'Select a reaction to see its participants, regulations and the quotes from the paper, with page, section and figure. With several papers, each quote also says which paper it is from.',
           'A quote marked verbatim was found word for word in the paper; close match means it differs slightly, usually in PDF symbols.',
-          'The Issues tab lists everything that needs your attention. Mark issues resolved or dismiss them.',
-          'The Suggested fixes tab lists edits Paper2Path suggests for some of the problems it found. Nothing changes until you accept one.',
+          'Each issue is shown with its reaction or entity, with the fix Paper2Path suggests for it, if any. Resolve or dismiss the issue, or accept or reject the fix; nothing changes until you accept it. Issues about the whole annotation are in General issues.',
+          'As Reactome instances, at the top of a reaction or entity, shows what loading creates. The Entities tab lists every entity with its compartment, uses and issues.',
           'Check this reaction runs rule checks and a model review of one reaction, and marks it Fix first, Needs fixing, Worth a look or No problems found.',
-          'Check all reactions, on the Issues tab, checks every reaction at once and lists them most urgent first. Click a name to open that reaction.',
+          'Check all, above the reaction list, checks every reaction at once; the bar under each reaction shows the reviewer\'s confidence. Sort by Needs attention first or Lowest confidence first.',
           'In the Network tab, click a reaction to see its details in the panel on the right; the rest of the network is greyed out. Double-click it to open it in Reactions. Drag the bar between the network and the panel to resize them; double-click the bar to reset it.',
           'The Usage tab shows how many model tokens each step used, including each reaction check and chat turn. Steps that call no model are not listed; for an annotation reused from a saved result, steps marked "saved run" show what the original run used.',
         ],

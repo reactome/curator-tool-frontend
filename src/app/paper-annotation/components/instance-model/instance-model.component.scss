@@ -1,0 +1,19 @@
+.instance { font-size: 13px; }
+.head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; margin-bottom: 6px; }
+.head .new { margin-left: 0; }
+.cls { color: #6a1b9a; font-size: 12px; }
+.dn { font-weight: 500; }
+.new { font-size: 11px; color: #2e7d32; background: #e8f5e9; border-radius: 8px; padding: 0 6px; margin-left: 4px; }
+table { border-collapse: collapse; width: 100%; }
+th { text-align: left; vertical-align: top; font-weight: normal; color: #555; font-family: monospace; font-size: 12px;
+  padding: 3px 12px 3px 0; white-space: nowrap; width: 1%; }
+td { padding: 3px 0; border-bottom: 1px solid #f0f0f0; }
+.value + .value { margin-top: 2px; }
+.ref { background: none; border: none; padding: 0; cursor: pointer; text-align: left; font: inherit; color: inherit;
+  display: inline-flex; align-items: baseline; gap: 4px; }
+.ref:disabled { cursor: default; opacity: .7; }
+.ref mat-icon { align-self: center; }
+.nested { margin: 4px 0 6px 14px; padding-left: 10px; border-left: 2px solid #e0e0e0; }
+.text { white-space: pre-wrap; }
+.none { color: #666; font-size: 13px; }
+.value .dn + .cls { margin-left: 6px; }

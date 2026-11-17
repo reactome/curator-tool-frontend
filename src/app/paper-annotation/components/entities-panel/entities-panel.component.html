@@ -1,0 +1,81 @@
+<div class="entities">
+  <div class="list-column">
+    <div class="list-head">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="filter">
+        <mat-label>Filter</mat-label>
+        <input matInput [(ngModel)]="filter" placeholder="name, UniProt, compartment" aria-label="Filter entities">
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="sort">
+        <mat-label>Sort</mat-label>
+        <mat-select [(ngModel)]="sort" aria-label="Sort entities">
+          <mat-option value="draft">As in the draft</mat-option>
+          <mat-option value="attention">Needs attention first</mat-option>
+          <mat-option value="name">By name (A–Z)</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <p class="count">{{ shown.length }} of {{ entities.length }} entities</p>
+    <ul class="entity-list" role="listbox" aria-label="Entities">
+      <li *ngFor="let e of shown" role="option" tabindex="0" [class.selected]="e.key === selected?.key"
+          [attr.aria-selected]="e.key === selected?.key" (click)="select(e.key)" (keyup.enter)="select(e.key)">
+        <span class="name">{{ describe(e.participant) }}<span class="kind">{{ kindLabel(e.participant) }}</span></span>
+        <span class="badges">
+          <span class="comp" [ngClass]="'comp-' + compartment(e.participant).cls" [matTooltip]="compartment(e.participant).tip"
+                matTooltipShowDelay="400">{{ compartment(e.participant).label }}</span>
+          <mat-icon *ngIf="e.participant.existing" class="badge" matTooltip="Uses an existing Reactome instance">storage</mat-icon>
+          <span *ngIf="openCount(e.key)" class="issues-count" [matTooltip]="openCount(e.key) + ' open issue(s)'">{{ openCount(e.key) }}</span>
+        </span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="detail" *ngIf="selected as e; else none">
+    <h2>{{ describe(e.participant) }}</h2>
+    <p class="type">{{ kindLabel(e.participant) }}<span *ngIf="e.participant.species && e.participant.species !== 'Homo sapiens'"> · {{ e.participant.species }}</span>
+      <span class="key"> · {{ e.key }}</span>
+      <span class="flag" *ngFor="let f of e.participant.needs_resolution">needs {{ f }}</span></p>
+    <p class="aliases" *ngIf="e.participant.aliases?.length">Also called {{ e.participant.aliases!.join(', ') }}</p>
+
+    <section class="model" aria-label="As Reactome instances">
+      <h3><button type="button" class="toggle" (click)="showInstances = !showInstances" [attr.aria-expanded]="showInstances">
+        <mat-icon inline>{{ showInstances ? 'expand_more' : 'chevron_right' }}</mat-icon> As Reactome instances</button></h3>
+      <p class="hint" *ngIf="!showInstances">What Load into staged instances creates for this entity, in Reactome's data model.</p>
+      <app-instance-model *ngIf="showInstances" [dbId]="e.dbId" [instances]="instances"></app-instance-model>
+    </section>
+
+    <section>
+      <h3>Compartment</h3>
+      <p><span class="comp" [ngClass]="'comp-' + compartment(e.participant).cls">{{ compartment(e.participant).label }}</span>
+        <span class="how">{{ compartment(e.participant).tip }}</span></p>
+    </section>
+
+
+    <section class="structure" *ngIf="(e.participant.components?.length || e.participant.members?.length || e.partOf.length)">
+      <h3>Structure</h3>
+      <p *ngIf="e.participant.components?.length"><strong>Components:</strong>
+        <button type="button" class="link" *ngFor="let k of e.participant.components" (click)="select(k)">{{ nameOf(k) }}</button></p>
+      <p *ngIf="e.participant.members?.length"><strong>Members:</strong>
+        <button type="button" class="link" *ngFor="let k of e.participant.members" (click)="select(k)">{{ nameOf(k) }}</button></p>
+      <p *ngIf="e.partOf.length"><strong>Part of:</strong>
+        <button type="button" class="link" *ngFor="let k of e.partOf" (click)="select(k)">{{ nameOf(k) }}</button></p>
+    </section>
+
+    <section>
+      <h3>Used in reactions ({{ e.reactions.length }})</h3>
+      <p class="none" *ngIf="!e.reactions.length">Not used directly by a reaction{{ e.partOf.length ? ' (only as a part)' : '' }}.</p>
+      <ul class="uses">
+        <li *ngFor="let r of e.reactions"><button type="button" class="link" (click)="openReaction.emit(r.key)">{{ r.name }}</button>
+          <span class="role">{{ r.key }} · {{ roleLabel(r.roles) }}</span></li>
+      </ul>
+    </section>
+
+    <section aria-label="Issues of this entity">
+      <h3>Issues</h3>
+      <app-issue-list [sessionId]="sessionId" [issues]="issuesOf(e.key)" [proposals]="proposals"
+                      empty="No open issues for this entity." (changed)="onChanged()"
+                      (proposalDecided)="proposalDecided.emit($event)"></app-issue-list>
+    </section>
+
+  </div>
+  <ng-template #none><p class="none">No entities.</p></ng-template>
+</div>

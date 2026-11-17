@@ -15,6 +15,7 @@ describe('UserInstancesService annotation loading', () => {
 
   let service: UserInstancesService;
   let dataService: jasmine.SpyObj<any>;
+  let instUtils: jasmine.SpyObj<any>;
   let auth: jasmine.SpyObj<any>;
   let importSpy: jasmine.Spy;
   let order: string[];
@@ -22,7 +23,11 @@ describe('UserInstancesService annotation loading', () => {
 
   const make = (current: UserInstances) => {
     order = [];
-    dataService = jasmine.createSpyObj('DataService', ['persitUserInstances', 'listUserInstanceBackups']);
+    dataService = jasmine.createSpyObj('DataService', ['persitUserInstances', 'listUserInstanceBackups', 'claimNewDbIds']);
+    // By default the counter hands out the dbIds the annotation already has, so the payload passes through as it came;
+    // the renumbering itself is covered under "dbIds".
+    dataService.claimNewDbIds.and.callFake((n: number) => Promise.resolve(Array.from({ length: n }, (_, k) => -(k + 1))));
+    instUtils = jasmine.createSpyObj('InstanceUtilities', ['forgetNewDbId']);
     dataService.persitUserInstances.and.callFake(() => { order.push('persist'); return of({}); });
     dataService.listUserInstanceBackups.and.returnValue(of([
       { fileName: 'old.json', lastModified: 100 }, { fileName: 'newest.json', lastModified: 300 }, { fileName: 'mid.json', lastModified: 200 }]));
@@ -31,7 +36,7 @@ describe('UserInstancesService annotation loading', () => {
     // The constructor registers a permanent window 'storage' listener; keep this instance from leaking one
     // into every later spec (a storage event fired elsewhere would call it with these spies).
     spyOn(window, 'addEventListener');
-    service = new UserInstancesService({} as any, dataService, auth, {} as any);
+    service = new UserInstancesService(instUtils, dataService, auth, {} as any);
     spyOn<any>(service, 'currentStaged').and.returnValue(of(current));
     importSpy = spyOn(service, 'importUserInstancesFromFile').and.callFake(() => { order.push('import'); return of(incoming); });
   };
@@ -44,7 +49,7 @@ describe('UserInstancesService annotation loading', () => {
       const r = await service.loadAnnotationInstances(incoming).toPromise();
       expect(dataService.persitUserInstances).not.toHaveBeenCalled();
       expect(importSpy).toHaveBeenCalledWith(incoming);
-      expect(r).toEqual({ replaced: 0, backedUp: false, ...none, loaded: 3 });
+      expect(r).toEqual({ replaced: 0, backedUp: false, ...none, loaded: 3, stagedToExported: jasmine.any(Map) });
     });
 
     it('backs up what is staged first, then replaces it, and reports the newest backup', async () => {
@@ -53,7 +58,7 @@ describe('UserInstancesService annotation loading', () => {
       expect(order).toEqual(['persist', 'import']);                       // the backup completes before anything is replaced
       expect(dataService.persitUserInstances.calls.mostRecent().args[1]).toBe('curator1');
       expect(dataService.persitUserInstances.calls.mostRecent().args[0].newInstances.length).toBe(5);
-      expect(r).toEqual({ replaced: 7, backedUp: true, backupFile: 'newest.json', ...none, loaded: 3 });
+      expect(r).toEqual({ replaced: 7, backedUp: true, backupFile: 'newest.json', ...none, loaded: 3, stagedToExported: jasmine.any(Map) });
     });
 
     it('a lone updated instance is work worth backing up', async () => {
@@ -81,7 +86,7 @@ describe('UserInstancesService annotation loading', () => {
       make(staged(2));
       dataService.listUserInstanceBackups.and.returnValue(throwError(() => new Error('nope')));
       const r = await service.loadAnnotationInstances(incoming).toPromise();
-      expect(r).toEqual({ replaced: 2, backedUp: true, backupFile: undefined, ...none, loaded: 3 });
+      expect(r).toEqual({ replaced: 2, backedUp: true, backupFile: undefined, ...none, loaded: 3, stagedToExported: jasmine.any(Map) });
       expect(importSpy).toHaveBeenCalled();
     });
 
@@ -92,12 +97,56 @@ describe('UserInstancesService annotation loading', () => {
       expect(dataService.persitUserInstances).toHaveBeenCalledTimes(1);
     });
 
+    describe('dbIds', () => {
+      // An annotation numbers its new instances itself, from -1 down; this browser may already have handed those out.
+      const exported = (): UserInstances => ({
+        newInstances: [
+          { dbId: -1, schemaClassName: 'Reaction', displayName: 'R', attributes: { dbId: -1, input: [{ dbId: -2, schemaClassName: 'EntityWithAccessionedSequence', displayName: 'LANA1' }, { dbId: 4655360, schemaClassName: 'EntityWithAccessionedSequence', displayName: 'AURKB' }], literatureReference: { dbId: -3, schemaClassName: 'LiteratureReference', displayName: 'Paper' } } } as any,
+          { dbId: -2, schemaClassName: 'EntityWithAccessionedSequence', displayName: 'LANA1', attributes: { dbId: -2 } } as any,
+          { dbId: -3, schemaClassName: 'LiteratureReference', displayName: 'Paper', attributes: { dbId: -3 } } as any,
+        ],
+        updatedInstances: [{ dbId: 9973909, schemaClassName: 'Pathway', displayName: 'P', attributes: { hasEvent: [{ dbId: 10, schemaClassName: 'Reaction' }, { dbId: -1, schemaClassName: 'Reaction' }] } } as any],
+        deletedInstances: [], bookmarks: [{ dbId: -2, schemaClassName: 'EntityWithAccessionedSequence', displayName: 'LANA1' }],
+      });
+
+      it('come from the shared counter, with every reference in the load following, and the exported ones reported', async () => {
+        make(staged(0));
+        dataService.claimNewDbIds.and.returnValue(Promise.resolve([-41, -42, -43]));
+        const r = await service.loadAnnotationInstances(exported()).toPromise();
+        expect(dataService.claimNewDbIds).toHaveBeenCalledWith(3);
+        const loaded = loadedPayload() as any;
+        expect(loaded.newInstances.map((i: any) => i.dbId)).toEqual([-41, -42, -43]);
+        expect(loaded.newInstances.map((i: any) => i.attributes.dbId)).toEqual([-41, -42, -43]);
+        const reaction = loaded.newInstances[0].attributes;
+        expect(reaction.input.map((x: any) => x.dbId)).toEqual([-42, 4655360]);         // an existing instance keeps its dbId
+        expect(reaction.literatureReference.dbId).toBe(-43);
+        expect(loaded.updatedInstances[0].attributes.hasEvent.map((x: any) => x.dbId)).toEqual([10, -41]);
+        expect(loaded.bookmarks.map((b: any) => b.dbId)).toEqual([-42]);
+        expect([...r!.stagedToExported]).toEqual([[-41, -1], [-42, -2], [-43, -3]]);
+      });
+
+      it('forget whatever this tab still caches under the dbIds they are given', async () => {
+        make(staged(0));
+        dataService.claimNewDbIds.and.returnValue(Promise.resolve([-5, -6, -7]));
+        await service.loadAnnotationInstances(exported()).toPromise();
+        expect(instUtils.forgetNewDbId.calls.allArgs()).toEqual([[-5], [-6], [-7]]);
+      });
+
+      it('leave the caller\'s export untouched', async () => {
+        make(staged(0));
+        dataService.claimNewDbIds.and.returnValue(Promise.resolve([-41, -42, -43]));
+        const e = exported();
+        await service.loadAnnotationInstances(e).toPromise();
+        expect(e).toEqual(exported());
+      });
+    });
+
     describe('the default person', () => {
       it('is kept: the load carries the staged default person, and the annotation itself is not modified', async () => {
         make(staged(5, { defaultPerson: person(77) }));
         const r = await service.loadAnnotationInstances(incoming).toPromise();
         expect(loadedPayload().defaultPerson).toEqual(person(77));
-        expect(loadedPayload().newInstances).toBe(incoming.newInstances);     // everything else is the annotation's
+        expect(loadedPayload().newInstances).toEqual(incoming.newInstances);     // everything else is the annotation's
         expect(incoming.defaultPerson).toBeUndefined();                       // the caller's object is untouched
         expect(r!.keptDefaultPerson).toBeTrue();
       });
@@ -114,7 +163,7 @@ describe('UserInstancesService annotation loading', () => {
         const r = await service.loadAnnotationInstances(incoming).toPromise();
         expect(dataService.persitUserInstances).not.toHaveBeenCalled();
         expect(loadedPayload().defaultPerson).toEqual(person(77));
-        expect(r).toEqual({ replaced: 0, backedUp: false, keptDefaultPerson: true, keptBookmarks: 0, loaded: 3 });
+        expect(r).toEqual({ replaced: 0, backedUp: false, keptDefaultPerson: true, keptBookmarks: 0, loaded: 3, stagedToExported: jasmine.any(Map) });
       });
 
       it('yields to one the incoming data names itself, which then counts as replaced', async () => {
@@ -122,7 +171,7 @@ describe('UserInstancesService annotation loading', () => {
         const own = staged(3, { defaultPerson: person(88) });
         const r = await service.loadAnnotationInstances(own).toPromise();
         expect(importSpy).toHaveBeenCalledWith(own);
-        expect(r).toEqual({ replaced: 3, backedUp: true, backupFile: 'newest.json', ...none, loaded: 3 });
+        expect(r).toEqual({ replaced: 3, backedUp: true, backupFile: 'newest.json', ...none, loaded: 3, stagedToExported: jasmine.any(Map) });
       });
 
       it('when none is staged, nothing is invented', async () => {
@@ -138,7 +187,7 @@ describe('UserInstancesService annotation loading', () => {
         make(staged(5, { bookmarks: [bookmark(1), bookmark(2)] }));
         const r = await service.loadAnnotationInstances(incoming).toPromise();
         expect(loadedPayload().bookmarks).toEqual([bookmark(1), bookmark(2)]);
-        expect(loadedPayload().newInstances).toBe(incoming.newInstances);
+        expect(loadedPayload().newInstances).toEqual(incoming.newInstances);
         expect(incoming.bookmarks).toEqual([]);                               // the caller's object is untouched
         expect(r!.keptBookmarks).toBe(2);
       });
@@ -155,7 +204,7 @@ describe('UserInstancesService annotation loading', () => {
         const r = await service.loadAnnotationInstances(incoming).toPromise();
         expect(dataService.persitUserInstances).not.toHaveBeenCalled();
         expect(loadedPayload().bookmarks).toEqual([bookmark(1)]);
-        expect(r).toEqual({ replaced: 0, backedUp: false, keptDefaultPerson: false, keptBookmarks: 1, loaded: 3 });
+        expect(r).toEqual({ replaced: 0, backedUp: false, keptDefaultPerson: false, keptBookmarks: 1, loaded: 3, stagedToExported: jasmine.any(Map) });
       });
 
       it('yield to a non-empty list the incoming data brings itself, and the staged ones then count as replaced', async () => {
@@ -163,7 +212,7 @@ describe('UserInstancesService annotation loading', () => {
         const own = staged(3, { bookmarks: [bookmark(9)] });
         const r = await service.loadAnnotationInstances(own).toPromise();
         expect(importSpy).toHaveBeenCalledWith(own);
-        expect(r).toEqual({ replaced: 3, backedUp: true, backupFile: 'newest.json', ...none, loaded: 3 });
+        expect(r).toEqual({ replaced: 3, backedUp: true, backupFile: 'newest.json', ...none, loaded: 3, stagedToExported: jasmine.any(Map) });
       });
 
       it('are kept together with the default person', async () => {
@@ -171,7 +220,7 @@ describe('UserInstancesService annotation loading', () => {
         const r = await service.loadAnnotationInstances(incoming).toPromise();
         expect(loadedPayload().bookmarks.length).toBe(3);
         expect(loadedPayload().defaultPerson).toEqual(person(77));
-        expect(r).toEqual({ replaced: 4, backedUp: true, backupFile: 'newest.json', keptDefaultPerson: true, keptBookmarks: 3, loaded: 3 });
+        expect(r).toEqual({ replaced: 4, backedUp: true, backupFile: 'newest.json', keptDefaultPerson: true, keptBookmarks: 3, loaded: 3, stagedToExported: jasmine.any(Map) });
       });
 
       it('with none staged, the annotation goes through untouched', async () => {
@@ -205,7 +254,8 @@ describe('UserInstancesService annotation loading', () => {
     const realImport = (current: UserInstances) => {
       const dispatched: any[] = [];
       const ds = jasmine.createSpyObj('DataService', ['persitUserInstances', 'listUserInstanceBackups', 'hydrateUserInstances',
-        'computePersistPayload', 'resetNextNewDbId', 'fetchBookmarkShell']);
+        'computePersistPayload', 'resetNextNewDbId', 'fetchBookmarkShell', 'claimNewDbIds']);
+      ds.claimNewDbIds.and.callFake((n: number) => Promise.resolve(Array.from({ length: n }, (_, k) => -100 - k)));
       ds.persitUserInstances.and.returnValue(of({}));
       ds.listUserInstanceBackups.and.returnValue(of([]));
       ds.hydrateUserInstances.and.callFake((u: UserInstances) => of(u));
@@ -214,7 +264,7 @@ describe('UserInstancesService annotation loading', () => {
       const a = jasmine.createSpyObj('AuthenticateService', ['getUser']);
       a.getUser.and.returnValue('curator1');
       spyOn(window, 'addEventListener');
-      const svc = new UserInstancesService({ makeShell: (i: Instance) => i } as any, ds, a, { dispatch: (x: any) => dispatched.push(x) } as any);
+      const svc = new UserInstancesService({ makeShell: (i: Instance) => i, forgetNewDbId: () => {} } as any, ds, a, { dispatch: (x: any) => dispatched.push(x) } as any);
       spyOn<any>(svc, 'currentStaged').and.returnValue(of(current));
       return { svc, dispatched };
     };

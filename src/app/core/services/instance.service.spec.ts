@@ -751,3 +751,62 @@ describe('InstanceUtilities.commitNewInstances', () => {
     expect(dataService.commit.calls.allArgs().map(args => args[0].dbId)).toEqual([reaction.dbId, pathway.dbId]);
   });
 });
+
+/**
+ * 2026-11-09: a new LiteratureReference was handed -5, the dbId of an EWAS loaded from Paper2Path and discarded
+ * earlier in the same (never reloaded) tab. It inherited that EWAS's cached shell, so after the reference was
+ * committed the reaction citing it was sent claiming the reference was an EWAS, and the server refused the commit.
+ */
+describe('InstanceUtilities with a reused new dbId', () => {
+  let utils: InstanceUtilities;
+  const inst = (dbId: number, displayName: string, schemaClassName: string): Instance =>
+    ({ dbId, displayName, schemaClassName, attributes: new Map<string, any>() });
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        InstanceUtilities,
+        { provide: Store, useValue: jasmine.createSpyObj<Store>('Store', ['dispatch']) },
+        { provide: MatDialog, useValue: jasmine.createSpyObj<MatDialog>('MatDialog', ['open']) },
+        { provide: CommitResultDialogService, useValue: jasmine.createSpyObj<CommitResultDialogService>('CommitResultDialogService', ['openDialog']) },
+        { provide: MatchedInstancesDialogService, useValue: jasmine.createSpyObj<MatchedInstancesDialogService>('MatchedInstancesDialogService', ['openDialog']) },
+      ]
+    });
+    utils = TestBed.inject(InstanceUtilities);
+  });
+
+  it('a stale shell of another class takes the new instance\'s class and name, so the reference commits as what it is', () => {
+    utils.getShellInstance(inst(-5, 'LANA1', 'EntityWithAccessionedSequence'));             // the discarded EWAS
+    const ref = utils.getShellInstance(inst(-5, 'Carmena M et al. 2012', 'LiteratureReference'));
+    expect(ref.schemaClassName).toBe('LiteratureReference');
+    expect(ref.displayName).toBe('Carmena M et al. 2012');
+    utils.setCommittedNewInstDbId(-5, 10006294);
+    expect(ref.dbId).toBe(10006294);
+    expect(ref.schemaClassName).toBe('LiteratureReference');
+  });
+
+  it('a shell of the same class is still shared and kept as it is', () => {
+    const shell = utils.getShellInstance(inst(-7, 'A -> B', 'Reaction'));
+    expect(utils.getShellInstance(inst(-7, 'A -> B', 'Reaction'))).toBe(shell);
+    expect(shell.schemaClassName).toBe('Reaction');
+  });
+
+  it('forgetNewDbId: a later lookup gets a fresh shell, and referrers keep the old object as it was', () => {
+    const old = utils.getShellInstance(inst(-5, 'LANA1', 'EntityWithAccessionedSequence'));
+    utils.setDeletedDbId(-5);
+    expect(utils.isPermanentlyRemovedNewInstance(-5)).toBeTrue();
+    utils.forgetNewDbId(-5);
+    expect(utils.isPermanentlyRemovedNewInstance(-5)).toBeFalse();
+    const fresh = utils.getShellInstance(inst(-5, 'Carmena M et al. 2012', 'LiteratureReference'));
+    expect(fresh).not.toBe(old);
+    expect(fresh.schemaClassName).toBe('LiteratureReference');
+    expect(old.schemaClassName).toBe('EntityWithAccessionedSequence');
+    expect(old.displayName).toBe('LANA1');
+  });
+
+  it('forgetNewDbId leaves committed instances alone', () => {
+    const shell = utils.getShellInstance(inst(42, 'X', 'Reaction'));
+    utils.forgetNewDbId(42);
+    expect(utils.getShellInstance(inst(42, 'X', 'Reaction'))).toBe(shell);
+  });
+});

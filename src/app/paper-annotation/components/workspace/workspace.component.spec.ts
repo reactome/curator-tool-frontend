@@ -5,9 +5,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { Subject, of, throwError } from 'rxjs';
 import { UserInstancesService } from 'src/app/auth/login/user-instances.service';
-import { ExistingMatch, Issue, PaperInfo, Proposal, SessionDetail } from '../../models/llm-api.models';
+import { EntityInfo, ExistingMatch, Issue, PaperInfo, Proposal, SessionDetail } from '../../models/llm-api.models';
 import { LlmApiError } from '../../services/llm-api.service';
-import { CHECKED_REACTIONS_KEY, LOADED_SESSION_KEY } from '../../services/staging';
+import { CHECKED_REACTIONS_KEY, LOADED_DB_IDS_KEY, LOADED_SESSION_KEY } from '../../services/staging';
 import { ReferencePreparer } from '../../services/reference-preparer.service';
 import { WorkspaceComponent } from './workspace.component';
 
@@ -22,6 +22,8 @@ describe('WorkspaceComponent', () => {
   const match = (key: string, level: ExistingMatch['level']): ExistingMatch =>
     ({ reaction_key: key, db_id: 1, display_name: 'x', st_id: 'R-HSA-1', level, score: 1, cites_pmid: false, catalyst_match: true, overlap: 1, similarity: 1, reasons: [] });
 
+  const entity = (key: string): EntityInfo =>
+    ({ key, participant: { kind: 'ewas', key, name: key.toUpperCase(), needs_resolution: [] }, dbId: -20, reactions: [], partOf: [] });
   const suggestion = (id: string, key: string): Proposal =>
     ({ id, reason: 'why', ops: [], summary: ['changes'], reaction_keys: [key], evidence: [], actor: 'suggestions', status: 'pending', created: 1, decided_by: null, decided_at: null });
 
@@ -47,7 +49,9 @@ describe('WorkspaceComponent', () => {
   const loadedIds = () => (userInstances.loadAnnotationInstances.calls.mostRecent().args[0].newInstances as any[]).map(i => i.dbId);
 
   const make = () => {
-    api = jasmine.createSpyObj('LlmApiService', ['session', 'issues', 'existing', 'exportInstances', 'proposals']);
+    api = jasmine.createSpyObj('LlmApiService', ['session', 'issues', 'existing', 'exportInstances', 'proposals',
+                                                 'identifySessionPaper', 'setPaperPmid', 'entities', 'qaAll']);
+    api.entities.and.returnValue(of([entity('pink1'), entity('ub')]));
     api.session.and.returnValue(of(session('ready')));
     api.issues.and.returnValue(of([issue('i1', 'r0', 'action'), issue('i2', 'r0', 'warning'), issue('i3', 'r1', 'info', 'dismissed')]));
     api.existing.and.returnValue(of([match('r1', 'same'), match('r0', 'similar')]));
@@ -59,7 +63,7 @@ describe('WorkspaceComponent', () => {
     snack.open.and.returnValue({ onAction: () => snackAction } as any);
     userInstances = jasmine.createSpyObj('UserInstancesService', ['stagedSummary', 'loadAnnotationInstances']);
     userInstances.stagedSummary.and.returnValue(of({ replaced: 4, keepsDefaultPerson: false, keepsBookmarks: 0 }));
-    userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 4, backedUp: true, backupFile: 'b.json', loaded: 2, keptDefaultPerson: false, keptBookmarks: 0 }));
+    userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 4, backedUp: true, backupFile: 'b.json', loaded: 2, keptDefaultPerson: false, keptBookmarks: 0, stagedToExported: new Map<number, number>() }));
     location = jasmine.createSpyObj('Location', ['prepareExternalUrl']);
     location.prepareExternalUrl.and.callFake((path: string) => `/curatortool${path}`);
     openSpy = spyOn(window, 'open');
@@ -68,11 +72,13 @@ describe('WorkspaceComponent', () => {
     references.prepare.and.callFake((e: any) => of({ exported: e, report: noReferences }));
     component = new WorkspaceComponent(api, route, location, dialog, snack, userInstances, references);
     localStorage.removeItem(LOADED_SESSION_KEY);
+    localStorage.removeItem(LOADED_DB_IDS_KEY);
   };
   const answer = (confirmed: boolean) => dialog.open.and.returnValue({ afterClosed: () => of(confirmed) } as any);
 
   afterEach(() => {
     localStorage.removeItem(LOADED_SESSION_KEY);
+    localStorage.removeItem(LOADED_DB_IDS_KEY);
     localStorage.removeItem(CHECKED_REACTIONS_KEY + 's1');
     localStorage.removeItem(WorkspaceComponent.DETAIL_WIDTH_KEY);
   });
@@ -110,6 +116,69 @@ describe('WorkspaceComponent', () => {
     expect(component.title).toBe('3 papers');
     expect(component.papers.map(component.paperLabel)).toEqual(['PMID 24751536', 'clock.pdf', 'PMID 29168502']);
   });
+
+  it('gives an uploaded PDF its PubMed ID: finds it in PubMed for the curator to check, saves it, and re-reads everything', fakeAsync(() => {
+    make();
+    const pdf: PaperInfo = { source: 'ab12_tp53.pdf', kind: 'pdf', pmid: null, name: 'tp53.pdf' };
+    component.id = 's1';                                                   // set from the route by ngOnInit
+    component.session = { ...session('ready'), pmid: null, source: 'tp53.pdf', papers: [pdf] };
+    expect(component.title).toBe('tp53.pdf');
+    expect(component.pdfPapers).toEqual([pdf]);
+    component.editPmid(pdf);
+    expect(component.editingPmid).toBe('ab12_tp53.pdf');
+    api.identifySessionPaper.and.returnValue(of({ found: true, pmid: '33824975', title: 'Intact TP-53 function', method: 'doi' }));
+    component.findPmid(pdf);
+    expect(api.identifySessionPaper).toHaveBeenCalledWith('s1', 'ab12_tp53.pdf');
+    expect(component.pmidDraft).toBe('33824975');                          // offered, not saved
+    expect(component.pmidNote).toContain('Found by its DOI: Intact TP-53 function');
+    expect(api.setPaperPmid).not.toHaveBeenCalled();
+    component.pmidDraft = '33x';
+    expect(component.pmidDraftValid).toBeFalse();
+    component.savePmid(pdf);
+    expect(api.setPaperPmid).not.toHaveBeenCalled();
+    component.pmidDraft = '33824975';
+    api.setPaperPmid.and.returnValue(of({ papers: [{ ...pdf, pmid: '33824975' }], title: 'Intact TP-53 function' }));
+    const reload = spyOn(component, 'reload');
+    component.savePmid(pdf);
+    expect(api.setPaperPmid).toHaveBeenCalledWith('s1', 'ab12_tp53.pdf', '33824975');
+    expect(component.editingPmid).toBeNull();
+    expect(reload).toHaveBeenCalled();
+    component.session = { ...session('ready'), pmid: '33824975', source: 'tp53.pdf', papers: [{ ...pdf, pmid: '33824975' }] };
+    expect(component.title).toBe('tp53.pdf (PMID 33824975)');
+  }));
+
+  it('waits for Find in PubMed behind a panel, which the curator can stop', fakeAsync(() => {
+    make();
+    const pdf: PaperInfo = { source: 'ab12_tp53.pdf', kind: 'pdf', pmid: null, name: 'tp53.pdf' };
+    component.id = 's1';
+    component.session = { ...session('ready'), papers: [pdf] };
+    const answer$ = new Subject<any>();
+    api.identifySessionPaper.and.returnValue(answer$);
+    component.editPmid(pdf);
+    component.findPmid(pdf);
+    expect(component.pmidFinding).toBeTrue();
+    component.stopFindingPmid();
+    expect(component.pmidFinding).toBeFalse();
+    expect(component.pmidBusy).toBeFalse();
+    expect(component.pmidNote).toContain('stopped waiting');
+    answer$.next({ found: true, pmid: '33824975', title: 't', method: 'doi' });     // too late: ignored
+    expect(component.pmidDraft).toBe('');
+    api.identifySessionPaper.and.returnValue(of({ found: false, note: 'no match' }));
+    component.findPmid(pdf);
+    expect(component.pmidFinding).toBeFalse();                                        // answered: the panel goes
+  }));
+
+  it('shows why a PubMed ID could not be saved, and keeps the editor open', fakeAsync(() => {
+    make();
+    const pdf: PaperInfo = { source: 'ab12_x.pdf', kind: 'pdf', pmid: null, name: 'x.pdf' };
+    component.session = { ...session('ready'), papers: [pdf] };
+    component.editPmid(pdf);
+    component.pmidDraft = '999';
+    api.setPaperPmid.and.returnValue(throwError(() => new LlmApiError(422, 'PubMed has no record of PMID 999')));
+    component.savePmid(pdf);
+    expect(component.editingPmid).toBe('ab12_x.pdf');
+    expect(component.pmidNote).toBe('PubMed has no record of PMID 999');
+  }));
 
   it('stops at a failed session and shows nothing to review', fakeAsync(() => {
     make();
@@ -187,7 +256,7 @@ describe('WorkspaceComponent', () => {
     discardPeriodicTasks();
   }));
 
-  it('follows a reaction removed elsewhere (Issues tab, accepted edit): the selection moves to the first one', fakeAsync(() => {
+  it('follows a reaction removed elsewhere (an accepted edit): the selection moves to the first one', fakeAsync(() => {
     make();
     component.ngOnInit();
     tick(0);
@@ -240,6 +309,7 @@ describe('WorkspaceComponent', () => {
   describe('loading into staged instances', () => {
     beforeEach(fakeAsync(() => {
       make(); component.ngOnInit(); tick(0); component.ngOnDestroy(); discardPeriodicTasks();
+      api.exportInstances.calls.reset();          // the review read them too ("As Reactome instances"): count the load's own
       component.setChecked('r0', true);
     }));
 
@@ -260,10 +330,18 @@ describe('WorkspaceComponent', () => {
       expect(snack.open.calls.mostRecent().args[0]).toContain('b.json');
     });
 
+    it('remembers which exported dbId each renumbered instance came from, for its evidence', () => {
+      answer(true);
+      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 0, backedUp: false, loaded: 2, keptDefaultPerson: false,
+        keptBookmarks: 0, stagedToExported: new Map([[-41, -5], [-42, -2]]) }));
+      component.loadIntoStaging();
+      expect(JSON.parse(localStorage.getItem(LOADED_DB_IDS_KEY)!)).toEqual({ '-41': -5, '-42': -2 });
+    });
+
     it('tells the curator what was kept, in the dialog and afterwards', () => {
       answer(true);
       userInstances.stagedSummary.and.returnValue(of({ replaced: 4, keepsDefaultPerson: true, keepsBookmarks: 3 }));
-      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 4, backedUp: true, backupFile: 'b.json', loaded: 2, keptDefaultPerson: true, keptBookmarks: 3 }));
+      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 4, backedUp: true, backupFile: 'b.json', loaded: 2, keptDefaultPerson: true, keptBookmarks: 3, stagedToExported: new Map<number, number>() }));
       component.loadIntoStaging();
       expect(dialog.open.calls.mostRecent().args[1]!.data).toEqual(jasmine.objectContaining({ staged: 4, keepsDefaultPerson: true, keepsBookmarks: 3 }));
       expect(snack.open.calls.mostRecent().args[0]).toContain('Kept as they are: your default person and 3 bookmarks.');
@@ -271,10 +349,10 @@ describe('WorkspaceComponent', () => {
 
     it('words a single kept bookmark, and a kept default person alone', () => {
       answer(true);
-      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 0, backedUp: false, loaded: 2, keptDefaultPerson: false, keptBookmarks: 1 }));
+      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 0, backedUp: false, loaded: 2, keptDefaultPerson: false, keptBookmarks: 1, stagedToExported: new Map<number, number>() }));
       component.loadIntoStaging();
       expect(snack.open.calls.mostRecent().args[0]).toContain('Kept as they are: your 1 bookmark.');
-      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 0, backedUp: false, loaded: 2, keptDefaultPerson: true, keptBookmarks: 0 }));
+      userInstances.loadAnnotationInstances.and.returnValue(of({ replaced: 0, backedUp: false, loaded: 2, keptDefaultPerson: true, keptBookmarks: 0, stagedToExported: new Map<number, number>() }));
       component.loadIntoStaging();
       expect(snack.open.calls.mostRecent().args[0]).toContain('Kept as they are: your default person.');
     });
@@ -447,18 +525,69 @@ describe('WorkspaceComponent', () => {
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));
-  it('lists only the suggestions the service made, named by their reaction, and refreshes them after a decision', fakeAsync(() => {
+  it('reads the suggestions the service made, the entities and the instances with the issues, and again after a decision', fakeAsync(() => {
     make();
     component.ngOnInit();
     tick(0);
     expect(component.suggestions.map(p => p.id)).toEqual(['p-001']);          // the chat proposal is not a suggestion
-    expect(component.suggestionReaction(component.suggestions[0])).toBe('PINK1 phosphorylates Ub');
+    expect(component.entities.map(e => e.key)).toEqual(['pink1', 'ub']);
+    expect(component.instances[-5].schemaClassName).toBe('Reaction');          // by dbId, for "As Reactome instances"
     api.proposals.and.returnValue(of([]));
+    api.entities.and.returnValue(of([entity('pink1')]));
     component.onProposalDecided({ ...suggestion('p-001', 'r0'), status: 'rejected' });
     expect(component.suggestions).toEqual([]);
+    expect(component.entities.length).toBe(1);                                 // every tab follows the same re-read
     component.ngOnDestroy();
     discardPeriodicTasks();
   }));
+
+  it('shows the reviewer confidence of each reviewed reaction, and can list the least confident first', fakeAsync(() => {
+    make();
+    api.session.and.returnValue(of({ ...session('ready'), qa: {
+      r0: { priority: 'review', summary: null, score: 0.85, is_reaction: true },
+      r1: { priority: 'fix', summary: null, score: 0.3, is_reaction: true } } }));
+    component.ngOnInit();
+    tick(0);
+    expect(component.confidence('r0')).toEqual(jasmine.objectContaining({ pct: 85, level: 'high' }));
+    expect(component.confidence('r1')?.level).toBe('low');
+    expect(component.confidence('r9')).toBeNull();                               // not reviewed: no bar
+    component.reactionSort = 'confidence';
+    expect(component.sortedReactions.map(r => r.key)).toEqual(['r1', 'r0']);
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
+  it('lists the general issues (no reaction, no entity) and opens an entity in the Entities tab', fakeAsync(() => {
+    make();
+    api.issues.and.returnValue(of([issue('i1', 'r0', 'action'), issue('g1', null, 'warning'), issue('g2', null, 'info', 'resolved'),
+                                   { ...issue('e1', null, 'info'), participant_key: 'ub' }]));
+    component.ngOnInit();
+    tick(0);
+    expect(component.generalIssues.map(i => i.id)).toEqual(['g1', 'g2']);
+    expect(component.openGeneralIssues).toBe(1);
+    component.openEntity('ub');
+    expect(component.entityKey).toBe('ub');
+    expect(component.tab).toBe(1);
+    component.openReaction('r1');
+    expect(component.tab).toBe(0);
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
+  it('checks every reaction from the reaction list, then re-reads everything', fakeAsync(() => {
+    make();
+    component.ngOnInit();
+    tick(0);
+    api.qaAll.and.returnValue(of([]));
+    api.issues.calls.reset();
+    component.checkAll();
+    expect(api.qaAll).toHaveBeenCalledWith('s1');
+    expect(component.checkingAll).toBeFalse();
+    expect(api.issues).toHaveBeenCalledTimes(1);
+    component.ngOnDestroy();
+    discardPeriodicTasks();
+  }));
+
   describe('the divider between the network and the reaction panel', () => {
     // a split 1000px wide whose right edge is at x = 1100
     const split = { getBoundingClientRect: () => ({ right: 1100 }), clientWidth: 1000 } as unknown as HTMLElement;

@@ -18,6 +18,12 @@ ul { margin: 0; padding-left: 18px; }
 .open-issues ul, .qa ul { list-style: none; padding-left: 0; }
 .title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .title-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; flex-shrink: 0; margin-top: 4px; }
+.remove-slot { position: relative; display: inline-block; }
+.remove-slot .asking { visibility: hidden; }                     /* keeps its place: nothing moves */
+.remove-slot .cancel { position: absolute; inset: 0; width: 100%; height: 100%; }   /* exactly where Remove was */
+.remove-slot .confirm-remove { position: absolute; right: calc(100% + 8px); top: 50%; transform: translateY(-50%); z-index: 2;
+  white-space: nowrap; box-shadow: 0 1px 4px rgba(0, 0, 0, .2); }
+.remove-slot .confirm-remove span { flex: none; min-width: 0; }
 .confirm-remove { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; background: #fdecea; color: #7a1c14;
   border-radius: 4px; padding: 8px 12px; margin: 8px 0; }
 .confirm-remove span { flex: 1; min-width: 200px; }
@@ -25,3 +31,33 @@ ul { margin: 0; padding-left: 18px; }
 .qa-summary { font-weight: 500; margin: 4px 0; }
 .qa { background: #f5f7fa; border-radius: 4px; padding: 8px 12px; margin: 8px 0; }
 .error { display: flex; align-items: center; gap: 8px; background: #fdecea; color: #7a1c14; padding: 10px 12px; border-radius: 4px; }
+
+.compartments { color: #555; font-size: 13px; margin: 0 0 6px; }
+.comp { margin-left: 8px; border-radius: 10px; padding: 0 8px; font-size: 12px; cursor: help; border: 1px solid transparent; }
+.comp-stated { background: #e8f5e9; color: #1b5e20; }
+.comp-shown { background: #e3f2fd; color: #0d47a1; }
+.comp-parts { background: #f3e5f5; color: #4a148c; }
+.comp-curator { background: #eceff1; color: #37474f; }
+.comp-none { background: transparent; color: #8a4b00; border-color: #ffcc80; border-style: dashed; }
+.in-reactome { margin-left: 6px; background: #fff8e1; color: #6d4c00; border-radius: 10px; padding: 0 8px; font-size: 12px; }
+.keep-question { display: flex; gap: 12px; align-items: flex-start; background: #fff8f6; border: 1px solid #f3d2cc;
+  border-radius: 4px; padding: 8px 12px; margin: 10px 0; font-size: 13px; }
+.keep-question .text { flex: 1; min-width: 0; }
+.keep-question .why { color: #444; margin-top: 2px; }
+.keep-question .lookalike { color: #6a1b9a; }
+.keep-question .decide { display: flex; gap: 6px; flex-shrink: 0; }
+h4.sub { margin: 10px 0 2px; }
+.fixes app-proposal-card { display: block; margin-bottom: 8px; }
+.entity-link { background: none; border: none; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+.entity-link:hover { color: #1565c0; text-decoration: underline; }
+.in-reactome { display: inline-flex; gap: 4px; align-items: baseline; }
+.existing-instance { font-size: 13px; }
+.model h3 { margin-bottom: 2px; }
+.toggle { background: none; border: none; padding: 0; font: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; }
+.hint { color: #666; font-size: 12px; margin: 0; }
+
+.entity-rows { list-style: none; padding: 0; margin: 0; }
+.entity-rows > li { padding: 4px 0; border-bottom: 1px solid #f0f0f0; }
+.entity-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 0; font-size: 13px; }
+.entity-row .role { color: #777; font-size: 11px; min-width: 76px; margin-right: 6px; }
+.entity-issues { display: block; margin: 2px 0 2px 82px; }

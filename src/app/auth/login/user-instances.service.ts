@@ -1,15 +1,16 @@
 import { Injectable } from "@angular/core";
 import { Store } from "@ngrx/store";
-import { combineLatest, defaultIfEmpty, finalize, forkJoin, Observable, of, take, throwError } from "rxjs";
+import { combineLatest, defaultIfEmpty, finalize, forkJoin, from, Observable, of, take, throwError } from "rxjs";
 import { catchError, map, switchMap, tap } from "rxjs/operators";
 import { DiagramLock, Instance, UserInstances } from "src/app/core/models/reactome-instance.model";
 import { AuthenticateService } from "src/app/core/services/authenticate.service";
-import { DataService } from "src/app/core/services/data.service";
+import { DataService, NEXT_NEW_DB_ID_STORAGE_KEY } from "src/app/core/services/data.service";
 import { InstanceUtilities } from "src/app/core/services/instance.service";
 import { DefaultPersonActions, DeleteInstanceActions, NewInstanceActions, UpdateInstanceActions } from "src/app/instance/state/instance.actions";
 import { defaultPerson, deleteInstances, newInstances, updatedInstances } from "src/app/instance/state/instance.selectors";
 import { BookmarkActions } from "src/app/schema-view/instance-bookmark/state/bookmark.actions";
 import { bookmarkedInstances } from "src/app/schema-view/instance-bookmark/state/bookmark.selectors";
+import { renumberNewInstances } from "src/app/paper-annotation/services/staging";
 // import { PathwayDiagramObjectActions } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.actions";
 // import { pathwayDiagramObjects } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.selectors";
 // import { PathwayDiagramObject } from "src/app/event-view/components/pathway-diagram/state/pathway-diagram-object.model";
@@ -28,6 +29,12 @@ export interface AnnotationLoadResult {
     keptDefaultPerson: boolean;
     /** How many of the curator's bookmarks were kept through the load. */
     keptBookmarks: number;
+    /**
+     * The dbId each loaded new instance was given here, mapped to the dbId it was exported with. Loaded instances
+     * are renumbered from this browser's own counter (see renumberNewInstances); the annotation service still
+     * knows them by the exported dbId.
+     */
+    stagedToExported: Map<number, number>;
 }
 
 /** What a load would replace, for the confirmation shown before it happens. */
@@ -255,7 +262,25 @@ export class UserInstancesService {
      * the id the annotation session knows it by (which is how its evidence is found). What is carried
      * over is the curator's own default person and bookmarks (see loadPlan).
      */
-    loadAnnotationInstances(incoming: UserInstances): Observable<AnnotationLoadResult> {
+    loadAnnotationInstances(exported: UserInstances): Observable<AnnotationLoadResult> {
+        // The annotation numbered its new instances itself (from -1 down). Give them dbIds from the counter every tab
+        // shares, so none can be one this browser already handed out, and drop whatever is still cached under them
+        // (see DataService.getNextNewDbId: a reused dbId hands its stale shell, class and all, to the new instance).
+        const count = new Set((exported.newInstances ?? []).map(i => i.dbId).filter(id => id < 0)).size;
+        let stagedToExported = new Map<number, number>();
+        return from(this.dataService.claimNewDbIds(count)).pipe(
+            map(fresh => {
+                const r = renumberNewInstances(exported, fresh);
+                stagedToExported = r.stagedToExported;
+                fresh.forEach(id => this.instUtils.forgetNewDbId(id));
+                return r.payload;
+            }),
+            switchMap(incoming => this.loadRenumberedAnnotation(incoming)),
+            map(r => ({ ...r, stagedToExported }))
+        );
+    }
+
+    private loadRenumberedAnnotation(incoming: UserInstances): Observable<Omit<AnnotationLoadResult, 'stagedToExported'>> {
         return this.currentStaged().pipe(
             switchMap(local => {
                 const plan = this.loadPlan(local, incoming);
@@ -503,7 +528,11 @@ export class UserInstancesService {
             const preservedValues = this.captureLocalStorageValues([
                 // PathwayDiagramObjectActions.get_pathway_diagram_objects.type,
                 this.pathwayDiagramLockRefsStorageKey,
-                this.exactSavedDiagramNetworksStorageKey
+                this.exactSavedDiagramNetworksStorageKey,
+                // The new-dbId counter must never go back up while an open tab may still cache an
+                // instance under one of its dbIds: a tab that is not reloaded keeps its caches
+                // through a logout and a fresh login. See DataService.getNextNewDbId.
+                NEXT_NEW_DB_ID_STORAGE_KEY
             ]);
             localStorage.clear();
             this.restoreLocalStorageValues(preservedValues);

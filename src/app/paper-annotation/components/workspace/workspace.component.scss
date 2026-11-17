@@ -18,10 +18,10 @@ h1 { margin: 8px 0; font-size: 22px; font-weight: 500; }
 .running mat-progress-bar { margin: 0 auto 16px; }
 .step { font-size: 16px; margin: 0 0 12px; }
 .hint { color: #666; }
-.reactions { display: grid; grid-template-columns: minmax(240px, 320px) 1fr; gap: 16px; padding-top: 12px; align-items: start; }
+.reactions { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 16px; padding-top: 12px; align-items: start; }
 .reaction-column { min-width: 0; }
 .list-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px 4px 0; }
-.checked-count { color: #666; font-size: 13px; }
+.checked-count { color: #666; font-size: 13px; white-space: nowrap; }
 .load-check { flex-shrink: 0; margin: -10px 0 -10px -8px; }
 .panel-check { display: block; margin: -4px 0 8px -8px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
 .reaction-list { list-style: none; margin: 0; padding: 0; border: 1px solid #e0e0e0; border-radius: 4px; max-height: 70vh; overflow: auto; }
@@ -62,11 +62,35 @@ h1 { margin: 8px 0; font-size: 22px; font-weight: 500; }
 .spacer { flex: 1; }
 .stale { display: flex; align-items: center; gap: 8px; background: #e3effa; color: #0d3c7a; padding: 8px 12px; border-radius: 4px; margin: 8px 0; }
 
-.suggestions {
-  padding: 16px;
-  max-width: 760px;
+.general {
+  padding: 12px 4px;
+  max-width: 860px;
 
-  .hint, .none { color: rgba(0, 0, 0, 0.6); }
-  .suggestion { margin-bottom: 16px; }
-  h3 { margin: 0 0 6px; font-size: 14px; font-weight: 500; }
+  .hint { color: rgba(0, 0, 0, 0.6); margin: 0 0 8px; }
+  .paper-list { margin: 0 0 12px; padding-left: 18px; font-size: 13px; }
+  .kind { color: #777; }
 }
+.check-all { flex-shrink: 0; }
+
+.pdf-ids { list-style: none; margin: 2px 0 0; padding: 0; width: 100%; font-size: 13px; color: #555; }
+.pdf-ids li { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.pdf-no-pmid { color: #9a5b00; }
+.pdf-pmid-field { width: 130px; }
+.pdf-pmid-note { font-size: 12px; color: #555; flex-basis: 100%; }
+
+/* the QA reviewer's confidence, under the reaction's name */
+.confidence { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.confidence .track { flex: 0 1 120px; height: 5px; background: #e0e0e0; border-radius: 3px; overflow: hidden; }
+.confidence .fill { display: block; height: 100%; border-radius: 3px; }
+.confidence .fill.conf-low { background: #c62828; }
+.confidence .fill.conf-medium { background: #ef6c00; }
+.confidence .fill.conf-high { background: #2e7d32; }
+.confidence .pct { font-size: 11px; color: #666; min-width: 30px; }
+
+/* covers the page while Find in PubMed looks */
+.blocker { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, .7); }
+.blocker-box { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; max-width: 420px;
+  background: #fff; padding: 16px 24px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, .15); }
+.blocker-box p { margin: 0; }
+.blocker-hint { color: #666; font-size: 13px; }

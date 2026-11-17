@@ -9,6 +9,8 @@ const LABELS: Record<UsageStep, string> = {
   draft: 'Building the Reactome draft',
   qa: 'Reaction checks',
   chat: 'Chat',
+  combine: 'Combining papers (shared reactions)',
+  compartments: 'Placing compartments (from the paper)',
 };
 
 /** How many language-model tokens each step of this annotation used. Steps that call no model are not listed. */

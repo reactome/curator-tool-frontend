@@ -418,10 +418,11 @@
           <mat-card-content>
             <ul>
               <li>Select a reaction to see its inputs, outputs, catalyst, regulators and the quotes behind them, with page, section and figure. In an annotation of several papers, each quote also says which paper it is from.</li>
-              <li>The Issues tab lists everything that needs your attention, such as identifiers that could not be resolved or a reaction Reactome already has. Mark each one resolved or dismiss it.</li>
+              <li>Each issue is shown with the reaction or entity it is about, such as an identifier that could not be resolved or a compartment the paper does not give, with the fix Paper2Path suggests for it, if any. Resolve or dismiss the issue, or accept or reject the fix; nothing changes until you accept it. Issues about the annotation as a whole are in the General issues tab.</li>
+              <li>As Reactome instances, at the top of a reaction or entity, shows what loading creates in Reactome's data model. Click a new instance to open it in place; an existing Reactome instance links to Schema View.</li>
+              <li>The Entities tab lists every protein, small molecule, complex and set with its compartment (from the paper, with the sentence it comes from), the reactions it takes part in and its issues.</li>
               <li>Check this reaction runs rule checks and a model review of one reaction. It marks the reaction Fix first, Needs fixing, Worth a look or No problems found, and says in one sentence what matters most.</li>
-              <li>Check all reactions, on the Issues tab, checks every reaction at once and lists them most urgent first under Look at these first. Click a reaction's name to open it.</li>
-              <li>The Suggested fixes tab lists edits Paper2Path suggests for some of the problems it found. Like a chat proposal, each shows what it changes and the quotes behind it; nothing changes until you accept it.</li>
+              <li>Check all, above the reaction list, checks every reaction at once. A bar under each reaction shows the reviewer's confidence; sort by Needs attention first or Lowest confidence first to see the reactions to look at first.</li>
               <li>The Network tab draws every reaction with its entities. Click a reaction to see its details in the panel on the right, with the rest of the network greyed out; double-click it to open it in Reactions. Click an entity to see the reactions it takes part in. Drag the bar between the network and the panel to resize them, and double-click the bar to reset it.</li>
               <li>The Usage tab shows how many language-model tokens each step used, including every reaction check and chat turn, so you can see what an annotation cost.</li>
             </ul>

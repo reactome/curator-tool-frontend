@@ -1,11 +1,13 @@
 /**
- * A small markdown-to-HTML renderer for the graph query answers. It covers what the model writes:
+ * A small markdown-to-HTML renderer for language-model answers (Ask the Graph, the Paper2Path chat). It covers what
+ * the model writes:
  * headings, paragraphs, bold/italic/strikethrough, inline code, fenced code, bulleted and numbered
  * lists (nested by indentation), block quotes, tables, rules and links.
  *
  * The source is HTML-escaped before any markup is added, so the answer can never inject its own
  * tags; links are only made for http(s) and mailto URLs. The result is still bound through
- * [innerHTML], so Angular's sanitizer has the final say.
+ * [innerHTML], so Angular's sanitizer has the final say. Style the container with the global `markdown-body` class
+ * (styles.scss); in a template, the `markdown` pipe (markdown.pipe.ts) renders and binds in one step.
  */
 export function renderMarkdown(source: string | null | undefined): string {
   if (!source) return '';

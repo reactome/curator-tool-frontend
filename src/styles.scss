@@ -313,3 +313,35 @@ mat-dialog-actions,
   justify-content: flex-end !important;
   margin-top: auto !important;
 }
+
+/*
+ * Rendered markdown from a language model (shared/markdown.ts), bound with [innerHTML]: Ask the Graph answers and the
+ * Paper2Path chat. Global rather than per component because [innerHTML] content gets no component style scoping.
+ * Prefixed with `body` to outrank Material's `.mat-typography h1/p/...` rules (the body has that class, and the theme
+ * stylesheet loads after this one), which would otherwise reset these headings' and paragraphs' sizes and margins.
+ */
+body .markdown-body > :first-child { margin-top: 0; }
+body .markdown-body > :last-child { margin-bottom: 0; }
+body .markdown-body p { margin: 0 0 10px; }
+body .markdown-body :is(h1, h2, h3, h4, h5, h6) { margin: 16px 0 8px; line-height: 1.3; font-weight: 500; }
+body .markdown-body h1 { font-size: 20px; }
+body .markdown-body h2 { font-size: 18px; }
+body .markdown-body h3 { font-size: 16px; }
+body .markdown-body :is(h4, h5, h6) { font-size: 14px; }
+body .markdown-body :is(ul, ol) { margin: 0 0 10px; padding-left: 24px; }
+body .markdown-body li :is(ul, ol) { margin-bottom: 0; }
+body .markdown-body li + li { margin-top: 2px; }
+body .markdown-body code { font-family: monospace; font-size: 12px; padding: 1px 4px; border-radius: 4px;
+    background: var(--surface-variant); }
+body .markdown-body pre { margin: 0 0 10px; padding: 10px 12px; border-radius: 8px; overflow: auto;
+    background: var(--surface-variant); }
+body .markdown-body pre code { padding: 0; background: none; }
+body .markdown-body blockquote { margin: 0 0 10px; padding: 2px 12px; color: var(--on-surface-variant);
+    border-left: 3px solid var(--outline-variant); }
+body .markdown-body hr { border: none; border-top: 1px solid var(--outline-variant); margin: 12px 0; }
+body .markdown-body a { color: var(--primary); }
+body .markdown-body table { border-collapse: collapse; font-size: 13px; margin: 0 0 10px; display: block;
+    max-width: 100%; overflow-x: auto; }
+body .markdown-body :is(th, td) { padding: 4px 10px; border: 1px solid var(--outline-variant); }
+body .markdown-body :is(th, td):not([align]) { text-align: left; }
+body .markdown-body th { background: var(--surface-variant); font-weight: 500; }

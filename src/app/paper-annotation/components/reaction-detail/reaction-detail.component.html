@@ -1,3 +1,12 @@
+<ng-template #who let-p>
+  <button type="button" class="entity-link" (click)="openEntity.emit(p.key)" matTooltip="Show it in the Entities tab"
+          matTooltipShowDelay="600">{{ describe(p) }}</button>
+  <span class="detail" *ngFor="let x of details(p)">{{ x }}</span>
+  <span class="comp" [ngClass]="'comp-' + compartment(p).cls" [matTooltip]="compartment(p).tip"
+        tabindex="0" [attr.aria-label]="'Compartment: ' + compartment(p).label + '. ' + compartment(p).tip">{{ compartment(p).label }}</span>
+  <span class="in-reactome" *ngIf="p.existing as ex">in Reactome: <app-db-instance-link [dbId]="ex.db_id" [name]="ex.display_name"></app-db-instance-link></span>
+  <span class="flag" *ngFor="let f of p.needs_resolution">needs {{ f }}</span>
+</ng-template>
 <div class="error" *ngIf="error" role="alert"><mat-icon>error_outline</mat-icon> {{ error }}</div>
 <p *ngIf="loading && !detail">Loading…</p>
 
@@ -11,15 +20,22 @@
       <button mat-stroked-button [disabled]="qaBusy || removing" (click)="runQa()"
               matTooltip="Review the whole reaction again (rule checks and the model): after an edit, or when it was not checked">
         <mat-icon>fact_check</mat-icon> {{ qaView ? 'Re-check this reaction' : 'Check this reaction' }}</button>
-      <button mat-stroked-button color="warn" [disabled]="qaBusy || removing || confirmRemove" (click)="confirmRemove = true"
-              matTooltip="Take this reaction out of the annotation">
-        <mat-icon>delete</mat-icon> Remove this reaction</button>
+      <!-- Asking keeps the layout still: the button keeps its place (hidden) and Cancel takes exactly that place, so a
+           click that does not move the mouse cancels; Remove opens to its left. -->
+      <span class="remove-slot">
+        <button mat-stroked-button color="warn" class="remove" [class.asking]="confirmRemove" [disabled]="qaBusy || removing"
+                (click)="askRemove()" matTooltip="Take this reaction out of the annotation">
+          <mat-icon>delete</mat-icon> Remove this reaction</button>
+        <ng-container *ngIf="confirmRemove">
+          <span class="confirm-remove" role="alertdialog" aria-label="Confirm removing the reaction">
+            <span>Remove {{ reactionKey }}, with its issues and suggested fixes?</span>
+            <button mat-flat-button color="warn" class="confirm" [disabled]="removing" (click)="remove()">Remove</button>
+          </span>
+          <button mat-stroked-button class="cancel" #cancelRemoveButton [disabled]="removing" (click)="confirmRemove = false"
+                  (keydown.escape)="confirmRemove = false">Cancel: keep it</button>
+        </ng-container>
+      </span>
     </div>
-  </div>
-  <div class="confirm-remove" *ngIf="confirmRemove" role="alertdialog" aria-label="Confirm removing the reaction">
-    <span>Remove “{{ d.reaction.name }}” ({{ reactionKey }}) from the annotation? Its issues and suggested fixes go with it.</span>
-    <button mat-flat-button color="warn" [disabled]="removing" (click)="remove()">Remove</button>
-    <button mat-button [disabled]="removing" (click)="confirmRemove = false">Cancel</button>
   </div>
   <mat-progress-bar *ngIf="removing" mode="indeterminate"></mat-progress-bar>
   <mat-progress-bar *ngIf="qaBusy" mode="indeterminate"></mat-progress-bar>
@@ -31,53 +47,73 @@
     <p class="qa-summary" *ngIf="q.summary">{{ q.summary }}</p>
   </section>
 
+  <section class="keep-question" *ngIf="keepReasons.length" aria-label="Keep this reaction?">
+    <div class="text">
+      <strong>Keep this reaction?</strong> It may not belong in the annotation. Removing it also clears its other issues;
+      keeping it dismisses these reasons.
+      <div class="why" *ngFor="let r of keepReasons">{{ r.message }}</div>
+      <div class="why lookalike" *ngFor="let r of lookalikes"><mat-icon inline>content_copy</mat-icon> {{ r.message }}</div>
+    </div>
+    <div class="decide">
+      <button mat-flat-button color="warn" [disabled]="deciding || removing" (click)="removeFromDecision()"
+              matTooltip="Take it out of the annotation (out of the pathway and the order of reactions too)">Remove</button>
+      <button mat-stroked-button [disabled]="deciding || removing" (click)="keep()">Keep</button>
+    </div>
+  </section>
+
   <section class="existing" *ngFor="let m of myMatches">
     <mat-icon>content_copy</mat-icon>
     <div>
       <strong>{{ m.level === 'same' ? 'Reactome appears to have this reaction already' : 'Similar to an existing reaction' }}:</strong>
-      {{ m.display_name }} <span class="stid">({{ m.st_id }})</span>
+      <app-db-instance-link [dbId]="m.db_id" [name]="m.display_name"></app-db-instance-link>
+      <span class="stid" *ngIf="m.st_id">{{ m.st_id }}</span>
       <span class="why">{{ m.reasons.join(' · ') }}</span>
     </div>
   </section>
+  <p class="existing-instance" *ngIf="d.reaction.existing as ex">Uses the existing Reactome event
+    <app-db-instance-link [dbId]="ex.db_id" [name]="ex.display_name"></app-db-instance-link> (not created again).</p>
 
-  <section *ngIf="myIssues.length" class="open-issues">
-    <h3>Needs attention</h3>
-    <ul>
-      <li *ngFor="let i of myIssues"><span class="dot" [ngClass]="'sev-' + i.severity"></span>{{ i.message }}</li>
-    </ul>
+  <section class="model" aria-label="As Reactome instances">
+    <h3><button type="button" class="toggle" (click)="showInstances = !showInstances" [attr.aria-expanded]="showInstances">
+      <mat-icon inline>{{ showInstances ? 'expand_more' : 'chevron_right' }}</mat-icon> As Reactome instances</button></h3>
+    <p class="hint" *ngIf="!showInstances">What Load into staged instances creates for this reaction, in Reactome's data model.</p>
+    <app-instance-model *ngIf="showInstances" [dbId]="d.dbId" [instances]="instances"></app-instance-model>
   </section>
 
-  <section>
-    <h3>Participants</h3>
-    <div class="cols">
-      <div>
-        <h4>Inputs</h4>
-        <ul><li *ngFor="let p of participants(d.reaction.inputs)">{{ describe(p) }}
-          <span class="detail" *ngFor="let x of details(p)">{{ x }}</span>
-          <span class="flag" *ngFor="let f of p.needs_resolution">needs {{ f }}</span></li></ul>
-      </div>
-      <div>
-        <h4>Outputs</h4>
-        <ul><li *ngFor="let p of participants(d.reaction.outputs)">{{ describe(p) }}
-          <span class="detail" *ngFor="let x of details(p)">{{ x }}</span>
-          <span class="flag" *ngFor="let f of p.needs_resolution">needs {{ f }}</span></li></ul>
-      </div>
-    </div>
-    <p *ngIf="d.reaction.catalyst as c"><strong>Catalyst:</strong>
-      {{ participant(c.entity) ? describe(participant(c.entity)!) : c.entity }}
-      <span *ngIf="c.activity?.name"> ({{ c.activity?.name }})</span></p>
-    <ul class="regs" *ngIf="d.reaction.regulations.length">
-      <li *ngFor="let g of d.reaction.regulations">
-        <strong>{{ regulationLabel(g.kind) }}</strong>
-        {{ participant(g.regulator) ? describe(participant(g.regulator)!) : g.regulator }}
-        <em *ngIf="g.note">: {{ g.note }}</em>
+  <section class="entities" aria-label="About its entities">
+    <h3>About its entities</h3>
+    <p class="compartments" *ngIf="reactionCompartments">Compartments (from the paper): {{ reactionCompartments }}</p>
+    <ul class="entity-rows">
+      <li *ngFor="let e of entities; trackBy: trackEntity">
+        <div class="entity-row">
+          <span class="role">{{ e.role }}</span>
+          <ng-container *ngTemplateOutlet="who; context: { $implicit: e.p }"></ng-container>
+        </div>
+        <app-issue-list *ngIf="issuesOfEntity(e.p.key).length" class="entity-issues" [sessionId]="sessionId"
+                        [issues]="issuesOfEntity(e.p.key)" [proposals]="proposals" empty=""
+                        (changed)="changed.emit()" (proposalDecided)="proposalDecided.emit($event)"></app-issue-list>
       </li>
     </ul>
   </section>
 
-  <section *ngIf="d.reaction.summation">
-    <h3>Summary</h3>
-    <p>{{ d.reaction.summation }}</p>
+  <section class="fixes" *ngIf="otherFixes.length" aria-label="Other suggested fixes">
+    <h3>Other suggested fixes</h3>
+    <app-proposal-card *ngFor="let p of otherFixes" [sessionId]="sessionId" [proposal]="p" (decided)="onFixDecided($event)"></app-proposal-card>
+  </section>
+
+
+  <section class="open-issues" aria-label="Issues of this reaction">
+    <h3>Issues</h3>
+    <app-issue-list [sessionId]="sessionId" [issues]="myIssues" [proposals]="proposals" kind="issues"
+                    empty="No open issues for this reaction." (changed)="changed.emit()"
+                    (proposalDecided)="proposalDecided.emit($event)"></app-issue-list>
+  </section>
+
+  <section class="notes" aria-label="Notes on this reaction">
+    <h3>Notes</h3>
+    <app-issue-list [sessionId]="sessionId" [issues]="myIssues" [proposals]="proposals" kind="notes"
+                    empty="No notes." (changed)="changed.emit()"
+                    (proposalDecided)="proposalDecided.emit($event)"></app-issue-list>
   </section>
 
   <section>

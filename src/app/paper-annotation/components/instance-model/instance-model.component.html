@@ -1,0 +1,36 @@
+<div class="instance" *ngIf="instance as inst; else notNew">
+  <div class="head"><span class="cls">{{ inst.schemaClassName }}</span> <span class="dn">{{ inst.displayName }}</span>
+    <span class="new" matTooltip="Created when you load the annotation into staged instances">new · {{ inst.dbId }}</span></div>
+  <table>
+    <tr *ngFor="let r of rows; trackBy: trackRow">
+      <th>{{ r.name }}</th>
+      <td>
+        <div *ngFor="let v of r.values; trackBy: trackValue" class="value">
+          <ng-container *ngIf="isRef(v); else plain">
+            <ng-container *ngIf="isNew(v); else existing">
+              <button type="button" class="ref" (click)="toggle(v)" [attr.aria-expanded]="open.has(v.dbId)" [disabled]="isAbove(v)">
+                <mat-icon inline>{{ isAbove(v) ? 'subdirectory_arrow_left' : open.has(v.dbId) ? 'expand_more' : 'chevron_right' }}</mat-icon>
+                <span class="dn">{{ v.displayName }}</span> <span class="cls">{{ v.schemaClassName }}</span>
+                <span class="new">{{ isAbove(v) ? 'shown above' : 'new' }}</span>
+              </button>
+              <div class="nested" *ngIf="open.has(v.dbId) && !isAbove(v)">
+                <app-instance-model [dbId]="v.dbId" [instances]="instances" [path]="below"></app-instance-model>
+              </div>
+            </ng-container>
+            <ng-template #existing>
+              <app-db-instance-link *ngIf="v.dbId > 0; else unknown" [dbId]="v.dbId" [name]="v.displayName"></app-db-instance-link>
+              <span class="cls" *ngIf="v.dbId > 0"> {{ v.schemaClassName }}</span>
+              <ng-template #unknown><span class="dn">{{ v.displayName }}</span> <span class="cls">{{ v.schemaClassName }}</span></ng-template>
+            </ng-template>
+          </ng-container>
+          <ng-template #plain><span class="text">{{ v }}</span></ng-template>
+        </div>
+      </td>
+    </tr>
+  </table>
+</div>
+<ng-template #notNew>
+  <p class="none" *ngIf="dbId !== null && dbId > 0">An existing Reactome instance, used as it is (nothing new is created):
+    <app-db-instance-link [dbId]="dbId"></app-db-instance-link></p>
+  <p class="none" *ngIf="dbId === null || dbId <= 0">Not among the instances to load.</p>
+</ng-template>

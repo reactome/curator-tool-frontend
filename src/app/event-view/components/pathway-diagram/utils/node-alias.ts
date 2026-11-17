@@ -121,7 +121,7 @@ export function moveLinkToAlias(edge: any, alias: any, cy: Core): any {
     return cy.add({ group: 'edges', data: data, classes: classes })[0];
 }
 
-function getFreeElementId(preferred: string, cy: Core): string {
+export function getFreeElementId(preferred: string, cy: Core): string {
     let id = preferred;
     for (let i = 1; !cy.getElementById(id).empty(); i++)
         id = `${preferred}_${i}`;

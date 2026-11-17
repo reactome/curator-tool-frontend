@@ -737,6 +737,8 @@ The page, **Paper annotation**, has the **Papers to annotate** card, for papers 
 
 - **PubMed IDs**: type one or more, separated by spaces, commas or new lines. The papers must be open access in PubMed Central. An ID typed twice is used once. If one is not a number (up to 9 digits), *"Every PubMed ID must be a number (up to 9 digits)."* is shown and **Annotate** is disabled. Whether each paper is a review article is read from PubMed.
 - **Add PDFs** (`upload_file`): for papers that are not in PubMed Central, up to 50 MB each. You can pick several at once, and click **Add PDFs** again to add more. Each PDF is listed with a **Review** checkbox and a remove (`close`) button. Tick **Review** for a review article. The same file added twice is kept once.
+  - Paper2Path looks up each PDF's **PubMed ID** for you, from its DOI or its title, and fills it in under the file name with a line saying how it was found (for example *"Found by its DOI: …"*). Change it if it is wrong, or clear it. With a PubMed ID, the reactions from that PDF cite the paper; without one, they have no literature reference until you give it one (in the annotation's header, see below). An ID that is not a number is pointed out and **Annotate** is disabled.
+  - While the PubMed IDs are being looked up, a panel covers the card (*"Looking for the PubMed ID of 2 PDFs in PubMed…"*), so the annotation does not start without them. It usually takes a few seconds. **Stop waiting** gives up: the PDFs still being looked up then have no ID (*"Not looked up (you stopped waiting)"*), and you can type it yourself.
 - **Focus gene** (optional): the protein you care most about in the papers.
 
 Reactome needs direct evidence, so a research paper keeps only the reactions its own results show, and drops those it only cites from earlier work. A review article also keeps the reactions it cites. A PDF counts as research unless you tick **Review**.
@@ -763,54 +765,95 @@ To delete an annotation, click the delete button (`delete`) at the end of its ro
 
 ### Inside an annotation
 
-The header shows the paper (PMID or file name), the focus gene and the status, with a back arrow (`arrow_back`, *"All annotations"*). For an annotation of several papers, it shows *"N papers"* followed by each paper's PMID or file name, with *· review* after a review article. An annotation of one review article shows *review article* in the header. While the papers are being annotated, the page shows the current step; if it failed, the reason. When it is ready, there are five tabs on the left (**Reactions**, **Issues**, **Suggested fixes**, **Network** and **Usage**) and the **Chat** panel on the right.
+The header shows the paper (PMID or file name), the focus gene and the status, with a back arrow (`arrow_back`, *"All annotations"*). For an annotation of several papers, it shows *"N papers"* followed by each paper's PMID or file name, with *· review* after a review article. An annotation of one review article shows *review article* in the header. While the papers are being annotated, the page shows the current step; if it failed, the reason.
+
+For each uploaded PDF, the header shows its PubMed ID, or *no PubMed ID*. **Set PubMed ID** (or **Change**) opens a field: type the ID, or click **Find in PubMed** to look for it again (a panel covers the page while it looks, with **Stop waiting**), check what was found, and click **Save**. Saving an empty field removes the ID. The reactions from that PDF then cite the paper (or stop citing it); load the annotation into your staged instances again to bring the change in.
+
+When the annotation is ready, there are five tabs on the left (**Reactions**, **Entities**, **General issues**, **Network** and **Usage**) and the **Chat** panel on the right. Each issue is shown with the reaction or entity it is about, together with the fix suggested for it, so you can look into it and settle it in one place. Whatever you accept, resolve, dismiss, keep or remove in one tab is shown in every other tab straight away.
 
 #### Reactions
 
 The list on the left shows every extracted reaction, with its key (such as `r3`; point at the key to see the reaction's equation). On each row:
 
 - the checkbox chooses whether the reaction is loaded into your staged instances (see [Load into staged instances](#load-into-staged-instances)). **All**, above the list, checks or clears every reaction, and *"N of M checked to load"* shows how many are checked. A reaction that can't be loaded has its checkbox disabled;
-- **Keep?** means the reaction may not belong in the annotation, because it may not be a molecular reaction or no result of the paper shows it. Point at it to see why, and decide under **Keep these reactions?** on the **Issues** tab;
+- a bar under the name shows how confident the review is that the reaction is right: red below 40%, orange below 70%, green above. Point at it to see the number. A reaction the language model has not reviewed has no bar;
+- **Keep?** means the reaction may not belong in the annotation, because it may not be a molecular reaction or no result of the paper shows it. Point at it to see why, and decide in the reaction panel (**Keep this reaction?**);
 - a `content_copy` icon means Reactome appears to have the reaction already;
-- a coloured count shows its open issues, as the **Issues** tab counts them (red: needs action; orange: warnings). Notes, and issues that wait on a keep-or-remove decision, are not counted.
+- a coloured count shows its open issues (red: needs action; orange: warnings). Notes, and issues that wait on a keep-or-remove decision, are not counted.
 
-**Sort** orders the list **As in the paper** (the order the reactions were drafted in), **Needs attention first** (reactions to keep or remove, then by their saved review: fix first, needs fixing, worth a look, no problems found), or **By name (A–Z)**.
+**Sort** orders the list **As in the paper** (the order the reactions were drafted in), **Needs attention first** (reactions to keep or remove, then by their saved review: fix first, needs fixing, worth a look, no problems found), **Lowest confidence first**, or **By name (A–Z)**. **Check all** (`fact_check`), above the list, reviews every reaction again with the language model and updates the reviews, the confidence bars and the issues, so it can take a while.
 
-Click a reaction to see its details on the right:
+Click a reaction to see its details on the right, from top to bottom:
 
-- name and reaction type;
-- **Reactome appears to have this reaction already** or **Similar to an existing reaction**, with the existing reaction's name, stable id and why it matches;
-- **Needs attention**: the reaction's open issues;
-- **Participants**: **Inputs** and **Outputs**, with modifications, UniProt or ChEBI identifier, compartment, and a *needs …* flag for anything that could not be resolved; the **Catalyst** and its activity; regulators (*activated by*, *inhibited by*, *required by*);
-- **Summary**;
+- name and reaction type, with **Check this reaction** (`fact_check`; **Re-check this reaction** once it has been checked), which runs the rule checks and the model review again, for example after you changed the reaction, and **Remove this reaction** (`delete`);
+- the review saved with the annotation: **Fix first**, **Needs fixing**, **Worth a look** or **No problems found**, the reviewer's confidence, "may not be a molecular reaction" when the reviewer thinks so, and one sentence on the most important thing to do;
+- **Keep this reaction?**, only for a reaction that may not belong in the annotation: the reasons it was questioned, and any other reaction it may describe the same event as. **Remove** takes it out of the annotation (with its issues); **Keep** dismisses the reasons, and its other issues then count like any others;
+- **Reactome appears to have this reaction already** or **Similar to an existing reaction**, with the existing reaction's name and dbId (click it to open the reaction in Schema View in a new tab), its stable id and why it matches. A reaction recorded as an existing Reactome event says so, with a link;
+- [**As Reactome instances**](#as-reactome-instances);
+- **About its entities**: each entity of the reaction with its role (*input*, *output*, *catalyst*, *activated by*, *inhibited by*, *required by*, or *part of* a complex or set), its modifications, its UniProt or ChEBI identifier, its [compartment](#compartments), any existing Reactome instance it uses (*in Reactome*, with a link), and a *needs …* flag for anything that could not be resolved. Click an entity's name to open it in **Entities**. An entity's own issues and their suggested fixes are listed under it, so you can, for example, accept a suggested compartment right here. The reaction's compartments are listed at the top;
+- **Other suggested fixes**: fixes for this reaction that no issue below links to;
+- **Issues**: the reaction's open issues (see [Issues and suggested fixes](#issues-and-suggested-fixes));
+- **Notes**: the reaction's notes, which are for information;
 - **Evidence (N)**: each quote from the paper with its page, section and figure. In an annotation of several papers, each quote also has a tag saying which paper it is from (its PMID or file name). *verbatim* means the quote was found word for word in the paper, *close match* that it differs slightly (usually PDF symbols or hyphenation), and *not found in paper* that it could not be found.
 
-At the top of the reaction panel, the review saved with the annotation is shown: **Fix first**, **Needs fixing**, **Worth a look** or **No problems found**, the reviewer's confidence, "may not be a molecular reaction" when the reviewer thinks so, and one sentence on the most important thing to do. Its findings are under **Needs attention**. **Re-check this reaction** (`fact_check`; **Check this reaction** if it was never checked) runs the rule checks and the model review again, for example after you changed the reaction.
+**Remove this reaction** asks you to confirm without moving anything on the page: **Cancel: keep it** appears exactly where the button was, and **Remove** beside it, so a click without moving the mouse (or a double-click) cancels. Removing takes the reaction out of the annotation with its issues and suggested fixes, marks a proposed edit of it as no longer applying, and selects the next reaction in the list. Load the annotation into your staged instances again afterwards, as after any change.
 
-**Remove this reaction** (`delete`) takes the reaction out of the annotation, after you confirm with **Remove** (or **Cancel**). Its issues and suggested fixes go with it, a proposed edit of it is marked as no longer applying, and the next reaction in the list is selected. Load the annotation into your staged instances again afterwards, as after any change.
+#### Issues and suggested fixes
 
-#### Issues
+Issues are what Paper2Path found worth your attention: a reaction that may not be one, a catalyst no quote supports, an identifier that could not be found, a compartment the paper does not give, and so on. Each is listed where it belongs: a reaction's issues in its panel, an entity's in its panel (and under the entity in the panel of every reaction that uses it), and the rest under **General issues**.
 
-The top line counts the reactions to keep or remove and the issues listed. **Show** filters the issues by status (Open, Resolved, Dismissed, All). **Notes (N)** also lists notes, which are hidden at first. **Waiting on a decision (N)** also lists the issues of reactions that may be removed: they matter only if you keep the reaction.
+- Each issue has **Resolve** and **Dismiss**, and **Reopen** once settled. **Resolved or dismissed (N)** shows the settled ones again.
+- When Paper2Path suggests a fix for an issue, the fix is shown right under it (**Suggested fix**). Like a proposal in the chat, it shows why, what it changes and the quotes behind it. Nothing changes until you click **Accept**; **Reject** discards it. An accepted fix settles its issue.
+- An issue of a reaction that may be removed (see **Keep this reaction?**) is greyed out, with *"matters only if you keep the reaction"*.
+- Notes are held back behind **Notes (N)** in an entity's list; a note that comes with a fix, such as a suggested compartment, is always shown.
 
-**Keep these reactions?** comes first. It lists each reaction that may not belong in the annotation, because it may not be a molecular reaction or no result of the paper shows it. Each has its name (click it to open the reaction in **Reactions**), key, equation and the reasons it was questioned, plus any existing Reactome reaction it looks like (`content_copy`).
+After accepting a fix, load the annotation into your staged instances again to bring the edit in.
 
-- **Remove** accepts the suggested fix that removes the reaction from the annotation, with its other issues. It is disabled until a removal is suggested.
-- **Keep** dismisses the reasons and rejects the suggested removal. The reaction's other issues are then listed with the rest.
+#### As Reactome instances
 
-The other issues are grouped by reaction, most urgent first by the reaction's saved review (**Fix first**, **Needs fixing**, **Worth a look**, **No problems found**), which each group shows with its one-sentence summary. Click a reaction's name to open it in **Reactions**. A group shows its first three issues; **Show N more** lists the rest, and **Show fewer** folds them again. Each issue can be **Resolve**d or **Dismiss**ed, or **Reopen**ed.
+At the top of the reaction and entity panels, open at first (click the heading to fold it), **As Reactome instances** shows what **Load into staged instances** will create, as Reactome's data model holds it: the instance's class (for example *Reaction* or *EntityWithAccessionedSequence*), its display name, *new* with its temporary dbId, and each of its attributes with their values.
 
-**Check all reactions** (`fact_check`) reviews every reaction again with the language model and updates the saved reviews and the issues, so it can take a while.
+- A **new instance** in an attribute (marked *new*) opens in place when you click it, so you can follow a reaction to its catalyst activity, its proteins, their references and modified residues. An instance already open above is marked *shown above* rather than repeated.
+- An **existing Reactome instance** (a compartment, species, reference entity, GO activity, PSI-MOD term, literature reference, or an entity or event the annotation reuses) shows its display name and dbId. Click it to open it in Schema View in a new tab.
+- An entity that uses an existing Reactome instance as it is shows that instance, with a link, instead of a new one.
 
-#### Suggested fixes
+#### Compartments
 
-**Suggested fixes (N)** lists edits that Paper2Path suggests for some of the problems it found, each under the name of the reaction it is about. They are only suggestions. Like a proposal in the chat, each shows why, what it changes and the quotes behind it. Nothing changes until you click **Accept**; **Reject** discards it. Once you decide, the suggestion leaves the list. After accepting one, load the annotation into your staged instances again to bring the edit in.
+Paper2Path gives each protein, gene and small molecule the compartment the paper places it in, reaction by reaction, from what the text says: *"beta-catenin accumulates in the cytoplasm before translocating to the nucleus where it partners with TCF/LEF"* puts beta-catenin in the nucleoplasm for that binding, and in the cytosol before it moves. A reaction can involve several compartments (a membrane receptor and a cytosolic partner, a translocation). A molecule placed in two compartments becomes two entities, as in Reactome, and an existing Reactome instance of it is used when exactly one matches.
+
+A compartment is set only when the paper says or shows where the molecule is. Otherwise the entity has none, and a likely compartment from general knowledge is offered as a suggested fix (*"place … in … (suggested from general knowledge …)"*); it is never set without you. Accepting it records the compartment as your own assertion.
+
+Each entity's compartment is shown as a label:
+
+- green: **stated** in the paper; blue: **shown** by its experiments (fractions, imaging); purple: taken from its **parts** (every component of a complex is placed there); grey: set by you;
+- dashed *no compartment*: the paper does not say; the suggestion, if any, is named when you point at it.
+
+Point at a label to see how it was found and the sentence of the paper it comes from.
+
+#### Entities
+
+**Entities (N)** lists every protein, gene, RNA, small molecule, complex and set in the annotation, with its kind, its compartment label, a `storage` mark if it uses an existing Reactome instance, and its number of open issues. Type in **Filter** to find entities by name, UniProt accession or compartment. **Sort** orders them **As in the draft**, **Needs attention first** or **By name (A–Z)**.
+
+Click an entity to see, on the right:
+
+- its name, kind, organism (when not human), key, any *needs …* flag, and *Also called …* with the other names it goes by (for example the paper's own name for a viral protein renamed after its gene);
+- [**As Reactome instances**](#as-reactome-instances);
+- **Compartment**: its label, how it was found and the sentence of the paper;
+- **Structure**: its **Components** or **Members**, and the complexes or sets it is **Part of**; click one to open it;
+- **Used in reactions (N)**: each reaction it takes part in, with its key and role; click one to open it in **Reactions**;
+- **Issues**: its issues with their suggested fixes, as in a reaction panel.
+
+Clicking an entity's name in a reaction's **About its entities** opens it here.
+
+#### General issues
+
+**General issues (N)** lists the papers of the annotation (with *· review* for a review article, and each PDF's PubMed ID) and the issues about the annotation as a whole or its papers rather than one reaction or entity, for example a paper without a PubMed ID, each with **Resolve** and **Dismiss**.
 
 #### Network
 
 Every reaction and the entities it involves, drawn as one network. The legend under it explains the node shapes (protein, small molecule, complex, set, reaction), the dashed outline of an entity whose identifier was not resolved, the double outline of a reaction Reactome has already, and the line styles.
 
-- **Click a reaction** to select it. Its details are shown in the panel to the right of the network, the same details as in **Reactions**, and everything that is not part of it is greyed out. The selected reaction is also greyed around when the tab is first shown, so you can find it.
+- **Click a reaction** to select it. Its details are shown in the panel to the right of the network, the same details as in **Reactions** (issues, fixes and **As Reactome instances** included), and everything that is not part of it is greyed out. The selected reaction is also greyed around when the tab is first shown, so you can find it.
 - **Double-click a reaction** to open it in **Reactions**.
 - **Click an entity** to grey out everything except the reactions it takes part in and the entities beside it.
 - **Click the background** to clear the greying.
@@ -823,9 +866,11 @@ How many language-model tokens each step used (reading the paper, merging duplic
 
 ### Refine by chat
 
-Ask about the paper or ask for a change, for example *"Add the damage condition to the Parkin ubiquitination reaction."* Press `Enter` to send, `Shift+Enter` for a new line, and **Stop** to cancel a reply. Tick **About the selected reaction** to ask about the reaction selected in the tabs.
+Ask about the paper or ask for a change, for example *"Add the damage condition to the Parkin ubiquitination reaction."* Press `Enter` to send, `Shift+Enter` for a new line, and **Stop** to cancel a reply. Tick **About the selected reaction** to ask about the reaction selected in the tabs. The assistant's replies are formatted (headings, lists, bold, tables, code and links), as in **Ask the Graph**; your own messages are shown as you typed them.
 
 The assistant only **proposes** edits. Each **Proposed edit** shows why, what it changes, and the quotes behind it (**Show N supporting quotes**). Nothing changes until you click **Accept**; **Reject** discards it. A change to what a reaction is needs a quote from the paper.
+
+The assistant can also look things up in Reactome, for example *"How does Reactome model PINK1?"* or *"Which reactions does gilteritinib take part in?"*: search by name (pathways, reactions, proteins, complexes, sets, small molecules and drugs), open an instance with its inputs, outputs, catalysts, regulators, literature and pathways, list the existing entities for a UniProt accession, ChEBI ID or Guide to Pharmacology ID with their compartments, and list the reactions a molecule takes part in. Its answers say when they come from Reactome rather than from the paper, and what it finds in Reactome is never used as evidence for a reaction. It reads a Reactome release, so very recent curation may be missing.
 
 ### Load into staged instances
 

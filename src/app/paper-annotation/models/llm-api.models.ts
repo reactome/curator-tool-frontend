@@ -170,7 +170,22 @@ export interface PaperInfo {
 
 /** "PMID 24751536" or the PDF's file name. */
 export function paperLabel(p: PaperInfo): string {
-  return p.kind === 'pmid' ? `PMID ${p.pmid ?? p.name}` : p.name;
+  if (p.kind === 'pmid') return `PMID ${p.pmid ?? p.name}`;
+  return p.pmid ? `${p.name} (PMID ${p.pmid})` : p.name;
+}
+
+/**
+ * What the service found for a PDF (POST /papers/identify, or /sessions/{id}/papers/identify for one already uploaded):
+ * the PubMed ID of its article, by the DOI on its first pages or by its title. A suggestion for the curator to keep,
+ * edit or clear; `note` says why nothing was found (not in PubMed, a preprint, PubMed unreachable).
+ */
+export interface PaperIdentity {
+  found: boolean;
+  pmid?: string;
+  title?: string;
+  method?: 'doi' | 'title';
+  doi?: string | null;
+  note?: string;
 }
 
 /**
@@ -235,7 +250,7 @@ export const ISSUE_CATEGORY_LABEL: Record<IssueCategory, string> = {
 
 export interface Issue {
   id: string;
-  source: 'evidence' | 'builder' | 'resolver' | 'emitter' | 'pipeline' | 'existing' | 'qa' | 'checks';
+  source: 'evidence' | 'builder' | 'resolver' | 'emitter' | 'pipeline' | 'existing' | 'qa' | 'checks' | 'compartments';
   severity: IssueSeverity;
   code: string;
   message: string;
@@ -306,6 +321,22 @@ export interface Participant {
   uniprot?: string | null;
   chebi?: string | null;
   compartment_name?: string | null;
+  /** The Reactome Compartment instance it was resolved to. */
+  compartment?: ExistingRef | null;
+  /** How the compartment was found: stated | shown (by the paper, see compartment_quote) | parts | curator | null (no evidence). */
+  compartment_source?: string | null;
+  compartment_quote?: string | null;
+  /** No evidence in the paper: a likely compartment from general knowledge (a suggested fix, never applied). */
+  compartment_suggested?: ExistingRef | null;
+  /** The existing Reactome instance this participant reuses. */
+  existing?: ExistingRef | null;
+  /** Other names of the molecule (the paper's name before a rename, UniProt synonyms). */
+  aliases?: string[];
+  /** ewas: protein | dna (a gene) | rna; its organism and the existing reference / species it was resolved to. */
+  molecule?: 'protein' | 'dna' | 'rna';
+  species?: string;
+  species_ref?: ExistingRef | null;
+  reference_entity?: ExistingRef | null;
   needs_resolution: string[];
   modifications?: { psi_mod: string | null; mod_label: string | null; residue: string | null; coordinate: number | null }[];
   components?: string[];
@@ -325,6 +356,8 @@ export interface ReactionSpec {
   evidence_ids: string[];
   preceding: string[];
   existing: ExistingRef | null;
+  /** The compartments of its participants (from the paper). */
+  compartments?: ExistingRef[];
 }
 
 /** The reactions and their entities as a graph (GET /sessions/{id}/network). Ids are prefixed: `e:` entity, `r:` reaction. */
@@ -358,6 +391,17 @@ export interface NetworkEdge {
 export interface Network {
   nodes: NetworkNode[];
   edges: NetworkEdge[];
+}
+
+/** One entity of the draft (GET /sessions/{id}/entities): the participant, its staged dbId, where it is used. */
+export interface EntityInfo {
+  key: string;
+  participant: Participant;
+  /** Its dbId among the exported instances: negative for a new instance, positive for an existing Reactome one. */
+  dbId: number | null;
+  reactions: { key: string; name: string; roles: ('input' | 'output' | 'catalyst' | 'regulator')[] }[];
+  /** Keys of the complexes and sets containing it. */
+  partOf: string[];
 }
 
 export interface ReactionDetail {
@@ -447,7 +491,7 @@ export interface UsageCounts {
   cache_write_tokens: number;
 }
 
-export type UsageStep = 'extraction' | 'merge' | 'review' | 'draft' | 'qa' | 'chat';
+export type UsageStep = 'extraction' | 'merge' | 'review' | 'draft' | 'qa' | 'chat' | 'combine' | 'compartments';
 
 /** One step's totals. `saved` marks a step whose numbers come from the saved run a replayed annotation was made from. */
 export interface UsageStepRow extends UsageCounts {

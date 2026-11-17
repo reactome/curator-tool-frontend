@@ -2,7 +2,14 @@
 .intro, .hint, .empty { color: #555; }
 .starters { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin: 16px 0; }
 mat-card mat-form-field { width: 100%; }
-.start-card { max-width: 720px; padding: 8px 16px 12px; }
+.start-card { position: relative; max-width: 720px; padding: 8px 16px 12px; }
+/* covers the start card while PubMed IDs are looked up */
+.blocker { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, .8); border-radius: inherit; }
+.blocker-box { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; max-width: 420px;
+  background: #fff; padding: 16px 24px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, .15); }
+.blocker-box p { margin: 0; }
+.blocker-hint { color: #666; font-size: 13px; }
 .start-card mat-card-header, .start-card mat-card-content, .start-card mat-card-actions { padding: 0; }
 .start-card mat-card-actions { min-height: auto; padding-top: 8px; }   /* a little room below the focus gene field */
 .start-card mat-card-subtitle { margin-top: 8px; line-height: 1.5; }
@@ -10,7 +17,12 @@ mat-card mat-form-field { width: 100%; }
 .field-group:last-child { margin-bottom: 12px; }
 .pdfs .hint { margin: 8px 0 0; font-size: 13px; line-height: 1.5; }
 .files { list-style: none; margin: 8px 0 0; padding: 0; }
-.files li { display: flex; align-items: center; gap: 4px; padding: 2px 0; }
+.files li { padding: 2px 0 6px; }
+.file-row { display: flex; align-items: center; gap: 4px; }
+.file-pmid { display: flex; align-items: center; gap: 8px; margin-left: 28px; }
+.file-pmid-field { width: 130px; flex: none; }
+.file-pmid-note { flex: 1; min-width: 0; font-size: 12px; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-pmid-note.found { color: #2e6b30; }
 .file-icon { color: #777; }
 .file-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #333; }
 .invalid { color: #7a1c14; margin: 6px 0 0; font-size: 13px; }
@@ -22,7 +34,12 @@ table.sessions th { text-align: left; font-weight: 500; color: #555; border-bott
 table.sessions td { padding: 10px 8px; border-bottom: 1px solid #eee; }
 table.sessions tbody tr { cursor: pointer; }
 table.sessions td.row-actions { width: 1%; white-space: nowrap; text-align: right; padding: 0 8px; cursor: default; }
-.confirm-delete { display: inline-flex; align-items: center; gap: 8px; color: #7a1c14; }
+.delete-slot { position: relative; display: inline-block; vertical-align: middle; }
+.delete-slot .asking { visibility: hidden; }                     /* keeps its place: nothing in the row moves */
+.delete-slot .cancel { position: absolute; inset: 0; }           /* exactly where the delete button was */
+.confirm-delete { position: absolute; right: 100%; top: 50%; transform: translateY(-50%); z-index: 2;
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; color: #7a1c14;
+  background: #fdecea; border-radius: 4px; padding: 4px 4px 4px 12px; box-shadow: 0 1px 4px rgba(0, 0, 0, .2); }
 table.sessions tbody tr:hover, table.sessions tbody tr:focus { background: #f5f7fa; outline: none; }
 .status { padding: 2px 10px; border-radius: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
 .status-ready { background: #e3f4e6; color: #1b5e20; }
