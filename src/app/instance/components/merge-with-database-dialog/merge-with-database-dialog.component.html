@@ -1,0 +1,88 @@
+<h2 class="dialog_title" mat-dialog-title>Merge with Database Copy</h2>
+
+<mat-dialog-content>
+  <div class="instance-line">{{instanceLabel}}</div>
+
+  <div class="note" *ngIf="data.reason">
+    <mat-icon class="note-icon">warning</mat-icon>{{data.reason}}
+  </div>
+  <div class="note">
+    <mat-icon class="note-icon">info</mat-icon>
+    <span>
+      The database copy changed after you started editing. Choose a value for each attribute that differs.
+      Attributes you edited default to your value. Attributes you did not edit default to the database value.
+      The merged instance stays in your Updated Instances list, ready to commit.
+    </span>
+  </div>
+
+  <ng-container *ngIf="rows.length > 0; else noDifferences">
+    <div class="table-controls">
+      <span>{{rows.length}} attribute(s) differ, {{editedCount}} of them edited by you.</span>
+      <span class="spacer"></span>
+      <span class="bulk-label">All rows:</span>
+      <button mat-stroked-button (click)="setAll('local')" matTooltip="Take your value for every attribute">Mine</button>
+      <button mat-stroked-button (click)="setAll('database')" matTooltip="Take the database value for every attribute">Database</button>
+      <button mat-stroked-button (click)="resetDefaults()" matTooltip="Your value where you edited, database value elsewhere">Defaults</button>
+    </div>
+
+    <table class="merge-table">
+      <thead>
+        <tr>
+          <th class="attribute-col">Attribute</th>
+          <th class="value-col">Your copy</th>
+          <th class="value-col">Database copy</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let row of rows">
+          <tr [class.edited]="row.editedLocally">
+            <td class="attribute-col" rowspan="2">
+              <span class="attribute-name">{{row.attribute.name}}</span>
+              <span class="cardinality">{{row.multiValued ? '[+]' : '[1]'}}</span>
+              <div class="origin" *ngIf="row.editedLocally">edited by you</div>
+              <div class="origin" *ngIf="!row.editedLocally">changed in database</div>
+            </td>
+            <td class="value-col" [class.chosen]="row.choice === 'local'" (click)="choose(row, 'local')">
+              <mat-radio-button [checked]="row.choice === 'local'" [name]="'merge-' + row.attribute.name">
+                <span class="value-list">
+                  <span class="value-line" *ngFor="let value of row.localValues">{{label(row, value)}}</span>
+                  <span class="empty" *ngIf="row.localValues.length === 0">(empty)</span>
+                </span>
+              </mat-radio-button>
+            </td>
+            <td class="value-col" [class.chosen]="row.choice === 'database'" (click)="choose(row, 'database')">
+              <mat-radio-button [checked]="row.choice === 'database'" [name]="'merge-' + row.attribute.name">
+                <span class="value-list">
+                  <span class="value-line" *ngFor="let value of row.databaseValues">{{label(row, value)}}</span>
+                  <span class="empty" *ngIf="row.databaseValues.length === 0">(empty)</span>
+                </span>
+              </mat-radio-button>
+            </td>
+          </tr>
+          <tr class="result-row" [class.edited]="row.editedLocally">
+            <td colspan="2">
+              <mat-radio-button *ngIf="row.multiValued" [checked]="row.choice === 'both'"
+                [name]="'merge-' + row.attribute.name" (change)="choose(row, 'both')"
+                matTooltip="Database values, then your values the database lacks (repeats are kept, so stoichiometry is preserved)">
+                Both
+              </mat-radio-button>
+              <span class="result"><b>Result:</b> {{resultLabel(row)}}</span>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </ng-container>
+
+  <ng-template #noDifferences>
+    <p class="no-differences">
+      Your copy and the database copy hold the same values. Applying takes the database copy,
+      which removes this instance from your Updated Instances list.
+    </p>
+  </ng-template>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="apply()">Apply Merge</button>
+</mat-dialog-actions>

@@ -197,8 +197,22 @@ Each section header reads **"<Section> Instances: {total} ({selected})"** and ha
 
 - `select_all` / `deselect_all`
 - `undo` — **undo all changes for selected updated instances** (re-fetches each from the DB and resets)
-- `upload` — **commit all selected** (commits sequentially; any failures are reported afterward listing `#dbId displayName` of each failure)
-- Per-row buttons: **COMPARE2DB**, **UNDO**, **COMMIT**
+- `upload` — **commit all selected** (commits sequentially; any failures are reported afterward listing `#dbId displayName` of each failure; if some failed because the instance changed in the database, the report says so and points to the merge button)
+- Per-row buttons: **COMPARE2DB**, **MERGE2DB** (`merge`, **"merge with database copy"**), **UNDO**, **COMMIT**
+
+#### Merging with the database copy
+
+A commit is refused with *"Instance has been updated elsewhere"* when someone (another curator, or you in another window) committed the same instance after you started editing it. Committing again will keep failing, and **UNDO** throws your edits away. Use the `merge` row button instead. Committing a single row that fails this way opens the merge dialog for you.
+
+The **Merge with Database Copy** dialog lists only the attributes whose values differ between your copy and the database copy:
+
+- Each row shows **Your copy** and **Database copy**; click either side to take it. A row marked **edited by you** defaults to your value; a row marked **changed in database** (an attribute you never edited) defaults to the database value, so the other person's change is kept.
+- Multivalued attributes also offer **Both**: the database values, then the values you added that the database lacks. Repeated values are kept, so stoichiometry is not lost.
+- **Result** under each row shows what the attribute will hold.
+- **All rows:** **Mine**, **Database**, and **Defaults** set every row at once.
+- **Apply Merge** replaces your staged copy with the merged one, in every open window. It stays in **Updated Instances** for you to review and commit. If every row takes the database value, the instance leaves the list. **Cancel** changes nothing.
+
+The display name is regenerated from the merged values. The merge cannot combine copies of different classes; in that case, note your edits, use **UNDO**, and redo them.
 
 ### Deleted Instances
 

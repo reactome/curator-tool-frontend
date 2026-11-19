@@ -19,6 +19,8 @@ import { CommitResultDialogService, CommitResult } from './commit-result-dialog/
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
 import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
 import { MatchResolutionService } from 'src/app/core/services/match-resolution.service';
+import { isInstanceChangedError } from 'src/app/core/services/database-merge.service';
+import { MergeWithDatabaseDialogService } from 'src/app/instance/components/merge-with-database-dialog/merge-with-database-dialog.service';
 
 
 @Component({
@@ -30,7 +32,7 @@ export class UpdatedInstanceListComponent implements OnInit {
   // instances to be committed
   // There will be a checkbox to manage toBeUploade
   // toBeUploaded: Instance[] = [];
-  updatedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.COMPARE2DB, ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
+  updatedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.COMPARE2DB, ACTION_BUTTONS.MERGE2DB, ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
   deletedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
   newInstanceActionButtons: Array<ActionButton> = [ACTION_BUTTONS.DELETE, ACTION_BUTTONS.COMMIT];
 
@@ -72,7 +74,8 @@ export class UpdatedInstanceListComponent implements OnInit {
     private deletionDialogService: DeletionDialogService,
     private commitResultDialogService: CommitResultDialogService,
     private matchedInstancesDialogService: MatchedInstancesDialogService,
-    private matchResolutionService: MatchResolutionService
+    private matchResolutionService: MatchResolutionService,
+    private mergeWithDatabaseDialogService: MergeWithDatabaseDialogService
   ) {
   }
 
@@ -160,6 +163,11 @@ export class UpdatedInstanceListComponent implements OnInit {
         break;
       }
 
+      case "merge": {
+        this.mergeWithDatabase(actionButton.instance);
+        break;
+      }
+
       case "undo": {
         if (this.deletedInstances.includes(actionButton.instance))
           this.resetDeletedInstance(actionButton.instance);
@@ -189,9 +197,20 @@ export class UpdatedInstanceListComponent implements OnInit {
       this.openCommitWaitDialog('Committing Updated Instance', 'Please wait while the selected updated instance is committed.');
       this.dataService.commit(instance).pipe(
         finalize(() => this.closeCommitWaitDialog())
-      ).subscribe(rtn => {
-        this.instanceUtilities.processCommit(instance, rtn, this.dataService);
-        this.commitResultDialogService.openDialog(this.instanceUtilities.buildCommitSummaryResults(instance, rtn));
+      ).subscribe({
+        next: rtn => {
+          this.instanceUtilities.processCommit(instance, rtn, this.dataService);
+          this.commitResultDialogService.openDialog(this.instanceUtilities.buildCommitSummaryResults(instance, rtn));
+        },
+        error: error => {
+          // A 409 "updated elsewhere" means the database copy was committed after this one was
+          // staged, and every retry will be rejected the same way. Offer the merge tool straight
+          // away instead of leaving the curator with only Undo (which loses their edits).
+          if (isInstanceChangedError(error))
+            this.mergeWithDatabase(instance,
+              'The commit was rejected because this instance was changed in the database after you started editing it. ' +
+              'Merge your edits with the database copy, then commit again.');
+        }
       });
     }
     else if (this.newInstances.includes(instance)) {
@@ -279,7 +298,12 @@ export class UpdatedInstanceListComponent implements OnInit {
       if (failures.length > 0) {
         const failed = failures.map(f => `#${f.instance?.dbId} ${f.instance?.displayName ?? ''}`).join(', ');
         console.error(`[commitUpdatedInstances] ${failures.length} instance(s) failed to commit:`, failed, failures);
-        window.alert(`${failures.length} instance(s) failed to commit and were NOT saved:\n${failed}\n\nSee the console for details.`);
+        const changedElsewhere = failures.filter(f => isInstanceChangedError(f.error)).length;
+        const mergeHint = changedElsewhere > 0
+          ? `\n\n${changedElsewhere} of them changed in the database after you edited them. ` +
+            'Use the merge button on those rows to combine your edits with the database copy, then commit again.'
+          : '';
+        window.alert(`${failures.length} instance(s) failed to commit and were NOT saved:\n${failed}${mergeHint}\n\nSee the console for details.`);
       }
       this.selectedUpdatedInstances = [];
       this.showCheck = false;
@@ -368,6 +392,14 @@ export class UpdatedInstanceListComponent implements OnInit {
       this.store.dispatch(NewInstanceActions.register_new_instance(this.instanceUtilities.makeShell(instance)));
     else if (instance.modifiedAttributes && instance.modifiedAttributes.length > 0)
       this.store.dispatch(UpdateInstanceActions.register_updated_instance(this.instanceUtilities.makeShell(instance)));
+  }
+
+  /**
+   * Reconcile a staged updated instance with its current database copy. See DatabaseMergeService
+   * for why this is needed (409 "Instance has been updated elsewhere" on commit).
+   */
+  mergeWithDatabase(instance: Instance, reason?: string) {
+    this.mergeWithDatabaseDialogService.merge(instance, reason).subscribe();
   }
 
   private resetUpdatedInstance(instance: Instance) {

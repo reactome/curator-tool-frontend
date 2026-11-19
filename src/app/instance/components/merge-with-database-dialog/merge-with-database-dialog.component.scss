@@ -1,0 +1,127 @@
+.dialog_title {
+  text-align: left;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.instance-line {
+  margin-bottom: 8px;
+  color: var(--on-surface);
+  font-weight: 500;
+}
+
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--surface-variant);
+  color: var(--on-surface-variant);
+  font-size: 13px;
+
+  .note-icon {
+    flex: 0 0 auto;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.table-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 8px;
+  font-size: 13px;
+
+  .spacer {
+    flex: 1 1 auto;
+  }
+
+  .bulk-label {
+    color: var(--on-surface-variant);
+  }
+}
+
+.merge-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th {
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 2px solid var(--outline-variant);
+  }
+
+  td {
+    vertical-align: top;
+    padding: 4px 8px;
+  }
+
+  .attribute-col {
+    width: 20%;
+    border-bottom: 1px solid var(--outline-variant);
+
+    .attribute-name {
+      font-weight: 600;
+    }
+
+    .cardinality {
+      margin-left: 4px;
+      color: var(--on-surface-variant);
+    }
+
+    .origin {
+      margin-top: 2px;
+      font-size: 11px;
+      color: var(--on-surface-variant);
+    }
+  }
+
+  tr.edited .attribute-col .origin {
+    color: var(--primary);
+  }
+
+  .value-col {
+    width: 40%;
+    cursor: pointer;
+    border-radius: 4px;
+
+    &.chosen {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+    }
+  }
+
+  .value-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .value-line {
+    word-break: break-word;
+  }
+
+  .empty {
+    font-style: italic;
+    color: var(--on-surface-variant);
+  }
+
+  .result-row td {
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--outline-variant);
+  }
+
+  .result {
+    margin-left: 8px;
+    color: var(--on-surface-variant);
+    word-break: break-word;
+  }
+}
+
+.no-differences {
+  margin: 12px 0;
+}

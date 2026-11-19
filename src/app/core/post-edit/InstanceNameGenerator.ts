@@ -551,8 +551,7 @@ export class InstanceNameGenerator implements PostEditOperation {
   }
 
   private generatePublicationName(instance: Instance): string {
-    const authorNames: string[] | undefined = instance.attributes?.get("authorName");
-    const authorPart = this.generatePublicationAuthorPart(authorNames);
+    const authorPart = this.generatePublicationAuthorPart(this.getPublicationAuthorNames(instance));
 
     let year: number | undefined = instance.attributes?.get("year");
     if (Array.isArray(year))
@@ -564,6 +563,39 @@ export class InstanceNameGenerator implements PostEditOperation {
 
     const separator = authorPart.endsWith("et al.") ? " " : ". ";
     return `${authorPart}${separator}${yearPart}. ${titlePart}`;
+  }
+
+  // Publications carry their authors in one of two slots. Since July 2026 the LiteratureReference
+  // filler writes plain strings to `authorName` ("Nozawa, YI"). Everything curated before that
+  // (about 54,000 Publications in the database, e.g. LiteratureReference 5629116) has only the
+  // older `author` slot, a list of Person instances, and no `authorName` at all. Reading only
+  // `authorName` named all of those "unknown. 2013. <title>" the moment they were displayed or
+  // edited. So prefer `authorName` when it has any non-blank value, and otherwise fall back to the
+  // Person instances in `author`, whose display names use the same "Surname, Initials" form.
+  private getPublicationAuthorNames(instance: Instance): string[] {
+    const authorNames: string[] | undefined = instance.attributes?.get("authorName");
+    const names = (authorNames ?? [])
+      .filter(name => typeof name === 'string' && name.trim().length > 0);
+    if (names.length > 0)
+      return names;
+    const authors: Instance[] | undefined = instance.attributes?.get("author");
+    return (authors ?? [])
+      .map(author => this.getAuthorPersonName(author))
+      .filter((name): name is string => !!name && name.trim().length > 0);
+  }
+
+  // A Person referenced from `author` is normally a shell that already has its display name. A new
+  // Person may not have one yet, so build it the same way generatePersonName does, but only when
+  // the surname is there, so a nameless Person is skipped rather than rendered as "unknown".
+  private getAuthorPersonName(author: Instance | undefined): string | undefined {
+    if (!author)
+      return undefined;
+    if (author.displayName && author.displayName.trim().length > 0)
+      return author.displayName;
+    const surname = author.attributes?.get("surname");
+    if (!surname || surname.length === 0)
+      return undefined;
+    return this.generatePersonName(author);
   }
 
   // First author name followed by "et al." for more than two authors,
