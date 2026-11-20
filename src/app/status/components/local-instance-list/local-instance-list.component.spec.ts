@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { EMPTY, of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 
 import { Instance, SelectedInstancesList } from 'src/app/core/models/reactome-instance.model';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
@@ -16,7 +16,6 @@ import { DeleteBulkDialogService } from 'src/app/schema-view/list-instances/comp
 import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
 import { DeleteInstanceActions } from 'src/app/instance/state/instance.actions';
 import { CommitResultDialogService } from './commit-result-dialog/commit-result-dialog.service';
-import { MergeWithDatabaseDialogService } from 'src/app/instance/components/merge-with-database-dialog/merge-with-database-dialog.service';
 import {
   InstanceUtilitiesSpy,
   StoreSpy,
@@ -41,7 +40,6 @@ describe('UpdatedInstanceListComponent', () => {
   let deletionDialog: jasmine.SpyObj<DeletionDialogService>;
   let deleteBulkDialog: jasmine.SpyObj<DeleteBulkDialogService>;
   let commitResultDialog: jasmine.SpyObj<CommitResultDialogService>;
-  let mergeWithDatabase: jasmine.SpyObj<MergeWithDatabaseDialogService>;
 
   function build(staged: Instance[] = [], url = '/schema_view/instance/100') {
     utils = createInstanceUtilitiesSpy();
@@ -54,9 +52,6 @@ describe('UpdatedInstanceListComponent', () => {
     commitResultDialog = jasmine.createSpyObj<CommitResultDialogService>(
       'CommitResultDialogService', ['openDialog']);
     deleteBulkDialog.openDialog.and.returnValue({ afterClosed: () => of(false) } as any);
-    mergeWithDatabase = jasmine.createSpyObj<MergeWithDatabaseDialogService>(
-      'MergeWithDatabaseDialogService', ['merge']);
-    mergeWithDatabase.merge.and.returnValue(EMPTY);
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -71,7 +66,6 @@ describe('UpdatedInstanceListComponent', () => {
         { provide: DeletionDialogService, useValue: deletionDialog },
         { provide: DeleteBulkDialogService, useValue: deleteBulkDialog },
         { provide: CommitResultDialogService, useValue: commitResultDialog },
-        { provide: MergeWithDatabaseDialogService, useValue: mergeWithDatabase },
         {
           provide: MatchResolutionService,
           useValue: jasmine.createSpyObj('MatchResolutionService', ['resolve'])
@@ -97,9 +91,9 @@ describe('UpdatedInstanceListComponent', () => {
   const pathway = () => makeInstance({ dbId: 100, displayName: 'Glycolysis' });
 
   describe('action buttons per bucket', () => {
-    it('lets an updated instance be compared, merged with the database copy, reset, or committed', () => {
+    it('lets an updated instance be compared, reset, or committed', () => {
       expect(build().updatedInstanceActions.map(b => b.name))
-        .toEqual(['compare', 'merge', 'undo', 'upload']);
+        .toEqual(['compare', 'undo', 'upload']);
     });
 
     it('lets a deleted instance be reset or committed, but not compared', () => {
@@ -183,41 +177,6 @@ describe('UpdatedInstanceListComponent', () => {
       expect(dataService.commit).toHaveBeenCalledWith(instance);
       expect(utils.processCommit).toHaveBeenCalled();
       expect(commitResultDialog.openDialog).toHaveBeenCalled();
-    });
-
-    it('opens the merge tool for a merge', () => {
-      build();
-      const instance = pathway();
-
-      component.handleAction({ instance, action: ACTION_BUTTONS.MERGE2DB.name });
-
-      expect(mergeWithDatabase.merge).toHaveBeenCalledWith(instance, undefined);
-    });
-
-    it('offers the merge tool when a commit is rejected because the database copy changed', () => {
-      // Backend InstanceChangedException -> 409. Retrying can never succeed, so the curator
-      // is taken straight to the merge instead of being left with only Undo.
-      build();
-      const instance = pathway();
-      component.updatedInstances = [instance];
-      dataService.commit.and.returnValue(throwError(() => new Error(
-        'Instance has been updated elsewhere and cannot be committed (dbId, stId, displayName): 100, null, Glycolysis')));
-
-      component.handleAction({ instance, action: ACTION_BUTTONS.COMMIT.name });
-
-      expect(mergeWithDatabase.merge).toHaveBeenCalledWith(instance, jasmine.stringMatching('changed in the database'));
-      expect(commitResultDialog.openDialog).not.toHaveBeenCalled();
-    });
-
-    it('does not offer the merge tool for other commit failures', () => {
-      build();
-      const instance = pathway();
-      component.updatedInstances = [instance];
-      dataService.commit.and.returnValue(throwError(() => new Error('An unexpected error occurred')));
-
-      component.handleAction({ instance, action: ACTION_BUTTONS.COMMIT.name });
-
-      expect(mergeWithDatabase.merge).not.toHaveBeenCalled();
     });
 
     it('runs the duplicate check before committing a new instance', () => {

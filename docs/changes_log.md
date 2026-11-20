@@ -1,7 +1,3 @@
-### Build on November 19, 2026
-
-- Added: a **merge with database copy** button (`merge`) on each row of **Updated Instances**. Use it when a commit is refused with "Instance has been updated elsewhere", which happens when someone else, or you in another window, committed the same instance after you started editing it. Until now the only way out was **Undo**, which threw your edits away. The merge shows each attribute where your copy and the database copy differ, side by side. Attributes you edited start with your value, and attributes you did not edit start with the database value, so the other person's change is kept. For lists you can also keep **Both**. After **Apply Merge**, commit the instance as usual. When you commit a single instance and it is refused this way, the merge opens by itself.
-
 ### Build on November 16, 2026
 
 - Fixed: when a protein with modified residues is drawn more than once in a pathway diagram, **Validate Diagram** reported its modifications as drawn twice, and **Auto-Fix** then removed the mark from one of the copies and could never put it back. Each drawn copy is now checked on its own, and **Auto-Fix** adds a missing mark to the copy that lacks it. If a copy lost its mark this way and the diagram was saved, run **Validate Diagram** again and use **Auto-Fix**, then upload the diagram.
