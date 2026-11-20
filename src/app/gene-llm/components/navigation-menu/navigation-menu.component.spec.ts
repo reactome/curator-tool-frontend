@@ -19,22 +19,23 @@ describe('NavigationMenuComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('starts with no sections', () => {
-    expect(component.sections).toEqual([]);
+  it('starts with no pathways in either section', () => {
+    expect(component.navData).toEqual({ predPMIDPathways: [], ppiPathways: [] });
   });
 
-  it('lists one link per section, indenting the sub-sections', () => {
-    component.sections = [
-      { id: 'annotated_pathways', label: 'Annotated Pathways' },
-      { id: 'predicted_pathways', label: 'Predicted Pathways' },
-      { id: 'fi_partners', label: 'FI Partners', level: 1 },
-    ];
-    fixture.detectChanges();
+  it('hides both sections until data says otherwise', () => {
+    expect(component.hasAnnotatedData).toBeFalse();
+    expect(component.hasPPIData).toBeFalse();
+  });
 
-    const links = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('a'));
-    expect(links.map(a => a.textContent?.trim())).toEqual(['Annotated Pathways', 'Predicted Pathways', 'FI Partners']);
-    expect(links[2].classList).toContain('level_1');
-    expect(links[0].classList).toContain('level_0');
+  it('takes its sections through the navigationData setter', () => {
+    component.navigationData = {
+      predPMIDPathways: ['Cell cycle', 'Glycolysis'],
+      ppiPathways: ['Signalling']
+    };
+
+    expect(component.navData.predPMIDPathways).toEqual(['Cell cycle', 'Glycolysis']);
+    expect(component.navData.ppiPathways).toEqual(['Signalling']);
   });
 
   it('scrolls the requested section into view', fakeAsync(() => {

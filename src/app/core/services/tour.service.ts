@@ -52,14 +52,15 @@ const HOME_TOUR: TourStep[] = [
     targetSelector: '[routerLink="/event_view"], a[href*="event_view"]',
     position: 'bottom',
   },
-  {
-    id: 'gene2path',
-    title: 'Gene2Path',
-    content:
-      'Enter a gene symbol to generate LLM-assisted pathway annotation support. Useful for reviewing predicted pathway associations before curating.',
-    targetSelector: '[routerLink="/gene2path"], a[href*="gene2path"]',
-    position: 'bottom',
-  },
+  // Gene2Path is hidden from the home page while it is being re-developed; restore with its card there.
+  // {
+  //   id: 'gene2path',
+  //   title: 'Gene2Path',
+  //   content:
+  //     'Enter a gene symbol to generate LLM-assisted pathway annotation support. Useful for reviewing predicted pathway associations before curating.',
+  //   targetSelector: '[routerLink="/gene2path"], a[href*="gene2path"]',
+  //   position: 'bottom',
+  // },
   {
     id: 'paper2path',
     title: 'Paper2Path',
@@ -199,7 +200,7 @@ const GENE2PATH_TOUR: TourStep[] = [
     id: 'gene2path-welcome',
     title: 'Gene2Path App Tour',
     content:
-      'Welcome to Gene2Path. It finds the Reactome pathways a gene is, or could be, annotated in, then the papers to annotate it from. It needs a WebBench login. This tour walks you through submitting a gene and reviewing the results.',
+      'Welcome to Gene2Path. This tool uses an LLM service to generate pathway annotation support for a gene. This tour walks you through submitting a query and reviewing results.',
     position: 'center',
   },
   {
@@ -214,28 +215,28 @@ const GENE2PATH_TOUR: TourStep[] = [
     id: 'gene2path-settings',
     title: 'Settings',
     content:
-      'Click Settings before running to change the cutoffs for the predicted pathways: the lowest interaction score, how many partners, the FDR, and how many pathways to list.',
+      'Click the gear icon to open the Settings panel before submitting. Here you can change LLM model configuration options.',
     position: 'center',
   },
   {
     id: 'gene2path-submit',
     title: 'Submit',
     content:
-      'Click Run (or press Enter). A progress bar shows for the few seconds the pathways take.',
+      'Click the Submit (publish) icon to run the query. A progress bar appears while the LLM processes the gene against Reactome pathway data.',
     position: 'center',
   },
   {
     id: 'gene2path-results',
     title: 'Results',
     content:
-      'Annotated Pathways lists the pathways the gene is already in. Predicted Pathways lists those enriched among its functional interaction partners, with the FDR and the partners in each; those it is already in are marked. Use the On this page outline on the left to jump between sections.',
+      'Results are grouped into: Annotated Pathways (confirmed associations), Predicted Pathways (LLM suggestions to review), and protein-protein interaction tables. Use the side navigation menu to jump between sections.',
     position: 'center',
   },
   {
     id: 'gene2path-caution',
     title: 'Review Before Curating',
     content:
-      'Predicted pathways are statistical suggestions and their papers are summarized by an LLM: curation assistance, not ground truth. Review them before adding data to Reactome.',
+      'Generated content is curation assistance — not ground truth. Always review pathway links and PubMed citations before adding data to Reactome.',
     position: 'center',
   },
 ];

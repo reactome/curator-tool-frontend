@@ -1,337 +1,148 @@
-// The body is a fixed viewport height (styles.scss), so the page scrolls here, inside the host. That is also what the
-// outline's position: sticky is relative to.
 :host {
-  display: block;
-  height: 100%;
-  overflow: auto;
-}
+    overflow: auto;
+    display: table;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 97vw;
+    text-align: center;
 
-.page {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 16px 24px 48px;
-}
+  }
+  
+  .section_title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+    background-color: var(--primary);
+    height: 50px;
+    color: white;
+    line-height: 50px;
+  }
 
-.page-header {
-  margin-bottom: 16px;
-  text-align: left;
-  // The global h1 (styles.scss) is a centred flex box.
-  h1 { display: block; margin: 0; text-align: left; font-size: 26px; font-weight: 500; color: var(--primary); }
-  .subtitle { margin: 4px 0 0; color: #555; }
-}
+  .title {
+    margin-top: 8px;
+    font-weight: bold;
+    margin-bottom: 4px;
+    // text-decoration: underline;
+  }
+  
+  .query_gene {
+    color: red;
+    font-weight: bold;
+  }
 
-.query-card {
-  padding: 16px 20px;
-}
+  .note {
+    font-size: smaller;
+    font-weight: lighter;
+    font-style: italic;
+    margin-top: 0px;
+  }
 
-.query-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  .gene-field { width: 260px; }
-  button { height: 44px; }
-}
+  .error {
+    font-weight: bold;
+    color: red;
+  }
 
-.running {
-  margin: 20px 0;
-  p { color: #555; margin: 10px 0 0; }
-}
+  .file_input {
+    display: none;
+  }
 
-.intro {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-  margin-top: 24px;
-}
+  .center {
+    margin: auto;
+    width: 35%;
+    border: 1px solid var(--primary);
+    border-radius: 4px;
+    padding: 10px;
+    height: min-content;
+  }
 
-.intro-step {
-  display: flex;
-  gap: 12px;
-  padding: 16px;
-  border: 1px dashed #cfd8dc;
-  border-radius: 8px;
-  color: #555;
-  mat-icon { color: var(--primary); flex: 0 0 auto; }
-  b { display: block; color: #222; margin-bottom: 2px; }
-}
+  .gene_input {
+    background: var(--surface-variant); 
+    color: var(--on-primary-container);
+    // width: 200px;
+    // min-width: 100px;
+    outline: rgb(126, 166, 201);
+    width: 150px; 
+    margin-right: 10px;
+    align-items: center;
+  }
 
-.results {
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 24px;
-  margin-top: 24px;
-  // A failed query has nothing to outline: let the failure take the full width.
-  &:not(:has(.outline)) { grid-template-columns: minmax(0, 1fr); }
-}
+  .custom-search-icon {
+    height: 24px !important;
+    width: 24px !important;
+    font-size: 24px !important;
+    position: bottom !important;
+    padding: 10px !important;
+  }
 
-.outline {
-  position: sticky;
-  top: 16px;
-  align-self: start;
-  max-height: calc(100vh - 64px);
-  overflow-y: auto;
-}
+  .text-block-card {
+    // max-width: 400px;
+    width:fit-content;
+    text-align: left !important;
+    // add some padding to the text block
+    padding: 4px;
+    border-radius: 4px;
+  }
 
-.sections {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-width: 0;
-}
+  .mat-icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    color: var(--primary);
+    text-align: left;
+    vertical-align: middle;
+    // line-height: 50px;
+  }
 
-.section-card {
-  padding: 20px 24px;
-  scroll-margin-top: 16px;
-}
-
-.section-head {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 4px;
-  > mat-icon { color: var(--primary); margin-top: 2px; flex: 0 0 auto; }
-  h2 { margin: 0; font-size: 20px; font-weight: 500; }
-  .note { margin: 4px 0 0; }
-}
-
-h3 {
-  margin: 20px 0 4px;
-  font-size: 15px;
-  font-weight: 500;
-  scroll-margin-top: 16px;
-}
-
-.note {
-  margin: 0 0 8px;
-  font-size: 13px;
-  color: #666;
-}
-
-.login {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 12px 0 0;
-  color: #8a4b00;
-  mat-icon { font-size: 20px; width: 20px; height: 20px; }
-}
-
-.running .progress { color: #0d47a1; }
-
-.count {
-  margin-left: 6px;
-  padding: 0 8px;
-  border-radius: 10px;
-  background: #eef1f4;
-  color: #555;
-  font-size: 13px;
-  font-weight: 500;
-  vertical-align: middle;
-}
-
-.badge {
-  margin-left: 6px;
-  padding: 0 8px;
-  border-radius: 10px;
-  background: #fff4e0;
-  color: #8a4b00;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: .03em;
-  vertical-align: middle;
-  cursor: help;
-  &.strong { background: #e3f4e6; color: #1b5e20; }
-}
-
-.empty {
-  margin: 8px 0 0;
-  color: #555;
-}
-
-.pathway-list {
-  columns: 2 280px;
-  column-gap: 32px;
-  margin: 8px 0 0;
-  padding-left: 18px;
-  li { margin: 2px 0; break-inside: avoid; }
-}
-
-a { color: var(--primary); }
-
-table.predicted {
-  width: 100%;
-  margin-top: 8px;
-  border-collapse: collapse;
-  th { text-align: left; font-weight: 500; color: #555; font-size: 13px; padding: 6px 8px; border-bottom: 1px solid #ddd; }
-  td { padding: 8px; border-bottom: 1px solid #eee; vertical-align: top; }
-  .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  tr.already td:first-child a { color: #555; }
-}
-
-table.predicted .evidence-cell { white-space: nowrap; }
-table.predicted tr.open td { border-bottom: none; }
-
-.evidence-toggle {
-  min-width: 0;
-  padding: 0 8px;
-  mat-icon { margin-right: 2px; }
-}
-
-tr.summary-row > td { padding: 0 8px 10px; }
-
-.summary {
-  display: flex;
-  gap: 8px;
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #333;
-  mat-icon { flex: none; width: 18px; height: 18px; font-size: 18px; color: #7e57c2; }
-  .citation { white-space: nowrap; font-size: 12px; }
-}
-
-tr.evidence-row > td {
-  background: #fafafa;
-  padding: 4px 12px 12px;
-}
-
-.evidence-list {
-  margin: 0;
-  padding-left: 20px;
-  li { margin: 10px 0; }
-}
-
-.evidence-title a { font-weight: 500; }
-
-.evidence-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
-  margin-top: 2px;
-  font-size: 12px;
-  color: #666;
-  .pmc { font-weight: 500; }
-}
-
-.term-chip {
-  display: inline-block;
-  padding: 0 6px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  font-size: 12px;
-  color: #555;
-}
-
-.evidence-list blockquote {
-  margin: 6px 0 0;
-  padding: 2px 10px;
-  border-left: 3px solid #90caf9;
-  color: #333;
-  font-size: 13px;
-}
-
-.annotated-tag {
-  margin-left: 8px;
-  padding: 0 6px;
-  border-radius: 8px;
-  background: #e3f4e6;
-  color: #1b5e20;
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.gene-chip {
-  display: inline-block;
-  margin: 0 4px 4px 0;
-  padding: 0 8px;
-  border-radius: 10px;
-  background: #eef1f4;
-  font-size: 12px;
-  line-height: 22px;
-  .score { color: #777; margin-left: 2px; }
-}
-
-.partners { margin-top: 4px; }
-
-.failure {
-  display: flex;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 6px;
-  background: #fdecea;
-  color: #7a1c14;
-  p { margin: 4px 0 0; }
-}
-
-.disclaimer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-size: 13px;
-  color: #666;
-  mat-icon { font-size: 18px; width: 18px; height: 18px; }
-}
-
-@media (max-width: 900px) {
-  .results { grid-template-columns: minmax(0, 1fr); }
-  .outline { display: none; }
-}
-
-.partner-evidence-heading {
-  margin: 16px 0 4px;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.partner-evidence {
-  margin: 8px 0;
-  .partner-evidence-head {
+  .button_container {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    .empty { margin: 0; }
+    justify-content: center;
+    background: none;
+    // position:relative; 
+    // height: 42px;
+    // width: 42px;
+    border: none;
+    padding-right: 10px;
   }
-  .evidence-list li { margin: 6px 0; }
-}
 
-.partner-papers { list-style: none; padding-left: 0; }
+  .button-style {
+    background:  var(--surface-variant); color: var(--on-primary-container);
+    position:relative; 
+    height:52px;
+    width: 52px;
+    border: none;
+    margin-top: 10px;
+    border-bottom: 1px solid var(--primary);;
+  }
 
-.partner-papers li {
-  display: flex;
-  align-items: flex-start;
-  gap: 4px;
-  &.unavailable .evidence-title a { color: #666; }
-  .partner-paper { flex: 1; min-width: 0; }
-}
+  .gene_label {
+    // background: var(--surface-variant); color: var(--on-primary-container);
+    //height: 32px;
+    // border-bottom: 1px solid var(--primary);;
+    // padding: 10px;
+    margin-right: 10px;
+    color: var(--primary);
+    align-items: center;
 
-.relation {
-  display: inline-block;
-  padding: 0 6px;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 500;
-  &.rel-direct { background: #dcefdc; color: #1e5b1e; }
-  &.rel-indirect { background: #fdf1d6; color: #6b4e00; }
-  &.rel-none { background: #eee; color: #555; }
-}
+    display: flex;
+    justify-content: flex-end; /* Right-align content inside */
+    
+    // line-height: 35px;
+  }
 
-.relation-event {
-  margin: 2px 0;
-  font-size: 12px;
-  font-style: italic;
-}
+  .menu_style {
+    width: 200px; 
+    position: fixed; 
+    top: 5em; 
+    left: 1em;
+    background: none;
+    outline: none;
+  }
 
-.partner-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin: 4px 0 12px 36px;
-  font-size: 12px;
-  .count, .started { color: #555; }
-  .error { color: #b00020; }
-  mat-progress-bar { width: 200px; }
-}
+  .mat-drawer {
+    bottom: auto !important;
+  }
+
+  .mat-drawer-side {
+    border-right-style: none !important;
+  }

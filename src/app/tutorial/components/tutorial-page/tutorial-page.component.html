@@ -77,7 +77,7 @@
             <ul>
               <li><strong>Schema View</strong> — browse classes, list/edit instances, manage staged changes.</li>
               <li><strong>Event View</strong> — combine event tree, pathway diagram, and instance editor.</li>
-              <li><strong>Gene2Path</strong> — the Reactome pathways a gene is, or could be, in, then the papers to annotate it from.</li>
+              <li><strong>Gene2Path</strong> — LLM-assisted pathway annotation for a gene.</li>
             </ul>
             <p>The <strong>Status Toolbar</strong> at the bottom shows staged change counts and quick actions.</p>
           </mat-card-content>
@@ -322,12 +322,12 @@
           </mat-card-header>
           <mat-card-content>
             <p>
-              Gene2Path shows the Reactome pathways a gene is already annotated in, the pathways its functional
-              interaction partners are enriched in, and the papers worth annotating the gene from.
+              Gene2Path uses an LLM service to generate pathway annotation support for a gene.
+              Results include annotated pathways, predicted pathways, and protein-protein interaction tables.
             </p>
             <p class="tip">
               <mat-icon class="tip-icon">info</mat-icon>
-              The Gene2Path page can be opened, and shared by URL, without logging in, but running it needs a WebBench login.
+              The Gene2Path route does not require authentication and can be shared via URL.
             </p>
           </mat-card-content>
         </mat-card>
@@ -341,8 +341,8 @@
             <ol>
               <li>Navigate to <strong>Gene2Path</strong> from the home page.</li>
               <li>Enter a <strong>gene symbol</strong> in the input field.</li>
-              <li>Optionally click <strong>Settings</strong> to adjust LLM configuration settings.</li>
-              <li>Click <strong>Run</strong> (or press Enter).</li>
+              <li>Optionally click the <strong>gear icon</strong> to adjust LLM configuration settings.</li>
+              <li>Click the <strong>Submit</strong> (publish) icon.</li>
               <li>A progress bar shows while the query runs.</li>
             </ol>
           </mat-card-content>
@@ -355,15 +355,15 @@
           </mat-card-header>
           <mat-card-content>
             <ul>
-              <li>Use the <strong>On this page</strong> outline to jump between sections.</li>
-              <li><strong>Annotated Pathways</strong>: the released human pathways the gene is already in.</li>
-              <li><strong>Predicted Pathways</strong>: pathways enriched among its interaction partners, with the FDR and the partners in each; a strong or weak badge says how far to trust the top one.</li>
-              <li><strong>Interaction partners used</strong>: the partners and their functional interaction scores.</li>
-              <li>Pathway names link to the Reactome Pathway Browser.</li>
+              <li>Use the <strong>side navigation menu</strong> to jump between generated sections.</li>
+              <li><strong>Annotated Pathways</strong>: confirmed pathway associations with evidence.</li>
+              <li><strong>Predicted Pathways</strong>: LLM-suggested pathway associations to review.</li>
+              <li><strong>Interaction tables</strong>: protein-protein interaction data supporting the annotations.</li>
+              <li>Generated text includes links to Reactome pathways and PubMed where available.</li>
             </ul>
             <p class="tip">
               <mat-icon class="tip-icon">warning</mat-icon>
-              Predictions and paper summaries are curation <em>assistance</em> — always review before adding to Reactome.
+              Generated content is curation <em>assistance</em> — always review before adding to Reactome.
             </p>
           </mat-card-content>
         </mat-card>

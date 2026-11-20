@@ -38,12 +38,13 @@ After login, the **home page** launches five areas:
 
 - **Schema View** — browse schema classes, list instances, open/edit instances, run batch edits, and manage staged changes.
 - **Event View** — work with pathway/event trees, pathway diagrams, and instance editing together.
-- **Gene2Path** — submit a gene symbol to see the Reactome pathways it is in or is predicted to be in, then the papers worth annotating it from.
 - **Paper2Path** — draft a Reactome annotation from one or more papers (PubMed IDs and/or PDFs), review its reactions, issues and network, refine it by chat, and load it into your staged instances. *(Experimental.)*
 - **Ask the Graph** — ask questions about the curation database in plain English and get an answer with the matching instances. Read-only.
 - **Tutorial** — tabbed reference plus interactive guided tours for each area.
 
-The AI-assistance apps (Gene2Path, Paper2Path, Ask the Graph) and the Tutorial open in a **new browser tab**; Schema View and Event View open in the same tab.
+The AI-assistance apps (Paper2Path, Ask the Graph) and the Tutorial open in a **new browser tab**; Schema View and Event View open in the same tab.
+
+> **Gene2Path** is hidden from the home page while it is being re-developed. Its address, `/gene2path`, still works.
 
 ---
 
@@ -73,7 +74,7 @@ There is **no self-service registration** — accounts are provisioned separatel
 | Event View | `/event_view` | **Yes** |
 | Paper2Path | `/paper2path` | **Yes** |
 | Ask the Graph | `/graph_query` | **Yes** |
-| Gene2Path | `/gene2path` | **No** to open it (intentionally public — the link is cited in grant applications); **yes** to run it |
+| Gene2Path | `/gene2path` | **No** (intentionally public — the link is cited in grant applications) |
 | Tutorial | `/tutorial` | No |
 
 The empty URL (`/`) redirects to `/home`.
@@ -96,10 +97,11 @@ The home page shows the Reactome logo and the title **"Reactome WebBench"**, fol
 |---|---|---|
 | **Schema View** | `account_tree` | `/schema_view` (same tab) |
 | **Event View** | `timeline` | `/event_view` (same tab) |
-| **Gene2Path** | `psychology` | `/gene2path` (new tab) |
 | **Paper2Path** | `article` | `/paper2path` (new tab) |
 | **Ask the Graph** | `manage_search` | `/graph_query` (new tab) |
 | **Tutorial** | `school` | `/tutorial` (new tab) |
+
+The **Gene2Path** card is hidden while Gene2Path is being re-developed; [Gene2Path](#11-gene2path-app) is still reached at `/gene2path`.
 
 The [global status toolbar](#5-global-status-toolbar) is shown at the bottom of the home page with the staged-instance counters hidden.
 
@@ -698,44 +700,41 @@ The lower panel is the same [instance editor](#9-instance-editor) described abov
 
 ## 11) Gene2Path app
 
-Gene2Path (`/gene2path`, opens in a new tab) finds the Reactome pathways a gene is, or could be, annotated in, then the papers to annotate it from. Anyone can open the page, but running it needs a WebBench login: without one, the page shows *"Gene2Path needs a WebBench login. Log in, then come back to this page."* and **Run** is disabled.
+Gene2Path (`/gene2path`, opens in a new tab, no login required) uses LLM services to help annotate a gene against Reactome pathways.
 
-**Title:** **Gene2Path**, with the line *"Find the Reactome pathways a gene is, or could be, annotated in, then the papers to annotate it from."* Before the first run, two panels explain what you will get: **Pathways** and **Literature**.
+**Title:** *"Gene2Path: Use LLM to Annotate a Gene in Reactome"*.
 
 ### Basic usage
 
-1. In **Gene symbol**, type a gene symbol (a default is prefilled).
-2. Optionally open **Settings** (`settings`, tooltip **"Edit Configurations"**) before running.
-3. Click **Run** (`publish`, tooltip **"Submit gene for processing"**) or press Enter.
+1. In **"Enter a gene:"**, type a gene symbol (a default is prefilled).
+2. Click **Submit** (`publish` icon, tooltip **"Submit gene for processing"**).
+3. Optionally open **Settings** (`settings` icon, tooltip **"Edit Configurations"**) before submitting.
 
-The pathways usually take a few seconds, or up to a minute or two while the predicted pathways' papers are summarized. Meanwhile a progress bar shows *"Finding pathways for …"* with the current step, and the gene field and **Run** are disabled.
+An **indeterminate progress bar** shows while the query runs.
 
 ### Settings / configuration
 
-Settings open under the gene field. They only affect the predicted pathways.
-
-- **Functional Interaction Score >** (default 0.8): partners with a lower score are not used.
-- **Top Partners** (1–50, default 10): how many partners, best score first, the enrichment is run over.
-- **FDR <** (1, 0.05, 0.01, 0.001, 0.0001, 0.00001; default 0.05): only pathways enriched below this are predicted.
-- **Top Pathways** (1–50, default 8): how many predicted pathways are listed.
-- **Papers per Pathway** (0–20, default 5): how many supporting PubMed papers are listed under each predicted pathway; 0 skips the literature search (and with it the summaries).
-- **Summarize the papers** (on by default): has a language model summarize each predicted pathway's papers. Turn it off for a faster run without a language model. Disabled when **Papers per Pathway** is 0.
+- **Choose Interaction Source** — **"IntAct & BioGrid Protein-Protein Interactions"** (default) or **"Reactome Functional Interactions"**.
+- **Filter PPIs based on Reactome FIs** (checkbox, default on; only with IntAct & BioGrid).
+- **Functional Interaction Score ≥** (0–0.9, default 0.8)
+- **Top Pubmed Results:** (default 8)
+- **Pathway Similarity Cutoff:** (0–0.9, default 0.20)
+- **LLM Score Cutoff:** (default 3)
+- **Top Pathways:** (0–20, default 8)
+- **FDR: <** (1, 0.05, 0.01, 0.001, 0.0001, 0.00001; default 0.01)
 - **Reset** (`refresh`) restores defaults.
 
 ### Output
 
-Results appear as one card per section, with an **On this page** outline on the left that stays in view as you scroll (click an entry to scroll to it; hidden on a narrow window). Each pathway name links to the Reactome Pathway Browser.
+Results appear with a left **navigation menu** (smooth-scrolls to sections) and content cards:
 
-- **Annotated Pathways**, with their count: the released human pathways the gene already takes part in. A gene in none shows *"… is not annotated in any released human pathway yet."*
-- **Predicted Pathways**: the pathways enriched among the gene's top functional interaction (FI) partners, lowest FDR first, with the **FDR** and the **Partners in it**. A pathway the gene is already in is marked **already annotated**; the line under the heading says how many are not. A **strong** or **weak** badge says how far to trust the top one (strong: FDR below 1E-3 with at least 2 partners in it; hover for the reason).
+- **Annotated Pathways** — **Summary** and **Details** (pathways the gene is already annotated in).
+- **Predicted Pathways** — **Summary** and **Details**. Each predicted item shows *"PMID: … vs PATHWAY: …"* with a Semantic Score, LLM Score, and Pathway FDR. An expandable **"Click to process the full text paper"** panel extracts relationships and source text; if the PDF isn't found, you can upload one (**Choose a File**).
+- **Protein-Protein Interactions Supporting Annotation** — per-pathway tables with columns **Interaction Partner** and **PMID** (PubMed links), plus a summary.
 
-  Under each predicted pathway is a **summary** (marked `auto_awesome`) of what its papers say about the gene in that pathway: two to four sentences written by a language model from the papers' abstracts, citing them as **PMID** links to PubMed. It only cites papers listed for that pathway, and says so when the papers mention the gene and the pathway together without actually linking them. A pathway with no papers has no summary; one whose summary could not be written says *"The summary could not be written: …"*. Click the **papers** button in a pathway's **Literature** column to open its papers under the summary: each with its title (a link to PubMed), journal, year, PMID, a PMC link when the full text is available, the partners and pathway words it mentions, and the abstract sentences that tie them to the gene.
+Failures show under a **"Failure"** heading.
 
-  Under the table, **Interaction partners used** lists the partners with their FI scores. A gene with no partner above the score cutoff, or with no pathway below the FDR cutoff, says so and suggests which setting to change.
-
-The pathways are predicted without a language model: they come from the Reactome database and the FI network. Only the summaries use one. Failures show in a red **Failure** box, for example when the annotation service cannot be reached.
-
-> Gene2Path does **not** write to the curation database. Predicted pathways are statistical suggestions, and their summaries are written by a language model: check the cited papers before curating.
+> Gene2Path does **not** write to the curation database. Generated text links out to reactome.org and PubMed. Treat all output as curation assistance requiring review.
 
 ---
 

@@ -51,14 +51,6 @@ describe('LlmApiService', () => {
       req.flush({ sessionId: 's', jobId: 'j' });
     });
 
-    it('starts ONE annotation from a partner\'s papers, with the gene, the partner and the pathway', () => {
-      service.startPartnerPapers(['24751536', '29168502'], 'PINK1', 'PRKN', 5205685).subscribe(r => expect(r.sessionId).toBe('s'));
-      const req = http.expectOne(`${base}/sessions`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ pmids: ['24751536', '29168502'], focus: 'PINK1', partner: 'PRKN', pathway_id: 5205685 });
-      req.flush({ sessionId: 's', jobId: 'j' });
-    });
-
     it('uploads several PDFs as multipart, with the PMIDs and the focus alongside', () => {
       const a = new File(['%PDF-1'], 'a.pdf', { type: 'application/pdf' });
       const b = new File(['%PDF-2'], 'b.pdf', { type: 'application/pdf' });

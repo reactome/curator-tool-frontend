@@ -66,14 +66,6 @@
 
 - Fixed: in **Paper2Path**, after you accepted a change the chat proposed, the reaction panel kept showing the old version of the reaction until you selected another reaction and came back. It now updates straight away.
 
-### Build on November 4, 2026
-
-- Changed: **Gene2Path** works again, and is much faster. It had stopped working because the service behind it had been retired. Its pathways now come from the Reactome database and the functional interaction network, in a few seconds, without a language model. **Annotated Pathways** lists the released human pathways the gene is already in. **Predicted Pathways** lists the pathways enriched among its functional interaction partners, with the FDR and the partners in each, marks those the gene is already in, and says whether the top prediction is **strong** or **weak**. **Interaction partners used** lists the partners with their scores. Settings now hold the four cutoffs that apply to the predictions. The written summaries, the per-abstract details and the full-text panel are gone. Running Gene2Path now needs a WebBench login; the page itself still opens without one.
-
-- Changed: finding the papers to annotate a gene from has moved from Paper2Path to **Gene2Path**, which is back on the home page. Submit a gene and Gene2Path shows its annotated and predicted pathways first, then, under **Relevant Papers**, the papers worth annotating it from, ranked as before with a score out of 10, the kind of evidence and a sentence on why. The paper search runs while the pathways are being worked out, and needs you to be logged in to WebBench. Tick the papers you want and click **Annotate selected** to start a Paper2Path annotation from them, with the gene as its focus, then follow **Open it in Paper2Path**. The **Find papers for a gene** card is gone from the Paper2Path start page.
-
-- Changed: **Gene2Path** has a cleaner layout. The gene field, **Run** and **Settings** sit together at the top, and the settings open beneath them. Each result (Annotated Pathways, Predicted Pathways, Relevant Papers) is its own card, and an **On this page** outline on the left stays in view as you scroll.
-
 ### Build on November 3, 2026
 
 - Fixed: after WebBench logged you out for inactivity, clicking **OK** on the login form often did nothing and had to be clicked again, and you then landed on the home page instead of the view you had open. Other WebBench windows waiting at the login page went to https://curator.reactome.org/home, outside WebBench, and showed an error. Now one click logs you in, and each window goes back to the view it had open.

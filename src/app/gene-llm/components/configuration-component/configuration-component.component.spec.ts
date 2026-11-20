@@ -37,9 +37,9 @@ describe('ConfigurationComponentComponent', () => {
   });
 
   it('restores every edited field on reset', () => {
-    component.configuration.fi_cutoff = 0.5;
-    component.configuration.max_pathways = 42;
-    component.configuration.fdr_cutoff = 1;
+    component.configuration.queryGene = 'CDK1';
+    component.configuration.numberOfPathways = 42;
+    component.configuration.fdrCutoff = 1;
 
     component.resetValues();
 
@@ -48,18 +48,18 @@ describe('ConfigurationComponentComponent', () => {
 
   it('resets in place, so the binding held by the parent still sees the change', () => {
     const bound = component.configuration;
-    component.configuration.top_partners = 3;
+    component.configuration.queryGene = 'CDK1';
 
     component.resetValues();
 
     expect(component.configuration).toBe(bound);
-    expect(bound.top_partners).toEqual(DEFAULT_LLM_CONFIG.top_partners);
+    expect(bound.queryGene).toEqual(DEFAULT_LLM_CONFIG.queryGene);
   });
 
   it('leaves the module default untouched after an edit and a reset', () => {
-    component.configuration.fi_cutoff = 0.5;
+    component.configuration.queryGene = 'CDK1';
     component.resetValues();
 
-    expect(DEFAULT_LLM_CONFIG.fi_cutoff).toEqual(0.8);
+    expect(DEFAULT_LLM_CONFIG.queryGene).toEqual('TANC1');
   });
 });

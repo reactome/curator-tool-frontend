@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
   selector: 'app-configuration-component',
@@ -6,45 +6,44 @@ import { Component, Input } from '@angular/core';
   styleUrls: ['./configuration-component.component.scss']
 })
 export class ConfigurationComponentComponent {
-  @Input() configuration: Configuration = { ...DEFAULT_LLM_CONFIG };
 
+  @Input() configuration: Configuration = {...DEFAULT_LLM_CONFIG};
+  
   fdrOptions = [
     1, 0.05, 0.01, 0.001, 0.0001, 0.00001
   ]
-
+  
   resetValues() {
     Object.assign(this.configuration, DEFAULT_LLM_CONFIG);
   }
+
 }
 
-/**
- * The settings of a Gene2Path pathway search (POST /api/llm/pathways/by-gene in curator-tool-llm), in its own field
- * names, so the object is sent as it is. The defaults are the service's.
- *
- * The old Flask service's settings (PubMed results, pathway similarity, LLM score, interaction source) are gone with
- * it: the prediction is now FI-partner enrichment, without an LLM, and papers are listed per predicted pathway. The one LLM step
- * left is the optional summary of each predicted pathway's papers (`summarize`).
- */
-export const DEFAULT_LLM_CONFIG: Configuration = {
-  fi_cutoff: 0.8,
-  top_partners: 10,
-  fdr_cutoff: 0.05,
-  max_pathways: 8,
-  max_evidence: 5,
-  summarize: true,
+// Export a default configuration object
+export const DEFAULT_LLM_CONFIG : Configuration = {
+  queryGene: "TANC1",
+  fiScoreCutoff: 0.8,
+  numberOfPubmed: 8,
+  //maxQueryLength: "1000",
+  // cosine similarity cutoff for filtering the retrieved documents
+  // Change from 0.38 to 0.20 to include more documents, which may help in improving the LLM performance
+  cosineSimilarityCutoff: 0.20,
+  llmScoreCutoff: 3,
+  numberOfPathways: 8,
+  fdrCutoff: 0.01,
+  interactionSource: "intact_biogrid",
+  filterPPIs: true,
+  // model: "gpt-4o-mini"
 }
 
 export interface Configuration {
-  /** Lowest functional-interaction score for a partner. */
-  fi_cutoff: number;
-  /** Partners used, best FI score first. */
-  top_partners: number;
-  /** Highest FDR for a predicted pathway. */
-  fdr_cutoff: number;
-  /** Predicted pathways listed. */
-  max_pathways: number;
-  /** Supporting papers listed per pathway; 0 skips the literature search. */
-  max_evidence: number;
-  /** Have an LLM summarize each predicted pathway's papers. Off makes the search LLM-free, and faster. */
-  summarize: boolean;
+  queryGene: string;
+  fiScoreCutoff: number;
+  numberOfPubmed: number;
+  cosineSimilarityCutoff: number;
+  llmScoreCutoff: number;
+  numberOfPathways: number;
+  fdrCutoff: number;
+  interactionSource?: string; // "intact_biogrid" | "reactome_fis";
+  filterPPIs?: boolean;
 }

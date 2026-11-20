@@ -51,109 +51,6 @@ export interface GeneSearchResult {
   papers: CandidatePaper[];
 }
 
-/** A released human Reactome pathway the gene already takes part in (POST /pathways/by-gene). */
-export interface AnnotatedPathway {
-  pathway_id: number;
-  pathway_name: string;
-}
-
-/**
- * What an LLM read in a partner paper's abstract: a guide to which papers to annotate, not a finding. direct: a
- * molecular event between the gene and the partner (binding, modification, transport, ...); indirect: linked with no
- * mechanism given; none: only mentioned together.
- */
-export interface PaperCheck {
-  relation: 'direct' | 'indirect' | 'none';
-  /** The event in a few words; empty for none. */
-  event: string;
-}
-
-/** A PubMed paper naming the gene together with a predicted pathway's partners, or the key words of its name. */
-export interface PathwayEvidence {
-  pmid: string;
-  title: string;
-  journal: string;
-  year: string;
-  /** Set when PMC has the full text. */
-  pmcid: string | null;
-  /** The pathway's partners, and the words of its name, found in the title or abstract. */
-  partners_mentioned: string[];
-  terms_mentioned: string[];
-  /** Abstract sentences, verbatim, naming the gene with a partner or term. */
-  sentences: string[];
-  /** Partner papers only, when the search ran with its LLM steps (absent from an older service). */
-  check?: PaperCheck | null;
-  /** The check failed for this paper. */
-  check_error?: string | null;
-}
-
-/** The papers naming the gene with one of a predicted pathway's partners (PubMed: gene AND partner, title/abstract). */
-export interface PartnerEvidence {
-  partner: string;
-  /** PubMed hits; `papers` holds the best few (with the checks, direct ones first; else a sentence tying the two first). */
-  count: number;
-  papers: PathwayEvidence[];
-  /** The search failed for this partner. */
-  error?: string | null;
-}
-
-/** A pathway the gene is not annotated in yet, enriched among its top functional-interaction partners (binomial test,
- *  BH FDR), with the literature that links the gene to it. */
-export interface PredictedPathway {
-  pathway_id: number;
-  pathway_name: string;
-  fdr: number;
-  /** How many of the partners are in the pathway, and which. */
-  overlap_count: number;
-  mapped_genes: string[];
-  /** The gene is already annotated in this pathway. Always false now: the service leaves those out. */
-  annotated: boolean;
-  /** Supporting papers, best first (partner co-mentions first). Missing when the search was run with max_evidence 0. */
-  evidence?: PathwayEvidence[];
-  /** PubMed hits for the evidence search; `evidence` holds the top few. */
-  evidence_count?: number;
-  /** The literature lookup failed for this pathway (the rest of the result is fine). */
-  evidence_error?: string | null;
-  /** Per partner in `mapped_genes`, same order: the papers naming the gene with it. Missing with max_evidence 0. */
-  partner_evidence?: PartnerEvidence[];
-  partner_evidence_error?: string | null;
-  /**
-   * An LLM summary of what `evidence` says about the gene in this pathway, 2-4 sentences citing the papers as
-   * [PMID:12345] (only papers in `evidence`). Missing when the pathway has no papers or summaries were turned off.
-   */
-  summary?: string | null;
-  /** The summary could not be written (the evidence is still there). */
-  summary_error?: string | null;
-}
-
-/** The `result` of a pathway search job, for Gene2Path. Computed without an LLM. */
-export interface GenePathwaysResult {
-  gene: string;
-  annotated_pathways: AnnotatedPathway[];
-  /** ok | no_partners (no FI partner above fi_cutoff) | no_significant_pathway (none below fdr_cutoff) */
-  status: 'ok' | 'no_partners' | 'no_significant_pathway' | string;
-  /** The top prediction is strong (FDR < 1e-3 with at least 2 partners): the gene-first pipeline would anchor on it. */
-  confident: boolean;
-  /** Lowest FDR first. */
-  predicted_pathways: PredictedPathway[];
-  /** The FI partners used, best score first. */
-  partners: { gene: string; score: number }[];
-  params: { fi_cutoff?: number; top_partners?: number; fdr_cutoff?: number; max_pathways?: number; max_evidence?: number;
-            summarize?: boolean };
-}
-
-/** The settings of a pathway search; the service's defaults apply to any left out. */
-export interface GenePathwaysRequest {
-  fi_cutoff?: number;
-  top_partners?: number;
-  fdr_cutoff?: number;
-  max_pathways?: number;
-  /** Papers listed per pathway; 0 skips the literature search. */
-  max_evidence?: number;
-  /** An LLM summary of each predicted pathway's papers (the service's default is true). */
-  summarize?: boolean;
-}
-
 /** One paper of a session. `source` is the tag its reactions and quotes carry (`PMID:24751536`, or the PDF's stored file name). */
 export interface PaperInfo {
   source: string;
@@ -218,9 +115,6 @@ export interface ReactionRef {
 
 export interface SessionDetail extends SessionSummary {
   focus: string | null;
-  /** Started from Gene2Path: the focus gene's partner the papers were chosen for, and the predicted pathway (dbId). */
-  partner?: string | null;
-  pathway_id?: number | null;
   error: string | null;
   reactions: ReactionRef[];
   papers?: PaperInfo[];
