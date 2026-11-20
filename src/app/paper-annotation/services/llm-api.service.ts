@@ -6,7 +6,9 @@ import { TokenRefreshService } from 'src/app/core/services/token-refresh.service
 import { EntityInfo,
   AcceptResponse, ChatEvent, ExistingMatch, GeneSearchResult, InstanceEvidence, Issue, IssueStatus, Job, Network, PaperIdentity, PaperInfo, Passage, Proposal,
   ProposalRequest, QAResult, ReactionDetail, SessionDetail, SessionSummary, SessionUserInstances, StartResponse, StoredChatMessage,
-  UsageReport
+  UsageReport,
+  GenePathwaysResult,
+  GenePathwaysRequest
 } from '../models/llm-api.models';
 import { parseSse } from './sse-parser';
 
@@ -113,6 +115,15 @@ export class LlmApiService {
   }
 
   /**
+   * Start ONE annotation from the papers naming a gene with one of its functional-interaction partners (Gene2Path):
+   * merged into a single draft, the reactions involving both genes first, placed in the predicted pathway (dbId).
+   */
+  startPartnerPapers(pmids: string[], gene: string, partner: string, pathwayId: number): Observable<StartResponse> {
+    const body = { pmids, focus: gene, partner, pathway_id: pathwayId };
+    return this.call(() => this.http.post<StartResponse>(this.url('/sessions'), body));
+  }
+
+  /**
    * Find the papers worth annotating a gene from (PubMed search, re-rank, LLM judge). Runs as a job that takes a minute
    * or more: poll it with pollGeneSearch. Without `maxPapers` the service picks (5).
    */
@@ -124,6 +135,19 @@ export class LlmApiService {
   /** pollJob for a gene search: the final, done state carries the GeneSearchResult. */
   pollGeneSearch(jobId: string, everyMs = 3000): Observable<Job<GeneSearchResult>> {
     return this.pollJob(jobId, everyMs) as Observable<Job<GeneSearchResult>>;
+  }
+
+  /**
+   * The Reactome pathways a gene is, or could be, annotated in (Gene2Path): those it is already in, and those enriched
+   * among its functional-interaction partners. LLM-free, a few seconds, but a job: poll it with pollPathwaySearch.
+   */
+  findPathwaysByGene(gene: string, settings: GenePathwaysRequest = {}): Observable<{ jobId: string }> {
+    return this.call(() => this.http.post<{ jobId: string }>(this.url('/pathways/by-gene'), { gene, ...settings }));
+  }
+
+  /** pollJob for a pathway search: the final, done state carries the GenePathwaysResult. */
+  pollPathwaySearch(jobId: string, everyMs = 1000): Observable<Job<GenePathwaysResult>> {
+    return this.pollJob(jobId, everyMs) as Observable<Job<GenePathwaysResult>>;
   }
 
   sessions(): Observable<SessionSummary[]> {
