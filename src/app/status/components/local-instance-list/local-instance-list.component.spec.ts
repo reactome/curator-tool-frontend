@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { EMPTY, of, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { Instance, SelectedInstancesList } from 'src/app/core/models/reactome-instance.model';
 import { ACTION_BUTTONS } from 'src/app/core/models/reactome-schema.model';
@@ -16,7 +16,7 @@ import { DeleteBulkDialogService } from 'src/app/schema-view/list-instances/comp
 import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
 import { DeleteInstanceActions } from 'src/app/instance/state/instance.actions';
 import { CommitResultDialogService } from './commit-result-dialog/commit-result-dialog.service';
-import { MergeWithDatabaseDialogService } from 'src/app/instance/components/merge-with-database-dialog/merge-with-database-dialog.service';
+import { DatabaseMergeService } from 'src/app/core/services/database-merge.service';
 import {
   InstanceUtilitiesSpy,
   StoreSpy,
@@ -41,7 +41,7 @@ describe('UpdatedInstanceListComponent', () => {
   let deletionDialog: jasmine.SpyObj<DeletionDialogService>;
   let deleteBulkDialog: jasmine.SpyObj<DeleteBulkDialogService>;
   let commitResultDialog: jasmine.SpyObj<CommitResultDialogService>;
-  let mergeWithDatabase: jasmine.SpyObj<MergeWithDatabaseDialogService>;
+  let mergeService: jasmine.SpyObj<DatabaseMergeService>;
 
   function build(staged: Instance[] = [], url = '/schema_view/instance/100') {
     utils = createInstanceUtilitiesSpy();
@@ -54,9 +54,7 @@ describe('UpdatedInstanceListComponent', () => {
     commitResultDialog = jasmine.createSpyObj<CommitResultDialogService>(
       'CommitResultDialogService', ['openDialog']);
     deleteBulkDialog.openDialog.and.returnValue({ afterClosed: () => of(false) } as any);
-    mergeWithDatabase = jasmine.createSpyObj<MergeWithDatabaseDialogService>(
-      'MergeWithDatabaseDialogService', ['merge']);
-    mergeWithDatabase.merge.and.returnValue(EMPTY);
+    mergeService = jasmine.createSpyObj<DatabaseMergeService>('DatabaseMergeService', ['requestMerge']);
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -71,7 +69,7 @@ describe('UpdatedInstanceListComponent', () => {
         { provide: DeletionDialogService, useValue: deletionDialog },
         { provide: DeleteBulkDialogService, useValue: deleteBulkDialog },
         { provide: CommitResultDialogService, useValue: commitResultDialog },
-        { provide: MergeWithDatabaseDialogService, useValue: mergeWithDatabase },
+        { provide: DatabaseMergeService, useValue: mergeService },
         {
           provide: MatchResolutionService,
           useValue: jasmine.createSpyObj('MatchResolutionService', ['resolve'])
@@ -185,13 +183,27 @@ describe('UpdatedInstanceListComponent', () => {
       expect(commitResultDialog.openDialog).toHaveBeenCalled();
     });
 
-    it('opens the merge tool for a merge', () => {
+    it('opens the merge in the database comparison for a merge', () => {
+      // The request is raised before navigating: the comparison URL creates a new instance view,
+      // which takes the request once its comparison has loaded.
       build();
       const instance = pathway();
 
       component.handleAction({ instance, action: ACTION_BUTTONS.MERGE2DB.name });
 
-      expect(mergeWithDatabase.merge).toHaveBeenCalledWith(instance, undefined);
+      expect(mergeService.requestMerge).toHaveBeenCalledWith(100, undefined);
+      expect(router.navigate).toHaveBeenCalledWith(['schema_view/instance/100', 'comparison', '100']);
+    });
+
+    it('loads the comparison in place in the event view, where routing is blocked', () => {
+      build();
+      component.blockRoute = true;
+
+      component.handleAction({ instance: pathway(), action: ACTION_BUTTONS.MERGE2DB.name });
+
+      expect(mergeService.requestMerge).toHaveBeenCalledWith(100, undefined);
+      expect(utils.setLastClickedDbIdForComparison).toHaveBeenCalledWith(100);
+      expect(router.navigate).not.toHaveBeenCalled();
     });
 
     it('offers the merge tool when a commit is rejected because the database copy changed', () => {
@@ -205,7 +217,7 @@ describe('UpdatedInstanceListComponent', () => {
 
       component.handleAction({ instance, action: ACTION_BUTTONS.COMMIT.name });
 
-      expect(mergeWithDatabase.merge).toHaveBeenCalledWith(instance, jasmine.stringMatching('changed in the database'));
+      expect(mergeService.requestMerge).toHaveBeenCalledWith(100, jasmine.stringMatching('changed in the database'));
       expect(commitResultDialog.openDialog).not.toHaveBeenCalled();
     });
 
@@ -217,7 +229,7 @@ describe('UpdatedInstanceListComponent', () => {
 
       component.handleAction({ instance, action: ACTION_BUTTONS.COMMIT.name });
 
-      expect(mergeWithDatabase.merge).not.toHaveBeenCalled();
+      expect(mergeService.requestMerge).not.toHaveBeenCalled();
     });
 
     it('runs the duplicate check before committing a new instance', () => {

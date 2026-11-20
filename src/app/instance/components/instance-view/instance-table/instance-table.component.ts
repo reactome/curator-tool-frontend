@@ -33,7 +33,8 @@ import { deleteInstances } from 'src/app/instance/state/instance.selectors';
 import { Subscription, catchError, map, of, switchMap } from 'rxjs';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 import { AttributeValue, EDIT_ACTION } from 'src/app/core/models/reactome-instance.model';
-import { InstanceComparisonDataSource } from './instance-table-comparison.model';
+import { InstanceComparisonDataSource, InstanceMergeDataSource } from './instance-table-comparison.model';
+import { DatabaseMergeChoice, DatabaseMergeRow, DatabaseMergeService } from 'src/app/core/services/database-merge.service';
 import { MatDialog } from '@angular/material/dialog';
 import { EventCycleCheck } from 'src/app/core/services/event-cycle-check.service';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
@@ -74,10 +75,12 @@ export class InstanceTableComponent implements PostEditListener {
   // So that we can use it in the template
   DATA_TYPES = AttributeDataType;
 
-  // Data source for the table, can be either InstanceDataSource or InstanceComparisonDataSource
+  // Data source for the table: InstanceDataSource, InstanceComparisonDataSource, or
+  // InstanceMergeDataSource while a merge with the database copy is shown
   instanceDataSource:
     | InstanceDataSource
-    | InstanceComparisonDataSource = new InstanceDataSource(
+    | InstanceComparisonDataSource
+    | InstanceMergeDataSource = new InstanceDataSource(
       undefined,
       this.categories,
       this.sortAttNames,
@@ -91,6 +94,14 @@ export class InstanceTableComponent implements PostEditListener {
   // For comparison
   _referenceInstance?: Instance;
   showReferenceColumn: boolean = false;
+
+  /**
+   * The rows of a merge with the database copy, while InstanceViewComponent shows one (see
+   * DatabaseMergeService). The view owns them and their choices; the table only displays them and
+   * sets row.choice. Keeping them in the view means a reload of the table (the view filters and
+   * the refresh subjects trigger plenty) never loses a choice the curator has made.
+   */
+  _mergeRows?: DatabaseMergeRow[];
 
   // For highlighting rows during drag/drop event-view
   dragDropStatus: DragDropStatus = {
@@ -129,6 +140,19 @@ export class InstanceTableComponent implements PostEditListener {
     this.setReferenceInstance(refInstance!);
   }
 
+  @Input() set mergeRows(rows: DatabaseMergeRow[] | undefined) {
+    if (rows === this._mergeRows)
+      return;
+    this._mergeRows = rows;
+    this.updateColumns();
+    this.updateTableContent();
+  }
+
+  /** True while the merge with the database copy is shown. The table is read-only meanwhile. */
+  get isMerging(): boolean {
+    return this._mergeRows !== undefined && this._referenceInstance !== undefined;
+  }
+
   // Track subscriptions added so that we can remove them
   private subscriptions: Subscription = new Subscription()
 
@@ -144,6 +168,7 @@ export class InstanceTableComponent implements PostEditListener {
     private dataService: DataService,
     private dialog: MatDialog,
     private eventCycleCheck: EventCycleCheck,
+    private mergeService: DatabaseMergeService,
   ) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
@@ -168,13 +193,8 @@ export class InstanceTableComponent implements PostEditListener {
 
   setReferenceInstance(refInstance: Instance | undefined) {
     this._referenceInstance = refInstance;
-    if (refInstance === undefined) {
-      this.showReferenceColumn = false;
-      this.displayedColumns = ['name', 'value'];
-    }
-    else {
-      this.showReferenceColumn = true;
-      this.displayedColumns = ['name', 'value', 'referenceValue'];
+    this.updateColumns();
+    if (refInstance !== undefined) {
       if (this._instance?.dbId === refInstance.dbId) {
         this.referenceColumnTitle = 'Database Value'
       }
@@ -184,6 +204,53 @@ export class InstanceTableComponent implements PostEditListener {
       }
     }
     this.updateTableContent();
+  }
+
+  private updateColumns() {
+    if (this._referenceInstance === undefined) {
+      this.showReferenceColumn = false;
+      this.displayedColumns = ['name', 'value'];
+    }
+    else {
+      this.showReferenceColumn = true;
+      // The merge choice sits between the two values it picks from.
+      this.displayedColumns = this.isMerging
+        ? ['name', 'value', 'mergeChoice', 'referenceValue']
+        : ['name', 'value', 'referenceValue'];
+    }
+  }
+
+  mergeRow(attributeName: string): DatabaseMergeRow | undefined {
+    return this._mergeRows?.find(row => row.attribute.name === attributeName);
+  }
+
+  chooseMerge(row: DatabaseMergeRow, choice: DatabaseMergeChoice) {
+    row.choice = choice;
+  }
+
+  /**
+   * Highlights the side(s) a merge row takes and dims the other. 'both' takes both sides: the
+   * database list plus the curator's values the database lacks.
+   */
+  mergeCellClass(attributeName: string, side: 'local' | 'database') {
+    const row = this.mergeRow(attributeName);
+    if (!row)
+      return {};
+    const chosen = row.choice === 'both' || row.choice === side;
+    return { merge_chosen: chosen, merge_rejected: !chosen };
+  }
+
+  /** What the attribute will hold after the merge, for the choice cell's tooltip. */
+  mergeResultLabel(row: DatabaseMergeRow): string {
+    const values = this.mergeService.mergedValues(row);
+    if (values.length === 0)
+      return 'Result: (empty)';
+    const label = (value: any) => {
+      if (value && typeof value === 'object' && 'dbId' in value)
+        return `${value.displayName ?? '(no name)'} [${value.dbId}]`;
+      return String(value);
+    };
+    return 'Result: ' + values.map(label).join(', ');
   }
 
   changeShowHeaderActions() {
@@ -543,6 +610,7 @@ export class InstanceTableComponent implements PostEditListener {
    */
   private renderedDbId?: number;
   private renderedComparison: boolean = false;
+  private renderedMerge: boolean = false;
 
   /**
    * The element that scrolls. Held so its position can be saved before a reload and restored
@@ -559,12 +627,15 @@ export class InstanceTableComponent implements PostEditListener {
     // instance, or into or out of comparison, is a different table and is left at the top.
     const wantsComparison = this._referenceInstance !== undefined;
     const hadPreviousTable = this.renderedDbId !== undefined;
+    const wantsMerge = this.isMerging;
     const isReloadOfSameTable = this.renderedDbId === this._instance?.dbId
-      && this.renderedComparison === wantsComparison;
+      && this.renderedComparison === wantsComparison
+      && this.renderedMerge === wantsMerge;
     const container = this.tableContainer?.nativeElement;
     const previousScrollTop = isReloadOfSameTable ? container?.scrollTop : undefined;
     this.renderedDbId = this._instance?.dbId;
     this.renderedComparison = wantsComparison;
+    this.renderedMerge = wantsMerge;
     // A switch away from a previously-shown table is not guaranteed to leave the browser's own
     // clamping behavior to reset the scroll position (it is timing-dependent), so it is reset
     // explicitly here.
@@ -578,7 +649,16 @@ export class InstanceTableComponent implements PostEditListener {
     // edit tracking to filter on, so filtering by modifiedAttributes there emptied the table.
     // InstanceComparisonDataSource does the diff, and unions both schema classes' attributes so
     // attributes defined by only one of the two classes still show up.
-    if (this._referenceInstance === undefined) {
+    if (wantsMerge) {
+      this.instanceDataSource = new InstanceMergeDataSource(
+        this._mergeRows!,
+        this.categories,
+        this.sortAttNames,
+        this.sortAttDefined
+      );
+      this.instanceDataSource.connect();
+    }
+    else if (this._referenceInstance === undefined) {
       this.instanceDataSource = new InstanceDataSource(
         this._instance,
         this.categories,

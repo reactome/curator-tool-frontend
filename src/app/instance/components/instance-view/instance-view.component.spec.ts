@@ -3,7 +3,8 @@
 // bread-crumb history, title, changed/deleted state, and the reload guard.
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { Subject, of } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { ReviewStatusCheck } from 'src/app/core/post-edit/ReviewStatusCheck';
@@ -22,6 +23,7 @@ import {
   commonTestProviders,
   componentTestImports,
   createInstanceUtilitiesSpy,
+  makeAttribute,
   makeInstance,
   makeNewInstance,
   makeSchemaClass
@@ -312,6 +314,7 @@ describe('InstanceViewComponent', () => {
     it('shows the spinner when switching to a different instance', fakeAsync(() => {
       component.instance = makeInstance({ dbId: 100 });
       dataService.fetchInstance.and.returnValue(of(makeInstance({ dbId: 101 })));
+      component.instanceViewFilters = [];
 
       component.loadInstance(101);
       tick();
@@ -474,6 +477,153 @@ describe('InstanceViewComponent', () => {
 
     component.showReferenceValueColumn();
     expect(component.showReferenceColumn).toBeFalse();
+  });
+
+  describe('merging with the database copy', () => {
+    const pathwayClass = makeSchemaClass('Pathway', {
+      attributes: [makeAttribute('name', { cardinality: '+' }), makeAttribute('definition')]
+    });
+    /** The curator renamed it; meanwhile someone else changed the definition and committed. */
+    const staged = (name = 'mine') => makeInstance({
+      dbId: 100, schemaClass: pathwayClass, modifiedAttributes: ['name'],
+      attributes: { name: [name], definition: 'old' }
+    });
+    const database = () => makeInstance({ dbId: 100, attributes: { name: ['theirs'], definition: 'new' } });
+    let local: Instance;
+
+    beforeEach(() => {
+      // blockRoute: the comparison is loaded in place rather than through a route change, which
+      // needs the real router. The routed path goes through the same request/take handshake.
+      component.blockRoute = true;
+      local = staged();
+      dataService.getCachedInstance.and.callFake(() => local);
+      dataService.getSchemaClass.and.returnValue(pathwayClass);
+      dataService.handleSchemaClassForInstance.and.callFake((inst: Instance) => of(inst));
+      dataService.fetchInstanceFromDatabase.and.callFake(() => of(database()));
+      component.ngOnInit();
+    });
+
+    function showComparison() {
+      component.instance = local;
+      component.dbInstance = database();
+      component.showReferenceColumn = true;
+    }
+
+    const rowNames = () => component.mergeData!.rows.map(r => r.attribute.name).sort();
+
+    it('opens in the comparison already on display', () => {
+      showComparison();
+
+      component.openMerge('commit refused');
+
+      expect(rowNames()).toEqual(['definition', 'name']);
+      expect(component.mergeReason).toEqual('commit refused');
+    });
+
+    it('turns the comparison on first, then opens once the database copy is loaded', fakeAsync(() => {
+      component.instance = local;
+      dataService.fetchInstance.and.returnValue(of(local));
+      // The view filters are covered elsewhere; against these spies they yield no instance.
+      component.instanceViewFilters = [];
+
+      component.openMerge();
+      expect(component.mergeData).toBeUndefined();
+      tick();
+
+      expect(component.dbInstance?.dbId).toEqual(100);
+      expect(rowNames()).toEqual(['definition', 'name']);
+    }));
+
+    it('is offered for an updated instance only', () => {
+      component.instance = local;
+      expect(component.canMerge()).toBeTrue();
+
+      component.instance = makeInstance({ dbId: 100 });
+      expect(component.canMerge()).toBeFalse();
+
+      component.instance = makeNewInstance({ dbId: -1, modifiedAttributes: ['name'] });
+      expect(component.canMerge()).toBeFalse();
+    });
+
+    it('keeps the staged copy from being committed while open', () => {
+      // Committing now would send the copy the database already refused.
+      showComparison();
+      expect(component.isUploadable()).toBeTruthy();
+
+      component.openMerge();
+
+      expect(component.isUploadable()).toBeFalse();
+    });
+
+    it('applies the choices, and leaves the comparison on to show what is left to commit', () => {
+      showComparison();
+      component.openMerge();
+
+      component.applyMerge();
+
+      expect(dataService.registerInstance).toHaveBeenCalled();
+      const merged: Instance = dataService.registerInstance.calls.mostRecent().args[0];
+      expect(merged.attributes.get('name')).toEqual(['mine']);
+      expect(merged.attributes.get('definition')).toEqual('new');
+      expect(utils.setRefreshViewDbId).toHaveBeenCalledWith(100);
+      expect(component.mergeData).toBeUndefined();
+      expect(component.dbInstance).toBeDefined();
+    });
+
+    it('refuses to apply over a staged copy edited while it was open', () => {
+      showComparison();
+      component.openMerge();
+      local = staged('edited again');
+      const dialog = TestBed.inject(MatDialog) as jasmine.SpyObj<MatDialog>;
+
+      component.applyMerge();
+
+      expect(dataService.registerInstance).not.toHaveBeenCalled();
+      expect(component.mergeData!.rows.find(r => r.attribute.name === 'name')!.localValues).toEqual(['edited again']);
+      expect(dialog.open).toHaveBeenCalled();
+    });
+
+    it('changes nothing when cancelled', () => {
+      showComparison();
+      component.openMerge();
+
+      component.cancelMerge();
+
+      expect(component.mergeData).toBeUndefined();
+      expect(dataService.registerInstance).not.toHaveBeenCalled();
+    });
+
+    it('closes when the comparison is turned off', () => {
+      showComparison();
+      component.openMerge();
+
+      component.showReferenceValueColumn();
+
+      expect(component.mergeData).toBeUndefined();
+    });
+
+    it('closes when the view switches to another instance', fakeAsync(() => {
+      showComparison();
+      component.openMerge();
+      dataService.fetchInstance.and.returnValue(of(makeInstance({ dbId: 101 })));
+      component.instanceViewFilters = [];
+
+      component.loadInstance(101);
+      tick();
+
+      expect(component.mergeData).toBeUndefined();
+    }));
+
+    it('opens by itself when a commit is refused because the database copy changed', () => {
+      showComparison();
+      dataService.commit.and.returnValue(throwError(() => new Error(
+        'Instance has been updated elsewhere and cannot be committed (dbId, stId, displayName): 100, null, Glycolysis')));
+
+      component.upload();
+
+      expect(component.mergeData).toBeDefined();
+      expect(component.mergeReason).toContain('changed in the database');
+    });
   });
 
   it('installs the instance view filters up front', () => {

@@ -253,6 +253,87 @@ describe('DatabaseMergeService', () => {
     });
   });
 
+  describe('merge requests', () => {
+    it('hands a request to the instance view that asks for it, once', () => {
+      // The requester navigates to the comparison, which creates a new instance view; that view
+      // takes the request when its comparison has loaded.
+      service.requestMerge(100, 'commit refused');
+
+      expect(service.takeRequest(100)).toEqual({ dbId: 100, reason: 'commit refused' });
+      expect(service.takeRequest(100)).toBeUndefined();
+    });
+
+    it('does not hand a request to a view showing another instance', () => {
+      service.requestMerge(100);
+
+      expect(service.takeRequest(101)).toBeUndefined();
+      expect(service.takeRequest(100)).toBeDefined();
+    });
+
+    it('drops a request nobody took in time', () => {
+      // Otherwise the merge would pop up later, when the comparison is opened for another reason.
+      jasmine.clock().install();
+      try {
+        jasmine.clock().mockDate(new Date(2026, 10, 20, 12, 0, 0));
+        service.requestMerge(100);
+        jasmine.clock().tick(31_000);
+
+        expect(service.takeRequest(100)).toBeUndefined();
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
+
+    it('tells a view already showing the comparison', () => {
+      const seen: number[] = [];
+      service.mergeRequest$.subscribe(request => seen.push(request.dbId));
+
+      service.requestMerge(100);
+
+      expect(seen).toEqual([100]);
+    });
+  });
+
+  describe('a staged copy edited while the merge is open', () => {
+    it('is not stale while the staged copy still matches the rows', () => {
+      const local = staged();
+      dataService.getCachedInstance.and.returnValue(local);
+
+      expect(service.refreshIfStale({ local, database: database(), rows: service.buildRows(local, database()) }))
+        .toBeUndefined();
+    });
+
+    it('rebuilds the rows, keeping the choices on rows whose values did not change', () => {
+      const local = staged();
+      const rows = service.buildRows(local, database());
+      row(rows, 'definition').choice = 'local';
+      row(rows, 'name').choice = 'database';
+      // Edited elsewhere meanwhile: another reaction added to hasEvent.
+      const current = staged();
+      current.attributes.set('hasEvent', [reaction(1), reaction(2), reaction(3), reaction(4)]);
+      dataService.getCachedInstance.and.returnValue(current);
+
+      const refreshed = service.refreshIfStale({ local, database: database(), rows })!;
+
+      expect(refreshed.local).toBe(current);
+      expect(row(refreshed.rows, 'definition').choice).toEqual('local');
+      expect(row(refreshed.rows, 'name').choice).toEqual('database');
+      expect(row(refreshed.rows, 'hasEvent').localValues.length).toEqual(4);
+    });
+
+    it('notices an attribute that stopped differing', () => {
+      const local = staged();
+      const rows = service.buildRows(local, database());
+      const current = staged();
+      current.attributes.set('definition', 'new definition');
+      dataService.getCachedInstance.and.returnValue(current);
+
+      const refreshed = service.refreshIfStale({ local, database: database(), rows })!;
+
+      expect(refreshed.rows.map(r => r.attribute.name)).not.toContain('definition');
+    });
+  });
+
   it('recognises the backend "updated elsewhere" rejection', () => {
     expect(isInstanceChangedError(new Error(
       'Instance has been updated elsewhere and cannot be committed (dbId, stId, displayName): 1, x, y'))).toBeTrue();

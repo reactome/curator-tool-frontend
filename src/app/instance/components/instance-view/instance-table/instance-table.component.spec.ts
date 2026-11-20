@@ -5,11 +5,12 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { of } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 
 import { AttributeValue, EDIT_ACTION, Instance } from 'src/app/core/models/reactome-instance.model';
 import { AttributeEditService } from 'src/app/core/services/attribute-edit.service';
 import { DataService } from 'src/app/core/services/data.service';
+import { DatabaseMergeChoice, DatabaseMergeRow } from 'src/app/core/services/database-merge.service';
 import {
   AttributeCategory,
   AttributeDataType,
@@ -24,6 +25,7 @@ import {
   commonTestProviders,
   componentTestImports,
   createInstanceUtilitiesSpy,
+  makeAttribute,
   makeInstance,
   makeInstanceAttribute,
   makeSchemaClass
@@ -112,6 +114,70 @@ describe('InstanceTableComponent', () => {
       component.setReferenceInstance(undefined);
 
       expect(component.showReferenceColumn).toBeFalse();
+      expect(component.displayedColumns).toEqual(['name', 'value']);
+    });
+  });
+
+  describe('merging with the database copy', () => {
+    const mergeRow = (name: string, choice: DatabaseMergeChoice): DatabaseMergeRow => ({
+      attribute: makeAttribute(name, { cardinality: '+' }),
+      multiValued: true,
+      localValues: ['mine'],
+      databaseValues: ['theirs'],
+      editedLocally: choice === 'local',
+      choice
+    });
+
+    function showMerge(rows: DatabaseMergeRow[]) {
+      component.instance = pathway();
+      component.setReferenceInstance(makeInstance({ dbId: 100, displayName: 'Glycolysis' }));
+      component.mergeRows = rows;
+    }
+
+    it('puts the Take column between the two values it picks from', () => {
+      showMerge([mergeRow('name', 'local')]);
+
+      expect(component.isMerging).toBeTrue();
+      expect(component.displayedColumns).toEqual(['name', 'value', 'mergeChoice', 'referenceValue']);
+    });
+
+    it('lists only the merge rows, with their values', async () => {
+      showMerge([mergeRow('name', 'local')]);
+
+      const rows = await firstValueFrom(component.instanceDataSource.connect());
+
+      expect(rows.map(r => r.attribute.name)).toEqual(['name']);
+      expect(rows[0].value).toEqual(['mine']);
+      expect(rows[0].referenceValue).toEqual(['theirs']);
+    });
+
+    it('marks the chosen side, and both sides for "both"', () => {
+      const row = mergeRow('name', 'database');
+      showMerge([row]);
+
+      expect(component.mergeCellClass('name', 'database')).toEqual({ merge_chosen: true, merge_rejected: false });
+      expect(component.mergeCellClass('name', 'local')).toEqual({ merge_chosen: false, merge_rejected: true });
+
+      component.chooseMerge(row, 'both');
+
+      expect(component.mergeCellClass('name', 'local').merge_chosen).toBeTrue();
+      expect(component.mergeCellClass('name', 'database').merge_chosen).toBeTrue();
+    });
+
+    it('goes back to the plain comparison when the merge ends', () => {
+      showMerge([mergeRow('name', 'local')]);
+
+      component.mergeRows = undefined;
+
+      expect(component.isMerging).toBeFalse();
+      expect(component.displayedColumns).toEqual(['name', 'value', 'referenceValue']);
+    });
+
+    it('is not a merge without a reference column', () => {
+      component.instance = pathway();
+      component.mergeRows = [mergeRow('name', 'local')];
+
+      expect(component.isMerging).toBeFalse();
       expect(component.displayedColumns).toEqual(['name', 'value']);
     });
   });

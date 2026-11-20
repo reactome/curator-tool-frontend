@@ -160,3 +160,46 @@ button:disabled {
   color: var(--primary);
   cursor: not-allowed;
 }
+// Merge with the database copy. The side a row takes is tinted green; the side it drops is
+// faded, so the result can be read down the table without hovering each choice.
+.valueColumn.merge_chosen,
+.mat-mdc-cell.merge_chosen {
+  background-color: rgba(76, 175, 80, 0.15);
+}
+
+.valueColumn.merge_rejected,
+.mat-mdc-cell.merge_rejected {
+  opacity: 0.45;
+}
+
+.merge_value {
+  padding: 0 4px;
+}
+
+.mergeChoiceColumn {
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+  padding: 0 4px;
+}
+
+.merge_toggle {
+  --mat-standard-button-toggle-height: 28px;
+  align-items: center;
+
+  .mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.merge_origin {
+  font-size: 11px;
+  font-weight: normal;
+  font-style: italic;
+
+  &.merge_db_changed {
+    color: #1565c0;
+  }
+}

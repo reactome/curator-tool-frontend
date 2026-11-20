@@ -35,6 +35,14 @@ import { environment } from 'src/environments/environment.dev';
 import { InstanceNameGenerator } from 'src/app/core/post-edit/InstanceNameGenerator';
 import { ChangeClassDialogComponent } from '../change-class-dialog/change-class-dialog.component';
 import { MergeInstancesDialogService } from '../merge-instances-dialog/merge-instances-dialog.service';
+import {
+  DatabaseMergeChoice,
+  DatabaseMergeData,
+  DatabaseMergeError,
+  DatabaseMergeRequest,
+  DatabaseMergeService,
+  isInstanceChangedError
+} from 'src/app/core/services/database-merge.service';
 
 @Component({
   selector: 'app-instance-view',
@@ -63,6 +71,17 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   instanceViewFilters: InstanceViewFilter[] = [];
   hasPendingStagedInstances: boolean = false;
 
+  /**
+   * The merge of the staged copy with the database copy, while one is shown (see
+   * DatabaseMergeService for why it exists). It is shown in the database comparison table, which
+   * gets a Take column, and the header gets the bulk choices and Apply / Cancel. The rows, and the
+   * choices the curator makes on them, live here rather than in the table so that a reload of the
+   * table does not lose them.
+   */
+  mergeData: DatabaseMergeData | undefined;
+  /** Why the merge was opened, if not by the curator, e.g. a commit refused with 409. */
+  mergeReason: string | undefined;
+
   // Flag to indicate if this is in event view
   @Input() isInEventView: boolean = false;
 
@@ -83,6 +102,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   readonly dialog = inject(MatDialog);
   private readonly diagramSyncDialogService = inject(DiagramSyncDialogService);
+  private readonly mergeService = inject(DatabaseMergeService);
   // dbId of the displayed Pathway once it is known to have a PathwayDiagram. Kept as a dbId rather
   // than a flag so an answer that arrives after the curator has moved on can't switch the button
   // on for the next instance.
@@ -178,6 +198,12 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         }
       }
     })
+    this.subscriptions.add(subscription);
+
+    // A merge requested while this view already shows the database comparison for the instance.
+    // Otherwise the requester opens the comparison, and the request is taken when it has loaded
+    // (see takePendingMerge()).
+    subscription = this.mergeService.mergeRequest$.subscribe(request => this.onMergeRequest(request));
     this.subscriptions.add(subscription);
 
     subscription = combineLatest([
@@ -393,6 +419,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
           // Continue with the rest of the logic below
           this.instance = firstInstance;
           this.dbInstance = secondInstance;
+          // Two different instances: there is no database copy to merge with.
+          this.clearMerge();
           this.viewHistory.length = 0;
           this.addToViewHistory(firstInstance);
           this.updateTitle(firstInstance);
@@ -500,6 +528,10 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         this.instanceTable?.updateTableContent(); // Force to reload
       else
         this.instance = filteredInstance;
+      // A merge belongs to the instance it was opened for. Reloading that instance in place keeps
+      // it (the view filters and the refresh subjects reload all the time); a switch drops it.
+      if (this.mergeData && this.mergeData.local.dbId !== this.instance.dbId)
+        this.clearMerge();
       // No need to change the table here. When the instance is changed, the table will be updated automatically.
       // this.changeTable(this.instance);
       if (resetHistory)
@@ -514,6 +546,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
           this.showReferenceColumn = true;
           if (releaseSyncBlockOnComplete)
             this.unblockSyncView();
+          this.takePendingMerge();
         }, () => {
           this.showProgressSpinner = false;
           if (releaseSyncBlockOnComplete)
@@ -627,6 +660,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   showReferenceValueColumn() {
     this.showReferenceColumn = !this.showReferenceColumn;
+    // The merge is shown in the comparison, so turning the comparison off drops it.
+    if (!this.showReferenceColumn)
+      this.clearMerge();
     if (this.blockRoute) {
       // If this is used to switch off the reference column, just return
       if (!this.showReferenceColumn) {
@@ -656,6 +692,10 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   isUploadable() {
+    // Committing the staged copy while its merge is open would commit the copy the database
+    // already refused (409), not the merge.
+    if (this.mergeData)
+      return false;
     if (this.isDeleted())
       return true;
     //TODO: an attribute may add a new value and then delete this new value. Need to have a better
@@ -745,7 +785,137 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         this.changeTable(storedInst);
       }
       this.commitResultDialogService.openDialog(this.instUtils.buildCommitSummaryResults(this.instance!, storedInst));
+    }, error => {
+      // DataService has already shown the error. A 409 "updated elsewhere" means the database
+      // copy was committed after this one was staged, and every retry will be refused the same
+      // way, so open the merge instead of leaving the curator with only Undo (which loses their
+      // edits).
+      if (isInstanceChangedError(error))
+        this.openMerge('The commit was rejected because this instance was changed in the database after you started editing it. ' +
+          'Merge your edits with the database copy, then commit again.');
     });
+  }
+
+  /** The toolbar's merge button: offered for an updated instance not already being merged. */
+  canMerge(): boolean {
+    if (!this.instance || this.instance.dbId <= 0 || this.mergeData || this.isDeleted())
+      return false;
+    return (this.instance.modifiedAttributes?.length ?? 0) > 0
+      || (this.instance.passiveModifiedAttributes?.length ?? 0) > 0;
+  }
+
+  private isShowingDatabaseComparison(dbId: number): boolean {
+    return this.instance?.dbId === dbId && this.dbInstance?.dbId === dbId && this.loadingDbId === undefined;
+  }
+
+  /**
+   * Show the merge for the displayed instance. When the database comparison is not on yet, turn
+   * it on the same way the compare button does; the request is taken once it has loaded.
+   */
+  openMerge(reason?: string) {
+    if (!this.instance)
+      return;
+    const dbId = this.instance.dbId;
+    this.mergeService.requestMerge(dbId, reason);
+    if (this.isShowingDatabaseComparison(dbId))
+      return; // onMergeRequest() has taken it
+    if (this.blockRoute) {
+      this.loadInstance(dbId, true);
+      return;
+    }
+    // A comparison URL is a different route from the instance URL, so this view is replaced by
+    // a new one, which takes the request when its comparison has loaded.
+    this.router.navigate([this.getCurrentPathRoot() + "/instance/" + dbId, "comparison", dbId.toString()]);
+  }
+
+  private onMergeRequest(request: DatabaseMergeRequest) {
+    if (!this.isShowingDatabaseComparison(request.dbId))
+      return;
+    if (this.mergeService.takeRequest(request.dbId))
+      this.startMerge(request.reason);
+  }
+
+  private takePendingMerge() {
+    if (!this.instance || !this.isShowingDatabaseComparison(this.instance.dbId))
+      return;
+    const request = this.mergeService.takeRequest(this.instance.dbId);
+    if (request)
+      this.startMerge(request.reason);
+  }
+
+  private startMerge(reason?: string) {
+    if (!this.instance)
+      return;
+    const dbId = this.instance.dbId;
+    this.mergeService.prepare(dbId).pipe(take(1)).subscribe({
+      next: data => {
+        if (this.instance?.dbId !== dbId)
+          return; // The curator moved on while the database copy was read
+        // prepare() has just read the database copy; show that one, so the reference column is
+        // exactly what the rows are merged with.
+        this.dbInstance = data.database;
+        this.showReferenceColumn = true;
+        this.mergeData = data;
+        this.mergeReason = reason;
+      },
+      error: error => {
+        // DataService has already shown HTTP failures; these explain why no merge is possible.
+        if (error instanceof DatabaseMergeError)
+          this.showInfo('Cannot Merge', error.message);
+      }
+    });
+  }
+
+  /** Attributes the curator edited among the merge rows: the ones they really have to look at. */
+  get mergeEditedCount(): number {
+    return this.mergeData?.rows.filter(row => row.editedLocally).length ?? 0;
+  }
+
+  setAllMergeChoices(choice: Exclude<DatabaseMergeChoice, 'both'>) {
+    this.mergeData?.rows.forEach(row => row.choice = choice);
+  }
+
+  resetMergeChoices() {
+    this.mergeData?.rows.forEach(row => row.choice = row.editedLocally ? 'local' : 'database');
+  }
+
+  cancelMerge() {
+    this.clearMerge();
+  }
+
+  applyMerge() {
+    if (!this.mergeData)
+      return;
+    if (this.isDeleted()) {
+      this.clearMerge();
+      this.showInfo('Cannot Merge', 'This instance is marked for deletion, so there is nothing to merge. Undo the deletion first.');
+      return;
+    }
+    const refreshed = this.mergeService.refreshIfStale(this.mergeData);
+    if (refreshed) {
+      this.mergeData = refreshed;
+      this.showInfo('Your Copy Changed',
+        'Your staged copy of this instance was edited while the merge was open. The table now shows its current values, ' +
+        'and your choices are kept on the attributes whose values did not change. Check the rows, then apply again.');
+      return;
+    }
+    const outcome = this.mergeService.apply(this.mergeData);
+    // apply() fires refreshViewDbId$, which reloads the merged copy into this view. The database
+    // copy stays in the reference column, so what is left to commit can be seen straight away.
+    this.clearMerge();
+    if (!outcome.stillStaged)
+      this.showInfo('Merge Complete',
+        'Every attribute took the database value, so nothing is left to commit. ' +
+        'The instance has left your Updated Instances list.');
+  }
+
+  private clearMerge() {
+    this.mergeData = undefined;
+    this.mergeReason = undefined;
+  }
+
+  private showInfo(title: string, message: string) {
+    this.dialog.open(InfoDialogComponent, { data: { title, message } });
   }
 
   exportEventDocx() {

@@ -19,8 +19,7 @@ import { CommitResultDialogService, CommitResult } from './commit-result-dialog/
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
 import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
 import { MatchResolutionService } from 'src/app/core/services/match-resolution.service';
-import { isInstanceChangedError } from 'src/app/core/services/database-merge.service';
-import { MergeWithDatabaseDialogService } from 'src/app/instance/components/merge-with-database-dialog/merge-with-database-dialog.service';
+import { DatabaseMergeService, isInstanceChangedError } from 'src/app/core/services/database-merge.service';
 
 
 @Component({
@@ -75,7 +74,7 @@ export class UpdatedInstanceListComponent implements OnInit {
     private commitResultDialogService: CommitResultDialogService,
     private matchedInstancesDialogService: MatchedInstancesDialogService,
     private matchResolutionService: MatchResolutionService,
-    private mergeWithDatabaseDialogService: MergeWithDatabaseDialogService
+    private databaseMergeService: DatabaseMergeService
   ) {
   }
 
@@ -396,10 +395,13 @@ export class UpdatedInstanceListComponent implements OnInit {
 
   /**
    * Reconcile a staged updated instance with its current database copy. See DatabaseMergeService
-   * for why this is needed (409 "Instance has been updated elsewhere" on commit).
+   * for why this is needed (409 "Instance has been updated elsewhere" on commit). The merge is
+   * shown in the instance view's database comparison: raise the request, then open the
+   * comparison, and the instance view takes the request once the comparison has loaded.
    */
   mergeWithDatabase(instance: Instance, reason?: string) {
-    this.mergeWithDatabaseDialogService.merge(instance, reason).subscribe();
+    this.databaseMergeService.requestMerge(instance.dbId, reason);
+    this.compareWithDB(instance);
   }
 
   private resetUpdatedInstance(instance: Instance) {

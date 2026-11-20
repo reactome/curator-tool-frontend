@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { concatMap, map, Observable, of, take, throwError } from 'rxjs';
+import { concatMap, Observable, of, Subject, take, throwError } from 'rxjs';
 import { Instance } from '../models/reactome-instance.model';
 import { SchemaAttribute } from '../models/reactome-schema.model';
 import { InstanceNameGenerator } from '../post-edit/InstanceNameGenerator';
@@ -32,7 +32,7 @@ export interface DatabaseMergeRow {
   choice: DatabaseMergeChoice;
 }
 
-/** Everything the merge dialog needs, built from a fresh database read. */
+/** Everything the merge in the comparison table needs, built from a fresh database read. */
 export interface DatabaseMergeData {
   /** The staged copy, as held in DataService.id2instance. */
   local: Instance;
@@ -47,6 +47,25 @@ export interface DatabaseMergeOutcome {
   /** False when every row took the database value: nothing is left to commit. */
   stillStaged: boolean;
 }
+
+/**
+ * A request to show the merge for an instance. Raised by the Updated Instances list (the merge row
+ * button, or a single commit refused with 409) and consumed by the instance view, which shows the
+ * merge in its database comparison table.
+ */
+export interface DatabaseMergeRequest {
+  dbId: number;
+  /** Shown at the top of the merge, e.g. why a commit was rejected. */
+  reason?: string;
+}
+
+/**
+ * How long a request waits for an instance view to pick it up. The requester navigates to (or, in
+ * the event view, loads) the comparison right after raising the request, so a view that is going
+ * to take it does so within a load. A request nobody took must not surface minutes later, when
+ * the curator opens the comparison for some unrelated reason.
+ */
+const REQUEST_TTL_MS = 30_000;
 
 /**
  * Attributes the merge never offers. `modified` and `created` are the provenance slots the
@@ -78,10 +97,40 @@ export class DatabaseMergeService {
 
   private readonly nameGenerator: InstanceNameGenerator;
 
+  /**
+   * The request raised most recently and not yet taken. Kept in addition to the Subject below
+   * because the requester usually navigates to the comparison URL, which is a different route
+   * from the plain instance URL and so creates a new InstanceViewComponent: that component does
+   * not exist yet when the request is raised, and takes it from here once its comparison loads.
+   */
+  private pending?: { request: DatabaseMergeRequest; at: number };
+  private mergeRequest = new Subject<DatabaseMergeRequest>();
+  /** Emits each request, for an instance view that already shows the comparison it is for. */
+  readonly mergeRequest$ = this.mergeRequest.asObservable();
+
   constructor(private dataService: DataService,
     private instUtils: InstanceUtilities,
     private store: Store) {
     this.nameGenerator = new InstanceNameGenerator(dataService, instUtils);
+  }
+
+  /**
+   * Ask the instance view to show the merge for an instance. The caller then opens the database
+   * comparison for that instance; see {@link pending}.
+   */
+  requestMerge(dbId: number, reason?: string): void {
+    const request = { dbId, reason };
+    this.pending = { request, at: Date.now() };
+    this.mergeRequest.next(request);
+  }
+
+  /** Take the pending request for this instance, if there is a fresh one. Taking it clears it. */
+  takeRequest(dbId: number): DatabaseMergeRequest | undefined {
+    const pending = this.pending;
+    if (!pending || pending.request.dbId !== dbId)
+      return undefined;
+    this.pending = undefined;
+    return Date.now() - pending.at <= REQUEST_TTL_MS ? pending.request : undefined;
   }
 
   /**
@@ -92,8 +141,8 @@ export class DatabaseMergeService {
   prepare(dbId: number): Observable<DatabaseMergeData> {
     const local = this.dataService.getCachedInstance(dbId);
     if (!local)
-      return throwError(() => new DatabaseMergeError(`The staged copy of instance ${dbId} is not loaded in this window. ` +
-        'Open it in this window first, then try the merge again.'));
+      return throwError(() => new DatabaseMergeError(`Your staged copy of instance ${dbId} is not loaded in this window. ` +
+        'Open the instance, then try the merge again.'));
     if (dbId < 0)
       return throwError(() => new DatabaseMergeError('A new instance has no database copy to merge with.'));
     return this.dataService.handleSchemaClassForInstance(local).pipe(
@@ -208,6 +257,31 @@ export class DatabaseMergeService {
     }
     this.instUtils.setRefreshViewDbId(merged.dbId);
     return { instance: merged, stillStaged };
+  }
+
+  /**
+   * The merge is shown in the instance view rather than a modal dialog, so the staged copy can
+   * change while the curator is still choosing: an edit in another window, or in another panel of
+   * this one (the event view's diagram, for instance). The rows hold a snapshot of the staged
+   * values, and applying them would silently undo that edit.
+   *
+   * Returns undefined when the staged copy still matches the rows. Otherwise returns the rows
+   * rebuilt against the current staged copy, keeping the curator's choice on each row whose values
+   * did not change; changed and new rows get their defaults.
+   */
+  refreshIfStale(data: DatabaseMergeData): DatabaseMergeData | undefined {
+    const current = this.dataService.getCachedInstance(data.local.dbId) ?? data.local;
+    const rebuilt = this.buildRows(current, data.database);
+    const previous = new Map(data.rows.map(row => [row.attribute.name, row]));
+    let stale = rebuilt.length !== data.rows.length;
+    for (const row of rebuilt) {
+      const old = previous.get(row.attribute.name);
+      if (old && this.isSameList(old.localValues, row.localValues) && old.editedLocally === row.editedLocally)
+        row.choice = old.choice;
+      else
+        stale = true;
+    }
+    return stale ? { local: current, database: data.database, rows: rebuilt } : undefined;
   }
 
   mergedValues(row: DatabaseMergeRow): any[] {
