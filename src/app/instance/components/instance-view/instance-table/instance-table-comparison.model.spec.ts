@@ -127,6 +127,7 @@ describe('InstanceMergeDataSource', () => {
     localValues,
     databaseValues,
     editedLocally: true,
+    locked: false,
     choice: 'local'
   });
 

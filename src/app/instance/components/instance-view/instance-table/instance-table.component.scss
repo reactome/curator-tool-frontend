@@ -194,6 +194,25 @@ button:disabled {
   }
 }
 
+// "merge with database copy", beside the Database Value header text.
+.merge_header_button {
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+// A locked (not manually editable) merge row: no choice, always the database value.
+.merge_locked {
+  display: inline-flex;
+  align-items: center;
+  color: rgba(0, 0, 0, 0.54);
+
+  .mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
 .merge_origin {
   font-size: 11px;
   font-weight: normal;

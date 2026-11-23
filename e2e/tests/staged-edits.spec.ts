@@ -17,6 +17,7 @@
 import { Page } from '@playwright/test';
 
 import { expect, test } from '../fixtures/test';
+import { INSTANCES } from '../../src/testing/api-fixtures';
 
 /** The row for one attribute in the instance table. */
 const rowContaining = (page: Page, attribute: string) =>
@@ -149,6 +150,54 @@ test.describe('editing an instance', () => {
     await editAttribute(page, 'definition', 'An edited definition.');
 
     await expect(actionButton(page, 'compare')).toBeEnabled();
+  });
+
+  test('shows the database comparison itself, not the merge, when compare is pressed', async ({ page }) => {
+    // Regression (2026-11-23): the template binds [mergeRows]="mergeData?.rows", which Angular
+    // evaluates to null with no merge open, and the table treated null as a merge. Every
+    // comparison came up as an empty merge: a Take column, no Value / Database Value, no rows.
+    await editAttribute(page, 'definition', 'An edited definition.');
+
+    await actionButton(page, 'compare').click();
+
+    await expect(page.locator('app-instance-table th')).toHaveText(['Attribute', 'Value', 'Database Value']);
+    // The whole instance is listed, not just merge rows (the broken table had none at all).
+    await expect.poll(() => page.locator('app-instance-table tbody tr').count()).toBeGreaterThan(5);
+    // The mock database copy carries the same `modified` as the staged one, so nothing is out of
+    // sync and the merge is not offered.
+    await expect(actionButton(page, 'merge')).toHaveCount(0);
+  });
+
+  test('offers the merge beside the Database Value header once the copy is out of sync', async ({ page, api }) => {
+    await editAttribute(page, 'definition', 'An edited definition.');
+    // Someone else commits the instance meanwhile: the database copy now carries a newer
+    // `modified` InstanceEdit than the staged copy, which the backend would refuse with 409.
+    api.override({
+      name: 'instance 100 committed elsewhere',
+      match: p => p.includes('/findByDbId/100'),
+      body: {
+        ...INSTANCES[100],
+        attributes: {
+          ...INSTANCES[100].attributes,
+          definition: 'A definition someone else committed.',
+          modified: { dbId: 60, displayName: 'Someone, Else, 2026-11-23', schemaClassName: 'InstanceEdit' }
+        }
+      }
+    });
+
+    await actionButton(page, 'compare').click();
+
+    // The comparison comes first; the merge is only offered, in the Database Value header.
+    const header = page.locator('app-instance-table th').filter({ hasText: 'Database Value' });
+    await expect(page.locator('app-instance-table th')).toHaveText([/Attribute/, /Value/, /Database Value/]);
+    const merge = header.getByRole('button', { name: 'merge with database copy' });
+    await expect(merge).toBeVisible();
+    await expect(page.locator('mat-toolbar').getByText(/^merge$/)).toHaveCount(0);
+
+    await merge.click();
+
+    await expect(page.locator('app-instance-table th')).toHaveText([/Attribute/, /Value/, 'Take', /Database Value/]);
+    await expect(merge).toHaveCount(0);
   });
 
   test('survives a reload, so a crash does not lose the work', async ({ page }) => {

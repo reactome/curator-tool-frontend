@@ -199,20 +199,21 @@ Each section header reads **"<Section> Instances: {total} ({selected})"** and ha
 
 - `select_all` / `deselect_all`
 - `undo` — **undo all changes for selected updated instances** (re-fetches each from the DB and resets)
-- `upload` — **commit all selected** (commits sequentially; any failures are reported afterward listing `#dbId displayName` of each failure; if some failed because the instance changed in the database, the report says so and points to the merge button)
-- Per-row buttons: **COMPARE2DB**, **MERGE2DB** (`merge`, **"merge with database copy"**), **UNDO**, **COMMIT**
+- `upload` — **commit all selected** (commits sequentially; any failures are reported afterward listing `#dbId displayName` of each failure; if some failed because the instance changed in the database, the report says so and points to the comparison's merge button)
+- Per-row buttons: **COMPARE2DB**, **UNDO**, **COMMIT**
 
 #### Merging with the database copy
 
-A commit is refused with *"Instance has been updated elsewhere"* when someone (another curator, or you in another window) committed the same instance after you started editing it. Committing again will keep failing, and **UNDO** throws your edits away. Use the `merge` row button instead: it opens the instance in the [database comparison](#94-the-attribute-table) with the merge turned on. Committing a single instance that fails this way, from this list or with the instance editor's **Upload**, opens the merge for you. The instance editor's toolbar also has a `merge` button (**"merge with database copy"**) for any updated instance.
+A commit is refused with *"Instance has been updated elsewhere"* when someone (another curator, or you in another window) committed the same instance after you started editing it. Committing again will keep failing, and **UNDO** throws your edits away. Use the merge instead. It is available only in the [database comparison](#94-the-attribute-table), and only when your copy is out of sync with the database copy, that is, when its `modified` / `modifiedList` InstanceEdits no longer match the database's (the same check that makes the commit fail). Turn the comparison on (the **COMPARE2DB** row button, or `compare` in the instance editor); if your copy is out of sync, the `merge` button (**"merge with database copy"**) appears beside the **Database Value** column header. If the instance was committed elsewhere after you turned the comparison on, turn the comparison off and on again to reload the database copy. Committing a single instance that fails this way, from this list or with the instance editor's **Upload**, opens the comparison for you with the latest database copy. A note above the table says why the commit was refused and points to the `merge` button beside the **Database Value** header. The merge does not start until you press it.
 
 While the merge is on, the comparison table lists only the attributes whose values differ between your copy (**Value**) and the database copy (**Database Value**), and nothing in it can be edited:
 
 - A **Take** column between the two values holds the choice for each attribute: `arrow_back` takes your value, `arrow_forward` takes the database value. Hover the choice to see what the attribute will hold.
 - Under each attribute name, **edited by you** means the attribute starts with your value; **changed in database** (an attribute you never edited) means it starts with the database value, so the other person's change is kept.
+- Attributes that cannot be edited by hand (NoManualEdit, such as `modified`, `modifiedList`, `created` and `stableIdentifier`) are marked **not manually editable** and always take the database value: their **Take** cell shows `lock` `arrow_forward` instead of a choice, and the bulk buttons leave them alone. This is what lets the merged copy pass the commit check.
 - Multivalued attributes also offer **Both** (`sync_alt`): the database values, then the values you added that the database lacks. Repeated values are kept, so stoichiometry is not lost.
 - The side each attribute takes is tinted green; the side it drops is faded.
-- Above the table, a banner explains the merge (and, when a commit was refused, why it opened), counts the attributes that differ, and has **All rows:** **Mine**, **Database** and **Defaults** to set every row at once.
+- Above the table, a banner explains the merge (and, when a commit was refused, why), counts the attributes that differ (how many you edited, and how many are always taken from the database), and has **All rows:** **Mine**, **Database** and **Defaults** to set every row you can choose for at once.
 - **Apply Merge** replaces your staged copy with the merged one, in every open window. It stays in **Updated Instances** for you to review and commit, and the comparison stays on so you can see what is left to commit. If every row takes the database value, the instance leaves the list. **Cancel**, turning the comparison off, or opening another instance closes the merge without changing anything.
 - **Upload** is disabled while the merge is on, because it would commit the copy the database already refused.
 - If your copy is edited while the merge is open (in another window, or in another panel), **Apply Merge** does not apply. It refreshes the rows instead and keeps your choices on the attributes whose values did not change, so you can check them and apply again.
@@ -438,7 +439,6 @@ The title reads **"{SchemaClass}: {displayName} [{dbId}]"**. It turns **red** wh
 | `checklist` | **Run QA Report** (or *"You may need to commit your changes first for the QA Report"* when edits are pending) | Icon is blue (not run), **green** (passed), or **red** (failed) |
 | `list_alt` | **Show Referrers** | |
 | `compare` | **compare to instance at db** / **turn off comparison** | Enabled only when a database copy is available; toggles the comparison column |
-| `merge` | **merge with database copy** | Updated instances only; opens the comparison with the [merge with the database copy](#merging-with-the-database-copy) turned on |
 | `delete` | **Delete Instance** | Opens the deletion dialog |
 | `upload` | **Upload** | Commits this instance; enabled only when there are changes |
 | `download` | **Export event to DOCX** | Event classes only; blocked while staged instances are pending |
@@ -469,7 +469,7 @@ The title reads **"{SchemaClass}: {displayName} [{dbId}]"**. It turns **red** wh
 
 ### 9.4 The attribute table
 
-Columns: **Attribute**, **Value**, and (when comparing) a reference column headed **Database Value** (comparing to the DB copy) or the other instance's display name (comparing two instances). While a [merge with the database copy](#merging-with-the-database-copy) is on, a **Take** column sits between **Value** and **Database Value**, only the attributes that differ are listed, and the table is read-only.
+Columns: **Attribute**, **Value**, and (when comparing) a reference column headed **Database Value** (comparing to the DB copy) or the other instance's display name (comparing two instances). When your copy of an updated instance is out of sync with the database copy, the **Database Value** header has a `merge` button (**"merge with database copy"**) that turns on the [merge with the database copy](#merging-with-the-database-copy). While a [merge with the database copy](#merging-with-the-database-copy) is on, a **Take** column sits between **Value** and **Database Value**, only the attributes that differ are listed, and the table is read-only.
 
 **Attribute-name cell:** shows a category icon — **Mandatory**, **Required**, **Optional**, or **NoManualEdit** — and is color-coded:
 

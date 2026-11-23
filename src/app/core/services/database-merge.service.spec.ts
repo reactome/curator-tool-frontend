@@ -38,6 +38,8 @@ describe('DatabaseMergeService', () => {
       makeAttribute('definition'),
       makeInstanceAttribute('hasEvent', ['Event']),
       makeInstanceAttribute('modified', ['InstanceEdit'], { cardinality: '1' }),
+      makeInstanceAttribute('modifiedList', ['InstanceEdit'], { cardinality: '+' }),
+      makeAttribute('stableIdentifier', { category: AttributeCategory.NOMANUALEDIT }),
       makeAttribute('displayName'),
     ]
   });
@@ -97,10 +99,54 @@ describe('DatabaseMergeService', () => {
   const row = (rows: DatabaseMergeRow[], name: string) => rows.find(r => r.attribute.name === name)!;
 
   describe('building rows', () => {
-    it('lists only the attributes that differ, never modified or displayName', () => {
+    it('lists only the attributes that differ, never displayName', () => {
       const rows = service.buildRows(staged(), database());
 
-      expect(rows.map(r => r.attribute.name).sort()).toEqual(['definition', 'hasEvent', 'name']);
+      expect(rows.map(r => r.attribute.name).sort()).toEqual(['definition', 'hasEvent', 'modified', 'name']);
+    });
+
+    it('locks modified to the database value, even when the schema does not say NOMANUALEDIT', () => {
+      // The fixture's `modified` is OPTIONAL; keeping the staged one would get a 409 again.
+      const modified = row(service.buildRows(staged(), database()), 'modified');
+
+      expect(modified.locked).toBeTrue();
+      expect(modified.choice).toEqual('database');
+    });
+
+    it('locks a NOMANUALEDIT attribute to the database value, even when the curator\'s copy changed it', () => {
+      const local = staged();
+      local.attributes.set('stableIdentifier', 'R-HSA-mine');
+      local.modifiedAttributes = [...local.modifiedAttributes!, 'stableIdentifier'];
+      const db = database();
+      db.attributes.set('stableIdentifier', 'R-HSA-theirs');
+
+      const stId = row(service.buildRows(local, db), 'stableIdentifier');
+
+      expect(stId.editedLocally).toBeTrue();
+      expect(stId.locked).toBeTrue();
+      expect(stId.choice).toEqual('database');
+      expect(service.mergedValues(stId)).toEqual(['R-HSA-theirs']);
+    });
+
+    it('does not let a locked row be switched to the curator value', () => {
+      const rows = service.buildRows(staged(), database());
+
+      service.choose(row(rows, 'modified'), 'local');
+      service.choose(row(rows, 'definition'), 'local');
+
+      expect(row(rows, 'modified').choice).toEqual('database');
+      expect(row(rows, 'definition').choice).toEqual('local');
+    });
+
+    it('takes the database value of a locked row even if its choice was forced to local', () => {
+      // merge() goes through mergedValues(), so the lock holds however the choice got there.
+      const rows = service.buildRows(staged(), database());
+      row(rows, 'modified').choice = 'local';
+
+      const merged = service.merge({ local: staged(), database: database(), rows });
+
+      expect(merged.attributes.get('modified').dbId).toEqual(60);
+      expect(merged.modifiedAttributes).not.toContain('modified');
     });
 
     it('defaults to the curator value where they edited, and to the database value elsewhere', () => {
@@ -234,7 +280,8 @@ describe('DatabaseMergeService', () => {
       const data = await firstValueFrom(service.prepare(100));
 
       expect(dataService.fetchInstanceFromDatabase).toHaveBeenCalledWith(100, false);
-      expect(data.rows.length).toEqual(3);
+      // name, definition, hasEvent, and the locked `modified` row.
+      expect(data.rows.length).toEqual(4);
     });
 
     it('refuses when the staged copy is not loaded in this window', async () => {
@@ -331,6 +378,50 @@ describe('DatabaseMergeService', () => {
       const refreshed = service.refreshIfStale({ local, database: database(), rows })!;
 
       expect(refreshed.rows.map(r => r.attribute.name)).not.toContain('definition');
+    });
+  });
+
+  describe('detecting a staged copy out of sync with the database', () => {
+    it('is out of sync when the modified InstanceEdit differs, as the backend checks', () => {
+      expect(service.isOutOfSync(staged(), database())).toBeTrue();
+    });
+
+    it('is in sync when both copies carry the same modified InstanceEdit', () => {
+      const db = database();
+      db.attributes.set('modified', edit(50));
+
+      expect(service.isOutOfSync(staged(), db)).toBeFalse();
+    });
+
+    it('is out of sync when modifiedList differs, even with the same modified', () => {
+      const local = staged();
+      local.attributes.set('modifiedList', [edit(40), edit(50)]);
+      const db = database();
+      db.attributes.set('modified', edit(50));
+      db.attributes.set('modifiedList', [edit(40), edit(45), edit(50)]);
+
+      expect(service.isOutOfSync(local, db)).toBeTrue();
+
+      db.attributes.set('modifiedList', [edit(40), edit(50)]);
+      expect(service.isOutOfSync(local, db)).toBeFalse();
+    });
+
+    it('ignores modifiedList when one copy was loaded without it', () => {
+      const db = database();
+      db.attributes.set('modified', edit(50));
+      db.attributes.set('modifiedList', [edit(40), edit(50)]);
+
+      expect(service.isOutOfSync(staged(), db)).toBeFalse();
+    });
+
+    it('is never out of sync for a new instance or for two different instances', () => {
+      const fresh = staged();
+      fresh.dbId = -5;
+      expect(service.isOutOfSync(fresh, database())).toBeFalse();
+
+      const other = database();
+      other.dbId = 200;
+      expect(service.isOutOfSync(staged(), other)).toBeFalse();
     });
   });
 

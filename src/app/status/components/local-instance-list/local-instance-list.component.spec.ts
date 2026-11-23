@@ -95,9 +95,10 @@ describe('UpdatedInstanceListComponent', () => {
   const pathway = () => makeInstance({ dbId: 100, displayName: 'Glycolysis' });
 
   describe('action buttons per bucket', () => {
-    it('lets an updated instance be compared, merged with the database copy, reset, or committed', () => {
+    it('lets an updated instance be compared, reset, or committed', () => {
+      // The merge with the database copy is reached from the comparison, not from a row button.
       expect(build().updatedInstanceActions.map(b => b.name))
-        .toEqual(['compare', 'merge', 'undo', 'upload']);
+        .toEqual(['compare', 'undo', 'upload']);
     });
 
     it('lets a deleted instance be reset or committed, but not compared', () => {
@@ -183,13 +184,13 @@ describe('UpdatedInstanceListComponent', () => {
       expect(commitResultDialog.openDialog).toHaveBeenCalled();
     });
 
-    it('opens the merge in the database comparison for a merge', () => {
+    it('opens the merge in the database comparison', () => {
       // The request is raised before navigating: the comparison URL creates a new instance view,
       // which takes the request once its comparison has loaded.
       build();
       const instance = pathway();
 
-      component.handleAction({ instance, action: ACTION_BUTTONS.MERGE2DB.name });
+      component.mergeWithDatabase(instance);
 
       expect(mergeService.requestMerge).toHaveBeenCalledWith(100, undefined);
       expect(router.navigate).toHaveBeenCalledWith(['schema_view/instance/100', 'comparison', '100']);
@@ -199,7 +200,7 @@ describe('UpdatedInstanceListComponent', () => {
       build();
       component.blockRoute = true;
 
-      component.handleAction({ instance: pathway(), action: ACTION_BUTTONS.MERGE2DB.name });
+      component.mergeWithDatabase(pathway());
 
       expect(mergeService.requestMerge).toHaveBeenCalledWith(100, undefined);
       expect(utils.setLastClickedDbIdForComparison).toHaveBeenCalledWith(100);
@@ -208,7 +209,7 @@ describe('UpdatedInstanceListComponent', () => {
 
     it('offers the merge tool when a commit is rejected because the database copy changed', () => {
       // Backend InstanceChangedException -> 409. Retrying can never succeed, so the curator
-      // is taken straight to the merge instead of being left with only Undo.
+      // is taken to the comparison, where the merge is offered, instead of being left with only Undo.
       build();
       const instance = pathway();
       component.updatedInstances = [instance];

@@ -71,6 +71,8 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 
 - Request to view only one pathway's realted instances (Karen requested)
 
+- [Done 2026-11-23] Make the merge feature only appear when in comparison mode. For nomanualedits only take database version, not other way. (The merge button also requires the staged copy to be out of sync with the database: `modified`/`modifiedList` no longer match.)
+
 
 ### TODO
 

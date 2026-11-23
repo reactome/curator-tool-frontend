@@ -41,6 +41,7 @@ import {
   DatabaseMergeError,
   DatabaseMergeRequest,
   DatabaseMergeService,
+  COMMIT_REFUSED_REASON,
   isInstanceChangedError
 } from 'src/app/core/services/database-merge.service';
 
@@ -79,8 +80,13 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
    * table does not lose them.
    */
   mergeData: DatabaseMergeData | undefined;
-  /** Why the merge was opened, if not by the curator, e.g. a commit refused with 409. */
+  /**
+   * Why the merge is offered, when a commit was refused with 409. Shown above the table, with a
+   * pointer to the merge button, until the curator opens the merge; then in the merge banner.
+   */
   mergeReason: string | undefined;
+  /** The instance mergeReason is about, so switching to another instance drops it. */
+  private mergeReasonDbId: number | undefined;
 
   // Flag to indicate if this is in event view
   @Input() isInEventView: boolean = false;
@@ -528,9 +534,11 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         this.instanceTable?.updateTableContent(); // Force to reload
       else
         this.instance = filteredInstance;
-      // A merge belongs to the instance it was opened for. Reloading that instance in place keeps
-      // it (the view filters and the refresh subjects reload all the time); a switch drops it.
-      if (this.mergeData && this.mergeData.local.dbId !== this.instance.dbId)
+      // A merge, and the note on a refused commit, belong to the instance they were opened for.
+      // Reloading that instance in place keeps them (the view filters and the refresh subjects
+      // reload all the time); a switch drops them.
+      if ((this.mergeData && this.mergeData.local.dbId !== this.instance.dbId)
+        || (this.mergeReasonDbId !== undefined && this.mergeReasonDbId !== this.instance.dbId))
         this.clearMerge();
       // No need to change the table here. When the instance is changed, the table will be updated automatically.
       // this.changeTable(this.instance);
@@ -788,20 +796,42 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     }, error => {
       // DataService has already shown the error. A 409 "updated elsewhere" means the database
       // copy was committed after this one was staged, and every retry will be refused the same
-      // way, so open the merge instead of leaving the curator with only Undo (which loses their
+      // way, so offer the merge instead of leaving the curator with only Undo (which loses their
       // edits).
       if (isInstanceChangedError(error))
-        this.openMerge('The commit was rejected because this instance was changed in the database after you started editing it. ' +
-          'Merge your edits with the database copy, then commit again.');
+        this.offerMerge(COMMIT_REFUSED_REASON);
     });
   }
 
-  /** The toolbar's merge button: offered for an updated instance not already being merged. */
+  /**
+   * The merge button, shown beside the table's Database Value header (it was in the toolbar until
+   * 2026-11-23). Offered for an updated instance not already being merged, only
+   * while the database comparison is on, and only when the staged copy is out of sync with the
+   * database copy (DatabaseMergeService.isOutOfSync: its `modified` / `modifiedList` InstanceEdits
+   * no longer match, which is what makes the backend refuse the commit with 409).
+   *
+   * History: the merge used to be a row button in Updated Instances and was offered for any
+   * updated instance. Curators asked for it to live in comparison mode only (the merge is laid out
+   * in the comparison table) and to appear only once edits are actually out of sync; merging an
+   * in-sync copy can only throw edits away. Comparing two different instances does not count:
+   * there is no database copy to merge.
+   *
+   * The test uses the database copy the comparison loaded. If someone commits the instance after
+   * the comparison was opened, the button appears once the comparison is reloaded (toggle it off
+   * and on), or straight away when a commit is refused, which re-reads the database copy (see
+   * offerMerge()).
+   */
   canMerge(): boolean {
     if (!this.instance || this.instance.dbId <= 0 || this.mergeData || this.isDeleted())
       return false;
-    return (this.instance.modifiedAttributes?.length ?? 0) > 0
-      || (this.instance.passiveModifiedAttributes?.length ?? 0) > 0;
+    if (!this.isShowingDatabaseComparison(this.instance.dbId))
+      return false;
+    if ((this.instance.modifiedAttributes?.length ?? 0) === 0
+      && (this.instance.passiveModifiedAttributes?.length ?? 0) === 0)
+      return false;
+    // The displayed instance is a view-filtered copy; the staged copy is what gets committed.
+    const staged = this.dataService.getCachedInstance(this.instance.dbId) ?? this.instance;
+    return this.mergeService.isOutOfSync(staged, this.dbInstance!);
   }
 
   private isShowingDatabaseComparison(dbId: number): boolean {
@@ -809,10 +839,23 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Show the merge for the displayed instance. When the database comparison is not on yet, turn
-   * it on the same way the compare button does; the request is taken once it has loaded.
+   * The merge button: show the merge in the comparison already on display. The button is offered
+   * only while that comparison is on (canMerge()), so there is nothing to turn on first.
    */
-  openMerge(reason?: string) {
+  openMerge() {
+    if (!this.instance || !this.isShowingDatabaseComparison(this.instance.dbId))
+      return;
+    this.startMerge(this.mergeReason);
+  }
+
+  /**
+   * After a commit was refused with 409: show the database comparison with a fresh database copy,
+   * so the merge button appears, and a note on why. The merge itself waits for the curator to
+   * press the button (until 2026-11-23 a refused commit started the merge straight away; curators
+   * asked for it to wait). When the comparison is not on yet, turn it on the same way the compare
+   * button does; the request is taken once it has loaded.
+   */
+  offerMerge(reason?: string) {
     if (!this.instance)
       return;
     const dbId = this.instance.dbId;
@@ -828,19 +871,35 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     this.router.navigate([this.getCurrentPathRoot() + "/instance/" + dbId, "comparison", dbId.toString()]);
   }
 
+  /**
+   * A request for the comparison already on display. Its database copy was read when the
+   * comparison opened, before the commit that made this one fail, so it would not show the newer
+   * `modified` and the merge button would not appear: read it again.
+   */
   private onMergeRequest(request: DatabaseMergeRequest) {
     if (!this.isShowingDatabaseComparison(request.dbId))
       return;
-    if (this.mergeService.takeRequest(request.dbId))
-      this.startMerge(request.reason);
+    if (!this.mergeService.takeRequest(request.dbId))
+      return;
+    this.setMergeReason(request.dbId, request.reason);
+    this.dataService.fetchInstanceFromDatabase(request.dbId, false).pipe(take(1)).subscribe(database => {
+      if (database && this.instance?.dbId === request.dbId && !this.mergeData)
+        this.dbInstance = database;
+    });
   }
 
+  /** A request raised before this comparison loaded; its database copy has just been read. */
   private takePendingMerge() {
     if (!this.instance || !this.isShowingDatabaseComparison(this.instance.dbId))
       return;
     const request = this.mergeService.takeRequest(this.instance.dbId);
     if (request)
-      this.startMerge(request.reason);
+      this.setMergeReason(this.instance.dbId, request.reason);
+  }
+
+  private setMergeReason(dbId: number, reason?: string) {
+    this.mergeReason = reason;
+    this.mergeReasonDbId = reason ? dbId : undefined;
   }
 
   private startMerge(reason?: string) {
@@ -856,7 +915,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         this.dbInstance = data.database;
         this.showReferenceColumn = true;
         this.mergeData = data;
-        this.mergeReason = reason;
+        this.setMergeReason(dbId, reason);
       },
       error: error => {
         // DataService has already shown HTTP failures; these explain why no merge is possible.
@@ -866,17 +925,27 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Attributes the curator edited among the merge rows: the ones they really have to look at. */
+  /**
+   * Attributes the curator edited among the choosable merge rows: the ones they really have to
+   * look at. Locked (not manually editable) rows always take the database value, so they are
+   * counted separately.
+   */
   get mergeEditedCount(): number {
-    return this.mergeData?.rows.filter(row => row.editedLocally).length ?? 0;
+    return this.mergeData?.rows.filter(row => row.editedLocally && !row.locked).length ?? 0;
   }
 
+  /** Rows that always take the database value (see DatabaseMergeRow.locked). */
+  get mergeLockedCount(): number {
+    return this.mergeData?.rows.filter(row => row.locked).length ?? 0;
+  }
+
+  /** The bulk buttons. Locked rows are left on the database value. */
   setAllMergeChoices(choice: Exclude<DatabaseMergeChoice, 'both'>) {
-    this.mergeData?.rows.forEach(row => row.choice = choice);
+    this.mergeData?.rows.forEach(row => this.mergeService.choose(row, choice));
   }
 
   resetMergeChoices() {
-    this.mergeData?.rows.forEach(row => row.choice = row.editedLocally ? 'local' : 'database');
+    this.mergeData?.rows.forEach(row => row.choice = this.mergeService.defaultChoice(row));
   }
 
   cancelMerge() {
@@ -911,7 +980,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   private clearMerge() {
     this.mergeData = undefined;
-    this.mergeReason = undefined;
+    this.setMergeReason(0, undefined);
   }
 
   private showInfo(title: string, message: string) {

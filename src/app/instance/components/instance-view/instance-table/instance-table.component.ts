@@ -51,6 +51,16 @@ import { StoichiometryDialogComponent } from './stoichiometry-dialog/stoichiomet
 export class InstanceTableComponent implements PostEditListener {
   // Fire an event when this instance is edited
   @Output() editedInstance = new EventEmitter<Instance>();
+
+  /**
+   * Whether to show the "merge with database copy" button beside the Database Value header.
+   * InstanceViewComponent.canMerge() decides (database comparison on, staged copy out of sync);
+   * the table only places the button. It used to sit in the instance view's toolbar; curators
+   * asked for it beside the column it merges from.
+   */
+  @Input() canMerge: boolean = false;
+  /** The header's merge button was pressed; InstanceViewComponent opens the merge. */
+  @Output() mergeRequested = new EventEmitter<void>();
   displayedColumns: string[] = ['name', 'value'];
   showFilterOptions: boolean = false;
   showHeaderActions: boolean = false;
@@ -140,17 +150,25 @@ export class InstanceTableComponent implements PostEditListener {
     this.setReferenceInstance(refInstance!);
   }
 
-  @Input() set mergeRows(rows: DatabaseMergeRow[] | undefined) {
-    if (rows === this._mergeRows)
+  /**
+   * Bound as `[mergeRows]="mergeData?.rows"`. Angular's safe navigation in a template yields
+   * **null**, not undefined, when there is no merge, so null must be normalized here. Until
+   * 2026-11-23 it was stored as is, and since isMerging tested `!== undefined`, every plain
+   * database comparison was rendered as an empty merge: a Take column and no rows at all, so the
+   * comparison itself could not be seen.
+   */
+  @Input() set mergeRows(rows: DatabaseMergeRow[] | null | undefined) {
+    const normalized = rows ?? undefined;
+    if (normalized === this._mergeRows)
       return;
-    this._mergeRows = rows;
+    this._mergeRows = normalized;
     this.updateColumns();
     this.updateTableContent();
   }
 
   /** True while the merge with the database copy is shown. The table is read-only meanwhile. */
   get isMerging(): boolean {
-    return this._mergeRows !== undefined && this._referenceInstance !== undefined;
+    return this._mergeRows != null && this._referenceInstance != null;
   }
 
   // Track subscriptions added so that we can remove them
@@ -225,7 +243,7 @@ export class InstanceTableComponent implements PostEditListener {
   }
 
   chooseMerge(row: DatabaseMergeRow, choice: DatabaseMergeChoice) {
-    row.choice = choice;
+    this.mergeService.choose(row, choice);
   }
 
   /**

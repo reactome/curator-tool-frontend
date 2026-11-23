@@ -19,7 +19,7 @@ import { CommitResultDialogService, CommitResult } from './commit-result-dialog/
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
 import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
 import { MatchResolutionService } from 'src/app/core/services/match-resolution.service';
-import { DatabaseMergeService, isInstanceChangedError } from 'src/app/core/services/database-merge.service';
+import { COMMIT_REFUSED_REASON, DatabaseMergeService, isInstanceChangedError } from 'src/app/core/services/database-merge.service';
 
 
 @Component({
@@ -31,7 +31,7 @@ export class UpdatedInstanceListComponent implements OnInit {
   // instances to be committed
   // There will be a checkbox to manage toBeUploade
   // toBeUploaded: Instance[] = [];
-  updatedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.COMPARE2DB, ACTION_BUTTONS.MERGE2DB, ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
+  updatedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.COMPARE2DB, ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
   deletedInstanceActions: Array<ActionButton> = [ACTION_BUTTONS.UNDO, ACTION_BUTTONS.COMMIT];
   newInstanceActionButtons: Array<ActionButton> = [ACTION_BUTTONS.DELETE, ACTION_BUTTONS.COMMIT];
 
@@ -162,11 +162,6 @@ export class UpdatedInstanceListComponent implements OnInit {
         break;
       }
 
-      case "merge": {
-        this.mergeWithDatabase(actionButton.instance);
-        break;
-      }
-
       case "undo": {
         if (this.deletedInstances.includes(actionButton.instance))
           this.resetDeletedInstance(actionButton.instance);
@@ -203,12 +198,10 @@ export class UpdatedInstanceListComponent implements OnInit {
         },
         error: error => {
           // A 409 "updated elsewhere" means the database copy was committed after this one was
-          // staged, and every retry will be rejected the same way. Offer the merge tool straight
-          // away instead of leaving the curator with only Undo (which loses their edits).
+          // staged, and every retry will be rejected the same way. Offer the merge straight away
+          // instead of leaving the curator with only Undo (which loses their edits).
           if (isInstanceChangedError(error))
-            this.mergeWithDatabase(instance,
-              'The commit was rejected because this instance was changed in the database after you started editing it. ' +
-              'Merge your edits with the database copy, then commit again.');
+            this.mergeWithDatabase(instance, COMMIT_REFUSED_REASON);
         }
       });
     }
@@ -300,7 +293,8 @@ export class UpdatedInstanceListComponent implements OnInit {
         const changedElsewhere = failures.filter(f => isInstanceChangedError(f.error)).length;
         const mergeHint = changedElsewhere > 0
           ? `\n\n${changedElsewhere} of them changed in the database after you edited them. ` +
-            'Use the merge button on those rows to combine your edits with the database copy, then commit again.'
+            'Compare each of them with the database copy (the compare button on its row) and use the merge button ' +
+            'there to combine your edits with the database copy, then commit again.'
           : '';
         window.alert(`${failures.length} instance(s) failed to commit and were NOT saved:\n${failed}${mergeHint}\n\nSee the console for details.`);
       }
@@ -394,10 +388,15 @@ export class UpdatedInstanceListComponent implements OnInit {
   }
 
   /**
-   * Reconcile a staged updated instance with its current database copy. See DatabaseMergeService
-   * for why this is needed (409 "Instance has been updated elsewhere" on commit). The merge is
-   * shown in the instance view's database comparison: raise the request, then open the
-   * comparison, and the instance view takes the request once the comparison has loaded.
+   * Offer the merge of a staged updated instance with its current database copy, after a commit
+   * was refused with 409 "Instance has been updated elsewhere" (see DatabaseMergeService). Raise
+   * the request, then open the comparison; the instance view takes the request once the comparison
+   * has loaded, shows why, and offers its merge button. The merge itself waits for the curator to
+   * press that button.
+   *
+   * There is deliberately no merge row button in this list: curators asked for the merge to be
+   * reachable only from the comparison (the instance editor's merge button shows only while the
+   * database comparison is on and the staged copy is out of sync).
    */
   mergeWithDatabase(instance: Instance, reason?: string) {
     this.databaseMergeService.requestMerge(instance.dbId, reason);

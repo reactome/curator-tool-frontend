@@ -125,6 +125,7 @@ describe('InstanceTableComponent', () => {
       localValues: ['mine'],
       databaseValues: ['theirs'],
       editedLocally: choice === 'local',
+      locked: false,
       choice
     });
 
@@ -162,6 +163,29 @@ describe('InstanceTableComponent', () => {
 
       expect(component.mergeCellClass('name', 'local').merge_chosen).toBeTrue();
       expect(component.mergeCellClass('name', 'database').merge_chosen).toBeTrue();
+    });
+
+    it('shows the plain comparison when the view binds null for "no merge"', () => {
+      // InstanceViewComponent binds [mergeRows]="mergeData?.rows", and Angular's safe navigation
+      // yields null, not undefined. Treating null as a merge rendered every database comparison
+      // as an empty merge: a Take column and no rows.
+      component.instance = pathway();
+      component.setReferenceInstance(makeInstance({ dbId: 100, displayName: 'Glycolysis' }));
+
+      component.mergeRows = null;
+
+      expect(component.isMerging).toBeFalse();
+      expect(component.displayedColumns).toEqual(['name', 'value', 'referenceValue']);
+    });
+
+    it('passes the header merge button press on to the instance view', () => {
+      const pressed = jasmine.createSpy('mergeRequested');
+      component.mergeRequested.subscribe(pressed);
+
+      component.mergeRequested.emit();
+
+      expect(pressed).toHaveBeenCalled();
+      expect(component.canMerge).toBeFalse(); // hidden unless the view says the merge applies
     });
 
     it('goes back to the plain comparison when the merge ends', () => {

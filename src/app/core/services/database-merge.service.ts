@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { concatMap, Observable, of, Subject, take, throwError } from 'rxjs';
 import { Instance } from '../models/reactome-instance.model';
-import { SchemaAttribute } from '../models/reactome-schema.model';
+import { AttributeCategory, SchemaAttribute } from '../models/reactome-schema.model';
 import { InstanceNameGenerator } from '../post-edit/InstanceNameGenerator';
 import { UpdateInstanceActions } from 'src/app/instance/state/instance.actions';
 import { DataService } from './data.service';
@@ -29,6 +29,15 @@ export interface DatabaseMergeRow {
    * curator never touched, so the database value is the right default.
    */
   editedLocally: boolean;
+  /**
+   * True for an attribute curators cannot edit by hand (NOMANUALEDIT in this class, plus the
+   * provenance slots in {@link ALWAYS_DATABASE}). A locked row always takes the database value:
+   * these values are written by the backend or by the tool itself (InstanceEdits, stable
+   * identifiers, release data), so the copy in the database is the authoritative one, and keeping
+   * the staged copy's `modified` would get the commit refused with the same 409 again. Curators
+   * asked for exactly this: "for nomanualedits only take database version, not other way".
+   */
+  locked: boolean;
   choice: DatabaseMergeChoice;
 }
 
@@ -49,9 +58,9 @@ export interface DatabaseMergeOutcome {
 }
 
 /**
- * A request to show the merge for an instance. Raised by the Updated Instances list (the merge row
- * button, or a single commit refused with 409) and consumed by the instance view, which shows the
- * merge in its database comparison table.
+ * A request to show the merge for an instance. Raised by the instance view's merge button and by a
+ * single commit refused with 409, and consumed by the instance view, which shows the merge in its
+ * database comparison table.
  */
 export interface DatabaseMergeRequest {
   dbId: number;
@@ -68,13 +77,21 @@ export interface DatabaseMergeRequest {
 const REQUEST_TTL_MS = 30_000;
 
 /**
- * Attributes the merge never offers. `modified` and `created` are the provenance slots the
- * backend's commit conflict check reads (CurationService.isConflictWithStored compares the staged
- * `modified` InstanceEdit with the stored one). The merged instance must carry the database's
- * current values for them, or the commit would be rejected with the same 409 again. displayName
- * is regenerated from the merged values instead of being picked.
+ * Attributes the merge never lists. displayName is regenerated from the merged values instead of
+ * being picked.
  */
-const NOT_MERGEABLE = new Set(['dbId', 'DB_ID', 'displayName', 'created', 'modified']);
+const NOT_MERGEABLE = new Set(['dbId', 'DB_ID', 'displayName']);
+
+/**
+ * Attributes that always take the database value, whatever their category in the loaded schema.
+ * They are NOMANUALEDIT in the backend's schema already; this is a guard in case the category is
+ * missing. `modified` is what the backend's commit conflict check reads
+ * (CurationService.isConflictWithStored compares the staged `modified` InstanceEdit with the
+ * stored one), and `modifiedList` grows with it on every commit. Until 2026-11-23 these were hidden
+ * from the merge instead; they are listed now, locked, so the curator can see that the database's
+ * InstanceEdits are what gets committed.
+ */
+const ALWAYS_DATABASE = new Set(['created', 'modified', 'modifiedList']);
 
 /**
  * Merges a staged (updated) instance with the current database copy of the same instance.
@@ -178,17 +195,62 @@ export class DatabaseMergeService {
       const databaseValues = this.toValues(database, attribute.name);
       if (this.isSameList(localValues, databaseValues))
         continue;
-      const editedLocally = edited.has(attribute.name);
-      rows.push({
+      const row: DatabaseMergeRow = {
         attribute,
         multiValued: attribute.cardinality !== '1',
         localValues,
         databaseValues,
-        editedLocally,
-        choice: editedLocally ? 'local' : 'database'
-      });
+        editedLocally: edited.has(attribute.name),
+        locked: this.isLocked(attribute),
+        choice: 'database'
+      };
+      row.choice = this.defaultChoice(row);
+      rows.push(row);
     }
     return rows;
+  }
+
+  /** See {@link DatabaseMergeRow.locked}. */
+  isLocked(attribute: SchemaAttribute): boolean {
+    return ALWAYS_DATABASE.has(attribute.name) || attribute.category === AttributeCategory.NOMANUALEDIT;
+  }
+
+  /** The curator's value where they edited, the database value elsewhere and on locked rows. */
+  defaultChoice(row: DatabaseMergeRow): DatabaseMergeChoice {
+    return row.editedLocally && !row.locked ? 'local' : 'database';
+  }
+
+  /** Set a row's choice. Locked rows keep the database value whatever is asked for. */
+  choose(row: DatabaseMergeRow, choice: DatabaseMergeChoice): void {
+    row.choice = row.locked ? 'database' : choice;
+  }
+
+  /**
+   * True when the staged copy was staged against an older database copy than the current one, so
+   * the backend will refuse to commit it (409 "Instance has been updated elsewhere"). This is the
+   * front-end mirror of CurationService.isConflictWithStored, which compares the dbId of the staged
+   * `modified` InstanceEdit with the stored one. `modifiedList` is compared as well (in order, by
+   * dbId), since every commit appends to it; it is compared only when both copies carry the slot,
+   * so a copy loaded without it is not reported as out of sync on that account alone.
+   *
+   * The merge button is offered only when this is true: merging a copy that is in sync would only
+   * throw edits away (curators asked for the merge to appear only once edits are out of sync).
+   */
+  isOutOfSync(local: Instance, database: Instance): boolean {
+    if (!local || !database || local.dbId <= 0 || local.dbId !== database.dbId)
+      return false;
+    const ids = (instance: Instance, name: string) => this.toValues(instance, name).map(v => v?.dbId ?? v);
+    const localModified = ids(local, 'modified');
+    const databaseModified = ids(database, 'modified');
+    if (localModified[0] !== databaseModified[0])
+      return true;
+    const hasList = (instance: Instance) => instance.attributes?.has?.('modifiedList') ?? false;
+    if (hasList(local) && hasList(database)) {
+      const localList = ids(local, 'modifiedList');
+      const databaseList = ids(database, 'modifiedList');
+      return localList.length !== databaseList.length || localList.some((id, i) => id !== databaseList[i]);
+    }
+    return false;
   }
 
   /**
@@ -285,6 +347,8 @@ export class DatabaseMergeService {
   }
 
   mergedValues(row: DatabaseMergeRow): any[] {
+    if (row.locked)
+      return [...row.databaseValues];
     switch (row.choice) {
       case 'local':
         return [...row.localValues];
@@ -342,6 +406,13 @@ export class DatabaseMergeService {
  * already reported in the error banner).
  */
 export class DatabaseMergeError extends Error {}
+
+/**
+ * Shown when a commit is refused with 409 "Instance has been updated elsewhere". The instance view adds
+ * a pointer to its merge button while the merge is not open yet.
+ */
+export const COMMIT_REFUSED_REASON =
+  'The commit was rejected because this instance was changed in the database after you started editing it.';
 
 /**
  * True when a commit failed because the instance was committed elsewhere after it was staged:

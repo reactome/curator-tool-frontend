@@ -135,8 +135,8 @@
             </ng-container>
             {{element.attribute.name}}
             <ng-container *ngIf="isMerging && mergeRow(element.attribute.name) as row">
-              <div class="merge_origin" [class.merge_db_changed]="!row.editedLocally">
-                {{row.editedLocally ? 'edited by you' : 'changed in database'}}</div>
+              <div class="merge_origin" [class.merge_db_changed]="!row.editedLocally || row.locked">
+                {{row.locked ? 'not manually editable' : row.editedLocally ? 'edited by you' : 'changed in database'}}</div>
             </ng-container>
           </div>
         </td>
@@ -196,8 +196,13 @@
       <ng-container matColumnDef="mergeChoice">
         <th mat-header-cell *matHeaderCellDef class="mergeChoiceColumn">Take</th>
         <td mat-cell *matCellDef="let element" class="mergeChoiceColumn">
+          <!-- Not manually editable: always the database value, so there is nothing to choose. -->
           <ng-container *ngIf="mergeRow(element.attribute.name) as row">
-            <mat-button-toggle-group class="merge_toggle" [value]="row.choice" (change)="chooseMerge(row, $event.value)"
+            <div *ngIf="row.locked" class="merge_locked" [attr.aria-label]="'Database value always kept for ' + row.attribute.name"
+              matTooltip="Not manually editable: the database value is always kept">
+              <mat-icon>lock</mat-icon><mat-icon>arrow_forward</mat-icon>
+            </div>
+            <mat-button-toggle-group *ngIf="!row.locked" class="merge_toggle" [value]="row.choice" (change)="chooseMerge(row, $event.value)"
               [attr.aria-label]="'Value to keep for ' + row.attribute.name" [matTooltip]="mergeResultLabel(row)">
               <mat-button-toggle value="local" aria-label="Your value">
                 <mat-icon>arrow_back</mat-icon>
@@ -218,6 +223,10 @@
         <div style="display: flex;">
           <th style="flex: 1" mat-header-cell *matHeaderCellDef (mouseenter)="changeShowHeaderActions()"
             (mouseleave)="changeShowHeaderActions()">{{referenceColumnTitle}}
+            <button *ngIf="canMerge && !isMerging" mat-icon-button color="primary" class="merge_header_button"
+              (click)="mergeRequested.emit()" matTooltip="merge with database copy" aria-label="merge with database copy">
+              <mat-icon>merge</mat-icon>
+            </button>
             <button style="bottom:5px; right: 0; position: absolute" matTooltip="attributes having different values"
               *ngIf="showHeaderActions" mat-icon-button (click)="filterEditedValues()">
               <mat-icon>filter_list</mat-icon>
