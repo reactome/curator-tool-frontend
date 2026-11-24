@@ -273,7 +273,23 @@ before starting an item.
       does work.
 - [ ] Inner shapes are not updated when nodes are resized.
 - [ ] Connecting positions are not updated for helper nodes when they are dragged during editing.
-- [ ] A newly added compartment drags too fast, probably from a stale previous drag position.
+- [x] A newly added compartment drags too fast, probably from a stale previous drag position.
+      Fixed 2026-11-24 (no branch yet; uncommitted on `main`). The guess was right in kind: the drag
+      handler in `pathway-diagram.component.ts` kept **one** previous position for all dragged nodes,
+      seeded with the node under the mouse. cytoscape emits `drag` once per dragged node per mouse
+      move, so in a multi-node drag each compartment layer's delta was measured against another
+      node, and `moveCompartmentLayers` moved the sibling layer by the distance between them on
+      every tick. The error compounds: a 40 px drag sent the compartment about 2×10⁸ px away
+      (reproduced against headless cytoscape). Insert Compartment leaves both layers selected, so
+      adding a shift-click selection and dragging it was enough. Now there is a per-node
+      `dragPositions` map, seeded on `grab` (which fires for every dragged node) and updated after
+      each node's handling. `moveCompartmentLayers` also skips a sibling layer or label that
+      cytoscape is already dragging, which otherwise moved it twice. Two related fixes went in with
+      it: the undo snapshot is taken on `grabon` (once per gesture) instead of `grab` (once per
+      dragged node), and a `resizingNodes.indexOf(node)` that should have been `indexOf(other)`.
+      The comment at `instance-converter.ts` ("modification nodes added will be subject to dragging
+      for unknown reason") was most likely the same shared-delta bug acting through
+      `moveModifications`; it has not been re-tested.
 - [ ] "Go to pathway" in the diagram sometimes selects oddly — the selected pathway gets stuck in the
       URL.
 - [ ] Empty reactions cannot be deleted or edited in the pathway diagram.
