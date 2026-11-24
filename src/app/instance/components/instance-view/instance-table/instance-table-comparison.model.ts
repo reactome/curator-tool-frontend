@@ -6,7 +6,6 @@ import { DataSource } from "@angular/cdk/collections";
 import { Observable, of } from "rxjs";
 import { AttributeValue, Instance } from "src/app/core/models/reactome-instance.model";
 import { AttributeCategory, AttributeDataType, SchemaAttribute } from "src/app/core/models/reactome-schema.model";
-import { DatabaseMergeRow } from "src/app/core/services/database-merge.service";
 
 
 export interface DragDropStatus {
@@ -130,46 +129,4 @@ export class InstanceComparisonDataSource extends DataSource<AttributeValue> {
     override disconnect(): void {
     }
 
-}
-/**
- * The rows of a merge with the database copy (see DatabaseMergeService), shown in the comparison
- * table. Only the attributes that differ are listed, so the "edited" filter does not apply.
- *
- * The values come from the merge rows rather than from the instance the table shows: the rows are
- * what will be merged, and the displayed instance has been through the view filters (deleted
- * references stripped, display name regenerated), so it is not quite the staged copy.
- */
-export class InstanceMergeDataSource extends DataSource<AttributeValue> {
-
-    constructor(private rows: DatabaseMergeRow[],
-        private categories: Map<AttributeCategory, boolean>,
-        public sort: boolean,
-        public sortAttDefined: boolean) {
-        super();
-    }
-
-    override connect(): Observable<AttributeValue[]> {
-        const asValue = (row: DatabaseMergeRow, values: any[]) => {
-            if (values.length === 0)
-                return undefined;
-            return row.multiValued ? values : values[0];
-        };
-        const attributeValues: AttributeValue[] = this.rows
-            .filter(row => this.categories.get(row.attribute.category))
-            .map(row => ({
-                attribute: row.attribute,
-                value: asValue(row, row.localValues),
-                referenceValue: asValue(row, row.databaseValues),
-            }));
-        if (this.sort)
-            attributeValues.sort((a, b) => a.attribute.name.localeCompare(b.attribute.name));
-        else
-            attributeValues.sort((a, b) => b.attribute.name.localeCompare(a.attribute.name));
-        if (this.sortAttDefined)
-            attributeValues.sort((a, b) => a.attribute.definingType < b.attribute.definingType ? -1 : 1);
-        return of(attributeValues);
-    }
-
-    override disconnect(): void {
-    }
 }

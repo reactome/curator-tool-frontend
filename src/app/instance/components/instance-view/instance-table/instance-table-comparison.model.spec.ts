@@ -1,8 +1,7 @@
 import { firstValueFrom } from "rxjs";
 import { Instance } from "src/app/core/models/reactome-instance.model";
 import { AttributeCategory, AttributeDataType, AttributeDefiningType, SchemaAttribute } from "src/app/core/models/reactome-schema.model";
-import { DatabaseMergeRow } from "src/app/core/services/database-merge.service";
-import { InstanceComparisonDataSource, InstanceMergeDataSource } from "./instance-table-comparison.model";
+import { InstanceComparisonDataSource } from "./instance-table-comparison.model";
 
 /**
  * Covers the "attributes having different values" filter used when two instances are compared
@@ -109,61 +108,4 @@ describe('InstanceComparisonDataSource', () => {
     expect(unfiltered.map(att => att.attribute.name)).toEqual(['compartment', 'definition', 'name', 'species']);
   });
 
-});
-
-describe('InstanceMergeDataSource', () => {
-  const attribute = (name: string, cardinality: '1' | '+', category = AttributeCategory.OPTIONAL): SchemaAttribute => ({
-    cardinality,
-    name,
-    origin: 'DatabaseObject',
-    category,
-    definingType: AttributeDefiningType.UNDEFINED,
-    type: AttributeDataType.STRING
-  });
-
-  const row = (att: SchemaAttribute, localValues: any[], databaseValues: any[]): DatabaseMergeRow => ({
-    attribute: att,
-    multiValued: att.cardinality !== '1',
-    localValues,
-    databaseValues,
-    editedLocally: true,
-    locked: false,
-    choice: 'local'
-  });
-
-  const categories = (off: AttributeCategory[] = []) => {
-    const map = new Map<AttributeCategory, boolean>();
-    for (const category of Object.values(AttributeCategory))
-      if (typeof category === 'number')
-        map.set(category, !off.includes(category));
-    return map;
-  };
-
-  it('shows each row as a value and a reference value, a single value unwrapped', async () => {
-    const rows = [
-      row(attribute('name', '+'), ['mine'], ['theirs']),
-      row(attribute('definition', '1'), ['old'], [])
-    ];
-
-    const values = await firstValueFrom(new InstanceMergeDataSource(rows, categories(), true, false).connect());
-
-    expect(values.map(v => v.attribute.name)).toEqual(['definition', 'name']);
-    expect(values[0].value).toEqual('old');
-    // An empty side is undefined, which the table renders as an empty slot
-    expect(values[0].referenceValue).toBeUndefined();
-    expect(values[1].value).toEqual(['mine']);
-    expect(values[1].referenceValue).toEqual(['theirs']);
-  });
-
-  it('honours the category filter', async () => {
-    const rows = [
-      row(attribute('name', '+', AttributeCategory.REQUIRED), ['mine'], ['theirs']),
-      row(attribute('definition', '1'), ['old'], ['new'])
-    ];
-
-    const values = await firstValueFrom(
-      new InstanceMergeDataSource(rows, categories([AttributeCategory.OPTIONAL]), true, false).connect());
-
-    expect(values.map(v => v.attribute.name)).toEqual(['name']);
-  });
 });
