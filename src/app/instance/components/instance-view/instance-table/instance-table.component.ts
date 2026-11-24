@@ -290,8 +290,9 @@ export class InstanceTableComponent implements PostEditListener {
     return this.differsFromDatabase(attribute.name) || this.isActiveEdited(attribute.name);
   }
 
-  changeShowHeaderActions() {
-    this.showHeaderActions = !this.showHeaderActions;
+  // Set, never toggle: see the comment on the header row in the template.
+  setShowHeaderActions(show: boolean) {
+    this.showHeaderActions = show;
   }
 
   doFilter(category: AttributeCategory) {

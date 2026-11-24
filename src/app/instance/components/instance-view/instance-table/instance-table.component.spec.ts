@@ -656,10 +656,14 @@ describe('InstanceTableComponent', () => {
     expect(component.showFilterOptions).toBeFalse();
   });
 
-  it('toggles the header actions', () => {
-    component.changeShowHeaderActions();
-
+  it('shows and hides the header actions explicitly, without toggling', () => {
+    component.setShowHeaderActions(true);
+    component.setShowHeaderActions(true); // a repeated enter must not flip it back off
     expect(component.showHeaderActions).toBeTrue();
+
+    component.setShowHeaderActions(false);
+    component.setShowHeaderActions(false);
+    expect(component.showHeaderActions).toBeFalse();
   });
 
   it('tracks which instances are staged for deletion', () => {

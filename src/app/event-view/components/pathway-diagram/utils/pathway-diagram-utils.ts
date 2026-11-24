@@ -683,17 +683,23 @@ export class PathwayDiagramUtilService {
         const deltaX = compartment.position().x - previousDragPos.x;
         const deltaY = compartment.position().y - previousDragPos.y;
 
-        // Move the sibling layer by the same delta
+        // Move the sibling layer by the same delta.
+        // A sibling or label that is itself being dragged (both selected, e.g. right after Insert
+        // Compartment, which selects both layers) is already moved by cytoscape: moving it here too
+        // moved it twice as far, and each layer's handler then moved the other again.
         let {isInner, other } = this.getSiblingCompartment(compartment, event.cy);
-        if (other && other.length > 0) {
+        if (other && other.length > 0 && !other.grabbed()) {
             const otherPos = other.position();
             other.position({ x: otherPos.x + deltaX, y: otherPos.y + deltaY });
         }
 
-        // Move any label nodes associated with this compartment (or its sibling)
+        // Move any label nodes associated with this compartment (or its sibling). With both layers
+        // dragged, each layer's handler would move the labels, so only the outer layer's handler does.
+        if (other && other.length > 0 && other.grabbed() && isInner)
+            return;
         const ids = [compartment.id(), ...(other && other.length > 0 ? [other.id()] : [])];
         event.cy.nodes().filter((node: any) =>
-            node.hasClass(LABEL_CLASS) && ids.includes(node.data('compartmentId'))
+            node.hasClass(LABEL_CLASS) && ids.includes(node.data('compartmentId')) && !node.grabbed()
         ).forEach((label: any) => {
             const p = label.position();
             label.position({ x: p.x + deltaX, y: p.y + deltaY });
