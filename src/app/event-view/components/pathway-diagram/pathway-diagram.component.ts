@@ -97,8 +97,17 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
   isLinkMovable: boolean = false;
   // Where the popup menu was opened, in model coordinates: an alias is pasted there
   private popupPosition: Position = { x: 0, y: 0 };
-  // Tracking the previous dragging position: should cytoscape provides this?
-  previousDragPos: Position = { x: 0, y: 0 };
+  // The last position of each node being dragged, keyed by node id, so the drag handler can tell how far
+  // that node moved since the previous drag tick and move what follows it (the other compartment layer,
+  // compartment labels, modifications, the compartment under a resize widget) by the same amount.
+  // This used to be a single position shared by all dragged nodes, seeded with the node under the mouse.
+  // cytoscape fires 'drag' once per dragged node per mouse move, so when a multi-selection containing a
+  // compartment layer was dragged, that layer's delta was measured against whichever node the handler had
+  // seen last. The other layer was moved by the distance between the two nodes on every tick; the error fed
+  // back into the next tick and threw the compartment millions of pixels away, out of reach even when
+  // zoomed out. Inserting a compartment leaves both of its layers selected, so shift-clicking more objects
+  // and dragging them was enough to trigger it.
+  private dragPositions = new Map<string, Position>();
   // Track a list of nodes that are under resizing
   resizingNodes: any[] = [];
   // When true, compartments cannot be moved, resized, or deleted during editing so that
@@ -849,29 +858,25 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
       this.showCyPopup(e);
     });
     this.diagram.cy.on('mousedown', (e: any) => {
-      // Make sure isNode is defined as a function to avoid an error
-      if (e.target !== undefined && typeof e.target.isNode === 'function') {
-        if (e.target.hasClass('Modification') && !e.target.hasClass('resizing')) {
-          return;
-        }
-        // Since we cannot get the mouse position during dragging
-        // we use the target's position for the relative changes.
-        const pos = e.target.position();
-        this.previousDragPos.x = pos.x;
-        this.previousDragPos.y = pos.y;
-      }
       if (this.showMenu) {
         this.showMenu = false;
         e.preventDefault();
       }
     });
-    this.diagram.cy.on('mouseup', (e: any) => {
-      // reset previous drag position
-      this.previousDragPos.x = 0;
-      this.previousDragPos.y = 0;
+    this.diagram.cy.on('mouseup', () => {
+      this.dragPositions.clear();
+    });
+    // 'grab' fires on every node that will be dragged (the node under the mouse, or all selected
+    // grabbable nodes when that one is selected), before any of them moves: record where each starts.
+    this.diagram.cy.on('grab', 'node', (e: any) => {
+      const pos = e.target.position();
+      this.dragPositions.set(e.target.id(), { x: pos.x, y: pos.y });
     });
     // Capture one undo snapshot per drag gesture (move or resize), not per mousemove tick.
-    this.diagram.cy.on('grab', 'node', () => {
+    // 'grabon' fires once, on the node under the mouse; 'grab' fires once per dragged node,
+    // which pushed one identical snapshot per selected node, so undoing a multi-node move
+    // took as many clicks as there were nodes.
+    this.diagram.cy.on('grabon', 'node', () => {
       if (this.isEditing)
         this.pushUndoSnapshot();
     });
@@ -889,6 +894,15 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     this.diagram.cy.on('drag', 'node', (e: any) => {
       this.markDiagramEdited();
       let node = e.target;
+      // See dragPositions. A node with no recorded start (not expected, since 'grab' precedes 'drag')
+      // counts as not having moved, rather than as having moved from (0, 0).
+      const current = node.position();
+      const previousDragPos: Position = this.dragPositions.get(node.id()) ?? { x: current.x, y: current.y };
+      // Recorded after the handling below, which may itself reposition the node (e.g. a resize widget).
+      const recordPosition = () => {
+        const pos = node.position();
+        this.dragPositions.set(node.id(), { x: pos.x, y: pos.y });
+      };
       // If a node that had resize enabled is being moved, disable its resize mode
       if (node.hasClass('Compartment') && !node.hasClass(LABEL_CLASS)) {
         this.diagramUtils.disableResizeCompartment(node, this.diagram);
@@ -899,7 +913,7 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         let { isInner, other } = this.diagramUtils.getSiblingCompartment(node, this.diagram.cy);
         if (other) {
           this.diagramUtils.disableResizeCompartment(other, this.diagram);
-          idx = this.resizingNodes.indexOf(node);
+          idx = this.resizingNodes.indexOf(other);
           if (idx >= 0) this.resizingNodes.splice(idx, 1);
         }
       }
@@ -913,24 +927,22 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
         // Modification nodes follow their parent in moveModifications. When dragged by
         // themselves, they can only slide along the parent's boundary.
         this.diagramUtils.snapModificationToParentBoundary(node, this.diagram.cy);
+        recordPosition();
         return;
       }
       if (node.hasClass('resizing')) {
         // This may be used for both compartment and PE node
-        this.diagramUtils.resizeCompartment(node, e, this.previousDragPos);
+        this.diagramUtils.resizeCompartment(node, e, previousDragPos);
       }
       else if (node.hasClass('Compartment') && !node.hasClass(LABEL_CLASS)) {
         // Handle compartment dragging - move both inner and outer layers together
-        this.diagramUtils.moveCompartmentLayers(node, e, this.previousDragPos);
+        this.diagramUtils.moveCompartmentLayers(node, e, previousDragPos);
       }
       else if (node.hasClass('Protein') || node.hasClass('RNA') || node.hasClass('Gene')) {
         // Handle Modification move only for the above three types of nodes.
-        this.diagramUtils.moveModifications(node, e, this.previousDragPos);
+        this.diagramUtils.moveModifications(node, e, previousDragPos);
       }
-      // Always update previousDragPos to track the current position
-      const pos = node.position();
-      this.previousDragPos.x = pos.x;
-      this.previousDragPos.y = pos.y;
+      recordPosition();
     });
     // Reset for anything for editing
     this.diagramUtils.id2hyperEdge.clear();

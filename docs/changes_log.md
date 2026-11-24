@@ -1,3 +1,7 @@
+### Build on November 24, 2026
+
+- Fixed: in a pathway diagram, dragging several selected objects together could throw a compartment far out of the diagram, where even zooming out would not find it. It happened when one of the selected objects was a compartment, as it is right after **Insert Compartment** (both of its outlines stay selected until you click elsewhere). A compartment in the selection now moves with the other objects by the same distance. Dragging a selection also now adds one undo step instead of one per selected object, so a single **Undo** puts everything back. If a compartment disappeared this way, use **Undo**, or reload the diagram without uploading it.
+
 ### Build on November 16, 2026
 
 - Fixed: when a protein with modified residues is drawn more than once in a pathway diagram, **Validate Diagram** reported its modifications as drawn twice, and **Auto-Fix** then removed the mark from one of the copies and could never put it back. Each drawn copy is now checked on its own, and **Auto-Fix** adds a missing mark to the copy that lacks it. If a copy lost its mark this way and the diagram was saved, run **Validate Diagram** again and use **Auto-Fix**, then upload the diagram.
