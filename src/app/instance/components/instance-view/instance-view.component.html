@@ -105,55 +105,28 @@
       </div>
     </div>
   </mat-toolbar>
-  <!-- A commit was refused with 409: point at the merge button, which waits for the curator -->
-  <div class="merge-banner" *ngIf="mergeReason && !mergeData && canMerge() && !showProgressSpinner">
-    <div class="merge-note merge-reason">
-      <mat-icon>warning</mat-icon>
-      <span>{{mergeReason}} Press <mat-icon inline>merge</mat-icon> <b>merge with database copy</b> beside the
-        <b>Database Value</b> header to merge your edits with the database copy, then commit again.</span>
+  <!-- The staged copy fell behind the database copy (someone else committed the instance). The fix is
+  done in the table: unlock and reset modified / modifiedList, and the attributes marked "changed in
+  database". See InstanceViewComponent.isOutOfSync(). -->
+  <div class="sync-banner" *ngIf="isOutOfSync() && !showProgressSpinner">
+    <div class="sync-note sync-reason" *ngIf="syncReason">
+      <mat-icon>warning</mat-icon><span>{{syncReason}}</span>
     </div>
-  </div>
-  <!-- Merge with the database copy: the choices themselves are in the table's Take column -->
-  <div class="merge-banner" *ngIf="mergeData && !showProgressSpinner && instance">
-    <div class="merge-note merge-reason" *ngIf="mergeReason">
-      <mat-icon>warning</mat-icon><span>{{mergeReason}}</span>
-    </div>
-    <div class="merge-note">
+    <div class="sync-note">
       <mat-icon>info</mat-icon>
       <span>
-        <b>Merging with the database copy.</b> The table lists only the attributes that differ. In
-        <b>Take</b>, choose your value (<mat-icon inline>arrow_back</mat-icon>), the database value
-        (<mat-icon inline>arrow_forward</mat-icon>) or, for lists, both (<mat-icon inline>sync_alt</mat-icon>).
-        Attributes you edited start with your value; attributes changed in the database start with the database
-        value. Attributes that cannot be edited by hand (<mat-icon inline>lock</mat-icon>, such as
-        <b>modified</b>) always take the database value. Nothing changes until you apply.
+        <b>Your copy is out of sync with the database.</b> Someone committed this instance after you started
+        editing it, so the database will refuse your commit until <b>modified</b> and <b>modifiedList</b> match
+        the database again. Unlock <b>modified</b> (<mat-icon inline>lock</mat-icon>) and reset it to the db value
+        (<mat-icon inline>undo</mat-icon>); <b>modifiedList</b> is unlocked and reset with it, since <b>modified</b> must
+        always be the last entry of <b>modifiedList</b>. Attributes marked <i>changed in database</i> would be overwritten by your
+        copy: reset them too unless you mean to replace them.
       </span>
-    </div>
-    <div class="merge-controls">
-      <span *ngIf="mergeData.rows.length > 0">
-        {{mergeData.rows.length}} attribute(s) differ, {{mergeEditedCount}} of them edited by you<ng-container
-          *ngIf="mergeLockedCount > 0">, {{mergeLockedCount}} always taken from the database</ng-container>.
-      </span>
-      <span *ngIf="mergeData.rows.length === 0">
-        Your copy and the database copy hold the same values. Applying takes the database copy, which removes this
-        instance from your Updated Instances list.
-      </span>
-      <span class="spacer"></span>
-      <ng-container *ngIf="mergeData.rows.length > 0">
-        <span>All rows:</span>
-        <button mat-stroked-button (click)="setAllMergeChoices('local')" matTooltip="Take your value for every attribute you can edit">Mine</button>
-        <button mat-stroked-button (click)="setAllMergeChoices('database')" matTooltip="Take the database value for every attribute">Database</button>
-        <button mat-stroked-button (click)="resetMergeChoices()" matTooltip="Your value where you edited, database value elsewhere">Defaults</button>
-      </ng-container>
-      <button mat-button (click)="cancelMerge()" matTooltip="Close the merge without changing anything">Cancel</button>
-      <button mat-flat-button color="primary" (click)="applyMerge()"
-        matTooltip="Replace your staged copy with the merged one, ready to commit">Apply Merge</button>
     </div>
   </div>
   <!-- <app-text-curation style="height: 80px;" [embedded]="true" [instanceView]="this" *ngIf="instance"></app-text-curation> -->
 </div>
 <app-instance-table class="fill-height" [instance]="instance" [referenceInstance]="dbInstance"
-  [mergeRows]="mergeData?.rows" [canMerge]="canMerge()" (mergeRequested)="openMerge()"
   (editedInstance)="updateTitle($event)" *ngIf="!showProgressSpinner && instance"
   [blockRouter]="blockRoute"></app-instance-table>
 <!--<iframe [src]="'https://reactome.github.io/PathwayBrowser/' + '453279' | safe" width="1980" height="1020" title="Diagram Editor"></iframe>-->

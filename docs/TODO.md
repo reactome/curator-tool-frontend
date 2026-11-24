@@ -74,7 +74,7 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 
 Change the css so that the lines in comparison are even
 The buttons for filtering are out of sync
-Currently the user must take all or none of the nomanualedit attributes, think of cases where this would not be wanted
+- [Done 2026-11-24] Currently the user must take all or none of the nomanualedit attributes, think of cases where this would not be wanted. (The merge tool was replaced: in the database comparison each NOMANUALEDIT attribute that differs from the database has its own lock; unlocking offers the usual "reset to the db value" button.)
 Keep modified and modifiedList in sync 
 
 

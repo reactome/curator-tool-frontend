@@ -33,8 +33,8 @@ import { deleteInstances } from 'src/app/instance/state/instance.selectors';
 import { Subscription, catchError, map, of, switchMap } from 'rxjs';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 import { AttributeValue, EDIT_ACTION } from 'src/app/core/models/reactome-instance.model';
-import { InstanceComparisonDataSource, InstanceMergeDataSource } from './instance-table-comparison.model';
-import { DatabaseMergeChoice, DatabaseMergeRow, DatabaseMergeService } from 'src/app/core/services/database-merge.service';
+import { InstanceComparisonDataSource } from './instance-table-comparison.model';
+import { DatabaseSyncService } from 'src/app/core/services/database-sync.service';
 import { MatDialog } from '@angular/material/dialog';
 import { EventCycleCheck } from 'src/app/core/services/event-cycle-check.service';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
@@ -52,15 +52,6 @@ export class InstanceTableComponent implements PostEditListener {
   // Fire an event when this instance is edited
   @Output() editedInstance = new EventEmitter<Instance>();
 
-  /**
-   * Whether to show the "merge with database copy" button beside the Database Value header.
-   * InstanceViewComponent.canMerge() decides (database comparison on, staged copy out of sync);
-   * the table only places the button. It used to sit in the instance view's toolbar; curators
-   * asked for it beside the column it merges from.
-   */
-  @Input() canMerge: boolean = false;
-  /** The header's merge button was pressed; InstanceViewComponent opens the merge. */
-  @Output() mergeRequested = new EventEmitter<void>();
   displayedColumns: string[] = ['name', 'value'];
   showFilterOptions: boolean = false;
   showHeaderActions: boolean = false;
@@ -85,12 +76,10 @@ export class InstanceTableComponent implements PostEditListener {
   // So that we can use it in the template
   DATA_TYPES = AttributeDataType;
 
-  // Data source for the table: InstanceDataSource, InstanceComparisonDataSource, or
-  // InstanceMergeDataSource while a merge with the database copy is shown
+  // Data source for the table: InstanceDataSource or InstanceComparisonDataSource
   instanceDataSource:
     | InstanceDataSource
-    | InstanceComparisonDataSource
-    | InstanceMergeDataSource = new InstanceDataSource(
+    | InstanceComparisonDataSource = new InstanceDataSource(
       undefined,
       this.categories,
       this.sortAttNames,
@@ -106,12 +95,13 @@ export class InstanceTableComponent implements PostEditListener {
   showReferenceColumn: boolean = false;
 
   /**
-   * The rows of a merge with the database copy, while InstanceViewComponent shows one (see
-   * DatabaseMergeService). The view owns them and their choices; the table only displays them and
-   * sets row.choice. Keeping them in the view means a reload of the table (the view filters and
-   * the refresh subjects trigger plenty) never loses a choice the curator has made.
+   * Not-manually-editable attributes the curator has unlocked in the database comparison, so that
+   * the revert button is offered on them (see isLocked()). Kept across reloads of the same table,
+   * which edits and the view filters trigger all the time; cleared when the table switches to a
+   * different instance or into or out of comparison (see updateTableContent()), so an attribute
+   * is never left unlocked by accident on the next instance.
    */
-  _mergeRows?: DatabaseMergeRow[];
+  private unlockedAttributes = new Set<string>();
 
   // For highlighting rows during drag/drop event-view
   dragDropStatus: DragDropStatus = {
@@ -150,27 +140,6 @@ export class InstanceTableComponent implements PostEditListener {
     this.setReferenceInstance(refInstance!);
   }
 
-  /**
-   * Bound as `[mergeRows]="mergeData?.rows"`. Angular's safe navigation in a template yields
-   * **null**, not undefined, when there is no merge, so null must be normalized here. Until
-   * 2026-11-23 it was stored as is, and since isMerging tested `!== undefined`, every plain
-   * database comparison was rendered as an empty merge: a Take column and no rows at all, so the
-   * comparison itself could not be seen.
-   */
-  @Input() set mergeRows(rows: DatabaseMergeRow[] | null | undefined) {
-    const normalized = rows ?? undefined;
-    if (normalized === this._mergeRows)
-      return;
-    this._mergeRows = normalized;
-    this.updateColumns();
-    this.updateTableContent();
-  }
-
-  /** True while the merge with the database copy is shown. The table is read-only meanwhile. */
-  get isMerging(): boolean {
-    return this._mergeRows != null && this._referenceInstance != null;
-  }
-
   // Track subscriptions added so that we can remove them
   private subscriptions: Subscription = new Subscription()
 
@@ -186,7 +155,7 @@ export class InstanceTableComponent implements PostEditListener {
     private dataService: DataService,
     private dialog: MatDialog,
     private eventCycleCheck: EventCycleCheck,
-    private mergeService: DatabaseMergeService,
+    private syncService: DatabaseSyncService,
   ) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
@@ -231,44 +200,94 @@ export class InstanceTableComponent implements PostEditListener {
     }
     else {
       this.showReferenceColumn = true;
-      // The merge choice sits between the two values it picks from.
-      this.displayedColumns = this.isMerging
-        ? ['name', 'value', 'mergeChoice', 'referenceValue']
-        : ['name', 'value', 'referenceValue'];
+      this.displayedColumns = ['name', 'value', 'referenceValue'];
     }
   }
 
-  mergeRow(attributeName: string): DatabaseMergeRow | undefined {
-    return this._mergeRows?.find(row => row.attribute.name === attributeName);
+  /**
+   * True when the reference column holds this instance's own database copy, as opposed to a
+   * second instance it is being compared with.
+   */
+  isDatabaseComparison(): boolean {
+    return this._instance !== undefined && this._referenceInstance !== undefined
+      && this._instance.dbId === this._referenceInstance.dbId;
   }
 
-  chooseMerge(row: DatabaseMergeRow, choice: DatabaseMergeChoice) {
-    this.mergeService.choose(row, choice);
+  /** In the database comparison: whether this attribute's value differs from the database copy. */
+  differsFromDatabase(attName: string): boolean {
+    return this.isDatabaseComparison()
+      && this.syncService.differsFromDatabase(this._instance, this._referenceInstance, attName);
   }
 
   /**
-   * Highlights the side(s) a merge row takes and dims the other. 'both' takes both sides: the
-   * database list plus the curator's values the database lacks.
+   * In the database comparison: the attribute differs from the database, but not because of
+   * anything done in this copy. The view filters flag everything they change in
+   * modifiedAttributes, and a deleted reference is a passive edit, so a difference outside both
+   * lists can only come from a commit made elsewhere after this copy was staged (the staged copy
+   * is out of sync; see DatabaseSyncService.isOutOfSync). The backend saves the whole staged
+   * instance, so committing as is would overwrite that change with the stale value.
    */
-  mergeCellClass(attributeName: string, side: 'local' | 'database') {
-    const row = this.mergeRow(attributeName);
-    if (!row)
-      return {};
-    const chosen = row.choice === 'both' || row.choice === side;
-    return { merge_chosen: chosen, merge_rejected: !chosen };
+  isChangedInDatabase(attName: string): boolean {
+    return this.differsFromDatabase(attName)
+      && !(this._instance?.modifiedAttributes?.includes(attName) ?? false)
+      && !this.isPassiveEdited(attName);
   }
 
-  /** What the attribute will hold after the merge, for the choice cell's tooltip. */
-  mergeResultLabel(row: DatabaseMergeRow): string {
-    const values = this.mergeService.mergedValues(row);
-    if (values.length === 0)
-      return 'Result: (empty)';
-    const label = (value: any) => {
-      if (value && typeof value === 'object' && 'dbId' in value)
-        return `${value.displayName ?? '(no name)'} [${value.dbId}]`;
-      return String(value);
-    };
-    return 'Result: ' + values.map(label).join(', ');
+  /**
+   * A not-manually-editable attribute that differs from the database gets a lock in the
+   * database comparison. These are chiefly `modified` and `modifiedList`: when someone else
+   * commits the instance after it was staged, those InstanceEdits fall behind the database's, and
+   * the backend refuses the commit with 409 until they match again. Unlocking offers the
+   * comparison's ordinary "reset to the db value" button on the attribute.
+   *
+   * History: until 2026-11-24 a dedicated merge (a Take column with Apply Merge) handled this, and
+   * always took every not-manually-editable attribute from the database, all or none. Curators
+   * asked for a lock per attribute instead, so a value the tool itself wrote into the staged copy
+   * (a stable identifier, say) can be kept while `modified` / `modifiedList` are brought in line.
+   */
+  isLockable(attribute: SchemaAttribute): boolean {
+    return this.syncService.isLockable(attribute) && this.differsFromDatabase(attribute.name);
+  }
+
+  isLocked(attribute: SchemaAttribute): boolean {
+    return this.isLockable(attribute) && !this.unlockedAttributes.has(attribute.name);
+  }
+
+  /**
+   * `modified` and `modifiedList` lock and unlock together, as they are reset together (see
+   * DatabaseSyncService.provenancePartner and resetEdit()).
+   */
+  toggleLock(attribute: SchemaAttribute) {
+    const names = [attribute.name];
+    const partner = this.syncService.provenancePartner(attribute.name);
+    if (partner)
+      names.push(partner);
+    const unlock = !this.unlockedAttributes.has(attribute.name);
+    for (const name of names) {
+      if (unlock)
+        this.unlockedAttributes.add(name);
+      else
+        this.unlockedAttributes.delete(name);
+    }
+  }
+
+  /**
+   * Whether the reset button is offered on an attribute.
+   * - Comparing two instances: on what differs between them ("set to the right value"), except
+   *   not-manually-editable attributes. Unchanged from before the lock existed.
+   * - The database comparison: on what differs from the database, edited here or not (see
+   *   isChangedInDatabase()), and on attributes flagged as edited even though the value is back to
+   *   the database's (reverting clears the flag). A not-manually-editable attribute only once it is
+   *   unlocked.
+   */
+  canRevert(attribute: SchemaAttribute): boolean {
+    if (!this.showReferenceColumn)
+      return false;
+    if (!this.isDatabaseComparison())
+      return this.isActiveEdited(attribute.name) && attribute.category !== AttributeCategory.NOMANUALEDIT;
+    if (this.syncService.isLockable(attribute))
+      return this.isLockable(attribute) && !this.isLocked(attribute);
+    return this.differsFromDatabase(attribute.name) || this.isActiveEdited(attribute.name);
   }
 
   changeShowHeaderActions() {
@@ -628,7 +647,6 @@ export class InstanceTableComponent implements PostEditListener {
    */
   private renderedDbId?: number;
   private renderedComparison: boolean = false;
-  private renderedMerge: boolean = false;
 
   /**
    * The element that scrolls. Held so its position can be saved before a reload and restored
@@ -645,15 +663,15 @@ export class InstanceTableComponent implements PostEditListener {
     // instance, or into or out of comparison, is a different table and is left at the top.
     const wantsComparison = this._referenceInstance !== undefined;
     const hadPreviousTable = this.renderedDbId !== undefined;
-    const wantsMerge = this.isMerging;
     const isReloadOfSameTable = this.renderedDbId === this._instance?.dbId
-      && this.renderedComparison === wantsComparison
-      && this.renderedMerge === wantsMerge;
+      && this.renderedComparison === wantsComparison;
     const container = this.tableContainer?.nativeElement;
     const previousScrollTop = isReloadOfSameTable ? container?.scrollTop : undefined;
     this.renderedDbId = this._instance?.dbId;
     this.renderedComparison = wantsComparison;
-    this.renderedMerge = wantsMerge;
+    // An unlock belongs to the comparison it was made in (see unlockedAttributes).
+    if (!isReloadOfSameTable)
+      this.unlockedAttributes.clear();
     // A switch away from a previously-shown table is not guaranteed to leave the browser's own
     // clamping behavior to reset the scroll position (it is timing-dependent), so it is reset
     // explicitly here.
@@ -667,16 +685,7 @@ export class InstanceTableComponent implements PostEditListener {
     // edit tracking to filter on, so filtering by modifiedAttributes there emptied the table.
     // InstanceComparisonDataSource does the diff, and unions both schema classes' attributes so
     // attributes defined by only one of the two classes still show up.
-    if (wantsMerge) {
-      this.instanceDataSource = new InstanceMergeDataSource(
-        this._mergeRows!,
-        this.categories,
-        this.sortAttNames,
-        this.sortAttDefined
-      );
-      this.instanceDataSource.connect();
-    }
-    else if (this._referenceInstance === undefined) {
+    if (this._referenceInstance === undefined) {
       this.instanceDataSource = new InstanceDataSource(
         this._instance,
         this.categories,
@@ -947,6 +956,37 @@ export class InstanceTableComponent implements PostEditListener {
 
   resetEdit(attributeValue: AttributeValue) {
     if (!this._instance || !this._referenceInstance) return; // Do nothing if instance or reference instance is not defined
+    // `modified` must stay the last entry of `modifiedList` (a database contract; see
+    // DatabaseSyncService.provenancePartner), so resetting one to the database value resets the
+    // other too.
+    const partner = this.provenancePartnerToReset(attributeValue.attribute.name);
+    this.resetOneEdit(attributeValue);
+    if (partner)
+      this.resetOneEdit(partner);
+  }
+
+  /**
+   * The other half of the modified / modifiedList pair, when it also has to be reset: only in the
+   * database comparison, only when it differs, and only when the database copy carries it. A
+   * database copy loaded without the slot would otherwise make the reset delete the staged
+   * `modifiedList`, and the backend would then start the history over with just the new
+   * InstanceEdit.
+   */
+  private provenancePartnerToReset(attributeName: string): AttributeValue | undefined {
+    const partnerName = this.syncService.provenancePartner(attributeName);
+    if (!partnerName || !this.differsFromDatabase(partnerName))
+      return undefined;
+    const referenceValue = this._referenceInstance?.attributes?.get(partnerName);
+    if (referenceValue === undefined || referenceValue === null)
+      return undefined;
+    const attribute = this._instance?.schemaClass?.attributes?.find(att => att.name === partnerName);
+    if (!attribute)
+      return undefined;
+    return { attribute, value: this._instance!.attributes.get(partnerName), referenceValue };
+  }
+
+  private resetOneEdit(attributeValue: AttributeValue) {
+    if (!this._instance || !this._referenceInstance) return;
     if (this._instance.source) {
       this.attributeEditService.resetAttributeValue(this._instance.source, attributeValue);
     }
@@ -958,6 +998,8 @@ export class InstanceTableComponent implements PostEditListener {
       value: attributeValue.value
     };
     this.attributeEditService.resetAttributeValue(this._instance, attributeValueClone);
+    // Reverted, so it matches the database again; lock it again in case it falls out of sync later.
+    this.unlockedAttributes.delete(attributeValue.attribute.name);
     this.finishEdit(attributeValue.attribute.name,
       attributeValue.value,
       this._instance.dbId === this._referenceInstance.dbId);

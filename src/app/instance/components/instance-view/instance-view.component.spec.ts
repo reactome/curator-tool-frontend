@@ -4,7 +4,7 @@
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
-import { MatDialog } from '@angular/material/dialog';
+import { Store } from '@ngrx/store';
 
 import { Instance } from 'src/app/core/models/reactome-instance.model';
 import { AttributeCategory } from 'src/app/core/models/reactome-schema.model';
@@ -21,6 +21,7 @@ import { DiagramSyncDialogService } from '../diagram-sync-dialog/diagram-sync-di
 import { ReferrersDialogService } from '../referrers-dialog/referrers-dialog.service';
 import {
   InstanceUtilitiesSpy,
+  StoreSpy,
   commonTestProviders,
   componentTestImports,
   createInstanceUtilitiesSpy,
@@ -482,12 +483,11 @@ describe('InstanceViewComponent', () => {
     expect(component.showReferenceColumn).toBeFalse();
   });
 
-  describe('merging with the database copy', () => {
+  describe('a staged copy out of sync with the database copy', () => {
     const pathwayClass = makeSchemaClass('Pathway', {
       attributes: [
         makeAttribute('name', { cardinality: '+' }),
         makeAttribute('definition'),
-        makeAttribute('stableIdentifier', { category: AttributeCategory.NOMANUALEDIT }),
         makeInstanceAttribute('modified', ['InstanceEdit'], { cardinality: '1', category: AttributeCategory.NOMANUALEDIT })
       ]
     });
@@ -496,9 +496,9 @@ describe('InstanceViewComponent', () => {
      * The curator renamed it, staged against InstanceEdit 50; meanwhile someone else changed the
      * definition and committed, adding InstanceEdit 60.
      */
-    const staged = (name = 'mine') => makeInstance({
+    const staged = () => makeInstance({
       dbId: 100, schemaClass: pathwayClass, modifiedAttributes: ['name'],
-      attributes: { name: [name], definition: 'old', modified: edit(50) }
+      attributes: { name: ['mine'], definition: 'old', modified: edit(50) }
     });
     const database = () => makeInstance({
       dbId: 100, attributes: { name: ['theirs'], definition: 'new', modified: edit(60) }
@@ -523,218 +523,146 @@ describe('InstanceViewComponent', () => {
       component.showReferenceColumn = true;
     }
 
-    /** Change what the database read returns, for the merge's fresh read. */
-    function fetchDatabase(change: (db: Instance) => void) {
-      dataService.fetchInstanceFromDatabase.and.callFake(() => {
-        const db = database();
-        change(db);
-        return of(db);
-      });
-    }
-
-    const rowNames = () => component.mergeData!.rows.map(r => r.attribute.name).sort();
-
-    it('opens in the comparison already on display', () => {
-      showComparison();
-
-      component.openMerge();
-
-      expect(rowNames()).toEqual(['definition', 'modified', 'name']);
-      expect(component.mergeReason).toBeUndefined();
-    });
-
-    it('does nothing from the button unless the database comparison is on', () => {
-      component.instance = local;
-
-      component.openMerge();
-
-      expect(component.mergeData).toBeUndefined();
-      expect(dataService.fetchInstanceFromDatabase).not.toHaveBeenCalled();
-    });
-
-    it('is offered after a refused commit by turning the comparison on, but waits for the button', fakeAsync(() => {
+    it('turns the comparison on after a refused commit, with the reason', fakeAsync(() => {
       component.instance = local;
       dataService.fetchInstance.and.returnValue(of(local));
       // The view filters are covered elsewhere; against these spies they yield no instance.
       component.instanceViewFilters = [];
 
-      component.offerMerge('commit refused');
+      component.showOutOfSync('commit refused');
       tick();
 
       expect(component.dbInstance?.dbId).toEqual(100);
-      expect(component.mergeData).toBeUndefined();
-      expect(component.mergeReason).toEqual('commit refused');
-      expect(component.canMerge()).toBeTrue();
-
-      component.openMerge();
-
-      expect(rowNames()).toEqual(['definition', 'modified', 'name']);
-      // The banner still says why the merge is there.
-      expect(component.mergeReason).toEqual('commit refused');
+      expect(component.syncReason).toEqual('commit refused');
+      expect(component.isOutOfSync()).toBeTrue();
     }));
 
     it('re-reads the database copy of a comparison already on display when a commit is refused', () => {
       // The comparison was opened before the other commit: its copy still has InstanceEdit 50,
-      // so the staged copy looks in sync and no merge button shows.
+      // so the staged copy looks in sync and no note shows.
       showComparison();
       component.dbInstance!.attributes.set('modified', edit(50));
-      expect(component.canMerge()).toBeFalse();
+      expect(component.isOutOfSync()).toBeFalse();
 
-      component.offerMerge('commit refused');
+      component.showOutOfSync('commit refused');
 
       expect(dataService.fetchInstanceFromDatabase).toHaveBeenCalledWith(100, false);
-      expect(component.canMerge()).toBeTrue();
-      expect(component.mergeData).toBeUndefined();
+      expect(component.isOutOfSync()).toBeTrue();
+      expect(component.syncReason).toEqual('commit refused');
     });
 
     it('drops the note on a refused commit when the view switches to another instance', fakeAsync(() => {
       showComparison();
-      component.offerMerge('commit refused');
+      component.showOutOfSync('commit refused');
       dataService.fetchInstance.and.returnValue(of(makeInstance({ dbId: 101 })));
       component.instanceViewFilters = [];
 
       component.loadInstance(101);
       tick();
 
-      expect(component.mergeReason).toBeUndefined();
+      expect(component.syncReason).toBeUndefined();
     }));
 
-    it('is offered for an updated instance only', () => {
+    it('drops the note on a refused commit when the comparison is turned off', () => {
       showComparison();
-      expect(component.canMerge()).toBeTrue();
-
-      component.instance = makeInstance({ dbId: 100 });
-      expect(component.canMerge()).toBeFalse();
-
-      component.instance = makeNewInstance({ dbId: -1, modifiedAttributes: ['name'] });
-      expect(component.canMerge()).toBeFalse();
-    });
-
-    it('is offered only while the database comparison is on', () => {
-      component.instance = local;
-      component.dbInstance = undefined;
-      expect(component.canMerge()).toBeFalse();
-
-      // Comparing with a different instance is not a database comparison.
-      component.dbInstance = makeInstance({ dbId: 200 });
-      expect(component.canMerge()).toBeFalse();
-
-      showComparison();
-      expect(component.canMerge()).toBeTrue();
-    });
-
-    it('is offered only when the staged copy is out of sync with the database copy', () => {
-      // Same InstanceEdit on both sides: the backend would accept the commit, so nothing to merge.
-      showComparison();
-      component.dbInstance!.attributes.set('modified', edit(50));
-      expect(component.canMerge()).toBeFalse();
-
-      component.dbInstance!.attributes.set('modified', edit(60));
-      expect(component.canMerge()).toBeTrue();
-    });
-
-    it('keeps not-manually-editable attributes on the database value, whatever bulk choice is made', () => {
-      local.attributes.set('stableIdentifier', 'R-HSA-mine');
-      fetchDatabase(db => db.attributes.set('stableIdentifier', 'R-HSA-theirs'));
-      showComparison();
-      component.openMerge();
-      const choiceOf = (name: string) => component.mergeData!.rows.find(r => r.attribute.name === name)!.choice;
-
-      component.setAllMergeChoices('local');
-
-      expect(choiceOf('name')).toEqual('local');
-      expect(choiceOf('definition')).toEqual('local');
-      expect(choiceOf('modified')).toEqual('database');
-      expect(choiceOf('stableIdentifier')).toEqual('database');
-      expect(component.mergeLockedCount).toEqual(2);
-
-      component.applyMerge();
-
-      const merged: Instance = dataService.registerInstance.calls.mostRecent().args[0];
-      expect(merged.attributes.get('modified').dbId).toEqual(60);
-      expect(merged.attributes.get('stableIdentifier')).toEqual('R-HSA-theirs');
-      expect(merged.attributes.get('definition')).toEqual('old');
-    });
-
-    it('keeps the staged copy from being committed while open', () => {
-      // Committing now would send the copy the database already refused.
-      showComparison();
-      expect(component.isUploadable()).toBeTruthy();
-
-      component.openMerge();
-
-      expect(component.isUploadable()).toBeFalse();
-    });
-
-    it('applies the choices, and leaves the comparison on to show what is left to commit', () => {
-      showComparison();
-      component.openMerge();
-
-      component.applyMerge();
-
-      expect(dataService.registerInstance).toHaveBeenCalled();
-      const merged: Instance = dataService.registerInstance.calls.mostRecent().args[0];
-      expect(merged.attributes.get('name')).toEqual(['mine']);
-      expect(merged.attributes.get('definition')).toEqual('new');
-      expect(utils.setRefreshViewDbId).toHaveBeenCalledWith(100);
-      expect(component.mergeData).toBeUndefined();
-      expect(component.dbInstance).toBeDefined();
-    });
-
-    it('refuses to apply over a staged copy edited while it was open', () => {
-      showComparison();
-      component.openMerge();
-      local = staged('edited again');
-      const dialog = TestBed.inject(MatDialog) as jasmine.SpyObj<MatDialog>;
-
-      component.applyMerge();
-
-      expect(dataService.registerInstance).not.toHaveBeenCalled();
-      expect(component.mergeData!.rows.find(r => r.attribute.name === 'name')!.localValues).toEqual(['edited again']);
-      expect(dialog.open).toHaveBeenCalled();
-    });
-
-    it('changes nothing when cancelled', () => {
-      showComparison();
-      component.openMerge();
-
-      component.cancelMerge();
-
-      expect(component.mergeData).toBeUndefined();
-      expect(dataService.registerInstance).not.toHaveBeenCalled();
-    });
-
-    it('closes when the comparison is turned off', () => {
-      showComparison();
-      component.openMerge();
+      component.showOutOfSync('commit refused');
 
       component.showReferenceValueColumn();
 
-      expect(component.mergeData).toBeUndefined();
+      expect(component.syncReason).toBeUndefined();
     });
 
-    it('closes when the view switches to another instance', fakeAsync(() => {
+    it('is reported for an updated instance only', () => {
       showComparison();
-      component.openMerge();
-      dataService.fetchInstance.and.returnValue(of(makeInstance({ dbId: 101 })));
-      component.instanceViewFilters = [];
+      expect(component.isOutOfSync()).toBeTrue();
 
-      component.loadInstance(101);
-      tick();
+      component.instance = makeInstance({ dbId: 100 });
+      expect(component.isOutOfSync()).toBeFalse();
 
-      expect(component.mergeData).toBeUndefined();
-    }));
+      component.instance = makeNewInstance({ dbId: -1, modifiedAttributes: ['name'] });
+      expect(component.isOutOfSync()).toBeFalse();
+    });
 
-    it('is offered, not opened, when a commit is refused because the database copy changed', () => {
+    it('is reported only while the database comparison is on', () => {
+      component.instance = local;
+      component.dbInstance = undefined;
+      expect(component.isOutOfSync()).toBeFalse();
+
+      // Comparing with a different instance is not a database comparison.
+      component.dbInstance = makeInstance({ dbId: 200 });
+      expect(component.isOutOfSync()).toBeFalse();
+
+      showComparison();
+      expect(component.isOutOfSync()).toBeTrue();
+    });
+
+    it('clears once modified matches the database again', () => {
+      // Same InstanceEdit on both sides: the backend would accept the commit. This is the state
+      // after the curator unlocks modified and resets it to the db value in the table.
+      showComparison();
+      expect(component.isOutOfSync()).toBeTrue();
+
+      local.attributes.set('modified', edit(60));
+      expect(component.isOutOfSync()).toBeFalse();
+    });
+
+    it('does not keep an out-of-sync copy from being committed', () => {
+      // The backend decides; a refusal brings the curator back here with the reason.
+      showComparison();
+      expect(component.isUploadable()).toBeTruthy();
+    });
+
+    describe('once the instance leaves Updated Instances (committed or undone)', () => {
+      let store: StoreSpy;
+      const stagedShell = () => [makeShellInstance(100, 'Glycolysis', 'Pathway')];
+
+      beforeEach(() => {
+        store = TestBed.inject(Store) as unknown as StoreSpy;
+        store.setSelectResult(stagedShell());
+        showComparison();
+        component.showOutOfSync('commit refused');
+        dataService.fetchInstanceFromDatabase.calls.reset();
+        // The database copy after the commit: it carries the commit's own InstanceEdit.
+        dataService.fetchInstanceFromDatabase.and.callFake(() => of(makeInstance({
+          dbId: 100, attributes: { name: ['mine'], definition: 'new', modified: edit(70) }
+        })));
+      });
+
+      it('re-reads the database copy, so the committed instance is not compared with the old one', () => {
+        // Regression (2026-11-24): the comparison kept the copy read before the commit, and every
+        // attribute the commit changed showed a lock, a reset and "changed in database".
+        store.setSelectResult([]);
+
+        expect(dataService.fetchInstanceFromDatabase).toHaveBeenCalledOnceWith(100, false);
+        expect(component.dbInstance!.attributes.get('modified').dbId).toEqual(70);
+        expect(component.syncReason).toBeUndefined();
+      });
+
+      it('does not re-read it while the instance stays staged', () => {
+        // Every edit re-emits the list; that must not cost a database read each time.
+        store.setSelectResult(stagedShell());
+
+        expect(dataService.fetchInstanceFromDatabase).not.toHaveBeenCalled();
+      });
+
+      it('does not read a database copy when no comparison is shown', () => {
+        component.dbInstance = undefined;
+
+        store.setSelectResult([]);
+
+        expect(dataService.fetchInstanceFromDatabase).not.toHaveBeenCalled();
+      });
+    });
+
+    it('is shown with the reason when a commit is refused because the database copy changed', () => {
       showComparison();
       dataService.commit.and.returnValue(throwError(() => new Error(
         'Instance has been updated elsewhere and cannot be committed (dbId, stId, displayName): 100, null, Glycolysis')));
 
       component.upload();
 
-      expect(component.mergeData).toBeUndefined();
-      expect(component.mergeReason).toContain('changed in the database');
-      expect(component.canMerge()).toBeTrue();
+      expect(component.syncReason).toContain('changed in the database');
+      expect(component.isOutOfSync()).toBeTrue();
     });
   });
 

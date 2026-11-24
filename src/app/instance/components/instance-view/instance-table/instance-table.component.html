@@ -63,27 +63,25 @@
     </ng-template>
   </ng-template>
 
-  <!-- Read-only rendering of a value. Used for the reference column, and for both value columns while
-  a merge with the database copy is shown (nothing is edited until the merge is applied). -->
-  <ng-template #refValueColTemplate let-element let-value="value">
+  <ng-template #refValueColTemplate let-element>
     <ng-container *ngIf="element.attribute.cardinality === '1'">
-      <app-instance-table-row-element [attribute]="element.attribute" [value]="value" [disable]="true"
+      <app-instance-table-row-element [attribute]="element.attribute" [value]="element.referenceValue" [disable]="true"
         [passiveEdit]="isPassiveEdited(element.attribute.name)" />
     </ng-container>
     <ng-container *ngIf="element.attribute.cardinality === '+'">
-      <ng-container *ngIf="value === undefined; else elseblock">
+      <ng-container *ngIf="element.referenceValue === undefined; else elseblock">
         <app-instance-table-row-element [attribute]="element.attribute" [disable]="true"
           [passiveEdit]="isPassiveEdited(element.attribute.name)" />
       </ng-container>
       <ng-template #elseblock>
         <ng-container *ngIf="isStoichiometryAttribute(element.attribute); else refPlain">
           <app-instance-table-row-element
-            *ngFor="let group of getStoichiometryGroups(value); trackBy: trackByGroupDbId"
+            *ngFor="let group of getStoichiometryGroups(element.referenceValue); trackBy: trackByGroupDbId"
             class="example-box" [attribute]="element.attribute" [value]="group.value" [stoichiometry]="group.count"
             [disable]="true" [passiveEdit]="isPassiveEdited(element.attribute.name)" />
         </ng-container>
         <ng-template #refPlain>
-          <app-instance-table-row-element *ngFor="let object of value; let i = index"
+          <app-instance-table-row-element *ngFor="let object of element.referenceValue; let i = index"
             class="example-box" [attribute]="element.attribute" [value]="object" [disable]="true"
             [passiveEdit]="isPassiveEdited(element.attribute.name)" />
         </ng-template>
@@ -134,10 +132,9 @@
               <img ngSrc="assets/images/NoManualEdit.gif" alt="NoManualEdit" width="16" height="16" priority>
             </ng-container>
             {{element.attribute.name}}
-            <ng-container *ngIf="isMerging && mergeRow(element.attribute.name) as row">
-              <div class="merge_origin" [class.merge_db_changed]="!row.editedLocally || row.locked">
-                {{row.locked ? 'not manually editable' : row.editedLocally ? 'edited by you' : 'changed in database'}}</div>
-            </ng-container>
+            <div *ngIf="isChangedInDatabase(element.attribute.name)" class="db_changed"
+              matTooltip="Changed in the database after you started editing. Committing as is would overwrite it with the value on the left.">
+              changed in database</div>
           </div>
         </td>
       </ng-container>
@@ -164,57 +161,31 @@
           </th>
         </div>
         <td mat-cell *matCellDef="let element" style="padding:0" class="valueColumn"
-          [ngClass]="isMerging ? mergeCellClass(element.attribute.name, 'local') : dragHoverClass(element.attribute)">
-          <ng-container *ngIf="isMerging; else editableValue">
-            <!-- Choices are made in the Take column only: values here can be instance links, and a
-            click that navigates away would drop the merge. -->
-            <div class="merge_value">
-              <ng-container
-                *ngTemplateOutlet="refValueColTemplate; context: {$implicit: element, value: element.value}"></ng-container>
-            </div>
-          </ng-container>
-          <ng-template #editableValue>
+          [ngClass]="dragHoverClass(element.attribute)">
           <div style="display: flex;">
             <div style="flex: 1">
               <ng-container *ngTemplateOutlet="valueColTemplate; context: {$implicit: element}"></ng-container>
             </div>
-            <!-- reset button for active edits only -->
-            <div
-              *ngIf="isActiveEdited(element.attribute.name) && element.attribute.category !== AttributeCategory.NOMANUALEDIT && showReferenceColumn"
-              style="height: 24px; width: 35px; float: right; z-index: 3; bottom: 10px;">
-              <button style="bottom: 7px; right: 5px;" mat-icon-button (click)="resetEdit(element)"
-                [matTooltip]="_instance?.dbId === _referenceInstance?.dbId ? 'reset to the db value' : 'set to the right value'">
+            <!-- A not-manually-editable attribute that differs from the database (modified and
+            modifiedList, typically, once someone else commits the instance) is locked; unlocking
+            offers the reset button below. See InstanceTableComponent.isLockable(). -->
+            <div *ngIf="isLockable(element.attribute)" class="row_action">
+              <button mat-icon-button (click)="toggleLock(element.attribute)"
+                [attr.aria-label]="(isLocked(element.attribute) ? 'unlock ' : 'lock ') + element.attribute.name"
+                [matTooltip]="isLocked(element.attribute)
+                  ? 'Not manually editable, and differs from the database. Unlock to revert it to the db value.'
+                  : 'Lock again'">
+                <mat-icon>{{isLocked(element.attribute) ? 'lock' : 'lock_open'}}</mat-icon>
+              </button>
+            </div>
+            <div *ngIf="canRevert(element.attribute)" class="row_action">
+              <button mat-icon-button (click)="resetEdit(element)"
+                [attr.aria-label]="'reset ' + element.attribute.name"
+                [matTooltip]="isDatabaseComparison() ? 'reset to the db value' : 'set to the right value'">
                 <mat-icon>undo</mat-icon>
               </button>
             </div>
           </div>
-          </ng-template>
-        </td>
-      </ng-container>
-
-      <!-- Merge with the database copy: which side each attribute takes -->
-      <ng-container matColumnDef="mergeChoice">
-        <th mat-header-cell *matHeaderCellDef class="mergeChoiceColumn">Take</th>
-        <td mat-cell *matCellDef="let element" class="mergeChoiceColumn">
-          <!-- Not manually editable: always the database value, so there is nothing to choose. -->
-          <ng-container *ngIf="mergeRow(element.attribute.name) as row">
-            <div *ngIf="row.locked" class="merge_locked" [attr.aria-label]="'Database value always kept for ' + row.attribute.name"
-              matTooltip="Not manually editable: the database value is always kept">
-              <mat-icon>lock</mat-icon><mat-icon>arrow_forward</mat-icon>
-            </div>
-            <mat-button-toggle-group *ngIf="!row.locked" class="merge_toggle" [value]="row.choice" (change)="chooseMerge(row, $event.value)"
-              [attr.aria-label]="'Value to keep for ' + row.attribute.name" [matTooltip]="mergeResultLabel(row)">
-              <mat-button-toggle value="local" aria-label="Your value">
-                <mat-icon>arrow_back</mat-icon>
-              </mat-button-toggle>
-              <mat-button-toggle *ngIf="row.multiValued" value="both" aria-label="Both">
-                <mat-icon>sync_alt</mat-icon>
-              </mat-button-toggle>
-              <mat-button-toggle value="database" aria-label="Database value">
-                <mat-icon>arrow_forward</mat-icon>
-              </mat-button-toggle>
-            </mat-button-toggle-group>
-          </ng-container>
         </td>
       </ng-container>
 
@@ -223,22 +194,14 @@
         <div style="display: flex;">
           <th style="flex: 1" mat-header-cell *matHeaderCellDef (mouseenter)="changeShowHeaderActions()"
             (mouseleave)="changeShowHeaderActions()">{{referenceColumnTitle}}
-            <button *ngIf="canMerge && !isMerging" mat-icon-button color="primary" class="merge_header_button"
-              (click)="mergeRequested.emit()" matTooltip="merge with database copy" aria-label="merge with database copy">
-              <mat-icon>merge</mat-icon>
-            </button>
             <button style="bottom:5px; right: 0; position: absolute" matTooltip="attributes having different values"
               *ngIf="showHeaderActions" mat-icon-button (click)="filterEditedValues()">
               <mat-icon>filter_list</mat-icon>
             </button>
           </th>
         </div>
-        <td mat-cell *matCellDef="let element" style="padding: 0"
-          [ngClass]="isMerging ? mergeCellClass(element.attribute.name, 'database') : {}">
-          <div [class.merge_value]="isMerging">
-            <ng-container
-              *ngTemplateOutlet="refValueColTemplate; context: {$implicit: element, value: element.referenceValue}"></ng-container>
-          </div>
+        <td mat-cell *matCellDef="let element" style="padding: 0">
+          <ng-container *ngTemplateOutlet="refValueColTemplate; context: {$implicit: element}"></ng-container>
         </td>
       </ng-container>
 

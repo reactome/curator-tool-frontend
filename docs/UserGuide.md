@@ -199,26 +199,18 @@ Each section header reads **"<Section> Instances: {total} ({selected})"** and ha
 
 - `select_all` / `deselect_all`
 - `undo` — **undo all changes for selected updated instances** (re-fetches each from the DB and resets)
-- `upload` — **commit all selected** (commits sequentially; any failures are reported afterward listing `#dbId displayName` of each failure; if some failed because the instance changed in the database, the report says so and points to the comparison's merge button)
+- `upload` — **commit all selected** (commits sequentially; any failures are reported afterward listing `#dbId displayName` of each failure; if some failed because the instance changed in the database, the report says so and points to the [database comparison](#bringing-your-copy-back-in-sync-with-the-database), where they can be brought back in sync)
 - Per-row buttons: **COMPARE2DB**, **UNDO**, **COMMIT**
 
-#### Merging with the database copy
+#### Bringing your copy back in sync with the database
 
-A commit is refused with *"Instance has been updated elsewhere"* when someone (another curator, or you in another window) committed the same instance after you started editing it. Committing again will keep failing, and **UNDO** throws your edits away. Use the merge instead. It is available only in the [database comparison](#94-the-attribute-table), and only when your copy is out of sync with the database copy, that is, when its `modified` / `modifiedList` InstanceEdits no longer match the database's (the same check that makes the commit fail). Turn the comparison on (the **COMPARE2DB** row button, or `compare` in the instance editor); if your copy is out of sync, the `merge` button (**"merge with database copy"**) appears beside the **Database Value** column header. If the instance was committed elsewhere after you turned the comparison on, turn the comparison off and on again to reload the database copy. Committing a single instance that fails this way, from this list or with the instance editor's **Upload**, opens the comparison for you with the latest database copy. A note above the table says why the commit was refused and points to the `merge` button beside the **Database Value** header. The merge does not start until you press it.
+A commit is refused with *"Instance has been updated elsewhere"* when someone (another curator, or you in another window) committed the same instance after you started editing it. Your copy is then *out of sync*: its `modified` / `modifiedList` InstanceEdits no longer match the database's, and committing again will keep failing. **UNDO** would throw your edits away. Fix it in the [database comparison](#94-the-attribute-table) instead:
 
-While the merge is on, the comparison table lists only the attributes whose values differ between your copy (**Value**) and the database copy (**Database Value**), and nothing in it can be edited:
-
-- A **Take** column between the two values holds the choice for each attribute: `arrow_back` takes your value, `arrow_forward` takes the database value. Hover the choice to see what the attribute will hold.
-- Under each attribute name, **edited by you** means the attribute starts with your value; **changed in database** (an attribute you never edited) means it starts with the database value, so the other person's change is kept.
-- Attributes that cannot be edited by hand (NoManualEdit, such as `modified`, `modifiedList`, `created` and `stableIdentifier`) are marked **not manually editable** and always take the database value: their **Take** cell shows `lock` `arrow_forward` instead of a choice, and the bulk buttons leave them alone. This is what lets the merged copy pass the commit check.
-- Multivalued attributes also offer **Both** (`sync_alt`): the database values, then the values you added that the database lacks. Repeated values are kept, so stoichiometry is not lost.
-- The side each attribute takes is tinted green; the side it drops is faded.
-- Above the table, a banner explains the merge (and, when a commit was refused, why), counts the attributes that differ (how many you edited, and how many are always taken from the database), and has **All rows:** **Mine**, **Database** and **Defaults** to set every row you can choose for at once.
-- **Apply Merge** replaces your staged copy with the merged one, in every open window. It stays in **Updated Instances** for you to review and commit, and the comparison stays on so you can see what is left to commit. If every row takes the database value, the instance leaves the list. **Cancel**, turning the comparison off, or opening another instance closes the merge without changing anything.
-- **Upload** is disabled while the merge is on, because it would commit the copy the database already refused.
-- If your copy is edited while the merge is open (in another window, or in another panel), **Apply Merge** does not apply. It refreshes the rows instead and keeps your choices on the attributes whose values did not change, so you can check them and apply again.
-
-The display name is regenerated from the merged values. The merge cannot combine copies of different classes; in that case, note your edits, use **UNDO**, and redo them.
+1. Turn the comparison on (the **COMPARE2DB** row button, or `compare` in the instance editor). Committing a single instance that fails this way, from this list or with the instance editor's **Upload**, does this for you with the latest database copy. If the instance was committed elsewhere after you turned the comparison on, turn the comparison off and on again to reload the database copy.
+2. A note above the table says your copy is out of sync (and, after a refused commit, why).
+3. `modified` and `modifiedList` show a `lock` in their **Value** cell. These attributes cannot be edited by hand, so they are locked until you choose to change them. Click the `lock` to unlock an attribute (it becomes `lock_open`), then click `undo` (**"reset to the db value"**) to take the database value. `modified` and `modifiedList` are locked, unlocked and reset together, because `modified` must always be the same InstanceEdit as the last entry of `modifiedList`. Every other attribute is locked and unlocked on its own: any other attribute that cannot be edited by hand and differs from the database (for example `stableIdentifier`) gets its own lock, so you can leave it as it is in your copy.
+4. Attributes that someone else changed and you did not touch are marked *changed in database* under the attribute name. The commit saves your whole copy, so committing as is would put your older value back. Click `undo` on them to keep the other person's change.
+5. Once `modified` and `modifiedList` match the database, the note goes away. Commit as usual.
 
 ### Deleted Instances
 
@@ -469,7 +461,7 @@ The title reads **"{SchemaClass}: {displayName} [{dbId}]"**. It turns **red** wh
 
 ### 9.4 The attribute table
 
-Columns: **Attribute**, **Value**, and (when comparing) a reference column headed **Database Value** (comparing to the DB copy) or the other instance's display name (comparing two instances). When your copy of an updated instance is out of sync with the database copy, the **Database Value** header has a `merge` button (**"merge with database copy"**) that turns on the [merge with the database copy](#merging-with-the-database-copy). While a [merge with the database copy](#merging-with-the-database-copy) is on, a **Take** column sits between **Value** and **Database Value**, only the attributes that differ are listed, and the table is read-only.
+Columns: **Attribute**, **Value**, and (when comparing) a reference column headed **Database Value** (comparing to the DB copy) or the other instance's display name (comparing two instances). When your copy of an updated instance is out of sync with the database copy, a note above the table says so, and the table offers what you need to [bring it back in sync](#bringing-your-copy-back-in-sync-with-the-database).
 
 **Attribute-name cell:** shows a category icon — **Mandatory**, **Required**, **Optional**, or **NoManualEdit** — and is color-coded:
 
@@ -488,7 +480,8 @@ Hovering the attribute name shows a tooltip explaining its state. Hovering colum
 - **Float:** numeric input, one decimal point (leading `-` allowed).
 - **Boolean:** a slide toggle; commits immediately.
 - **NoManualEdit** attributes are read-only.
-- **Undo/reset:** for an actively edited attribute, an `undo` icon appears in the value cell when the comparison column is shown; it resets the attribute to the reference value (tooltip **"reset to the db value"** or **"set to the right value"**).
+- **Undo/reset:** when the comparison column is shown, an `undo` icon in the value cell resets the attribute to the reference value (tooltip **"reset to the db value"** or **"set to the right value"**). When comparing two instances, it appears on actively edited attributes. In the database comparison, it appears on every attribute whose value differs from the database, including ones marked *changed in database* under the attribute name (changed by someone else after you started editing).
+- **Lock/unlock (database comparison):** an attribute that cannot be edited by hand (NoManualEdit, such as `modified` and `modifiedList`) and differs from the database shows a `lock` instead of `undo`. Click it to unlock (`lock_open`) and get the `undo` button; click again to lock it. Reset attributes lock again by themselves. `modified` and `modifiedList` lock, unlock and reset as a pair. See [Bringing your copy back in sync with the database](#bringing-your-copy-back-in-sync-with-the-database).
 - **Multi-valued** attributes support **drag-to-reorder** (except NoManualEdit) and an extra empty row to add a new value.
 
 ### 9.6 Instance-valued slot action menu

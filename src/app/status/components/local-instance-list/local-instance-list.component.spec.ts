@@ -16,7 +16,7 @@ import { DeleteBulkDialogService } from 'src/app/schema-view/list-instances/comp
 import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
 import { DeleteInstanceActions } from 'src/app/instance/state/instance.actions';
 import { CommitResultDialogService } from './commit-result-dialog/commit-result-dialog.service';
-import { DatabaseMergeService } from 'src/app/core/services/database-merge.service';
+import { DatabaseSyncService } from 'src/app/core/services/database-sync.service';
 import {
   InstanceUtilitiesSpy,
   StoreSpy,
@@ -41,7 +41,7 @@ describe('UpdatedInstanceListComponent', () => {
   let deletionDialog: jasmine.SpyObj<DeletionDialogService>;
   let deleteBulkDialog: jasmine.SpyObj<DeleteBulkDialogService>;
   let commitResultDialog: jasmine.SpyObj<CommitResultDialogService>;
-  let mergeService: jasmine.SpyObj<DatabaseMergeService>;
+  let syncService: jasmine.SpyObj<DatabaseSyncService>;
 
   function build(staged: Instance[] = [], url = '/schema_view/instance/100') {
     utils = createInstanceUtilitiesSpy();
@@ -54,7 +54,7 @@ describe('UpdatedInstanceListComponent', () => {
     commitResultDialog = jasmine.createSpyObj<CommitResultDialogService>(
       'CommitResultDialogService', ['openDialog']);
     deleteBulkDialog.openDialog.and.returnValue({ afterClosed: () => of(false) } as any);
-    mergeService = jasmine.createSpyObj<DatabaseMergeService>('DatabaseMergeService', ['requestMerge']);
+    syncService = jasmine.createSpyObj<DatabaseSyncService>('DatabaseSyncService', ['requestComparison']);
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -69,7 +69,7 @@ describe('UpdatedInstanceListComponent', () => {
         { provide: DeletionDialogService, useValue: deletionDialog },
         { provide: DeleteBulkDialogService, useValue: deleteBulkDialog },
         { provide: CommitResultDialogService, useValue: commitResultDialog },
-        { provide: DatabaseMergeService, useValue: mergeService },
+        { provide: DatabaseSyncService, useValue: syncService },
         {
           provide: MatchResolutionService,
           useValue: jasmine.createSpyObj('MatchResolutionService', ['resolve'])
@@ -96,7 +96,7 @@ describe('UpdatedInstanceListComponent', () => {
 
   describe('action buttons per bucket', () => {
     it('lets an updated instance be compared, reset, or committed', () => {
-      // The merge with the database copy is reached from the comparison, not from a row button.
+      // Out-of-sync copies are fixed in the database comparison (the compare button), not by a row button.
       expect(build().updatedInstanceActions.map(b => b.name))
         .toEqual(['compare', 'undo', 'upload']);
     });
@@ -184,15 +184,15 @@ describe('UpdatedInstanceListComponent', () => {
       expect(commitResultDialog.openDialog).toHaveBeenCalled();
     });
 
-    it('opens the merge in the database comparison', () => {
+    it('opens the database comparison with the out-of-sync note', () => {
       // The request is raised before navigating: the comparison URL creates a new instance view,
       // which takes the request once its comparison has loaded.
       build();
       const instance = pathway();
 
-      component.mergeWithDatabase(instance);
+      component.showOutOfSync(instance);
 
-      expect(mergeService.requestMerge).toHaveBeenCalledWith(100, undefined);
+      expect(syncService.requestComparison).toHaveBeenCalledWith(100, undefined);
       expect(router.navigate).toHaveBeenCalledWith(['schema_view/instance/100', 'comparison', '100']);
     });
 
@@ -200,16 +200,17 @@ describe('UpdatedInstanceListComponent', () => {
       build();
       component.blockRoute = true;
 
-      component.mergeWithDatabase(pathway());
+      component.showOutOfSync(pathway());
 
-      expect(mergeService.requestMerge).toHaveBeenCalledWith(100, undefined);
+      expect(syncService.requestComparison).toHaveBeenCalledWith(100, undefined);
       expect(utils.setLastClickedDbIdForComparison).toHaveBeenCalledWith(100);
       expect(router.navigate).not.toHaveBeenCalled();
     });
 
-    it('offers the merge tool when a commit is rejected because the database copy changed', () => {
+    it('opens the comparison when a commit is rejected because the database copy changed', () => {
       // Backend InstanceChangedException -> 409. Retrying can never succeed, so the curator
-      // is taken to the comparison, where the merge is offered, instead of being left with only Undo.
+      // is taken to the comparison, where modified / modifiedList can be unlocked and reset, instead of
+      // being left with only Undo.
       build();
       const instance = pathway();
       component.updatedInstances = [instance];
@@ -218,11 +219,11 @@ describe('UpdatedInstanceListComponent', () => {
 
       component.handleAction({ instance, action: ACTION_BUTTONS.COMMIT.name });
 
-      expect(mergeService.requestMerge).toHaveBeenCalledWith(100, jasmine.stringMatching('changed in the database'));
+      expect(syncService.requestComparison).toHaveBeenCalledWith(100, jasmine.stringMatching('changed in the database'));
       expect(commitResultDialog.openDialog).not.toHaveBeenCalled();
     });
 
-    it('does not offer the merge tool for other commit failures', () => {
+    it('does not open the comparison for other commit failures', () => {
       build();
       const instance = pathway();
       component.updatedInstances = [instance];
@@ -230,7 +231,7 @@ describe('UpdatedInstanceListComponent', () => {
 
       component.handleAction({ instance, action: ACTION_BUTTONS.COMMIT.name });
 
-      expect(mergeService.requestMerge).not.toHaveBeenCalled();
+      expect(syncService.requestComparison).not.toHaveBeenCalled();
     });
 
     it('runs the duplicate check before committing a new instance', () => {

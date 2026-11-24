@@ -160,65 +160,24 @@ button:disabled {
   color: var(--primary);
   cursor: not-allowed;
 }
-// Merge with the database copy. The side a row takes is tinted green; the side it drops is
-// faded, so the result can be read down the table without hovering each choice.
-.valueColumn.merge_chosen,
-.mat-mdc-cell.merge_chosen {
-  background-color: rgba(76, 175, 80, 0.15);
-}
 
-.valueColumn.merge_rejected,
-.mat-mdc-cell.merge_rejected {
-  opacity: 0.45;
-}
+// The lock and reset buttons at the right of a value cell.
+.row_action {
+  height: 24px;
+  width: 35px;
+  z-index: 3;
 
-.merge_value {
-  padding: 0 4px;
-}
-
-.mergeChoiceColumn {
-  width: 1%;
-  white-space: nowrap;
-  text-align: center;
-  padding: 0 4px;
-}
-
-.merge_toggle {
-  --mat-standard-button-toggle-height: 28px;
-  align-items: center;
-
-  .mat-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
+  button {
+    bottom: 7px;
+    right: 5px;
   }
 }
 
-// "merge with database copy", beside the Database Value header text.
-.merge_header_button {
-  vertical-align: middle;
-  margin-left: 4px;
-}
-
-// A locked (not manually editable) merge row: no choice, always the database value.
-.merge_locked {
-  display: inline-flex;
-  align-items: center;
-  color: rgba(0, 0, 0, 0.54);
-
-  .mat-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-  }
-}
-
-.merge_origin {
+// "changed in database" under an attribute name in the database comparison: the database copy
+// changed after this copy was staged (InstanceTableComponent.isChangedInDatabase()).
+.db_changed {
   font-size: 11px;
   font-weight: normal;
   font-style: italic;
-
-  &.merge_db_changed {
-    color: #1565c0;
-  }
+  color: #1565c0;
 }
