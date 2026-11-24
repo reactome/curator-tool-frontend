@@ -97,8 +97,7 @@
       <!-- Attribute Name Column -->
       <ng-container matColumnDef="name">
         <div style="display: flex;">
-          <th style="flex: 1" mat-header-cell (mouseenter)="changeShowHeaderActions()"
-            (mouseleave)="changeShowHeaderActions()" *matHeaderCellDef>Attribute
+          <th style="flex: 1" mat-header-cell *matHeaderCellDef>Attribute
             <button style="bottom:5px; right: 0; position: absolute" matTooltip="Sort attributes by name"
               *ngIf="showHeaderActions" mat-icon-button (click)="sort()">
               <mat-icon>sort_by_alpha</mat-icon>
@@ -139,8 +138,7 @@
       <!-- Attribute Value Column -->
       <ng-container matColumnDef="value">
         <div style="display: flex;">
-          <th style="flex: 1" mat-header-cell (mouseenter)="changeShowHeaderActions()"
-            (mouseleave)="changeShowHeaderActions()" *matHeaderCellDef> {{valueColumnTitle}}
+          <th style="flex: 1" mat-header-cell *matHeaderCellDef> {{valueColumnTitle}}
             <ng-container *ngIf="showHeaderActions">
               <button style="bottom:5px; right: 0; position: absolute" matTooltip="edited attributes"
                 *ngIf="showHeaderActions" mat-icon-button (click)="filterEditedValues()">
@@ -179,8 +177,7 @@
       <!-- Reference value column if any -->
       <ng-container matColumnDef="referenceValue" *ngIf="showReferenceColumn">
         <div style="display: flex;">
-          <th style="flex: 1" mat-header-cell *matHeaderCellDef (mouseenter)="changeShowHeaderActions()"
-            (mouseleave)="changeShowHeaderActions()">{{referenceColumnTitle}}
+          <th style="flex: 1" mat-header-cell *matHeaderCellDef>{{referenceColumnTitle}}
             <button style="bottom:5px; right: 0; position: absolute" matTooltip="attributes having different values"
               *ngIf="showHeaderActions" mat-icon-button (click)="filterEditedValues()">
               <mat-icon>filter_list</mat-icon>
@@ -192,7 +189,13 @@
         </td>
       </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <!-- Header actions are shown while the pointer is anywhere over the header row. The listeners
+           set the flag explicitly instead of toggling it: they used to sit on each <th> and toggle,
+           so any missed enter/leave (e.g. the header re-rendering under the pointer after a filter
+           or sort, or the reference column being added/removed) left the flag inverted, showing
+           the icons when the mouse was elsewhere and hiding them when the curator went to click. -->
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"
+        (mouseenter)="setShowHeaderActions(true)" (mouseleave)="setShowHeaderActions(false)"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;" [attr.data-attribute]="row.attribute.name"></tr>
     </table>
   </section>

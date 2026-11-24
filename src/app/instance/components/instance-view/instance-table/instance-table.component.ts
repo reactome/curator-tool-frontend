@@ -186,8 +186,9 @@ export class InstanceTableComponent implements PostEditListener {
     this.updateTableContent();
   }
 
-  changeShowHeaderActions() {
-    this.showHeaderActions = !this.showHeaderActions;
+  // Set, never toggle: see the comment on the header row in the template.
+  setShowHeaderActions(show: boolean) {
+    this.showHeaderActions = show;
   }
 
   doFilter(category: AttributeCategory) {
