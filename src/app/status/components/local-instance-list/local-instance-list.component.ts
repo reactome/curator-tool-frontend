@@ -19,6 +19,7 @@ import { CommitResultDialogService, CommitResult } from './commit-result-dialog/
 import { CommitWaitDialogComponent } from 'src/app/shared/components/commit-wait-dialog/commit-wait-dialog.component';
 import { MatchedInstancesDialogService } from 'src/app/shared/components/matched-instances-dialog/matched-instances-dialog.service';
 import { MatchResolutionService } from 'src/app/core/services/match-resolution.service';
+import { COMMIT_REFUSED_REASON, DatabaseSyncService, isInstanceChangedError } from 'src/app/core/services/database-sync.service';
 
 
 @Component({
@@ -72,7 +73,8 @@ export class UpdatedInstanceListComponent implements OnInit {
     private deletionDialogService: DeletionDialogService,
     private commitResultDialogService: CommitResultDialogService,
     private matchedInstancesDialogService: MatchedInstancesDialogService,
-    private matchResolutionService: MatchResolutionService
+    private matchResolutionService: MatchResolutionService,
+    private databaseSyncService: DatabaseSyncService
   ) {
   }
 
@@ -189,9 +191,19 @@ export class UpdatedInstanceListComponent implements OnInit {
       this.openCommitWaitDialog('Committing Updated Instance', 'Please wait while the selected updated instance is committed.');
       this.dataService.commit(instance).pipe(
         finalize(() => this.closeCommitWaitDialog())
-      ).subscribe(rtn => {
-        this.instanceUtilities.processCommit(instance, rtn, this.dataService);
-        this.commitResultDialogService.openDialog(this.instanceUtilities.buildCommitSummaryResults(instance, rtn));
+      ).subscribe({
+        next: rtn => {
+          this.instanceUtilities.processCommit(instance, rtn, this.dataService);
+          this.commitResultDialogService.openDialog(this.instanceUtilities.buildCommitSummaryResults(instance, rtn));
+        },
+        error: error => {
+          // A 409 "updated elsewhere" means the database copy was committed after this one was
+          // staged, and every retry will be rejected the same way. Open the database comparison
+          // straight away, where modified / modifiedList can be unlocked and reset, instead of
+          // leaving the curator with only Undo (which loses their edits).
+          if (isInstanceChangedError(error))
+            this.showOutOfSync(instance, COMMIT_REFUSED_REASON);
+        }
       });
     }
     else if (this.newInstances.includes(instance)) {
@@ -279,7 +291,13 @@ export class UpdatedInstanceListComponent implements OnInit {
       if (failures.length > 0) {
         const failed = failures.map(f => `#${f.instance?.dbId} ${f.instance?.displayName ?? ''}`).join(', ');
         console.error(`[commitUpdatedInstances] ${failures.length} instance(s) failed to commit:`, failed, failures);
-        window.alert(`${failures.length} instance(s) failed to commit and were NOT saved:\n${failed}\n\nSee the console for details.`);
+        const changedElsewhere = failures.filter(f => isInstanceChangedError(f.error)).length;
+        const syncHint = changedElsewhere > 0
+          ? `\n\n${changedElsewhere} of them changed in the database after you edited them. ` +
+            'Compare each of them with the database copy (the compare button on its row), unlock modified and ' +
+            'modifiedList there and reset them to the db value, then commit again.'
+          : '';
+        window.alert(`${failures.length} instance(s) failed to commit and were NOT saved:\n${failed}${syncHint}\n\nSee the console for details.`);
       }
       this.selectedUpdatedInstances = [];
       this.showCheck = false;
@@ -368,6 +386,18 @@ export class UpdatedInstanceListComponent implements OnInit {
       this.store.dispatch(NewInstanceActions.register_new_instance(this.instanceUtilities.makeShell(instance)));
     else if (instance.modifiedAttributes && instance.modifiedAttributes.length > 0)
       this.store.dispatch(UpdateInstanceActions.register_updated_instance(this.instanceUtilities.makeShell(instance)));
+  }
+
+  /**
+   * Open the database comparison for a staged updated instance after a commit was refused with
+   * 409 "Instance has been updated elsewhere" (see DatabaseSyncService). Raise the request, then
+   * open the comparison; the instance view takes the request once the comparison has loaded and
+   * shows why above its out-of-sync note. The fix is made there: unlock modified / modifiedList
+   * and reset them to the db value.
+   */
+  showOutOfSync(instance: Instance, reason?: string) {
+    this.databaseSyncService.requestComparison(instance.dbId, reason);
+    this.compareWithDB(instance);
   }
 
   private resetUpdatedInstance(instance: Instance) {

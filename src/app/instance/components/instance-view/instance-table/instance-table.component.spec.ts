@@ -24,6 +24,7 @@ import {
   commonTestProviders,
   componentTestImports,
   createInstanceUtilitiesSpy,
+  makeAttribute,
   makeInstance,
   makeInstanceAttribute,
   makeSchemaClass
@@ -113,6 +114,235 @@ describe('InstanceTableComponent', () => {
 
       expect(component.showReferenceColumn).toBeFalse();
       expect(component.displayedColumns).toEqual(['name', 'value']);
+    });
+  });
+
+  describe('the database comparison of an out-of-sync copy', () => {
+    const edit = (dbId: number) => ({ dbId, displayName: `Edit ${dbId}`, schemaClassName: 'InstanceEdit' });
+    const pathwayClass = () => makeSchemaClass('Pathway', {
+      attributes: [
+        makeAttribute('name', { cardinality: '+' }),
+        makeAttribute('definition'),
+        makeAttribute('stableIdentifier', { category: AttributeCategory.NOMANUALEDIT }),
+        makeInstanceAttribute('modified', ['InstanceEdit'], { cardinality: '1', category: AttributeCategory.NOMANUALEDIT }),
+        makeInstanceAttribute('modifiedList', ['InstanceEdit'], { cardinality: '+', category: AttributeCategory.NOMANUALEDIT }),
+      ]
+    });
+    const attribute = (name: string) => component._instance!.schemaClass!.attributes!.find(a => a.name === name)!;
+
+    /**
+     * The curator renamed it, staged against InstanceEdit 50. Someone else then changed the
+     * definition and committed, adding InstanceEdit 60. The stable identifier is the same on both.
+     */
+    function showComparison(referenceDbId = 100, databaseHasModifiedList = true) {
+      const staged = makeInstance({
+        dbId: 100, displayName: 'Glycolysis', modifiedAttributes: ['name'],
+        attributes: {
+          name: ['mine'], definition: 'old', stableIdentifier: 'R-HSA-1',
+          modified: edit(50), modifiedList: [edit(40), edit(50)]
+        }
+      });
+      staged.schemaClass = pathwayClass();
+      component.instance = staged;
+      const database = makeInstance({
+        dbId: referenceDbId, displayName: 'Glycolysis',
+        attributes: {
+          name: ['theirs'], definition: 'new', stableIdentifier: 'R-HSA-1',
+          modified: edit(60), modifiedList: [edit(40), edit(50), edit(60)]
+        }
+      });
+      if (!databaseHasModifiedList)
+        database.attributes.delete('modifiedList');
+      component.setReferenceInstance(database);
+    }
+
+    describe('modified and modifiedList, which the database keeps as a pair', () => {
+      // Contract: modified is the same InstanceEdit as the last entry of modifiedList.
+      let attributeEdit: jasmine.SpyObj<AttributeEditService>;
+      let finishEdit: jasmine.Spy;
+
+      beforeEach(() => {
+        attributeEdit = TestBed.inject(AttributeEditService) as jasmine.SpyObj<AttributeEditService>;
+        finishEdit = spyOn(component, 'finishEdit');
+      });
+
+      const resetNames = () => finishEdit.calls.allArgs().map(args => args[0]);
+      const resetTo = (name: string) => attributeEdit.resetAttributeValue.calls.allArgs()
+        .filter(args => args[0] === component._instance && args[1].attribute.name === name)
+        .map(args => args[1].referenceValue);
+
+      it('unlocks and locks together', () => {
+        showComparison();
+
+        component.toggleLock(attribute('modified'));
+
+        expect(component.isLocked(attribute('modified'))).toBeFalse();
+        expect(component.isLocked(attribute('modifiedList'))).toBeFalse();
+
+        component.toggleLock(attribute('modifiedList'));
+
+        expect(component.isLocked(attribute('modified'))).toBeTrue();
+        expect(component.isLocked(attribute('modifiedList'))).toBeTrue();
+      });
+
+      it('resets modifiedList with modified', () => {
+        // Resetting modified alone would pass the conflict check and then commit the stale list,
+        // dropping the other commit's InstanceEdit.
+        showComparison();
+        component.toggleLock(attribute('modified'));
+
+        component.resetEdit({ attribute: attribute('modified'), value: edit(50), referenceValue: edit(60) });
+
+        expect(resetNames()).toEqual(['modified', 'modifiedList']);
+        expect(resetTo('modifiedList')).toEqual([[edit(40), edit(50), edit(60)]]);
+        expect(finishEdit.calls.allArgs().every(args => args[2] === true)).toBeTrue();
+      });
+
+      it('resets modified with modifiedList', () => {
+        showComparison();
+        component.toggleLock(attribute('modifiedList'));
+
+        component.resetEdit({
+          attribute: attribute('modifiedList'), value: [edit(40), edit(50)], referenceValue: [edit(40), edit(50), edit(60)]
+        });
+
+        expect(resetNames()).toEqual(['modifiedList', 'modified']);
+        expect(resetTo('modified')).toEqual([edit(60)]);
+      });
+
+      it('leaves the partner alone when it already matches the database', () => {
+        showComparison();
+        component._instance!.attributes.set('modifiedList', [edit(40), edit(50), edit(60)]);
+
+        component.resetEdit({ attribute: attribute('modified'), value: edit(50), referenceValue: edit(60) });
+
+        expect(resetNames()).toEqual(['modified']);
+      });
+
+      it('does not delete the staged modifiedList when the database copy was loaded without it', () => {
+        // The backend would then start the history over with just the new InstanceEdit.
+        showComparison(100, false);
+
+        component.resetEdit({ attribute: attribute('modified'), value: edit(50), referenceValue: edit(60) });
+
+        expect(resetNames()).toEqual(['modified']);
+      });
+
+      it('resets nothing else for an ordinary attribute', () => {
+        showComparison();
+
+        component.resetEdit({ attribute: attribute('definition'), value: 'old', referenceValue: 'new' });
+
+        expect(resetNames()).toEqual(['definition']);
+      });
+    });
+
+    it('locks a not-manually-editable attribute that differs from the database, and offers no reset', () => {
+      showComparison();
+
+      expect(component.isLockable(attribute('modified'))).toBeTrue();
+      expect(component.isLocked(attribute('modified'))).toBeTrue();
+      expect(component.canRevert(attribute('modified'))).toBeFalse();
+    });
+
+    it('offers the reset to the db value once unlocked, and locks again on request', () => {
+      showComparison();
+
+      component.toggleLock(attribute('modified'));
+
+      expect(component.isLocked(attribute('modified'))).toBeFalse();
+      expect(component.canRevert(attribute('modified'))).toBeTrue();
+
+      component.toggleLock(attribute('modified'));
+
+      expect(component.canRevert(attribute('modified'))).toBeFalse();
+    });
+
+    it('locks each attribute on its own', () => {
+      // The old merge took every not-manually-editable attribute from the database, all or none.
+      showComparison();
+      component._instance!.attributes.set('stableIdentifier', 'R-HSA-mine');
+
+      component.toggleLock(attribute('modified'));
+
+      expect(component.isLocked(attribute('modified'))).toBeFalse();
+      expect(component.isLocked(attribute('stableIdentifier'))).toBeTrue();
+    });
+
+    it('does not lock a not-manually-editable attribute that matches the database', () => {
+      showComparison();
+
+      expect(component.isLockable(attribute('stableIdentifier'))).toBeFalse();
+      expect(component.canRevert(attribute('stableIdentifier'))).toBeFalse();
+    });
+
+    it('locks again once the attribute has been reset', () => {
+      showComparison();
+      component.toggleLock(attribute('modified'));
+      const finishEdit = spyOn(component, 'finishEdit');
+
+      component.resetEdit({ attribute: attribute('modified'), value: edit(50), referenceValue: edit(60) });
+      // The reset copies the database value in (stubbed out in this spec).
+      component._instance!.attributes.set('modified', edit(60));
+
+      expect(finishEdit).toHaveBeenCalledWith('modified', edit(50), true);
+      expect(component.isLockable(attribute('modified'))).toBeFalse();
+      component._instance!.attributes.set('modified', edit(70));
+      expect(component.isLocked(attribute('modified'))).toBeTrue();
+    });
+
+    it('drops every unlock when the table switches to another instance', () => {
+      showComparison();
+      component.toggleLock(attribute('modified'));
+
+      component.instance = pathway({ dbId: 101 });
+      showComparison();
+
+      expect(component.isLocked(attribute('modified'))).toBeTrue();
+    });
+
+    it('keeps an unlock across a reload of the same table', () => {
+      // Edits and the view filters reload the table all the time.
+      showComparison();
+      component.toggleLock(attribute('modified'));
+
+      component.updateTableContent();
+
+      expect(component.isLocked(attribute('modified'))).toBeFalse();
+    });
+
+    it('marks an attribute changed only in the database, and offers its reset', () => {
+      // The backend saves the whole staged instance: committing as is would put "old" back.
+      showComparison();
+
+      expect(component.isChangedInDatabase('definition')).toBeTrue();
+      expect(component.canRevert(attribute('definition'))).toBeTrue();
+    });
+
+    it('does not mark an attribute the curator edited as changed in the database', () => {
+      showComparison();
+
+      expect(component.isChangedInDatabase('name')).toBeFalse();
+      expect(component.canRevert(attribute('name'))).toBeTrue();
+    });
+
+    it('neither locks nor marks anything when two different instances are compared', () => {
+      showComparison(200);
+
+      expect(component.isDatabaseComparison()).toBeFalse();
+      expect(component.isLockable(attribute('modified'))).toBeFalse();
+      expect(component.isChangedInDatabase('definition')).toBeFalse();
+      // Unchanged from before the lock: reset is offered on edited, manually editable attributes.
+      expect(component.canRevert(attribute('name'))).toBeTrue();
+      expect(component.canRevert(attribute('modified'))).toBeFalse();
+    });
+
+    it('offers no reset without a comparison', () => {
+      showComparison();
+      component.setReferenceInstance(undefined);
+
+      expect(component.canRevert(attribute('name'))).toBeFalse();
+      expect(component.isLockable(attribute('modified'))).toBeFalse();
     });
   });
 

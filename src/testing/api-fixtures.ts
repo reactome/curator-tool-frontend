@@ -121,6 +121,9 @@ export const CLASS_ATTRIBUTES: Record<string, any[]> = {
     attr('created', { category: 'NOMANUALEDIT', type: reactome('InstanceEdit') }),
     attr('modified', {
       cardinality: '+', category: 'NOMANUALEDIT', type: reactome('InstanceEdit')
+    }),
+    attr('modifiedList', {
+      cardinality: '+', category: 'NOMANUALEDIT', type: reactome('InstanceEdit')
     })
   ],
   Reaction: [

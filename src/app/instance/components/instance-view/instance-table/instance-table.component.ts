@@ -34,6 +34,7 @@ import { Subscription, catchError, map, of, switchMap } from 'rxjs';
 import { BookmarkActions } from 'src/app/schema-view/instance-bookmark/state/bookmark.actions';
 import { AttributeValue, EDIT_ACTION } from 'src/app/core/models/reactome-instance.model';
 import { InstanceComparisonDataSource } from './instance-table-comparison.model';
+import { DatabaseSyncService } from 'src/app/core/services/database-sync.service';
 import { MatDialog } from '@angular/material/dialog';
 import { EventCycleCheck } from 'src/app/core/services/event-cycle-check.service';
 import { InfoDialogComponent } from 'src/app/shared/components/info-dialog/info-dialog.component';
@@ -50,6 +51,7 @@ import { StoichiometryDialogComponent } from './stoichiometry-dialog/stoichiomet
 export class InstanceTableComponent implements PostEditListener {
   // Fire an event when this instance is edited
   @Output() editedInstance = new EventEmitter<Instance>();
+
   displayedColumns: string[] = ['name', 'value'];
   showFilterOptions: boolean = false;
   showHeaderActions: boolean = false;
@@ -74,7 +76,7 @@ export class InstanceTableComponent implements PostEditListener {
   // So that we can use it in the template
   DATA_TYPES = AttributeDataType;
 
-  // Data source for the table, can be either InstanceDataSource or InstanceComparisonDataSource
+  // Data source for the table: InstanceDataSource or InstanceComparisonDataSource
   instanceDataSource:
     | InstanceDataSource
     | InstanceComparisonDataSource = new InstanceDataSource(
@@ -91,6 +93,15 @@ export class InstanceTableComponent implements PostEditListener {
   // For comparison
   _referenceInstance?: Instance;
   showReferenceColumn: boolean = false;
+
+  /**
+   * Not-manually-editable attributes the curator has unlocked in the database comparison, so that
+   * the revert button is offered on them (see isLocked()). Kept across reloads of the same table,
+   * which edits and the view filters trigger all the time; cleared when the table switches to a
+   * different instance or into or out of comparison (see updateTableContent()), so an attribute
+   * is never left unlocked by accident on the next instance.
+   */
+  private unlockedAttributes = new Set<string>();
 
   // For highlighting rows during drag/drop event-view
   dragDropStatus: DragDropStatus = {
@@ -144,6 +155,7 @@ export class InstanceTableComponent implements PostEditListener {
     private dataService: DataService,
     private dialog: MatDialog,
     private eventCycleCheck: EventCycleCheck,
+    private syncService: DatabaseSyncService,
   ) {
     for (let category of this.categoryNames) {
       let categoryKey = category as keyof typeof AttributeCategory;
@@ -168,13 +180,8 @@ export class InstanceTableComponent implements PostEditListener {
 
   setReferenceInstance(refInstance: Instance | undefined) {
     this._referenceInstance = refInstance;
-    if (refInstance === undefined) {
-      this.showReferenceColumn = false;
-      this.displayedColumns = ['name', 'value'];
-    }
-    else {
-      this.showReferenceColumn = true;
-      this.displayedColumns = ['name', 'value', 'referenceValue'];
+    this.updateColumns();
+    if (refInstance !== undefined) {
       if (this._instance?.dbId === refInstance.dbId) {
         this.referenceColumnTitle = 'Database Value'
       }
@@ -184,6 +191,103 @@ export class InstanceTableComponent implements PostEditListener {
       }
     }
     this.updateTableContent();
+  }
+
+  private updateColumns() {
+    if (this._referenceInstance === undefined) {
+      this.showReferenceColumn = false;
+      this.displayedColumns = ['name', 'value'];
+    }
+    else {
+      this.showReferenceColumn = true;
+      this.displayedColumns = ['name', 'value', 'referenceValue'];
+    }
+  }
+
+  /**
+   * True when the reference column holds this instance's own database copy, as opposed to a
+   * second instance it is being compared with.
+   */
+  isDatabaseComparison(): boolean {
+    return this._instance !== undefined && this._referenceInstance !== undefined
+      && this._instance.dbId === this._referenceInstance.dbId;
+  }
+
+  /** In the database comparison: whether this attribute's value differs from the database copy. */
+  differsFromDatabase(attName: string): boolean {
+    return this.isDatabaseComparison()
+      && this.syncService.differsFromDatabase(this._instance, this._referenceInstance, attName);
+  }
+
+  /**
+   * In the database comparison: the attribute differs from the database, but not because of
+   * anything done in this copy. The view filters flag everything they change in
+   * modifiedAttributes, and a deleted reference is a passive edit, so a difference outside both
+   * lists can only come from a commit made elsewhere after this copy was staged (the staged copy
+   * is out of sync; see DatabaseSyncService.isOutOfSync). The backend saves the whole staged
+   * instance, so committing as is would overwrite that change with the stale value.
+   */
+  isChangedInDatabase(attName: string): boolean {
+    return this.differsFromDatabase(attName)
+      && !(this._instance?.modifiedAttributes?.includes(attName) ?? false)
+      && !this.isPassiveEdited(attName);
+  }
+
+  /**
+   * A not-manually-editable attribute that differs from the database gets a lock in the
+   * database comparison. These are chiefly `modified` and `modifiedList`: when someone else
+   * commits the instance after it was staged, those InstanceEdits fall behind the database's, and
+   * the backend refuses the commit with 409 until they match again. Unlocking offers the
+   * comparison's ordinary "reset to the db value" button on the attribute.
+   *
+   * History: until 2026-11-24 a dedicated merge (a Take column with Apply Merge) handled this, and
+   * always took every not-manually-editable attribute from the database, all or none. Curators
+   * asked for a lock per attribute instead, so a value the tool itself wrote into the staged copy
+   * (a stable identifier, say) can be kept while `modified` / `modifiedList` are brought in line.
+   */
+  isLockable(attribute: SchemaAttribute): boolean {
+    return this.syncService.isLockable(attribute) && this.differsFromDatabase(attribute.name);
+  }
+
+  isLocked(attribute: SchemaAttribute): boolean {
+    return this.isLockable(attribute) && !this.unlockedAttributes.has(attribute.name);
+  }
+
+  /**
+   * `modified` and `modifiedList` lock and unlock together, as they are reset together (see
+   * DatabaseSyncService.provenancePartner and resetEdit()).
+   */
+  toggleLock(attribute: SchemaAttribute) {
+    const names = [attribute.name];
+    const partner = this.syncService.provenancePartner(attribute.name);
+    if (partner)
+      names.push(partner);
+    const unlock = !this.unlockedAttributes.has(attribute.name);
+    for (const name of names) {
+      if (unlock)
+        this.unlockedAttributes.add(name);
+      else
+        this.unlockedAttributes.delete(name);
+    }
+  }
+
+  /**
+   * Whether the reset button is offered on an attribute.
+   * - Comparing two instances: on what differs between them ("set to the right value"), except
+   *   not-manually-editable attributes. Unchanged from before the lock existed.
+   * - The database comparison: on what differs from the database, edited here or not (see
+   *   isChangedInDatabase()), and on attributes flagged as edited even though the value is back to
+   *   the database's (reverting clears the flag). A not-manually-editable attribute only once it is
+   *   unlocked.
+   */
+  canRevert(attribute: SchemaAttribute): boolean {
+    if (!this.showReferenceColumn)
+      return false;
+    if (!this.isDatabaseComparison())
+      return this.isActiveEdited(attribute.name) && attribute.category !== AttributeCategory.NOMANUALEDIT;
+    if (this.syncService.isLockable(attribute))
+      return this.isLockable(attribute) && !this.isLocked(attribute);
+    return this.differsFromDatabase(attribute.name) || this.isActiveEdited(attribute.name);
   }
 
   // Set, never toggle: see the comment on the header row in the template.
@@ -566,6 +670,9 @@ export class InstanceTableComponent implements PostEditListener {
     const previousScrollTop = isReloadOfSameTable ? container?.scrollTop : undefined;
     this.renderedDbId = this._instance?.dbId;
     this.renderedComparison = wantsComparison;
+    // An unlock belongs to the comparison it was made in (see unlockedAttributes).
+    if (!isReloadOfSameTable)
+      this.unlockedAttributes.clear();
     // A switch away from a previously-shown table is not guaranteed to leave the browser's own
     // clamping behavior to reset the scroll position (it is timing-dependent), so it is reset
     // explicitly here.
@@ -850,6 +957,37 @@ export class InstanceTableComponent implements PostEditListener {
 
   resetEdit(attributeValue: AttributeValue) {
     if (!this._instance || !this._referenceInstance) return; // Do nothing if instance or reference instance is not defined
+    // `modified` must stay the last entry of `modifiedList` (a database contract; see
+    // DatabaseSyncService.provenancePartner), so resetting one to the database value resets the
+    // other too.
+    const partner = this.provenancePartnerToReset(attributeValue.attribute.name);
+    this.resetOneEdit(attributeValue);
+    if (partner)
+      this.resetOneEdit(partner);
+  }
+
+  /**
+   * The other half of the modified / modifiedList pair, when it also has to be reset: only in the
+   * database comparison, only when it differs, and only when the database copy carries it. A
+   * database copy loaded without the slot would otherwise make the reset delete the staged
+   * `modifiedList`, and the backend would then start the history over with just the new
+   * InstanceEdit.
+   */
+  private provenancePartnerToReset(attributeName: string): AttributeValue | undefined {
+    const partnerName = this.syncService.provenancePartner(attributeName);
+    if (!partnerName || !this.differsFromDatabase(partnerName))
+      return undefined;
+    const referenceValue = this._referenceInstance?.attributes?.get(partnerName);
+    if (referenceValue === undefined || referenceValue === null)
+      return undefined;
+    const attribute = this._instance?.schemaClass?.attributes?.find(att => att.name === partnerName);
+    if (!attribute)
+      return undefined;
+    return { attribute, value: this._instance!.attributes.get(partnerName), referenceValue };
+  }
+
+  private resetOneEdit(attributeValue: AttributeValue) {
+    if (!this._instance || !this._referenceInstance) return;
     if (this._instance.source) {
       this.attributeEditService.resetAttributeValue(this._instance.source, attributeValue);
     }
@@ -861,6 +999,8 @@ export class InstanceTableComponent implements PostEditListener {
       value: attributeValue.value
     };
     this.attributeEditService.resetAttributeValue(this._instance, attributeValueClone);
+    // Reverted, so it matches the database again; lock it again in case it falls out of sync later.
+    this.unlockedAttributes.delete(attributeValue.attribute.name);
     this.finishEdit(attributeValue.attribute.name,
       attributeValue.value,
       this._instance.dbId === this._referenceInstance.dbId);

@@ -17,6 +17,7 @@
 import { Page } from '@playwright/test';
 
 import { expect, test } from '../fixtures/test';
+import { INSTANCES } from '../../src/testing/api-fixtures';
 
 /** The row for one attribute in the instance table. */
 const rowContaining = (page: Page, attribute: string) =>
@@ -149,6 +150,94 @@ test.describe('editing an instance', () => {
     await editAttribute(page, 'definition', 'An edited definition.');
 
     await expect(actionButton(page, 'compare')).toBeEnabled();
+  });
+
+  test('shows the plain database comparison when the copy is in sync', async ({ page }) => {
+    await editAttribute(page, 'definition', 'An edited definition.');
+
+    await actionButton(page, 'compare').click();
+
+    await expect(page.locator('app-instance-table th')).toHaveText(['Attribute', 'Value', 'Database Value']);
+    await expect.poll(() => page.locator('app-instance-table tbody tr').count()).toBeGreaterThan(5);
+    // The mock database copy carries the same `modified` as the staged one, so nothing is out of
+    // sync: no note, no locks.
+    await expect(page.locator('.sync-banner')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^unlock / })).toHaveCount(0);
+  });
+
+  test('locks modified once the copy is out of sync, and unlocking offers the reset', async ({ page, api }) => {
+    await editAttribute(page, 'definition', 'An edited definition.');
+    // Someone else commits the instance meanwhile: the database copy now carries a newer
+    // `modified` InstanceEdit than the staged copy, which the backend would refuse with 409.
+    api.override({
+      name: 'instance 100 committed elsewhere',
+      match: p => p.includes('/findByDbId/100'),
+      body: {
+        ...INSTANCES[100],
+        attributes: {
+          ...INSTANCES[100].attributes,
+          doRelease: false,
+          // A list, as the fixture schema declares `modified` multivalued.
+          modified: [{ dbId: 60, displayName: 'Someone, Else, 2026-11-23', schemaClassName: 'InstanceEdit' }],
+          modifiedList: [{ dbId: 60, displayName: 'Someone, Else, 2026-11-23', schemaClassName: 'InstanceEdit' }]
+        }
+      }
+    });
+
+    await actionButton(page, 'compare').click();
+
+    await expect(page.locator('.sync-banner')).toContainText('out of sync with the database');
+    // No merge column: the comparison is the usual three.
+    await expect(page.locator('app-instance-table th')).toHaveText([/Attribute/, /Value/, /Database Value/]);
+    // An attribute only the other commit changed is marked, with its reset.
+    const doRelease = rowContaining(page, 'doRelease');
+    await expect(doRelease).toContainText('changed in database');
+    await expect(doRelease.getByRole('button', { name: 'reset doRelease' })).toBeVisible();
+
+    const modified = rowContaining(page, 'modified');
+    await expect(modified.getByRole('button', { name: 'reset modified' })).toHaveCount(0);
+
+    const modifiedList = rowContaining(page, 'modifiedList');
+    await modified.getByRole('button', { name: 'unlock modified' }).click();
+    // modified must stay the last entry of modifiedList, so the two unlock together...
+    await expect(modifiedList.getByRole('button', { name: 'lock modifiedList' })).toBeVisible();
+    await modified.getByRole('button', { name: 'reset modified' }).click();
+
+    // ...and are reset together. Both now match the database, so the backend would accept the commit.
+    await expect(page.locator('.sync-banner')).toHaveCount(0);
+    await expect(modified.getByRole('button', { name: /lock modified$/ })).toHaveCount(0);
+    await expect(modifiedList.getByRole('button', { name: /lock modifiedList|reset modifiedList/ })).toHaveCount(0);
+
+    // Commit with the comparison still open. The mock database does not change by itself, so
+    // make it answer the way the backend would afterwards: the edit, plus the commit's own
+    // InstanceEdit at the end of modifiedList.
+    const committedEdit = { dbId: 70, displayName: 'Curator, Test, 2026-11-24', schemaClassName: 'InstanceEdit' };
+    api.override({
+      name: 'instance 100 after this commit',
+      match: p => p.includes('/findByDbId/100'),
+      body: {
+        ...INSTANCES[100],
+        attributes: {
+          ...INSTANCES[100].attributes,
+          definition: 'An edited definition.',
+          doRelease: false,
+          modified: [committedEdit],
+          modifiedList: [
+            { dbId: 60, displayName: 'Someone, Else, 2026-11-23', schemaClassName: 'InstanceEdit' },
+            committedEdit
+          ]
+        }
+      }
+    });
+    await actionButton(page, 'upload').click();
+    await page.keyboard.press('Escape'); // the commit summary dialog
+
+    // Regression (2026-11-24): the comparison kept the database copy read before the commit, so
+    // the committed instance showed locks, resets and "changed in database" all over.
+    await expect(rowContaining(page, 'definition')).not.toContainText('changed in database');
+    await expect(page.getByRole('button', { name: /^(un)?lock / })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^reset / })).toHaveCount(0);
+    await expect(page.locator('.sync-banner')).toHaveCount(0);
   });
 
   test('survives a reload, so a crash does not lose the work', async ({ page }) => {

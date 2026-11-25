@@ -69,7 +69,14 @@ HasMember, HasCandidate, HasComponent, HasComponentForComplex, HasModifiedResidu
 
 - staged instances MCP
 
-- Request to view only one pathway's realted instances (Karen requested)
+
+- [Done 2026-11-23] Make the merge feature only appear when in comparison mode. For nomanualedits only take database version, not other way. (The merge button also requires the staged copy to be out of sync with the database: `modified`/`modifiedList` no longer match.)
+
+Change the css so that the lines in comparison are even
+The buttons for filtering are out of sync
+- [Done 2026-11-24] Currently the user must take all or none of the nomanualedit attributes, think of cases where this would not be wanted. (The merge tool was replaced: in the database comparison each NOMANUALEDIT attribute that differs from the database has its own lock; unlocking offers the usual "reset to the db value" button.)
+Keep modified and modifiedList in sync 
+
 
 
 ### TODO

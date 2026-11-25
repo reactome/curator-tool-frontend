@@ -199,8 +199,18 @@ Each section header reads **"<Section> Instances: {total} ({selected})"** and ha
 
 - `select_all` / `deselect_all`
 - `undo` — **undo all changes for selected updated instances** (re-fetches each from the DB and resets)
-- `upload` — **commit all selected** (commits sequentially; any failures are reported afterward listing `#dbId displayName` of each failure)
+- `upload` — **commit all selected** (commits sequentially; any failures are reported afterward listing `#dbId displayName` of each failure; if some failed because the instance changed in the database, the report says so and points to the [database comparison](#bringing-your-copy-back-in-sync-with-the-database), where they can be brought back in sync)
 - Per-row buttons: **COMPARE2DB**, **UNDO**, **COMMIT**
+
+#### Bringing your copy back in sync with the database
+
+A commit is refused with *"Instance has been updated elsewhere"* when someone (another curator, or you in another window) committed the same instance after you started editing it. Your copy is then *out of sync*: its `modified` / `modifiedList` InstanceEdits no longer match the database's, and committing again will keep failing. **UNDO** would throw your edits away. Fix it in the [database comparison](#94-the-attribute-table) instead:
+
+1. Turn the comparison on (the **COMPARE2DB** row button, or `compare` in the instance editor). Committing a single instance that fails this way, from this list or with the instance editor's **Upload**, does this for you with the latest database copy. If the instance was committed elsewhere after you turned the comparison on, turn the comparison off and on again to reload the database copy.
+2. A note above the table says your copy is out of sync (and, after a refused commit, why).
+3. `modified` and `modifiedList` show a `lock` in their **Value** cell. These attributes cannot be edited by hand, so they are locked until you choose to change them. Click the `lock` to unlock an attribute (it becomes `lock_open`), then click `undo` (**"reset to the db value"**) to take the database value. `modified` and `modifiedList` are locked, unlocked and reset together, because `modified` must always be the same InstanceEdit as the last entry of `modifiedList`. Every other attribute is locked and unlocked on its own: any other attribute that cannot be edited by hand and differs from the database (for example `stableIdentifier`) gets its own lock, so you can leave it as it is in your copy.
+4. Attributes that someone else changed and you did not touch are marked *changed in database* under the attribute name. The commit saves your whole copy, so committing as is would put your older value back. Click `undo` on them to keep the other person's change.
+5. Once `modified` and `modifiedList` match the database, the note goes away. Commit as usual.
 
 ### Deleted Instances
 
@@ -450,7 +460,7 @@ The title reads **"{SchemaClass}: {displayName} [{dbId}]"**. It turns **red** wh
 
 ### 9.4 The attribute table
 
-Columns: **Attribute**, **Value**, and (when comparing) a reference column headed **Database Value** (comparing to the DB copy) or the other instance's display name (comparing two instances).
+Columns: **Attribute**, **Value**, and (when comparing) a reference column headed **Database Value** (comparing to the DB copy) or the other instance's display name (comparing two instances). When your copy of an updated instance is out of sync with the database copy, a note above the table says so, and the table offers what you need to [bring it back in sync](#bringing-your-copy-back-in-sync-with-the-database).
 
 **Attribute-name cell:** shows a category icon — **Mandatory**, **Required**, **Optional**, or **NoManualEdit** — and is color-coded:
 
@@ -469,7 +479,8 @@ Hovering the attribute name shows a tooltip explaining its state. Hovering colum
 - **Float:** numeric input, one decimal point (leading `-` allowed).
 - **Boolean:** a slide toggle; commits immediately.
 - **NoManualEdit** attributes are read-only.
-- **Undo/reset:** for an actively edited attribute, an `undo` icon appears in the value cell when the comparison column is shown; it resets the attribute to the reference value (tooltip **"reset to the db value"** or **"set to the right value"**).
+- **Undo/reset:** when the comparison column is shown, an `undo` icon in the value cell resets the attribute to the reference value (tooltip **"reset to the db value"** or **"set to the right value"**). When comparing two instances, it appears on actively edited attributes. In the database comparison, it appears on every attribute whose value differs from the database, including ones marked *changed in database* under the attribute name (changed by someone else after you started editing).
+- **Lock/unlock (database comparison):** an attribute that cannot be edited by hand (NoManualEdit, such as `modified` and `modifiedList`) and differs from the database shows a `lock` instead of `undo`. Click it to unlock (`lock_open`) and get the `undo` button; click again to lock it. Reset attributes lock again by themselves. `modified` and `modifiedList` lock, unlock and reset as a pair. See [Bringing your copy back in sync with the database](#bringing-your-copy-back-in-sync-with-the-database).
 - **Multi-valued** attributes support **drag-to-reorder** (except NoManualEdit) and an extra empty row to add a new value.
 
 ### 9.6 Instance-valued slot action menu

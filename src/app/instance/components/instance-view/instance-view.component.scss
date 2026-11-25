@@ -93,3 +93,29 @@ app-instance-table.fill-height {
     color: red;
   }
 }
+// Out of sync with the database copy (see InstanceViewComponent.isOutOfSync())
+.sync-banner {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--outline-variant, #ccc);
+  background: var(--surface, #fff);
+  font-size: 13px;
+}
+
+.sync-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 4px;
+
+  > .mat-icon {
+    flex: 0 0 auto;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--primary);
+  }
+
+  &.sync-reason > .mat-icon {
+    color: #e65100;
+  }
+}

@@ -35,6 +35,12 @@ import { environment } from 'src/environments/environment.dev';
 import { InstanceNameGenerator } from 'src/app/core/post-edit/InstanceNameGenerator';
 import { ChangeClassDialogComponent } from '../change-class-dialog/change-class-dialog.component';
 import { MergeInstancesDialogService } from '../merge-instances-dialog/merge-instances-dialog.service';
+import {
+  DatabaseComparisonRequest,
+  DatabaseSyncService,
+  COMMIT_REFUSED_REASON,
+  isInstanceChangedError
+} from 'src/app/core/services/database-sync.service';
 
 @Component({
   selector: 'app-instance-view',
@@ -63,6 +69,16 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
   instanceViewFilters: InstanceViewFilter[] = [];
   hasPendingStagedInstances: boolean = false;
 
+  /**
+   * Why the out-of-sync note is shown, when a commit was refused with 409. Shown in the note above
+   * the table (see isOutOfSync()).
+   */
+  syncReason: string | undefined;
+  /** The instance syncReason is about, so switching to another instance drops it. */
+  private syncReasonDbId: number | undefined;
+  /** dbIds in Updated Instances at the last store emission; see the updatedInstances() subscription. */
+  private stagedUpdatedDbIds = new Set<number>();
+
   // Flag to indicate if this is in event view
   @Input() isInEventView: boolean = false;
 
@@ -83,6 +99,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   readonly dialog = inject(MatDialog);
   private readonly diagramSyncDialogService = inject(DiagramSyncDialogService);
+  private readonly syncService = inject(DatabaseSyncService);
   // dbId of the displayed Pathway once it is known to have a PathwayDiagram. Kept as a dbId rather
   // than a flag so an answer that arrives after the curator has moved on can't switch the button
   // on for the next instance.
@@ -180,6 +197,12 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     })
     this.subscriptions.add(subscription);
 
+    // A comparison requested while this view already shows the database comparison for the
+    // instance. Otherwise the requester opens the comparison, and the request is taken when it has
+    // loaded (see takePendingRequest()).
+    subscription = this.syncService.comparisonRequest$.subscribe(request => this.onComparisonRequest(request));
+    this.subscriptions.add(subscription);
+
     subscription = combineLatest([
       this.store.select(newInstances()),
       this.store.select(updatedInstances()),
@@ -187,6 +210,25 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
     ]).subscribe(([stagedNewInstances, stagedUpdatedInstances, stagedDeletedInstances]) => {
       this.hasPendingStagedInstances =
         stagedNewInstances.length > 0 || stagedUpdatedInstances.length > 0 || stagedDeletedInstances.length > 0;
+    });
+    this.subscriptions.add(subscription);
+
+    // The displayed instance left Updated Instances: committed (from here, from Local Changes, or
+    // in another tab) or undone. Either way the database now holds what the view is about to
+    // reload, so the database copy in the comparison must be read again. Without this the
+    // comparison kept the copy read before the commit (2026-11-24): the freshly committed
+    // instance, with its new `modified` InstanceEdit, was compared against it, and every
+    // attribute the commit changed showed a lock, a reset and "changed in database".
+    subscription = this.store.select(updatedInstances()).subscribe(stagedUpdatedInstances => {
+      const staged = new Set(stagedUpdatedInstances.map(inst => inst.dbId));
+      const previous = this.stagedUpdatedDbIds;
+      this.stagedUpdatedDbIds = staged;
+      const dbId = this.instance?.dbId;
+      if (dbId === undefined || !previous.has(dbId) || staged.has(dbId))
+        return;
+      this.setSyncReason(0, undefined);
+      if (this.isShowingDatabaseComparison(dbId))
+        this.refreshDatabaseCopy(dbId);
     });
     this.subscriptions.add(subscription);
     // first check isReferrer and then load instances for the past dbId 
@@ -393,6 +435,8 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
           // Continue with the rest of the logic below
           this.instance = firstInstance;
           this.dbInstance = secondInstance;
+          // Two different instances: there is no database copy to be out of sync with.
+          this.setSyncReason(0, undefined);
           this.viewHistory.length = 0;
           this.addToViewHistory(firstInstance);
           this.updateTitle(firstInstance);
@@ -500,6 +544,11 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         this.instanceTable?.updateTableContent(); // Force to reload
       else
         this.instance = filteredInstance;
+      // The note on a refused commit belongs to the instance it was raised for. Reloading that
+      // instance in place keeps it (the view filters and the refresh subjects reload all the
+      // time); a switch drops it.
+      if (this.syncReasonDbId !== undefined && this.syncReasonDbId !== this.instance.dbId)
+        this.setSyncReason(0, undefined);
       // No need to change the table here. When the instance is changed, the table will be updated automatically.
       // this.changeTable(this.instance);
       if (resetHistory)
@@ -514,6 +563,7 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
           this.showReferenceColumn = true;
           if (releaseSyncBlockOnComplete)
             this.unblockSyncView();
+          this.takePendingRequest();
         }, () => {
           this.showProgressSpinner = false;
           if (releaseSyncBlockOnComplete)
@@ -627,6 +677,9 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
 
   showReferenceValueColumn() {
     this.showReferenceColumn = !this.showReferenceColumn;
+    // The note on a refused commit is shown with the comparison, so turning that off drops it.
+    if (!this.showReferenceColumn)
+      this.setSyncReason(0, undefined);
     if (this.blockRoute) {
       // If this is used to switch off the reference column, just return
       if (!this.showReferenceColumn) {
@@ -745,7 +798,111 @@ export class InstanceViewComponent implements OnInit, OnDestroy {
         this.changeTable(storedInst);
       }
       this.commitResultDialogService.openDialog(this.instUtils.buildCommitSummaryResults(this.instance!, storedInst));
+    }, error => {
+      // DataService has already shown the error. A 409 "updated elsewhere" means the database
+      // copy was committed after this one was staged, and every retry will be refused the same
+      // way. Show the database comparison with a fresh database copy, where modified /
+      // modifiedList can be unlocked and reset, instead of leaving the curator with only Undo
+      // (which loses their edits).
+      if (isInstanceChangedError(error))
+        this.showOutOfSync(COMMIT_REFUSED_REASON);
     });
+  }
+
+  /**
+   * Whether to show the out-of-sync note above the database comparison. True for a staged
+   * updated instance whose `modified` / `modifiedList` InstanceEdits no longer match the database
+   * copy's (DatabaseSyncService.isOutOfSync), which is what makes the backend refuse the commit
+   * with 409. The fix itself is made in the table: those attributes are locked there, and once
+   * unlocked they take the ordinary "reset to the db value" button (see
+   * InstanceTableComponent.isLockable()).
+   *
+   * History: until 2026-11-24 this was canMerge(), which offered a dedicated merge (a Take column
+   * with Apply Merge) beside the Database Value header. Curators preferred to reuse the
+   * comparison's own reset button with a lock on the not-manually-editable attributes. Comparing
+   * two different instances does not count: there is no database copy to be out of sync with.
+   *
+   * The test uses the database copy the comparison loaded. If someone commits the instance after
+   * the comparison was opened, the note appears once the comparison is reloaded (toggle it off and
+   * on), or straight away when a commit is refused, which re-reads the database copy (see
+   * showOutOfSync()).
+   */
+  isOutOfSync(): boolean {
+    if (!this.instance || this.instance.dbId <= 0 || this.isDeleted())
+      return false;
+    if (!this.isShowingDatabaseComparison(this.instance.dbId))
+      return false;
+    if ((this.instance.modifiedAttributes?.length ?? 0) === 0
+      && (this.instance.passiveModifiedAttributes?.length ?? 0) === 0)
+      return false;
+    // The displayed instance is a view-filtered copy; the staged copy is what gets committed.
+    const staged = this.dataService.getCachedInstance(this.instance.dbId) ?? this.instance;
+    return this.syncService.isOutOfSync(staged, this.dbInstance!);
+  }
+
+  private isShowingDatabaseComparison(dbId: number): boolean {
+    return this.instance?.dbId === dbId && this.dbInstance?.dbId === dbId && this.loadingDbId === undefined;
+  }
+
+  /**
+   * After a commit was refused with 409: show the database comparison with a fresh database copy,
+   * so the out-of-sync note and the locks appear, with the reason. When the comparison is not on
+   * yet, turn it on the same way the compare button does; the request is taken once it has loaded.
+   */
+  showOutOfSync(reason?: string) {
+    if (!this.instance)
+      return;
+    const dbId = this.instance.dbId;
+    this.syncService.requestComparison(dbId, reason);
+    if (this.isShowingDatabaseComparison(dbId))
+      return; // onComparisonRequest() has taken it
+    if (this.blockRoute) {
+      this.loadInstance(dbId, true);
+      return;
+    }
+    // A comparison URL is a different route from the instance URL, so this view is replaced by
+    // a new one, which takes the request when its comparison has loaded.
+    this.router.navigate([this.getCurrentPathRoot() + "/instance/" + dbId, "comparison", dbId.toString()]);
+  }
+
+  /**
+   * A request for the comparison already on display. Its database copy was read when the
+   * comparison opened, before the commit that made this one fail, so it would not show the newer
+   * `modified` and the note and locks would not appear: read it again.
+   */
+  private onComparisonRequest(request: DatabaseComparisonRequest) {
+    if (!this.isShowingDatabaseComparison(request.dbId))
+      return;
+    if (!this.syncService.takeRequest(request.dbId))
+      return;
+    this.setSyncReason(request.dbId, request.reason);
+    this.refreshDatabaseCopy(request.dbId);
+  }
+
+  /** Read the database copy shown in the comparison again, unless the view has moved on meanwhile. */
+  private refreshDatabaseCopy(dbId: number) {
+    this.dataService.fetchInstanceFromDatabase(dbId, false).pipe(take(1)).subscribe(database => {
+      if (database && this.instance?.dbId === dbId && this.dbInstance?.dbId === dbId)
+        this.dbInstance = database;
+    });
+  }
+
+  /** A request raised before this comparison loaded; its database copy has just been read. */
+  private takePendingRequest() {
+    if (!this.instance || !this.isShowingDatabaseComparison(this.instance.dbId))
+      return;
+    const request = this.syncService.takeRequest(this.instance.dbId);
+    if (request)
+      this.setSyncReason(this.instance.dbId, request.reason);
+  }
+
+  private setSyncReason(dbId: number, reason?: string) {
+    this.syncReason = reason;
+    this.syncReasonDbId = reason ? dbId : undefined;
+  }
+
+  private showInfo(title: string, message: string) {
+    this.dialog.open(InfoDialogComponent, { data: { title, message } });
   }
 
   exportEventDocx() {

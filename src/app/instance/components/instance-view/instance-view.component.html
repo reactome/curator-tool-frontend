@@ -108,6 +108,25 @@
       </div>
     </div>
   </mat-toolbar>
+  <!-- The staged copy fell behind the database copy (someone else committed the instance). The fix is
+  done in the table: unlock and reset modified / modifiedList, and the attributes marked "changed in
+  database". See InstanceViewComponent.isOutOfSync(). -->
+  <div class="sync-banner" *ngIf="isOutOfSync() && !showProgressSpinner">
+    <div class="sync-note sync-reason" *ngIf="syncReason">
+      <mat-icon>warning</mat-icon><span>{{syncReason}}</span>
+    </div>
+    <div class="sync-note">
+      <mat-icon>info</mat-icon>
+      <span>
+        <b>Your copy is out of sync with the database.</b> Someone committed this instance after you started
+        editing it, so the database will refuse your commit until <b>modified</b> and <b>modifiedList</b> match
+        the database again. Unlock <b>modified</b> (<mat-icon inline>lock</mat-icon>) and reset it to the db value
+        (<mat-icon inline>undo</mat-icon>); <b>modifiedList</b> is unlocked and reset with it, since <b>modified</b> must
+        always be the last entry of <b>modifiedList</b>. Attributes marked <i>changed in database</i> would be overwritten by your
+        copy: reset them too unless you mean to replace them.
+      </span>
+    </div>
+  </div>
   <!-- <app-text-curation style="height: 80px;" [embedded]="true" [instanceView]="this" *ngIf="instance"></app-text-curation> -->
 </div>
 <app-instance-table class="fill-height" [instance]="instance" [referenceInstance]="dbInstance"

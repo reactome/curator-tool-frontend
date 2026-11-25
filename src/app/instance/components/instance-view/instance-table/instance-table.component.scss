@@ -160,3 +160,24 @@ button:disabled {
   color: var(--primary);
   cursor: not-allowed;
 }
+
+// The lock and reset buttons at the right of a value cell.
+.row_action {
+  height: 24px;
+  width: 35px;
+  z-index: 3;
+
+  button {
+    bottom: 7px;
+    right: 5px;
+  }
+}
+
+// "changed in database" under an attribute name in the database comparison: the database copy
+// changed after this copy was staged (InstanceTableComponent.isChangedInDatabase()).
+.db_changed {
+  font-size: 11px;
+  font-weight: normal;
+  font-style: italic;
+  color: #1565c0;
+}

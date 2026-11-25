@@ -131,6 +131,9 @@
               <img ngSrc="assets/images/NoManualEdit.gif" alt="NoManualEdit" width="16" height="16" priority>
             </ng-container>
             {{element.attribute.name}}
+            <div *ngIf="isChangedInDatabase(element.attribute.name)" class="db_changed"
+              matTooltip="Changed in the database after you started editing. Committing as is would overwrite it with the value on the left.">
+              changed in database</div>
           </div>
         </td>
       </ng-container>
@@ -161,12 +164,22 @@
             <div style="flex: 1">
               <ng-container *ngTemplateOutlet="valueColTemplate; context: {$implicit: element}"></ng-container>
             </div>
-            <!-- reset button for active edits only -->
-            <div
-              *ngIf="isActiveEdited(element.attribute.name) && element.attribute.category !== AttributeCategory.NOMANUALEDIT && showReferenceColumn"
-              style="height: 24px; width: 35px; float: right; z-index: 3; bottom: 10px;">
-              <button style="bottom: 7px; right: 5px;" mat-icon-button (click)="resetEdit(element)"
-                [matTooltip]="_instance?.dbId === _referenceInstance?.dbId ? 'reset to the db value' : 'set to the right value'">
+            <!-- A not-manually-editable attribute that differs from the database (modified and
+            modifiedList, typically, once someone else commits the instance) is locked; unlocking
+            offers the reset button below. See InstanceTableComponent.isLockable(). -->
+            <div *ngIf="isLockable(element.attribute)" class="row_action">
+              <button mat-icon-button (click)="toggleLock(element.attribute)"
+                [attr.aria-label]="(isLocked(element.attribute) ? 'unlock ' : 'lock ') + element.attribute.name"
+                [matTooltip]="isLocked(element.attribute)
+                  ? 'Not manually editable, and differs from the database. Unlock to revert it to the db value.'
+                  : 'Lock again'">
+                <mat-icon>{{isLocked(element.attribute) ? 'lock' : 'lock_open'}}</mat-icon>
+              </button>
+            </div>
+            <div *ngIf="canRevert(element.attribute)" class="row_action">
+              <button mat-icon-button (click)="resetEdit(element)"
+                [attr.aria-label]="'reset ' + element.attribute.name"
+                [matTooltip]="isDatabaseComparison() ? 'reset to the db value' : 'set to the right value'">
                 <mat-icon>undo</mat-icon>
               </button>
             </div>
