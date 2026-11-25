@@ -37,6 +37,14 @@ describe('PathwayDiagramUtilService.removeEditingArtifacts', () => {
     const hub = '100:200_200';
     cy = cytoscape({
       headless: true,
+      styleEnabled: true,
+      // Keep the saved positions: the default grid layout would move every node
+      layout: { name: 'preset' },
+      // Node sizes as the diagram library sets them; edge endpoints are computed from them
+      style: [
+        { selector: 'node', style: { width: 10, height: 10 } },
+        { selector: 'node[width]', style: { width: 'data(width)', height: 'data(height)' } }
+      ] as any,
       elements: [
         { data: { id: '70101-outer', displayName: '', textX: -100, textY: -50, width: 1000, height: 800 }, position: { x: 600, y: 500 }, classes: ['Compartment', 'outer'] },
         { data: { id: '70101-outer-label', compartmentId: '70101-outer', displayName: 'cytosol', width: 50, height: 12 }, position: { x: 225, y: 208 }, classes: ['Compartment', 'outer', 'label'] },
@@ -85,5 +93,45 @@ describe('PathwayDiagramUtilService.removeEditingArtifacts', () => {
     service.removeEditingArtifacts({ cy } as any);
 
     expect(cy.elements().jsons()).toEqual(before);
+  });
+
+  // As initDiagram() does when a backup taken in the editing mode is loaded for editing.
+  describe('then enableEditing() on a network loaded from an editing-state backup', () => {
+    // enableEditing() flags new edges for sub-pathways, which needs no real diagram here
+    const diagram = () => ({ cy, flag: () => {} } as any);
+    const labels = () => cy.nodes('.label');
+    const hubs = () => cy.nodes('.edge_point').filter((node: any) => node.connectedEdges().length > 2);
+
+    beforeEach(() => {
+      service.removeEditingArtifacts(diagram());
+      service.enableEditing(diagram());
+    });
+
+    afterEach(() => service.id2hyperEdge.clear());
+
+    it('has exactly one label node per compartment, carrying the compartment name', () => {
+      expect(labels().length).toBe(1);
+      expect(labels()[0].id()).toBe('70101-outer-label');
+      expect(labels()[0].data('displayName')).toBe('cytosol');
+    });
+
+    it('has exactly one input hub, at the position saved in the backup', () => {
+      expect(hubs().length).toBe(1);
+      expect(hubs()[0].position()).toEqual({ x: 200, y: 200 });
+    });
+
+    it('keeps the inputs and output attached to the reaction', () => {
+      const ends = cy.nodes('.PhysicalEntity').map((node: any) => node.id() + ':' + node.connectedEdges().length);
+      expect(ends.sort()).toEqual(['1:1', '2:1', '3:1']);
+    });
+
+    it('gives the same network after a second disable/enable cycle', () => {
+      const snapshot = () => cy.elements().jsons().map((e: any) => e.data.id).sort();
+      const before = snapshot();
+      service.disableEditing(diagram());
+      service.removeEditingArtifacts(diagram());
+      service.enableEditing(diagram());
+      expect(snapshot()).toEqual(before);
+    });
   });
 });

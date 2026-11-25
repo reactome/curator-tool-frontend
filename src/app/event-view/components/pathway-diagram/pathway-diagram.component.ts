@@ -832,6 +832,12 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     if (!this.pathwayId || this.pathwayId.length == 0)
       return;
     this.diagramUtils.diagramService = this.diagram.getDiagramService();
+    // A network captured in the editing mode (a backup, an undo snapshot, or one synced from
+    // another tab) still has compartment label nodes and edge point nodes, but no HyperEdge
+    // tracks them after it is displayed again. Always start from a clean network, so that
+    // enableEditing() below expands it the same way as any other diagram, and nothing is
+    // left behind for disableEditing() to miss.
+    this.diagramUtils.removeEditingArtifacts(this.diagram);
     this.diagramUtils.updateCompartmentZOrder(this.diagram.cy);
     // Must run before enableEditing() below, which groups edges into HyperEdges by hyperEdgeId.
     this.diagramUtils.markLoadedFlowLines(this.diagram.cy);
