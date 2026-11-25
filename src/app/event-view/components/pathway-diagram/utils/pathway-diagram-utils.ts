@@ -3,7 +3,7 @@ import { EdgeDefinition, NodeDefinition, Core } from 'cytoscape';
 import { array } from 'vectorious';
 import { Position } from "ngx-reactome-diagram/lib/model/diagram.model";
 import { Injectable } from "@angular/core";
-import { AttributeValue, Instance, LABEL_CLASS, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
+import { AttributeValue, EDGE_POINT_CLASS, Instance, LABEL_CLASS, RENDERING_CONSTS } from "src/app/core/models/reactome-instance.model";
 import { DataService } from "src/app/core/services/data.service";
 import { HyperEdge } from "./hyperedge";
 import { InstanceConverter } from "./instance-converter";
@@ -1035,6 +1035,45 @@ export class PathwayDiagramUtilService {
             hyperEdge.enableRoundSegments();
         });
         this.id2hyperEdge.clear(); // Reset it
+    }
+
+    /**
+     * Remove the editing artifacts left in the network: fold compartment label nodes back into their
+     * compartments and collapse edge point nodes (bend points and input/output hubs) not tracked by any
+     * HyperEdge. disableEditing() only handles the HyperEdges tracked in id2hyperEdge, but a network
+     * captured in the editing mode (an undo snapshot, a backup, or one synced from another tab) can be
+     * displayed again without them. If such a network is uploaded as is, the diagram converter at the
+     * server side cannot read it (e.g. WNT, 3858498, saved on 2026-11-23 lost most of its inputs and
+     * got wrong compartment bounds during slicing).
+     * Call this after disableEditing() and before generating the JSON to be uploaded.
+     */
+    removeEditingArtifacts(diagram: DiagramComponent) {
+        const cy = diagram.cy;
+        cy.nodes('.' + LABEL_CLASS).forEach((node: any) => {
+            this.assignLabelToCompartment(node, cy);
+        });
+        const pointNodes = cy.nodes('.' + EDGE_POINT_CLASS);
+        if (pointNodes.empty())
+            return;
+        const id2edges = new Map<number | string, any[]>();
+        pointNodes.connectedEdges().forEach((edge: any) => {
+            const id = this.getHyperEdgeId(edge);
+            if (id === undefined)
+                return;
+            id2edges.set(id, [...(id2edges.get(id) || []), edge]);
+        });
+        id2edges.forEach((edges, id) => {
+            const hyperEdge = new HyperEdge(this, cy, id);
+            for (const edge of edges) {
+                hyperEdge.registerObject(edge);
+                hyperEdge.registerObject(edge.source());
+                hyperEdge.registerObject(edge.target());
+            }
+            hyperEdge.enableRoundSegments();
+        });
+        const remaining = cy.nodes('.' + EDGE_POINT_CLASS);
+        if (remaining.nonempty())
+            console.warn('Edge point nodes cannot be collapsed: ' + remaining.map((node: any) => node.id()).join(', '));
     }
 
     disableReactionEditing(id: number|string, diagram: DiagramComponent) {

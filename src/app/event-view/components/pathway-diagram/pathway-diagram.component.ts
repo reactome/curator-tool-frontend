@@ -1355,6 +1355,9 @@ export class PathwayDiagramComponent implements AfterViewInit, OnInit, OnDestroy
     // Make sure disable diagram first
     if (wasEditing)
       this.diagramUtils.disableEditing(this.diagram);
+    // Whatever isEditing says, never upload editing artifacts (compartment label nodes, edge
+    // point nodes): they may be in a network restored from an undo snapshot or a backup.
+    this.diagramUtils.removeEditingArtifacts(this.diagram);
     // cy refers to itself. This creates a circular structure.
     // Need to do a little bit of workaround here.
     // Get rid of any circular structure by doing the following fixes
