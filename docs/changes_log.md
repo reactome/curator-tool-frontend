@@ -1,3 +1,7 @@
+### Build on November 26, 2026
+
+- Fixed: in **Event View**, once the event tree on the left was scrolled sideways (for example after selecting an object in the diagram jumped to a deeply nested event), there was no visible way to scroll it back: its horizontal scrollbar sat below the last event, out of sight. The tree now ends at the bottom of the panel, with its horizontal scrollbar always visible. The species and text filter above it stays in place while you scroll the tree.
+
 ### Build on November 24, 2026
 
 - Changed: **merge with database copy** has been replaced by the comparison's own `undo` (**reset to the db value**) button. When someone commits an instance after you started editing it, compare it with the database copy. A note above the table says your copy is out of sync. `modified` and `modifiedList` now show a lock in the comparison: click the lock to unlock them, then click `undo` to take the database value, and your copy can be committed again. `modified` and `modifiedList` are unlocked and reset together, so `modified` always stays the last entry of `modifiedList`. Every other attribute that cannot be edited by hand has its own lock, so you no longer have to take all or none of them from the database. Attributes that someone else changed and you did not touch are marked *changed in database*, and they now have an `undo` button too, so you can keep the other person's change instead of overwriting it. The **Take** column, **Apply Merge**, and the `merge` button beside **Database Value** are gone.
