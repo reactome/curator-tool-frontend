@@ -20,7 +20,11 @@
 
 .mat-tree {
   background: var(--surface2);
-  height: calc(100vh - 2 * var(--body-margin, 8px)) / 2;
+  // Fill the height main-event gives the tree (see app-event-tree there), so both of its scrollbars
+  // stay on screen. This was `calc(100vh - 2 * var(--body-margin, 8px)) / 2`, which Sass emits as
+  // `calc(...)/2`: invalid CSS, so the browser dropped it and the tree took the height of all its nodes.
+  flex: 1 1 0;
+  min-height: 0;
   border: 1px solid var(--outline-variant);
   overflow: scroll;
   // The following shifts the whole tree to the left, to account for removing the top (dummy) node
